@@ -1,0 +1,13 @@
+
+sysmem_IMPORTS_start
+I_Kprintf
+sysmem_IMPORTS_start
+
+loadcore_IMPORTS_start
+I_RegisterLibraryEntries
+loadcore_IMPORTS_start
+
+intrman_IMPORTS_start
+I_CpuSuspendIntr
+I_CpuResumeIntr
+intrman_IMPORTS_start

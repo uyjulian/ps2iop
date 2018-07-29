@@ -1,0 +1,15 @@
+
+intrman_IMPORTS_start
+I_CpuSuspendIntr
+I_CpuResumeIntr
+intrman_IMPORTS_end
+
+sysclib_IMPORTS_start
+I_memcpy
+I_bzero
+sysclib_IMPORTS_end
+
+ioman_IMPORTS_start
+I_AddDrv
+I_DelDrv
+ioman_IMPORTS_end
