@@ -1,0 +1,23 @@
+
+DECLARE_EXPORT_TABLE(sysclib, 1, 1)
+END_EXPORT_TABLE
+
+// A stubbed stdio is registered in sysclib
+DECLARE_EXPORT_TABLE(stdio, 1, 2)
+    DECLARE_EXPORT(_start)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+END_EXPORT_TABLE
+
+void _retonly() {}

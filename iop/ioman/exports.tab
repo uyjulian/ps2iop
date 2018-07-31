@@ -1,0 +1,5 @@
+
+DECLARE_EXPORT_TABLE(ioman, 1, 2)
+END_EXPORT_TABLE
+
+void _retonly() {}
