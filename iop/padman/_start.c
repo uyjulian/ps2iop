@@ -2,7 +2,7 @@
 #include "irx_imports.h"
 
 #define MODNAME "padman"
-IRX_ID(MODNAME, 1, 20);
+IRX_ID(MODNAME, 1, 14);
 
 extern struct irx_export_table _exp_padman;
 
