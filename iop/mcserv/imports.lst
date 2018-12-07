@@ -40,13 +40,13 @@ I_McDetectCard
 I_McOpen
 I_McClose
 I_McRead
-I_McWrite
+//I_McWrite
 I_McSeek
 I_McFormat
 I_McGetDir
 I_McDelete
 I_McFlush
-I_McChDir
+//I_McChDir
 I_McSetFileInfo
 I_McEraseBlock
 I_McReadPage

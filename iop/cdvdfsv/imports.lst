@@ -72,7 +72,7 @@ I_sceCdReadKey
 I_sceCdDecSet
 I_sceCdPause
 I_sceCdBreak
-I_sceCdReadCdda
+//I_sceCdReadCdda
 I_sceCdReadConsoleID
 I_sceCdWriteConsoleID
 I_sceCdMV
@@ -91,4 +91,4 @@ I_sceCdStRead
 I_sceCdStSeek
 I_sceCdStStart
 I_sceCdStStop
-cdvdman_IMPORTS_start
+cdvdman_IMPORTS_end
