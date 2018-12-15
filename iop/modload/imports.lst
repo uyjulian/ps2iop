@@ -9,7 +9,7 @@ I_Kprintf
 sysmem_IMPORTS_end
 
 loadcore_IMPORTS_start
-I_GetLibraryEntryTable
+I_GetLoadcoreInternalData
 I_FlushIcache
 I_RegisterLibraryEntries
 //8

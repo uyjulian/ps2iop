@@ -1,6 +1,6 @@
 IOP_BIN = osdsnd.irx
 
-IOP_OBJS = _start.o imports.o
+IOP_OBJS = _start.o imports.o main.o
 
 all: $(IOP_BIN)
 

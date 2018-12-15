@@ -1,6 +1,6 @@
 IOP_BIN = mcman.irx
 
-IOP_OBJS = _start.o imports.o exports.o
+IOP_OBJS = _start.o imports.o exports.o main.o
 
 all: $(IOP_BIN)
 

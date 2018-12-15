@@ -1,6 +1,6 @@
 IOP_BIN = sysmem.irx
 
-IOP_OBJS = _start.o exports.o
+IOP_OBJS = _start.o exports.o main.o
 
 all: $(IOP_BIN)
 
