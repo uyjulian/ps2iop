@@ -11,21 +11,25 @@ void longjmp(jmp_buf env, int val) {
 	// FIXME: stub
 }
 
+// non-standard prototype
 char _toupper(char c) {
 	// FIXME: stub
 	return 0;
 }
 
+// non-standard prototype
 char _tolower(char c) {
 	// FIXME: stub
 	return 0;
 }
 
+// non-standard function
 unsigned char look_ctype_table(char character) {
 	// FIXME: stub
 	return 0;
 }
 
+// non-standard function
 void *get_ctype_table() {
 	// FIXME: stub
 	return NULL;
@@ -69,6 +73,7 @@ void bzero(void * x, size_t y) {
 	// FIXME: stub
 }
 
+// non-standard function
 int prnt(print_callback_t x, void *context, const char * format, va_list ap) {
 	// FIXME: stub
 	return 0;
@@ -164,6 +169,7 @@ long strtol(const char *s, char **endptr, int base) {
 	return 0;
 }
 
+// non-standard function
 char *atob(char *s, int *i) {
 	// FIXME: stub
 	return NULL;
