@@ -29,7 +29,6 @@ IRX_ID(MODNAME, 2, 2);
 #define CDSC_IO_SEMA 0xFFFFFFF6          //Wait (param != 0) or signal (param == 0) high-level I/O semaphore.
 #define CDSC_GET_VERSION 0xFFFFFFF7      //Get CDVDMAN version.
 #define CDSC_SET_ERROR 0xFFFFFFFE        //Used by CDVDFSV and CDVDSTM to set the error code (Typically READCF*).
-#define CDSC_OPL_SHUTDOWN 0x00000001     //Shutdown OPL
 
 
 typedef struct
@@ -135,14 +134,12 @@ static void cdvdfsv_startrpcthreads(void);
 static void cdvdfsv_rpc0_th(void *args);
 static void cdvdfsv_rpc1_th(void *args);
 static void cdvdfsv_rpc2_th(void *args);
-static void cdvdfsv_rpc_sd_th(void *args);
 static void *cbrpc_cdinit(int fno, void *buf, int size);
 static void *cbrpc_cdvdScmds(int fno, void *buf, int size);
 static void *cbrpc_cddiskready(int fno, void *buf, int size);
 static void *cbrpc_cddiskready2(int fno, void *buf, int size);
 static void *cbrpc_cdvdNcmds(int fno, void *buf, int size);
 static void *cbrpc_S596(int fno, void *buf, int size);
-static void *cbrpc_shutdown(int fno, void *buf, int size);
 static void *cbrpc_cdsearchfile(int fno, void *buf, int size);
 static inline void rpcSCmd_cdreadclock(void *buf);
 static inline void rpcSCmd_cdtrayreq(void *buf);
@@ -162,56 +159,91 @@ static void sysmemSendEE(void *buf, void *EE_addr, int size);
 int sceCdChangeThreadPriority(int priority);
 
 enum CDVDFSV_SCMD {
-    CDVDFSV_SCMD_READCLOCK = 0x01,
-    CDVDFSV_SCMD_WRITECLOCK,
-    CDVDFSV_SCMD_DISKTYPE,
-    CDVDFSV_SCMD_GETERROR,
-    CDVDFSV_SCMD_TRAYREQ,
-    CDVDFSV_SCMD_APPLYSCMD = 0x0B,
-    CDVDFSV_SCMD_STATUS,
-    CDVDFSV_SCMD_BREAK = 0x16,
-    CDVDFSV_SCMD_CANCELPOFF = 0x1F,
-    CDVDFSV_SCMD_BLUELEDCTRL,
-    CDVDFSV_SCMD_POWEROFF,
-    CDVDFSV_SCMD_MMODE,
-    CDVDFSV_SCMD_THREADPRIO,
-    CDVDFSV_SCMD_READGUID,
-    CDVDFSV_SCMD_SETTIMEOUT,
-    CDVDFSV_SCMD_READMODELID,
-    CDVDFSV_SCMD_READDUALINFO
+    CD_SCMD_READCLOCK = 0x01,
+    CD_SCMD_WRITECLOCK,
+    CD_SCMD_GETDISKTYPE,
+    CD_SCMD_GETERROR,
+    CD_SCMD_TRAYREQ,
+    CD_SCMD_READ_ILINK_ID,
+    CD_SCMD_WRITE_ILINK_ID,
+    CD_SCMD_READ_NVM,
+    CD_SCMD_WRITE_NVM,
+    CD_SCMD_DEC_SET,
+    CD_SCMD_SCMD,
+    CD_SCMD_STATUS,
+    CD_SCMD_SET_HD_MODE,
+    CD_SCMD_OPEN_CONFIG,
+    CD_SCMD_CLOSE_CONFIG,
+    CD_SCMD_READ_CONFIG,
+    CD_SCMD_WRITE_CONFIG,
+    CD_SCMD_READ_CONSOLE_ID,
+    CD_SCMD_WRITE_CONSOLE_ID,
+    CD_SCMD_READ_MECHACON_VERSION,
+    CD_SCMD_CTRL_AD_OUT,
+    CD_SCMD_BREAK,
+    CD_SCMD_READ_SUBQ,
+    CD_SCMD_FORBID_DVDP,
+    CD_SCMD_AUTO_ADJUST_CTRL,
+    CD_SCMD_READ_MODEL_NAME,
+    CD_SCMD_WRITE_MODEL_NAME,
+    CD_SCMD_FORBID_READ,
+    CD_SCMD_SPIN_CTRL,
+    CD_SCMD_BOOT_CERTIFY,
+    CD_SCMD_CANCELPOWEROFF,
+    CD_SCMD_BLUELEDCTRL,
+    CD_SCMD_POWEROFF,
+    CD_SCMD_MMODE,
+    CD_SCMD_SETTHREADPRI,
+    CD_SCMD_READGUID,
+    CD_SCMD_SETTIMEOUT,
+    CD_SCMD_READMODELID,
+    CD_SCMD_READDUALINFO
 };
 
-enum CDVDFSV_NCMD {
-    CDVDFSV_NCMD_CDREAD = 1,
-    CDVDFSV_NCMD_CDDAREAD,
-    CDVDFSV_NCMD_DVDREAD,
-    CDVDFSV_NCMD_GETTOC,
-    CDVDFSV_NCMD_SEEK,
-    CDVDFSV_NCMD_STANDBY,
-    CDVDFSV_NCMD_STOP,
-    CDVDFSV_NCMD_PAUSE,
-    CDVDFSV_NCMD_STREAM,
-    CDVDFSV_NCMD_CDDASTREAM,
-    CDVDFSV_NCMD_APPLYNCMD = 0x0C,
-    CDVDFSV_NCMD_IOPMREAD,
-    CDVDFSV_NCMD_DISKRDY,
-    CDVDFSV_NCMD_READCHAIN,
-    CDVDFSV_NCMD_READDISKID = 0x11,
-    CDVDFSV_NCMD_DISKTYPE = 0x17,
+// The following are not handled at the moment:
+// 40: 110
+// 41: 109
+// 42: 148
+// 43: 150
+// 44: 152
+// 48: sceCdRcBypassCtl
+// 49: 117
+// 50: 116
+// 53: 120
+// 56: 128
+// 67: 189
+// 68: 191
 
-    CDVDFSV_NCMD_COUNT
+enum CDVDFSV_NCMD {
+    CD_NCMD_READ = 1,
+    CD_NCMD_CDDAREAD,
+    CD_NCMD_DVDREAD,
+    CD_NCMD_GETTOC,
+    CD_NCMD_SEEK,
+    CD_NCMD_STANDBY,
+    CD_NCMD_STOP,
+    CD_NCMD_PAUSE,
+    CD_NCMD_STREAM,
+    CD_NCMD_CDDASTREAM,
+    CD_NCMD_READ_KEY,
+    CD_NCMD_NCMD,
+    CD_NCMD_READIOPMEM,
+    CD_NCMD_DISKREADY,
+    CD_NCMD_READCHAIN,
+    CD_NCMD_READDISKID = 0x11,
+    CD_NCMD_DISKTYPE = 0x17,
 };
 
 enum CDVDFSV_ST_CMD {
-    CDVDFSV_ST_START = 1,
-    CDVDFSV_ST_READ,
-    CDVDFSV_ST_STOP,
-    CDVDFSV_ST_SEEK,
-    CDVDFSV_ST_INIT,
-    CDVDFSV_ST_STAT,
-    CDVDFSV_ST_PAUSE,
-    CDVDFSV_ST_RESUME,
-    CDVDFSV_ST_SEEKF
+    CDVD_ST_CMD_START = 1,
+    CDVD_ST_CMD_READ,
+    CDVD_ST_CMD_STOP,
+    CDVD_ST_CMD_SEEK,
+    CDVD_ST_CMD_INIT,
+    CDVD_ST_CMD_STAT,
+    CDVD_ST_CMD_PAUSE,
+    CDVD_ST_CMD_RESUME,
+    CDVD_ST_CMD_SEEKF
 };
 
 static sceCdRMode cdvdfsv_Stmode;
@@ -224,7 +256,6 @@ static SifRpcDataQueue_t rpc_sd_DQ;
 static SifRpcServerData_t cdinit_rpcSD, cddiskready_rpcSD, cddiskready2_rpcSD, cdvdScmds_rpcSD;
 static SifRpcServerData_t cdsearchfile_rpcSD, cdvdNcmds_rpcSD;
 static SifRpcServerData_t S596_rpcSD;
-static SifRpcServerData_t sd_rpcSD;
 
 static u8 cdinit_rpcbuf[16];
 static u8 cddiskready_rpcbuf[16];
@@ -233,7 +264,6 @@ static u8 cdvdScmds_rpcbuf[1024];
 static u8 cdsearchfile_rpcbuf[304];
 static u8 cdvdNcmds_rpcbuf[1024];
 static u8 S596_rpcbuf[16];
-static u8 shutdown_rpcbuf[16];
 
 static int rpc0_thread_id, rpc1_thread_id, rpc2_thread_id, rpc_sd_thread_id;
 
@@ -299,15 +329,6 @@ static void cdvdfsv_startrpcthreads(void)
 
     rpc0_thread_id = CreateThread(&thread_param);
     StartThread(rpc0_thread_id, NULL);
-
-    thread_param.attr = TH_C;
-    thread_param.option = 0xABCD8003;
-    thread_param.thread = (void *)cdvdfsv_rpc_sd_th;
-    thread_param.stacksize = 0x1000;
-    thread_param.priority = 0x1;
-
-    rpc_sd_thread_id = CreateThread(&thread_param);
-    StartThread(rpc_sd_thread_id, NULL);
 }
 
 //-------------------------------------------------------------------------
@@ -349,15 +370,6 @@ static void cdvdfsv_rpc2_th(void *args)
     sceSifRegisterRpc(&cdsearchfile_rpcSD, 0x80000597, &cbrpc_cdsearchfile, cdsearchfile_rpcbuf, NULL, NULL, &rpc2_DQ);
 
     sceSifRpcLoop(&rpc2_DQ);
-}
-
-//-------------------------------------------------------------------------
-//Unofficial RPC for shutting down OPL.
-static void cdvdfsv_rpc_sd_th(void *args)
-{
-    sceSifSetRpcQueue(&rpc_sd_DQ, GetThreadId());
-    sceSifRegisterRpc(&sd_rpcSD, 0x80000598, &cbrpc_shutdown, shutdown_rpcbuf, NULL, NULL, &rpc_sd_DQ);
-    sceSifRpcLoop(&rpc_sd_DQ);
 }
 
 //-------------------------------------------------------------------------
@@ -442,49 +454,115 @@ static void *cbrpc_cdvdScmds(int fno, void *buf, int size)
 { // CD SCMD RPC callback
 
     switch (fno) {
-        case CDVDFSV_SCMD_READCLOCK:
+        case CD_SCMD_READCLOCK:
             rpcSCmd_cdreadclock(buf);
             break;
-        case CDVDFSV_SCMD_DISKTYPE:
+        case CD_SCMD_WRITECLOCK:
+            *(int *)buf = sceCdWriteClock((const sceCdCLOCK *)buf);
+            break;
+        case CD_SCMD_GETDISKTYPE:
             *(int *)buf = sceCdGetDiskType();
             break;
-        case CDVDFSV_SCMD_GETERROR:
+        case CD_SCMD_GETERROR:
             *(int *)buf = sceCdGetError();
             break;
-        case CDVDFSV_SCMD_TRAYREQ:
+        case CD_SCMD_TRAYREQ:
             rpcSCmd_cdtrayreq(buf);
             break;
-        case CDVDFSV_SCMD_APPLYSCMD:
+        case CD_SCMD_READ_ILINK_ID:
+            *(int *)buf = sceCdRI((u8 *)((u8 *)buf + 8), (u32 *)buf + 1);
+            break;
+        case CD_SCMD_WRITE_ILINK_ID:
+            *(int *)buf = sceCdWI(buf, (u32 *)buf + 1);
+            break;
+        case CD_SCMD_DEC_SET:
+            *(int *)buf = sceCdDecSet(((u8 *)buf)[0], ((u8 *)buf)[1], ((u8 *)buf)[2]);
+            break;
+        case CD_SCMD_SCMD:
             rpcSCmd_cdapplySCmd(buf);
             break;
-        case CDVDFSV_SCMD_STATUS:
+        case CD_SCMD_STATUS:
             *(int *)buf = sceCdStatus();
             break;
-        case CDVDFSV_SCMD_BREAK:
+        case CD_SCMD_SET_HD_MODE:
+            *(int *)buf = sceCdSetHDMode(((u8 *)buf)[0]);
+            break;
+        case CD_SCMD_OPEN_CONFIG:
+            *(int *)buf = sceCdOpenConfig(((u8 *)buf)[1], ((u8 *)buf)[0], ((u8 *)buf)[2]);
+            break;
+        case CD_SCMD_CLOSE_CONFIG:
+            *(int *)buf = sceCdCloseConfig((u32 *)buf + 1);
+            break;
+        case CD_SCMD_READ_CONFIG:
+            *(int *)buf = sceCdReadConfig((int *)buf + 3, (u32 *)buf + 1);
+            break;
+        case CD_SCMD_WRITE_CONFIG:
+            *(int *)buf = sceCdWriteConfig((const void *)buf, (u32 *)buf + 1);
+            break;
+        case CD_SCMD_READ_CONSOLE_ID:
+            *(int *)buf = sceCdReadConsoleID((u8 *)((u8 *)buf + 8), (u32 *)buf + 1);
+            break;
+        case CD_SCMD_WRITE_CONSOLE_ID:
+            *(int *)buf = sceCdWriteConsoleID((u8 *)buf, (u32 *)buf + 1);
+            break;
+        case CD_SCMD_READ_MECHACON_VERSION:
+            *(u32 *)buf = sceCdMV((u8 *)((u8 *)buf + 8), (u32 *)buf + 1);
+            break;
+        case CD_SCMD_CTRL_AD_OUT:
+            *(u32 *)buf = sceCdCtrlADout(((u8 *)buf)[0], (u32 *)buf + 1);
+            break;
+        case CD_SCMD_BREAK:
             *(int *)buf = sceCdBreak();
             break;
-        case CDVDFSV_SCMD_CANCELPOFF:
-            *(int *)buf = 1;
+        case CD_SCMD_READ_SUBQ:
+            *(int *)buf = sceCdReadSUBQ((u8 *)buf + 2, (u32 *)buf + 1);
             break;
-        case CDVDFSV_SCMD_POWEROFF:
-            *(int *)buf = sceCdPowerOff((int *)buf);
+        case CD_SCMD_FORBID_DVDP:
+            *(int *)buf = sceCdForbidDVDP((u32 *)buf + 1);
             break;
-        case CDVDFSV_SCMD_MMODE:
+        case CD_SCMD_AUTO_ADJUST_CTRL:
+            *(int *)buf = sceCdAutoAdjustCtrl(((int *)buf)[0], (u32 *)buf + 1);
+            break;
+        case CD_SCMD_READ_MODEL_NAME:
+            *(u32 *)buf = sceCdRM((char *)((u8 *)buf + 8), (u32 *)buf + 1);
+            break;
+        case CD_SCMD_WRITE_MODEL_NAME:
+            *(int *)buf = sceCdWM((const char *)buf, (u32 *)buf + 1);
+            break;
+        case CD_SCMD_FORBID_READ:
+            *(int *)buf = sceCdForbidRead((u32 *)buf + 1);
+            break;
+        case CD_SCMD_SPIN_CTRL:
+            *(int *)buf = sceCdSC(-8, (int *)buf);
+            break;
+        case CD_SCMD_BOOT_CERTIFY:
+            *(int *)buf = sceCdBootCertify((const u8 *)buf);
+            break;
+        case CD_SCMD_CANCELPOWEROFF:
+            *(int *)buf = sceCdCancelPOffRdy((u32 *)buf + 1);
+            break;
+        case CD_SCMD_BLUELEDCTRL:
+            *(int *)buf = sceCdBlueLEDCtl(*(u32 *)buf, (u32 *)buf + 1);
+            break;
+        case CD_SCMD_POWEROFF:
+            *(int *)buf = sceCdPowerOff(buf);
+            break;
+        case CD_SCMD_MMODE:
             *(int *)buf = sceCdMmode(*(int *)buf);
             break;
-        case CDVDFSV_SCMD_THREADPRIO:
+        case CD_SCMD_SETTHREADPRI:
             *(int *)buf = sceCdChangeThreadPriority(*(int *)buf);
             break;
-        case CDVDFSV_SCMD_READGUID:
+        case CD_SCMD_READGUID:
             rpcSCmd_cdreadGUID(buf);
             break;
-        case CDVDFSV_SCMD_SETTIMEOUT:
+        case CD_SCMD_SETTIMEOUT:
             rpcSCmd_cdsettimeout(buf);
             break;
-        case CDVDFSV_SCMD_READMODELID:
+        case CD_SCMD_READMODELID:
             rpcSCmd_cdreadModelID(buf);
             break;
-        case CDVDFSV_SCMD_READDUALINFO:
+        case CD_SCMD_READDUALINFO:
             rpcSCmd_cdreaddvddualinfo(buf);
             break;
         default:
@@ -538,42 +616,39 @@ static void *cbrpc_cdvdNcmds(int fno, void *buf, int size)
     sceCdSC(CDSC_IO_SEMA, &fno);
 
     switch (fno) {
-        case CDVDFSV_NCMD_CDREAD:
-        case CDVDFSV_NCMD_CDDAREAD:
-        case CDVDFSV_NCMD_DVDREAD:
+        case CD_NCMD_READ:
+        case CD_NCMD_CDDAREAD:
+        case CD_NCMD_DVDREAD:
             cdvd_readee(buf);
             break;
-        case CDVDFSV_NCMD_GETTOC:
-            *(int *)buf = 1;
-            break;
-        case CDVDFSV_NCMD_SEEK:
+        case CD_NCMD_SEEK:
             *(int *)buf = sceCdSeek(*(u32 *)buf);
             break;
-        case CDVDFSV_NCMD_STANDBY:
+        case CD_NCMD_STANDBY:
             *(int *)buf = sceCdStandby();
             break;
-        case CDVDFSV_NCMD_STOP:
+        case CD_NCMD_STOP:
             *(int *)buf = sceCdStop();
             break;
-        case CDVDFSV_NCMD_PAUSE:
+        case CD_NCMD_PAUSE:
             *(int *)buf = sceCdPause();
             break;
-        case CDVDFSV_NCMD_STREAM:
+        case CD_NCMD_STREAM:
             cdvd_Stsubcmdcall(buf);
             break;
-        case CDVDFSV_NCMD_IOPMREAD:
+        case CD_NCMD_READIOPMEM:
             cdvd_readiopm(buf);
             break;
-        case CDVDFSV_NCMD_DISKRDY:
+        case CD_NCMD_DISKREADY:
             *(int *)buf = sceCdDiskReady(0);
             break;
-        case CDVDFSV_NCMD_READCHAIN:
+        case CD_NCMD_READCHAIN:
             cdvd_readchain(buf);
             break;
-        case CDVDFSV_NCMD_READDISKID:
+        case CD_NCMD_READDISKID:
             rpcNCmd_cdreadDiskID(buf);
             break;
-        case CDVDFSV_NCMD_DISKTYPE:
+        case CD_NCMD_DISKTYPE:
             rpcNCmd_cdgetdisktype(buf);
             break;
         default:
@@ -596,22 +671,6 @@ static void *cbrpc_S596(int fno, void *buf, int size)
         cdvdman_intr_ef = sceCdSC(CDSC_GET_INTRFLAG, &dummy);
         ClearEventFlag(cdvdman_intr_ef, ~4);
         WaitEventFlag(cdvdman_intr_ef, 4, WEF_AND, NULL);
-    }
-
-    *(int *)buf = 1;
-    return buf;
-}
-
-//--------------------------------------------------------------
-static void *cbrpc_shutdown(int fno, void *buf, int size)
-{
-    int value;
-
-    if (fno == 1) {
-        //Terminate operations.
-        //Shutdown OPL
-        value = *(int *)buf;
-        sceCdSC(CDSC_OPL_SHUTDOWN, &value);
     }
 
     *(int *)buf = 1;
@@ -664,31 +723,31 @@ static inline void cdvd_Stsubcmdcall(void *buf)
     RpcCdvdStream_t *St = (RpcCdvdStream_t *)buf;
 
     switch (St->cmd) {
-        case CDVDFSV_ST_START:
+        case CDVD_ST_CMD_START:
             *(int *)buf = sceCdStStart(((RpcCdvdStream_t *)buf)->lsn, &cdvdfsv_Stmode);
             break;
-        case CDVDFSV_ST_READ:
+        case CDVD_ST_CMD_READ:
             cdvdSt_read(buf);
             break;
-        case CDVDFSV_ST_STOP:
+        case CDVD_ST_CMD_STOP:
             *(int *)buf = sceCdStStop();
             break;
-        case CDVDFSV_ST_SEEK:
+        case CDVD_ST_CMD_SEEK:
             *(int *)buf = sceCdStSeek(((RpcCdvdStream_t *)buf)->lsn);
             break;
-        case CDVDFSV_ST_INIT:
+        case CDVD_ST_CMD_INIT:
             *(int *)buf = sceCdStInit(((RpcCdvdStInit_t *)buf)->bufmax, ((RpcCdvdStInit_t *)buf)->bankmax, ((RpcCdvdStInit_t *)buf)->buf);
             break;
-        case CDVDFSV_ST_STAT:
+        case CDVD_ST_CMD_STAT:
             *(int *)buf = sceCdStStat();
             break;
-        case CDVDFSV_ST_PAUSE:
+        case CDVD_ST_CMD_PAUSE:
             *(int *)buf = sceCdStPause();
             break;
-        case CDVDFSV_ST_RESUME:
+        case CDVD_ST_CMD_RESUME:
             *(int *)buf = sceCdStResume();
             break;
-        case CDVDFSV_ST_SEEKF:
+        case CDVD_ST_CMD_SEEKF:
             *(int *)buf = sceCdStSeekF(((RpcCdvdStream_t *)buf)->lsn);
             break;
         default:
