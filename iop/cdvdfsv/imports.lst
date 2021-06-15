@@ -57,6 +57,8 @@ cdvdman_IMPORTS_start
 I_sceCdInit
 I_sceCdStandby
 I_sceCdRead
+I_sceCdReadDVDV
+I_sceCdReadCDDA
 I_sceCdSeek
 I_sceCdGetError
 I_sceCdSearchFile

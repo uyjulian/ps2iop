@@ -153,7 +153,7 @@ static inline void rpcNCmd_cdgetdisktype(void *buf);
 static inline void cdvd_Stsubcmdcall(void *buf);
 static inline void cdvdSt_read(void *buf);
 static inline void cdvd_readchain(void *buf);
-static inline void cdvd_readee(void *buf);
+static inline void cdvd_readee(void *buf, int fno);
 static inline void cdvd_readiopm(void *buf);
 static void sysmemSendEE(void *buf, void *EE_addr, int size);
 int sceCdChangeThreadPriority(int priority);
@@ -619,7 +619,7 @@ static void *cbrpc_cdvdNcmds(int fno, void *buf, int size)
         case CD_NCMD_READ:
         case CD_NCMD_CDDAREAD:
         case CD_NCMD_DVDREAD:
-            cdvd_readee(buf);
+            cdvd_readee(buf, fno);
             break;
         case CD_NCMD_SEEK:
             *(int *)buf = sceCdSeek(*(u32 *)buf);
@@ -852,11 +852,11 @@ static inline void cdvd_readchain(void *buf)
 }
 
 //--------------------------------------------------------------
-static inline void cdvd_readee(void *buf)
+static inline void cdvd_readee(void *buf, int fno)
 { // Read Disc data to EE mem buffer
     u8 curlsn_buf[16];
     u32 nbytes, nsectors, sectors_to_read, size_64b, size_64bb, bytesent, temp;
-    int sector_size, flag_64b, fsverror;
+    int sector_size, flag_64b, fsverror, cd_read_result;
     void *fsvRbuf = (void *)cdvdfsv_buf;
     void *eeaddr_64b, *eeaddr2_64b;
     cdvdfsv_readee_t readee;
@@ -867,12 +867,56 @@ static inline void cdvd_readee(void *buf)
         return;
     }
 
-    sector_size = 2328;
-
-    if ((r->mode.datapattern & 0xff) != 1) {
-        sector_size = 2340;
-        if ((r->mode.datapattern & 0xff) != 2)
-            sector_size = 2048;
+    switch(fno)
+    {
+        case CD_NCMD_DVDREAD:
+        {
+            sector_size = 2064;
+            break;
+        }
+        case CD_NCMD_CDDAREAD:
+        {
+            switch (r->mode.datapattern & 0xff) {
+                case SCECdSecS2368:
+                {
+                    sector_size = 2368;
+                    break;
+                }
+                case SCECdSecS2448:
+                {
+                    sector_size = 2448;
+                    break;
+                }
+                default:
+                {
+                    sector_size = 2352;
+                    break;
+                }
+            }
+            break;
+        }
+        case CD_NCMD_READ:
+        default:
+        {
+            switch (r->mode.datapattern & 0xff) {
+                case SCECdSecS2328:
+                {
+                    sector_size = 2328;
+                    break;
+                }
+                case SCECdSecS2340:
+                {
+                    sector_size = 2340;
+                    break;
+                }
+                default:
+                {
+                    sector_size = 2048;
+                    break;
+                }
+            }
+            break;
+        }
     }
 
     r->eeaddr1 = (void *)((u32)r->eeaddr1 & 0x1fffffff);
@@ -939,7 +983,28 @@ static inline void cdvd_readee(void *buf)
                 temp = nsectors;
             }
 
-            if (sceCdRead(r->lsn, temp, (void *)fsvRbuf, NULL) == 0) {
+            switch(fno)
+            {
+                case CD_NCMD_DVDREAD:
+                {
+                    cd_read_result = sceCdReadDVDV(r->lsn, temp, (void *)fsvRbuf, NULL);
+                    break;
+                }
+                case CD_NCMD_CDDAREAD:
+                {
+                    cd_read_result = sceCdReadCDDA(r->lsn, temp, (void *)fsvRbuf, NULL);
+                    break;
+                }
+                case CD_NCMD_READ:
+                default:
+                {
+                    cd_read_result = sceCdRead(r->lsn, temp, (void *)fsvRbuf, NULL);
+                    break;
+                }
+            }
+
+
+            if (cd_read_result == 0) {
                 if (sceCdGetError() == SCECdErNO) {
                     fsverror = SCECdErREADCF;
                     sceCdSC(CDSC_SET_ERROR, &fsverror);
