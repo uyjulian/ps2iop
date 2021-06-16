@@ -488,6 +488,7 @@ static void *cbrpc_cdvdScmds(int fno, void *buf, int size)
             *(int *)buf = sceCdSetHDMode(((u8 *)buf)[0]);
             break;
         case CD_SCMD_OPEN_CONFIG:
+            // TODO: verify order of arguments
             *(int *)buf = sceCdOpenConfig(((u8 *)buf)[1], ((u8 *)buf)[0], ((u8 *)buf)[2]);
             break;
         case CD_SCMD_CLOSE_CONFIG:
