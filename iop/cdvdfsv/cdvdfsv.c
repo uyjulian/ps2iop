@@ -730,6 +730,7 @@ static inline void cdvd_Stsubcmdcall(void *buf)
 
     switch (St->cmd) {
         case CDVD_ST_CMD_START:
+            memcpy(&cdvdfsv_Stmode, &((RpcCdvdStream_t *)buf)->mode, sizeof(cdvdfsv_Stmode));
             *(int *)buf = sceCdStStart(((RpcCdvdStream_t *)buf)->lsn, &cdvdfsv_Stmode);
             break;
         case CDVD_ST_CMD_READ:
@@ -788,10 +789,28 @@ static inline void cdvdSt_read(void *buf)
 {
     RpcCdvdStream_t *St = (RpcCdvdStream_t *)buf;
     u32 err;
-    int r, rpos, remaining;
+    int r, rpos, remaining, sector_size;
     void *ee_addr;
 
-    for (rpos = 0, ee_addr = St->buf, remaining = St->sectors; remaining > 0; ee_addr += r << 11, rpos += r, remaining -= r) {
+    switch (cdvdfsv_Stmode.datapattern & 0xff) {
+        case SCECdSecS2328:
+        {
+            sector_size = 2328;
+            break;
+        }
+        case SCECdSecS2340:
+        {
+            sector_size = 2340;
+            break;
+        }
+        default:
+        {
+            sector_size = 2048;
+            break;
+        }
+    }
+
+    for (rpos = 0, ee_addr = St->buf, remaining = St->sectors; remaining > 0; ee_addr += r * sector_size, rpos += r, remaining -= r) {
         if ((r = sceCdStRead(remaining, (void *)((u32)ee_addr | 0x80000000), 0, &err)) < 1)
             break;
     }
