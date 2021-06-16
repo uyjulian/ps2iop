@@ -624,15 +624,19 @@ static void *cbrpc_cdvdNcmds(int fno, void *buf, int size)
             break;
         case CD_NCMD_SEEK:
             *(int *)buf = sceCdSeek(*(u32 *)buf);
+            sceCdSync(6);
             break;
         case CD_NCMD_STANDBY:
             *(int *)buf = sceCdStandby();
+            sceCdSync(4);
             break;
         case CD_NCMD_STOP:
             *(int *)buf = sceCdStop();
+            sceCdSync(4);
             break;
         case CD_NCMD_PAUSE:
             *(int *)buf = sceCdPause();
+            sceCdSync(6);
             break;
         case CD_NCMD_STREAM:
             cdvd_Stsubcmdcall(buf);
