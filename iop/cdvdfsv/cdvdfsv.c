@@ -152,7 +152,7 @@ static inline void rpcNCmd_cdreadDiskID(void *buf);
 static inline void rpcNCmd_cdgetdisktype(void *buf);
 static inline void cdvd_Stsubcmdcall(void *buf);
 static inline void cdvdSt_read(void *buf);
-static inline void cdvd_readchain(void *buf);
+static inline void cdvd_readchain(void *buf, int fno);
 static inline void cdvd_readee(void *buf, int fno);
 static inline void cdvd_readiopm(void *buf);
 static void sysmemSendEE(void *buf, void *EE_addr, int size);
@@ -230,7 +230,8 @@ enum CDVDFSV_NCMD {
     CD_NCMD_READIOPMEM,
     CD_NCMD_DISKREADY,
     CD_NCMD_READCHAIN,
-    CD_NCMD_READDISKID = 0x11,
+    CD_NCMD_CDDAREADCHAIN,
+    CD_NCMD_READDISKID,
     CD_NCMD_DISKTYPE = 0x17,
 };
 
@@ -252,7 +253,6 @@ static u8 *cdvdfsv_buf;
 static SifRpcDataQueue_t rpc0_DQ;
 static SifRpcDataQueue_t rpc1_DQ;
 static SifRpcDataQueue_t rpc2_DQ;
-static SifRpcDataQueue_t rpc_sd_DQ;
 static SifRpcServerData_t cdinit_rpcSD, cddiskready_rpcSD, cddiskready2_rpcSD, cdvdScmds_rpcSD;
 static SifRpcServerData_t cdsearchfile_rpcSD, cdvdNcmds_rpcSD;
 static SifRpcServerData_t S596_rpcSD;
@@ -265,7 +265,7 @@ static u8 cdsearchfile_rpcbuf[304];
 static u8 cdvdNcmds_rpcbuf[1024];
 static u8 S596_rpcbuf[16];
 
-static int rpc0_thread_id, rpc1_thread_id, rpc2_thread_id, rpc_sd_thread_id;
+static int rpc0_thread_id, rpc1_thread_id, rpc2_thread_id;
 
 extern struct irx_export_table _exp_cdvdfsv;
 
@@ -643,7 +643,8 @@ static void *cbrpc_cdvdNcmds(int fno, void *buf, int size)
             *(int *)buf = sceCdDiskReady(0);
             break;
         case CD_NCMD_READCHAIN:
-            cdvd_readchain(buf);
+        case CD_NCMD_CDDAREADCHAIN:
+            cdvd_readchain(buf, fno);
             break;
         case CD_NCMD_READDISKID:
             rpcNCmd_cdreadDiskID(buf);
@@ -794,12 +795,65 @@ static inline void cdvdSt_read(void *buf)
 }
 
 //-------------------------------------------------------------------------
-static inline void cdvd_readchain(void *buf)
+static inline void cdvd_readchain(void *buf, int fno)
 {
-    int i, fsverror;
+    int i, fsverror, sector_size;
+    sceCdRMode mode;
     u32 nsectors, tsectors, lsn, addr, readpos;
 
     RpcCdvdchain_t *ch = (RpcCdvdchain_t *)buf;
+
+    // TODO: verify endianness
+    mode.trycount = (((RpcCdvdchain_t *)buf)[65].lsn) & 0xff;
+    mode.spindlctrl = ((((RpcCdvdchain_t *)buf)[65].lsn) >> 8) & 0xff;
+    mode.datapattern = ((((RpcCdvdchain_t *)buf)[65].lsn) >> 16) & 0xff;
+
+    switch(fno)
+    {
+        case CD_NCMD_CDDAREADCHAIN:
+        {
+            switch (mode.datapattern & 0xff) {
+                case SCECdSecS2368:
+                {
+                    sector_size = 2368;
+                    break;
+                }
+                case SCECdSecS2448:
+                {
+                    sector_size = 2448;
+                    break;
+                }
+                default:
+                {
+                    sector_size = 2352;
+                    break;
+                }
+            }
+            break;
+        }
+        case CD_NCMD_READCHAIN:
+        default:
+        {
+            switch (mode.datapattern & 0xff) {
+                case SCECdSecS2328:
+                {
+                    sector_size = 2328;
+                    break;
+                }
+                case SCECdSecS2340:
+                {
+                    sector_size = 2340;
+                    break;
+                }
+                default:
+                {
+                    sector_size = 2048;
+                    break;
+                }
+            }
+            break;
+        }
+    }
 
     for (i = 0, readpos = 0; i < 64; i++, ch++) {
 
@@ -822,7 +876,7 @@ static inline void cdvd_readchain(void *buf)
             }
             sceCdSync(0);
 
-            readpos += tsectors * 2048;
+            readpos += tsectors * sector_size;
         } else { // EE addr
             while (tsectors > 0) {
                 nsectors = (tsectors > CDVDMAN_FS_SECTORS) ? CDVDMAN_FS_SECTORS : tsectors;
@@ -837,12 +891,12 @@ static inline void cdvd_readchain(void *buf)
                     return;
                 }
                 sceCdSync(0);
-                sysmemSendEE(cdvdfsv_buf, (void *)addr, nsectors << 11);
+                sysmemSendEE(cdvdfsv_buf, (void *)addr, nsectors * sector_size);
 
                 lsn += nsectors;
                 tsectors -= nsectors;
-                addr += nsectors << 11;
-                readpos += nsectors << 11;
+                addr += nsectors * sector_size;
+                readpos += nsectors * sector_size;
             }
         }
 
