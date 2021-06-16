@@ -802,7 +802,7 @@ static inline void cdvdSt_read(void *buf)
 //-------------------------------------------------------------------------
 static inline void cdvd_readchain(void *buf, int fno)
 {
-    int i, fsverror, sector_size;
+    int i, fsverror, sector_size, cd_read_result;
     sceCdRMode mode;
     u32 nsectors, tsectors, lsn, addr, readpos;
 
@@ -870,7 +870,21 @@ static inline void cdvd_readchain(void *buf, int fno)
         addr = (u32)ch->buf & 0xfffffffc;
 
         if ((u32)ch->buf & 1) { // IOP addr
-            if (sceCdRead(lsn, tsectors, (void *)addr, NULL) == 0) {
+            switch(fno)
+            {
+                case CD_NCMD_CDDAREADCHAIN:
+                {
+                    cd_read_result = sceCdReadCDDA(lsn, tsectors, (void *)addr, &mode);
+                    break;
+                }
+                case CD_NCMD_READCHAIN:
+                default:
+                {
+                    cd_read_result = sceCdRead(lsn, tsectors, (void *)addr, &mode);
+                    break;
+                }
+            }
+            if (cd_read_result == 0) {
                 if (sceCdGetError() == SCECdErNO) {
                     fsverror = SCECdErREADCFR;
                     sceCdSC(CDSC_SET_ERROR, &fsverror);
@@ -886,7 +900,21 @@ static inline void cdvd_readchain(void *buf, int fno)
             while (tsectors > 0) {
                 nsectors = (tsectors > CDVDMAN_FS_SECTORS) ? CDVDMAN_FS_SECTORS : tsectors;
 
-                if (sceCdRead(lsn, nsectors, cdvdfsv_buf, NULL) == 0) {
+                switch(fno)
+                {
+                    case CD_NCMD_CDDAREADCHAIN:
+                    {
+                        cd_read_result = sceCdReadCDDA(lsn, nsectors, cdvdfsv_buf, &mode);
+                        break;
+                    }
+                    case CD_NCMD_READCHAIN:
+                    default:
+                    {
+                        cd_read_result = sceCdRead(lsn, nsectors, cdvdfsv_buf, &mode);
+                        break;
+                    }
+                }
+                if (cd_read_result == 0) {
                     if (sceCdGetError() == SCECdErNO) {
                         fsverror = SCECdErREADCF;
                         sceCdSC(CDSC_SET_ERROR, &fsverror);
@@ -1046,18 +1074,18 @@ static inline void cdvd_readee(void *buf, int fno)
             {
                 case CD_NCMD_DVDREAD:
                 {
-                    cd_read_result = sceCdReadDVDV(r->lsn, temp, (void *)fsvRbuf, NULL);
+                    cd_read_result = sceCdReadDVDV(r->lsn, temp, (void *)fsvRbuf, &r->mode);
                     break;
                 }
                 case CD_NCMD_CDDAREAD:
                 {
-                    cd_read_result = sceCdReadCDDA(r->lsn, temp, (void *)fsvRbuf, NULL);
+                    cd_read_result = sceCdReadCDDA(r->lsn, temp, (void *)fsvRbuf, &r->mode);
                     break;
                 }
                 case CD_NCMD_READ:
                 default:
                 {
-                    cd_read_result = sceCdRead(r->lsn, temp, (void *)fsvRbuf, NULL);
+                    cd_read_result = sceCdRead(r->lsn, temp, (void *)fsvRbuf, &r->mode);
                     break;
                 }
             }
