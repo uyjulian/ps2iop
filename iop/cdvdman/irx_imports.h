@@ -10,6 +10,9 @@
 #include "thbase.h"
 #include "thsemap.h"
 #include "sysclib.h"
-#include "ioman.h"
+#include "iomanX.h"
+#include "sysmem.h"
+#include "thevent.h"
+#include "dmacman.h"
 
 #endif /* IOP_IRX_IMPORTS_H */
