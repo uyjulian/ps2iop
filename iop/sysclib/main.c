@@ -42,11 +42,11 @@ char *atob(char *s, int *i) {
 }
 
 // non-standard function (not to be confused with the wchar_t related function)
-void *wmemcopy(u32 *dest, const u32 *src, size_t size) {
+void *_wmemcopy(u32 *dest, const u32 *src, size_t size) {
 	return memcpy((u8 *)dest, (u8 *)src, size);
 }
 
 // non-standard function (not to be confused with the wchar_t related function)
-void *wmemset(u32 *dest, u32 c, size_t size) {
+void *_wmemset(u32 *dest, u32 c, size_t size) {
 	return memset((u8 *)dest, c, size);
 }

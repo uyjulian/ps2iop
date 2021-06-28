@@ -40,8 +40,11 @@ DECLARE_EXPORT_TABLE(sysclib, 1, 1)
     DECLARE_EXPORT(atob)
     DECLARE_EXPORT(strtoul)
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(wmemcopy)
-    DECLARE_EXPORT(wmemset)
+    DECLARE_EXPORT(_wmemcopy)
+    DECLARE_EXPORT(_wmemset)
+    DECLARE_EXPORT(vsprintf)
+    DECLARE_EXPORT(strtok_r)
+    DECLARE_EXPORT(_retnegativeone)
 END_EXPORT_TABLE
 
 // A stubbed stdio is registered in sysclib
@@ -63,3 +66,4 @@ DECLARE_EXPORT_TABLE(stdio, 1, 2)
 END_EXPORT_TABLE
 
 void _retonly() {}
+int _retnegativeone() { return -1; }

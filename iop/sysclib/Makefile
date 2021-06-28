@@ -29,6 +29,7 @@ IOP_OBJS += musl/string/strpbrk.o
 IOP_OBJS += musl/string/strrchr.o
 IOP_OBJS += musl/string/strspn.o
 IOP_OBJS += musl/string/strstr.o
+IOP_OBJS += musl/string/strtok_r.o
 IOP_OBJS += musl/string/strtok.o
 
 IOP_OBJS += mpaland_printf/printf.o
