@@ -1,6 +1,13 @@
 IOP_BIN = cdvdman.irx
 
-IOP_OBJS = _start.o imports.o exports.o main.o
+IOP_OBJS = imports.o exports.o
+IOP_OBJS += cdvdman.o
+IOP_OBJS += device-cdvd.o
+IOP_OBJS += ioops.o
+IOP_OBJS += ncmd.o
+IOP_OBJS += scmd.o
+IOP_OBJS += searchfile.o
+IOP_OBJS += streaming.o
 
 all: $(IOP_BIN)
 
