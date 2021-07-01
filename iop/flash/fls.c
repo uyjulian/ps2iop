@@ -1,4 +1,10 @@
 
+// fls_4 - detect dev9 flash device
+// fls_6 - identify flash chip
+// fls_7 - erase page?
+// fls_8 - read page?
+// fls_9 - write page?
+
 #include "irx_imports.h"
 
 #define WORDn(x, n) (*((u16 *)&(x) + n))
