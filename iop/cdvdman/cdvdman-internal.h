@@ -280,16 +280,16 @@ typedef struct _iop_device_ops
 
 int cdrom_init(iop_device_t *);
 int cdrom_deinit(iop_device_t *);
-int cdrom_open(iop_file_t *, const char *, int, ...);
+int cdrom_open(iop_file_t *, const char *, int, int);
 int cdrom_close(iop_file_t *);
 int cdrom_read(iop_file_t *, void *, int);
-int cdrom_lseek(iop_file_t *, unsigned long, int);
-int cdrom_ioctl(iop_file_t *, unsigned long, void *);
+int cdrom_lseek(iop_file_t *, int, int);
+int cdrom_ioctl(iop_file_t *, int, void *);
 int cdrom_dopen(iop_file_t *, const char *);
 int cdrom_dread(iop_file_t *, iox_dirent_t *);
 int cdrom_getstat(iop_file_t *, const char *, iox_stat_t *);
 int cdrom_ioctl2(iop_file_t *, int, void *, size_t, void *, size_t);
-int cdrom_devctl(iop_file_t *, const char *, int, void *, u32, void *, u32);
+int cdrom_devctl(iop_file_t *, const char *, int, void *, unsigned int, void *, unsigned int);
 int cdrom_nulldev(iop_file_t *nuldev, ...);
 s64 cdrom_nulldev64(iop_file_t *nuldev, ...);
 
@@ -516,7 +516,7 @@ extern int cdvdman_fs_base2;
 
 /* cdvdman SBSS segment */
 
-extern char *cdvdman_ptoc;
+extern u8 *cdvdman_ptoc;
 extern int cdvdman_scmd_ef;
 extern char *cdvdman_pb_fsvr;
 extern int cdvdman_srch_ef;
@@ -552,7 +552,7 @@ extern int cdvdman_ptblflag;
 extern char cdvdman_fs_rbuf[0x800];
 
 extern char cdvdman_fsvrbuf[FSVR_BUFFER_SIZE];
-extern char toc_buffer[TOC_BUFFSIZE];
+extern u8 toc_buffer[TOC_BUFFSIZE];
 
 /* The data below is probably a some very big (0xC0 bytes or even bigger) internal structure */
 extern u8 cdvdman_command;

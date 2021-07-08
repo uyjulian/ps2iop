@@ -16,30 +16,30 @@ iop_device_ops_t cdvdman_cdops =
     {
         cdrom_init,
         cdrom_deinit,
-        cdrom_nulldev,
+        (void *)cdrom_nulldev,
         cdrom_open,
         cdrom_close,
         cdrom_read,
-        cdrom_nulldev,
+        (void *)cdrom_nulldev,
         cdrom_lseek,
         cdrom_ioctl,
-        cdrom_nulldev,
-        cdrom_nulldev,
-        cdrom_nulldev,
+        (void *)cdrom_nulldev,
+        (void *)cdrom_nulldev,
+        (void *)cdrom_nulldev,
         cdrom_dopen,
         cdrom_close,
         cdrom_dread,
         cdrom_getstat,
-        cdrom_nulldev,
-        cdrom_nulldev,
-        cdrom_nulldev,
-        cdrom_nulldev,
-        cdrom_nulldev,
-        cdrom_nulldev,
-        cdrom_nulldev64,
+        (void *)cdrom_nulldev,
+        (void *)cdrom_nulldev,
+        (void *)cdrom_nulldev,
+        (void *)cdrom_nulldev,
+        (void *)cdrom_nulldev,
+        (void *)cdrom_nulldev,
+        (void *)cdrom_nulldev64,
         cdrom_devctl,
-        cdrom_nulldev,
-        cdrom_nulldev,
+        (void *)cdrom_nulldev,
+        (void *)cdrom_nulldev,
         cdrom_ioctl2};
 
 iop_device_t cdvdman_cddev = {cdvdman_cdrom, IOP_DT_FS | IOP_DT_FSEXT, 1, "CD-ROM ", &cdvdman_cdops};
@@ -89,7 +89,7 @@ int cdvdman_fs_base2 = 0;
 
 /* cdvdman SBSS segment */
 
-char *cdvdman_ptoc;    /* sbss:0000  - pointer to buffer used to read TOC */
+u8 *cdvdman_ptoc;    /* sbss:0000  - pointer to buffer used to read TOC */
 int cdvdman_scmd_ef;   /* sbss:0004  - event flag #2 - s-commands syncronization */
 char *cdvdman_pb_fsvr; /* sbss:0008  - pointer to fsv read buffer */
 int cdvdman_srch_ef;   /* sbss:000C  - event flag #4 - file search syncronization */
@@ -125,7 +125,7 @@ int cdvdman_ptblflag;
 char cdvdman_fs_rbuf[0x800]; /* or 0x810 - unsure */
 
 char cdvdman_fsvrbuf[FSVR_BUFFER_SIZE];
-char toc_buffer[TOC_BUFFSIZE];
+u8 toc_buffer[TOC_BUFFSIZE];
 
 /* The data below is probably a some very big (0xC0 bytes or even bigger) internal structure */
 u8 cdvdman_command;

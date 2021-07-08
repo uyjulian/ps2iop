@@ -359,9 +359,6 @@ int cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
     u32 resultp;
     register CDVDMAN_FILEDATA *fd;
     register int rc;
-    iox_dirent_t *bbuf;
-
-    bbuf = (iox_dirent_t *)buf;
 
     DPRINTF(1, "fileIO DREAD\n");
 
@@ -377,7 +374,7 @@ int cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
             if (rc) {
                 fd->read_pos += 1;
             }
-            strcpy(buf->name, &fileinfo.name);
+            strcpy(buf->name, fileinfo.name);
             cdvdman_fillstat(fileinfo.name, &buf->stat, &fileinfo);
         } else {
             SetEventFlag(cdvdman_read_ef, 1);
@@ -393,6 +390,9 @@ int cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
 /* internal routine */
 int cdvd_odcinit(CDVDMAN_FILEDATA *fh, int mode, int id)
 {
+    // TODO: implement
+    return 0;
+#if 0
     char cachefilename[512];
     int oldstate, ioctlarg;
     register u32 i;
@@ -401,7 +401,7 @@ int cdvd_odcinit(CDVDMAN_FILEDATA *fh, int mode, int id)
 
     cdvdman_iocache = 0;
 
-    sprintf(cachefilename, "%sCache_%d_%d_%d_%d", cdvdman_cachedir, fh->fd_layer, fh->file_lsn, fh->filesize, id);
+    sprintf(cachefilename, "%sCache_%d_%ld_%ld_%d", cdvdman_cachedir, fh->fd_layer, fh->file_lsn, fh->filesize, id);
 
     DPRINTF(1, "Cachefile:%s Open_or_Close:%d\n", cachefilename, mode);
 
@@ -493,6 +493,7 @@ int cdvd_odcinit(CDVDMAN_FILEDATA *fh, int mode, int id)
             return -12;
         }
     }
+#endif
 }
 
 int cdvdman_cacheinvl(CDVDMAN_FILEDATA *fd, int index)
@@ -516,15 +517,15 @@ int cdvdman_invcaches()
 }
 
 /* For "cdrom" device OPS */
-int cdrom_open(iop_file_t *f, const char *name, int mode, ...)
+int cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 {
     sceCdlFILE fileinfo;
     char filename[0x80];
     char devctl_req[0x18];
     u32 resultp;
     int results;
-    register int va0, va1, va2, va3;
-    register int rc;
+    register int va0, va1, va2;
+    register int rc = 0;
     register CDVDMAN_FILEDATA *fd;
 
     DPRINTF(1, "fileIO OPEN name= %s mode= 0x%08x layer %d\n", name, mode, f->unit);
@@ -958,7 +959,7 @@ int cdrom_read(iop_file_t *f, void *buf, int nbytes)
 }
 
 /* For "cdrom" device OPS */
-int cdrom_ioctl(iop_file_t *f, unsigned long arg, void *param)
+int cdrom_ioctl(iop_file_t *f, int arg, void *param)
 {
     register int r;
 
@@ -1090,7 +1091,7 @@ int cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, void *bu
 }
 
 /* For "cdrom" device OPS */
-int cdrom_devctl(iop_file_t *f, const char *, int cmd, void *argp, u32 arglen, void *bufp, u32 buflen)
+int cdrom_devctl(iop_file_t *f, const char *, int cmd, void *argp, unsigned int arglen, void *bufp, unsigned int buflen)
 {
     char devctl_req[0x18];
     u32 resultp;
@@ -1324,13 +1325,13 @@ int cdrom_devctl(iop_file_t *f, const char *, int cmd, void *argp, u32 arglen, v
 }
 
 /* For "cdrom" device OPS */
-int cdrom_lseek(iop_file_t *f, unsigned long offset, int pos)
+int cdrom_lseek(iop_file_t *f, int offset, int pos)
 {
     char devctl_req[0x18];
     u32 resultp;
     int results;
     register int rc;
-    register u32 loc;
+    register u32 loc = 0;
     register CDVDMAN_FILEDATA *fd;
 
     DPRINTF(0, "fileIO SEEK\n");
