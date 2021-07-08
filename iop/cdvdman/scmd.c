@@ -194,7 +194,10 @@ int sceCdBreak()
 /* internal callback routine */
 unsigned int alarm_cb_poff(void *param)
 {
+#if 0
     ((u32 *)param)[0x84] = 0; /* supposed to be "cdvdman_pwr_flg" variable here */
+#endif
+	cdvdman_pwr_flg = 0;
     return 0;
 }
 
