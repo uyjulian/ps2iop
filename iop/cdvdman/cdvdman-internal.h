@@ -1,7 +1,16 @@
+
+#define __CDVDMAN_ALL__
+
+
 #ifdef __CDVDMAN_NEWBIOS__
 #ifndef __CDVDMAN_BIOS__
 #define __CDVDMAN_BIOS__
 #endif
+#endif
+
+#ifdef __CDVDMAN_ALL__
+#define __CDVDMAN_BB_NAV__
+#define __CDVDMAN_BIOS__
 #endif
 
 #ifdef __CDVDMAN_BB_NAV__
