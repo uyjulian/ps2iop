@@ -188,6 +188,16 @@ void cdvdman_iormode(sceCdRMode *rmode, int fmode, int layer)
     }
 }
 
+/* internal routine */
+int _sceCdSearchDir(char *dirname, int layer)
+{
+    sceCdlFILE fileinfo;
+
+    DPRINTF(1, "_sceCdSearchDir: dir name %s layer %d\n", dirname, layer);
+
+    return (sceCdLayerSearchFile(&fileinfo, dirname, layer) == 0) ? -2 : cdvdman_fs_cdsec;
+}
+
 int cdrom_dopen(iop_file_t *f, const char *dirname)
 {
     char name[0x80];
@@ -349,6 +359,33 @@ int cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf)
 
     cdvdman_fillstat(filename, buf, &fileinfo);
     SetEventFlag(cdvdman_read_ef, 1);
+    return 1;
+}
+
+/* internal routine */
+int _sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer)
+{
+    DPRINTF(1, "_sceCdReadDir: current= %d dsec= %d layer= %d\n", cdvdman_fs_cdsec, dsec, layer);
+
+    if ((dsec != cdvdman_fs_cdsec) || (cdvdman_fs_layer != layer)) {
+        if (cdvdman_fs_layer != layer) {
+            if (CD_newmedia(layer))
+                cdvdman_fs_cache = 1;
+            else
+                return -2;
+        }
+
+        if (!CD_cachefile(dsec, layer))
+            return -2;
+    }
+
+    if (cdvdman_filetbl[index].name)
+        return 0;
+
+    DPRINTF(1, "%s: found dir_point %d\n", cdvdman_filetbl[index].name, index);
+
+    *fp = cdvdman_filetbl[index];
+
     return 1;
 }
 

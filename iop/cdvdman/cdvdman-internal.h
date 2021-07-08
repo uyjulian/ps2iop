@@ -647,6 +647,7 @@ extern int cdvdman_syncdec(int decflag, int decxor, int shift, u32 data);
 extern int disc_read(int size, int loc, void *buffer, int layer);
 extern int intrh_dma_3(void *common);
 extern int cdvdman_cacheinit(u32 blocks, char *fname, int action);
+extern u32 sceCdLsnDualChg(u32 lsn);
 
 // cdvdmanf
 extern int cdvdman_devready();
@@ -662,3 +663,5 @@ extern int cdvdman_stread(iop_file_t *f, void *buf, int nbyte);
 
 // Temporary prototype until it gets implemented in ps2sdk
 extern int sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5, void *cb);
+
+extern void break_read_timeout_callback(void);
