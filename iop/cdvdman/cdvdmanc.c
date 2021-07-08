@@ -2,7 +2,7 @@
 
 #include "cdvdman-internal.h"
 
-IRX_ID("cdvd_driver", 1, 0);
+IRX_ID("cdvd_driver", 1, 4);
 
 // Missing entries: 23, 25, 31-34, 42, 55, 65, 79-80, 82
 
