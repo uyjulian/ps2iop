@@ -4,7 +4,19 @@
 
 IRX_ID("cdvd_driver", 1, 4);
 
-// Missing entries: 23, 25, 31-34, 42, 55, 65, 79-80, 82
+// Missing entries: 
+// sceCdWI,
+// sceCdWriteClock,
+// sceCdOpenConfig,
+// sceCdCloseConfig
+// sceCdReadConfig, 
+// sceCdWriteConfig, 
+// sceCdWriteConsoleID, 
+// sceCdAutoAdjustCtrl, 
+// sceCdWM, 
+// sceCdReadDiskID, 
+// sceCdReadGUID, 
+// sceCdReadModelID,
 
 /* Entry point */
 int _start(int argc, char **argv)
