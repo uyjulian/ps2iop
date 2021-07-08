@@ -49,18 +49,18 @@ u32 cdvdman_cd36key = 0;
 int cdvdman_ee_ncmd = 0;
 int cdvdman_mmode = 0;   /* Media Mode set by sceCdMmode() call */
 int cdvdman_brkfunc = 0; /* Cancelled ncmd function set by sceCdBreak() call */
-int cdvdman_newmeca = 0; /* Enables "PAUSE" after TOC reading and read speed change */
-int cdvdman_nomode0 = 0; /* Disables DEC MODE 0x00 */
-int cdvdman_scmd1Bh = 0; /* Enables "Cancel Power-off RDY" S-Command */
-int cdvdman_ncmd0Eh = 0; /* Enables N-Command 0Eh (disc reading) */
+int cdvdman_minver10700 = 0; /* Enables "PAUSE" after TOC reading and read speed change */
+int cdvdman_minver20200 = 0; /* Disables DEC MODE 0x00 */
+int cdvdman_minver20400 = 0; /* Enables "Cancel Power-off RDY" S-Command */
+int cdvdman_minver20800 = 0; /* Enables N-Command 0Eh (disc reading) */
 int cdvdman_emudvd9 = 0; /* Enables internal Dual-Layer DVD emulation (for pair of DVD5 discs) */
-int cdvdman_scmd21h = 0; /* Enables S-Commands 21h & 22h */
-int cdvdman_scmd24h = 0; /* Enables S-Command 24h */
+int cdvdman_minver30601 = 0; /* Enables S-Commands 21h & 22h */
+int cdvdman_minver50000 = 0; /* Enables S-Command 24h */
 #ifdef __CDVDMAN_NEWBIOS__
-int cdvdman_scmd27h = 0; /* Enables S-Command 27h */
-int cdvdman_scmd28h = 0; /* Enables S-Command 28h */
+int cdvdman_minver50200 = 0; /* Enables S-Command 27h */
+int cdvdman_minver50400 = 0; /* Enables S-Command 28h */
 
-int cdvdman_scmd36h = 0; /* Enables S-Command 36h */
+int cdvdman_minver60000 = 0; /* Enables S-Command 36h */
 int cdvdman_nontray = 0;
 #endif
 

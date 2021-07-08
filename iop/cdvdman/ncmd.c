@@ -289,7 +289,7 @@ int cdvdman_readtoc(u8 *toc, int param, int func)
         return 0;
 
     sceCdSync(0);
-    if (cdvdman_newmeca)
+    if (cdvdman_minver10700)
         if (!sceCdPause())
             return 0; /* sets drive in PAUSE state for new consoles ? */
     sceCdSync(0);

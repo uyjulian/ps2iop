@@ -485,18 +485,18 @@ extern u32 cdvdman_cd36key;
 extern int cdvdman_ee_ncmd;
 extern int cdvdman_mmode;
 extern int cdvdman_brkfunc;
-extern int cdvdman_newmeca;
-extern int cdvdman_nomode0;
-extern int cdvdman_scmd1Bh;
-extern int cdvdman_ncmd0Eh;
+extern int cdvdman_minver10700;
+extern int cdvdman_minver20200;
+extern int cdvdman_minver20400;
+extern int cdvdman_minver20800;
 extern int cdvdman_emudvd9;
-extern int cdvdman_scmd21h;
-extern int cdvdman_scmd24h;
+extern int cdvdman_minver30601;
+extern int cdvdman_minver50000;
 #ifdef __CDVDMAN_NEWBIOS__
-extern int cdvdman_scmd27h;
-extern int cdvdman_scmd28h;
+extern int cdvdman_minver50200;
+extern int cdvdman_minver50400;
 
-extern int cdvdman_scmd36h;
+extern int cdvdman_minver60000;
 extern int cdvdman_nontray;
 #endif
 

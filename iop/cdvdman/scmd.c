@@ -470,7 +470,7 @@ int sceCdCancelPOffRdy(u32 *stat)
     int dummy = 0;
 
     *stat = 0;
-    return (cdvdman_scmd1Bh) ? cdvdman_send_scmd(0x1B, &dummy, 0, stat, 1, 1) : 1;
+    return (cdvdman_minver20400) ? cdvdman_send_scmd(0x1B, &dummy, 0, stat, 1, 1) : 1;
 }
 
 /* Exported entry #72 (available in XCDVDMAN & BBNav) */
@@ -498,7 +498,7 @@ int sceCdRcBypassCtl(int param, u32 *stat)
 {
     *stat = 0;
 
-    if (!cdvdman_scmd24h) {
+    if (!cdvdman_minver50000) {
         *stat = 0x100;
         return 1;
     }

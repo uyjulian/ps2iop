@@ -108,14 +108,14 @@ int cdvdman_initcfg()
 
     DPRINTF(1, "MV %02x %02x %02x %02x\n", mv[0], mv[1], mv[2], mv[3]);
 
-    cdvdman_newmeca = (0x106FF < (u32)count) ? 1 : 0;
-    cdvdman_nomode0 = (0x201FF < (u32)count) ? 1 : 0;
-    cdvdman_scmd1Bh = (0x203FF < (u32)count) ? 1 : 0;
-    cdvdman_ncmd0Eh = (0x207FF < (u32)count) ? 1 : 0;
-    cdvdman_scmd21h = (0x30600 < (u32)count) ? 1 : 0; /* BBNAV */
-    cdvdman_scmd24h = (0x4FFFF < (u32)count) ? 1 : 0; /* BBNAV */
+    cdvdman_minver10700 = (0x106FF < (u32)count) ? 1 : 0;
+    cdvdman_minver20200 = (0x201FF < (u32)count) ? 1 : 0;
+    cdvdman_minver20400 = (0x203FF < (u32)count) ? 1 : 0;
+    cdvdman_minver20800 = (0x207FF < (u32)count) ? 1 : 0;
+    cdvdman_minver30601 = (0x30600 < (u32)count) ? 1 : 0; /* BBNAV */
+    cdvdman_minver50000 = (0x4FFFF < (u32)count) ? 1 : 0; /* BBNAV */
 #ifdef __CDVDMAN_NEWBIOS__
-    cdvdman_scmd27h = (0x501FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
+    cdvdman_minver50200 = (0x501FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
     if (0x501FF < (u32)count) {
         u32 t;
 
@@ -125,12 +125,12 @@ int cdvdman_initcfg()
         cdvdman_nontray = (t < 1) ? 1 : 0;
     }
     /* else ??? = 0; */
-    cdvdman_scmd28h = (0x503FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
+    cdvdman_minver50400 = (0x503FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
 #endif
 
 #if 0
     // guards cdvdman_189
-    cdvdman_scmd36h = (0x5FFFF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
+    cdvdman_minver60000 = (0x5FFFF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
 #endif
 
     return 1;
@@ -238,7 +238,7 @@ int cdvdman_intr_cb(void *common)
             (cdvdman_brkfunc == err)
         )) &&
         (
-            (!cdvdman_nomode0) &&
+            (!cdvdman_minver20200) &&
             (!cdvdman_strm_id) &&
             (!cdvdman_dvdflag) &&
             (!cdvdman_recstat) &&
@@ -1103,7 +1103,7 @@ int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARA
     cdvdman_cmdfunc = func;
     media_type = CDVDreg_TYPE;
 
-    if ((!cdvdman_newmeca) && (cdvdman_ncmd == CDVD_NCMD_READ)) {
+    if ((!cdvdman_minver10700) && (cdvdman_ncmd == CDVD_NCMD_READ)) {
         ncmd &= 0xFF;
         if ((ncmd) && (ncmd != cdvdman_ncmd) && (ncmd != CDVD_NCMD_READFULL) &&
             (ncmd != 0xE) && (ncmd != CDVD_NCMD_DVDREAD) && ((media_type != 0xFD) || (ncmd == CDVD_NCMD_STOP))) {
@@ -1250,7 +1250,7 @@ int cdvdman_speedctl(u32 spindlctrl, int dvdflag, u32 maxlsn)
         case 1:
             if (!dvdflag)
                 return 0x85;
-            if (cdvdman_newmeca)
+            if (cdvdman_minver10700)
                 return 0x83;
             if (cdvdman_dldvd) {
                 if (maxlsn >= cdvdman_layer1)
@@ -1816,7 +1816,7 @@ int cdvdman_readfull(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int flag
 /* Exported entry #76 */
 int sceCdReadFull(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode)
 {
-    return cdvdman_readfull(lsn, sectors, buf, mode, (cdvdman_ncmd0Eh) ? 1 : 0);
+    return cdvdman_readfull(lsn, sectors, buf, mode, (cdvdman_minver20800) ? 1 : 0);
 }
 
 /* Exported entry #75 */
