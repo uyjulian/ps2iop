@@ -434,10 +434,9 @@ int intrh_cdrom(void *common)
     return 1;
 }
 
-/* Unsure if this code is fully correct */
 u32 cdvdman_l1start(char *toc)
 {
-    return toc[0x17] + (toc[0x16] << 8) + (toc[0x15] << 16) + 0xFFFD0001;
+    return toc[0x17] + (toc[0x16] << 8) + (toc[0x15] << 16) - 0x30000 + 1;
 }
 
 /* internal routine */
@@ -2082,7 +2081,7 @@ int cdvdman_readfull(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int flag
             t = 0x88;
             break;
         case 2:
-            b18.dma3_blkwords = 0; // TODO: check this
+            b18.dma3_blkwords = 0xC;
             b18.dma3_blkcount = 51 * sectors;
             t = 0x8C;
             break;
