@@ -23,18 +23,18 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(sceCdReadDVDV)
     DECLARE_EXPORT(sceCdCheckCmd)
     DECLARE_EXPORT(sceCdRI)
-    DECLARE_EXPORT(_retonly) //sceCdWI
+    DECLARE_EXPORT(sceCdWI)
     DECLARE_EXPORT(sceCdReadClock)
-    DECLARE_EXPORT(_retonly) //sceCdWriteClock
-    DECLARE_EXPORT(_retonly) //sceCdReadNVM
-    DECLARE_EXPORT(_retonly) //sceCdWriteNVM
+    DECLARE_EXPORT(sceCdWriteClock)
+    DECLARE_EXPORT(sceCdReadNVM)
+    DECLARE_EXPORT(sceCdWriteNVM)
     DECLARE_EXPORT(sceCdStatus)
     DECLARE_EXPORT(sceCdApplySCmd)
     DECLARE_EXPORT(sceCdSetHDMode)
     DECLARE_EXPORT(_retonly) //sceCdOpenConfig
-    DECLARE_EXPORT(_retonly) //sceCdCloseConfig
-    DECLARE_EXPORT(_retonly) //sceCdReadConfig
-    DECLARE_EXPORT(_retonly) //sceCdWriteConfig
+    DECLARE_EXPORT(sceCdCloseConfig)
+    DECLARE_EXPORT(sceCdReadConfig)
+    DECLARE_EXPORT(sceCdWriteConfig)
     DECLARE_EXPORT(sceCdReadKey)
     DECLARE_EXPORT(sceCdDecSet)
     DECLARE_EXPORT(sceCdCallback)
@@ -42,7 +42,7 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(sceCdBreak)
     DECLARE_EXPORT(sceCdReadCDDA)
     DECLARE_EXPORT(sceCdReadConsoleID)
-    DECLARE_EXPORT(_retonly) //sceCdWriteConsoleID
+    DECLARE_EXPORT(sceCdWriteConsoleID)
     DECLARE_EXPORT(sceCdMV)
     DECLARE_EXPORT(sceCdGetReadPos)
     DECLARE_EXPORT(sceCdCtrlADout)
@@ -55,7 +55,7 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(sceCdForbidDVDP)
     DECLARE_EXPORT(sceCdReadSUBQ)
     DECLARE_EXPORT(sceCdApplyNCmd)
-    DECLARE_EXPORT(_retonly) //sceCdAutoAdjustCtrl
+    DECLARE_EXPORT(sceCdAutoAdjustCtrl)
     DECLARE_EXPORT(sceCdStInit)
     DECLARE_EXPORT(sceCdStRead)
     DECLARE_EXPORT(sceCdStSeek)
@@ -65,7 +65,7 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(sceCdRead0)
     DECLARE_EXPORT(sceCdRV)
     DECLARE_EXPORT(sceCdRM)
-    DECLARE_EXPORT(_retonly) //sceCdWM
+    DECLARE_EXPORT(sceCdWM)
     DECLARE_EXPORT(sceCdReadChain)
     DECLARE_EXPORT(sceCdStPause)
     DECLARE_EXPORT(sceCdStResume)
@@ -109,18 +109,18 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly) //sceCdReadWakeUpTime
-    DECLARE_EXPORT(_retonly) //sceCdWriteWakeUpTime
+    DECLARE_EXPORT(sceCdReadWakeUpTime)
+    DECLARE_EXPORT(sceCdWriteWakeUpTime)
     DECLARE_EXPORT(_retonly) //111
-    DECLARE_EXPORT(_retonly) //sceCdApplySCmd2
+    DECLARE_EXPORT(sceCdApplySCmd2)
     DECLARE_EXPORT(_retonly) //113
-    DECLARE_EXPORT(_retonly) //sceCdRE
-    DECLARE_EXPORT(_retonly) //sceCdRcBypassCtl
-    DECLARE_EXPORT(_retonly) //116
-    DECLARE_EXPORT(_retonly) //sceRemote2_7
+    DECLARE_EXPORT(sceCdRE)
+    DECLARE_EXPORT(sceCdRcBypassCtl)
+    DECLARE_EXPORT(cdvdman_116)
+    DECLARE_EXPORT(sceRemote2_7)
     DECLARE_EXPORT(_retonly) //118
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly) //sceCdSetLEDsMode
+    DECLARE_EXPORT(sceCdSetLEDsMode)
     DECLARE_EXPORT(_retonly) //121
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
@@ -128,6 +128,7 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(cdvdman_125)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(cdvdman_128)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
@@ -147,12 +148,11 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly) //sceCdReadPS1BootParam
+    DECLARE_EXPORT(sceCdReadPS1BootParam)
     DECLARE_EXPORT(_retonly) //149
-    DECLARE_EXPORT(_retonly) //sceCdSetFanProfile
+    DECLARE_EXPORT(sceCdSetFanProfile)
     DECLARE_EXPORT(_retonly) //151
-    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(cdvdman_152)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly) //sceCdChgSys
     DECLARE_EXPORT(_retonly) //155
@@ -189,9 +189,9 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly) //sceCdReadRegionParams
+    DECLARE_EXPORT(sceCdReadRegionParams)
     DECLARE_EXPORT(_retonly) //190
-    DECLARE_EXPORT(_retonly) //sceCdWriteRegionParams
+    DECLARE_EXPORT(sceCdWriteRegionParams)
 END_EXPORT_TABLE
 
 void _retonly() {}

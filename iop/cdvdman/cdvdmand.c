@@ -62,6 +62,8 @@ int cdvdman_minver50400 = 0; /* Enables S-Command 28h */
 
 int cdvdman_minver60000 = 0; /* Enables S-Command 36h */
 int cdvdman_nontray = 0;
+
+int cdvdman_minver60600 = 0;
 #endif
 
 char *cdvdman_masterd = "PlayStation Master Disc";
@@ -179,3 +181,4 @@ int cdvdman_dr_flg;
 u16 cdvdman_unk2; /* +0xC0 */
 u16 cdvdman_unk3; /* +0xC2 */
 int cdvdman_waf2;
+int cdvdman_config_numblocks;

@@ -1010,7 +1010,7 @@ int cdrom_ioctl(iop_file_t *f, int arg, void *param)
 
 #ifdef __CDVDMAN_SW_E35__
         case 0x10020:
-            r = sceCdReadKey(((int *)param)[0], ((int *)param)[1], ((int *)param)[2], &((int *)param)[3]);
+            r = sceCdReadKey(((int *)param)[0], ((int *)param)[1], ((int *)param)[2], (unsigned char*)&((int *)param)[3]);
             if (r)
                 return r;
             r = -16;

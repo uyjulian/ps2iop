@@ -26,6 +26,40 @@ int sceCdReadClock(sceCdCLOCK *rtc)
     return rc;
 }
 
+/* Exported entry #25 */
+int sceCdWriteClock(const sceCdCLOCK *clock)
+{
+	int dummy;
+	return cdvdman_send_scmd(9, &clock->second, 7, &dummy, 1, 1);
+}
+
+/* Exported entry #26 */
+int sceCdReadNVM(u32 address, u16 *data, u8 *result)
+{
+	int ret;
+	u8 out[3];
+	u16 in;
+
+	in = ((address << 8) & 0xFF00) | ((address >> 8) & 0xFF);
+	ret = cdvdman_send_scmd(10, &in, 2, out, 3, 1);
+	*result = out[0];
+	*data = out[2] | (out[1] << 8);
+	DPRINTF(0, "ReadNVM call addr= 0x%04x data= 0x%04x stat= 0x%02x\n", address, *data, *result);
+	return ret;
+}
+
+/* Exported entry #27 */
+int sceCdWriteNVM(u32 address, u16 data, u8 *result)
+{
+	int ret;
+	u32 in;
+
+	in = ((address << 8) & 0xFF00) | (address & 0xff) | (data << 24) | ((data << 8) & 0xFF0000);
+	ret = cdvdman_send_scmd(11, &in, 4, result, 1, 1);
+	DPRINTF(0, "WriteNVM call addr= 0x%04x data= 0x%04x stat= 0x%02x\n", address, data, *result);
+	return ret;
+}
+
 /* Exported entry #12 */
 int sceCdGetDiskType()
 {
@@ -304,6 +338,18 @@ int sceCdRI(u8 *buf, u32 *stat)
     return r;
 }
 
+/* Exported entry #23 */
+int sceCdWI(const u8 *buffer, u32 *result)
+{
+	int ret; // $s0
+
+	DelayThread(16000);
+	*result = 0;
+	ret = cdvdman_send_scmd(19, buffer, 8, result, 1, 1);
+	DelayThread(16000);
+	return ret;
+}
+
 /* Exported entry #51 */
 int sceCdRC(sceCdCLOCK *rtc)
 {
@@ -359,6 +405,41 @@ int sceCdRM(char *m, u32 *stat)
 
         return 1;
     }
+}
+
+/* Exported entry #65 */
+int sceCdWM(const char *buffer, u32 *status)
+{
+	int result;
+	int rval1;
+	int rval2;
+	char wdata[8];
+	u8 rdata[9];
+
+	*status = 0;
+	if (sceCdMV(rdata, status) == 1 && 0x104FF < (rdata[3] | (rdata[2] << 8) | (rdata[1] << 16)))
+	{
+		DelayThread(2000);
+		rdata[0] = 0;
+		memcpy(&rdata[1], buffer, 8);
+		rval1 = cdvdman_send_scmd(24, rdata, 9, wdata, 1, 1);
+		*status = wdata[0] & 0xff;
+		DelayThread(16000);
+		rdata[0] = 8;
+		memcpy(&rdata[1], &buffer[8], 8);
+		rval2 = cdvdman_send_scmd(24, rdata, 9, wdata, 1, 1);
+		*status |= wdata[0] & 0xff;
+		DelayThread(16000);
+		result = 0;
+		if ( rval1 )
+			result = rval2 != 0;
+	}
+	else
+	{
+		result = 1;
+		*status |= 0x40u;
+	}
+	return result;
 }
 
 /* Exported entry #43 */
@@ -428,6 +509,18 @@ int sceCdReadSUBQ(void *buf, u32 *stat)
     set_ev_flag(cdvdman_scmd_ef, 1);
 
     return rcode;
+}
+
+/* Exported entry #52 */
+int sceCdAutoAdjustCtrl(int mode, u32 *result)
+{
+	int in;
+
+	in = mode;
+	*result = 0;
+	DelayThread(2000);
+	DPRINTF(0, "Auto Adjust Ctrl: Set param %d\n", in);
+	return cdvdman_send_scmd(22, &in, 1, result, 1, 1);
 }
 
 /* Exported entry #52 */
@@ -557,6 +650,21 @@ int sceCdReadConsoleID(u8 *id, u32 *stat)
     return r;
 }
 
+/* Exported entry #42 */
+int sceCdWriteConsoleID(const u8 *buffer, u32 *status)
+{
+	int ret;
+	u8 in[9];
+
+	DelayThread(16000);
+	*status = 0;
+	in[0] = 68;
+	memcpy(&in[1], buffer, 8);
+	ret = cdvdman_send_scmd(3, &in, 9, status, 1, 1);
+	DelayThread(16000);
+	return ret;
+}
+
 /* Exported entry #30 */
 int sceCdSetHDMode(u32 arg)
 {
@@ -587,4 +695,422 @@ int sceCdSetTimeout(int param, int timeout)
         default:
             return 0;
     }
+}
+
+/* Exported entry #109 */
+int sceCdReadWakeUpTime(sceCdCLOCK *clock, u16 *arg2, u32 *arg3, int *arg4)
+{
+	int res;
+	u8 out[10];
+
+	clock->year = 0;
+	clock->month = 0;
+	clock->day = 0;
+	clock->pad = 0;
+	clock->hour = 0;
+	clock->minute = 0;
+	clock->second = 0;
+	clock->stat = 0;
+	*arg2 = 0;
+	*arg3 = 0;
+	if ( cdvdman_minver50000 )
+	{
+		res = cdvdman_send_scmd(34, 0, 0, out, 10, 1);
+		if ( res )
+		{
+			clock->stat = out[0];
+			clock->second = out[2] == 255 ? 0xff : out[2] & 0x7F;;
+			clock->minute = out[3] & 0x7F;
+			clock->pad = 0;
+			clock->hour = out[4];
+			clock->day = out[5];
+			clock->month = out[6];
+			clock->year = out[7];
+			*arg2 = out[8] | (out[9] << 8);
+			*arg3 = out[1] & 0xff;
+			*arg4 = 2 * (out[2] >> 7);
+			if ( (out[3] & 0x80) != 0 )
+				*arg4 |= 1;
+		}
+	}
+	else
+	{
+		*arg3 = 256;
+		res = 1;
+	}
+	return res;
+}
+
+/* Exported entry #110 */
+int sceCdWriteWakeUpTime(const sceCdCLOCK *clock, u16 arg2, int arg3)
+{
+	u32 var5;
+	u32 var6;
+	u32 dummy;
+	u8 in[8];
+
+	if ( !cdvdman_minver50000 )
+		return 0;
+	var5 = 10 * (clock->month >> 4) + (clock->month & 0xF);
+	var6 = 10 * (clock->day >> 4) + (clock->day & 0xF);
+	if ( (10 * (clock->second >> 4) + (clock->second & 0xFu) >= 0x3C
+			|| 10 * (clock->minute >> 4) + (clock->minute & 0xFu) >= 0x3C
+			|| 10 * (clock->hour >> 4) + (clock->hour & 0xFu) >= 0x18
+			|| 10 * (clock->year >> 4) + (clock->year & 0xFu) >= 0x64
+			|| var5 >= 0xD
+			|| !var5
+			|| var6 >= 0x20
+			|| !var6)
+		&& arg3 != 255
+		&& (clock->second & 0x80) == 0
+		&& (clock->minute & 0x80) == 0 )
+	{
+		return 0;
+	}
+	in[0] = clock->second;
+	in[1] = clock->minute;
+	in[2] = clock->hour;
+	in[3] = clock->day;
+	in[4] = clock->month;
+	in[5] = clock->year;
+	memcpy(&in[6], &arg2, 2);
+	if (arg3 == 1)
+	{
+		in[1] |= 0x80;
+	}
+	else if (arg3 == 255)
+	{
+		in[0] = -1;
+	}
+	return cdvdman_send_scmd(33, in, 8, &dummy, 1, 1);
+}
+
+/* Exported entry #116 */
+int cdvdman_116(u32 *a1, u32 *a2, u32 *a3, u32 *a4)
+{
+	int result;
+	u32 v9;
+	u32 v10[5];
+	u32 v11 = 0;
+
+	*a4 = 0;
+	*a3 = 0;
+	*a2 = 0;
+	*a1 = 0;
+	if ( !cdvdman_minver50000 )
+	{
+		*a4 = 256;
+		return 1;
+	}
+	result = cdvdman_send_scmd(29, 0, 0, v10, 5, 1);
+	if ( result != 1 )
+		return result;
+	*a4 = v10[0];
+	*a1 = v10[1];
+	v11 |= v10[2] << 16;
+	v11 |= v10[3] << 8;
+	v11 |= v10[4] << 0;
+	v9 = *a1;
+	if ( *a1 == 15 )
+	{
+		*a2 = (v11 >> 17) & 0x7F;
+		*a3 = (u8)(v11 >> 9);
+		return 1;
+	}
+	if ( (u32)*a1 >= 0x10 )
+	{
+		result = 0;
+		if ( v9 != 20 )
+			return result;
+		*a2 = (v11 >> 17) & 0x7F;
+		*a3 = (v11 >> 4) & 0x1FFF;
+		return 1;
+	}
+	result = 0;
+	if ( v9 != 12 )
+		return result;
+	*a2 = (v11 >> 17) & 0x7F;
+	*a3 = (v11 >> 12) & 0x1F;
+	return 1;
+}
+
+/* Exported entry #117 */
+int sceRemote2_7(u16 a1, u32 *a2)
+{
+	int result;
+	u16 v3;
+
+	*a2 = 0;
+	if ( cdvdman_minver50000 )
+	{
+		v3 = a1;
+		result = cdvdman_send_scmd(31, &v3, 2, a2, 1, 1);
+	}
+	else
+	{
+		*a2 = 256;
+		result = 1;
+	}
+	return result;
+}
+
+/* Exported entry #120 */
+int sceCdSetLEDsMode(u32 arg1, u32 *result)
+{
+	int ret;
+	u8 v3;
+
+	v3 = arg1 & 0xff;
+	if ( cdvdman_minver50000 )
+	{
+		*result = 0;
+		ret = cdvdman_send_scmd(37, &v3, 1, result, 1, 1);
+	}
+	else
+	{
+		*result = 256;
+		ret = 1;
+	}
+	return ret;
+}
+
+/* Exported entry #128 */
+int cdvdman_128(u32 *a1, u32 *a2)
+{
+	int result;
+	u8 v5[3];
+
+	*a1 = 0;
+	*a2 = 0;
+	if ( cdvdman_minver50000 )
+	{
+		result = cdvdman_send_scmd(38, 0, 0, v5, 3, 1);
+		*a1 = ((u8)v5[2] << 8) | (u8)v5[1];
+		*a2 = (u8)v5[0];
+	}
+	else
+	{
+		*a2 = 256;
+		result = 1;
+	}
+	return result;
+}
+
+/* Exported entry #148 */
+int sceCdReadPS1BootParam(u8 *out, u32 *result)
+{
+	int ret;
+	u8 outt[13];
+
+	*result = 0;
+	memset(out, 0, 11);
+	if ( cdvdman_minver50200 )
+	{
+		ret = cdvdman_send_scmd(39, 0, 0, &outt, 13, 1);
+		memcpy(out, &outt[1], 11);
+		*result = outt[0];
+	}
+	else
+	{
+		*result = 256;
+		ret = 1;
+	}
+	return ret;
+}
+
+/* Exported entry #150 */
+int sceCdSetFanProfile(u8 arg1, u32 *result)
+{
+	int ret;
+	u8 v4;
+	u8 v5;
+
+	*result = 0;
+	if ( cdvdman_minver50400 )
+	{
+		v5 = arg1;
+		ret = cdvdman_send_scmd(40, &v5, 1, &v4, 1, 1);
+		*result = v4;
+	}
+	else
+	{
+		*result = 256;
+		ret = 1;
+	}
+	return ret;
+}
+
+/* Exported entry #152 */
+int cdvdman_152(u32 *a1, u32 *a2)
+{
+	int ret;
+	u8 v7[3];
+	u8 v8;
+
+	*a2 = 0;
+	if ( cdvdman_minver50400 )
+	{
+		v8 = 0xEF;
+		ret = cdvdman_send_scmd(3, &v8, 1, v7, 3, 1);
+		*a1 = 3125 * (((u8)v7[2] | ((u8)v7[1] << 8)) << 16 >> 18) / 100;
+		*a2 = (u8)v7[0];
+	}
+	else
+	{
+		ret = 1;
+		*a2 = 256;
+		*a1 = 0;
+	}
+	return ret;
+}
+
+/* Exported entry #189 */
+int sceCdReadRegionParams(u32 *arg1, u32 *result)
+{
+	int ret;
+	u8 out[15];
+
+	*result = 0;
+	memset(arg1, 0, 15);
+	if ( cdvdman_minver60000 )
+	{
+		ret = cdvdman_send_scmd(54, 0, 0, &out, 15, 1);
+		memcpy(&arg1[0], &out[1], 4);
+		memcpy(&arg1[1], &out[5], 4);
+		memcpy(&arg1[2], &out[9], 4);
+		memcpy(((u8 *)&arg1[3]), &out[13], 1);
+		memcpy(((u8 *)&arg1[3]) + 1, &out[14], 1);
+		*result = out[0];
+	}
+	else
+	{
+		*result = 256;
+		ret = 1;
+	}
+	return ret;
+}
+
+/* Exported entry #191 */
+int sceCdWriteRegionParams(u8 arg1, u32 *arg2, u8 *arg3, u32 *result)
+{
+	int ret;
+	u32 v9;
+	u32 v10;
+	u8 v11[16];
+
+	*result = 0;
+	memset(v11, 0, sizeof(v11));
+	if ( cdvdman_minver60600 )
+	{
+		v11[0] = arg1;
+		v9 = arg2[1];
+		v10 = arg2[2];
+		*(u32 *)&v11[1] = *arg2;
+		*(u32 *)&v11[5] = v9;
+		*(u32 *)&v11[9] = v10;
+		v9 |= arg3[1] & 0xff;
+		v11[13] = *arg3;
+		v11[14] = v9;
+		ret = cdvdman_send_scmd(62, v11, 15, result, 1, 1);
+	}
+	else
+	{
+		*result = 256;
+		ret = 1;
+	}
+	return ret;
+}
+
+#if 0
+int sceCdOpenConfig(int block, int mode, int NumBlocks, u32 *status)
+{
+	int in;
+
+	DelayThread(16000);
+	in = (mode & 0xff) | ((block & 0xff) << 8) | ((NumBlocks & 0xff) << 16);
+	cdvdman_config_numblocks = NumBlocks;
+	*status = 0;
+	return cdvdman_send_scmd(64, &in, 3, status, 1, 1);
+}
+#endif
+
+int sceCdCloseConfig(u32 *result)
+{
+	int ret;
+
+	*result = 0;
+	ret = cdvdman_send_scmd(67, 0, 0, result, 1, 1);
+	cdvdman_config_numblocks = 0;
+	return ret;
+}
+
+int read_config_process(void *a1, u32 *a2)
+{
+	int ret;
+	u8 out[16];
+
+	ret = cdvdman_send_scmd(65, 0, 0, out, 16, 1);
+	*a2 = (u8)(out[14] + out[13] + out[12] + out[11] + out[10] + out[9] + out[8] + out[7] + out[6] + out[5] + out[4] + out[3] + out[2] + out[0] + out[1]) != out[15];
+	memcpy(a1, out, 15);
+	return ret;
+}
+
+int sceCdReadConfig(void *buffer, u32 *result)
+{
+	int ret;
+
+	ret = 0;
+	if ( cdvdman_config_numblocks <= 0 )
+		return ret;
+	while ( 1 )
+	{
+		if ( !read_config_process(buffer, result) )
+		{
+			DPRINTF(0, "ReadConfig fail Command busy\n");
+			return ret;
+		}
+		if ( *result )
+			break;
+		++ret;
+		buffer = (u8 *)buffer + 15;
+		if ( ret >= cdvdman_config_numblocks )
+			return ret;
+	}
+	DPRINTF(0, "ReadConfig fail status: 0x%02x\n", *result);
+	return ret;
+}
+
+int write_config_process(const u8 *a1, u32 *a2)
+{
+	char in[16];
+
+	*a2 = 0;
+	memcpy(in, a1, 15);
+	in[15] = in[14] + in[13] + in[12] + in[11] + in[10] + in[9] + in[8] + in[7] + in[6] + in[5] + in[4] + in[3] + in[2] + in[0] + in[1];
+	return cdvdman_send_scmd(66, in, 16, a2, 1, 1);
+}
+
+int sceCdWriteConfig(const void *buffer, u32 *result)
+{
+	int ret;
+
+	ret = 0;
+	if ( cdvdman_config_numblocks <= 0 )
+		return ret;
+	while ( 1 )
+	{
+		if ( !write_config_process(buffer, result) )
+		{
+			DPRINTF(0, "WriteConfig fail Command busy\n");
+			return ret;
+		}
+		if ( *result )
+			break;
+		++ret;
+		buffer = (u8 *)buffer + 15;
+		if ( ret >= cdvdman_config_numblocks )
+			return ret;
+	}
+	DPRINTF(0, "WriteConfig fail status: 0x%02x\n", *result);
+	return ret;
 }

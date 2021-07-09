@@ -1,16 +1,17 @@
 
 #define __CDVDMAN_ALL__
 
+#ifdef __CDVDMAN_ALL__
+#define __CDVDMAN_BB_NAV__
+#define __CDVDMAN_BIOS__
+#define __CDVDMAN_NEWBIOS__
+#endif
+
 
 #ifdef __CDVDMAN_NEWBIOS__
 #ifndef __CDVDMAN_BIOS__
 #define __CDVDMAN_BIOS__
 #endif
-#endif
-
-#ifdef __CDVDMAN_ALL__
-#define __CDVDMAN_BB_NAV__
-#define __CDVDMAN_BIOS__
 #endif
 
 #ifdef __CDVDMAN_BB_NAV__
@@ -43,6 +44,9 @@
 #endif
 #ifndef __CDVDMAN_SW_E36__
 #define __CDVDMAN_SW_E36__
+#endif
+#ifndef __CDVDMAN_SW_E66__
+#define __CDVDMAN_SW_E66__
 #endif
 #endif
 
@@ -498,6 +502,8 @@ extern int cdvdman_minver50400;
 
 extern int cdvdman_minver60000;
 extern int cdvdman_nontray;
+
+extern int cdvdman_minver60600;
 #endif
 
 extern char *cdvdman_masterd;
@@ -615,6 +621,7 @@ extern int cdvdman_dr_flg;
 extern u16 cdvdman_unk2;
 extern u16 cdvdman_unk3;
 extern int cdvdman_waf2;
+extern int cdvdman_config_numblocks;
 
 #define DPRINTF(...)
 

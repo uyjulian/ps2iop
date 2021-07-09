@@ -5,15 +5,6 @@
 IRX_ID("cdvd_driver", 1, 4);
 
 // Missing entries: 
-// sceCdWI,
-// sceCdWriteClock,
-// sceCdOpenConfig,
-// sceCdCloseConfig
-// sceCdReadConfig, 
-// sceCdWriteConfig, 
-// sceCdWriteConsoleID, 
-// sceCdAutoAdjustCtrl, 
-// sceCdWM, 
 // sceCdReadDiskID, 
 // sceCdReadGUID, 
 // sceCdReadModelID,
@@ -128,10 +119,10 @@ int cdvdman_initcfg()
     cdvdman_minver50400 = (0x503FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
 #endif
 
-#if 0
     // guards cdvdman_189
     cdvdman_minver60000 = (0x5FFFF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
-#endif
+
+    cdvdman_minver60600 = (0x605FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
 
     return 1;
 }
@@ -1756,7 +1747,65 @@ void Read2intrCDVD(int read2_flag)
 /* Exported entry #66 */
 int sceCdReadChain(sceCdRChain *read_tag, sceCdRMode *mode)
 {
-    return 0; /* in most IOP images */
+#ifdef __CDVDMAN_SW_E66__
+    int result;
+    u32 v5;
+    int v6;
+    void *v7;
+
+    if ( CDVDreg_TYPE == 20 && mode->spindlctrl == 1 )
+        mode->spindlctrl = 0;
+    if ( (CDVDreg_READY & 0xC0) == 64 && !cdvdman_read2_flg )
+    {
+        cdvdman_readptr = 0;
+        cdvdman_readlsn = 0;
+        cdvdman_rdsectc = 0;
+        cdvdman_csec = 0;
+        cdvdman_nsec = 0;
+        // TODO: support code for cdvdman_rbuffer in other functions
+        cdvdman_rbuffer = read_tag;
+        cdvdman_cdrmode.datapattern = mode->datapattern;
+        cdvdman_cdrmode.trycount = mode->trycount;
+        cdvdman_cdrmode.spindlctrl = mode->spindlctrl;
+        v5 = read_tag->lbn;
+        v6 = read_tag->sectors;
+        v7 = (void *)read_tag->buffer;
+        result = 1;
+        if ( v5 != -1 && v6 != -1 )
+        {
+            if ( v7 == (void *)-1 )
+            {
+                result = 1;
+            }
+            else
+            {
+                cdvdman_rdsectc = v6;
+                cdvdman_read2_flg = 2;
+
+                if ( sceCdRead0(v5, v6, v7, mode, 0, 0) == 0 )
+                {
+                    result = 0;
+                    cdvdman_cderror = -2;
+                    cdvdman_rdsectc = 0;
+                    cdvdman_read2_flg = 0;
+                }
+                else
+                {
+                    result = 1;
+                    ++cdvdman_csec;
+                }
+            }
+        }
+    }
+    else
+    {
+        DPRINTF(0, "dbl error r2f= %d waf= %d\n", cdvdman_read2_flg, cdvdman_waf);
+        result = 0;
+    }
+    return result;
+#else
+    return 0;
+#endif
 }
 
 /* internal routine */
