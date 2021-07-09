@@ -17,7 +17,7 @@
 #define SPD_REG480C (*((vu32 *)0xB000480C))
 #define SPD_REG4814 (*((vu32 *)0xB0004814))
 
-#define SPD_BF80146E (*((vu32 *)0xBF80146E))
+#define SPD_BF80146E (*((vu8 *)0xBF80146E))
 
 s32 fls_4();
 s32 fls_5();
