@@ -4,12 +4,12 @@ DECLARE_EXPORT_TABLE(fls, 1, 1)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(fls_4)
+    DECLARE_EXPORT(flash_detect)
     DECLARE_EXPORT(fls_5)
-    DECLARE_EXPORT(fls_6)
-    DECLARE_EXPORT(fls_7)
-    DECLARE_EXPORT(fls_8)
-    DECLARE_EXPORT(fls_9)
+    DECLARE_EXPORT(flash_identify)
+    DECLARE_EXPORT(flash_erase)
+    DECLARE_EXPORT(flash_read)
+    DECLARE_EXPORT(flash_write)
 END_EXPORT_TABLE
 
 void _retonly() {}
