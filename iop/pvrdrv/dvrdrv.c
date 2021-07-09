@@ -371,9 +371,7 @@ int DvrdrvTransferDma(u8 *output_buffer, int a2)
     int result;
     int v6;
     int v7;
-    unsigned int v8;
-    u16 *v9;
-    s16 v10;
+    u32 *v8;
 
     v4 = 0;
     if (((u32)output_buffer & 3) != 0)
@@ -383,7 +381,7 @@ int DvrdrvTransferDma(u8 *output_buffer, int a2)
     v7 = a2 % 128;
     (*((vu32 *)0xB0004108)) = a2 / 128;
     (*((vu32 *)0xB000410C)) = 32;
-    v8 = (unsigned int)&output_buffer[128 * (u16)(a2 / 128)];
+    v8 = (u32 *)&output_buffer[128 * (u16)(a2 / 128)];
     switch ((*((vu32 *)0xB0004004)) & 7) {
         case 0:
         case 2:
@@ -403,14 +401,12 @@ int DvrdrvTransferDma(u8 *output_buffer, int a2)
         LABEL_7:
             dev9DmaTransfer(2, output_buffer, (v6 << 16) | 0x20, v4);
             if (v7 > 0) {
-                v9 = (u16 *)(u32)(v8 & 0xFFFF);
+                // TODO: verify this 16-bit copy
                 do {
                     v7 -= 4;
-                    (*((vu32 *)0xB0004120)) = *v9;
-                    v10 = *(u16 *)((v8 & 0xFFFF0000) >> 16);
-                    v8 += 4;
-                    (*((vu32 *)0xB0004122)) = v10;
-                    v9 = (u16 *)(u32)(v8 & 0xFFFF);
+                    (*((vu16 *)0xB0004120)) = ((*((u32 *)v8)) & 0x0000FFFF);
+                    (*((vu16 *)0xB0004122)) = ((*((u32 *)v8)) & 0xFFFF0000) >> 16;
+                    v8 += 1;
                 } while (v7 > 0);
             }
             UnblockAPI();
