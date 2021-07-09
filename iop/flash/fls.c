@@ -1,7 +1,4 @@
 
-// fls_4 - detect dev9 flash device
-// fls_6 - identify flash chip, open id
-
 #include "irx_imports.h"
 
 #define SPD_REG0004 (*((vu32 *)0xB0000004))
