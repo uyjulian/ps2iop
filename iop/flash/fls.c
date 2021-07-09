@@ -184,7 +184,6 @@ s32 flash_read(flash_info *a1, s32 a2, s32 a3, void *a4)
     s32 v8;
     u32 v9;
     u16 *v10;
-    u32 *v11;
     s32 v12;
     s32 i;
     u32 j;
@@ -236,9 +235,8 @@ s32 flash_read(flash_info *a1, s32 a2, s32 a3, void *a4)
     LABEL_21:
         SPD_REG4808 = v12;
     }
-    v10 = a4;
-    v11 = a4;
 LABEL_23:
+    v10 = a4;
     for (i = 0; i < a3; v8 = 0) {
         v18 = 0;
         SetAlarm(&sys_clock, fls_timeout, &v18);
@@ -261,9 +259,9 @@ LABEL_23:
                 ++v10;
             }
         } else {
-            for (j = 0; j < a1->byte_page >> 2; ++v11) {
+            for (j = 0; j < a1->byte_page >> 2; ++v10) {
                 ++j;
-                *v11 = SPD_REG4800;
+                *v10 = SPD_REG4800;
             }
         }
         SPD_REG480C = v5;
