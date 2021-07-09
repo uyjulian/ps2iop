@@ -505,6 +505,7 @@ extern int cdvdman_nontray;
 
 extern int cdvdman_minver60600;
 #endif
+extern int cdvdman_minver50600;
 
 extern char *cdvdman_masterd;
 extern u8 cdvdman_ncmd;

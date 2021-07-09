@@ -65,6 +65,7 @@ int cdvdman_nontray = 0;
 
 int cdvdman_minver60600 = 0;
 #endif
+int cdvdman_minver50600 = 0; /* DESR / PSX DVR commands */
 
 char *cdvdman_masterd = "PlayStation Master Disc";
 u8 cdvdman_ncmd = CDVD_NCMD_READ;

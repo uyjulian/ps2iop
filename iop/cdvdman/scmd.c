@@ -1022,6 +1022,7 @@ int sceCdWriteRegionParams(u8 arg1, u32 *arg2, u8 *arg3, u32 *result)
 }
 
 #if 0
+/* Exported entry #31 */
 int sceCdOpenConfig(int block, int mode, int NumBlocks, u32 *status)
 {
 	int in;
@@ -1034,6 +1035,7 @@ int sceCdOpenConfig(int block, int mode, int NumBlocks, u32 *status)
 }
 #endif
 
+/* Exported entry #32 */
 int sceCdCloseConfig(u32 *result)
 {
 	int ret;
@@ -1055,6 +1057,7 @@ int read_config_process(void *a1, u32 *a2)
 	return ret;
 }
 
+/* Exported entry #33 */
 int sceCdReadConfig(void *buffer, u32 *result)
 {
 	int ret;
@@ -1090,6 +1093,7 @@ int write_config_process(const u8 *a1, u32 *a2)
 	return cdvdman_send_scmd(66, in, 16, a2, 1, 1);
 }
 
+/* Exported entry #34 */
 int sceCdWriteConfig(const void *buffer, u32 *result)
 {
 	int ret;
@@ -1112,5 +1116,130 @@ int sceCdWriteConfig(const void *buffer, u32 *result)
 			return ret;
 	}
 	DPRINTF(0, "WriteConfig fail status: 0x%02x\n", *result);
+	return ret;
+}
+
+int cdvdman_readID(int mode, u8 *buf)
+{
+    u8 lbuf[16];
+    u32 stat;
+    int r;
+
+    r = sceCdRI(lbuf, &stat);
+    if ((r == 0) || (stat))
+        return 0;
+
+    if (mode == 0) { // GUID
+        u32 *GUID0 = (u32 *)&buf[0];
+        u32 *GUID1 = (u32 *)&buf[4];
+        *GUID0 = lbuf[0] | 0x08004600; //Replace the MODEL ID segment with the SCE OUI, to get the console's IEEE1394 EUI-64.
+        *GUID1 = *(u32 *)&lbuf[4];
+    } else { // ModelID
+        u32 *ModelID = (u32 *)&buf[0];
+        *ModelID = (*(u32 *)&lbuf[0]) >> 8;
+    }
+
+    return 1;
+}
+
+/* Exported entry #80 */
+int sceCdReadGUID(u64 *GUID)
+{
+    return cdvdman_readID(0, (u8 *)GUID);
+}
+
+/* Exported entry #82 */
+int sceCdReadModelID(unsigned long int *ModelID)
+{
+    return cdvdman_readID(1, (u8 *)ModelID);
+}
+
+int sceCdXLEDCtl(u8 arg1, u8 arg2, u32 *result1, u32 *result2)
+{
+	int ret;
+	u8 in[8];
+	u8 out[16];
+
+	*result1 = 0;
+	ret = 1;
+	if ( cdvdman_minver50600 )
+	{
+		in[0] = arg1;
+		in[1] = arg2;
+		*result2 = 0;
+		ret = cdvdman_send_scmd(0x2Du, in, 2, out, 2, 1);
+		if ( ret )
+		{
+			*result2 = (u8)out[0];
+			*result1 = (u8)out[1];
+		}
+	}
+	else
+	{
+		*result2 = 256;
+	}
+	return ret;
+}
+
+int sceCdBuzzerCtl(u32 *result)
+{
+	int ret;
+
+	ret = 1;
+	if ( cdvdman_minver50600 )
+	{
+		*result = 0;
+		ret = cdvdman_send_scmd(0x2Eu, 0, 0, result, 1, 1);
+	}
+	else
+	{
+		*result = 256;
+	}
+	return ret;
+}
+
+int sceCdXBSPowerCtl(u8 arg1, u8 arg2, u32 *result1, u32 *result2)
+{
+	int v6;
+	char in[8];
+	char out[16];
+
+	*result1 = 0;
+	v6 = 1;
+	if ( cdvdman_minver50600 )
+	{
+		in[0] = arg1;
+		in[1] = arg2;
+		*result2 = 0;
+		v6 = cdvdman_send_scmd(0x2Cu, in, 2, out, 2, 1);
+		if ( v6 )
+		{
+			*result2 = (u8)out[0];
+			*result1 = (u8)out[1];
+		}
+	}
+	else
+	{
+		*result2 = 256;
+	}
+	return v6;
+}
+
+int sceCdXDVRPReset(u8 arg1, u32 *result)
+{
+	int ret;
+	u8 in[8];
+
+	ret = 1;
+	if ( cdvdman_minver50600 )
+	{
+		in[0] = arg1;
+		*result = 0;
+		ret = cdvdman_send_scmd(0x33u, in, 1, result, 1, 1);
+	}
+	else
+	{
+		*result = 256;
+	}
 	return ret;
 }

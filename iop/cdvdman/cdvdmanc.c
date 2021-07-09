@@ -6,8 +6,15 @@ IRX_ID("cdvd_driver", 1, 4);
 
 // Missing entries: 
 // sceCdReadDiskID, 
-// sceCdReadGUID, 
-// sceCdReadModelID,
+// sceCdChgSys
+// sceCdNoticeGameStart
+// 161
+// 167
+// 169
+// sceCdSetMediumRemoval
+// sceCdGetMediumRemoval
+// 179
+// sceCdGetWakeUpReason
 
 /* Entry point */
 int _start(int argc, char **argv)
@@ -118,6 +125,8 @@ int cdvdman_initcfg()
     /* else ??? = 0; */
     cdvdman_minver50400 = (0x503FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
 #endif
+
+    cdvdman_minver50600 = (0x505FF < (u32)count) ? 1 : 0;
 
     // guards cdvdman_189
     cdvdman_minver60000 = (0x5FFFF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */

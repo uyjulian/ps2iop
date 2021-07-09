@@ -80,9 +80,9 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(sceCdStSeekF)
     DECLARE_EXPORT(sceCdPOffCallback)
     DECLARE_EXPORT(_retonly) //sceCdReadDiskID
-    DECLARE_EXPORT(_retonly) //sceCdReadGUID
+    DECLARE_EXPORT(sceCdReadGUID)
     DECLARE_EXPORT(sceCdSetTimeout)
-    DECLARE_EXPORT(_retonly) // sceCdReadModelID
+    DECLARE_EXPORT(sceCdReadModelID)
     DECLARE_EXPORT(sceCdReadDvdDualInfo)
     DECLARE_EXPORT(sceCdLayerSearchFile)
     DECLARE_EXPORT(_retonly) //85
@@ -161,17 +161,17 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly) //161!
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly) //sceCdXLEDCtl
+    DECLARE_EXPORT(sceCdXLEDCtl)
     DECLARE_EXPORT(_retonly) //164
-    DECLARE_EXPORT(_retonly) //sceCdBuzzerCtl
+    DECLARE_EXPORT(sceCdBuzzerCtl)
     DECLARE_EXPORT(_retonly) //166
+    DECLARE_EXPORT(_retonly) //167!
     DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly) //169!
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly) //sceCdXBSPowerCtl
+    DECLARE_EXPORT(sceCdXBSPowerCtl)
     DECLARE_EXPORT(_retonly) //172
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
@@ -179,9 +179,9 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(_retonly) //176
     DECLARE_EXPORT(_retonly) //sceCdGetMediumRemoval
     DECLARE_EXPORT(_retonly) //178
+    DECLARE_EXPORT(_retonly) //179!
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly) //sceCdXDVRPReset
+    DECLARE_EXPORT(sceCdXDVRPReset)
     DECLARE_EXPORT(_retonly) //182
     DECLARE_EXPORT(_retonly) //sceCdGetWakeUpReason
     DECLARE_EXPORT(_retonly) //184
