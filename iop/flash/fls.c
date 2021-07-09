@@ -4,9 +4,6 @@
 
 #include "irx_imports.h"
 
-#define WORDn(x, n) (*((u16 *)&(x) + n))
-#define LOWORD(x)   WORDn(x, 0)
-
 #define SPD_REG0004 (*((vu32 *)0xB0000004))
 #define SPD_REG4800 (*((vu32 *)0xB0004800))
 #define SPD_REG4804 (*((vu32 *)0xB0004804))
@@ -220,7 +217,7 @@ s32 flash_read(flash_info *a1, s32 a2, s32 a3, void *a4)
                 goto LABEL_23;
             }
             SPD_REG4808 = (u8)(v7 >> 9) | 0x100;
-            LOWORD(v12) = (u8)(v7 >> 17);
+            v12 = (u8)(v7 >> 17);
         }
         goto LABEL_21;
     }
@@ -300,7 +297,7 @@ s32 flash_write(flash_info *a1, s32 a2, s16 *a3)
             if (v4 != 117)
                 goto LABEL_14;
             SPD_REG4808 = (u8)(v3 >> 9) | 0x100;
-            LOWORD(v5) = (u8)(v3 >> 17);
+            v5 = (u8)(v3 >> 17);
         }
         goto LABEL_13;
     }
