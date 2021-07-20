@@ -173,7 +173,7 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(sceCdXBSPowerCtl)
     DECLARE_EXPORT(_retonly) //172
-    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly) //173!
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(sceCdSetMediumRemoval)
     DECLARE_EXPORT(_retonly) //176
