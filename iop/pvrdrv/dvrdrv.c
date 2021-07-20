@@ -27,7 +27,7 @@ typedef struct __attribute__((aligned(4))) drvdrv_exec_cmd_ack_
     u16 return_result_word[64];
     u32 status_4228_comp;
     u32 timeout;
-    u32 input_buffer;
+    void *input_buffer;
     u32 input_buffer_length;
     void *output_buffer;
     int ack_status_ack2;
@@ -1153,7 +1153,7 @@ int DvrdrvExecCmdAckDmaSendComp(drvdrv_exec_cmd_ack *a1)
                 if (v18 <= 0) {
                     DvrdrvCancelWaitDmaEnd(v12);
                 } else {
-                    DvrdrvTransferDma((u8 *)a1->input_buffer, v18);
+                    DvrdrvTransferDma(a1->input_buffer, v18);
                     DvrdrvWaitDmaEnd(v10, v12);
                 }
                 ReleaseItrSema(v10);
@@ -1320,7 +1320,7 @@ int DvrdrvExecCmdAckDma2Comp(drvdrv_exec_cmd_ack *a1)
         if (v20 <= 0) {
             DvrdrvCancelWaitDmaEnd(v14);
         } else {
-            DvrdrvTransferDma((u8 *)a1->input_buffer, v20);
+            DvrdrvTransferDma(a1->input_buffer, v20);
             DvrdrvWaitDmaEnd(v8, v14);
         }
         ReleaseItrSema(v8);
