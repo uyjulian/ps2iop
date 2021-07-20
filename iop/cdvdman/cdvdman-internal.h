@@ -137,6 +137,7 @@
 #define CDVDreg_E        (*(volatile u8 *)0xBF40200E)
 #define CDVDreg_TYPE     (*(volatile u8 *)0xBF40200F)
 #define CDVDreg_13       (*(volatile u8 *)0xBF402013)
+#define CDVDreg_15       (*(volatile u8 *)0xBF402015)
 #define CDVDreg_SCOMMAND (*(volatile u8 *)0xBF402016)
 #define CDVDreg_SDATAIN  (*(volatile u8 *)0xBF402017)
 #define CDVDreg_SDATAOUT (*(volatile u8 *)0xBF402018)
@@ -444,16 +445,6 @@ typedef struct _CD_DIR_ENTRY
 
 #define PIOCALLOC 0x7001
 
-
-#define VAR_int(x)    0
-//*(int *)((char *)common + ((char *)&x - (char *)&cdvdman_commmand))
-#define VAR_void(x)   0
-//*(void **)((char *)common + ((char *)&x - (char *)&cdvdman_commmand))
-#define VAR_ushort(x) 0
-//*(u16 *)((char *)common + ((char *)&x - (char *)&cdvdman_commmand))
-#define VAR_uchar(x)  0
-//*(u8 *)((char *)common + ((char *)&x - (char *)&cdvdman_commmand))
-
 /* cdvdman RODATA segment */
 
 #define cdvdman_cdrom "cdrom"
@@ -623,6 +614,7 @@ extern u16 cdvdman_unk2;
 extern u16 cdvdman_unk3;
 extern int cdvdman_waf2;
 extern int cdvdman_config_numblocks;
+extern int cdvdman_medium_removal_state;
 
 #define DPRINTF(...)
 
@@ -677,8 +669,5 @@ extern int cdvdman_cacheinvl(CDVDMAN_FILEDATA *fd, int index);
 extern int cdvdman_invcaches();
 extern int cdvdman_ioread(iop_file_t *f, void *buf, int nbytes);
 extern int cdvdman_stread(iop_file_t *f, void *buf, int nbyte);
-
-// Temporary prototype until it gets implemented in ps2sdk
-extern int sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5, void *cb);
 
 extern void break_read_timeout_callback(void);

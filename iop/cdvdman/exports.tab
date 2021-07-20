@@ -31,7 +31,7 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(sceCdStatus)
     DECLARE_EXPORT(sceCdApplySCmd)
     DECLARE_EXPORT(sceCdSetHDMode)
-    DECLARE_EXPORT(_retonly) //sceCdOpenConfig
+    DECLARE_EXPORT(sceCdOpenConfig)
     DECLARE_EXPORT(sceCdCloseConfig)
     DECLARE_EXPORT(sceCdReadConfig)
     DECLARE_EXPORT(sceCdWriteConfig)
@@ -79,7 +79,7 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(sceCdReadFull)
     DECLARE_EXPORT(sceCdStSeekF)
     DECLARE_EXPORT(sceCdPOffCallback)
-    DECLARE_EXPORT(_retonly) //sceCdReadDiskID
+    DECLARE_EXPORT(sceCdReadDiskID)
     DECLARE_EXPORT(sceCdReadGUID)
     DECLARE_EXPORT(sceCdSetTimeout)
     DECLARE_EXPORT(sceCdReadModelID)
@@ -156,7 +156,7 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly) //sceCdChgSys
     DECLARE_EXPORT(_retonly) //155
-    DECLARE_EXPORT(_retonly) //sceCdNoticeGameStart
+    DECLARE_EXPORT(sceCdNoticeGameStart)
     DECLARE_EXPORT(_retonly) //157
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
@@ -175,15 +175,15 @@ DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
     DECLARE_EXPORT(_retonly) //172
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly) //sceCdSetMediumRemoval
+    DECLARE_EXPORT(sceCdSetMediumRemoval)
     DECLARE_EXPORT(_retonly) //176
-    DECLARE_EXPORT(_retonly) //sceCdGetMediumRemoval
+    DECLARE_EXPORT(sceCdGetMediumRemoval)
     DECLARE_EXPORT(_retonly) //178
     DECLARE_EXPORT(_retonly) //179!
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(sceCdXDVRPReset)
     DECLARE_EXPORT(_retonly) //182
-    DECLARE_EXPORT(_retonly) //sceCdGetWakeUpReason
+    DECLARE_EXPORT(sceCdGetWakeUpReason)
     DECLARE_EXPORT(_retonly) //184
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)

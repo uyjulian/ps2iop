@@ -66,6 +66,17 @@ int sceCdGetDiskType()
     return CDVDreg_TYPE;
 }
 
+/* Exported entry #183 */
+int sceCdGetWakeUpReason(void)
+{
+    int ret;
+
+    ret = CDVDreg_15;
+    if ( ret != -1 )
+        ret &= 0xFu;
+    return ret;
+}
+
 /* Exported entry #8 */
 int sceCdGetError()
 {
@@ -92,6 +103,10 @@ int sceCdTrayReq(int param, u32 *traychk)
 
         if (cdvdman_send_scmd(6, &data[0], 1, &data[1], 1, 1)) {
             if (!data[1]) {
+                if ( !param )
+                {
+                    cdvdman_medium_removal_state = 0;
+                }
                 delay_thread(11000);
                 return 1;
             }
@@ -1021,7 +1036,6 @@ int sceCdWriteRegionParams(u8 arg1, u32 *arg2, u8 *arg3, u32 *result)
 	return ret;
 }
 
-#if 0
 /* Exported entry #31 */
 int sceCdOpenConfig(int block, int mode, int NumBlocks, u32 *status)
 {
@@ -1033,7 +1047,6 @@ int sceCdOpenConfig(int block, int mode, int NumBlocks, u32 *status)
 	*status = 0;
 	return cdvdman_send_scmd(64, &in, 3, status, 1, 1);
 }
-#endif
 
 /* Exported entry #32 */
 int sceCdCloseConfig(u32 *result)
@@ -1154,6 +1167,7 @@ int sceCdReadModelID(unsigned long int *ModelID)
     return cdvdman_readID(1, (u8 *)ModelID);
 }
 
+/* Exported entry #163 */
 int sceCdXLEDCtl(u8 arg1, u8 arg2, u32 *result1, u32 *result2)
 {
 	int ret;
@@ -1181,6 +1195,7 @@ int sceCdXLEDCtl(u8 arg1, u8 arg2, u32 *result1, u32 *result2)
 	return ret;
 }
 
+/* Exported entry #165 */
 int sceCdBuzzerCtl(u32 *result)
 {
 	int ret;
@@ -1198,6 +1213,7 @@ int sceCdBuzzerCtl(u32 *result)
 	return ret;
 }
 
+/* Exported entry #171 */
 int sceCdXBSPowerCtl(u8 arg1, u8 arg2, u32 *result1, u32 *result2)
 {
 	int v6;
@@ -1225,6 +1241,7 @@ int sceCdXBSPowerCtl(u8 arg1, u8 arg2, u32 *result1, u32 *result2)
 	return v6;
 }
 
+/* Exported entry #181 */
 int sceCdXDVRPReset(u8 arg1, u32 *result)
 {
 	int ret;
@@ -1242,4 +1259,82 @@ int sceCdXDVRPReset(u8 arg1, u32 *result)
 		*result = 256;
 	}
 	return ret;
+}
+
+/* Exported entry #175 */
+int sceCdSetMediumRemoval(u8 arg1, u32 *result)
+{
+    int ret;
+    int medium_removal_state_old;
+    u8 in[8];
+    int state;
+
+    ret = 1;
+    if ( cdvdman_minver50600 )
+    {
+        in[0] = arg1;
+        *result = 0;
+        CpuSuspendIntr(&state);
+        medium_removal_state_old = cdvdman_medium_removal_state;
+        cdvdman_medium_removal_state = arg1;
+        ret = cdvdman_send_scmd(0x31u, in, 1, result, 1, 1);
+        if ( !ret || *result )
+            cdvdman_medium_removal_state = medium_removal_state_old;
+        CpuResumeIntr(state);
+    }
+    else
+    {
+        *result = 256;
+    }
+    return ret;
+}
+
+/* Exported entry #177 */
+int sceCdGetMediumRemoval(u32 *result1, u32 *result2)
+{
+    int ret;
+    char out[16];
+
+    *result1 = 0;
+    ret = 1;
+    if ( cdvdman_minver50600 )
+    {
+        *result2 = 0;
+        ret = cdvdman_send_scmd(0x32u, 0, 0, out, 2, 1);
+        if ( !ret )
+            return ret;
+        *result2 = (u8)out[0];
+        *result1 = (u8)out[1];
+    }
+    else
+    {
+        *result2 = 256;
+    }
+    if ( ret && !*result2 )
+        cdvdman_medium_removal_state = *result1;
+    return ret;
+}
+
+/* Exported entry #156 */
+int sceCdNoticeGameStart(u8 arg1, u32 *result)
+{
+    int res;
+    char out[8];
+    u8 in[8];
+
+    *result = 0;
+    if ( cdvdman_minver50400 )
+    {
+        in[0] = arg1;
+        res = cdvdman_send_scmd(0x29u, in, 1, out, 1, 1);
+        *result = (u8)out[0];
+    }
+    else
+    {
+        *result = 256;
+        res = 1;
+    }
+    if ( res && !*result )
+        cdvdman_medium_removal_state = 0;
+    return res;
 }

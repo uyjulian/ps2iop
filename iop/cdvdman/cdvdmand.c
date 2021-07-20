@@ -183,3 +183,4 @@ u16 cdvdman_unk2; /* +0xC0 */
 u16 cdvdman_unk3; /* +0xC2 */
 int cdvdman_waf2;
 int cdvdman_config_numblocks;
+int cdvdman_medium_removal_state;

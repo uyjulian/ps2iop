@@ -4,17 +4,12 @@
 
 IRX_ID("cdvd_driver", 1, 4);
 
-// Missing entries: 
-// sceCdReadDiskID, 
+// TODO: 
 // sceCdChgSys
-// sceCdNoticeGameStart
 // 161
 // 167
 // 169
-// sceCdSetMediumRemoval
-// sceCdGetMediumRemoval
 // 179
-// sceCdGetWakeUpReason
 
 /* Entry point */
 int _start(int argc, char **argv)
@@ -126,7 +121,7 @@ int cdvdman_initcfg()
     cdvdman_minver50400 = (0x503FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
 #endif
 
-    cdvdman_minver50600 = (0x505FF < (u32)count) ? 1 : 0;
+    cdvdman_minver50600 = (0x505FF < (u32)count) ? 1 : 0; /* DESR */
 
     // guards cdvdman_189
     cdvdman_minver60000 = (0x5FFFF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
@@ -616,6 +611,7 @@ void cdvdman_init()
 {
     int dummy;
     u32 stat;
+    u32 medium_removal_state;
     register int r, t;
     register u16 *p;
 
@@ -650,16 +646,33 @@ void cdvdman_init()
     p = (u16 *)QueryBootMode(6);
     cdvdman_nodecflg = (p != 0) ? (((*p & 0xFFFC) ^ 0x60) < 1) : 0;
 
-    /* 
-   Is it a bug in the SCE's code ? It seems the variable "t" (register "$s1") 
-   had not been initialized before the begining of the following cycle.
-  */
-
+    t = 0;
     do {
         r = sceCdCancelPOffRdy(&stat);
         if ((!r) || (stat))
             DelayThread(16000);
     } while ((++t < 0x3D) && ((!r) || (stat)));
+
+    cdvdman_medium_removal_state = 0;
+    if (cdvdman_minver50600 && !cdvdman_minver60000)
+    {
+		t = 0;
+		do {
+		    r = sceCdSetMediumRemoval(0, &stat);
+		    if ((!r) || (stat))
+		        DelayThread(16000);
+		} while ((++t < 0x3D) && ((!r) || (stat)));
+		t = 0;
+		do {
+		    r = sceCdGetMediumRemoval((u32 *)&medium_removal_state, &stat);
+		    if ((!r) || (stat))
+		        DelayThread(16000);
+		} while ((++t < 0x3D) && ((!r) || (stat)));
+
+		if (r && !stat)
+			cdvdman_medium_removal_state = medium_removal_state;
+		// TODO: handle sceCdChgSys
+    }
 }
 
 /* Exported entry #4 */
@@ -1452,7 +1465,7 @@ int read_cdvd_cb(void *common)
     register int index, dvoff, cdoff, layer = 0, sblock;
 
     index = layer;
-    if (VAR_ushort(cdvdman_dma3prm.dma3_csectors)) {
+    if (cdvdman_dma3prm.dma3_csectors) {
         dvoff = layer;
         cdoff = layer;
 
@@ -1501,10 +1514,10 @@ int read_cdvd_cb(void *common)
             dvoff += 2064;
             cdoff += 2340;
 
-        } while (++index < VAR_ushort(cdvdman_dma3prm.dma3_csectors));
+        } while (++index < cdvdman_dma3prm.dma3_csectors);
     }
 
-    if (VAR_ushort(cdvdman_dma3prm.dma3_csectors) == index) {
+    if (cdvdman_dma3prm.dma3_csectors == index) {
         if (cdvdman_pattern == 2) {
             memcpy((void *)((u32)cdvdman_rbuffer + cdvdman_dma3sec * 2340), cdvdman_ptoc, index * 2340);
         } else {
@@ -1512,7 +1525,7 @@ int read_cdvd_cb(void *common)
 
             size = cdvdman_pattern ? 2328 : 2048;
 
-            if (VAR_ushort(cdvdman_dma3prm.dma3_csectors)) {
+            if (cdvdman_dma3prm.dma3_csectors) {
                 register u32 offset;
 
                 index = 0;
@@ -1521,7 +1534,7 @@ int read_cdvd_cb(void *common)
                 do {
                     memcpy(((void *)(u32)cdvdman_rbuffer + (cdvdman_dma3sec + index) * size), (void *)((u32)cdvdman_ptoc + offset), size);
                     offset += sblock;
-                } while (++index < VAR_ushort(cdvdman_dma3prm.dma3_csectors));
+                } while (++index < cdvdman_dma3prm.dma3_csectors);
             }
         }
 

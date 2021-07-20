@@ -306,7 +306,7 @@ int cdvdman_gettoc(u8 *toc)
 /* Exported entry #19 (avilable in bios and bbnav) */
 /* Looks like alternate TOC reading */
 #ifdef __CDVDMAN_SW_E19__
-int sceCdGetToc2(char *toc, int param)
+int sceCdGetToc2(u8 *toc, int param)
 {
     DMA3PARAM b18;
     char ndata;
@@ -590,3 +590,61 @@ int sceCdReadKey(unsigned char arg1, unsigned char arg2, unsigned int lsn, unsig
     return 1;
 }
 
+/* Exported entry #79 (available in dnas images) */
+int sceCdReadDiskID(unsigned int *id)
+{
+	int v2;
+	int v3;
+	int v4;
+	int result;
+	int v6;
+	sceCdRMode rmode;
+	char buffer[2048];
+	u32 resultp;
+
+	*((u8 *)id + 4) = 0;
+	*((u8 *)id + 3) = 0;
+	*((u8 *)id + 2) = 0;
+	*((u8 *)id + 1) = 0;
+	*(u8 *)id = 0;
+	u8 *key = (u8 *)id;
+	v2 = CDVDreg_TYPE;
+	v3 = v2 >= 21;
+	v4 = v2 < 18;
+	if ( v3 )
+		return 0;
+	v3 = v4;
+	result = 0;
+	if ( v3 )
+		return result;
+	rmode.spindlctrl = 18;
+	rmode.datapattern = 0;
+	rmode.trycount = 0;
+	sceCdRead0(0x4Bu, 1u, buffer, &rmode, 0, 0);
+	sceCdSync(3);
+	v3 = !cdvdman_ncmd0Ch(0, 0, 75);
+	result = 0;
+	if ( v3 )
+		return result;
+	sceCdSync(3);
+	if ( cdvdman_cderror )
+		return 0;
+	WaitEventFlag(cdvdman_scmd_ef, 1u, 0, &resultp);
+	v6 = 0;
+	if ( (CDVDreg_KEYSTATE & 4) != 0 )
+	{
+	    key[0] = *(volatile u8 *)0xBF402030;
+	    key[0] ^= CDVDreg_KEYXOR;
+	    key[1] = *(volatile u8 *)0xBF402031;
+	    key[1] ^= CDVDreg_KEYXOR;
+	    key[2] = *(volatile u8 *)0xBF402032;
+	    key[2] ^= CDVDreg_KEYXOR;
+	    key[3] = *(volatile u8 *)0xBF402033;
+	    key[3] ^= CDVDreg_KEYXOR;
+	    key[4] = *(volatile u8 *)0xBF402034;
+	    key[4] ^= CDVDreg_KEYXOR;
+		v6 = 1;
+	}
+	set_ev_flag(cdvdman_scmd_ef, 1u);
+	return v6;
+}
