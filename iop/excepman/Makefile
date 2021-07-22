@@ -1,6 +1,6 @@
 IOP_BIN = excepman.irx
 
-IOP_OBJS = _start.o imports.o exports.o main.o
+IOP_OBJS = excepman.o imports.o exports.o ex_handler.o
 
 all: $(IOP_BIN)
 
