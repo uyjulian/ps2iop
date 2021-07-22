@@ -28,8 +28,8 @@ DECLARE_EXPORT_TABLE(sifcmd, 1, 1)
     DECLARE_EXPORT(sceSifRemoveRpcQueue)
     DECLARE_EXPORT(sceSifSetSif1CB)
     DECLARE_EXPORT(sceSifClearSif1CB)
-    DECLARE_EXPORT(sceSifSendCmdIntr)
-    DECLARE_EXPORT(isceSifSendCmdIntr)
+    DECLARE_EXPORT(_retonly) // ?? sceSifSendCmdIntr
+    DECLARE_EXPORT(_retonly) // ?? isceSifSendCmdIntr
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
 END_EXPORT_TABLE
