@@ -1,9 +1,9 @@
 
 DECLARE_EXPORT_TABLE(sysmem, 1, 1)
     DECLARE_EXPORT(_start)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(sysmem_init_memory)
+    DECLARE_EXPORT(sysmem_retonly)
+    DECLARE_EXPORT(sysmem_return_addr_of_memsize)
     DECLARE_EXPORT(AllocSysMemory)
     DECLARE_EXPORT(FreeSysMemory)
     DECLARE_EXPORT(QueryMemSize)
