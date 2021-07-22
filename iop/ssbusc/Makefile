@@ -1,6 +1,6 @@
 IOP_BIN = ssbusc.irx
 
-IOP_OBJS = _start.o imports.o exports.o main.o
+IOP_OBJS = ssbusc.o imports.o exports.o
 
 all: $(IOP_BIN)
 
