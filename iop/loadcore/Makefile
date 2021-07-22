@@ -1,6 +1,6 @@
 IOP_BIN = loadcore.irx
 
-IOP_OBJS = _start.o imports.o exports.o main.o
+IOP_OBJS = loadcore.o imports.o exports.o
 
 all: $(IOP_BIN)
 
