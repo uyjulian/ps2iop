@@ -1,6 +1,6 @@
 IOP_BIN = intrman.irx
 
-IOP_OBJS = _start.o imports.o exports.o main.o
+IOP_OBJS = intrman.o imports.o exports.o int_handler.o
 
 all: $(IOP_BIN)
 
