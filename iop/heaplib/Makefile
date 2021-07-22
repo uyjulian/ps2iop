@@ -1,6 +1,6 @@
 IOP_BIN = heaplib.irx
 
-IOP_OBJS = _start.o imports.o exports.o main.o
+IOP_OBJS = heaplib.o imports.o exports.o
 
 all: $(IOP_BIN)
 
