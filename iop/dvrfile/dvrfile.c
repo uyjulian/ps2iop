@@ -126,7 +126,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                      \
         return dvrf_df_chdir(a1, translated_name);                                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -134,7 +134,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                      \
         return dvrf_df_chstat(a1, translated_name, stat, statmask);                                                                         \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -142,7 +142,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                      \
         return dvrf_df_devctl(a1, translated_name, cmd, arg, arglen, buf, buflen);                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -150,7 +150,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_path[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                   \
+        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                      \
         return dvrf_df_dopen(a1, translated_path);                                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -159,10 +159,10 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
         char translated_dev[1040];                                                                                                          \
                                                                                                                                             \
         if (shouldbswapformatarg) {                                                                                                         \
-            sprintf(translated_dev, basedevname ":%s", dev);                                                                             \
+            sprintf(translated_dev, basedevname ":%s", dev);                                                                                \
             *(u32 *)arg = bswap32(*(u32 *)arg);                                                                                             \
         } else {                                                                                                                            \
-            sprintf(translated_dev, basedevname "%d:%s", a1->unit, dev);                                                                 \
+            sprintf(translated_dev, basedevname "%d:%s", a1->unit, dev);                                                                    \
         }                                                                                                                                   \
         return dvrf_df_format(a1, translated_dev, blockdev, arg, arglen);                                                                   \
     }                                                                                                                                       \
@@ -171,7 +171,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                      \
         return dvrf_df_getstat(a1, translated_name, stat);                                                                                  \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -179,7 +179,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_path[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                   \
+        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                      \
         return dvrf_df_mkdir(a1, translated_path, mode);                                                                                    \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -187,7 +187,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_fsname[1040];                                                                                                       \
                                                                                                                                             \
-        sprintf(translated_fsname, basedevname "%d:%s", a1->unit, fsname);                                                               \
+        sprintf(translated_fsname, basedevname "%d:%s", a1->unit, fsname);                                                                  \
         return dvrf_df_mount(a1, translated_fsname, devname, flag, arg, arglen);                                                            \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -195,7 +195,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                      \
         return dvrf_df_open(a1, translated_name, flags, mode);                                                                              \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -203,7 +203,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_path[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                   \
+        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                      \
         return dvrf_df_readlink(a1, translated_path, buf, buflen);                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -211,7 +211,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                      \
         return dvrf_df_remove(a1, translated_name);                                                                                         \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -220,8 +220,8 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
         char translated_old[1040];                                                                                                          \
         char translated_new[1040];                                                                                                          \
                                                                                                                                             \
-        sprintf(translated_old, basedevname "%d:%s", a1->unit, old);                                                                     \
-        sprintf(translated_new, basedevname "%d:%s", a1->unit, new_1);                                                                   \
+        sprintf(translated_old, basedevname "%d:%s", a1->unit, old);                                                                        \
+        sprintf(translated_new, basedevname "%d:%s", a1->unit, new_1);                                                                      \
         return dvrf_df_rename(a1, translated_old, translated_new);                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -229,7 +229,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_path[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                   \
+        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                      \
         return dvrf_df_rmdir(a1, translated_path);                                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -238,8 +238,8 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
         char translated_old[1040];                                                                                                          \
         char translated_new[1040];                                                                                                          \
                                                                                                                                             \
-        sprintf(translated_old, basedevname "%d:%s", a1->unit, old);                                                                     \
-        sprintf(translated_new, basedevname "%d:%s", a1->unit, new_1);                                                                   \
+        sprintf(translated_old, basedevname "%d:%s", a1->unit, old);                                                                        \
+        sprintf(translated_new, basedevname "%d:%s", a1->unit, new_1);                                                                      \
         return dvrf_df_symlink(a1, translated_old, translated_new);                                                                         \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -247,7 +247,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_dev[1040];                                                                                                          \
                                                                                                                                             \
-        sprintf(translated_dev, basedevname "%d:%s", a1->unit, dev);                                                                     \
+        sprintf(translated_dev, basedevname "%d:%s", a1->unit, dev);                                                                        \
         return dvrf_df_sync(a1, translated_dev, flag);                                                                                      \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -255,7 +255,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_fsname[1040];                                                                                                       \
                                                                                                                                             \
-        sprintf(translated_fsname, basedevname "%d:%s", a1->unit, fsname);                                                               \
+        sprintf(translated_fsname, basedevname "%d:%s", a1->unit, fsname);                                                                  \
         return dvrf_df_umount(a1, translated_fsname);                                                                                       \
     }
 
@@ -486,7 +486,7 @@ int module_start(int a1, const char **a2)
     current_chunk_size = 0x4000;
     dvrp_fd_count = 0;
     if (AddDrv(&dvr_pfs_drv) || AddDrv(&dvr_hdd_drv)) {
-        goto LABEL_20;
+        goto fail;
     }
     v9 = 0;
     if (a1 > 0) {
@@ -511,7 +511,7 @@ int module_start(int a1, const char **a2)
         }
     }
     printf(v12);
-LABEL_20:
+fail:
     DelDrv("dvr_pfs");
     DelDrv("dvr_hdd");
     DelDrv("dvr_hdck");
@@ -542,21 +542,36 @@ GEN_TRANSLATION_FUNCS(dvrhdck, "dvr_hdck", 1);
 GEN_TRANSLATION_FUNCS(dvrfssk, "dvr_fssk", 1);
 GEN_TRANSLATION_FUNCS(dvrfsck, "dvr_fsck", 1);
 
+static int check_cmdack_err(int (*func)(drvdrv_exec_cmd_ack *a1), drvdrv_exec_cmd_ack *cmdack, int *retval, const char *funcname)
+{
+    if (func(cmdack)) {
+        *retval = -5;
+        printf("%s -> IO error (phase %d)\n", funcname, cmdack->phase);
+        return 1;
+    }
+    if (cmdack->comp_status) {
+        *retval = -5;
+        printf("%s -> Complete parameter error (phase %d), %04X\n", funcname, cmdack->phase, cmdack->comp_status);
+        return 1;
+    }
+    return 0;
+}
+
 int dvrf_df_init(iop_device_t *a1)
 {
-    int v2;
-    iop_sema_t v3;
+    int this_sema_id;
+    iop_sema_t sema_struct;
 
     if (sema_id >= 0)
         return 0;
-    v3.attr = 0;
-    v3.initial = 1;
-    v3.max = 1;
-    v3.option = 0;
-    v2 = CreateSema(&v3);
-    if (v2 < 0)
+    sema_struct.attr = 0;
+    sema_struct.initial = 1;
+    sema_struct.max = 1;
+    sema_struct.option = 0;
+    this_sema_id = CreateSema(&sema_struct);
+    if (this_sema_id < 0)
         return -1;
-    sema_id = v2;
+    sema_id = this_sema_id;
     return 0;
 }
 
@@ -572,7 +587,6 @@ int dvrf_df_exit(iop_device_t *a1)
 
 int dvrf_df_chdir(iop_file_t *a1, const char *name)
 {
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -583,25 +597,17 @@ int dvrf_df_chdir(iop_file_t *a1, const char *name)
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = strlen(name) + 1;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
 
 int dvrf_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned int statmask)
 {
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -614,19 +620,12 @@ int dvrf_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned 
     cmdack.input_buffer_length = strlen(name) + 5;
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            CopySceStat(stat, (u8 *)RBUF);
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+    CopySceStat(stat, (u8 *)RBUF);
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -635,7 +634,6 @@ int dvrf_df_close(iop_file_t *a1)
 {
     int retval;
     int dvrp_fd;
-    const char *fmterr;
     drvdrv_exec_cmd_ack cmdack;
 
     retval = 0;
@@ -646,19 +644,12 @@ int dvrf_df_close(iop_file_t *a1)
     cmdack.input_word[1] = dvrp_fd;
     cmdack.input_word_count = 2;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            UnregisterFd(a1);
-            --dvrp_fd_count;
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    UnregisterFd(a1);
+    --dvrp_fd_count;
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -667,7 +658,6 @@ int dvrf_df_dclose(iop_file_t *a1)
 {
     int retval;
     int dvrp_fd;
-    const char *fmterr;
     drvdrv_exec_cmd_ack cmdack;
 
     retval = 0;
@@ -678,19 +668,12 @@ int dvrf_df_dclose(iop_file_t *a1)
     cmdack.input_word[1] = dvrp_fd;
     cmdack.input_word_count = 2;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            UnregisterFd(a1);
-            --dvrp_fd_count;
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    UnregisterFd(a1);
+    --dvrp_fd_count;
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -699,7 +682,6 @@ int dvrf_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigne
 {
     int retval;
     u32 argoffset;
-    const char *fmterr;
     drvdrv_exec_cmd_ack cmdack;
 
     retval = 0;
@@ -712,7 +694,7 @@ int dvrf_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigne
         } else {
             retval = -33;
         }
-        goto LABEL_18;
+        goto finish;
     }
     argoffset = arglen + 16;
     SBUF[0] = bswap32(argoffset);
@@ -728,21 +710,13 @@ int dvrf_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigne
     cmdack.input_buffer = SBUF;
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 30000000;
-    if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    LABEL_13:
-        retval = -5;
-        printf(fmterr, __func__, cmdack.phase);
-        goto LABEL_18;
-    }
-    if (cmdack.comp_status) {
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
-        goto LABEL_13;
+    if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     if (!retval && buf && buflen)
         memcpy(buf, cmdack.output_buffer, buflen);
-LABEL_18:
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -750,7 +724,6 @@ LABEL_18:
 int dvrf_df_dopen(iop_file_t *a1, const char *path)
 {
     int retval;
-    const char *fmterr;
     drvdrv_exec_cmd_ack cmdack;
 
     WaitSema(sema_id);
@@ -762,16 +735,8 @@ int dvrf_df_dopen(iop_file_t *a1, const char *path)
         cmdack.input_buffer = &SBUF;
         cmdack.input_buffer_length = strlen(path) + 1;
         cmdack.timeout = 10000000;
-        if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-            fmterr = "%s -> IO error (phase %d)\n";
-        LABEL_6:
-            retval = -5;
-            printf(fmterr, __func__, cmdack.phase);
-            goto LABEL_10;
-        }
-        if (cmdack.comp_status) {
-            fmterr = "%s -> Complete parameter error (phase %d)\n";
-            goto LABEL_6;
+        if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+            goto finish;
         }
         retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
         if (retval >= 0) {
@@ -781,7 +746,7 @@ int dvrf_df_dopen(iop_file_t *a1, const char *path)
             printf("%s -> fd error (fd=%d)\n", __func__, retval);
         }
     }
-LABEL_10:
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -789,7 +754,6 @@ LABEL_10:
 int dvrf_df_dread(iop_file_t *a1, iox_dirent_t *buf)
 {
     int dvrp_fd;
-    const char *fmterr;
     int *statbuf;
     int retval;
     iox_dirent_t *v8;
@@ -808,18 +772,10 @@ int dvrf_df_dread(iop_file_t *a1, iox_dirent_t *buf)
     cmdack.input_word_count = 2;
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaRecvComp(&cmdack)) {
-        fmterr = "%s : IO error (phase %d)\n";
-    LABEL_5:
-        retval = -5;
-        printf(fmterr, __func__, cmdack.phase);
-        goto LABEL_14;
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaRecvComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
     statbuf = (int *)RBUF;
-    if (cmdack.comp_status) {
-        fmterr = "%s : Complete parameter error (phase %d)\n";
-        goto LABEL_5;
-    }
     v8 = buf;
     do {
         v8->stat.mode = statbuf[0];
@@ -845,7 +801,7 @@ int dvrf_df_dread(iop_file_t *a1, iox_dirent_t *buf)
         v16 = (iox_dirent_t *)((char *)v16 + 4);
     } while (v12 < 6);
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-LABEL_14:
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -856,7 +812,6 @@ int dvrf_df_format(iop_file_t *a1, const char *dev, const char *blockdev, void *
     u32 dev_len;
     const char *dev_;
     u32 arg_offset;
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -876,25 +831,17 @@ int dvrf_df_format(iop_file_t *a1, const char *dev, const char *blockdev, void *
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = arg_offset + arglen;
     cmdack.timeout = 3600000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
 
 int dvrf_df_getstat(iop_file_t *a1, const char *name, iox_stat_t *stat)
 {
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -906,19 +853,12 @@ int dvrf_df_getstat(iop_file_t *a1, const char *name, iox_stat_t *stat)
     cmdack.input_buffer_length = strlen(name) + 1;
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            CopySceStat(stat, (u8 *)RBUF);
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+    CopySceStat(stat, (u8 *)RBUF);
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -926,7 +866,6 @@ LABEL_7:
 int dvrf_df_ioctl(iop_file_t *a1, int cmd, void *param)
 {
     int dvrp_fd;
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -941,18 +880,11 @@ int dvrf_df_ioctl(iop_file_t *a1, int cmd, void *param)
     cmdack.input_word[5] = (u32)param & 0xFFFF;
     cmdack.input_word_count = 6;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "%s : IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s : Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -960,7 +892,6 @@ LABEL_7:
 int dvrf_df_ioctl2(iop_file_t *a1, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen)
 {
     int dvrp_fd;
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -979,22 +910,14 @@ int dvrf_df_ioctl2(iop_file_t *a1, int cmd, void *arg, unsigned int arglen, void
     cmdack.input_word_count = 0;
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    LABEL_8:
-        retval = -5;
-        printf(fmterr, __func__, cmdack.phase);
-        goto LABEL_12;
-    }
-    if (cmdack.comp_status) {
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
-        goto LABEL_8;
+    if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     if (buflen) {
         memcpy(buf, RBUF, buflen);
     }
-LABEL_12:
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -1002,7 +925,6 @@ LABEL_12:
 int dvrf_df_lseek(iop_file_t *a1, int offset, int mode)
 {
     int dvrp_fd;
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1017,18 +939,11 @@ int dvrf_df_lseek(iop_file_t *a1, int offset, int mode)
     cmdack.input_word[5] = mode;
     cmdack.input_word_count = 6;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "%s : IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s : Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -1036,8 +951,8 @@ LABEL_7:
 s64 dvrf_df_lseek64(iop_file_t *a1, s64 offset, int whence)
 {
     int dvrp_fd;
-    const char *fmterr;
     s64 retval;
+    int rretval;
     drvdrv_exec_cmd_ack cmdack;
 
     WaitSema(sema_id);
@@ -1053,25 +968,19 @@ s64 dvrf_df_lseek64(iop_file_t *a1, s64 offset, int whence)
     cmdack.input_word[7] = whence;
     cmdack.input_word_count = 8;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "%s : IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = ((s64)cmdack.return_result_word[0] << 48) | ((s64)cmdack.return_result_word[1] << 32) | ((s64)cmdack.return_result_word[2] << 16) | (s64)cmdack.return_result_word[3];
-            goto LABEL_7;
-        }
-        fmterr = "%s : Complete parameter error (phase %d)\n";
+    rretval = 0;
+    if (check_cmdack_err(&DvrdrvExecCmdAckComp, &cmdack, &rretval, __func__)) {
+        retval = rretval;
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = ((s64)cmdack.return_result_word[0] << 48) | ((s64)cmdack.return_result_word[1] << 32) | ((s64)cmdack.return_result_word[2] << 16) | (s64)cmdack.return_result_word[3];
+finish:
     SignalSema(sema_id);
     return retval;
 }
 
 int dvrf_df_mkdir(iop_file_t *a1, const char *path, int mode)
 {
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1083,18 +992,11 @@ int dvrf_df_mkdir(iop_file_t *a1, const char *path, int mode)
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = strlen(path) + 5;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -1105,7 +1007,6 @@ int dvrf_df_mount(iop_file_t *a1, const char *fsname, const char *devname, int f
     u32 fsname_len;
     const char *fsname_;
     unsigned int arg_offs;
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1129,18 +1030,11 @@ int dvrf_df_mount(iop_file_t *a1, const char *fsname, const char *devname, int f
     cmdack.input_word_count = 0;
     cmdack.input_buffer_length = arg_offs + arglen;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_10;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_10:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -1149,14 +1043,13 @@ int dvrf_df_open(iop_file_t *a1, const char *name, int flags, int mode)
 {
     u16 mode_;
     int retval;
-    const char *fmterr;
     drvdrv_exec_cmd_ack cmdack;
 
     mode_ = mode;
     WaitSema(sema_id);
     if (dvrp_fd_count >= 32) {
         retval = -24;
-        goto LABEL_11;
+        goto finish;
     }
     SBUF[0] = bswap32(flags);
     mode_ = (mode_ << 8) + (mode_ >> 8);
@@ -1167,16 +1060,8 @@ int dvrf_df_open(iop_file_t *a1, const char *name, int flags, int mode)
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = strlen(name) + 7;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    LABEL_7:
-        retval = -5;
-        printf(fmterr, __func__, cmdack.phase);
-        goto LABEL_11;
-    }
-    if (cmdack.comp_status) {
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
-        goto LABEL_7;
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     if (retval >= 0) {
@@ -1185,7 +1070,7 @@ int dvrf_df_open(iop_file_t *a1, const char *name, int flags, int mode)
     } else {
         printf("%s -> fd error (fd=%d)\n", __func__, retval);
     }
-LABEL_11:
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -1228,15 +1113,8 @@ int dvrf_df_read(iop_file_t *a1, void *ptr, int size)
         cmdack.input_word_count = 4;
         cmdack.output_buffer = out_buf;
         cmdack.timeout = 10000000;
-        if (DvrdrvExecCmdAckDmaRecvComp(&cmdack)) {
-            retval = -5;
-            printf("%s : IO error (phase %d)\n", __func__, cmdack.phase);
-            goto LABEL_19;
-        }
-        if (cmdack.comp_status) {
-            retval = -5;
-            printf("%s : Complete parameter error (phase %d), %04X\n", __func__, cmdack.phase, cmdack.comp_status);
-            goto LABEL_19;
+        if (check_cmdack_err(&DvrdrvExecCmdAckDmaRecvComp, &cmdack, &retval, __func__)) {
+            goto finish;
         }
         read_size = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
         remain_size -= read_size;
@@ -1250,14 +1128,13 @@ int dvrf_df_read(iop_file_t *a1, void *ptr, int size)
     if (unalign_size)
         memcpy(ptr, RBUF, total_read);
     retval = total_read;
-LABEL_19:
+finish:
     SignalSema(sema_id);
     return retval;
 }
 
 int dvrf_df_readlink(iop_file_t *a1, const char *path, char *buf, unsigned int buflen)
 {
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1270,27 +1147,18 @@ int dvrf_df_readlink(iop_file_t *a1, const char *path, char *buf, unsigned int b
     cmdack.input_buffer = SBUF;
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    LABEL_5:
-        retval = -5;
-        printf(fmterr, __func__, cmdack.phase);
-        goto LABEL_9;
-    }
-    if (cmdack.comp_status) {
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
-        goto LABEL_5;
+    if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     memcpy(buf, RBUF, buflen);
-LABEL_9:
+finish:
     SignalSema(sema_id);
     return retval;
 }
 
 int dvrf_df_remove(iop_file_t *a1, const char *name)
 {
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1301,18 +1169,11 @@ int dvrf_df_remove(iop_file_t *a1, const char *name)
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = strlen(name) + 1;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -1322,7 +1183,6 @@ int dvrf_df_rename(iop_file_t *a1, const char *old, const char *new_1)
     size_t old_strlen;
     const char *old_;
     size_t new_offs;
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1338,25 +1198,17 @@ int dvrf_df_rename(iop_file_t *a1, const char *old, const char *new_1)
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = new_offs + strlen(new_1) + 1;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
 
 int dvrf_df_rmdir(iop_file_t *a1, const char *path)
 {
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1367,18 +1219,11 @@ int dvrf_df_rmdir(iop_file_t *a1, const char *path)
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = strlen(path) + 1;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -1388,7 +1233,6 @@ int dvrf_df_symlink(iop_file_t *a1, const char *old, const char *new_1)
     size_t old_len;
     const char *old_;
     size_t new_offs;
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1404,25 +1248,17 @@ int dvrf_df_symlink(iop_file_t *a1, const char *old, const char *new_1)
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = new_offs + strlen(new_1) + 1;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
 
 int dvrf_df_sync(iop_file_t *a1, const char *dev, int flag)
 {
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1434,25 +1270,17 @@ int dvrf_df_sync(iop_file_t *a1, const char *dev, int flag)
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = strlen(dev) + 5;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
 
 int dvrf_df_umount(iop_file_t *a1, const char *fsname)
 {
-    const char *fmterr;
     int retval;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1463,18 +1291,11 @@ int dvrf_df_umount(iop_file_t *a1, const char *fsname)
     cmdack.input_buffer = SBUF;
     cmdack.input_buffer_length = strlen(fsname) + 1;
     cmdack.timeout = 10000000;
-    if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "%s -> IO error (phase %d)\n";
-    } else {
-        if (!cmdack.comp_status) {
-            retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            goto LABEL_7;
-        }
-        fmterr = "%s -> Complete parameter error (phase %d)\n";
+    if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
+        goto finish;
     }
-    retval = -5;
-    printf(fmterr, __func__, cmdack.phase);
-LABEL_7:
+    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
+finish:
     SignalSema(sema_id);
     return retval;
 }
@@ -1484,7 +1305,6 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
     int total_write;
     char *in_buffer;
     int retval;
-    const char *fmterr;
     int write_ret;
     int dvrp_fd;
     int remain_size;
@@ -1515,29 +1335,21 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
             cmdack.input_buffer = in_buffer;
             cmdack.input_buffer_length = chunk_size;
             cmdack.timeout = 10000000;
-            if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-                fmterr = "%s : IO error (phase %d)\n";
-            LABEL_5:
-                write_ret = -5;
-                printf(fmterr, __func__, cmdack.phase);
-                goto LABEL_16;
-            }
-            if (cmdack.comp_status) {
-                fmterr = "%s : Complete parameter error (phase %d)\n";
-                goto LABEL_5;
+            if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &write_ret, __func__)) {
+                goto finish;
             }
             write_size_hi = cmdack.return_result_word[0] << 16;
             write_size = write_size_hi + cmdack.return_result_word[1];
             remain_size -= write_size;
             if (write_size <= 0) {
                 write_ret = write_size_hi + cmdack.return_result_word[1];
-                goto LABEL_16;
+                goto finish;
             }
             in_buffer += write_size;
             total_write += write_size;
         }
         write_ret = total_write;
-    LABEL_16:
+    finish:
         SignalSema(sema_id);
         retval = write_ret;
     }
