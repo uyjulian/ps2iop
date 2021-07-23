@@ -1095,16 +1095,16 @@ int dvrf_df_chdir(iop_file_t *a1, const char *name)
     cmdack.input_buffer_length = strlen(name) + 1;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_chdir -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_chdir -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1126,17 +1126,17 @@ int dvrf_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned 
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "dvrf_df_chstat -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             CopySceStat(stat, (u8 *)RBUF);
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_chstat -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1158,17 +1158,17 @@ int dvrf_df_close(iop_file_t *a1)
     cmdack.input_word_count = 2;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "dvrf_df_close -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             UnregisterFd(a1);
             --dvrp_fd_count;
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_close -> Complete parameter (phase %d)\n";
+        fmterr = "%s -> Complete parameter (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1190,17 +1190,17 @@ int dvrf_df_dclose(iop_file_t *a1)
     cmdack.input_word_count = 2;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "dvrf_df_dclose -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             UnregisterFd(a1);
             --dvrp_fd_count;
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_dclose -> Complete parameter (phase %d)\n";
+        fmterr = "%s -> Complete parameter (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1240,14 +1240,14 @@ int dvrf_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigne
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 30000000;
     if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "dvrf_df_devctl -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     LABEL_13:
         retval = -5;
-        printf(fmterr, cmdack.phase);
+        printf(fmterr, __func__, cmdack.phase);
         goto LABEL_18;
     }
     if (cmdack.comp_status) {
-        fmterr = "dvrf_df_devctl -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
         goto LABEL_13;
     }
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
@@ -1274,14 +1274,14 @@ int dvrf_df_dopen(iop_file_t *a1, const char *path)
         cmdack.input_buffer_length = strlen(path) + 1;
         cmdack.timeout = 10000000;
         if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-            fmterr = "dvrf_df_dopen -> IO error (phase %d)\n";
+            fmterr = "%s -> IO error (phase %d)\n";
         LABEL_6:
             retval = -5;
-            printf(fmterr, cmdack.phase);
+            printf(fmterr, __func__, cmdack.phase);
             goto LABEL_10;
         }
         if (cmdack.comp_status) {
-            fmterr = "dvrf_df_dopen -> Complete parameter error (phase %d)\n";
+            fmterr = "%s -> Complete parameter error (phase %d)\n";
             goto LABEL_6;
         }
         retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
@@ -1289,7 +1289,7 @@ int dvrf_df_dopen(iop_file_t *a1, const char *path)
             RegisterFd(a1, retval);
             ++dvrp_fd_count;
         } else {
-            printf("dvrf_df_dopen -> fd error (fd=%d)\n", retval);
+            printf("%s -> fd error (fd=%d)\n", __func__, retval);
         }
     }
 LABEL_10:
@@ -1320,15 +1320,15 @@ int dvrf_df_dread(iop_file_t *a1, iox_dirent_t *buf)
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaRecvComp(&cmdack)) {
-        fmterr = "dvrf_df_dread : IO error (phase %d)\n";
+        fmterr = "%s : IO error (phase %d)\n";
     LABEL_5:
         retval = -5;
-        printf(fmterr, cmdack.phase);
+        printf(fmterr, __func__, cmdack.phase);
         goto LABEL_14;
     }
     statbuf = (int *)RBUF;
     if (cmdack.comp_status) {
-        fmterr = "dvrf_df_dread : Complete parameter error (phase %d)\n";
+        fmterr = "%s : Complete parameter error (phase %d)\n";
         goto LABEL_5;
     }
     v8 = buf;
@@ -1388,16 +1388,16 @@ int dvrf_df_format(iop_file_t *a1, const char *dev, const char *blockdev, void *
     cmdack.input_buffer_length = arg_offset + arglen;
     cmdack.timeout = 3600000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_format -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_format -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1418,17 +1418,17 @@ int dvrf_df_getstat(iop_file_t *a1, const char *name, iox_stat_t *stat)
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "dvrf_df_getstat -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             CopySceStat(stat, (u8 *)RBUF);
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_getstat -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1453,16 +1453,16 @@ int dvrf_df_ioctl(iop_file_t *a1, int cmd, void *param)
     cmdack.input_word_count = 6;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "dvrf_df_ioctl : IO error (phase %d)\n";
+        fmterr = "%s : IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_ioctl : Complete parameter error (phase %d)\n";
+        fmterr = "%s : Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1491,14 +1491,14 @@ int dvrf_df_ioctl2(iop_file_t *a1, int cmd, void *arg, unsigned int arglen, void
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "dvrf_df_ioctl2 -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     LABEL_8:
         retval = -5;
-        printf(fmterr, cmdack.phase);
+        printf(fmterr, __func__, cmdack.phase);
         goto LABEL_12;
     }
     if (cmdack.comp_status) {
-        fmterr = "dvrf_df_ioctl2 -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
         goto LABEL_8;
     }
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
@@ -1529,16 +1529,16 @@ int dvrf_df_lseek(iop_file_t *a1, int offset, int mode)
     cmdack.input_word_count = 6;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "dvrf_df_lseek : IO error (phase %d)\n";
+        fmterr = "%s : IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_lseek : Complete parameter error (phase %d)\n";
+        fmterr = "%s : Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1565,16 +1565,16 @@ s64 dvrf_df_lseek64(iop_file_t *a1, s64 offset, int whence)
     cmdack.input_word_count = 8;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckComp(&cmdack)) {
-        fmterr = "dvrf_df_lseek64 : IO error (phase %d)\n";
+        fmterr = "%s : IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = ((s64)cmdack.return_result_word[0] << 48) | ((s64)cmdack.return_result_word[1] << 32) | ((s64)cmdack.return_result_word[2] << 16) | (s64)cmdack.return_result_word[3];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_lseek64 : Complete parameter error (phase %d)\n";
+        fmterr = "%s : Complete parameter error (phase %d)\n";
     }
-    retval = -5LL;
-    printf(fmterr, cmdack.phase);
+    retval = -5;
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1595,16 +1595,16 @@ int dvrf_df_mkdir(iop_file_t *a1, const char *path, int mode)
     cmdack.input_buffer_length = strlen(path) + 5;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_mkdir -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_mkdir -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1641,16 +1641,16 @@ int dvrf_df_mount(iop_file_t *a1, const char *fsname, const char *devname, int f
     cmdack.input_buffer_length = arg_offs + arglen;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_mount -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_10;
         }
-        fmterr = "dvrf_df_mount -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_10:
     SignalSema(sema_id);
     return retval;
@@ -1679,14 +1679,14 @@ int dvrf_df_open(iop_file_t *a1, const char *name, int flags, int mode)
     cmdack.input_buffer_length = strlen(name) + 7;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_open -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     LABEL_7:
         retval = -5;
-        printf(fmterr, cmdack.phase);
+        printf(fmterr, __func__, cmdack.phase);
         goto LABEL_11;
     }
     if (cmdack.comp_status) {
-        fmterr = "dvrf_df_open -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
         goto LABEL_7;
     }
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
@@ -1694,7 +1694,7 @@ int dvrf_df_open(iop_file_t *a1, const char *name, int flags, int mode)
         RegisterFd(a1, retval);
         ++dvrp_fd_count;
     } else {
-        printf("dvrf_df_open -> fd error (fd=%d)\n", retval);
+        printf("%s -> fd error (fd=%d)\n", __func__, retval);
     }
 LABEL_11:
     SignalSema(sema_id);
@@ -1782,14 +1782,14 @@ int dvrf_df_readlink(iop_file_t *a1, const char *path, char *buf, unsigned int b
     cmdack.output_buffer = RBUF;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDma2Comp(&cmdack)) {
-        fmterr = "dvrf_df_readlink -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     LABEL_5:
         retval = -5;
-        printf(fmterr, cmdack.phase);
+        printf(fmterr, __func__, cmdack.phase);
         goto LABEL_9;
     }
     if (cmdack.comp_status) {
-        fmterr = "dvrf_df_readlink -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
         goto LABEL_5;
     }
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
@@ -1813,16 +1813,16 @@ int dvrf_df_remove(iop_file_t *a1, const char *name)
     cmdack.input_buffer_length = strlen(name) + 1;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_remove -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_remove -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1850,16 +1850,16 @@ int dvrf_df_rename(iop_file_t *a1, const char *old, const char *new_1)
     cmdack.input_buffer_length = new_offs + strlen(new_1) + 1;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_rename -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_rename -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1879,16 +1879,16 @@ int dvrf_df_rmdir(iop_file_t *a1, const char *path)
     cmdack.input_buffer_length = strlen(path) + 1;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_rmdir -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_rmdir -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1916,16 +1916,16 @@ int dvrf_df_symlink(iop_file_t *a1, const char *old, const char *new_1)
     cmdack.input_buffer_length = new_offs + strlen(new_1) + 1;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_symlink -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_symlink -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1946,16 +1946,16 @@ int dvrf_df_sync(iop_file_t *a1, const char *dev, int flag)
     cmdack.input_buffer_length = strlen(dev) + 5;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_sync -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_sync -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1975,16 +1975,16 @@ int dvrf_df_umount(iop_file_t *a1, const char *fsname)
     cmdack.input_buffer_length = strlen(fsname) + 1;
     cmdack.timeout = 10000000;
     if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-        fmterr = "dvrf_df_umount -> IO error (phase %d)\n";
+        fmterr = "%s -> IO error (phase %d)\n";
     } else {
         if (!cmdack.comp_status) {
             retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             goto LABEL_7;
         }
-        fmterr = "dvrf_df_umount -> Complete parameter error (phase %d)\n";
+        fmterr = "%s -> Complete parameter error (phase %d)\n";
     }
     retval = -5;
-    printf(fmterr, cmdack.phase);
+    printf(fmterr, __func__, cmdack.phase);
 LABEL_7:
     SignalSema(sema_id);
     return retval;
@@ -1995,7 +1995,7 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
     int total_write;
     char *in_buffer;
     int retval;
-    const char *errfmt;
+    const char *fmterr;
     int write_ret;
     int dvrp_fd;
     int remain_size;
@@ -2007,7 +2007,7 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
     total_write = 0;
     in_buffer = (char *)ptr;
     if (((u32)ptr & 3) != 0) {
-        printf("dvrf_df_write : Address is not a multiple of 4.\n");
+        printf("%s : Address is not a multiple of 4.\n", __func__);
         retval = -14;
     } else {
         WaitSema(sema_id);
@@ -2027,14 +2027,14 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
             cmdack.input_buffer_length = chunk_size;
             cmdack.timeout = 10000000;
             if (DvrdrvExecCmdAckDmaSendComp(&cmdack)) {
-                errfmt = "dvrf_df_write : IO error (phase %d)\n";
+                fmterr = "%s : IO error (phase %d)\n";
             LABEL_5:
                 write_ret = -5;
-                printf(errfmt, cmdack.phase);
+                printf(fmterr, __func__, cmdack.phase);
                 goto LABEL_16;
             }
             if (cmdack.comp_status) {
-                errfmt = "dvrf_df_write : Complete parameter error (phase %d)\n";
+                fmterr = "%s : Complete parameter error (phase %d)\n";
                 goto LABEL_5;
             }
             write_size_hi = cmdack.return_result_word[0] << 16;
