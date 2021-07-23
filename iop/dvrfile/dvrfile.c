@@ -260,9 +260,6 @@ int _start(int a1, const char **a2)
 int module_start(int a1, const char **a2)
 {
     int i;
-
-    int v9;
-    const char **v10;
     USE_SPD_REGS;
 
     for (i = 0; i < 30000; i += 1) {
@@ -285,18 +282,13 @@ int module_start(int a1, const char **a2)
     if (AddDrv(&dvrpfs_drv) || AddDrv(&dvrhdd_drv)) {
         goto fail;
     }
-    v9 = 0;
-    if (a1 > 0) {
-        v10 = a2;
-        do {
-            if (!strcmp(*v10, "fschk"))
-                break;
-            v9 += 1;
-            v10 += 1;
-        } while (v9 < a1);
+    for (i = 0; i < a1; i += 1)
+    {
+        if (!strcmp(a2[i], "fschk"))
+            goto setup_fschk;
     }
-    if (v9 == a1)
-        return 2;
+    return 2;
+setup_fschk:
     printf("dvrfile.irx : FILE SYSTEM CHECK MODE\n");
     
     if (AddDrv(&dvrhdck_drv)) {
