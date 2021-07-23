@@ -263,10 +263,9 @@ int module_start(int a1, const char **a2)
 
     int v9;
     const char **v10;
-    const char *v12;
     USE_SPD_REGS;
 
-    for (i = 0; i < 30000; ++i) {
+    for (i = 0; i < 30000; i += 1) {
         if ((SPD_REG16(0x4230) & 0x20) != 0)
             break;
         DelayThread(1000);
@@ -292,23 +291,27 @@ int module_start(int a1, const char **a2)
         do {
             if (!strcmp(*v10, "fschk"))
                 break;
-            ++v9;
-            ++v10;
+            v9 += 1;
+            v10 += 1;
         } while (v9 < a1);
     }
     if (v9 == a1)
         return 2;
     printf("dvrfile.irx : FILE SYSTEM CHECK MODE\n");
-    v12 = "hdck\n";
-    if (AddDrv(&dvrhdck_drv) == 0) {
-        v12 = "fssk\n";
-        if (AddDrv(&dvrfssk_drv) == 0) {
-            v12 = "fsck\n";
-            if (AddDrv(&dvrfsck_drv) == 0)
-                return 2;
-        }
+    
+    if (AddDrv(&dvrhdck_drv)) {
+        printf("hdck\n");
+        goto fail;
     }
-    printf(v12);
+    if (AddDrv(&dvrfssk_drv)) {
+        printf("fssk\n");
+        goto fail;
+    }
+    if (AddDrv(&dvrfsck_drv)) {
+        printf("fsck\n");
+        goto fail;
+    }
+    return 2;
 fail:
     DelDrv("dvr_pfs");
     DelDrv("dvr_hdd");
@@ -431,7 +434,7 @@ int dvrf_df_close(iop_file_t *a1)
         goto finish;
     }
     UnregisterFd(a1);
-    --dvrp_fd_count;
+    dvrp_fd_count -= 1;
 finish:
     SignalSema(sema_id);
     return retval;
@@ -455,7 +458,7 @@ int dvrf_df_dclose(iop_file_t *a1)
         goto finish;
     }
     UnregisterFd(a1);
-    --dvrp_fd_count;
+    dvrp_fd_count -= 1;
 finish:
     SignalSema(sema_id);
     return retval;
@@ -524,7 +527,7 @@ int dvrf_df_dopen(iop_file_t *a1, const char *path)
         retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
         if (retval >= 0) {
             RegisterFd(a1, retval);
-            ++dvrp_fd_count;
+            dvrp_fd_count += 1;
         } else {
             printf("%s -> fd error (fd=%d)\n", __func__, retval);
         }
@@ -537,14 +540,7 @@ finish:
 int dvrf_df_dread(iop_file_t *a1, iox_dirent_t *buf)
 {
     int dvrp_fd;
-    int *statbuf;
     int retval;
-    iox_dirent_t *v8;
-    int v12;
-    iox_dirent_t *v16;
-    u32 v17;
-    u32 v18;
-    u32 v19;
     drvdrv_exec_cmd_ack cmdack;
 
     WaitSema(sema_id);
@@ -558,31 +554,17 @@ int dvrf_df_dread(iop_file_t *a1, iox_dirent_t *buf)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaRecvComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    statbuf = (int *)RBUF;
-    v8 = buf;
-    do {
-        v8->stat.mode = statbuf[0];
-        v8->stat.attr = statbuf[1];
-        v8->stat.size = statbuf[2];
-        *(u32 *)v8->stat.ctime = statbuf[3];
-        statbuf += 4;
-        v8 = (iox_dirent_t *)((char *)v8 + 16);
-    } while (statbuf != (int *)&RBUF[320]);
-    v12 = 0;
-    v16 = buf;
-    v8->stat.mode = *statbuf;
-    v17 = buf->stat.attr;
-    v18 = buf->stat.size;
+    memcpy(buf, RBUF, sizeof(*buf));
     buf->stat.mode = bswap32(buf->stat.mode);
-    buf->stat.attr = bswap32(v17);
-    v19 = buf->stat.hisize;
-    buf->stat.size = bswap32(v18);
-    buf->stat.hisize = bswap32(v19);
-    do {
-        ++v12;
-        v16->stat.private_0 = bswap32(v16->stat.private_0);
-        v16 = (iox_dirent_t *)((char *)v16 + 4);
-    } while (v12 < 6);
+    buf->stat.attr = bswap32(buf->stat.attr);
+    buf->stat.size = bswap32(buf->stat.size);
+    buf->stat.hisize = bswap32(buf->stat.hisize);
+    buf->stat.private_0 = bswap32(buf->stat.private_0);
+    buf->stat.private_1 = bswap32(buf->stat.private_1);
+    buf->stat.private_2 = bswap32(buf->stat.private_2);
+    buf->stat.private_3 = bswap32(buf->stat.private_3);
+    buf->stat.private_4 = bswap32(buf->stat.private_4);
+    buf->stat.private_5 = bswap32(buf->stat.private_5);
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
@@ -849,7 +831,7 @@ int dvrf_df_open(iop_file_t *a1, const char *name, int flags, int mode)
     retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     if (retval >= 0) {
         RegisterFd(a1, retval);
-        ++dvrp_fd_count;
+        dvrp_fd_count += 1;
     } else {
         printf("%s -> fd error (fd=%d)\n", __func__, retval);
     }
