@@ -340,6 +340,7 @@ static int check_cmdack_err(int (*func)(drvdrv_exec_cmd_ack *a1), drvdrv_exec_cm
         printf("%s -> Complete parameter error (phase %d), %04X\n", funcname, cmdack->phase, cmdack->comp_status);
         return 1;
     }
+    *retval = (cmdack->return_result_word[0] << 16) + cmdack->return_result_word[1];
     return 0;
 }
 
@@ -386,7 +387,6 @@ int dvrf_df_chdir(iop_file_t *a1, const char *name)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -409,7 +409,6 @@ int dvrf_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned 
     if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     CopySceStat(stat, (u8 *)RBUF);
 finish:
     SignalSema(sema_id);
@@ -433,6 +432,7 @@ int dvrf_df_close(iop_file_t *a1)
     if (check_cmdack_err(&DvrdrvExecCmdAckComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
+    retval = 0;
     UnregisterFd(a1);
     dvrp_fd_count -= 1;
 finish:
@@ -457,6 +457,7 @@ int dvrf_df_dclose(iop_file_t *a1)
     if (check_cmdack_err(&DvrdrvExecCmdAckComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
+    retval = 0;
     UnregisterFd(a1);
     dvrp_fd_count -= 1;
 finish:
@@ -499,7 +500,6 @@ int dvrf_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigne
     if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     if (!retval && buf && buflen)
         memcpy(buf, cmdack.output_buffer, buflen);
 finish:
@@ -515,16 +515,15 @@ int dvrf_df_dopen(iop_file_t *a1, const char *path)
     WaitSema(sema_id);
     retval = -EMFILE;
     if (dvrp_fd_count < 32) {
-        strcpy((char *)&SBUF, path);
+        strcpy((char *)SBUF, path);
         cmdack.command = 0x1106;
         cmdack.input_word_count = 0;
-        cmdack.input_buffer = &SBUF;
+        cmdack.input_buffer = SBUF;
         cmdack.input_buffer_length = strlen(path) + 1;
         cmdack.timeout = 10000000;
         if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
             goto finish;
         }
-        retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
         if (retval >= 0) {
             RegisterFd(a1, retval);
             dvrp_fd_count += 1;
@@ -565,7 +564,6 @@ int dvrf_df_dread(iop_file_t *a1, iox_dirent_t *buf)
     buf->stat.private_3 = bswap32(buf->stat.private_3);
     buf->stat.private_4 = bswap32(buf->stat.private_4);
     buf->stat.private_5 = bswap32(buf->stat.private_5);
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -599,7 +597,6 @@ int dvrf_df_format(iop_file_t *a1, const char *dev, const char *blockdev, void *
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -621,7 +618,6 @@ int dvrf_df_getstat(iop_file_t *a1, const char *name, iox_stat_t *stat)
     if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     CopySceStat(stat, (u8 *)RBUF);
 finish:
     SignalSema(sema_id);
@@ -648,7 +644,6 @@ int dvrf_df_ioctl(iop_file_t *a1, int cmd, void *param)
     if (check_cmdack_err(&DvrdrvExecCmdAckComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -678,7 +673,6 @@ int dvrf_df_ioctl2(iop_file_t *a1, int cmd, void *arg, unsigned int arglen, void
     if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     if (buflen) {
         memcpy(buf, RBUF, buflen);
     }
@@ -707,7 +701,6 @@ int dvrf_df_lseek(iop_file_t *a1, int offset, int mode)
     if (check_cmdack_err(&DvrdrvExecCmdAckComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -760,7 +753,6 @@ int dvrf_df_mkdir(iop_file_t *a1, const char *path, int mode)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -798,7 +790,6 @@ int dvrf_df_mount(iop_file_t *a1, const char *fsname, const char *devname, int f
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -828,7 +819,6 @@ int dvrf_df_open(iop_file_t *a1, const char *name, int flags, int mode)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     if (retval >= 0) {
         RegisterFd(a1, retval);
         dvrp_fd_count += 1;
@@ -878,15 +868,15 @@ int dvrf_df_read(iop_file_t *a1, void *ptr, int size)
         cmdack.input_word_count = 4;
         cmdack.output_buffer = out_buf;
         cmdack.timeout = 10000000;
-        if (check_cmdack_err(&DvrdrvExecCmdAckDmaRecvComp, &cmdack, &retval, __func__)) {
+        if (check_cmdack_err(&DvrdrvExecCmdAckDmaRecvComp, &cmdack, &read_size, __func__)) {
+            retval = read_size;
             goto finish;
         }
-        read_size = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-        remain_size -= read_size;
         if (read_size <= 0) {
             unalign_size = size & 0x7F;
             break;
         }
+        remain_size -= read_size;
         out_buf += read_size;
         total_read += read_size;
     }
@@ -915,7 +905,6 @@ int dvrf_df_readlink(iop_file_t *a1, const char *path, char *buf, unsigned int b
     if (check_cmdack_err(&DvrdrvExecCmdAckDma2Comp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
     memcpy(buf, RBUF, buflen);
 finish:
     SignalSema(sema_id);
@@ -937,7 +926,6 @@ int dvrf_df_remove(iop_file_t *a1, const char *name)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -966,7 +954,6 @@ int dvrf_df_rename(iop_file_t *a1, const char *old, const char *new_1)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -987,7 +974,6 @@ int dvrf_df_rmdir(iop_file_t *a1, const char *path)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -1016,7 +1002,6 @@ int dvrf_df_symlink(iop_file_t *a1, const char *old, const char *new_1)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -1038,7 +1023,6 @@ int dvrf_df_sync(iop_file_t *a1, const char *dev, int flag)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -1059,7 +1043,6 @@ int dvrf_df_umount(iop_file_t *a1, const char *fsname)
     if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
         goto finish;
     }
-    retval = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
 finish:
     SignalSema(sema_id);
     return retval;
@@ -1073,7 +1056,6 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
     int dvrp_fd;
     int remain_size;
     u32 chunk_size;
-    int write_size;
     drvdrv_exec_cmd_ack cmdack;
 
     total_write = 0;
@@ -1101,14 +1083,12 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
             if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
                 goto finish;
             }
-            write_size = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
-            if (write_size <= 0) {
-                retval = write_size;
+            if (retval <= 0) {
                 goto finish;
             }
-            remain_size -= write_size;
-            in_buffer += write_size;
-            total_write += write_size;
+            remain_size -= retval;
+            in_buffer += retval;
+            total_write += retval;
         }
         retval = total_write;
     }
