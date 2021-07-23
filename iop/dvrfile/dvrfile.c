@@ -1230,12 +1230,12 @@ int dvrf_df_read(iop_file_t *a1, void *ptr, int size)
         cmdack.timeout = 10000000;
         if (DvrdrvExecCmdAckDmaRecvComp(&cmdack)) {
             retval = -5;
-            printf("dvrf_df_read : IO error (phase %d)\n", cmdack.phase);
+            printf("%s : IO error (phase %d)\n", __func__, cmdack.phase);
             goto LABEL_19;
         }
         if (cmdack.comp_status) {
             retval = -5;
-            printf("dvrf_df_read : Complete parameter error (phase %d), %04X\n", cmdack.phase, cmdack.comp_status);
+            printf("%s : Complete parameter error (phase %d), %04X\n", __func__, cmdack.phase, cmdack.comp_status);
             goto LABEL_19;
         }
         read_size = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
