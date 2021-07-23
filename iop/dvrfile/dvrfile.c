@@ -12,86 +12,6 @@ extern int module_start(int a1, const char **a2);
 extern int module_stop();
 extern int dvrf_df_init(iop_device_t *a1);
 extern int dvrf_df_exit(iop_device_t *a1);
-extern int dvrpfs_df_chdir(iop_file_t *a1, const char *name);
-extern int dvrpfs_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned int statmask);
-extern int dvrpfs_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen);
-extern int dvrpfs_df_dopen(iop_file_t *a1, const char *name);
-extern int dvrpfs_df_format(iop_file_t *a1, const char *dev, const char *blockdev, void *arg, int arglen);
-extern int dvrpfs_df_getstat(iop_file_t *a1, const char *name, iox_stat_t *stat);
-extern int dvrpfs_df_mkdir(iop_file_t *a1, const char *path, int mode);
-extern int dvrpfs_df_mount(iop_file_t *a1, const char *fsname, const char *devname, int flag, void *arg, int arglen);
-extern int dvrpfs_df_open(iop_file_t *a1, const char *name, int flags, int mode);
-extern int dvrpfs_df_readlink(iop_file_t *a1, const char *path, char *buf, unsigned int buflen);
-extern int dvrpfs_df_remove(iop_file_t *a1, const char *name);
-extern int dvrpfs_df_rename(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrpfs_df_rmdir(iop_file_t *a1, const char *path);
-extern int dvrpfs_df_symlink(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrpfs_df_sync(iop_file_t *a1, const char *dev, int flag);
-extern int dvrpfs_df_umount(iop_file_t *a1, const char *fsname);
-extern int dvrhdd_df_chdir(iop_file_t *a1, const char *name);
-extern int dvrhdd_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned int statmask);
-extern int dvrhdd_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen);
-extern int dvrhdd_df_dopen(iop_file_t *a1, const char *path);
-extern int dvrhdd_df_format(iop_file_t *a1, const char *dev, const char *blockdev, void *arg, int arglen);
-extern int dvrhdd_df_getstat(iop_file_t *a1, const char *name, iox_stat_t *stat);
-extern int dvrhdd_df_mkdir(iop_file_t *a1, const char *path, int mode);
-extern int dvrhdd_df_mount(iop_file_t *a1, const char *fsname, const char *devname, int flag, void *arg, int arglen);
-extern int dvrhdd_df_open(iop_file_t *a1, const char *name, int flags, int mode);
-extern int dvrhdd_df_readlink(iop_file_t *a1, const char *path, char *buf, unsigned int buflen);
-extern int dvrhdd_df_remove(iop_file_t *a1, const char *name);
-extern int dvrhdd_df_rename(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrhdd_df_rmdir(iop_file_t *a1, const char *path);
-extern int dvrhdd_df_symlink(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrhdd_df_sync(iop_file_t *a1, const char *dev, int flag);
-extern int dvrhdd_df_umount(iop_file_t *a1, const char *fsname);
-extern int dvrhdck_df_chdir(iop_file_t *a1, const char *name);
-extern int dvrhdck_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned int statmask);
-extern int dvrhdck_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen);
-extern int dvrhdck_df_dopen(iop_file_t *a1, const char *path);
-extern int dvrhdck_df_format(iop_file_t *a1, const char *dev, const char *blockdev, void *arg, int arglen);
-extern int dvrhdck_df_getstat(iop_file_t *a1, const char *name, iox_stat_t *stat);
-extern int dvrhdck_df_mkdir(iop_file_t *a1, const char *path, int mode);
-extern int dvrhdck_df_mount(iop_file_t *a1, const char *fsname, const char *devname, int flag, void *arg, int arglen);
-extern int dvrhdck_df_open(iop_file_t *a1, const char *name, int flags, int mode);
-extern int dvrhdck_df_readlink(iop_file_t *a1, const char *path, char *buf, unsigned int buflen);
-extern int dvrhdck_df_remove(iop_file_t *a1, const char *name);
-extern int dvrhdck_df_rename(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrhdck_df_rmdir(iop_file_t *a1, const char *path);
-extern int dvrhdck_df_symlink(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrhdck_df_sync(iop_file_t *a1, const char *dev, int flag);
-extern int dvrhdck_df_umount(iop_file_t *a1, const char *fsname);
-extern int dvrfssk_df_chdir(iop_file_t *a1, const char *name);
-extern int dvrfssk_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned int statmask);
-extern int dvrfssk_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen);
-extern int dvrfssk_df_dopen(iop_file_t *a1, const char *path);
-extern int dvrfssk_df_format(iop_file_t *a1, const char *dev, const char *blockdev, void *arg, int arglen);
-extern int dvrfssk_df_getstat(iop_file_t *a1, const char *name, iox_stat_t *stat);
-extern int dvrfssk_df_mkdir(iop_file_t *a1, const char *path, int mode);
-extern int dvrfssk_df_mount(iop_file_t *a1, const char *fsname, const char *devname, int flag, void *arg, int arglen);
-extern int dvrfssk_df_open(iop_file_t *a1, const char *name, int flags, int mode);
-extern int dvrfssk_df_readlink(iop_file_t *a1, const char *path, char *buf, unsigned int buflen);
-extern int dvrfssk_df_remove(iop_file_t *a1, const char *name);
-extern int dvrfssk_df_rename(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrfssk_df_rmdir(iop_file_t *a1, const char *path);
-extern int dvrfssk_df_symlink(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrfssk_df_sync(iop_file_t *a1, const char *dev, int flag);
-extern int dvrfssk_df_umount(iop_file_t *a1, const char *fsname);
-extern int dvrfsck_df_chdir(iop_file_t *a1, const char *name);
-extern int dvrfsck_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned int statmask);
-extern int dvrfsck_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen);
-extern int dvrfsck_df_dopen(iop_file_t *a1, const char *path);
-extern int dvrfsck_df_format(iop_file_t *a1, const char *dev, const char *blockdev, void *arg, int arglen);
-extern int dvrfsck_df_getstat(iop_file_t *a1, const char *name, iox_stat_t *stat);
-extern int dvrfsck_df_mkdir(iop_file_t *a1, const char *path, int mode);
-extern int dvrfsck_df_mount(iop_file_t *a1, const char *fsname, const char *devname, int flag, void *arg, int arglen);
-extern int dvrfsck_df_open(iop_file_t *a1, const char *name, int flags, int mode);
-extern int dvrfsck_df_readlink(iop_file_t *a1, const char *path, char *buf, unsigned int buflen);
-extern int dvrfsck_df_remove(iop_file_t *a1, const char *name);
-extern int dvrfsck_df_rename(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrfsck_df_rmdir(iop_file_t *a1, const char *path);
-extern int dvrfsck_df_symlink(iop_file_t *a1, const char *old, const char *new_1);
-extern int dvrfsck_df_sync(iop_file_t *a1, const char *dev, int flag);
-extern int dvrfsck_df_umount(iop_file_t *a1, const char *fsname);
 extern int dvrf_df_chdir(iop_file_t *a1, const char *name);
 extern int dvrf_df_chstat(iop_file_t *a1, const char *name, iox_stat_t *stat, unsigned int statmask);
 extern int dvrf_df_close(iop_file_t *a1);
@@ -122,7 +42,7 @@ extern int UnregisterFd(iop_file_t *a1);
 extern int GetFd(iop_file_t *a1);
 extern void CopySceStat(iox_stat_t *stat, u8 *a2);
 
-#define GEN_TRANSLATION_FUNCS(basefuncname, basedevname, shouldbswapformatarg)                                                              \
+#define GEN_TRANSLATION_FUNCS(basefuncname, basedevname, shouldbswapformatarg, drvname)                                                     \
     int basefuncname##_df_chdir(iop_file_t *a1, const char *name)                                                                           \
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
@@ -258,7 +178,44 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
                                                                                                                                             \
         sprintf(translated_fsname, basedevname "%d:%s", a1->unit, fsname);                                                                  \
         return dvrf_df_umount(a1, translated_fsname);                                                                                       \
-    }
+    }                                                                                                                                       \
+                                                                                                                                            \
+    iop_device_ops_t basefuncname##_functbl = {                                                                                             \
+        dvrf_df_init,                                                                                                                       \
+        dvrf_df_exit,                                                                                                                       \
+        basefuncname##_df_format,                                                                                                           \
+        basefuncname##_df_open,                                                                                                             \
+        dvrf_df_close,                                                                                                                      \
+        dvrf_df_read,                                                                                                                       \
+        dvrf_df_write,                                                                                                                      \
+        dvrf_df_lseek,                                                                                                                      \
+        dvrf_df_ioctl,                                                                                                                      \
+        basefuncname##_df_remove,                                                                                                           \
+        basefuncname##_df_mkdir,                                                                                                            \
+        basefuncname##_df_rmdir,                                                                                                            \
+        basefuncname##_df_dopen,                                                                                                            \
+        dvrf_df_dclose,                                                                                                                     \
+        dvrf_df_dread,                                                                                                                      \
+        basefuncname##_df_getstat,                                                                                                          \
+        basefuncname##_df_chstat,                                                                                                           \
+        basefuncname##_df_rename,                                                                                                           \
+        basefuncname##_df_chdir,                                                                                                            \
+        basefuncname##_df_sync,                                                                                                             \
+        basefuncname##_df_mount,                                                                                                            \
+        basefuncname##_df_umount,                                                                                                           \
+        dvrf_df_lseek64,                                                                                                                    \
+        basefuncname##_df_devctl,                                                                                                           \
+        basefuncname##_df_symlink,                                                                                                          \
+        basefuncname##_df_readlink,                                                                                                         \
+        dvrf_df_ioctl2,                                                                                                                     \
+    };                                                                                                                                      \
+                                                                                                                                            \
+    iop_device_t basefuncname##_drv = {                                                                                                     \
+        basedevname,                                                                                                                        \
+        (IOP_DT_FS | IOP_DT_FSEXT),                                                                                                         \
+        1,                                                                                                                                  \
+        drvname,                                                                                                                            \
+        &basefuncname##_functbl};
 
 typedef struct dvrp_fd_map_struct_
 {
@@ -266,181 +223,21 @@ typedef struct dvrp_fd_map_struct_
     iop_file_t *iop_fd;
 } dvrp_fd_map_struct;
 
-iop_device_ops_t DvrFuncTbl_PFS = {
-    dvrf_df_init,
-    dvrf_df_exit,
-    dvrpfs_df_format,
-    dvrpfs_df_open,
-    dvrf_df_close,
-    dvrf_df_read,
-    dvrf_df_write,
-    dvrf_df_lseek,
-    dvrf_df_ioctl,
-    dvrpfs_df_remove,
-    dvrpfs_df_mkdir,
-    dvrpfs_df_rmdir,
-    dvrpfs_df_dopen,
-    dvrf_df_dclose,
-    dvrf_df_dread,
-    dvrpfs_df_getstat,
-    dvrpfs_df_chstat,
-    dvrpfs_df_rename,
-    dvrpfs_df_chdir,
-    dvrpfs_df_sync,
-    dvrpfs_df_mount,
-    dvrpfs_df_umount,
-    dvrf_df_lseek64,
-    dvrpfs_df_devctl,
-    dvrpfs_df_symlink,
-    dvrpfs_df_readlink,
-    dvrf_df_ioctl2,
-};
-iop_device_ops_t DvrFuncTbl_HDD = {
-    dvrf_df_init,
-    dvrf_df_exit,
-    dvrhdd_df_format,
-    dvrhdd_df_open,
-    dvrf_df_close,
-    dvrf_df_read,
-    dvrf_df_write,
-    dvrf_df_lseek,
-    dvrf_df_ioctl,
-    dvrhdd_df_remove,
-    dvrhdd_df_mkdir,
-    dvrhdd_df_rmdir,
-    dvrhdd_df_dopen,
-    dvrf_df_dclose,
-    dvrf_df_dread,
-    dvrhdd_df_getstat,
-    dvrhdd_df_chstat,
-    dvrhdd_df_rename,
-    dvrhdd_df_chdir,
-    dvrhdd_df_sync,
-    dvrhdd_df_mount,
-    dvrhdd_df_umount,
-    dvrf_df_lseek64,
-    dvrhdd_df_devctl,
-    dvrhdd_df_symlink,
-    dvrhdd_df_readlink,
-    dvrf_df_ioctl2,
-};
-iop_device_ops_t DvrFuncTbl_HDCK = {
-    dvrf_df_init,
-    dvrf_df_exit,
-    dvrhdck_df_format,
-    dvrhdck_df_open,
-    dvrf_df_close,
-    dvrf_df_read,
-    dvrf_df_write,
-    dvrf_df_lseek,
-    dvrf_df_ioctl,
-    dvrhdck_df_remove,
-    dvrhdck_df_mkdir,
-    dvrhdck_df_rmdir,
-    dvrhdck_df_dopen,
-    dvrf_df_dclose,
-    dvrf_df_dread,
-    dvrhdck_df_getstat,
-    dvrhdck_df_chstat,
-    dvrhdck_df_rename,
-    dvrhdck_df_chdir,
-    dvrhdck_df_sync,
-    dvrhdck_df_mount,
-    dvrhdck_df_umount,
-    dvrf_df_lseek64,
-    dvrhdck_df_devctl,
-    dvrhdck_df_symlink,
-    dvrhdck_df_readlink,
-    dvrf_df_ioctl2,
-};
-iop_device_ops_t DvrFuncTbl_FSSK = {
-    dvrf_df_init,
-    dvrf_df_exit,
-    dvrfssk_df_format,
-    dvrfssk_df_open,
-    dvrf_df_close,
-    dvrf_df_read,
-    dvrf_df_write,
-    dvrf_df_lseek,
-    dvrf_df_ioctl,
-    dvrfssk_df_remove,
-    dvrfssk_df_mkdir,
-    dvrfssk_df_rmdir,
-    dvrfssk_df_dopen,
-    dvrf_df_dclose,
-    dvrf_df_dread,
-    dvrfssk_df_getstat,
-    dvrfssk_df_chstat,
-    dvrfssk_df_rename,
-    dvrfssk_df_chdir,
-    dvrfssk_df_sync,
-    dvrfssk_df_mount,
-    dvrfssk_df_umount,
-    dvrf_df_lseek64,
-    dvrfssk_df_devctl,
-    dvrfssk_df_symlink,
-    dvrfssk_df_readlink,
-    dvrf_df_ioctl2,
-};
-iop_device_ops_t DvrFuncTbl_FSCK = {
-    dvrf_df_init,
-    dvrf_df_exit,
-    dvrfsck_df_format,
-    dvrfsck_df_open,
-    dvrf_df_close,
-    dvrf_df_read,
-    dvrf_df_write,
-    dvrf_df_lseek,
-    dvrf_df_ioctl,
-    dvrfsck_df_remove,
-    dvrfsck_df_mkdir,
-    dvrfsck_df_rmdir,
-    dvrfsck_df_dopen,
-    dvrf_df_dclose,
-    dvrf_df_dread,
-    dvrfsck_df_getstat,
-    dvrfsck_df_chstat,
-    dvrfsck_df_rename,
-    dvrfsck_df_chdir,
-    dvrfsck_df_sync,
-    dvrfsck_df_mount,
-    dvrfsck_df_umount,
-    dvrf_df_lseek64,
-    dvrfsck_df_devctl,
-    dvrfsck_df_symlink,
-    dvrfsck_df_readlink,
-    dvrf_df_ioctl2,
-};
-iop_device_t dvr_pfs_drv = {
-    "dvr_pfs",
-    (IOP_DT_FS | IOP_DT_FSEXT),
-    1,
-    "PFS Driver for DVR",
-    &DvrFuncTbl_PFS};
-iop_device_t dvr_hdd_drv = {
-    "dvr_hdd",
-    (IOP_DT_FS | IOP_DT_FSEXT),
-    1,
-    "HDD Driver for DVR",
-    &DvrFuncTbl_HDD};
-iop_device_t dvr_hdck_drv = {
-    "dvr_hdck",
-    (IOP_DT_FS | IOP_DT_FSEXT),
-    1,
-    "HDCK Driver for DVR",
-    &DvrFuncTbl_HDCK};
-iop_device_t dvr_fssk_drv = {
-    "dvr_fssk",
-    (IOP_DT_FS | IOP_DT_FSEXT),
-    1,
-    "FSSK Driver for DVR",
-    &DvrFuncTbl_FSSK};
-iop_device_t dvr_fsck_drv = {
-    "dvr_fsck",
-    (IOP_DT_FS | IOP_DT_FSEXT),
-    1,
-    "FSCK Driver for DVR",
-    &DvrFuncTbl_FSCK};
+static inline u32 bswap32(u32 val)
+{
+#if 0
+    return __builtin_bswap32(val);
+#else
+    return (val << 24) + ((val & 0xFF00) << 8) + ((val >> 8) & 0xFF00) + ((val >> 24) & 0xFF);
+#endif
+}
+
+GEN_TRANSLATION_FUNCS(dvrpfs, "dvr_pfs", 1, "PFS Driver for DVR");
+GEN_TRANSLATION_FUNCS(dvrhdd, "dvr_hdd", 0, "HDD Driver for DVR");
+GEN_TRANSLATION_FUNCS(dvrhdck, "dvr_hdck", 1, "HDCK Driver for DVR");
+GEN_TRANSLATION_FUNCS(dvrfssk, "dvr_fssk", 1, "FSSK Driver for DVR");
+GEN_TRANSLATION_FUNCS(dvrfsck, "dvr_fsck", 1, "FSCK Driver for DVR");
+
 s32 sema_id;
 dvrp_fd_map_struct dvrp_fd_map[32];
 int dvrp_fd_count;
@@ -486,7 +283,7 @@ int module_start(int a1, const char **a2)
     sema_id = -1;
     current_chunk_size = 0x4000;
     dvrp_fd_count = 0;
-    if (AddDrv(&dvr_pfs_drv) || AddDrv(&dvr_hdd_drv)) {
+    if (AddDrv(&dvrpfs_drv) || AddDrv(&dvrhdd_drv)) {
         goto fail;
     }
     v9 = 0;
@@ -503,11 +300,11 @@ int module_start(int a1, const char **a2)
         return 2;
     printf("dvrfile.irx : FILE SYSTEM CHECK MODE\n");
     v12 = "hdck\n";
-    if (AddDrv(&dvr_hdck_drv) == 0) {
+    if (AddDrv(&dvrhdck_drv) == 0) {
         v12 = "fssk\n";
-        if (AddDrv(&dvr_fssk_drv) == 0) {
+        if (AddDrv(&dvrfssk_drv) == 0) {
             v12 = "fsck\n";
-            if (AddDrv(&dvr_fsck_drv) == 0)
+            if (AddDrv(&dvrfsck_drv) == 0)
                 return 2;
         }
     }
@@ -527,21 +324,6 @@ int module_stop()
         return 2;
     return 1;
 }
-
-static inline u32 bswap32(u32 val)
-{
-#if 0
-    return __builtin_bswap32(val);
-#else
-    return (val << 24) + ((val & 0xFF00) << 8) + ((val >> 8) & 0xFF00) + ((val >> 24) & 0xFF);
-#endif
-}
-
-GEN_TRANSLATION_FUNCS(dvrpfs, "dvr_pfs", 1);
-GEN_TRANSLATION_FUNCS(dvrhdd, "dvr_hdd", 0);
-GEN_TRANSLATION_FUNCS(dvrhdck, "dvr_hdck", 1);
-GEN_TRANSLATION_FUNCS(dvrfssk, "dvr_fssk", 1);
-GEN_TRANSLATION_FUNCS(dvrfsck, "dvr_fsck", 1);
 
 static int check_cmdack_err(int (*func)(drvdrv_exec_cmd_ack *a1), drvdrv_exec_cmd_ack *cmdack, int *retval, const char *funcname)
 {
