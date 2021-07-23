@@ -1305,11 +1305,9 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
     int total_write;
     char *in_buffer;
     int retval;
-    int write_ret;
     int dvrp_fd;
     int remain_size;
     u32 chunk_size;
-    int write_size_hi;
     int write_size;
     drvdrv_exec_cmd_ack cmdack;
 
@@ -1335,24 +1333,22 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
             cmdack.input_buffer = in_buffer;
             cmdack.input_buffer_length = chunk_size;
             cmdack.timeout = 10000000;
-            if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &write_ret, __func__)) {
+            if (check_cmdack_err(&DvrdrvExecCmdAckDmaSendComp, &cmdack, &retval, __func__)) {
                 goto finish;
             }
-            write_size_hi = cmdack.return_result_word[0] << 16;
-            write_size = write_size_hi + cmdack.return_result_word[1];
-            remain_size -= write_size;
+            write_size = (cmdack.return_result_word[0] << 16) + cmdack.return_result_word[1];
             if (write_size <= 0) {
-                write_ret = write_size_hi + cmdack.return_result_word[1];
+                retval = write_size;
                 goto finish;
             }
+            remain_size -= write_size;
             in_buffer += write_size;
             total_write += write_size;
         }
-        write_ret = total_write;
-    finish:
-        SignalSema(sema_id);
-        retval = write_ret;
+        retval = total_write;
     }
+finish:
+    SignalSema(sema_id);
     return retval;
 }
 
