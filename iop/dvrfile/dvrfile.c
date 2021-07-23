@@ -6,6 +6,7 @@
 #include "thbase.h"
 #include "thsemap.h"
 #include "speedregs.h"
+#include "errno.h"
 
 extern int module_start(int a1, const char **a2);
 extern int module_stop();
@@ -545,12 +546,12 @@ GEN_TRANSLATION_FUNCS(dvrfsck, "dvr_fsck", 1);
 static int check_cmdack_err(int (*func)(drvdrv_exec_cmd_ack *a1), drvdrv_exec_cmd_ack *cmdack, int *retval, const char *funcname)
 {
     if (func(cmdack)) {
-        *retval = -5;
+        *retval = -EIO;
         printf("%s -> IO error (phase %d)\n", funcname, cmdack->phase);
         return 1;
     }
     if (cmdack->comp_status) {
-        *retval = -5;
+        *retval = -EIO;
         printf("%s -> Complete parameter error (phase %d), %04X\n", funcname, cmdack->phase, cmdack->comp_status);
         return 1;
     }
@@ -688,11 +689,11 @@ int dvrf_df_devctl(iop_file_t *a1, const char *name, int cmd, void *arg, unsigne
     WaitSema(sema_id);
     if (cmd == 0x5065) {
         if ((*(u32 *)arg & 0x7F) != 0) {
-            retval = -22;
+            retval = -EINVAL;
         } else if (*(int *)arg <= 0x20000) {
             current_chunk_size = *(u32 *)arg;
         } else {
-            retval = -33;
+            retval = -EDOM;
         }
         goto finish;
     }
@@ -727,7 +728,7 @@ int dvrf_df_dopen(iop_file_t *a1, const char *path)
     drvdrv_exec_cmd_ack cmdack;
 
     WaitSema(sema_id);
-    retval = -24;
+    retval = -EMFILE;
     if (dvrp_fd_count < 32) {
         strcpy((char *)&SBUF, path);
         cmdack.command = 0x1106;
@@ -1048,7 +1049,7 @@ int dvrf_df_open(iop_file_t *a1, const char *name, int flags, int mode)
     mode_ = mode;
     WaitSema(sema_id);
     if (dvrp_fd_count >= 32) {
-        retval = -24;
+        retval = -EMFILE;
         goto finish;
     }
     SBUF[0] = bswap32(flags);
@@ -1089,7 +1090,7 @@ int dvrf_df_read(iop_file_t *a1, void *ptr, int size)
 
     total_read = 0;
     if (((u32)ptr & 3) != 0)
-        return -14;
+        return -EFAULT;
     WaitSema(sema_id);
     out_buf = (char *)ptr;
     if ((size & 0x7F) != 0) {
@@ -1315,7 +1316,7 @@ int dvrf_df_write(iop_file_t *a1, void *ptr, int size)
     in_buffer = (char *)ptr;
     if (((u32)ptr & 3) != 0) {
         printf("%s : Address is not a multiple of 4.\n", __func__);
-        retval = -14;
+        retval = -EFAULT;
     } else {
         WaitSema(sema_id);
         dvrp_fd = GetFd(a1);
