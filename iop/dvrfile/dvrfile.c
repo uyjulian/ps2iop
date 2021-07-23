@@ -126,7 +126,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, "%s%d:%s", basedevname, a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
         return dvrf_df_chdir(a1, translated_name);                                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -134,7 +134,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, "%s%d:%s", basedevname, a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
         return dvrf_df_chstat(a1, translated_name, stat, statmask);                                                                         \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -142,7 +142,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, "%s%d:%s", basedevname, a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
         return dvrf_df_devctl(a1, translated_name, cmd, arg, arglen, buf, buflen);                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -150,7 +150,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_path[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_path, "%s%d:%s", basedevname, a1->unit, path);                                                                   \
+        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                   \
         return dvrf_df_dopen(a1, translated_path);                                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -159,10 +159,10 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
         char translated_dev[1040];                                                                                                          \
                                                                                                                                             \
         if (shouldbswapformatarg) {                                                                                                         \
-            sprintf(translated_dev, "%s:%s", basedevname, dev);                                                                             \
+            sprintf(translated_dev, basedevname ":%s", dev);                                                                             \
             *(u32 *)arg = bswap32(*(u32 *)arg);                                                                                             \
         } else {                                                                                                                            \
-            sprintf(translated_dev, "%s%d:%s", basedevname, a1->unit, dev);                                                                 \
+            sprintf(translated_dev, basedevname "%d:%s", a1->unit, dev);                                                                 \
         }                                                                                                                                   \
         return dvrf_df_format(a1, translated_dev, blockdev, arg, arglen);                                                                   \
     }                                                                                                                                       \
@@ -171,7 +171,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, "%s%d:%s", basedevname, a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
         return dvrf_df_getstat(a1, translated_name, stat);                                                                                  \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -179,7 +179,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_path[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_path, "%s%d:%s", basedevname, a1->unit, path);                                                                   \
+        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                   \
         return dvrf_df_mkdir(a1, translated_path, mode);                                                                                    \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -187,7 +187,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_fsname[1040];                                                                                                       \
                                                                                                                                             \
-        sprintf(translated_fsname, "%s%d:%s", basedevname, a1->unit, fsname);                                                               \
+        sprintf(translated_fsname, basedevname "%d:%s", a1->unit, fsname);                                                               \
         return dvrf_df_mount(a1, translated_fsname, devname, flag, arg, arglen);                                                            \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -195,7 +195,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, "%s%d:%s", basedevname, a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
         return dvrf_df_open(a1, translated_name, flags, mode);                                                                              \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -203,7 +203,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_path[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_path, "%s%d:%s", basedevname, a1->unit, path);                                                                   \
+        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                   \
         return dvrf_df_readlink(a1, translated_path, buf, buflen);                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -211,7 +211,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_name[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_name, "%s%d:%s", basedevname, a1->unit, name);                                                                   \
+        sprintf(translated_name, basedevname "%d:%s", a1->unit, name);                                                                   \
         return dvrf_df_remove(a1, translated_name);                                                                                         \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -220,8 +220,8 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
         char translated_old[1040];                                                                                                          \
         char translated_new[1040];                                                                                                          \
                                                                                                                                             \
-        sprintf(translated_old, "%s%d:%s", basedevname, a1->unit, old);                                                                     \
-        sprintf(translated_new, "%s%d:%s", basedevname, a1->unit, new_1);                                                                   \
+        sprintf(translated_old, basedevname "%d:%s", a1->unit, old);                                                                     \
+        sprintf(translated_new, basedevname "%d:%s", a1->unit, new_1);                                                                   \
         return dvrf_df_rename(a1, translated_old, translated_new);                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -229,7 +229,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_path[1040];                                                                                                         \
                                                                                                                                             \
-        sprintf(translated_path, "%s%d:%s", basedevname, a1->unit, path);                                                                   \
+        sprintf(translated_path, basedevname "%d:%s", a1->unit, path);                                                                   \
         return dvrf_df_rmdir(a1, translated_path);                                                                                          \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -238,8 +238,8 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
         char translated_old[1040];                                                                                                          \
         char translated_new[1040];                                                                                                          \
                                                                                                                                             \
-        sprintf(translated_old, "%s%d:%s", basedevname, a1->unit, old);                                                                     \
-        sprintf(translated_new, "%s%d:%s", basedevname, a1->unit, new_1);                                                                   \
+        sprintf(translated_old, basedevname "%d:%s", a1->unit, old);                                                                     \
+        sprintf(translated_new, basedevname "%d:%s", a1->unit, new_1);                                                                   \
         return dvrf_df_symlink(a1, translated_old, translated_new);                                                                         \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -247,7 +247,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_dev[1040];                                                                                                          \
                                                                                                                                             \
-        sprintf(translated_dev, "%s%d:%s", basedevname, a1->unit, dev);                                                                     \
+        sprintf(translated_dev, basedevname "%d:%s", a1->unit, dev);                                                                     \
         return dvrf_df_sync(a1, translated_dev, flag);                                                                                      \
     }                                                                                                                                       \
                                                                                                                                             \
@@ -255,7 +255,7 @@ extern void CopySceStat(iox_stat_t *stat, u8 *a2);
     {                                                                                                                                       \
         char translated_fsname[1040];                                                                                                       \
                                                                                                                                             \
-        sprintf(translated_fsname, "%s%d:%s", basedevname, a1->unit, fsname);                                                               \
+        sprintf(translated_fsname, basedevname "%d:%s", a1->unit, fsname);                                                               \
         return dvrf_df_umount(a1, translated_fsname);                                                                                       \
     }
 
