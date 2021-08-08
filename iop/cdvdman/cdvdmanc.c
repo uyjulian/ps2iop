@@ -53,7 +53,6 @@ void cdvdman_termcall(int arg)
 
         sceCdBreak();
         sceCdSync(0);
-        sceCdDecSet(0, 0, 0);
 
         if (dmac_ch_get_chcr(3) & DMAC_CHCR_TR)
             CDVDreg_ABORT = 1;
@@ -90,25 +89,12 @@ int cdvdman_initcfg()
 
     count = mv[3] | ((u32)mv[2] << 8) | ((u32)mv[1] << 16);
 
-    /* when CDVDMAN runs on special console the dual-layer dvd emulation will be enabled */
-    cdvdman_emudvd9 = mv[2] & 1;
-
     DPRINTF(1, "MV %02x %02x %02x %02x\n", mv[0], mv[1], mv[2], mv[3]);
 
     cdvdman_minver10700 = (0x106FF < (u32)count) ? 1 : 0;
     cdvdman_minver20200 = (0x201FF < (u32)count) ? 1 : 0;
     cdvdman_minver20400 = (0x203FF < (u32)count) ? 1 : 0;
     cdvdman_minver20800 = (0x207FF < (u32)count) ? 1 : 0;
-#ifdef __CDVDMAN_NEWBIOS__
-    if (0x501FF < (u32)count) {
-        u32 t;
-
-        /* ??? = 0; */
-        t = (u32)count & 0xF;
-        t ^= 1;
-        cdvdman_nontray = (t < 1) ? 1 : 0;
-    }
-#endif
 
     return 1;
 }
@@ -334,9 +320,6 @@ lab2:
     } else if (rs == 3)
         cdvdman_recstat = 0;
 
-    if (cdvdman_decstate)
-        sceCdDecSet(0, 0, 0);
-
     rs = cdvdman_read2_flg;
     if (((rs == 1) || (rs == 3)) && (!cdvdman_usetoc)) {
         DPRINTF(1, "call Read2intrCDVD()\n");
@@ -344,8 +327,6 @@ lab2:
     }
 
     cdvdman_syncerr = 0;
-    if (cdvdman_decstate != 2)
-        cdvdman_decstate = 0;
 
     if ((cdvdman_strm_id == 1) && (!cdvdman_usetoc) && (!cdvdman_read2_flg)) {
         if (cdvdman_cdstm0cb == 0) {
@@ -459,12 +440,6 @@ int DvdDual_infochk()
     } else
         cdvdman_dldvd = 0;
 
-    if (cdvdman_dlemu) {
-        DPRINTF(1, "CDVD:DualEmuON\n");
-        cdvdman_layer1 = cdvdman_elayer;
-        cdvdman_dldvd = 0;
-    }
-
     DPRINTF(1, "DvdDual_info: %02x  Layer1_LSN:%d opo_or_para %d\n", cdvdman_ptoc[0xE], cdvdman_layer1, cdvdman_dldvd);
 
     return 1;
@@ -482,9 +457,7 @@ u32 sceCdLsnDualChg(u32 lsn)
     if (!DvdDual_infochk())
         return newlsn;
 
-    if (cdvdman_dlemu) {
-        // TODO: implement dual layer emulation by using two physical discs
-    } else {
+    {
         if ((cdvdman_dldvd) && (lsn >= cdvdman_layer1))
             newlsn -= 0x10;
     }
@@ -504,7 +477,6 @@ int sceCdSC(int code, int *param)
             return (int)cdvdman_poffarg;
         case 0xFFFFFFE7:
             return cdvdman_scmd_ef; /* Used by cdvdfsv */
-        /* case 0xFFFFFFE8 should return cdvdman_xorvalue (apparently) but hadn't been found */
         case 0xFFFFFFE9:
             return sceCdLsnDualChg(*param); /* Used by cdvdfsv */
         case 0xFFFFFFEA:
@@ -539,10 +511,10 @@ int sceCdSC(int code, int *param)
             int type;
 
             type = CDVDreg_TYPE;
-            if ((type < 0x10) || (type > 0x14))
+            if ((type < SCECdPSCD) || (type > SCECdPS2DVD))
                 return 0;
 
-            if ((cdvdman_mmode != ((type == 0x14) ? 2 : 1)) && (cdvdman_mmode != 0xFF))
+            if ((cdvdman_mmode != ((type == SCECdPS2DVD) ? 2 : 1)) && (cdvdman_mmode != 0xFF))
                 return 0;
 
             return 1;
@@ -593,7 +565,6 @@ void cdvdman_init()
     int dummy;
     u32 stat;
     register int r, t;
-    register u16 *p;
 
     cdvdman_user_cb = 0;
     cdvdman_poff_cb = 0;
@@ -623,9 +594,6 @@ void cdvdman_init()
 
     cdvdman_initcfg();
 
-    p = (u16 *)QueryBootMode(6);
-    cdvdman_nodecflg = (p != 0) ? (((*p & 0xFFFC) ^ 0x60) < 1) : 0;
-
     t = 0;
     do {
         r = sceCdCancelPOffRdy(&stat);
@@ -644,8 +612,6 @@ int sceCdInit(int init_mode)
     if ((init_mode < 0) || (init_mode < 2) || (init_mode != SCECdEXIT)) {
         DPRINTF(1, "Cdvdman Init\n");
         cdvdman_read2_flg = 0;
-        cdvdman_decstate = cdvdman_xorvalue = cdvdman_decshift = 0;
-        sceCdDecSet(0, 0, 0);
         cdvdman_init();
     } else {
         sceCdSync(0);
@@ -1075,7 +1041,7 @@ int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARA
     if ((!cdvdman_minver10700) && (cdvdman_ncmd == CDVD_NCMD_READ)) {
         ncmd &= 0xFF;
         if ((ncmd) && (ncmd != cdvdman_ncmd) && (ncmd != CDVD_NCMD_READFULL) &&
-            (ncmd != 0xE) && (ncmd != CDVD_NCMD_DVDREAD) && ((media_type != 0xFD) || (ncmd == CDVD_NCMD_STOP))) {
+            (ncmd != 0xE) && (ncmd != CDVD_NCMD_DVDREAD) && ((media_type != SCECdCDDA) || (ncmd == CDVD_NCMD_STOP))) {
             cdvdman_ncmd_to.hi = 0;
             cdvdman_ncmd_to.lo = 0x6978000;
             set_alarm(&cdvdman_ncmd_to, alarm_cb_ncmd, &cdvdman_ncmd_to);
@@ -1097,8 +1063,6 @@ int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARA
     }
 
     cdvdman_ncmd = ncmd;
-    if (cdvdman_decstate)
-        sceCdDecSet(cdvdman_decshift > 0, 1, cdvdman_decshift);
 
     cdvdman_read_to = 0;
     cdvdman_command = ncmd;
@@ -1272,18 +1236,18 @@ int cdvdman_isdvd()
     u32 type;
 
     type = CDVDreg_TYPE & 0xFF;
-    if (type == 0x14)
+    if (type == SCECdPS2DVD)
         return 1; /* SCECdPS2DVD */
     if (type < 0x15) {
-        if (type < 0x10)
+        if (type < SCECdPSCD)
             return 0;
     } else {
-        if (type == 0xFD)
+        if (type == SCECdCDDA)
             return 0; /* SCECdCDDA */
-        if (type < 0xFE) {
+        if (type < SCECdDVDV) {
             if (type == 0xFC)
                 return 1; /* unknown, but should be a DVD anyway, it's probably DVDRW */
-        } else if (type == 0xFE)
+        } else if (type == SCECdDVDV)
             return 1; /* SCECdDVDV */
     }
 
@@ -1386,8 +1350,8 @@ int sceCdRead0(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int csec, void
     type = CDVDreg_TYPE;
 
     /* for revision */
-    if ((type >= 0x10) && (type <= 0x14) && ((cdvdman_mmode == ((type == 0x14) ? 2 : 1)) || (cdvdman_mmode == 0xFF))) {
-        cdvdman_dvdflag = (type == 0x14) ? 1 : 0;
+    if ((type >= SCECdPSCD) && (type <= SCECdPS2DVD) && ((cdvdman_mmode == ((type == SCECdPS2DVD) ? 2 : 1)) || (cdvdman_mmode == 0xFF))) {
+        cdvdman_dvdflag = (type == SCECdPS2DVD) ? 1 : 0;
         cdvdman_rdmode = *mode;
         cdvdman_read_cb = cb;
         cdvdman_rdchunk = b18.dma3_csectors;
@@ -1431,10 +1395,10 @@ int read_cdvd_cb(void *common)
             if ((cdvdman_read2_flg & 0xFFFF) != 3) {
                 sblock = 2064;
 
-                readlsn = cdvdman_syncdec(cdvdman_decstate, cdvdman_xorvalue, cdvdman_decshift, ((u8 *)cdvdman_ptoc)[3 + dvoff]) & 0xFF;
-                readlsn += (cdvdman_syncdec(cdvdman_decstate, cdvdman_xorvalue, cdvdman_decshift, ((u8 *)cdvdman_ptoc)[2 + dvoff]) & 0xFF) << 8;
-                readlsn += (cdvdman_syncdec(cdvdman_decstate, cdvdman_xorvalue, cdvdman_decshift, ((u8 *)cdvdman_ptoc)[1 + dvoff]) & 0xFF) << 16;
-                layer = cdvdman_syncdec(cdvdman_decstate, cdvdman_xorvalue, cdvdman_decshift, ((u8 *)cdvdman_ptoc)[1 + dvoff]) & 0x1;
+                readlsn = ((u8 *)cdvdman_ptoc)[3 + dvoff];
+                readlsn += ((u8 *)cdvdman_ptoc)[2 + dvoff] << 8;
+                readlsn += ((u8 *)cdvdman_ptoc)[1 + dvoff] << 16;
+                layer = ((u8 *)cdvdman_ptoc)[1 + dvoff] & 0x1;
 
                     readlsn += 0xFFFD0000;
 
@@ -1454,9 +1418,9 @@ int read_cdvd_cb(void *common)
             } else {
                 sblock = 2340;
 
-                cd_loc.minute = cdvdman_syncdec(cdvdman_decstate, cdvdman_xorvalue, cdvdman_decshift, ((u8 *)cdvdman_ptoc)[0 + cdoff]);
-                cd_loc.second = cdvdman_syncdec(cdvdman_decstate, cdvdman_xorvalue, cdvdman_decshift, ((u8 *)cdvdman_ptoc)[1 + cdoff]);
-                cd_loc.sector = cdvdman_syncdec(cdvdman_decstate, cdvdman_xorvalue, cdvdman_decshift, ((u8 *)cdvdman_ptoc)[2 + cdoff]);
+                cd_loc.minute = ((u8 *)cdvdman_ptoc)[0 + cdoff];
+                cd_loc.second = ((u8 *)cdvdman_ptoc)[1 + cdoff];
+                cd_loc.sector = ((u8 *)cdvdman_ptoc)[2 + cdoff];
 
                 readlsn = sceCdPosToInt(&cd_loc);
             }
@@ -1515,16 +1479,13 @@ int cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int decflag,
     } else if (mode->datapattern == 1)
         return sceCdRead0(lsn, sectors, buf, mode, 0, 0);
 
-    if ((!cdvdman_cd36key) || (cdvdman_decstate)) {
+    // TODO: check if key should set
+    if ((!cdvdman_cd36key)) {
         int oldstate, dummy, rc;
 
         CpuSuspendIntr(&oldstate);
 
         if (((CDVDreg_READY & 0xC0) == 0x40) && (!cdvdman_read2_flg)) {
-            if (decflag) {
-                cdvdman_decshift = shift;
-                cdvdman_decstate = 1;
-            }
             cdvdman_readbuf = buf;
             cdvdman_readptr = 0;
             cdvdman_readlsn = lsn;
@@ -1566,11 +1527,6 @@ int cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int decflag,
             cdvdman_rdsectc = 0;
             cdvdman_read2_flg = 0;
 
-            if (cdvdman_decstate) {
-                cdvdman_decstate = cdvdman_xorvalue = cdvdman_decshift = 0;
-                sceCdDecSet(0, 0, 0);
-            }
-
             cancel_alarm(alarm_cb_read, &cdvdman_racb_to);
         }
         else
@@ -1592,30 +1548,6 @@ int cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int decflag,
 int sceCdRE(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode)
 {
     return cdvdman_read(lsn, sectors, buf, mode, 0, 0);
-}
-
-/* #define ROL8(v, b)  (((v) << (b)) | ((v) >> (8 - (b)))) */
-
-/* internal */
-int cdvdman_syncdec(int decflag, int decxor, int shift, u32 data)
-{
-    register u32 s, t;
-
-    if (decflag) {
-        if (shift < 0)
-            shift += 7;
-        t = shift >> 3;
-        t <<= 3;
-        s = shift - t;
-        data &= 0xFF;
-        t = data << s;
-        s = 8 - s;
-        data >>= s;
-        t |= data;
-
-        return t ^ decxor; /* return decxor ^ ROL8(data & 0xFF, shift - ((u32)(shift >> 3) << 3)); */
-    } else
-        return data & 0xFF;
 }
 
 /* internal routine */
@@ -1661,14 +1593,10 @@ void Read2intrCDVD(int read2_flag)
                     cdvdman_cderror = SCECdErNORDY;
                     cdvdman_read2_flg = 0;
                     cdvdman_readptr = 0;
-                    if (cdvdman_decstate)
-                        cdvdman_decstate = cdvdman_xorvalue = cdvdman_decshift = 0;
                 }
             } else {
                 cdvdman_read2_flg = 0;
                 cdvdman_readptr = 0;
-                if (cdvdman_decstate)
-                    cdvdman_decstate = cdvdman_xorvalue = cdvdman_decshift = 0;
             }
         } else {
             register u32 lsn;
@@ -1702,8 +1630,6 @@ void Read2intrCDVD(int read2_flag)
                 cdvdman_retries = 0;
                 cdvdman_rtindex = 0;
                 cdvdman_readptr = 0;
-                if (cdvdman_decstate)
-                    cdvdman_decstate = cdvdman_xorvalue = cdvdman_decshift = 0;
             }
 
             r = cdvdman_retries;
@@ -1717,8 +1643,6 @@ void Read2intrCDVD(int read2_flag)
         cdvdman_retries = 0;
         cdvdman_rtindex = 0;
         cdvdman_readptr = 0;
-        if (cdvdman_decstate)
-            cdvdman_decstate = cdvdman_xorvalue = cdvdman_decshift = 0;
     }
 }
 
@@ -1754,11 +1678,11 @@ int cdvdman_readfull(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int flag
     b18.cdvdreg_howto = t;
 
     switch (CDVDreg_TYPE & 0xFF) {
-        case 0x10:
-        case 0x11:
-        case 0x12:
-        case 0x13:
-        case 0xFD:
+        case SCECdPSCD:
+        case SCECdPSCDDA:
+        case SCECdPS2CD:
+        case SCECdPS2CDDA:
+        case SCECdCDDA:
             break;
         default:
             return 0;
@@ -1786,29 +1710,6 @@ int sceCdReadFull(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode)
 int sceCdMmode(int media)
 {
     cdvdman_mmode = media;
-    return 1;
-}
-
-/* Exported entry #36 (bios & bbnav) */
-int sceCdDecSet(unsigned char arg1, unsigned char arg2, unsigned char shift)
-{
-/* Just returns 1 in most IOPRP images */
-#ifdef __CDVDMAN_SW_E36__
-    /* 
-  The code below can be found in a BIOS and BB Nav.
-  It's absent in most IOPRP images.
- */
-    register u32 dec;
-    cdvdman_cd36key = arg2 | shift;
-    shift &= 7;
-    shift <<= 4;
-
-    dec = (arg1) ? (shift | 2) : shift;
-    if (arg2)
-        dec |= 1;
-
-    CDVDreg_DEC = dec;
-#endif
     return 1;
 }
 

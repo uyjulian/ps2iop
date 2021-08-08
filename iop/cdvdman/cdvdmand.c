@@ -34,11 +34,6 @@ int cdvdman_minver10700 = 0; /* Enables "PAUSE" after TOC reading and read speed
 int cdvdman_minver20200 = 0; /* Disables DEC MODE 0x00 */
 int cdvdman_minver20400 = 0; /* Enables "Cancel Power-off RDY" S-Command */
 int cdvdman_minver20800 = 0; /* Enables N-Command 0Eh (disc reading) */
-int cdvdman_emudvd9 = 0; /* Enables internal Dual-Layer DVD emulation (for pair of DVD5 discs) */
-#ifdef __CDVDMAN_NEWBIOS__
-int cdvdman_nontray = 0;
-#endif
-char *cdvdman_masterd = "PlayStation Master Disc";
 u8 cdvdman_ncmd = CDVD_NCMD_READ;
 int cdvdman_chmedia = 0;
 int cdvdman_chflags[4] = {1, 1, 1, 1}; /* four copies of "Media Change" */
@@ -123,13 +118,6 @@ u32 cdvdman_pwr_flg;
 u32 cdvdman_layer1;
 u8 cdvdman_usetoc;
 u8 cdvdman_dldvd;
-u8 cdvdman_curdvd;
-u8 cdvdman_dlemu;
-u32 cdvdman_elayer;
-int cdvdman_xorvalue;
-u32 cdvdman_decshift;
-int cdvdman_decstate;
-int cdvdman_nodecflg;
 DMA3PARAM cdvdman_dma3prm;
 u32 cdvdman_dma3sec; /* increased by by dma3_csectors value during DMA Ch.3 interrupt handler */
 int cdvdman_dr_flg;

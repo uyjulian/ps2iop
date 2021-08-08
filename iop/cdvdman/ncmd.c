@@ -172,7 +172,7 @@ int sceCdStandby()
 
     type = CDVDreg_TYPE;
 
-    if ((type < 0x10) || (type >= 0x14))
+    if ((type < 0x10) || (type >= SCECdPS2DVD))
         return cdvdman_send_ncmd(CDVD_NCMD_STANDBY, 0, 0, SCECdFuncStandby, 0, 1) >= 0;
 
     ndata[0] = 0x10;
@@ -261,7 +261,7 @@ int cdvdman_readtoc(u8 *toc, int param, int func)
     v = CDVDreg_TYPE;
     if (v < 0x10)
         return 0;
-    if ((v == 0x14) || (v == 0xFE) || (v == 0xFC)) {
+    if ((v == SCECdPS2DVD) || (v == SCECdDVDV) || (v == 0xFC)) {
         b18.cdvdreg_howto = 0x84;
         b18.dma3_blkwords = 0x04;
         b18.dma3_blkcount = 0x81;
@@ -271,7 +271,7 @@ int cdvdman_readtoc(u8 *toc, int param, int func)
         b18.dma3_callback = 0;
         ndata = param;
     } else {
-        if ((v < 0x14) || (v == 0xFD)) {
+        if ((v < SCECdPS2DVD) || (v == SCECdCDDA)) {
             b18.cdvdreg_howto = 0x80;
             b18.dma3_blkwords = 0x20;
             b18.dma3_blkcount = 0x08;
@@ -303,27 +303,6 @@ int cdvdman_gettoc(u8 *toc)
     return cdvdman_readtoc(toc, 0, SCECdFuncGetToc);
 }
 
-/* Exported entry #19 (avilable in bios and bbnav) */
-/* Looks like alternate TOC reading */
-#ifdef __CDVDMAN_SW_E19__
-int sceCdGetToc2(u8 *toc, int param)
-{
-    DMA3PARAM b18;
-    char ndata;
-
-    b18.cdvdreg_howto = 0x8C;
-    b18.dma3_blkcount = 0x2B;
-    b18.dma3_maddress = toc;
-    b18.dma3_msectors = 0;
-    b18.dma3_csectors = 0;
-    b18.dma3_callback = 0;
-
-    ndata = param;
-
-    return cdvdman_send_ncmd(CDVD_NCMD_GETTOC, &ndata, 1, 0, &b18, 1) >= 0;
-}
-#endif
-
 /* Exported entry #63 */
 int sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5, void *cb)
 {
@@ -333,7 +312,7 @@ int sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5, void *c
     u32 resultp;
 #endif
 
-    if (CDVDreg_TYPE != 0x14)
+    if (CDVDreg_TYPE != SCECdPS2DVD)
         return 0;
 
 #ifndef __CDVDMAN_BIOS__
@@ -396,9 +375,9 @@ int sceCdReadDVDV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode)
 #endif
 
     switch (CDVDreg_TYPE) {
-        case 0x14: /* SCECdPS2DVD */
+        case SCECdPS2DVD: /* SCECdPS2DVD */
         case 0xFC: /* unknown media type */
-        case 0xFE: /* SCECdDVDV */
+        case SCECdDVDV: /* SCECdDVDV */
             break;
         default:
             return 0;
@@ -449,202 +428,3 @@ int sceCdReadDVDV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode)
     return cdvdman_send_ncmd(CDVD_NCMD_DVDREAD, &ndata, 0xB, 0x9, &b18, 1) >= 0;
 }
 #endif
-
-/* internal routine */
-int cdvdman_ncmd0Ch(int arg1, u32 arg2, u32 arg3)
-{
-    char ndata[7];
-    register u8 *p;
-
-    if (arg1)
-        arg3 = 0;
-
-    ndata[1] = 0 < arg2;
-    ndata[0] = arg1;
-    ndata[2] = 0 < (arg2 >> 8);
-    p = (u8 *)&arg3;
-    ndata[3] = p[0];
-    ndata[4] = p[1];
-    ndata[5] = p[2];
-    ndata[6] = p[3];
-
-    return cdvdman_send_ncmd(0xC, ndata, 7, 0, 0, 1) >= 0;
-}
-
-/* Exported entry #35 (available in bios & bbnav) */
-int sceCdReadKey(unsigned char arg1, unsigned char arg2, unsigned int lsn, unsigned char *key)
-{
-    register int r38;
-#ifndef __CDVDMAN_SW_E35__
-    register u32 index;
-    sceCdRMode rmode;
-    char buffer[2048];
-    u32 resultp;
-
-    if (cdvdman_isdvd()) {
-        if (!arg1) {
-            if (!DvdDual_infochk())
-                return 0;
-            lsn = sceCdLsnDualChg(lsn);
-        }
-    }
-
-    rmode.spindlctrl = 0x10;
-    rmode.datapattern = 0;
-    rmode.trycount = 0;
-
-    sceCdRead0(lsn, 1, buffer, &rmode, 0, 0);
-    sceCdSync(3);
-
-    index = 0;
-
-    do {
-        register int t;
-
-        if (!cdvdman_ncmd0Ch(arg1, arg2, lsn + index))
-            return 0;
-        sceCdSync(3);
-        t = cdvdman_cderror & 0xFF;
-        if (!t)
-            break;
-        cdvdman_cderror = t;
-    } while (++index < 300);
-
-    WaitEventFlag(cdvdman_scmd_ef, 1, WEF_AND, &resultp);
-#else
-    if (!cdvdman_ncmd0Ch(arg1, arg2, lsn))
-        return 0;
-
-    while (!sceCdCheckCmd()) {
-        ;
-    }
-
-    DelayThread(2000);
-#endif
-
-    r38 = CDVDreg_KEYSTATE;
-
-    if (r38 & 0x1) {
-        key[0] = *(volatile u8 *)0xBF402020;
-        key[0] ^= CDVDreg_KEYXOR;
-        key[1] = *(volatile u8 *)0xBF402021;
-        key[1] ^= CDVDreg_KEYXOR;
-        key[2] = *(volatile u8 *)0xBF402022;
-        key[2] ^= CDVDreg_KEYXOR;
-        key[3] = *(volatile u8 *)0xBF402023;
-        key[3] ^= CDVDreg_KEYXOR;
-        key[4] = *(volatile u8 *)0xBF402024;
-        key[4] ^= CDVDreg_KEYXOR;
-    } else {
-        key[0] = 0;
-        key[1] = 0;
-        key[2] = 0;
-        key[3] = 0;
-        key[4] = 0;
-    }
-
-    if (r38 & 0x2) {
-        key[5] = *(volatile u8 *)0xBF402028;
-        key[5] ^= CDVDreg_KEYXOR;
-        key[6] = *(volatile u8 *)0xBF402029;
-        key[6] ^= CDVDreg_KEYXOR;
-        key[7] = *(volatile u8 *)0xBF40202A;
-        key[7] ^= CDVDreg_KEYXOR;
-        key[8] = *(volatile u8 *)0xBF40202B;
-        key[8] ^= CDVDreg_KEYXOR;
-        key[9] = *(volatile u8 *)0xBF40202C;
-        key[9] ^= CDVDreg_KEYXOR;
-    } else {
-        key[5] = 0;
-        key[6] = 0;
-        key[7] = 0;
-        key[8] = 0;
-        key[9] = 0;
-    }
-
-    if (r38 & 0x4) {
-        key[10] = *(volatile u8 *)0xBF402030;
-        key[10] ^= CDVDreg_KEYXOR;
-        key[11] = *(volatile u8 *)0xBF402031;
-        key[11] ^= CDVDreg_KEYXOR;
-        key[12] = *(volatile u8 *)0xBF402032;
-        key[12] ^= CDVDreg_KEYXOR;
-        key[13] = *(volatile u8 *)0xBF402033;
-        key[13] ^= CDVDreg_KEYXOR;
-        key[14] = *(volatile u8 *)0xBF402034;
-        key[14] ^= CDVDreg_KEYXOR;
-    } else {
-        key[10] = 0;
-        key[11] = 0;
-        key[12] = 0;
-        key[13] = 0;
-        key[14] = 0;
-    }
-
-    key[15] = r38 & 0x7;
-
-#ifndef __CDVDMAN_SW_E35__
-    set_ev_flag(cdvdman_scmd_ef, 1);
-#endif
-
-    return 1;
-}
-
-/* Exported entry #79 (available in dnas images) */
-int sceCdReadDiskID(unsigned int *id)
-{
-	int v2;
-	int v3;
-	int v4;
-	int result;
-	int v6;
-	sceCdRMode rmode;
-	char buffer[2048];
-	u32 resultp;
-
-	*((u8 *)id + 4) = 0;
-	*((u8 *)id + 3) = 0;
-	*((u8 *)id + 2) = 0;
-	*((u8 *)id + 1) = 0;
-	*(u8 *)id = 0;
-	u8 *key = (u8 *)id;
-	v2 = CDVDreg_TYPE;
-	v3 = v2 >= 21;
-	v4 = v2 < 18;
-	if ( v3 )
-		return 0;
-	v3 = v4;
-	result = 0;
-	if ( v3 )
-		return result;
-	rmode.spindlctrl = 18;
-	rmode.datapattern = 0;
-	rmode.trycount = 0;
-	sceCdRead0(0x4Bu, 1u, buffer, &rmode, 0, 0);
-	sceCdSync(3);
-	v3 = !cdvdman_ncmd0Ch(0, 0, 75);
-	result = 0;
-	if ( v3 )
-		return result;
-	sceCdSync(3);
-	if ( cdvdman_cderror )
-		return 0;
-	WaitEventFlag(cdvdman_scmd_ef, 1u, 0, &resultp);
-	v6 = 0;
-	if ( (CDVDreg_KEYSTATE & 4) != 0 )
-	{
-	    key[0] = *(volatile u8 *)0xBF402030;
-	    key[0] ^= CDVDreg_KEYXOR;
-	    key[1] = *(volatile u8 *)0xBF402031;
-	    key[1] ^= CDVDreg_KEYXOR;
-	    key[2] = *(volatile u8 *)0xBF402032;
-	    key[2] ^= CDVDreg_KEYXOR;
-	    key[3] = *(volatile u8 *)0xBF402033;
-	    key[3] ^= CDVDreg_KEYXOR;
-	    key[4] = *(volatile u8 *)0xBF402034;
-	    key[4] ^= CDVDreg_KEYXOR;
-		v6 = 1;
-	}
-	set_ev_flag(cdvdman_scmd_ef, 1u);
-	return v6;
-}

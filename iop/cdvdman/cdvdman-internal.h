@@ -168,11 +168,6 @@ extern int cdvdman_minver10700;
 extern int cdvdman_minver20200;
 extern int cdvdman_minver20400;
 extern int cdvdman_minver20800;
-extern int cdvdman_emudvd9;
-#ifdef __CDVDMAN_NEWBIOS__
-extern int cdvdman_nontray;
-#endif
-extern char *cdvdman_masterd;
 extern u8 cdvdman_ncmd;
 extern int cdvdman_chmedia;
 extern int cdvdman_chflags[4];
@@ -257,13 +252,6 @@ extern u32 cdvdman_pwr_flg;
 extern u32 cdvdman_layer1;
 extern u8 cdvdman_usetoc;
 extern u8 cdvdman_dldvd;
-extern u8 cdvdman_curdvd;
-extern u8 cdvdman_dlemu;
-extern u32 cdvdman_elayer;
-extern int cdvdman_xorvalue;
-extern u32 cdvdman_decshift;
-extern int cdvdman_decstate;
-extern int cdvdman_nodecflg;
 extern DMA3PARAM cdvdman_dma3prm;
 extern u32 cdvdman_dma3sec;
 extern int cdvdman_dr_flg;
@@ -297,10 +285,8 @@ extern int cdvdman_isdvd();
 extern int cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int decflag, int shift);
 extern void Read2intrCDVD(int read2_flag);
 extern int cdvdman_readfull(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int flag);
-extern int cdvdman_ncmd0Ch(int arg1, u32 arg2, u32 arg3);
 extern int cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int rdlen, int check_sef);
 extern int sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, sceCdRMode *mode, int ncmd, int dintrsec, void *func);
-extern int cdvdman_syncdec(int decflag, int decxor, int shift, u32 data);
 extern int intrh_dma_3(void *common);
 extern u32 sceCdLsnDualChg(u32 lsn);
 

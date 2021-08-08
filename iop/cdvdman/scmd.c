@@ -47,12 +47,6 @@ int sceCdTrayReq(int param, u32 *traychk)
     u8 data[2];
 
     if (param != SCECdTrayCheck) {
-#ifdef __CDVDMAN_NEWBIOS__
-        if (cdvdman_nontray)
-            if (cdvdman_nontray == 1)
-                return 1;
-#endif
-
         data[0] = param;
 
         if (cdvdman_send_scmd(6, &data[0], 1, &data[1], 1, 1)) {
@@ -90,52 +84,10 @@ int sceCdApplySCmd(u8 cmd, const void *wdata, u16 wdlen, void *rdata)
     return 0;
 }
 
-int cdvdman_traycheck(u8 *p, int *stat)
-{
-    u8 sdata[4];
-    u8 rdata[16];
-    register int rcode;
-
-    sdata[0] = 0x30;
-    sdata[1] = 0x02;
-
-    rcode = cdvdman_send_scmd(3, sdata, 2, rdata, 2, 1);
-
-    *stat = rdata[0];
-    *p = rdata[1];
-
-    return rcode;
-}
-
 /* Exported entry #28 */
 int sceCdStatus()
 {
-#ifdef __CDVDMAN_SW_E28__
     return CDVDreg_STATUS; /* bios version */
-#else
-    u8 trs;
-    int result;
-    register int stat, type;
-
-    type = CDVDreg_TYPE;
-    stat = CDVDreg_STATUS;
-
-    if (type == 0) {
-        if (cdvdman_traycheck(&trs, &result) == 1) {
-            if (!result) {
-                if (trs & 0x08)
-                    stat |= 0x01;
-                else
-                    stat &= 0xFE;
-            }
-        }
-    }
-
-    if (cdvdman_usetoc)
-        stat &= 0xFFFFFFFE;
-
-    return (cdvdman_pwr_flg) ? -1 : stat;
-#endif
 }
 
 /* Exported entry #39 */
@@ -153,11 +105,6 @@ int sceCdBreak()
 
     cdvdman_cderror = SCECdErABRT;
     cdvdman_thrd_id = GetThreadId();
-
-    if (cdvdman_decstate) {
-        cdvdman_decstate = cdvdman_xorvalue = cdvdman_decshift = 0;
-        sceCdDecSet(0, 0, 0);
-    }
 
     cdvdman_recstat = 0;
     break_read_timeout_callback();
@@ -218,61 +165,14 @@ int sceCdPowerOff(u32 *stat)
 /* Exported entry #83 */
 int sceCdReadDvdDualInfo(int *on_dual, u32 *layer1_start)
 {
-    sceCdRMode read_mode;
     *on_dual = 0;
     *layer1_start = 0;
-    cdvdman_dlemu = 0;
-    if (!cdvdman_emudvd9) {
+    {
         if (!DvdDual_infochk())
             return 0;
         *on_dual = cdvdman_dldvd;
         *layer1_start = cdvdman_layer1;
         return 1;
-    } else {
-        int i;
-
-        if (!cdvdman_isdvd())
-            return 1;
-        if ((cdvdman_mmode != 2) && (cdvdman_mmode != 0xFF))
-            return 0;
-
-        read_mode.trycount = 0;
-        read_mode.spindlctrl = 0;
-        read_mode.datapattern = 0;
-
-        sceCdRead0(0xE, 1, cdvdman_ptoc, &read_mode, 0, 0);
-        if ((!sceCdSync(3)) && (cdvdman_cderror))
-        {
-            DPRINTF(1, "CDVD: ReadDvdDualInfo Read Error %02x, %d\n", cdvdman_cderror, 0);
-            return 0;
-        }
-
-        for (i = 0; i < 0x14; i++) {
-            if (cdvdman_ptoc[0x68 + i] != cdvdman_masterd[i])
-                break;
-        }
-        if (i != 0x14) {
-            if (DvdDual_infochk()) {
-                *on_dual = cdvdman_dldvd;
-                *layer1_start = cdvdman_layer1;
-                return 1;
-            } else
-                return 0;
-        } else {
-            if (cdvdman_ptoc[0x83] != 2)
-                return 1;
-            if (!(cdvdman_ptoc[0x84] & 0x2))
-                return 1;
-            cdvdman_curdvd = cdvdman_ptoc[0x85];
-            cdvdman_elayer = 1 + (cdvdman_ptoc[0x86]) + (cdvdman_ptoc[0x87] << 8) + (cdvdman_ptoc[0x88] << 16) + (cdvdman_ptoc[0x89] << 24);
-            cdvdman_dldvd = 0;
-            cdvdman_layer1 = cdvdman_elayer;
-            cdvdman_dlemu = 1;
-            *on_dual = 1;
-            *layer1_start = cdvdman_layer1;
-            DPRINTF(1, "sceCdReadDvdDualInfo():Cur_Disk %d layer1_start %d\n", cdvdman_elayer, cdvdman_curdvd);
-            return 1;
-        }
     }
 }
 

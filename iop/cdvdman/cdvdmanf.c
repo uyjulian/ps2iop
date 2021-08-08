@@ -19,13 +19,7 @@ int cdrom_init(iop_device_t *dev)
     cdvdman_usetoc = 0;
     cdvdman_read_to = 0;
     cdvdman_pwr_flg = 0;
-    cdvdman_curdvd = 0;
-    cdvdman_dlemu = 0;
-    cdvdman_decstate = 0;
-    cdvdman_xorvalue = 0;
-    cdvdman_decshift = 0;
     cdvdman_dldvd = 0xFF;
-    cdvdman_nodecflg = 0;
     cdvdman_ee_ncmd = 0;
 
     evfp.attr = EA_MULTI;
