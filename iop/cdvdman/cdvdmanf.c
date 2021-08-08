@@ -121,7 +121,6 @@ void cdvdman_iormode(sceCdRMode *rmode, int fmode, int layer)
 
     rmode->datapattern = 0;
 
-    // TODO: check this!
     rmode->trycount = (cdvdman_trycnt == -1) ? 0x10 : cdvdman_trycnt;
 
     if (!cdvdman_l0check(layer)) {
@@ -288,11 +287,12 @@ void cdvdman_fillstat(void *dummy, iox_stat_t *buf, sceCdlFILE *fp)
 
     buf->size = fp->size;
 
-    // TODO: check this!
+    // TODO: Uncomment once flag is added to cdl structure
 #if 0
     buf->mode = ((fp->flag & 2) ? 0x1049 : 0x2000) | 0x124;
+#else
+    buf->mode = 0x2000 | 0x124;
 #endif
-    buf->mode = 0x1049 | 0x124;
 }
 
 /* internal routine */
@@ -427,7 +427,7 @@ int cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
 /* internal routine */
 int cdvd_odcinit(CDVDMAN_FILEDATA *fh, int mode, int id)
 {
-    // TODO: implement
+    // TODO: implement cache related function
     return 0;
 #if 0
     char cachefilename[512];

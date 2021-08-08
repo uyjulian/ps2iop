@@ -5,12 +5,12 @@
 IRX_ID("cdvd_driver", 1, 4);
 
 // TODO: 
-// sceCdChgSys
-// 161
-// 167
-// 169
-// 173
-// 179
+// sceCdChgSys -> required for PS2/DVD reading on DESR
+// 161 -> some xor read function
+// 167 -> alternate SCMD 0x2F
+// 169 -> alternate SCMD 0x30
+// 173 -> related to interupt &8 and &16
+// 179 -> some alternate read function
 
 /* Entry point */
 int _start(int argc, char **argv)
@@ -2012,6 +2012,7 @@ int CD_newmedia(int layer)
         } while (++i < cdvdman_ptblsize);
     }
 
+    // TODO: implement cache related setting here
     /* ??? = 0; */
     /* ??? = 0; */
     /* ??? = 0; */
@@ -2281,6 +2282,7 @@ int cdvdman_cacheinit(u32 blocks, char *fname, int action)
 
         CpuSuspendIntr(&oldstate);
         cdvdman_cache_fd = -1;
+        // TODO: implement cache related setting here
         /* ??? = 0; ??? = 0; ??? = 0; */
         cdvdman_ptblflag = 0;
         FreeSysMemory(cdvdman_pathtbl);
@@ -2335,6 +2337,7 @@ int cdvdman_cacheinit(u32 blocks, char *fname, int action)
                     p += 5;
                 } while (++i < blocks);
             }
+            // TODO: implement cache related setting here
             /* ??? = 0; ??? = 0; ??? = 0; */
             cdvdman_ptblflag = 1;
             CpuResumeIntr(oldstate);

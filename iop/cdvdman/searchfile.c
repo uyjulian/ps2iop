@@ -49,10 +49,7 @@ int CdSearchFile(sceCdlFILE *fp, const char *name, int layer)
     if (cdvdman_fs_layer != layer)
         cdvdman_fs_cache = 0;
 
-    if ((!cdvdman_mediactl(0)) && (cdvdman_fs_cache)) /* bad condition check scheme, possible error */
-    {
-        DPRINTF(1, "CdSearchFile: cache dir data used\n");
-    } else {
+    if ( cdvdman_mediactl(0) || !cdvdman_fs_cache ) {
         DPRINTF(1, "CdSearchFile Topen= %s\n", name);
         if (!CD_newmedia(layer)) {
             cdvdman_fs_cache = 0;

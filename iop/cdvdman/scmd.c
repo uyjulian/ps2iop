@@ -526,7 +526,7 @@ int sceCdReadSUBQ(void *buf, u32 *stat)
     return rcode;
 }
 
-/* Exported entry #52 */
+/* Exported entry #55 */
 int sceCdAutoAdjustCtrl(int mode, u32 *result)
 {
 	int in;
