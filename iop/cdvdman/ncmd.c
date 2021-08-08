@@ -24,7 +24,7 @@ int sceCdSync(int mode)
                 if (sceCdCheckCmd())
                     if (!cdvdman_read2_flg)
                         break;
-                WaitEventFlag(cdvdman_intr_ef, 1, EF_WAIT_AND, &resultp);
+                WaitEventFlag(cdvdman_intr_ef, 1, WEF_AND, &resultp);
             }
             break;
         case 1:
@@ -41,7 +41,7 @@ int sceCdSync(int mode)
                 if (sceCdCheckCmd())
                     if (!cdvdman_read2_flg)
                         break;
-                WaitEventFlag(cdvdman_intr_ef, 1, EF_WAIT_AND, &resultp);
+                WaitEventFlag(cdvdman_intr_ef, 1, WEF_AND, &resultp);
             }
             cancel_alarm(alarm_cb_cdsync, &sys_clock);
             break;
@@ -53,13 +53,13 @@ int sceCdSync(int mode)
                 if (sceCdCheckCmd())
                     if (!cdvdman_read2_flg)
                         break;
-                WaitEventFlag(cdvdman_intr_ef, 1, EF_WAIT_AND, &resultp);
+                WaitEventFlag(cdvdman_intr_ef, 1, WEF_AND, &resultp);
             }
             cancel_alarm(alarm_cb_cdsync, &sys_clock);
             break;
         case 5:
             while (!sceCdCheckCmd())
-                WaitEventFlag(cdvdman_intr_ef, 1, EF_WAIT_AND, &resultp);
+                WaitEventFlag(cdvdman_intr_ef, 1, WEF_AND, &resultp);
             break;
         case 6: /* Looks very same as case #3 */
             sys_clock.hi = 0;
@@ -69,7 +69,7 @@ int sceCdSync(int mode)
                 if (sceCdCheckCmd())
                     if (!cdvdman_read2_flg)
                         break;
-                WaitEventFlag(cdvdman_intr_ef, 1, EF_WAIT_AND, &resultp);
+                WaitEventFlag(cdvdman_intr_ef, 1, WEF_AND, &resultp);
             }
             cancel_alarm(alarm_cb_cdsync, &sys_clock);
             break;
@@ -80,7 +80,7 @@ int sceCdSync(int mode)
                         if (!cdvdman_ee_ncmd)
                             if (!cdvdman_strm_id)
                                 break;
-                WaitEventFlag(cdvdman_intr_ef, 1, EF_WAIT_AND, &resultp);
+                WaitEventFlag(cdvdman_intr_ef, 1, WEF_AND, &resultp);
             }
             break;
         case 17:
@@ -91,21 +91,21 @@ int sceCdSync(int mode)
                             return 0;
             return 1;
         case 32:
-            WaitEventFlag(cdvdman_intr_ef, 0x21, EF_WAIT_OR, &resultp);
+            WaitEventFlag(cdvdman_intr_ef, 0x21, WEF_OR, &resultp);
             ReferEventFlagStatus(cdvdman_intr_ef, &evfi);
             if (evfi.currBits & 0x20)
                 break;
             if (cdvdman_cderror)
                 SetEventFlag(cdvdman_intr_ef, 0x20);
             else
-                WaitEventFlag(cdvdman_intr_ef, 0x20, EF_WAIT_AND, &resultp);
+                WaitEventFlag(cdvdman_intr_ef, 0x20, WEF_AND, &resultp);
             break;
         default:
             for (;;) {
                 if (sceCdCheckCmd())
                     if (!cdvdman_read2_flg)
                         break;
-                WaitEventFlag(cdvdman_intr_ef, 1, EF_WAIT_AND, &resultp);
+                WaitEventFlag(cdvdman_intr_ef, 1, WEF_AND, &resultp);
             }
             break;
     }
@@ -226,7 +226,7 @@ int sceCdDiskReady(int mode)
 
         do {
             delay_thread(2000);
-            WaitEventFlag(cdvdman_intr_ef, 1, EF_WAIT_AND, &resultp);
+            WaitEventFlag(cdvdman_intr_ef, 1, WEF_AND, &resultp);
             type = CDVDreg_TYPE;
             if ((CDVDreg_READY & 0xC0) != 0x40)
                 continue;
@@ -234,13 +234,13 @@ int sceCdDiskReady(int mode)
                 continue;
         } while ((type - 1) < 4);
 
-        return CdlCdComplete;
+        return SCECdComplete;
     } else if (mode == 8)
         return CDVDreg_READY; /* This mode is not available in modules from BIOS */
 
     if ((CDVDreg_READY & 0xC0) == 0x40)
         if (!cdvdman_read2_flg)
-            return CdlCdComplete;
+            return SCECdComplete;
     DPRINTF(1, "Drive Not Ready\n");
     return SCECdNotReady;
 }
@@ -340,7 +340,7 @@ int sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5, void *c
     if ((cdvdman_mmode != 2) && (cdvdman_mmode != 0))
         return 0;
 
-    if (PollEventFlag(cdvdman_ncmd_ef, 1, EF_WAIT_CLEAR, &resultp) == 0xFFFFFE5B)
+    if (PollEventFlag(cdvdman_ncmd_ef, 1, WEF_CLEAR, &resultp) == 0xFFFFFE5B)
         return 0;
 
     DPRINTF(1, "RV read: sec %d num %d spin %d trycnt %d  addr %08x\n", lsn, sectors, mode->spindlctrl, mode->trycount, buf);
@@ -510,7 +510,7 @@ int sceCdReadKey(unsigned char arg1, unsigned char arg2, unsigned int lsn, unsig
         cdvdman_cderror = t;
     } while (++index < 300);
 
-    WaitEventFlag(cdvdman_scmd_ef, 1, EF_WAIT_AND, &resultp);
+    WaitEventFlag(cdvdman_scmd_ef, 1, WEF_AND, &resultp);
 #else
     if (!cdvdman_ncmd0Ch(arg1, arg2, lsn))
         return 0;

@@ -10,7 +10,7 @@
 #include "thbase.h"
 #include "thsemap.h"
 #include "sysclib.h"
-#include "iomanX.h"
+#include "ioman.h"
 #include "sysmem.h"
 #include "thevent.h"
 #include "dmacman.h"

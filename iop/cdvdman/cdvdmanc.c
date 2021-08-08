@@ -4,14 +4,6 @@
 
 IRX_ID("cdvd_driver", 1, 4);
 
-// TODO: 
-// sceCdChgSys -> required for PS2/DVD reading on DESR
-// 161 -> some xor read function
-// 167 -> alternate SCMD 0x2F
-// 169 -> alternate SCMD 0x30
-// 173 -> related to interupt &8 and &16
-// 179 -> some alternate read function
-
 /* Entry point */
 int _start(int argc, char **argv)
 {
@@ -25,13 +17,11 @@ int _start(int argc, char **argv)
     }
 
     cdvdman_ptoc = toc_buffer;
+#if 0
     cdvdman_pb_fsvr = cdvdman_fsvrbuf;
+#endif
 
     cdvdman_init();
-
-#if 0
-    SetRebootTimeLibraryHandlingMode(&_exp_cdvdman, 2);
-#endif
 
     return 0;
 }
@@ -39,7 +29,10 @@ int _start(int argc, char **argv)
 /* Exported entry #47 (used by cdvdfsv module) */
 void *sceGetFsvRbuf()
 {
+#if 0
     return cdvdman_fsvrbuf;
+#endif
+    return NULL;
 }
 
 /* Exported entry #3 */
@@ -62,14 +55,14 @@ void cdvdman_termcall(int arg)
         sceCdSync(0);
         sceCdDecSet(0, 0, 0);
 
-        if (dmac_ch_get_chcr(3) & DMAf_TR)
+        if (dmac_ch_get_chcr(3) & DMAC_CHCR_TR)
             CDVDreg_ABORT = 1;
         dmac_ch_set_chcr(3, 0);
 
-        DisableIntr(INUM_DMA_3, &dummy);
-        ReleaseIntrHandler(INUM_DMA_3);
-        DisableIntr(INUM_CDROM, &dummy);
-        ReleaseIntrHandler(INUM_CDROM);
+        DisableIntr(IOP_IRQ_DMA_CDVD, &dummy);
+        ReleaseIntrHandler(IOP_IRQ_DMA_CDVD);
+        DisableIntr(IOP_IRQ_CDVD, &dummy);
+        ReleaseIntrHandler(IOP_IRQ_CDVD);
     }
 }
 
@@ -106,10 +99,7 @@ int cdvdman_initcfg()
     cdvdman_minver20200 = (0x201FF < (u32)count) ? 1 : 0;
     cdvdman_minver20400 = (0x203FF < (u32)count) ? 1 : 0;
     cdvdman_minver20800 = (0x207FF < (u32)count) ? 1 : 0;
-    cdvdman_minver30601 = (0x30600 < (u32)count) ? 1 : 0; /* BBNAV */
-    cdvdman_minver50000 = (0x4FFFF < (u32)count) ? 1 : 0; /* BBNAV */
 #ifdef __CDVDMAN_NEWBIOS__
-    cdvdman_minver50200 = (0x501FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
     if (0x501FF < (u32)count) {
         u32 t;
 
@@ -118,16 +108,7 @@ int cdvdman_initcfg()
         t ^= 1;
         cdvdman_nontray = (t < 1) ? 1 : 0;
     }
-    /* else ??? = 0; */
-    cdvdman_minver50400 = (0x503FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
 #endif
-
-    cdvdman_minver50600 = (0x505FF < (u32)count) ? 1 : 0; /* DESR */
-
-    // guards cdvdman_189
-    cdvdman_minver60000 = (0x5FFFF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
-
-    cdvdman_minver60600 = (0x605FF < (u32)count) ? 1 : 0; /* slim PS2 BIOS */
 
     return 1;
 }
@@ -164,7 +145,7 @@ sceCdCBFunc sceCdCallback(sceCdCBFunc func)
     if (sceCdSync(1))
         return 0;
 
-    if (PollEventFlag(cdvdman_ncmd_ef, 1, EF_WAIT_CLEAR, &resultp) == 0xFFFFFE5B)
+    if (PollEventFlag(cdvdman_ncmd_ef, 1, WEF_CLEAR, &resultp) == 0xFFFFFE5B)
         return 0;
     rc = cdvdman_user_cb;
     cdvdman_user_cb = func;
@@ -213,7 +194,7 @@ int cdvdman_intr_cb(void *common)
     register int err, rs;
 
     iSetEventFlag(cdvdman_intr_ef, 0x29);
-    DisableIntr(INUM_DMA_3, &oldstate);
+    DisableIntr(IOP_IRQ_DMA_CDVD, &oldstate);
 
     if (cdvdman_cderror == SCECdErEOM)
         cdvdman_cderror = 0;
@@ -434,7 +415,7 @@ int intrh_cdrom(void *common)
         cdvdman_waf2 = 1;
         cdvdman_unused2++; /* common + 0x3 */
         cdvdman_unused2++; /* common + 0x3 */
-        CDVDreg_PWOFF = CdlCdComplete;
+        CDVDreg_PWOFF = SCECdComplete;
     }
 
     iReferEventFlagStatus(cdvdman_intr_ef, &efi);
@@ -574,7 +555,7 @@ int sceCdSC(int code, int *param)
             if (*param) /* Used by cdvdfsv */
             {
                 u32 resultp;
-                WaitEventFlag(cdvdman_read_ef, 1, EF_WAIT_CLEAR, &resultp);
+                WaitEventFlag(cdvdman_read_ef, 1, WEF_CLEAR, &resultp);
             } else
                 SetEventFlag(cdvdman_read_ef, 1);
 
@@ -588,7 +569,6 @@ int sceCdSC(int code, int *param)
         case 0xFFFFFFF7:
             return _irx_id.v; /* Used by cdvdfsv */
         case 0xFFFFFFF8:
-            cdvdman_spinctl = *param;
             return 1;
         case 0xFFFFFFFC:
             return cdvdman_cd36key; /* used by cdvdfsv */
@@ -612,7 +592,6 @@ void cdvdman_init()
 {
     int dummy;
     u32 stat;
-    u32 medium_removal_state;
     register int r, t;
     register u16 *p;
 
@@ -621,10 +600,10 @@ void cdvdman_init()
     cdvdman_cmdfunc = 0;
     cdvdman_dr_flg = 0;
 
-    RegisterIntrHandler(INUM_CDROM, HTYPE_C, intrh_cdrom, &cdvdman_command);
-    RegisterIntrHandler(INUM_DMA_3, HTYPE_C, intrh_dma_3, &cdvdman_command);
+    RegisterIntrHandler(IOP_IRQ_CDVD, HTYPE_C, intrh_cdrom, &cdvdman_command);
+    RegisterIntrHandler(IOP_IRQ_DMA_CDVD, HTYPE_C, intrh_dma_3, &cdvdman_command);
 
-    EnableIntr(INUM_CDROM);
+    EnableIntr(IOP_IRQ_CDVD);
 
     sceCdSC(0xFFFFFFF3, &dummy);
 
@@ -653,27 +632,6 @@ void cdvdman_init()
         if ((!r) || (stat))
             DelayThread(16000);
     } while ((++t < 0x3D) && ((!r) || (stat)));
-
-    cdvdman_medium_removal_state = 0;
-    if (cdvdman_minver50600 && !cdvdman_minver60000)
-    {
-		t = 0;
-		do {
-		    r = sceCdSetMediumRemoval(0, &stat);
-		    if ((!r) || (stat))
-		        DelayThread(16000);
-		} while ((++t < 0x3D) && ((!r) || (stat)));
-		t = 0;
-		do {
-		    r = sceCdGetMediumRemoval((u32 *)&medium_removal_state, &stat);
-		    if ((!r) || (stat))
-		        DelayThread(16000);
-		} while ((++t < 0x3D) && ((!r) || (stat)));
-
-		if (r && !stat)
-			cdvdman_medium_removal_state = medium_removal_state;
-		// TODO: handle sceCdChgSys
-    }
 }
 
 /* Exported entry #4 */
@@ -692,10 +650,10 @@ int sceCdInit(int init_mode)
     } else {
         sceCdSync(0);
         DPRINTF(1, "Cdvdman Exit\n");
-        DisableIntr(INUM_CDROM, &dummy);
-        ReleaseIntrHandler(INUM_CDROM);
-        DisableIntr(INUM_DMA_3, &dummy);
-        ReleaseIntrHandler(INUM_DMA_3);
+        DisableIntr(IOP_IRQ_CDVD, &dummy);
+        ReleaseIntrHandler(IOP_IRQ_CDVD);
+        DisableIntr(IOP_IRQ_DMA_CDVD, &dummy);
+        ReleaseIntrHandler(IOP_IRQ_DMA_CDVD);
     }
 
     if (init_mode == SCECdINIT) {
@@ -718,11 +676,9 @@ int sceCdInit(int init_mode)
     cdvdman_scmd_flg = 1;
     cdvdman_cderror = SCECdErNO;
     cdvdman_read_to = 0;
-    cdvdman_spinctl = -1;
     SetEventFlag(cdvdman_intr_ef, 0x29);
     SetEventFlag(cdvdman_ncmd_ef, 1);
     SetEventFlag(cdvdman_scmd_ef, 1);
-    SetEventFlag(cdvdman_srch_ef, 1);
 
     return 1;
 }
@@ -734,7 +690,7 @@ int cdvdman_send_scmd(int cmd, const void *sdata, int sdlen, void *rdata, int rd
     int i, j;
 
     if (check_sef == 1)
-        if (PollEventFlag(cdvdman_scmd_ef, 1, EF_WAIT_CLEAR, &resultp) == 0xFFFFFE5B)
+        if (PollEventFlag(cdvdman_scmd_ef, 1, WEF_CLEAR, &resultp) == 0xFFFFFE5B)
             return 0;
 
     i = 0;
@@ -748,7 +704,7 @@ int cdvdman_send_scmd(int cmd, const void *sdata, int sdlen, void *rdata, int rd
     if (!cdvdman_waf) {
         if (QueryIntrContext()) {
             for (;;) {
-                if (!(dmac_ch_get_chcr(3) & DMAf_TR))
+                if (!(dmac_ch_get_chcr(3) & DMAC_CHCR_TR))
                     break;
                 if (cdvdman_waf)
                     break;
@@ -917,7 +873,7 @@ int cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int r
     register int i, t;
 
     if (check_sef == 1)
-        if (PollEventFlag(cdvdman_scmd_ef, 1, EF_WAIT_CLEAR, &resultp) == 0xFFFFFE5B)
+        if (PollEventFlag(cdvdman_scmd_ef, 1, WEF_CLEAR, &resultp) == 0xFFFFFE5B)
             return 0;
 
     t = 0;
@@ -1042,12 +998,12 @@ int intrh_dma_3(void *common)
             dmac_ch_get_chcr(3);
             dmac_ch_set_madr(3, (u32)cdvdman_dma3prm.dma3_maddress);
             dmac_ch_set_bcr(3, cdvdman_dma3prm.dma3_blkwords | (cdvdman_dma3prm.dma3_blkcount * cdvdman_dma3prm.dma3_csectors << 16));
-            dmac_ch_set_chcr(3, 0x40000000 | DMAf_TR | DMAf_CO);
+            dmac_ch_set_chcr(3, 0x40000000 | DMAC_CHCR_TR | DMAC_CHCR_CO);
             dmac_ch_get_chcr(3);
 
             iClearEventFlag(cdvdman_intr_ef, 0xFFFFFFDF);
         } else {
-            DisableIntr(INUM_DMA_3, &dummy);
+            DisableIntr(IOP_IRQ_DMA_CDVD, &dummy);
             iSetEventFlag(cdvdman_intr_ef, 0x20);
         }
     }
@@ -1063,7 +1019,7 @@ int cdvdman_setdma3(DMA3PARAM *b18)
 {
     int result = 0, val;
 
-    if (dmac_ch_get_chcr(3) & DMAf_TR)
+    if (dmac_ch_get_chcr(3) & DMAC_CHCR_TR)
         CDVDreg_ABORT = 1;
 
     cdvdman_dma3prm = *b18;
@@ -1073,7 +1029,7 @@ int cdvdman_setdma3(DMA3PARAM *b18)
     result = dmac_ch_get_chcr(3);
     if (b18->dma3_csectors) {
         clear_ev_flag(cdvdman_intr_ef, 0xFFFFFFDF);
-        EnableIntr(INUM_DMA_3);
+        EnableIntr(IOP_IRQ_DMA_CDVD);
     }
 
     CDVDreg_HOWTO = b18->cdvdreg_howto;
@@ -1086,7 +1042,7 @@ int cdvdman_setdma3(DMA3PARAM *b18)
     val <<= 16;
 
     dmac_ch_set_bcr(3, val | b18->dma3_blkwords);
-    dmac_ch_set_chcr(3, 0x40000000 | DMAf_TR | DMAf_CO);
+    dmac_ch_set_chcr(3, 0x40000000 | DMAC_CHCR_TR | DMAC_CHCR_CO);
     dmac_ch_get_chcr(3);
 
     return result;
@@ -1101,7 +1057,7 @@ int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARA
     u32 resultp;
 
     if (check_cb == 1)
-        if (PollEventFlag(cdvdman_ncmd_ef, 1, EF_WAIT_CLEAR, &resultp) == 0xFFFFFE5B)
+        if (PollEventFlag(cdvdman_ncmd_ef, 1, WEF_CLEAR, &resultp) == 0xFFFFFE5B)
             return -1;
 
     if (((CDVDreg_READY & 0xC0) != 0x40) || ((!cdvdman_waf) && ((cdvdman_read2_flg == 1) || ((cdvdman_read2_flg == 1) && ((ncmd & 0xFF) != CDVD_NCMD_DVDREAD)) || ((cdvdman_read2_flg == 2) && ((ncmd & 0xFF) != CDVD_NCMD_READ))))) {
@@ -1111,7 +1067,6 @@ int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARA
         return -1;
     }
 
-    cdvdman_iocache = 0;
     if (b18)
         cdvdman_setdma3(b18);
     cdvdman_cmdfunc = func;
@@ -1196,7 +1151,7 @@ int cdvdman_mediactl(int code)
     char rdata;
     register int r, b;
 
-    if (PollEventFlag(cdvdman_scmd_ef, 1, EF_WAIT_CLEAR, &resultp) == 0xFFFFFE5B)
+    if (PollEventFlag(cdvdman_scmd_ef, 1, WEF_CLEAR, &resultp) == 0xFFFFFE5B)
         return 0;
 
     b = CDVDreg_B & 1;
@@ -1397,7 +1352,7 @@ int sceCdRead0(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int csec, void
     u32 resultp;
     int type;
 
-    if (PollEventFlag(cdvdman_ncmd_ef, 1, EF_WAIT_CLEAR, &resultp) == 0xFFFFFE5B)
+    if (PollEventFlag(cdvdman_ncmd_ef, 1, WEF_CLEAR, &resultp) == 0xFFFFFE5B)
         return 0;
 
     DPRINTF(1, "DVD/CD sceCdRead0 sec %d num %d spin %d trycnt %d dptn %d adr %08x\n", lsn, sectors, mode->spindlctrl, mode->trycount, mode->datapattern, buf);
@@ -1767,70 +1722,6 @@ void Read2intrCDVD(int read2_flag)
     }
 }
 
-/* Exported entry #66 */
-int sceCdReadChain(sceCdRChain *read_tag, sceCdRMode *mode)
-{
-#ifdef __CDVDMAN_SW_E66__
-    int result;
-    u32 v5;
-    int v6;
-    void *v7;
-
-    if ( CDVDreg_TYPE == 20 && mode->spindlctrl == 1 )
-        mode->spindlctrl = 0;
-    if ( (CDVDreg_READY & 0xC0) == 64 && !cdvdman_read2_flg )
-    {
-        cdvdman_readptr = 0;
-        cdvdman_readlsn = 0;
-        cdvdman_rdsectc = 0;
-        cdvdman_csec = 0;
-        cdvdman_nsec = 0;
-        // TODO: support code for cdvdman_rbuffer in other functions
-        cdvdman_rbuffer = read_tag;
-        cdvdman_cdrmode.datapattern = mode->datapattern;
-        cdvdman_cdrmode.trycount = mode->trycount;
-        cdvdman_cdrmode.spindlctrl = mode->spindlctrl;
-        v5 = read_tag->lbn;
-        v6 = read_tag->sectors;
-        v7 = (void *)read_tag->buffer;
-        result = 1;
-        if ( v5 != -1 && v6 != -1 )
-        {
-            if ( v7 == (void *)-1 )
-            {
-                result = 1;
-            }
-            else
-            {
-                cdvdman_rdsectc = v6;
-                cdvdman_read2_flg = 2;
-
-                if ( sceCdRead0(v5, v6, v7, mode, 0, 0) == 0 )
-                {
-                    result = 0;
-                    cdvdman_cderror = -2;
-                    cdvdman_rdsectc = 0;
-                    cdvdman_read2_flg = 0;
-                }
-                else
-                {
-                    result = 1;
-                    ++cdvdman_csec;
-                }
-            }
-        }
-    }
-    else
-    {
-        DPRINTF(0, "dbl error r2f= %d waf= %d\n", cdvdman_read2_flg, cdvdman_waf);
-        result = 0;
-    }
-    return result;
-#else
-    return 0;
-#endif
-}
-
 /* internal routine */
 int cdvdman_readfull(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int flag)
 {
@@ -1924,8 +1815,6 @@ int sceCdDecSet(unsigned char arg1, unsigned char arg2, unsigned char shift)
 /* Exported entry #71 (only BIOS & BB Nav), internal routine in IOP images. */
 int sceCdSpinCtrlIOP(u32 speed)
 {
-    DPRINTF(1, "sceCdSpinCtrlIOP speed= %d\n", speed);
-    cdvdman_spinctl = speed;
     return 1;
 }
 
@@ -1959,396 +1848,4 @@ u32 sceCdPosToInt(sceCdlLOCCD *p)
     result -= 150;
 
     return result;
-}
-
-/* internal routine */
-int CD_newmedia(int layer)
-{
-    int oldstate;
-    u32 ptsector;
-    register int type, index;
-    register void *buf;
-    register u8 *p;
-    register int number;
-    register u8 *end;
-
-    type = sceCdGetDiskType();
-    if ((type != 0x14) && (type != 0x12) && (type != 0x13) && (type != 0x10) &&
-        (type != 0x11) && (type != 0xFF) && (type != 0xFE) && (type != 0xFC)) {
-        DPRINTF(1, "CD_newmedia: Illegal disc media type =%d\n", type);
-        return 0;
-    }
-
-    cdvdman_fs_base2 = 0;
-    if (type == 0x14) {
-        if (!DvdDual_infochk()) {
-            DPRINTF(1, "CD_newmedia: Get DvdDual_infochk fail\n");
-            return 0;
-        }
-        if (layer) {
-            cdvdman_fs_base2 = cdvdman_layer1;
-        } else
-            cdvdman_fs_base2 = 0;
-    }
-
-    if (disc_read(1, cdvdman_fs_base2 + 0x10, cdvdman_fs_rbuf, layer) != 1) {
-        DPRINTF(1, "CD_newmedia: Read error in disc_read(PVD)\n");
-        return 0;
-    }
-
-    CpuSuspendIntr(&oldstate);
-
-    if (cdvdman_ptblsize) {
-        register u32 i = 0;
-        register int *p = (int *)cdvdman_pathtbl;
-
-        do {
-            p[0] = 0;
-            p[1] = 0;
-            p[2] = 0;
-            p[3] = 0;
-            p[4] = 0;
-            p += 5;
-        } while (++i < cdvdman_ptblsize);
-    }
-
-    // TODO: implement cache related setting here
-    /* ??? = 0; */
-    /* ??? = 0; */
-    /* ??? = 0; */
-
-    CpuResumeIntr(oldstate);
-
-    if (strncmp(&cdvdman_fs_rbuf[1], "CD001", 5)) {
-        DPRINTF(1, "CD_newmedia: Disc format error in cd_read(PVD)\n");
-        return 0;
-    }
-
-    switch (type) {
-        case 0x10: /* SCECdPSCD */
-        case 0x11: /* SCECdPSCDDA */
-        case 0x12: /* SCECdPS2CD */
-        case 0x13: /* SCECdPS2CDDA */
-            ptsector = *(u32 *)(&cdvdman_fs_rbuf[0x8C]);
-            DPRINTF(0x11, "CD_newmedia: CD Read mode\n");
-            break;
-        case 0x14: /* SCECdPS2DVD */
-        case 0xFC: /* ? */
-        case 0xFE: /* SCECdDVDV */
-            ptsector = 0x101;
-            DPRINTF(0x11, "CD_newmedia: DVD Read mode\n");
-            break;
-        default:
-            ptsector = 0x101;
-            break;
-    }
-
-    buf = cdvdman_fs_rbuf;
-    if (disc_read(1, cdvdman_fs_base2 + ptsector, buf, layer) != 1) {
-        DPRINTF(1, "CD_newmedia: Read error (PT:%08x)\n", ptsector);
-        return 0;
-    }
-
-    p = (u8 *)buf;
-
-    DPRINTF(2, "CD_newmedia: sarching dir..\n");
-
-    index = 0;
-    if (p < &p[0x800]) {
-        end = &p[0x800];
-
-        do {
-            register char *name;
-
-            if (!*p)
-                break;
-
-            name = &cdvdman_dirtbl[index].name[0];
-
-            cdvdman_dirtbl[index].extent = *(int *)&p[2];
-            number = index + 1;
-            cdvdman_dirtbl[index].number = number;
-            cdvdman_dirtbl[index].parent = p[6];
-
-            memcpy(name, &p[8], *p);
-            cdvdman_dirtbl[index].name[*p] = 0;
-
-            p += *p + (*p & 0x1) + 8;
-
-            DPRINTF(2, "\t%08x,%04x,%04x,%s\n", cdvdman_dirtbl[index].extent, cdvdman_dirtbl[index].number, cdvdman_dirtbl[index].parent, name);
-
-            index = number;
-        } while ((index < CdlMAXDIR) && (p < end));
-    }
-
-    if (index < CdlMAXDIR)
-        cdvdman_dirtbl[index].parent = 0;
-
-    cdvdman_fs_cdsec = 0;
-    cdvdman_fs_layer = layer;
-
-    DPRINTF(2, "CD_newmedia: %d dir entries found\n", index);
-
-    return 1;
-}
-
-/* internal routine */
-int CD_cachefile(int dsec, int layer)
-{
-    u32 fslsn;
-    u32 *ptrsz;
-    u8 *date2;
-    u8 *date1;
-    register u8 *p;
-    register u32 year;
-    register int index;
-    register u32 *ptlsn;
-    register char *pname;
-    register u8 *date5;
-    register u8 *date4;
-    register u8 *date3;
-
-
-    if (dsec != cdvdman_fs_cdsec) {
-        if (!layer) {
-            fslsn = cdvdman_dirtbl[dsec - 1].extent;
-        } else {
-            fslsn = (u32)cdvdman_fs_base2 + cdvdman_dirtbl[dsec - 1].extent;
-        }
-
-        p = (u8 *)cdvdman_fs_rbuf;
-
-        if (disc_read(1, fslsn, p, layer) == 1) {
-            DPRINTF(2, "CD_cachefile: searching...\n");
-
-            index = 0;
-            date1 = &cdvdman_filetbl[0].date[1];
-            date2 = &cdvdman_filetbl[0].date[2];
-            date3 = &cdvdman_filetbl[0].date[3];
-            date4 = &cdvdman_filetbl[0].date[4];
-            date5 = &cdvdman_filetbl[0].date[5];
-            ptlsn = &cdvdman_filetbl[0].lsn;
-            ptrsz = &cdvdman_filetbl[0].size;
-            pname = &cdvdman_filetbl[0].name[0];
-
-            if (p < &p[0x800]) {
-                do {
-                    if (!*p)
-                        break;
-
-                    *ptlsn = *(u32 *)&p[0x2];
-                    *ptrsz = *(u32 *)&p[0xA];
-
-                    year = p[0x12] + 1900;
-                    cdvdman_filetbl[index].date[7] = year >> 8;
-                    cdvdman_filetbl[index].date[6] = year;
-                    *date5 = p[0x13];
-                    *date4 = p[0x14];
-                    *date3 = p[0x15];
-                    *date2 = p[0x16];
-                    *date1 = p[0x17];
-
-                    // TODO: set this correctly after structure entry is added
-#if 0
-                    cdvdman_filetbl[index].flag = p[0x19];
-#endif
-
-                    if (!index) {
-                        pname[0] = '.';
-                        pname[1] = 0;
-                    } else {
-                        if (index == 1) {
-                            pname[0] = '.';
-                            pname[1] = '.';
-                            pname[2] = 0;
-                        } else {
-                            memcpy(pname, &p[0x21], p[0x20]);
-                            cdvdman_filetbl[index].name[p[0x20]] = 0;
-                        }
-                    }
-
-                    DPRINTF(2, "\t lsn %d size %d name:%d:%s %d/%d/%d %d:%d:%d\n", *ptlsn, cdvdman_filetbl[index].size, p[0x20], pname, year, *date5, *date4, *date3, *date2, *date1);
-
-                    date1 += 0x24;
-                    date2 += 0x24;
-                    date3 += 0x24;
-                    date4 += 0x24;
-                    date5 += 0x24;
-                    pname += 0x24;
-                    ptlsn = (u32 *)((u32)ptlsn + 0x24);
-                    ptrsz = (u32 *)((u32)ptrsz + 0x24);
-
-                    p += *p;
-                    index++;
-                } while ((index < CdlMAXFILE) && ((char *)p < &cdvdman_fs_rbuf[0x800]));
-            }
-
-            cdvdman_fs_cdsec = dsec;
-
-            if (index < CdlMAXFILE)
-                cdvdman_filetbl[index].name[0] = 0;
-
-            DPRINTF(2, "CD_cachefile: %d files found\n", index);
-        } else {
-            DPRINTF(1, "CD_cachefile: dir not found\n");
-            cdvdman_fs_cdsec = 0;
-
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-int disc_read(int size, int loc, void *buffer, int layer)
-{
-    sceCdRMode rmode;
-    register int f;
-
-    f = 0;
-    rmode.trycount = 0x10;
-
-    if (cdvdman_l0check(layer))
-        cdvdman_srchspd = 0;
-
-    switch (cdvdman_srchspd) {
-        case 2:
-            rmode.spindlctrl = 2;
-            break;
-        case 1:
-            rmode.spindlctrl = 1;
-            break;
-        case 0:
-            rmode.spindlctrl = 0;
-            break;
-        case 3:
-            rmode.spindlctrl = 3;
-            break;
-        case 4:
-            rmode.spindlctrl = 4;
-            break;
-        default:
-            rmode.spindlctrl = 1;
-            break;
-    }
-
-    rmode.datapattern = 0;
-
-    DPRINTF(1, "loc= %d size= %d\n", loc, size);
-
-    if (cdvdman_ptblflag) {
-        // TODO: handle cache function
-    }
-
-    if (f)
-        return size;
-
-    if (!sceCdRE(loc, size, buffer, &rmode))
-        return 0;
-    sceCdSync(3);
-    if (!sceCdGetError())
-        return size;
-
-    DPRINTF(1, "cd_read: error code %x\n", sceCdGetError());
-
-    return 0;
-}
-
-int cdvdman_cacheinit(u32 blocks, char *fname, int action)
-{
-    char cachedir[512];
-    int oldstate;
-    int ioctlarg;
-    register int i, v, fd, num;
-
-    v = num = 0;
-
-    if (!action) {
-    cacheinit_l1:
-
-        if (cdvdman_cache_fd != -1) {
-            v = close(cdvdman_cache_fd);
-            if (!(num < 0)) {
-                if (!strncmp(cachedir, "pfs", 3)) {
-                    num = remove(cachedir);
-                } else {
-                    if (strncmp(cachedir, "host", 4)) {
-                        num = 0;
-                        remove(cachedir);
-                    }
-                }
-            }
-        }
-
-        CpuSuspendIntr(&oldstate);
-        cdvdman_cache_fd = -1;
-        // TODO: implement cache related setting here
-        /* ??? = 0; ??? = 0; ??? = 0; */
-        cdvdman_ptblflag = 0;
-        FreeSysMemory(cdvdman_pathtbl);
-        cdvdman_pathtbl = 0;
-        CpuResumeIntr(oldstate);
-
-        DPRINTF(1, "path_tbl_init Error %d\n", v);
-
-        return (action) ? v : num;
-    } else {
-        CpuSuspendIntr(&oldstate);
-        if ((cdvdman_pathtbl = AllocSysMemory(SMEM_High, blocks * 20, 0))) {
-            CpuResumeIntr(oldstate);
-
-            sprintf(cachedir, "%sCache_Path", fname);
-
-            fd = open(cachedir, O_RDWR | O_CREAT | O_TRUNC, 0x1FF);
-            if (fd < 0)
-                goto cacheinit_l1;
-
-            cdvdman_cache_fd = fd;
-
-            if (!strncmp(cachedir, "pfs", 3)) {
-                ioctlarg = blocks << 11;
-                ioctl2(cdvdman_cache_fd, PIOCALLOC, &ioctlarg, 4, 0, 0);
-            }
-
-            if (num < blocks) {
-                i = 0;
-                do {
-                    v = write(cdvdman_cache_fd, cdvdman_fs_rbuf, 0x800);
-                    if (v < 0)
-                        goto cacheinit_l1;
-                } while (++i < blocks);
-            }
-
-            CpuSuspendIntr(&oldstate);
-            cdvdman_ptblsize = blocks;
-            if (blocks) {
-                register int *p;
-
-                i = 0;
-                p = (int *)cdvdman_pathtbl;
-
-                do {
-                    p[4] = 0;
-                    p[3] = 0;
-                    p[2] = 0;
-                    p[1] = 0;
-                    p[0] = 0;
-
-                    p += 5;
-                } while (++i < blocks);
-            }
-            // TODO: implement cache related setting here
-            /* ??? = 0; ??? = 0; ??? = 0; */
-            cdvdman_ptblflag = 1;
-            CpuResumeIntr(oldstate);
-
-            return 0;
-        } else {
-            CpuResumeIntr(oldstate);
-            cdvdman_ptblflag = 0;
-
-            return -12;
-        }
-    }
-    return 0;
 }

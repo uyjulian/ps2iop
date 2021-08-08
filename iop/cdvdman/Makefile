@@ -1,6 +1,6 @@
 IOP_BIN = cdvdman.irx
 
-IOP_OBJS = imports.o exports.o cdvdmanc.o cdvdmand.o cdvdmanf.o cdvdmans.o scmd.o ncmd.o searchfile.o streaming.o
+IOP_OBJS = imports.o exports.o cdvdmanc.o cdvdmand.o cdvdmanf.o cdvdmans.o scmd.o ncmd.o
 
 all: $(IOP_BIN)
 
