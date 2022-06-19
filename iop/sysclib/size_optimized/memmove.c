@@ -6,9 +6,6 @@ void *memmove(void *dest, const void *src, size_t size)
 	u8 *v3;
 	void *result;
 	s32 v5;
-	u8 *v6;
-	char v7;
-	char v8;
 
 	v3 = dest;
 	if (!dest)
@@ -20,6 +17,8 @@ void *memmove(void *dest, const void *src, size_t size)
 		result = dest;
 		if (size > 0)
 		{
+			char v8;
+
 			do
 			{
 				v8 = *(u8 *)src;
@@ -37,6 +36,9 @@ void *memmove(void *dest, const void *src, size_t size)
 		result = dest;
 		if (v5 >= 0)
 		{
+			u8 *v6;
+			char v7;
+
 			do
 			{
 				v6 = (u8 *)dest + v5;

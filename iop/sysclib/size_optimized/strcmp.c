@@ -7,11 +7,11 @@ int strcmp(const char *p, const char *q)
 
 	if (p && q)
 	{
-		int v3;
-		int v4;
-
 		while (1)
 		{
+			int v3;
+			int v4;
+
 			v3 = *q;
 			v4 = *(u8 *)p;
 			q += 1;
