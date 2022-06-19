@@ -3,10 +3,10 @@
 
 void *memset(void *ptr, int c, size_t size)
 {
-	u8 *i;
-
 	if (ptr)
 	{
+		u8 *i;
+
 		if (!c && (((((u32)ptr) & 0xff) | (u8)size) & 3) == 0)
 		{
 			return _wmemset((u32 *)ptr, 0, size);

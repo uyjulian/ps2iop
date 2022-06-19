@@ -4,15 +4,17 @@
 size_t strspn(const char *s, const char *accept)
 {
 	const char *v2;
-	const char *v3;
-	int v4;
 
 	v2 = s;
 	if (*s)
 	{
+		const char *v3;
+
 		v3 = accept;
 		do
 		{
+			int v4;
+
 			v4 = *(u8 *)v3 << 24;
 			if (!*v3)
 			{

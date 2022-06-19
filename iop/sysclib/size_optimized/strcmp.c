@@ -4,11 +4,12 @@
 int strcmp(const char *p, const char *q)
 {
 	int result;
-	int v3;
-	int v4;
 
 	if (p && q)
 	{
+		int v3;
+		int v4;
+
 		while (1)
 		{
 			v3 = *q;

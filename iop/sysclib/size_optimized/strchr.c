@@ -3,7 +3,6 @@
 
 char *strchr(const char *s, int c)
 {
-	int v2;
 
 	if (!s)
 	{
@@ -11,6 +10,8 @@ char *strchr(const char *s, int c)
 	}
 	while (1)
 	{
+		int v2;
+
 		v2 = *s;
 		if (v2 == (char)c)
 		{
