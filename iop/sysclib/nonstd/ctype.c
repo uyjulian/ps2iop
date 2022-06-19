@@ -1,6 +1,5 @@
-
-#include "irx_imports.h"
-#include "sysclib.h"
+#define SYSCLIB_DISABLE_BUILTINS
+#include <sysclib.h>
 
 unsigned char ctype_table[128] = {
 	0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -31,22 +30,4 @@ unsigned char look_ctype_table(char character) {
 // non-standard function
 void *get_ctype_table() {
 	return ctype_table;
-}
-
-// non-standard function
-char *atob(char *s, int *i) {
-	char *result;
-
-	*i = strtol(s, &result, 10);
-	return result;
-}
-
-// non-standard function (not to be confused with the wchar_t related function)
-void *_wmemcopy(u32 *dest, const u32 *src, size_t size) {
-	return memcpy((u8 *)dest, (u8 *)src, size);
-}
-
-// non-standard function (not to be confused with the wchar_t related function)
-void *_wmemset(u32 *dest, u32 c, size_t size) {
-	return memset((u8 *)dest, c, size);
 }
