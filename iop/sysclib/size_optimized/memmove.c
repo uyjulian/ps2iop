@@ -5,7 +5,7 @@ void *memmove(void *dest, const void *src, size_t size)
 {
 	u8 *v3;
 	void *result;
-	size_t v5;
+	s32 v5;
 	u8 *v6;
 	char v7;
 	char v8;
