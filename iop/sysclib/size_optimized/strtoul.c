@@ -9,7 +9,7 @@ unsigned long strtoul(const char *s, char **endptr, int base)
 	int v7;
 	int v8;
 	char v9;
-	unsigned int v10;
+	int v10;
 	char *v11;
 
 	v3 = (char *)s;
