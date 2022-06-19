@@ -13,6 +13,7 @@ void *memmove(void *dest, const void *src, size_t n)
 	const char *s = src;
 
 	if (d==s) return d;
+	// cppcheck-suppress signConversion
 	if ((uintptr_t)s-(uintptr_t)d-n <= -2*n) return memcpy(d, s, n);
 
 	if (d<s) {

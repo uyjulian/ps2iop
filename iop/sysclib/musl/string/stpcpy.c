@@ -12,7 +12,9 @@ char *__stpcpy(char *restrict d, const char *restrict s)
 {
 #ifdef __GNUC__
 	typedef size_t __attribute__((__may_alias__)) word;
+	// cppcheck-suppress variableScope
 	word *wd;
+	// cppcheck-suppress variableScope
 	const word *ws;
 	if ((uintptr_t)s % ALIGN == (uintptr_t)d % ALIGN) {
 		for (; (uintptr_t)s % ALIGN; s++, d++)

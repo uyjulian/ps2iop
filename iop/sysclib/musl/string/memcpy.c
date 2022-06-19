@@ -18,6 +18,7 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n)
 #endif
 
 	typedef uint32_t __attribute__((__may_alias__)) u32;
+	// cppcheck-suppress variableScope
 	uint32_t w, x;
 
 	for (; (uintptr_t)s % 4 && n; n--) *d++ = *s++;

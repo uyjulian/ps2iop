@@ -23,6 +23,7 @@ char *__stpncpy(char *restrict d, const char *restrict s, size_t n)
 	}
 #endif
 	for (; n && (*d=*s); n--, s++, d++);
+	// cppcheck-suppress unusedLabelConfiguration
 tail:
 	memset(d, 0, n);
 	return d;
