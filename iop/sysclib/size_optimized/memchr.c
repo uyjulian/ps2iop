@@ -3,7 +3,7 @@
 
 void *memchr(const void *s, int c, size_t n)
 {
-	if (!s || n <= 0)
+	if (!s || (s32)n <= 0)
 	{
 		return 0;
 	}
@@ -15,7 +15,7 @@ void *memchr(const void *s, int c, size_t n)
 			break;
 		}
 		s = (char *)s + 1;
-		if (n <= 0)
+		if ((s32)n <= 0)
 		{
 			return 0;
 		}

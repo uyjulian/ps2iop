@@ -32,7 +32,7 @@ void *memmove(void *dest, const void *src, size_t size)
 	}
 	else
 	{
-		v5 = size - 1;
+		v5 = (s32)size - 1;
 		result = dest;
 		if (v5 >= 0)
 		{
