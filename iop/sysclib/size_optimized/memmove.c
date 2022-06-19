@@ -17,10 +17,10 @@ void *memmove(void *dest, const void *src, size_t size)
 		result = dest;
 		if (size > 0)
 		{
-			char v8;
-
 			do
 			{
+				char v8;
+
 				v8 = *(u8 *)src;
 				src = (u8 *)src + 1;
 				size -= 1;
@@ -36,11 +36,11 @@ void *memmove(void *dest, const void *src, size_t size)
 		result = dest;
 		if (v5 >= 0)
 		{
-			u8 *v6;
-			char v7;
-
 			do
 			{
+				u8 *v6;
+				char v7;
+
 				v6 = (u8 *)dest + v5;
 				v7 = *((u8 *)src + v5--);
 				*v6 = v7;
