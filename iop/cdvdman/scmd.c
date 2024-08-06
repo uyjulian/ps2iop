@@ -26,7 +26,7 @@ int sceCdReadClock(sceCdCLOCK *rtc)
 //-------------------------------------------------------------------------
 int sceCdGetDiskType(void)
 {
-    return cdvdman_stat.disc_type_reg;
+    return CDVDreg_TYPE;
 }
 
 //-------------------------------------------------------------------------
@@ -40,36 +40,36 @@ int sceCdGetError(void)
 //-------------------------------------------------------------------------
 int sceCdTrayReq(int mode, u32 *traycnt)
 {
+    u8 data[2];
     DPRINTF("sceCdTrayReq(%d, 0x%lX)\n", mode, *traycnt);
 
     if (mode == SCECdTrayCheck) {
         if (traycnt)
-            *traycnt = cdvdman_media_changed;
-
-        cdvdman_media_changed = 0;
-
+#if 0
+            *traycnt = cdvdman_mediactl(1);
+#endif
+            *traycnt = 0;
         return 1;
     }
 
-    if (mode == SCECdTrayOpen) {
-        cdvdman_stat.status = SCECdStatShellOpen;
-        cdvdman_stat.disc_type_reg = 0;
+    if (mode == SCECdTrayOpen || mode == SCECdTrayClose) {
+#ifdef __CDVDMAN_NEWBIOS__
+        // TODO: version check for lid consoles instead of tray consoles here
+        if (cdvdman_nontray)
+            if (cdvdman_nontray == 1)
+                return 1;
+#endif
 
-        DelayThread(11000);
+        data[0] = mode;
 
-        cdvdman_stat.err = SCECdErOPENS; /* not sure about this error code */
+        if (cdvdman_sendSCmd(6, &data[0], 1, &data[1], 1, 1)) {
+            if (!data[1]) {
+                DelayThread(11000);
+                return 1;
+            }
+        }
 
-        return 1;
-    } else if (mode == SCECdTrayClose) {
-        DelayThread(25000);
-
-        cdvdman_stat.status = SCECdStatPause; /* not sure if the status is right, may be - SCECdStatSpin */
-        cdvdman_stat.err = SCECdErNO;         /* not sure if this error code is suitable here */
-        cdvdman_stat.disc_type_reg = (int)0;
-
-        cdvdman_media_changed = 1;
-
-        return 1;
+        return 0;
     }
 
     return 0;
@@ -88,7 +88,7 @@ int sceCdStatus(void)
 {
     DPRINTF("sceCdStatus %d\n", cdvdman_stat.status);
 
-    return cdvdman_stat.status;
+    return CDVDreg_STATUS;
 }
 
 //-------------------------------------------------------------------------
