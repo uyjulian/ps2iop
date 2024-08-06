@@ -160,7 +160,6 @@ extern iop_device_ops_t cdvdman_cdops;
 extern iop_device_t cdvdman_cddev;
 
 extern int cdvdman_clk_flg;
-extern u32 cdvdman_cd36key;
 extern int cdvdman_ee_ncmd;
 extern int cdvdman_mmode;
 extern int cdvdman_brkfunc;
@@ -175,7 +174,6 @@ extern int cdvdman_rtindex;
 extern int cdvdman_retries;
 /* Timeouts (default values) */
 extern int cdvdman_sync_to;
-extern int TimeOut2;
 
 
 extern int cdvdman_verbose;
@@ -184,20 +182,13 @@ extern int cdvdman_verbose;
 
 extern u8 *cdvdman_ptoc;
 extern int cdvdman_scmd_ef;
-#if 0
-extern char *cdvdman_pb_fsvr;
-#endif
 extern int cdvdman_ncmd_ef;
 extern int cdvdman_read_ef;
 extern int cdvdman_intr_ef;
 
 extern sceCdCBFunc cdvdman_user_cb;
-extern void *cdvdman_poffarg;
-extern void (*cdvdman_cdstm0cb)(int);
 
 extern sceCdCLOCK cdvdman_clock;
-extern void (*cdvdman_poff_cb)(void *);
-extern void (*cdvdman_cdstm1cb)(int);
 extern int cdvdman_cmdfunc;
 
 extern u32 cdvdman_readptr;
@@ -208,9 +199,6 @@ extern void *cdvdman_readbuf;
 
 extern iop_sys_clock_t cdvdman_poff_to;
 
-#if 0
-extern char cdvdman_fsvrbuf[FSVR_BUFFER_SIZE];
-#endif
 extern u8 toc_buffer[TOC_BUFFSIZE];
 
 /* The data below is a very big (0xC0 bytes or even bigger) internal structure */
@@ -220,7 +208,6 @@ extern u8 cdvdman_unused1;
 extern u8 cdvdman_unused2;
 extern int cdvdman_waf;
 extern int cdvdman_thrd_id;
-extern int cdvdman_strm_id;
 extern int cdvdman_read2_flg;
 extern u32 cdvdman_readlsn;
 extern void *cdvdman_rbuffer;

@@ -78,8 +78,7 @@ int sceCdSync(int mode)
                 if (sceCdCheckCmd())
                     if (!cdvdman_read2_flg)
                         if (!cdvdman_ee_ncmd)
-                            if (!cdvdman_strm_id)
-                                break;
+                            break;
                 WaitEventFlag(cdvdman_intr_ef, 1, WEF_AND, &resultp);
             }
             break;
@@ -87,8 +86,7 @@ int sceCdSync(int mode)
             if (sceCdCheckCmd())
                 if (!cdvdman_read2_flg)
                     if (!cdvdman_ee_ncmd)
-                        if (!cdvdman_strm_id)
-                            return 0;
+                        return 0;
             return 1;
         case 32:
             WaitEventFlag(cdvdman_intr_ef, 0x21, WEF_OR, &resultp);

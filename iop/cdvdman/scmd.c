@@ -281,9 +281,6 @@ int sceCdSetTimeout(int param, int timeout)
         case 1:
             cdvdman_sync_to = timeout;
             return 1;
-        case 2:
-            TimeOut2 = timeout;
-            return 1;
         default:
             return 0;
     }

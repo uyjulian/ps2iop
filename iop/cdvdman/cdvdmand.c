@@ -26,7 +26,6 @@ iop_device_ops_t cdvdman_cdops =
 iop_device_t cdvdman_cddev = {cdvdman_cdrom, IOP_DT_FS, 1, "CD-ROM ", &cdvdman_cdops};
 
 int cdvdman_clk_flg = 0;
-u32 cdvdman_cd36key = 0;
 int cdvdman_ee_ncmd = 0;
 int cdvdman_mmode = 0;   /* Media Mode set by sceCdMmode() call */
 int cdvdman_brkfunc = 0; /* Cancelled ncmd function set by sceCdBreak() call */
@@ -41,7 +40,6 @@ int cdvdman_rtindex = 0;
 int cdvdman_retries = 0;
 /* Timeouts (default values) */
 int cdvdman_sync_to = 15000; /* TimeOut value for the certain sceCdSync call modes */
-int TimeOut2 = 5000;         /* Don't know much about it yet. Used by cdvdstm.irx */
 
 
 int cdvdman_verbose = 0; /* Enables debug output via printf & Kprintf calls */
@@ -50,20 +48,13 @@ int cdvdman_verbose = 0; /* Enables debug output via printf & Kprintf calls */
 
 u8 *cdvdman_ptoc;    /* sbss:0000  - pointer to buffer used to read TOC */
 int cdvdman_scmd_ef;   /* sbss:0004  - event flag #2 - s-commands syncronization */
-#if 0
-char *cdvdman_pb_fsvr; /* sbss:0008  - pointer to fsv read buffer */
-#endif
 int cdvdman_ncmd_ef;   /* sbss:0010  - event flag #3 - n-commands syncronization */
 int cdvdman_read_ef;   /* sbss:0014  - event flag #5 - disk reading syncronization */
 int cdvdman_intr_ef;   /* sbss:0018  - event flag #1 - hw interrupt syncronization */
 
 sceCdCBFunc cdvdman_user_cb; /* set by sceCdCallback */
-void *cdvdman_poffarg; /* sbss */
-void (*cdvdman_cdstm0cb)(int);
 
 sceCdCLOCK cdvdman_clock;        /* Cached Real-Time Clock value */
-void (*cdvdman_poff_cb)(void *); /* sbss */
-void (*cdvdman_cdstm1cb)(int);
 int cdvdman_cmdfunc;
 
 u32 cdvdman_readptr;
@@ -74,9 +65,6 @@ void *cdvdman_readbuf;
 
 iop_sys_clock_t cdvdman_poff_to;
 
-#if 0
-char cdvdman_fsvrbuf[FSVR_BUFFER_SIZE];
-#endif
 u8 toc_buffer[TOC_BUFFSIZE];
 
 /* The data below is probably a some very big (0xC0 bytes or even bigger) internal structure */
@@ -86,7 +74,6 @@ u8 cdvdman_unused1;
 u8 cdvdman_unused2;
 int cdvdman_waf; /* +4 */
 int cdvdman_thrd_id;
-int cdvdman_strm_id;
 int cdvdman_read2_flg;
 u32 cdvdman_readlsn;
 void *cdvdman_rbuffer;

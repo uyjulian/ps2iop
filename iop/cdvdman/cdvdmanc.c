@@ -17,9 +17,6 @@ int _start(int argc, char **argv)
     }
 
     cdvdman_ptoc = toc_buffer;
-#if 0
-    cdvdman_pb_fsvr = cdvdman_fsvrbuf;
-#endif
 
     cdvdman_init();
 
@@ -29,9 +26,6 @@ int _start(int argc, char **argv)
 /* Exported entry #47 (used by cdvdfsv module) */
 void *sceGetFsvRbuf()
 {
-#if 0
-    return cdvdman_fsvrbuf;
-#endif
     return NULL;
 }
 
@@ -140,37 +134,6 @@ sceCdCBFunc sceCdCallback(sceCdCBFunc func)
     return rc;
 }
 
-/* Exported entry #78 */
-void *sceCdPOffCallback(void (*func)(void *), void *addr)
-{
-    int oldstate;
-    void *old_cb;
-
-    CpuSuspendIntr(&oldstate);
-
-    old_cb = cdvdman_poff_cb;
-    cdvdman_poff_cb = func;
-    cdvdman_poffarg = addr;
-
-    CpuResumeIntr(oldstate);
-
-    return old_cb;
-}
-
-/* Exported entry #48 */
-int sceCdstm0Cb(void (*p)(int))
-{
-    cdvdman_cdstm0cb = p;
-    return 0;
-}
-
-/* Exported entry #49 */
-int sceCdstm1Cb(void (*p)(int))
-{
-    cdvdman_cdstm1cb = p;
-    return 0;
-}
-
 /* internal routine */
 int cdvdman_intr_cb(void *common)
 {
@@ -202,7 +165,6 @@ int cdvdman_intr_cb(void *common)
         )) &&
         (
             (!cdvdman_minver20200) &&
-            (!cdvdman_strm_id) &&
             (!cdvdman_dvdflag) &&
             (!cdvdman_recstat) &&
             ((cdvdman_rdmode.trycount) != 1)
@@ -263,11 +225,11 @@ int cdvdman_intr_cb(void *common)
         goto lab2;
     err = cdvdman_cderror;
     if ((err != SCECdErREAD) && ((err == SCECdErABRT) || (!cdvdman_read_to))) goto lab2;
-    if ((cdvdman_recstat) || (cdvdman_strm_id) || (cdvdman_cmdfunc == 9) || (cdvdman_cmdfunc == SCECdFuncReadCDDA))
+    if ((cdvdman_recstat) || (cdvdman_cmdfunc == 9) || (cdvdman_cmdfunc == SCECdFuncReadCDDA))
         goto lab2;
 
     /* && ((err == SCECdErREAD) || ((err == SCECdErABRT) && (cdvdman_read_to))) && */
-    /* (!cdvdman_recstat) && (!cdvdman_strm_id) && (cdvdman_cmdfunc == 9) && (cdvdman_cmdfunc != SCECdFuncReadCDDA) && */
+    /* (!cdvdman_recstat) && (cdvdman_cmdfunc == 9) && (cdvdman_cmdfunc != SCECdFuncReadCDDA) && */
     if (((u32)((sceCdRMode *)&cdvdman_rdmode)->trycount - 1) >= 4) {
         cdvdman_syncerr = 0;
 
@@ -328,20 +290,6 @@ lab2:
 
     cdvdman_syncerr = 0;
 
-    if ((cdvdman_strm_id == 1) && (!cdvdman_usetoc) && (!cdvdman_read2_flg)) {
-        if (cdvdman_cdstm0cb == 0) {
-            DPRINTF(1, "Intr func0 no seting");
-        } else
-            cdvdman_cdstm0cb(1);
-    }
-
-    if ((cdvdman_strm_id == 2) && (!cdvdman_usetoc) && (!cdvdman_read2_flg)) {
-        if (cdvdman_cdstm1cb == 0) {
-            DPRINTF(1, "Intr func1 no seting");
-        } else
-            cdvdman_cdstm1cb(1);
-    }
-
     if (cdvdman_read2_flg)
         cdvdman_readptr = 0;
 
@@ -388,8 +336,6 @@ int intrh_cdrom(void *common)
         CDVDreg_PWOFF = CdlDataEnd;
         iSetEventFlag(cdvdman_intr_ef, 0x4);
         iSetEventFlag(cdvdman_intr_ef, 0x10);
-        if (cdvdman_poff_cb)
-            cdvdman_poff_cb(cdvdman_poffarg);
         if (!ready)
             return 1;
     } else {
@@ -472,9 +418,6 @@ u32 sceCdLsnDualChg(u32 lsn)
 int sceCdSC(int code, int *param)
 {
     switch (code) {
-        case 0xFFFFFFE6:
-            *param = (int)cdvdman_poff_cb;
-            return (int)cdvdman_poffarg;
         case 0xFFFFFFE7:
             return cdvdman_scmd_ef; /* Used by cdvdfsv */
         case 0xFFFFFFE9:
@@ -484,8 +427,6 @@ int sceCdSC(int code, int *param)
         case 0xFFFFFFEE:
             cdvdman_read_to = *param; /* Used by cdvdfsv */
             return 0;
-        case 0xFFFFFFEF:
-            return TimeOut2;
         case 0xFFFFFFF0:
             *param = (int)&cdvdman_verbose;
             return 0xFF;
@@ -542,20 +483,14 @@ int sceCdSC(int code, int *param)
             return _irx_id.v; /* Used by cdvdfsv */
         case 0xFFFFFFF8:
             return 1;
-        case 0xFFFFFFFC:
-            return cdvdman_cd36key; /* used by cdvdfsv */
         case 0xFFFFFFFD:
             return cdvdman_read2_flg; /* Used by cdvdfsv */
         case 0xFFFFFFFE:
             return cdvdman_cderror = *param;
         default:
             *param = cdvdman_cderror;
-            if (code != 0xFFFFFFFF) /* cdvdman_strm_id is used by cdvdstm modules as strean ID. It's an active stream flag also. */
-            {
-                cdvdman_strm_id = code;
-            }
 
-            return cdvdman_strm_id;
+            return 0;
     }
 }
 
@@ -567,7 +502,6 @@ void cdvdman_init()
     register int r, t;
 
     cdvdman_user_cb = 0;
-    cdvdman_poff_cb = 0;
     cdvdman_cmdfunc = 0;
     cdvdman_dr_flg = 0;
 
@@ -1479,67 +1413,61 @@ int cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int decflag,
     } else if (mode->datapattern == 1)
         return sceCdRead0(lsn, sectors, buf, mode, 0, 0);
 
-    // TODO: check if key should set
-    if ((!cdvdman_cd36key)) {
-        int oldstate, dummy, rc;
+    int oldstate, dummy, rc;
 
-        CpuSuspendIntr(&oldstate);
+    CpuSuspendIntr(&oldstate);
 
-        if (((CDVDreg_READY & 0xC0) == 0x40) && (!cdvdman_read2_flg)) {
-            cdvdman_readbuf = buf;
-            cdvdman_readptr = 0;
-            cdvdman_readlsn = lsn;
-            cdvdman_csec = 0;
-            cdvdman_nsec = sectors;
-            cdvdman_rbuffer = buf;
-            cdvdman_pattern = 0;
-            cdvdman_cdrmode.trycount = mode->trycount;
-            cdvdman_cdrmode.spindlctrl = mode->spindlctrl;
-            cdvdman_syncerr = 0;
-            if (sectors >= 0x41) {
-                if (lsn & 0xF)
-                    rsect = 0x10 - (lsn & 0xF);
-                else
-                    rsect = 0x40;
-            } else
-                rsect = sectors;
+    if (((CDVDreg_READY & 0xC0) == 0x40) && (!cdvdman_read2_flg)) {
+        cdvdman_readbuf = buf;
+        cdvdman_readptr = 0;
+        cdvdman_readlsn = lsn;
+        cdvdman_csec = 0;
+        cdvdman_nsec = sectors;
+        cdvdman_rbuffer = buf;
+        cdvdman_pattern = 0;
+        cdvdman_cdrmode.trycount = mode->trycount;
+        cdvdman_cdrmode.spindlctrl = mode->spindlctrl;
+        cdvdman_syncerr = 0;
+        if (sectors >= 0x41) {
+            if (lsn & 0xF)
+                rsect = 0x10 - (lsn & 0xF);
+            else
+                rsect = 0x40;
+        } else
+            rsect = sectors;
 
-            cdvdman_rdsectc = rsect;
-            cdvdman_racb_to.hi = 0;
-            cdvdman_racb_to.lo = sceCdSC(0xFFFFFFF1, &dummy) * 0x9000;
-            set_alarm(&cdvdman_racb_to, alarm_cb_read, &cdvdman_racb_to);
-            if (dvd) {
-                cdvdman_read2_flg = 1;
-                rc = sceCdRV(lsn, rsect, cdvdman_ptoc, mode, 8, read_cdvd_cb);
-            } else {
-                cdvdman_cdrmode.datapattern = 2;
-                cdvdman_pattern = mode->datapattern;
-                cdvdman_read2_flg = 3;
-                rc = sceCdRead0(lsn, rsect, cdvdman_ptoc, &cdvdman_cdrmode, 8, read_cdvd_cb);
-            }
-
-            if (rc) {
-                CpuResumeIntr(oldstate);
-                return 1;
-            }
-
-            cdvdman_cderror = SCECdErREADCFR;
-            cdvdman_rdsectc = 0;
-            cdvdman_read2_flg = 0;
-
-            cancel_alarm(alarm_cb_read, &cdvdman_racb_to);
-        }
-        else
-        {
-            DPRINTF(1, "sceCdRead: Double Booking error r2f= %d waf= %d\n", cdvdman_read2_flg, cdvdman_waf);
+        cdvdman_rdsectc = rsect;
+        cdvdman_racb_to.hi = 0;
+        cdvdman_racb_to.lo = sceCdSC(0xFFFFFFF1, &dummy) * 0x9000;
+        set_alarm(&cdvdman_racb_to, alarm_cb_read, &cdvdman_racb_to);
+        if (dvd) {
+            cdvdman_read2_flg = 1;
+            rc = sceCdRV(lsn, rsect, cdvdman_ptoc, mode, 8, read_cdvd_cb);
+        } else {
+            cdvdman_cdrmode.datapattern = 2;
+            cdvdman_pattern = mode->datapattern;
+            cdvdman_read2_flg = 3;
+            rc = sceCdRead0(lsn, rsect, cdvdman_ptoc, &cdvdman_cdrmode, 8, read_cdvd_cb);
         }
 
-        CpuResumeIntr(oldstate);
-        return 0;
-    } else if (mode->spindlctrl == 1)
-        mode->spindlctrl = 0;
+        if (rc) {
+            CpuResumeIntr(oldstate);
+            return 1;
+        }
 
-    return sceCdRead0(lsn, sectors, buf, mode, 0, 0);
+        cdvdman_cderror = SCECdErREADCFR;
+        cdvdman_rdsectc = 0;
+        cdvdman_read2_flg = 0;
+
+        cancel_alarm(alarm_cb_read, &cdvdman_racb_to);
+    }
+    else
+    {
+        DPRINTF(1, "sceCdRead: Double Booking error r2f= %d waf= %d\n", cdvdman_read2_flg, cdvdman_waf);
+    }
+
+    CpuResumeIntr(oldstate);
+    return 0;
 }
 
 /* Exported entry #114 */

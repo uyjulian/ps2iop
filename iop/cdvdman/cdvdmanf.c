@@ -13,7 +13,6 @@ int cdrom_init(iop_device_t *dev)
     cdvdman_waf = 1;
     cdvdman_scmd_flg = 1;
     cdvdman_read2_flg = 0;
-    cdvdman_strm_id = 0;
     cdvdman_cderror = 0;
     cdvdman_layer1 = 0;
     cdvdman_usetoc = 0;
