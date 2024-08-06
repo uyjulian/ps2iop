@@ -490,7 +490,7 @@ s32 DvrdrvWaitDmaEnd(s32 *itrsema, u16 command)
         if ((v4 & 0x10) != 0) {
             v5 = 0;
             if (((*((vu32 *)0xB0004228)) & 1) != 0)
-                LOWORD(v6) = 64;
+                v6 = 64;
             else
                 v6 = (u8)((*((vu32 *)0xB0004228)) & 0xFC) >> 2;
             v7 = 0;
