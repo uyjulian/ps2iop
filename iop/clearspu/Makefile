@@ -2,6 +2,8 @@ IOP_BIN = clearspu.irx
 
 IOP_OBJS = _start.o imports.o main.o
 
+IOP_WARNFLAGS ?= -Wall -Wextra
+
 all: $(IOP_BIN)
 
 clean:
