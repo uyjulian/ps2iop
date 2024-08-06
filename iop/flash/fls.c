@@ -13,10 +13,10 @@
 typedef struct flash_info_
 {
     u32 id;
-    u32 mbit;
-    u32 byte_page;
-    u32 page_block;
-    u32 block_card;
+    u32 mbits;
+    u32 page_bytes;
+    u32 block_pages;
+    u32 blocks;
 } flash_info;
 
 s32 flash_detect();
@@ -103,11 +103,11 @@ s32 flash_identify(flash_info *a1)
         ++v3;
         if (v2 == v4[914]) {
             a1->id = v2;
-            a1->mbit = v4[915];
-            a1->byte_page = v4[916];
-            a1->page_block = v4[917];
-            a1->block_card = v4[918];
-            printf("flash: ID(0x%02x) %d(Mbit) %d (byte/page) %d(page/block) %d(block/card)\n", a1->id, a1->mbit, a1->byte_page, a1->page_block, a1->block_card);
+            a1->mbits = v4[915];
+            a1->page_bytes = v4[916];
+            a1->block_pages = v4[917];
+            a1->blocks = v4[918];
+            printf("flash: ID(0x%02x) %d(mbits) %d (byte/page) %d(page/block) %d(block/card)\n", a1->id, a1->mbits, a1->page_bytes, a1->block_pages, a1->blocks);
             return 0;
         }
         v4 += 5;
@@ -189,45 +189,35 @@ s32 flash_read(flash_info *a1, s32 a2, s32 a3, void *a4)
     v5 = 256;
     v19 = 0;
     v7 = a2 << 9;
-    if (a1->byte_page == 512)
+    if (a1->page_bytes == 512)
         v5 = 4352;
     SPD_REG480C = v5;
-    if (a1->byte_page == 16)
+    if (a1->page_bytes == 16)
         SPD_REG4804 = 80;
     else
         SPD_REG4804 = 0;
     v8 = v7 & 0x1FF;
-    if (a1->byte_page == 16)
+    if (a1->page_bytes == 16)
         v8 = v7 & 0xF;
-    v9 = a1->id;
-    if (a1->id == 118) {
+    if (a1->id == 118) { //0x76 FLASH_ID_512MBIT
         SPD_REG4808 = (u8)(v7 >> 17) | 0x100;
-        v12 = (v7 >> 25) & 1;
-        goto LABEL_21;
+        SPD_REG4808 = (v7 >> 25) & 1;
     }
-    if (v9 < 0x77) {
-        if (v9 == 115) {
-            SPD_REG4808 = (u8)(v7 >> 9) | 0x100;
-            v12 = (v7 >> 17) & 0x7F;
-        } else {
-            if (v9 != 117) {
-                goto LABEL_23;
-            }
-            SPD_REG4808 = (u8)(v7 >> 9) | 0x100;
-            v12 = (u8)(v7 >> 17);
-        }
-        goto LABEL_21;
-    }
-    if (v9 == 121) {
-        SPD_REG4808 = (u8)(v7 >> 17) | 0x100;
-        v12 = (v7 >> 25) & 2;
-        goto LABEL_21;
-    }
-    if (v9 == 230) {
+    if (a1->id == 115) { //0x73 FLASH_ID_128MBIT
         SPD_REG4808 = (u8)(v7 >> 9) | 0x100;
-        v12 = (v7 >> 17) & 0x3F;
-    LABEL_21:
-        SPD_REG4808 = v12;
+        SPD_REG4808 = (v7 >> 17) & 0x7F;
+    }
+    if (a1->id == 117) { //0x75 FLASH_ID_256MBIT
+        SPD_REG4808 = (u8)(v7 >> 9) | 0x100;
+        SPD_REG4808 = (u8)(v7 >> 17);
+    }
+    if (a1->id == 121) { //0x79 FLASH_ID_1024MBIT
+        SPD_REG4808 = (u8)(v7 >> 17) | 0x100;
+        SPD_REG4808 = (v7 >> 25) & 2;
+    }
+    if (a1->id == 230) { //0xE6 FLASH_ID_64MBIT
+        SPD_REG4808 = (u8)(v7 >> 9) | 0x100;
+        SPD_REG4808 = (v7 >> 17) & 0x3F;
     }
 LABEL_23:
     v10 = a4;
@@ -244,16 +234,16 @@ LABEL_23:
         CancelAlarm(fls_timeout, &v18);
         SPD_REG480C = v5 | 0x800;
         if (v8) {
-            v15 = a1->byte_page;
+            v15 = a1->page_bytes;
             v16 = v8 / 2;
             while (v16 < v15 >> 1) {
                 ++v16;
                 *v10 = SPD_REG4800;
-                v15 = a1->byte_page;
+                v15 = a1->page_bytes;
                 ++v10;
             }
         } else {
-            for (j = 0; j < a1->byte_page >> 2; ++v10) {
+            for (j = 0; j < a1->page_bytes >> 2; ++v10) {
                 ++j;
                 *v10 = SPD_REG4800;
             }
@@ -311,8 +301,8 @@ s32 flash_write(flash_info *a1, s32 a2, s16 *a3)
     }
 LABEL_14:
     v6 = 0;
-    if (a1->byte_page >> 1) {
-        v7 = a1->byte_page >> 1;
+    if (a1->page_bytes >> 1) {
+        v7 = a1->page_bytes >> 1;
         do {
             v8 = *a3++;
             ++v6;
