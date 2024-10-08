@@ -1,15 +1,11 @@
 
 DECLARE_EXPORT_TABLE(cdvdfsv, 1, 1)
-    DECLARE_EXPORT(_start)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
-    DECLARE_EXPORT(_retonly)
+/* 0x00404b74 0 at 0x00400158 */
+/* 0x00404b78 1 at 0x00404b90 */
+/* 0x00404b7c 2 at 0x00404b90 */
+/* 0x00404b80 3 at 0x00404b90 */
+/* 0x00404b84 4 at 0x004004d4 */
+DECLARE_EXPORT(sceCdChangeThreadPriority) /* 0x00404b88 5 at 0x004005f8 */
 END_EXPORT_TABLE
 
 void _retonly() {}

@@ -5,16 +5,14 @@
 #include <irx.h>
 
 #include <cdvdman.h>
-#include <dmacman.h>
 #include <intrman.h>
 #include <ioman.h>
 #include <loadcore.h>
-#include <sifcmd.h>
 #include <sifman.h>
 #include <stdio.h>
-#include <sysclib.h>
 #include <sysmem.h>
 #include <thbase.h>
 #include <thevent.h>
+#include <thsemap.h>
 
 #endif /* IOP_IRX_IMPORTS_H */
