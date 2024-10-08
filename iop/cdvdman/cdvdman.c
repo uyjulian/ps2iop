@@ -1,12 +1,13 @@
 
-#include <defs.h>
+#include "irx_imports.h"
+#include "../00common/defs.h"
 
 IRX_ID("cdvd_driver", 2, 38);
 
 //-------------------------------------------------------------------------
 // Function declarations
 
-int __cdecl cdvdman_0(int argc, char **argv);
+int __cdecl _start(int argc, char **argv);
 void *sceGetFsvRbuf(void);
 int __cdecl cdrom_init(iop_device_t *dev);
 void __fastcall cdvdman_termcall(int with_stop);
@@ -15,7 +16,7 @@ int __cdecl cdvdman_devready();
 int __cdecl cdvdman_l0check(int layer);
 void __cdecl cdvdman_iormode(sceCdRMode *rmode, int fmode, int layer);
 int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname);
-void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTRY *fp);
+void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTRY_T *fp);
 int __cdecl cdvdman_cdfname(char *filename);
 int __cdecl cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf);
 int __cdecl cdrom_dread(iop_file_t *f, iox_dirent_t *buf);
@@ -64,7 +65,7 @@ int __cdecl sceCdStRead(u32 sectors, u32 *buffer, u32 mode, u32 *error);
 int sceCdStPause(void);
 int sceCdStResume(void);
 int sceCdStStat(void);
-int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY *fp, const char *name, int layer);
+int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int layer);
 int __cdecl sceCdSearchDir(char *dirname, int layer);
 int __cdecl sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer);
 int __cdecl cdvdman_cmpname(const char *p, const char *q);
@@ -104,15 +105,15 @@ int __cdecl sceCdInit(int init_mode);
 int __cdecl set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata, int rdlen, int check_sef);
 void __cdecl cdvdman_write_scmd(cdvdman_internal_struct_t *s);
 int __cdecl cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int rdlen, int check_sef);
-int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff, u16 outBuffSize);
-int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned int inBuffSize, void *outBuff);
+int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff);
+int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff);
 int __fastcall cdvdman_125(char cmd, char *wdata, int wdlen, char *rdata);
 int sceCdBreak(void);
 int __fastcall cd_ncmd_timeout_callback(iop_sys_clock_t *sys_clock);
 int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s, int cbbits);
 int __cdecl cdvdman_setdma3(DMA3PARAM *b18);
 int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARAM *b18, int check_cb);
-int __cdecl sceCdApplyNCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff, u16 outBuffSize);
+int __cdecl sceCdApplyNCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize);
 int sceCdCheckCmd(void);
 int __cdecl cdvdman_mediactl(int code);
 int sceCdGetError(void);
@@ -161,6 +162,7 @@ int __cdecl sceCdReadDiskID(unsigned int *id);
 int __cdecl cdvdman_179(u32 *status);
 int __cdecl cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3);
 int __cdecl sceCdDecSet(u8 arg1, u8 arg2, u8 shift);
+#if 0
 void *__cdecl AllocSysMemory(int mode, int size, void *ptr);
 int __cdecl FreeSysMemory(void *ptr);
 int Kprintf(const char *format, ...);
@@ -220,6 +222,7 @@ int __cdecl AddDrv(iop_device_t *device);
 int __cdecl DelDrv(const char *name);
 int __cdecl devctl(const char *name, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen);
 int __cdecl ioctl2(int fd, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen);
+#endif
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -231,7 +234,7 @@ struct irx_export_table exp_cdvdman =
 	257u,
 	0u,
 	{ 99u, 100u, 118u, 100u, 109u, 97u, 110u, 0u },
-	{ &cdvdman_0 }
+	{ &_start }
 };
 __int16 irx_id_version = 550; // weak
 char aHost0[7] = "host0:"; // weak
@@ -244,7 +247,37 @@ int cdvdman_iocache = 0;
 int cdvdman_lcn_offset = 0;
 int cdvdman_numbytes_offset = 0;
 int cdvdman_strmerr = 0;
-iop_device_t cdvdman_cddev = { "cdrom", 268435472u, 1u, (const char *)0x40CEB0, &cdvdman_fun_tbl };
+static iop_device_ops_t cdvdman_cddev_ops =
+    {
+        &cdrom_init,
+        &cdrom_deinit,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_open,
+        (void *)&cdrom_close,
+        (void *)&cdrom_read,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_lseek,
+        &cdrom_ioctl,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_dopen,
+        (void *)&cdrom_close,
+        (void *)&cdrom_dread,
+        (void *)&cdrom_getstat,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_nulldev64,
+        &cdrom_devctl,
+        (void *)&cdrom_nulldev,
+        (void *)&cdrom_nulldev,
+        &cdrom_ioctl2,
+    };
+iop_device_t cdvdman_cddev = { "cdrom", 268435472u, 1u, "CD-ROM ", &cdvdman_cddev_ops };
 int cdvdman_sync_to = 15000;
 int TimeOut2 = 5000;
 iop_sys_clock_t readid_systemtime = { 0u, 0u }; // weak
@@ -298,7 +331,7 @@ void (__cdecl *cdvdman_cdstm1cb)(int);
 int cdvdman_cmdfunc;
 CDVDMAN_FILEDATA cdvdman_handles[16];
 char cdvdman_sfname[1024];
-CDVDMAN_FILETBL_ENTRY cdvdman_filetbl[64];
+CDVDMAN_FILETBL_ENTRY_T cdvdman_filetbl[64];
 CD_DIR_ENTRY cdvdman_dirtbl[128];
 int cdvdman_pathtblflag;
 char cdvdman_fs_rbuf[2048];
@@ -314,7 +347,7 @@ dev5_regs_t dev5_regs; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-int __cdecl cdvdman_0(int argc, char **argv)
+int __cdecl _start(int argc, char **argv)
 {
 	bool condtmp; // dc
 	int result; // $v0
@@ -334,7 +367,10 @@ int __cdecl cdvdman_0(int argc, char **argv)
 			cdvdman_ptoc = (u8 *)&cdvdman_fsvrbuf[2340];
 			cdvdman_temp_buffer_ptr = cdvdman_fsvrbuf;
 			cdvdman_init();
+#if 0
+			// FIXME workaround
 			SetRebootTimeLibraryHandlingMode(&exp_cdvdman, 2);
+#endif
 			return 0;
 		}
 	}
@@ -686,7 +722,7 @@ int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname)
 }
 
 //----- (00400878) --------------------------------------------------------
-void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTRY *fp)
+void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTRY_T *fp)
 {
 	int offi; // $a0
 	iox_stat_t *buftmp; // $v1
@@ -753,7 +789,7 @@ int __cdecl cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf)
 {
 	int devready_tmp; // $s0
 	int unit; // $a2
-	CDVDMAN_FILETBL_ENTRY filetble; // [sp+10h] [-B0h] BYREF
+	CDVDMAN_FILETBL_ENTRY_T filetble; // [sp+10h] [-B0h] BYREF
 	char filename[128]; // [sp+38h] [-88h] BYREF
 	u32 efbits[2]; // [sp+B8h] [-8h] BYREF
 
@@ -811,7 +847,7 @@ int __cdecl cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
 	int read_pos; // $a2
 	int fd_layer; // $a3
 	int Dir; // $v0
-	CDVDMAN_FILETBL_ENTRY fileinfo; // [sp+10h] [-30h] BYREF
+	CDVDMAN_FILETBL_ENTRY_T fileinfo; // [sp+10h] [-30h] BYREF
 	u32 efbits[2]; // [sp+38h] [-8h] BYREF
 
 	if ( cdvdman_verbose > 0 )
@@ -2540,7 +2576,7 @@ LABEL_27:
 				goto LABEL_88;
 			case 0x4392:
 				retval2 = 0;
-				Toc = sceCdApplySCmd(*(_BYTE *)argp, (char *)argp + 4, arglen - 4, bufp, outbuf_res_unused);
+				Toc = sceCdApplySCmd(*(_BYTE *)argp, (char *)argp + 4, arglen - 4, bufp);
 				goto LABEL_27;
 			case 0x4395:
 				retval2 = -16;
@@ -2903,7 +2939,7 @@ int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 	int pathlen; // $a3
 	const char *pathptrtmp; // $v0
 	char pathchrtmp; // $v0
-	CDVDMAN_FILETBL_ENTRY *ftble; // $a0
+	CDVDMAN_FILETBL_ENTRY_T *ftble; // $a0
 	int search_res; // $s0
 	u32 efbits[2]; // [sp+10h] [-8h] BYREF
 
@@ -2917,7 +2953,7 @@ int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 	while ( 1 )
 	{
 		pathchrtmp = *pathptrtmp;
-		ftble = (CDVDMAN_FILETBL_ENTRY *)fp;
+		ftble = (CDVDMAN_FILETBL_ENTRY_T *)fp;
 		if ( !pathchrtmp )
 		{
 			break;
@@ -2926,7 +2962,7 @@ int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 		pathptrtmp = &path[pathlen];
 		if ( pathlen >= 1023 )
 		{
-			ftble = (CDVDMAN_FILETBL_ENTRY *)fp;
+			ftble = (CDVDMAN_FILETBL_ENTRY_T *)fp;
 			break;
 		}
 	}
@@ -3439,7 +3475,7 @@ int sceCdStStat(void)
 }
 
 //----- (00404680) --------------------------------------------------------
-int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY *fp, const char *name, int layer)
+int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int layer)
 {
 	int result; // $v0
 	int parent_level; // $a0
@@ -3451,11 +3487,11 @@ int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY *fp, const char *name, int l
 	u32 condtmp2; // $v0
 	bool condtmp1; // dc
 	int pathcnt; // $s2
-	CDVDMAN_FILETBL_ENTRY *filetbl; // $s3
+	CDVDMAN_FILETBL_ENTRY_T *filetbl; // $s3
 	char *filename; // $s0
 	int filetblind; // $s1
-	CDVDMAN_FILETBL_ENTRY *fptmp1; // $v1
-	CDVDMAN_FILETBL_ENTRY *filetbltmp1; // $v0
+	CDVDMAN_FILETBL_ENTRY_T *fptmp1; // $v1
+	CDVDMAN_FILETBL_ENTRY_T *filetbltmp1; // $v0
 	u32 size; // $t1
 	int namecpytmp1; // $t2
 	int namecpytmp2; // $t3
@@ -3596,10 +3632,10 @@ LABEL_26:
 							fptmp1->file_struct.size = size;
 							*(_DWORD *)fptmp1->file_struct.name = namecpytmp1;
 							*(_DWORD *)&fptmp1->file_struct.name[4] = namecpytmp2;
-							filetbltmp1 = (CDVDMAN_FILETBL_ENTRY *)((char *)filetbltmp1 + 16);
-							fptmp1 = (CDVDMAN_FILETBL_ENTRY *)((char *)fptmp1 + 16);
+							filetbltmp1 = (CDVDMAN_FILETBL_ENTRY_T *)((char *)filetbltmp1 + 16);
+							fptmp1 = (CDVDMAN_FILETBL_ENTRY_T *)((char *)fptmp1 + 16);
 						}
-						while ( filetbltmp1 != (CDVDMAN_FILETBL_ENTRY *)&filetbl->file_properties );
+						while ( filetbltmp1 != (CDVDMAN_FILETBL_ENTRY_T *)&filetbl->file_properties );
 						fptmp1->file_struct.lsn = filetbltmp1->file_struct.lsn;
 						if ( layer )
 						{
@@ -3963,7 +3999,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 	u8 *date4ptr; // $s7
 	u8 *date5ptr; // $s6
 	char *nameptr; // $s5
-	CDVDMAN_FILETBL_ENTRY *filetble; // $s4
+	CDVDMAN_FILETBL_ENTRY_T *filetble; // $s4
 	int filetbli; // $s2
 	int file_year; // $s1
 	u32 loc; // [sp+30h] [-18h]
@@ -6530,7 +6566,7 @@ LABEL_8:
 // 408C10: using guessed type char rdstart[64];
 
 //----- (00408F50) --------------------------------------------------------
-int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff, u16 outBuffSize)
+int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff)
 {
 	int wdlen_tmp; // $s5
 	int timeout_tmp; // $s0
@@ -6551,7 +6587,7 @@ int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *
 }
 
 //----- (00409014) --------------------------------------------------------
-int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned int inBuffSize, void *outBuff)
+int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff)
 {
 	int i; // $s0
 	bool condtmp; // dc
@@ -6915,7 +6951,7 @@ LABEL_33:
 // BF402000: using guessed type dev5_regs_t dev5_regs;
 
 //----- (00409AB8) --------------------------------------------------------
-int __cdecl sceCdApplyNCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff, u16 outBuffSize)
+int __cdecl sceCdApplyNCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize)
 {
 	int inbuffsize_tmp; // $s3
 	int i; // $a0
@@ -8978,6 +9014,7 @@ int __cdecl sceCdDecSet(u8 arg1, u8 arg2, u8 shift)
 }
 // BF402000: using guessed type dev5_regs_t dev5_regs;
 
+#if 0
 //----- (0040CBC4) --------------------------------------------------------
 void *__cdecl AllocSysMemory(int mode, int size, void *ptr)
 {
@@ -9496,6 +9533,7 @@ int __cdecl ioctl2(int fd, int cmd, void *arg, unsigned int arglen, void *buf, u
 	return result;
 }
 // 40CE90: variable 'result' is possibly undefined
+#endif
 
 // nfuncs=214 queued=214 decompiled=214 lumina nreq=0 worse=0 better=0
 // ALL OK, 214 function(s) have been successfully decompiled

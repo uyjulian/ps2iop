@@ -6,7 +6,7 @@
 
 #include <dmacman.h>
 #include <intrman.h>
-#include <ioman.h>
+#include <iomanX.h>
 #include <loadcore.h>
 #include <stdio.h>
 #include <sysclib.h>

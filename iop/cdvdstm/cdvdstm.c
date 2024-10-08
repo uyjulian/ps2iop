@@ -1,5 +1,6 @@
 
-#include <defs.h>
+#include "irx_imports.h"
+#include "../00common/defs.h"
 
 IRX_ID("cdvd_st_driver", 2, 2);
 
@@ -18,10 +19,10 @@ unsigned int __fastcall iop_stream_handler(unsigned int posszarg1, unsigned int 
 void __fastcall iop_stream_intr_cb(int);
 int cdrom_stm_init();
 int cdrom_stm_deinit();
-int __fastcall cdrom_stm_devctl(int a1, int a2, int a3, cdrom_stm_devctl_t *instruct, int outres_len, int *outres_ptr);
+int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
 int __cdecl cdrom_stm_nulldev();
 __int64 __cdecl cdrom_stm_nulldev64();
-int __fastcall cdvdstm_0(int);
+int __fastcall _start(int);
 BOOL __fastcall stm_alarm_timeout_cb(void *a1);
 int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int outres_len, int *outres_ptr);
 unsigned int __fastcall ee_stream_intr_cb_normal(void *a1);
@@ -74,7 +75,7 @@ const struct irx_export_table exports =
 	257u,
 	0u,
 	{ 99u, 100u, 118u, 100u, 115u, 116u, 109u, 0u },
-	{ &cdvdstm_0 }
+	{ &_start }
 }; // idb
 int cdvdstm_verbose = 0; // weak
 int cdvdstm_in_deldrv = 0; // weak
@@ -86,7 +87,37 @@ unsigned int cdvdstm_sectorcount = 0u; // idb
 int cdvdstm_last_error_for_iop = 0; // idb
 int cdvdstm_retryerr_iop = 0; // weak
 int cdvdstm_retrycnt_iop = 0; // weak
-iop_device_t cdrom_stm_dev = { "cdrom_stm", 268435472u, 1u, "CD-ROM_STM ", &off_4046B4 }; // idb
+static iop_device_ops_t cdrom_stm_dev_ops =
+    {
+        &cdrom_stm_init,
+        &cdrom_stm_deinit,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        &cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev64,
+        &cdrom_stm_devctl,
+        (void *)&cdrom_stm_nulldev,
+        (void *)&cdrom_stm_nulldev,
+        &cdrom_stm_nulldev,
+    };
+iop_device_t cdrom_stm_dev = { "cdrom_stm", 268435472u, 1u, "CD-ROM_STM ", &cdrom_stm_dev_ops }; // idb
 int cdvdstm_last_error_for_ee = 0;
 int cdvdstm_bufsz2 = 0; // weak
 int cdvdstm_chunksz2 = 0; // weak
@@ -448,12 +479,12 @@ LABEL_30:
 							}
 							if ( posszarg2_remain < 0x800 )
 								chunk_size = posszarg2_remain;
-							areadst = buffer_curwriteptr;
+							areadst = (_DWORD *)buffer_curwriteptr;
 							written_chunk_size += chunk_size;
 							buffer_curwriteptr += chunk_size;
 							cdvdstm_memcpy(
 								areadst,
-								(char *)cdvdstm_buffer + cdvdstm_bankcur_iop * cdvdstm_numbytes + cdvdstm_bankoffs_iop,
+								(_DWORD *)((char *)cdvdstm_buffer + cdvdstm_bankcur_iop * cdvdstm_numbytes + cdvdstm_bankoffs_iop),
 								0x800u);
 							posszarg2_remain -= chunk_size;
 							cdvdstm_bankoffs_iop += chunk_size;
@@ -702,12 +733,16 @@ int cdrom_stm_deinit()
 }
 
 //----- (004013E8) --------------------------------------------------------
-int __fastcall cdrom_stm_devctl(int a1, int a2, int a3, cdrom_stm_devctl_t *instruct, int outres_len, int *outres_ptr)
+int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len)
 {
 	int retres; // $s5
 	u32 cmdid; // $a0
 	sceCdRMode *p_rmode; // $v0
+	cdrom_stm_devctl_t *instruct;
+	int *outres_ptr;
 
+	instruct = inbuf;
+	outres_ptr = outbuf;
 	WaitSema(cdvdstm_semid);
 	retres = 0;
 	if ( cdvdstm_in_deldrv )
@@ -744,7 +779,7 @@ int __fastcall cdrom_stm_devctl(int a1, int a2, int a3, cdrom_stm_devctl_t *inst
 		}
 		if ( a3 == 0x4396 )
 		{
-			ee_stream_handler_normal(instruct, outres_len, outres_ptr);
+			ee_stream_handler_normal(instruct, inbuf_len, outres_ptr);
 		}
 		else
 		{
@@ -755,7 +790,7 @@ LABEL_18:
 				retres = -5;
 				goto LABEL_19;
 			}
-			ee_stream_handler_cdda(instruct, outres_len, outres_ptr);
+			ee_stream_handler_cdda(instruct, inbuf_len, outres_ptr);
 		}
 	}
 LABEL_19:
@@ -779,7 +814,7 @@ __int64 __cdecl cdrom_stm_nulldev64()
 }
 
 //----- (004015DC) --------------------------------------------------------
-int __fastcall cdvdstm_0(int a1)
+int __fastcall _start(int a1)
 {
 	bool condtmp; // dc
 	int result; // $v0
@@ -2179,6 +2214,7 @@ void cdvdstm_1()
 	;
 }
 
+#if 0
 //----- (00404064) --------------------------------------------------------
 int Kprintf(const char *format, ...)
 {
@@ -2484,6 +2520,7 @@ int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMod
 	return result;
 }
 // 404268: variable 'result' is possibly undefined
+#endif
 
 // nfuncs=57 queued=57 decompiled=57 lumina nreq=0 worse=0 better=0
 // ALL OK, 57 function(s) have been successfully decompiled

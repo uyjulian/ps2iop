@@ -1,5 +1,6 @@
 
-#include <defs.h>
+#include "irx_imports.h"
+#include "../00common/defs.h"
 
 IRX_ID("cdvd_ee_driver", 2, 38);
 
@@ -8,7 +9,7 @@ IRX_ID("cdvd_ee_driver", 2, 38);
 
 int __fastcall cdvdfsv_checkdmastat(int trid);
 int __cdecl cdvdfsv_cleanuprpc();
-int __fastcall cdvdfsv_0(int ac, char **av);
+int __fastcall _start(int ac, char **av);
 int __cdecl cdvdfsv_init();
 void __cdecl cdvdfsv_main_th(void *arg);
 int *__fastcall cdvdfsv_4(int arg1);
@@ -59,6 +60,7 @@ void __cdecl cdvdfsv_rpc2_th(void *arg);
 int __fastcall cdvdfsv_unused_xorfun(unsigned int *, int);
 unsigned int __fastcall cdvdfsv_memcpy(_DWORD *a1, _DWORD *a2, unsigned int a3);
 void cdvdfsv_1();
+#if 0
 int Kprintf(const char *format, ...);
 int __cdecl RegisterLibraryEntries(struct irx_export_table *exports);
 int __cdecl ReleaseLibraryEntries(struct irx_export_table *exports);
@@ -137,6 +139,7 @@ int __cdecl sceCdReadDvdDualInfo(int *on_dual, unsigned int *layer1_start);
 int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer);
 int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMode *mode);
 int __cdecl sceCdDoesUniqueKeyExist(u32 *status);
+#endif
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -148,7 +151,7 @@ const struct irx_export_table exports =
 	257u,
 	0u,
 	{ 99u, 100u, 118u, 100u, 102u, 115u, 118u, 0u },
-	{ &cdvdfsv_0 }
+	{ &_start }
 }; // idb
 __int16 module_info_version = 550; // weak
 int cdvdfsv_def_pri = 81;
@@ -255,7 +258,7 @@ int __cdecl cdvdfsv_cleanuprpc()
 }
 
 //----- (00400158) --------------------------------------------------------
-int __fastcall cdvdfsv_0(int ac, char **av)
+int __fastcall _start(int ac, char **av)
 {
 	bool condtmp1; // dc
 	int result; // $v0
@@ -811,11 +814,11 @@ int __fastcall readproc2(
 	cdvdfsv_read_to.hi = 0;
 	cdvdfsv_read_to.lo = 36864 * sceCdSC(0xFFFFFFF1, &sc_fffffff1_res);
 	rtocbuf_plus_4680 = cdvdfsv_rtocbuf + 4680;
-	rtocbuf_tmp = cdvdfsv_rtocbuf;
+	rtocbuf_tmp = (unsigned int *)cdvdfsv_rtocbuf;
 	cdvdfsv_rderror = 253;
 	cdvdfsv_r2retry = 0;
 	cdvdfsv_r2count = 0;
-	rtocbuf_plus_2340 = cdvdfsv_rtocbuf + 2340;
+	rtocbuf_plus_2340 = (unsigned int *)(cdvdfsv_rtocbuf + 2340);
 	if ( secsize != 2340 && !fssift )
 	{
 		i1_1 = 0;
@@ -968,7 +971,7 @@ LABEL_82:
 					if ( i2 )
 					{
 						cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)((char *)rtocbuf_tmp + fssift), 2340 - fssift);
-						cdvdfsv_memcpy(rtocbuf_tmp, &rtocbuf_plus_4680[2340 * csec - 2340], 0x924u);
+						cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec - 2340], 0x924u);
 						if ( condtmp1 )
 							cdvdfsv_rdp2sdd.size = dmasize_tmp;
 						else
@@ -979,7 +982,7 @@ LABEL_82:
 					}
 					else
 					{
-						cdvdfsv_memcpy(rtocbuf_tmp, &rtocbuf_plus_4680[2340 * csec_minus_one], 0x924u);
+						cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec_minus_one], 0x924u);
 						if ( condtmp1 )
 							cdvdfsv_rdp2sdd.size = dmasize_tmp;
 						else
@@ -988,7 +991,7 @@ LABEL_82:
 						size_1 = cdvdfsv_rdp2sdd.size;
 						rtocbuf_src_1 = &rtocbuf_plus_4680[fssift];
 					}
-					cdvdfsv_memcpy(rtocbuf_dest_1, rtocbuf_src_1, size_1);
+					cdvdfsv_memcpy(rtocbuf_dest_1, (_DWORD *)rtocbuf_src_1, size_1);
 					cdvdfsv_rdp2sdd.src = rtocbuf_plus_2340;
 				}
 				else
@@ -1045,10 +1048,10 @@ LABEL_82:
 			if ( i2 )
 			{
 				cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)((char *)rtocbuf_tmp + fssift + 12), secsize - fssift);
-				rtocbuf_src_2 = rtocbuf_plus_4680 + 12;
+				rtocbuf_src_2 = (_DWORD *)(rtocbuf_plus_4680 + 12);
 				rtocbuf_src_tmp_2 = (_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift);
 				i4 = 0;
-				cdvdfsv_memcpy(rtocbuf_tmp, &rtocbuf_plus_4680[(csec - 1) * *p_sector_size], *p_sector_size);
+				cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[(csec - 1) * *p_sector_size], *p_sector_size);
 				rtocbuf_dest_2 = rtocbuf_src_tmp_2;
 				if ( csec - 1 > 0 )
 				{
@@ -1071,17 +1074,17 @@ LABEL_82:
 			}
 			else
 			{
-				cdvdfsv_memcpy(rtocbuf_tmp, &rtocbuf_plus_4680[(csec - 1) * *p_sector_size], *p_sector_size);
-				cdvdfsv_memcpy(rtocbuf_plus_2340, &rtocbuf_plus_4680[fssift + 12], secsize - fssift);
+				cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[(csec - 1) * *p_sector_size], *p_sector_size);
+				cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)&rtocbuf_plus_4680[fssift + 12], secsize - fssift);
 				rtocbuf_dest_3 = (_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift);
 				rtocbuf_src_3 = &rtocbuf_plus_4680[*p_sector_size + 12];
 				for ( i5 = 0; i5 < csec - 2; rtocbuf_dest_3 = (_DWORD *)((char *)rtocbuf_dest_3 + secsize) )
 				{
-					cdvdfsv_memcpy(rtocbuf_dest_3, rtocbuf_src_3, secsize);
+					cdvdfsv_memcpy(rtocbuf_dest_3, (_DWORD *)rtocbuf_src_3, secsize);
 					++i5;
 					rtocbuf_src_3 += *p_sector_size;
 				}
-				cdvdfsv_memcpy(rtocbuf_dest_3, rtocbuf_src_3, size_2);
+				cdvdfsv_memcpy(rtocbuf_dest_3, (_DWORD *)rtocbuf_src_3, size_2);
 				if ( !condtmp1 )
 				{
 					csec_bytes = secsize * (csec - 1);
@@ -1316,7 +1319,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 	flag = inbuf->flag;
 	all_sec = inbuf->sec;
 	lsn = inbuf->lsn;
-	cdvdfsv_rmodeee = (sceCdRMode)inbuf->rmodeee;
+	cdvdfsv_rmodeee = inbuf->rmodeee;
 	sc_ffffffe9_tmp = lsn;
 	if ( decflag )
 		decval = pkt_tmp[1].flag;
@@ -1992,7 +1995,7 @@ int __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int buf
 				error_code_tmp = error_code_1;
 			}
 			if ( buf_offs_mod_sector_size )
-				cdvdfsv_memcpy(rtocbuf_tmp, &rtocbuf_tmp[buf_offs_mod_sector_size], sector_count_in_bytes);
+				cdvdfsv_memcpy((_DWORD *)rtocbuf_tmp, (_DWORD *)&rtocbuf_tmp[buf_offs_mod_sector_size], sector_count_in_bytes);
 			cdvdfsv_eereadfull_dma1.src = rtocbuf_tmp;
 			cdvdfsv_eereadfull_dma1.size = sector_count_in_bytes;
 			cdvdfsv_eereadfull_dma1.attr = 0;
@@ -2430,7 +2433,7 @@ int __fastcall cdvdfsv_rpc3h_0B_applyscmd(
 	int res3_tmp; // $t2
 	int buf_tmp[4]; // [sp+10h] [-10h] BYREF
 
-	result = sceCdApplySCmd(inbuf->cmdNum, &inbuf->inBuff, inbuf->inBuffSize, buf_tmp, buf_tmp[0]);
+	result = sceCdApplySCmd(inbuf->cmdNum, &inbuf->inBuff, inbuf->inBuffSize, buf_tmp);
 	res1_tmp = buf_tmp[1];
 	res2_tmp = buf_tmp[2];
 	res3_tmp = buf_tmp[3];
@@ -3090,6 +3093,7 @@ void cdvdfsv_1()
 	;
 }
 
+#if 0
 //----- (00404BB4) --------------------------------------------------------
 int Kprintf(const char *format, ...)
 {
@@ -3783,6 +3787,7 @@ int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 	return result;
 }
 // 404F50: variable 'result' is possibly undefined
+#endif
 
 // nfuncs=131 queued=131 decompiled=131 lumina nreq=0 worse=0 better=0
 // ALL OK, 131 function(s) have been successfully decompiled

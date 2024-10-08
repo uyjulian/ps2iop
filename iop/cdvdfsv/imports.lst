@@ -66,13 +66,14 @@ I_sceSifCheckInit
 sifman_IMPORTS_end
 
 sysclib_IMPORTS_start
+I_memcpy
 I_strncmp
 I_strtol
 sysclib_IMPORTS_end
 
-ioman_IMPORTS_start
+iomanX_IMPORTS_start
 I_devctl
-ioman_IMPORTS_end
+iomanX_IMPORTS_end
 
 cdvdman_IMPORTS_start
 I_sceCdInit
@@ -110,5 +111,5 @@ I_sceCdReadModelID
 I_sceCdReadDvdDualInfo
 I_sceCdLayerSearchFile
 I_sceCdRE
-/* 0x00404f50 179 */
+I_sceCdDoesUniqueKeyExist
 cdvdman_IMPORTS_end

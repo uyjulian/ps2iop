@@ -7,7 +7,7 @@
 #include <cdvdman.h>
 #include <dmacman.h>
 #include <intrman.h>
-#include <ioman.h>
+#include <iomanX.h>
 #include <loadcore.h>
 #include <sifcmd.h>
 #include <sifman.h>

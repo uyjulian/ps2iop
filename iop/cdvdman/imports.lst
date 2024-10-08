@@ -8,7 +8,7 @@ sysmem_IMPORTS_end
 loadcore_IMPORTS_start
 I_RegisterLibraryEntries
 I_QueryBootMode
-I_SetRebootTimeLibraryHandlingMode
+// I_SetRebootTimeLibraryHandlingMode
 loadcore_IMPORTS_end
 
 intrman_IMPORTS_start
@@ -69,13 +69,14 @@ I_memset
 I_sprintf
 I_strcat
 I_strcmp
+I_strcpy
 I_strlen
 I_strncmp
 I_strncpy
 I_strtol
 sysclib_IMPORTS_end
 
-ioman_IMPORTS_start
+iomanX_IMPORTS_start
 I_open
 I_close
 I_read
@@ -86,4 +87,4 @@ I_AddDrv
 I_DelDrv
 I_devctl
 I_ioctl2
-ioman_IMPORTS_end
+iomanX_IMPORTS_end
