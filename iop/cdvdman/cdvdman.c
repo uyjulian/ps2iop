@@ -809,7 +809,7 @@ int __cdecl cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf)
 		unit = f->unit;
 		cdvdman_srchspd = 0;
 		if ( sceCdLayerSearchFile(&filetble.file_struct, filename, unit)
-			|| cdvdman_cdfname(filename) && sceCdLayerSearchFile(&filetble.file_struct, filename, f->unit) )
+			|| (cdvdman_cdfname(filename) && sceCdLayerSearchFile(&filetble.file_struct, filename, f->unit)) )
 		{
 			cdvdman_fillstat(filename, buf, &filetble);
 			SetEventFlag(fio_fsv_evid, 1u);
@@ -1751,13 +1751,13 @@ int __cdecl cdrom_close(iop_file_t *f)
 	}
 	WaitEventFlag(fio_fsv_evid, 1u, 16, &efbits);
 	filedata = &cdvdman_handles[(int)f->privdata];
-	if ( (filedata->fd_flags & 8) != 0
+	if ( ((filedata->fd_flags & 8) != 0
 		&& ((cdvdman_strmerr = 0,
 				 memset(&devctl_req, 0, sizeof(devctl_req)),
 				 devctl_req.cmdid = 3,
 				 devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0)
-		 || !buf)
-		|| (filedata->fd_flags & 0xC) == 4 && cdvd_odcinit(filedata, 0, (int)f->privdata) < 0 )
+		 || !buf))
+		|| ((filedata->fd_flags & 0xC) == 4 && cdvd_odcinit(filedata, 0, (int)f->privdata) < 0) )
 	{
 		SetEventFlag(fio_fsv_evid, 1u);
 		return -5;
@@ -5111,7 +5111,7 @@ int __fastcall cdvdman_intr_cb(cdvdman_internal_struct_t *s)
 		cdvdman_write_scmd(s);
 	}
 	last_error = (unsigned __int8)s->last_error;
-	if ( (last_error == 48 && cdvdman_cmdfunc == 1 || last_error == 1 && s->read_to && cdvdman_last_cmdfunc == 1)
+	if ( ((last_error == 48 && cdvdman_cmdfunc == 1) || (last_error == 1 && s->read_to && cdvdman_last_cmdfunc == 1))
 		&& !cdvdman_minver_20200
 		&& !s->stream_flag
 		&& !s->dvd_flag
@@ -5174,7 +5174,7 @@ int __fastcall cdvdman_intr_cb(cdvdman_internal_struct_t *s)
 	if ( (dev5_reg_013 & 0xF) != 0 )
 	{
 		last_error_tmp = (unsigned __int8)s->last_error;
-		if ( (last_error_tmp == 48 || last_error_tmp == 1 && s->read_to)
+		if ( (last_error_tmp == 48 || (last_error_tmp == 1 && s->read_to))
 			&& !s->recover_status
 			&& !s->stream_flag
 			&& cdvdman_cmdfunc != 9
@@ -6366,7 +6366,7 @@ LABEL_16:
 			}
 		}
 LABEL_21:
-		if ( !overflowcond && rdcnt >= (unsigned __int8)s->rdlen || s->rdlen == 16 )
+		if ( (!overflowcond && rdcnt >= (unsigned __int8)s->rdlen) || s->rdlen == 16 )
 		{
 			break;
 		}
@@ -6501,7 +6501,7 @@ int __cdecl cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdat
 			}
 		}
 LABEL_19:
-		if ( !cmdresoverflow && rdlecnt >= rdlen || rdlen == 16 )
+		if ( (!cmdresoverflow && rdlecnt >= rdlen) || rdlen == 16 )
 		{
 			break;
 		}
