@@ -913,7 +913,7 @@ int __cdecl cdvd_odcinit(CDVDMAN_FILEDATA *fh, int open_or_close, int id)
 	buf = (void *)fh->file_lsn;
 	file_size = fh->file_size;
 	cdvdman_iocache = 0;
-	sprintf(cache_filename, "%sCache_%d_%d_%d_%d", aHost0, fh->fd_layer, buf, file_size, id);
+	sprintf(cache_filename, "%sCache_%d_%d_%d_%d", aHost0, fh->fd_layer, (int)(uiptr)buf, (int)file_size, id);
 	cache_remove_result = 0;
 	if ( cdvdman_verbose > 0 )
 	{
