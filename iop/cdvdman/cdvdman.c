@@ -6739,7 +6739,7 @@ int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s, int cbbits)
 	s->cdvdman_dma3sec += s->dma3prm.dma3_csectors;
 	if ( dma3_msectors < read_chunk )
 	{
-		LOWORD(read_chunk) = dma3_msectors;
+		read_chunk = dma3_msectors;
 	}
 	s->dma3prm.dma3_csectors = read_chunk;
 	if ( dmacbres )
@@ -6773,7 +6773,6 @@ int __cdecl cdvdman_setdma3(DMA3PARAM *b18)
 {
 	void *dma3_maddress; // $a3
 	int (__cdecl *dma3_callback)(void *, int, int); // $t0
-	int csectors_tmp; // $t1
 	void *maddr_tmp; // $a1
 	int blkcnt_tmp; // $a1
 
@@ -6784,11 +6783,12 @@ int __cdecl cdvdman_setdma3(DMA3PARAM *b18)
 	cdvdman_istruct.drive_interupt_request = 0;
 	dma3_maddress = b18->dma3_maddress;
 	dma3_callback = b18->dma3_callback;
-	csectors_tmp = *(_DWORD *)&b18->dma3_csectors;
-	*(_DWORD *)&cdvdman_istruct.dma3prm.dma3_blkwords = *(_DWORD *)&b18->dma3_blkwords;
+	cdvdman_istruct.dma3prm.dma3_blkwords = b18->dma3_blkwords;
+	cdvdman_istruct.dma3prm.dma3_blkcount = b18->dma3_blkcount;
 	cdvdman_istruct.dma3prm.dma3_maddress = dma3_maddress;
 	cdvdman_istruct.dma3prm.dma3_callback = dma3_callback;
-	*(_DWORD *)&cdvdman_istruct.dma3prm.dma3_csectors = csectors_tmp;
+	cdvdman_istruct.dma3prm.dma3_csectors = b18->dma3_csectors;
+	cdvdman_istruct.dma3prm.cdvdreg_howto = b18->cdvdreg_howto;
 	cdvdman_istruct.dma3prm.dma3_msectors = b18->dma3_msectors;
 	cdvdman_istruct.cdvdman_dma3sec = 0;
 	dmac_ch_set_chcr(3u, 0);

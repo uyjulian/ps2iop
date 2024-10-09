@@ -837,7 +837,8 @@ int __fastcall readproc2(
 			retry_flag2 = 0;
 			ee_addr_tmp = ee_addr;
 			dmasize_tmp = dmasize;
-			*(_DWORD *)&cdvdfsv_cdvdman_internal_struct_ptr->dec_mode_set = 1;
+			cdvdfsv_cdvdman_internal_struct_ptr->dec_mode_set = 1;
+			cdvdfsv_cdvdman_internal_struct_ptr->dec_mode_last_set = 0;
 			CpuSuspendIntr(&state);
 			if ( enable_dec_shift )
 			{
