@@ -2348,7 +2348,6 @@ int __cdecl cdrom_devctl(
 	int cacheaction; // $a2
 	unsigned int sc_tmp_5; // $s0
 	int sc_tmp_6; // $v1
-	u16 outbuf_res_unused; // [sp+10h] [-30h]
 	cdrom_stm_devctl_t devctl_req; // [sp+18h] [-28h] BYREF
 	u32 efbits; // [sp+30h] [-10h] BYREF
 	int on_dual_tmp; // [sp+34h] [-Ch] BYREF
@@ -2671,7 +2670,6 @@ LABEL_88:
 	}
 }
 // 402ED0: conditional instruction was optimized away because $v1.4 is in (<10u|>=12u)
-// 40302C: variable 'outbuf_res_unused' is possibly undefined
 
 //----- (004032AC) --------------------------------------------------------
 int __cdecl cdrom_lseek(iop_file_t *f, int offset, int pos)
