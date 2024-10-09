@@ -4,6 +4,8 @@
 
 IRX_ID("cdvd_st_driver", 2, 2);
 
+extern struct irx_export_table _exp_cdvdstm;
+
 //-------------------------------------------------------------------------
 // Function declarations
 
@@ -68,15 +70,6 @@ int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMod
 //-------------------------------------------------------------------------
 // Data declarations
 
-const struct irx_export_table exports =
-{
-	1103101952u,
-	NULL,
-	257u,
-	0u,
-	{ 99u, 100u, 118u, 100u, 115u, 116u, 109u, 0u },
-	{ &_start }
-}; // idb
 int cdvdstm_verbose = 0; // weak
 int cdvdstm_in_deldrv = 0; // weak
 int cdvdstm_bufmax = 0; // weak
@@ -831,7 +824,7 @@ int __fastcall _start(int a1)
 			cdvdstm_in_deldrv = 1;
 			DelDrv("cdrom_stm");
 			CpuSuspendIntr(&state);
-			relres = ReleaseLibraryEntries((struct irx_export_table *)&exports);
+			relres = ReleaseLibraryEntries(&_exp_cdvdstm);
 			CpuResumeIntr(state);
 			if ( !relres )
 				return 1;
@@ -843,7 +836,7 @@ int __fastcall _start(int a1)
 	}
 	else
 	{
-		condtmp = RegisterLibraryEntries((struct irx_export_table *)&exports) != 0;
+		condtmp = RegisterLibraryEntries(&_exp_cdvdstm) != 0;
 		result = 1;
 		if ( condtmp )
 			return result;

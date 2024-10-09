@@ -4,6 +4,8 @@
 
 IRX_ID("cdvd_ee_driver", 2, 38);
 
+extern struct irx_export_table _exp_cdvdfsv;
+
 //-------------------------------------------------------------------------
 // Function declarations
 
@@ -144,16 +146,6 @@ int __cdecl sceCdDoesUniqueKeyExist(u32 *status);
 //-------------------------------------------------------------------------
 // Data declarations
 
-const struct irx_export_table exports =
-{
-	1103101952u,
-	NULL,
-	257u,
-	0u,
-	{ 99u, 100u, 118u, 100u, 102u, 115u, 118u, 0u },
-	{ &_start }
-}; // idb
-__int16 module_info_version = 550; // weak
 int cdvdfsv_def_pri = 81;
 int cdvdfsv_verbose = 0;
 int cdvdfsv_spinctl = -1;
@@ -280,7 +272,7 @@ int __fastcall _start(int ac, char **av)
 				if ( !condtmp1 )
 				{
 					CpuSuspendIntr(state);
-					error_code = ReleaseLibraryEntries((struct irx_export_table *)&exports);
+					error_code = ReleaseLibraryEntries(&_exp_cdvdfsv);
 					CpuResumeIntr(state[0]);
 					if ( error_code && error_code != -213 )
 					{
@@ -297,7 +289,7 @@ int __fastcall _start(int ac, char **av)
 	}
 	else
 	{
-		condtmp1 = RegisterLibraryEntries((struct irx_export_table *)&exports) != 0;
+		condtmp1 = RegisterLibraryEntries(&_exp_cdvdfsv) != 0;
 		result = 1;
 		if ( !condtmp1 )
 		{
@@ -485,14 +477,13 @@ CDVDInitResult *__fastcall cbrpc_rpc1_cdinit(int fno, void *buffer, int length)
 		cdvdfsv_initres.debug_mode = 254;
 	else
 		cdvdfsv_initres.debug_mode = 0;
-	cdvdfsv_initres.cdvdfsv_ver = (unsigned __int16)module_info_version;
+	cdvdfsv_initres.cdvdfsv_ver = (unsigned __int16)_irx_id.v;
 	cdvdfsv_initres.cdvdman_ver = sceCdSC(0xFFFFFFF7, &scres);
 	if ( cdvdfsv_verbose > 0 )
 		printf("sceCdInit end\n");
 	cdvdfsv_initres.result = 1;
 	return &cdvdfsv_initres;
 }
-// 405704: using guessed type __int16 module_info_version;
 // 405940: using guessed type CDVDInitResult cdvdfsv_initres;
 
 //----- (00400760) --------------------------------------------------------

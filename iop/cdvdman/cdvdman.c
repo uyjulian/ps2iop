@@ -4,6 +4,8 @@
 
 IRX_ID("cdvd_driver", 2, 38);
 
+extern struct irx_export_table _exp_cdvdman;
+
 //-------------------------------------------------------------------------
 // Function declarations
 
@@ -227,16 +229,6 @@ int __cdecl ioctl2(int fd, int cmd, void *arg, unsigned int arglen, void *buf, u
 //-------------------------------------------------------------------------
 // Data declarations
 
-struct irx_export_table exp_cdvdman =
-{
-	1103101952u,
-	NULL,
-	257u,
-	0u,
-	{ 99u, 100u, 118u, 100u, 109u, 97u, 110u, 0u },
-	{ &_start }
-};
-__int16 irx_id_version = 550; // weak
 char aHost0[7] = "host0:"; // weak
 int cdvdman_cache_sector_size_count = 1;
 int cdvdman_srchspd = 0;
@@ -352,7 +344,7 @@ int __cdecl _start(int argc, char **argv)
 	bool condtmp; // dc
 	int result; // $v0
 
-	condtmp = RegisterLibraryEntries(&exp_cdvdman) != 0;
+	condtmp = RegisterLibraryEntries(&_exp_cdvdman) != 0;
 	result = 1;
 	if ( !condtmp )
 	{
@@ -369,7 +361,7 @@ int __cdecl _start(int argc, char **argv)
 			cdvdman_init();
 #if 0
 			// FIXME workaround
-			SetRebootTimeLibraryHandlingMode(&exp_cdvdman, 2);
+			SetRebootTimeLibraryHandlingMode(&_exp_cdvdman, 2);
 #endif
 			return 0;
 		}
@@ -5967,7 +5959,7 @@ int __cdecl sceCdSC(int code, int *param)
 			}
 			return cdvdman_strm_id;
 		case 0xFFFFFFF7:
-			return (unsigned __int16)irx_id_version;
+			return (unsigned __int16)_irx_id.v;
 		case 0xFFFFFFF8:
 			cdvdman_spinctl = *param;
 			return 1;
@@ -5998,7 +5990,6 @@ int __cdecl sceCdSC(int code, int *param)
 			return result;
 	}
 }
-// 40E3D4: using guessed type __int16 irx_id_version;
 // BF402000: using guessed type dev5_regs_t dev5_regs;
 
 //----- (00408224) --------------------------------------------------------
@@ -8858,7 +8849,7 @@ int __cdecl sceCdReadDiskID(unsigned int *id)
 // 40C5B8: using guessed type char sectbuf[2048];
 
 //----- (0040C764) --------------------------------------------------------
-int __cdecl cdvdman_179(u32 *status)
+int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 {
 	int disktype_tmp; // $s0
 	int disk_type; // $v1
