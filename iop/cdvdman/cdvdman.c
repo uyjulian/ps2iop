@@ -4071,7 +4071,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 					date1ptrtmp1 = date1ptr;
 					sizeptr1tmp1 = sizeptr1;
 					memcpy(nameptr, toc1->filename, toc1->filenameLength);
-					cdvdman_filetbl[0].file_struct.name[toc1->filenameLength + filetbli * 36] = 0;
+					cdvdman_filetbl[filetbli].file_struct.name[toc1->filenameLength] = 0;
 					sizeptr1 = sizeptr1tmp1;
 					date1ptr = date1ptrtmp1;
 					date2ptr = date2ptrtmp1;

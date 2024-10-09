@@ -125,7 +125,7 @@ sceCdRMode rmode_for_stream0; // weak
 int cdvdstm_tgt; // weak
 int cdvdstm_semid; // idb
 int cdvdstm_ef; // idb
-char cdvdstm_usedmap_iop[]; // weak
+char cdvdstm_usedmap_iop[512]; // weak
 unsigned int cdvdstm_lsn_iop; // idb
 int cdvdstm_bankgp_iop; // weak
 int cdvdstm_bankcur_iop; // weak
@@ -137,7 +137,7 @@ SifDmaTransfer_t cdvdstm_dmat; // idb
 int cdvdstm_readlbn_ee_normal; // weak
 SifDmaTransfer_t cdvdstm_dmat2; // idb
 u32 cdvdstm_readlbn_ee_cdda; // idb
-char cdvdstm_usedmap_ee[];
+char cdvdstm_usedmap_ee[512];
 u32 cdvdstm_lsn_ee; // idb
 int cdvdstm_bankgp_ee; // weak
 int cdvdstm_bankcur_ee; // weak
