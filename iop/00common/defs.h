@@ -233,7 +233,7 @@ typedef struct _DMA3PARAM
 	u16 dma3_blkwords;
 	u16 dma3_blkcount;
 	void *dma3_maddress;
-	int (__cdecl *dma3_callback)(void *, int, int);
+	int (__cdecl *dma3_callback)(void);
 	u16 dma3_csectors;
 	u16 cdvdreg_howto;
 	u32 dma3_msectors;

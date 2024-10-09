@@ -18,7 +18,7 @@ BOOL __fastcall alarm_cb(void *);
 int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *error_ptr);
 int __fastcall sceCdStream0(int rdsize_sectors, char *addrarg, int modearg, int *error_ptr);
 unsigned int __fastcall iop_stream_handler(unsigned int posszarg1, unsigned int posszarg2, void *buffer, int cmdid, sceCdRMode *rmode, int *error_ptr);
-void __fastcall iop_stream_intr_cb(int);
+unsigned int __cdecl iop_stream_intr_cb(void *a1);
 int cdrom_stm_init();
 int cdrom_stm_deinit();
 int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
@@ -66,6 +66,21 @@ int __cdecl sceCdstm1Cb(void (__cdecl *p)(int));
 int __cdecl sceCdSC(int code, int *param);
 int sceCdStStop(void);
 int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMode *mode);
+
+static void iop_stream_intr_cb_thunk(int a1)
+{
+	iop_stream_intr_cb((void *)a1);
+}
+
+static void ee_stream_intr_cb_normal_thunk(int a1)
+{
+	ee_stream_intr_cb_normal((void *)a1);
+}
+
+static void ee_stream_intr_cb_cdda_thunk(int a1)
+{
+	ee_stream_intr_cb_cdda((void *)a1);
+}
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -334,7 +349,7 @@ LABEL_30:
 				switch ( cmdid_tmp )
 				{
 					case 5:
-						sceCdstm0Cb((void (__cdecl *)(int))iop_stream_intr_cb);
+						sceCdstm0Cb((void (__cdecl *)(int))iop_stream_intr_cb_thunk);
 						cdvdstm_bufmax = posszarg1_tmp;
 						cdvdstm_sectorcount = posszarg1_tmp / posszarg2;
 						cdvdstm_numbytes = (posszarg1_tmp / posszarg2) << 11;
@@ -538,14 +553,16 @@ LABEL_63:
 // 4049A4: using guessed type int cdvdstm_stmstart_iop;
 
 //----- (00400D30) --------------------------------------------------------
-void __fastcall iop_stream_intr_cb(int a1)
+unsigned int __cdecl iop_stream_intr_cb(void *a1)
 {
 	int disk_type_ex; // $a0
 	int retryerr_tmp; // $a1
 	int retrycnt_tmp; // $v0
 	int retry_minus_one; // $v0
 	unsigned int tgttmp; // $s0
+	unsigned int result; // $v0
 	int gptmp; // $a0
+	bool v8; // dc
 	unsigned int i; // $v1
 	int scres1; // [sp+28h] [-8h] BYREF
 
@@ -616,6 +633,7 @@ void __fastcall iop_stream_intr_cb(int a1)
 					 &cdvdstm_mode_iop) )
 		{
 			iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
+			return 0;
 		}
 		else
 		{
@@ -626,6 +644,7 @@ void __fastcall iop_stream_intr_cb(int a1)
 					sceCdSC(0, &scres1);
 			}
 			++cdvdstm_retrycnt_iop;
+			return 0;
 		}
 	}
 	else
@@ -652,10 +671,17 @@ void __fastcall iop_stream_intr_cb(int a1)
 					cdvdstm_bankcur_iop,
 					cdvdstm_mode_iop.spindlctrl);
 			cdvdstm_curclk_iop.lo = 294912;
-			if ( iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop)
-				&& !sceCdNop() )
+			v8 = iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop) == 0;
+			result = 0;
+			if ( !v8 )
 			{
-				sceCdSC(0, &scres1);
+				v8 = sceCdNop() != 0;
+				result = 0;
+				if ( !v8 )
+				{
+					sceCdSC(0, &scres1);
+					return 0;
+				}
 			}
 		}
 		else
@@ -689,9 +715,11 @@ LABEL_64:
 				}
 				cdvdstm_retrycnt_iop = 1;
 			}
+			result = 0;
 			cdvdstm_lsn_iop += cdvdstm_sectorcount;
 		}
 	}
+	return result;
 }
 // 404688: using guessed type int cdvdstm_verbose;
 // 404698: using guessed type int cdvdstm_numbytes;
@@ -950,7 +978,7 @@ LABEL_37:
 			*outres_ptr = i * ((unsigned int)cdvdstm_chunksz2 >> 11);
 			return result;
 		case 5u:
-			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_normal);
+			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_normal_thunk);
 			chunks_sectors = posszarg1 / (posszarg2_bytes >> 11);
 			if ( !(posszarg2_bytes >> 11) )
 				_break(7u, 0);
@@ -1468,7 +1496,7 @@ LABEL_7:
 			*outres_ptr = i * (cdvdstm_chunksz2 / (unsigned int)cdvdstm_usedchunksize2);
 			return result;
 		case 5u:
-			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_cdda);
+			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_cdda_thunk);
 			datapattern = instruct->rmode.datapattern;
 			if ( datapattern == 1 )
 			{

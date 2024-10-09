@@ -112,7 +112,7 @@ int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned long int inB
 int __fastcall cdvdman_125(char cmd, char *wdata, int wdlen, char *rdata);
 int sceCdBreak(void);
 int __fastcall cd_ncmd_timeout_callback(iop_sys_clock_t *sys_clock);
-int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s, int cbbits);
+int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s);
 int __cdecl cdvdman_setdma3(DMA3PARAM *b18);
 int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARAM *b18, int check_cb);
 int __cdecl sceCdApplyNCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize);
@@ -318,7 +318,7 @@ sceCdCBFunc cdvdman_user_cb;
 void *cdvdman_poffarg;
 void (__cdecl *cdvdman_cdstm0cb)(int);
 sceCdCLOCK cdvdman_clock;
-int (__cdecl *cdvdman_poff_cb)(void *userdata);
+void (__cdecl *cdvdman_poff_cb)(void *userdata);
 void (__cdecl *cdvdman_cdstm1cb)(int);
 int cdvdman_cmdfunc;
 CDVDMAN_FILEDATA cdvdman_handles[16];
@@ -5020,12 +5020,12 @@ sceCdCBFunc __cdecl sceCdCallback(sceCdCBFunc function)
 //----- (00406C64) --------------------------------------------------------
 void *__cdecl sceCdPOffCallback(void (__cdecl *func)(void *), void *addr)
 {
-	int (__cdecl *old_cb)(void *); // $s1
+	void (__cdecl *old_cb)(void *); // $s1
 	int state; // [sp+10h] [-8h] BYREF
 
 	CpuSuspendIntr(&state);
 	old_cb = cdvdman_poff_cb;
-	cdvdman_poff_cb = (int (__cdecl *)(void *))func;
+	cdvdman_poff_cb = func;
 	cdvdman_poffarg = addr;
 	CpuResumeIntr(state);
 	return old_cb;
@@ -5375,11 +5375,9 @@ int __fastcall intrh_cdrom(cdvdman_internal_struct_t *s)
 	int waftest; // $v0
 	vu8 dev_reg_008_tmp; // $v0
 	int result; // $v0
-	int curbits; // $a1
 	iop_event_info_t efinfo; // [sp+18h] [-20h] BYREF
 
 	conds1 = 0;
-	curbits = 0;
 	some_internal_struct_ptr = &s->field_002[1];
 	last_error = (unsigned __int8)s->last_error;
 	s->waf_set_test = s->wait_flag;
@@ -5440,7 +5438,7 @@ int __fastcall intrh_cdrom(cdvdman_internal_struct_t *s)
 		}
 		if ( s->last_error == 50 )
 		{
-			intrh_dma_3(s, curbits);
+			intrh_dma_3(s);
 		}
 	}
 	return cdvdman_intr_cb(s);
@@ -6715,7 +6713,7 @@ int __fastcall cd_ncmd_timeout_callback(iop_sys_clock_t *sys_clock)
 }
 
 //----- (00409440) --------------------------------------------------------
-int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s, int cbbits)
+int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s)
 {
 	int (*dma3_callback)(void); // $v0
 	int dmacbres; // $a2
@@ -6724,7 +6722,7 @@ int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s, int cbbits)
 	int oldstate; // [sp+14h] [-4h] BYREF
 
 	s->dma3prm.dma3_msectors -= s->dma3prm.dma3_csectors;
-	dma3_callback = (int (*)(void))s->dma3prm.dma3_callback;
+	dma3_callback = s->dma3prm.dma3_callback;
 	if ( dma3_callback )
 	{
 		dmacbres = dma3_callback();
@@ -6771,7 +6769,6 @@ int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s, int cbbits)
 int __cdecl cdvdman_setdma3(DMA3PARAM *b18)
 {
 	void *dma3_maddress; // $a3
-	int (__cdecl *dma3_callback)(void *, int, int); // $t0
 	void *maddr_tmp; // $a1
 	int blkcnt_tmp; // $a1
 
@@ -6781,11 +6778,10 @@ int __cdecl cdvdman_setdma3(DMA3PARAM *b18)
 	}
 	cdvdman_istruct.drive_interupt_request = 0;
 	dma3_maddress = b18->dma3_maddress;
-	dma3_callback = b18->dma3_callback;
 	cdvdman_istruct.dma3prm.dma3_blkwords = b18->dma3_blkwords;
 	cdvdman_istruct.dma3prm.dma3_blkcount = b18->dma3_blkcount;
 	cdvdman_istruct.dma3prm.dma3_maddress = dma3_maddress;
-	cdvdman_istruct.dma3prm.dma3_callback = dma3_callback;
+	cdvdman_istruct.dma3prm.dma3_callback = b18->dma3_callback;
 	cdvdman_istruct.dma3prm.dma3_csectors = b18->dma3_csectors;
 	cdvdman_istruct.dma3prm.cdvdreg_howto = b18->cdvdreg_howto;
 	cdvdman_istruct.dma3prm.dma3_msectors = b18->dma3_msectors;
@@ -7495,7 +7491,7 @@ int __cdecl sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, sceCdRMode *mode, int n
 	nsec_tmp = 1;
 	ndata[9] = speedctl_res;
 	b18.dma3_csectors = dintrsec;
-	b18.dma3_callback = (int (__cdecl *)(void *, int, int))func;
+	b18.dma3_callback = (int (__cdecl *)(void))func;
 	b18.dma3_msectors = nsec;
 	b18.dma3_maddress = buf;
 	if ( !(_WORD)dintrsec )
@@ -7599,7 +7595,7 @@ int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int
 			b18.dma3_csectors = 0;
 		}
 		nsec_tmp = 1;
-		b18.dma3_callback = (int (__cdecl *)(void *, int, int))callback;
+		b18.dma3_callback = (int (__cdecl *)(void))callback;
 		b18.dma3_msectors = sectors;
 		if ( !csec )
 		{
@@ -8406,7 +8402,7 @@ int __cdecl sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5,
 			cdvdman_istruct.read_buf = buf;
 			b18.dma3_blkcount = 43 * sectors_tmp;
 			b18.dma3_msectors = sectors;
-			b18.dma3_callback = (int (__cdecl *)(void *, int, int))cb;
+			b18.dma3_callback = (int (__cdecl *)(void))cb;
 			cdvdman_istruct.read_callback = cb;
 			b18.dma3_maddress = buf;
 			if ( cdvdman_send_ncmd(8, ndata, 11, 14, &b18, 0) >= 0 )
