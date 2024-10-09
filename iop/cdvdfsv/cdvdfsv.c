@@ -777,7 +777,7 @@ int __fastcall readproc2(
 	_DWORD *rtocbuf_src_tmp_2; // $s2
 	int i4; // $s1
 	_DWORD *rtocbuf_dest_2; // $a0
-	int csec_comm_tmp; // $t0
+	unsigned int csec_comm_tmp; // $t0
 	cdvdman_internal_struct_t *si3; // $v0
 	int Error; // $v0
 	int dec_mode_last_set; // $v1
@@ -1763,12 +1763,12 @@ LABEL_8:
 		buf_tmp = i->buffer;
 		lbn = i->lbn;
 		sectors = i->sectors;
-		if ( i->lbn == -1 )
+		if ( i->lbn == 0xFFFFFFFF )
 			return result;
-		if ( sectors == -1 )
+		if ( sectors == 0xFFFFFFFF )
 			return result;
 		result = i->buffer & 1;
-		if ( buf_tmp == -1 )
+		if ( buf_tmp == 0xFFFFFFFF )
 			return result;
 		if ( (buf_tmp & 1) != 0 )
 		{

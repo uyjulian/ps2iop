@@ -243,9 +243,9 @@ typedef struct CDVDMAN_PATHTBL_
 {
 	int cache_path_sz;
 	int lsn;
-	int nsec;
+	unsigned int nsec;
 	int layer;
-	int cache_hit_count;
+	unsigned int cache_hit_count;
 } CDVDMAN_PATHTBL_T;
 
 typedef struct CDVDMAN_FILETBL_ENTRY_
@@ -305,12 +305,12 @@ typedef struct cdvdman_internal_struct_
 	int sync_error;
 	int read_to;
 	int power_flag;
-	int layer_1_lsn;
+	u32 layer_1_lsn;
 	char use_toc;
 	char opo_or_para;
 	char current_dvd;
 	char dual_layer_emulation;
-	int current_dvd_lsn;
+	u32 current_dvd_lsn;
 	int check_version;
 	int dec_shift;
 	int dec_state;
