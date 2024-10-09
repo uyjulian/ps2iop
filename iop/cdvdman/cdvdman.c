@@ -3154,18 +3154,21 @@ int __fastcall read_id_from_rom(int mode, int *buf)
 	int *rdstackptr2; // $a2
 	unsigned int rdind2; // $v1
 	char rdtmp2; // $v0
-	char rdstack10; // [sp+10h] [-88h] BYREF
-	int rdstack18; // [sp+18h] [-80h]
-	int rdstack1c; // [sp+1Ch] [-7Ch]
-	int rdstack3c; // [sp+3Ch] [-5Ch]
-	int rdstack90[2]; // [sp+90h] [-8h] BYREF
+	struct
+	{
+		char m_unk10; // [sp+10h] [-88h] BYREF
+		int m_unk18; // [sp+18h] [-80h]
+		int m_unk1c; // [sp+1Ch] [-7Ch]
+		int m_unk3c; // [sp+3Ch] [-5Ch]
+		int m_unk90[2]; // [sp+90h] [-8h] BYREF
+	} rdstack;
 
 	rdstart = (char *)0xBFBF0000;
-	rdstackptr1 = &rdstack10;
+	rdstackptr1 = (char *)&rdstack;
 	rdpos = 0;
 	for ( i = 0; i < 0x20; ++i )
 	{
-		ptr1 = rdstack90;
+		ptr1 = rdstack.m_unk90;
 		rdind1 = 0;
 		do
 		{
@@ -3176,11 +3179,11 @@ int __fastcall read_id_from_rom(int mode, int *buf)
 			ptr1 = (int *)((char *)ptr1 + 1);
 		}
 		while ( rdind1 < 4 );
-		rdpos += rdstack90[0];
+		rdpos += rdstack.m_unk90[0];
 	}
-	for ( ; i < 0x4000; rdpos += rdstack90[0] )
+	for ( ; i < 0x4000; rdpos += rdstack.m_unk90[0] )
 	{
-		rdstackptr2 = rdstack90;
+		rdstackptr2 = rdstack.m_unk90;
 		rdind2 = 0;
 		do
 		{
@@ -3201,12 +3204,12 @@ int __fastcall read_id_from_rom(int mode, int *buf)
 	{
 		if ( mode )
 		{
-			*buf = rdstack3c;
+			*buf = rdstack.m_unk3c;
 		}
 		else
 		{
-			*buf = rdstack18;
-			buf[1] = rdstack1c;
+			*buf = rdstack.m_unk18;
+			buf[1] = rdstack.m_unk1c;
 		}
 		return 1;
 	}
@@ -3768,6 +3771,7 @@ int __cdecl CD_newmedia(int arg)
 	int state; // [sp+18h] [-8h] BYREF
 	int ptsector; // [sp+1Ch] [-4h]
 
+	ptsector = 0;
 	DiskType = sceCdGetDiskType();
 	if ( DiskType != 20
 		&& DiskType != 18
@@ -5372,10 +5376,11 @@ int __fastcall intrh_cdrom(cdvdman_internal_struct_t *s)
 	int waftest; // $v0
 	vu8 dev_reg_008_tmp; // $v0
 	int result; // $v0
-	int curbits_forgot_set; // $a1
+	int curbits; // $a1
 	iop_event_info_t efinfo; // [sp+18h] [-20h] BYREF
 
 	conds1 = 0;
+	curbits = 0;
 	some_internal_struct_ptr = &s->field_002[1];
 	last_error = (unsigned __int8)s->last_error;
 	s->waf_set_test = s->wait_flag;
@@ -5436,12 +5441,11 @@ int __fastcall intrh_cdrom(cdvdman_internal_struct_t *s)
 		}
 		if ( s->last_error == 50 )
 		{
-			intrh_dma_3(s, curbits_forgot_set);
+			intrh_dma_3(s, curbits);
 		}
 	}
 	return cdvdman_intr_cb(s);
 }
-// 40761C: variable 'curbits_forgot_set' is possibly undefined
 // BF402000: using guessed type dev5_regs_t dev5_regs;
 
 //----- (00407644) --------------------------------------------------------
@@ -8573,6 +8577,7 @@ int __cdecl sceCdCancelPOffRdy(u32 *result)
 	int retval; // $v0
 	char wdata[8]; // [sp+18h] [-8h] BYREF
 
+	memset(wdata, 0, sizeof(wdata));
 	*result = 0;
 	retval = 1;
 	if ( cdvdman_minver_20400 )

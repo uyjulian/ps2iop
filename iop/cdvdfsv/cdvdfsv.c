@@ -1304,6 +1304,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 
 	trid = 0;
 	decval = 0;
+	buf_offs_sum = 0;
 	sector_sizes[0] = 2340;
 	sector_sizes[1] = 2064;
 	pkt_tmp = inbuf;
@@ -1359,7 +1360,6 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 		cdvdfsv_rmodeee.spindlctrl = cdvdfsv_spinctl;
 	len2 = pkt_tmp->lsn;
 	sec2 = pkt_tmp->sec;
-	buf_offs_sum = 0;
 	len2_plus_sec2 = len2 + sec2;
 	if ( (flag & 0x3F) != 0 )
 		psize = (flag & 0xFFFFFFC0) - (flag - 64);
