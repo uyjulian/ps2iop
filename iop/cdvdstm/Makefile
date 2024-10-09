@@ -2,6 +2,8 @@ IOP_BIN = cdvdstm.irx
 
 IOP_OBJS = cdvdstm.o imports.o exports.o
 
+IOP_WARNFLAGS += -Wextra
+
 all: $(IOP_BIN)
 
 clean:
