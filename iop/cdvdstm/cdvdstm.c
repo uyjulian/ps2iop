@@ -1994,9 +1994,9 @@ unsigned int __fastcall cdvdstm_memcpy(_DWORD *a1, _DWORD *a2, unsigned int a3)
 
 	if ( a3 >> 2 )
 	{
-		if ( (((unsigned __int8)a1 | (unsigned __int8)a2) & 3) != 0 )
+		if ( (((uiptr)a1 | (uiptr)a2) & 3) != 0 )
 		{
-			if ( ((unsigned __int8)a1 & 3) != 0 && ((unsigned __int8)a2 & 3) != 0 )
+			if ( ((uiptr)a1 & 3) != 0 && ((uiptr)a2 & 3) != 0 )
 			{
 				v16 = (int)(a3 >> 2) / 12;
 				v17 = (int)(a3 >> 2) % 12;
@@ -2043,7 +2043,7 @@ LABEL_30:
 					while ( v16 );
 				}
 			}
-			else if ( ((unsigned __int8)a1 & 3) != 0 )
+			else if ( ((uiptr)a1 & 3) != 0 )
 			{
 				v29 = (int)(a3 >> 2) / 12;
 				v30 = (int)(a3 >> 2) % 12;

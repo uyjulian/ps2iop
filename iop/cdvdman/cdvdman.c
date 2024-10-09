@@ -1947,13 +1947,13 @@ LABEL_38:
 			{
 				printf("sce_Read LBN= %d sectors= %d\n", lbn, sectors);
 			}
-			addr_unaligned = (unsigned __int8)addr & 3;
+			addr_unaligned = (uiptr)addr & 3;
 			if ( cdvdman_iocache )
 			{
-				addr_unaligned = (unsigned __int8)addr & 3;
+				addr_unaligned = (uiptr)addr & 3;
 				if ( lbn >= cdvdman_lcn_offset )
 				{
-					addr_unaligned = (unsigned __int8)addr & 3;
+					addr_unaligned = (uiptr)addr & 3;
 					if ( cdvdman_lcn_offset + cdvdman_numbytes_offset >= lbn + sectors )
 					{
 						addr_tmp = addr;
@@ -4575,9 +4575,9 @@ unsigned int __fastcall cdvdman_memcpy(char *dst, const char *src, unsigned int 
 
 	if ( n >> 2 )
 	{
-		if ( (((unsigned __int8)dst | (unsigned __int8)src) & 3) != 0 )
+		if ( (((uiptr)dst | (uiptr)src) & 3) != 0 )
 		{
-			if ( ((unsigned __int8)dst & 3) != 0 && ((unsigned __int8)src & 3) != 0 )
+			if ( ((uiptr)dst & 3) != 0 && ((uiptr)src & 3) != 0 )
 			{
 				v16 = (int)(n >> 2) / 12;
 				v17 = (int)(n >> 2) % 12;
@@ -4628,7 +4628,7 @@ LABEL_30:
 					while ( v16 );
 				}
 			}
-			else if ( ((unsigned __int8)dst & 3) != 0 )
+			else if ( ((uiptr)dst & 3) != 0 )
 			{
 				v29 = (int)(n >> 2) / 12;
 				v30 = (int)(n >> 2) % 12;
