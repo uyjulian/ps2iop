@@ -894,7 +894,7 @@ int __cdecl cdvd_odcinit(CDVDMAN_FILEDATA *fh, int open_or_close, int id)
 	int is_pfs_res; // $v0
 	int cache_fd3; // $a0
 	int i; // $s0
-	_BYTE *tmp_ptr; // $v0
+	char *tmp_ptr; // $v0
 	unsigned int ioctl_arg3; // $v0
 	int ioctl_arg2; // $s2
 	int sector_ind1; // $s0
