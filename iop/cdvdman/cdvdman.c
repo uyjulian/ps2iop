@@ -327,7 +327,6 @@ CDVDMAN_FILETBL_ENTRY_T cdvdman_filetbl[64];
 CD_DIR_ENTRY cdvdman_dirtbl[128];
 int cdvdman_pathtblflag;
 char cdvdman_fs_rbuf[2048];
-char cdvdman_end_fs_rbuf[24];
 int cdvdman_readptr;
 iop_sys_clock_t cdvdman_racb_to;
 iop_sys_clock_t cdvdman_ncmd_to;
@@ -3891,7 +3890,7 @@ LABEL_37:
 		printf("CD_newmedia: sarching dir..\n");
 	}
 	dirind1 = 0;
-	if ( cdvdman_fs_rbuf < cdvdman_end_fs_rbuf )
+	if ( cdvdman_fs_rbuf < &cdvdman_fs_rbuf[2048] )
 	{
 		while ( *fs_rbuf_cur )
 		{
@@ -3918,7 +3917,7 @@ LABEL_37:
 			{
 				goto LABEL_51;
 			}
-			if ( fs_rbuf_cur >= cdvdman_end_fs_rbuf )
+			if ( fs_rbuf_cur >= &cdvdman_fs_rbuf[2048] )
 			{
 				break;
 			}
@@ -4032,7 +4031,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 		printf("CD_cachefile: searching...\n");
 	}
 	filecnt = 0;
-	if ( cdvdman_fs_rbuf < cdvdman_end_fs_rbuf )
+	if ( cdvdman_fs_rbuf < &cdvdman_fs_rbuf[2048] )
 	{
 		sizeptr1 = &cdvdman_filetbl[0].file_struct.size;
 		date1ptr = &cdvdman_filetbl[0].file_struct.date[1];
@@ -4120,7 +4119,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 				break;
 			}
 		}
-		while ( toc1 < (struct dirTocEntry *)cdvdman_end_fs_rbuf );
+		while ( toc1 < (struct dirTocEntry *)&cdvdman_fs_rbuf[2048] );
 	}
 	cdvdman_fs_cdsec = dsec;
 	if ( filecnt < 64 )
