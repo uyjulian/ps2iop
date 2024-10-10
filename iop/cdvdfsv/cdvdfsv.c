@@ -28,7 +28,7 @@ int __cdecl cdvdfsv_checksid(u32 lsn, u32 sectors, u32 ps2dvd, void *buf, int de
 int __fastcall readproc2(u32 lsn, u32 nsec, sceCdRMode *mode, u32 sector_size_selection, int do_multi_retries, int enable_dec_shift, int dec_shift, char *ee_addr, int fssift, int secsize, int dmasize, SifDmaTransfer_t *post_dmat);
 int __fastcall readproc1(unsigned int lsn, u32 nsec, void *retptr, sceCdRMode *rmode, int ps2dvd, int enable_retries, int dec_shift_enable, int dec_shift_value);
 void __cdecl cdvdfsv_rpc5h_01_readee(cdvdfsv_rpc5h_01_packet *inbuf, int buflen, void *outbuf, u32 ps2dvd, int sync, int decflag);
-int __fastcall cdvdfsv_chreadee(int secoffs, int seccount, char *ee_addr, sceCdRMode *in_rmode, u32 disktype_14, int sync);
+int __fastcall cdvdfsv_chreadee(int secoffs, int seccount, char *ee_addr, const sceCdRMode *in_rmode, u32 disktype_14, int sync);
 int __fastcall cdvdfsv_rpc5h_0F_readchain(cdvdfsv_rpc5h_0F_packet *inbuf, int buflen, void *outbuf);
 int __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int buflen, void *outbuf);
 int *__fastcall cbrpc_rpc2_diskready(int fno, void *buffer, int length);
@@ -39,7 +39,7 @@ void __cdecl cdvdfsv_rpc3h_06_ri(void *inbuf, int buflen, cdvdfsv_rpc3h_06_outpa
 void __cdecl cdvdfsv_rpc3h_1A_rm(void *inbuf, int buflen, cdvdfsv_rpc3h_1A_outpacket *outbuf);
 void __cdecl cdvdfsv_rpc3h_24_readguid(void *inbuf, int buflen, cdvdfsv_rpc3h_24_outpacket *outbuf);
 void __cdecl cdvdfsv_rpc3h_26_readmodelid(void *inbuf, int buflen, cdvdfsv_rpc3h_26_outpacket *outbuf);
-int __fastcall cdvdfsv_rpc3h_22_mmode(cdvdfsv_rpc3h_22_packet *inbuf, int buflen, void *outbuf);
+int __fastcall cdvdfsv_rpc3h_22_mmode(const cdvdfsv_rpc3h_22_packet *inbuf, int buflen, void *outbuf);
 int __fastcall cdvdfsv_rpc3h_23_changethreadpriority(void *inbuf, int buflen, void *outbuf);
 void __cdecl cdvdfsv_rpc3h_21_poweroff(void *inbuf, int buflen, cdvdfsv_rpc3h_21_outpacket *outbuf);
 void __cdecl cdvdfsv_rpc3h_15_ctrladout(void *inbuf, int buflen, cdvdfsv_rpc3h_15_outpacket *outbuf);
@@ -50,7 +50,7 @@ int __fastcall cdvdfsv_rpc3h_0B_applyscmd(cdvdfsv_rpc3h_0B_packet *inbuf, int bu
 int __fastcall cdvdfsv_rpc5h_0C_applyncmd(cdvdfsv_rpc5h_0C_packet *inbuf, int buflen, void *outbuf);
 int __fastcall cdvdfsv_rpc3h_04_geterror(void *inbuf, int buflen, void *outbuf);
 void __cdecl cdvdfsv_rpc3h_05_trayreq(void *inbuf, int buflen, cdvdfsv_rpc3h_05_outpacket *outbuf);
-int __fastcall cdvdfsv_rpc3h_25_settimeout(cdvdfsv_rpc3h_25_packet *inbuf, int buflen, void *outbuf);
+int __fastcall cdvdfsv_rpc3h_25_settimeout(const cdvdfsv_rpc3h_25_packet *inbuf, int buflen, void *outbuf);
 int __fastcall cdvdfsv_rpc3h_27_readdvddualinfo(void *inbuf, int buflen, cdvdfsv_rpc3h_27_outpacket *outbuf);
 int __cdecl cdvdfsv_rpc5h_0E_diskready();
 CDVDReadResult *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length);
@@ -1601,7 +1601,7 @@ int __fastcall cdvdfsv_chreadee(
 				int secoffs,
 				int seccount,
 				char *ee_addr,
-				sceCdRMode *in_rmode,
+				const sceCdRMode *in_rmode,
 				u32 disktype_14,
 				int sync)
 {
@@ -2345,7 +2345,7 @@ void __cdecl cdvdfsv_rpc3h_26_readmodelid(void *inbuf, int buflen, cdvdfsv_rpc3h
 }
 
 //----- (004038D4) --------------------------------------------------------
-int __fastcall cdvdfsv_rpc3h_22_mmode(cdvdfsv_rpc3h_22_packet *inbuf, int buflen, void *outbuf)
+int __fastcall cdvdfsv_rpc3h_22_mmode(const cdvdfsv_rpc3h_22_packet *inbuf, int buflen, void *outbuf)
 {
 	int result; // $v0
 
@@ -2535,7 +2535,7 @@ void __cdecl cdvdfsv_rpc3h_05_trayreq(void *inbuf, int buflen, cdvdfsv_rpc3h_05_
 }
 
 //----- (00403C40) --------------------------------------------------------
-int __fastcall cdvdfsv_rpc3h_25_settimeout(cdvdfsv_rpc3h_25_packet *inbuf, int buflen, void *outbuf)
+int __fastcall cdvdfsv_rpc3h_25_settimeout(const cdvdfsv_rpc3h_25_packet *inbuf, int buflen, void *outbuf)
 {
 	int result; // $v0
 
