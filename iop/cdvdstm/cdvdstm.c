@@ -274,7 +274,7 @@ unsigned int __fastcall iop_stream_handler(
 				sceCdRMode *rmode,
 				int *error_ptr)
 {
-	sceCdRMode *rmode_tmp; // $s0
+	const sceCdRMode *rmode_tmp; // $s0
 	int *error_ptr_tmp; // $fp
 	int cmdid_tmp; // $s1
 	int retryflag; // $s7

@@ -220,7 +220,7 @@ int __fastcall cdvdfsv_checkdmastat(int trid)
 int __cdecl cdvdfsv_cleanuprpc()
 {
 	int i; // $s1
-	int *tid_cur; // $s0
+	const int *tid_cur; // $s0
 	int tid_val; // $a0
 	int result; // $v0
 
@@ -255,7 +255,7 @@ int __fastcall _start(int ac, char **av)
 	bool condtmp1; // dc
 	int result; // $v0
 	u32 condtmp2; // $s0
-	unsigned __int16 *LibraryEntryTable; // $v0
+	const unsigned __int16 *LibraryEntryTable; // $v0
 	int error_code; // $s0
 	int state[2]; // [sp+10h] [-8h] BYREF
 
@@ -321,7 +321,7 @@ int __fastcall _start(int ac, char **av)
 //----- (004002C0) --------------------------------------------------------
 int __cdecl cdvdfsv_init()
 {
-	int *BootMode; // $v0
+	const int *BootMode; // $v0
 	iop_thread_t thparam; // [sp+10h] [-20h] BYREF
 	int scres; // [sp+28h] [-8h] BYREF
 
@@ -1860,7 +1860,7 @@ int __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int buf
 	int cmd_error; // $s1
 	int error_code; // $s0
 	unsigned int i1; // $v1
-	unsigned __int8 *rtocbuf_tmp_offs; // $v0
+	const unsigned __int8 *rtocbuf_tmp_offs; // $v0
 	unsigned int buf_toalign_tmp; // $t3
 	unsigned int buf_offs_mod_sector_size; // $s4
 	u32 lsn_2; // $s1

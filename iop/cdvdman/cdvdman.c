@@ -759,7 +759,7 @@ void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTR
 int __cdecl cdvdman_cdfname(char *filename)
 {
 	size_t filename_len; // $v0
-	char *filename_posptr; // $a0
+	const char *filename_posptr; // $a0
 	int result; // $v0
 
 	filename_len = strlen(filename);
@@ -2252,7 +2252,7 @@ int __fastcall cdrom_ioctl(iop_file_t *f, int arg, void *param)
 //----- (00402A7C) --------------------------------------------------------
 int __cdecl cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, void *bufp, size_t buflen)
 {
-	CDVDMAN_FILEDATA *filedata; // $v1
+	const CDVDMAN_FILEDATA *filedata; // $v1
 	int retval1; // $s0
 	u32 reqind; // $v0
 	bool condtmp1; // dc
@@ -2353,10 +2353,10 @@ int __cdecl cdrom_devctl(
 	void *strm_req; // $v1
 	int retval3; // $v0
 	unsigned int sc_tmp_ex; // $s0
-	char *sc_tmp_2; // $v1
+	const char *sc_tmp_2; // $v1
 	unsigned int sc_tmp_3; // $a1
 	unsigned int sc_tmp_4; // $s0
-	u8 *sc_tmp_4_addptr; // $a0
+	const u8 *sc_tmp_4_addptr; // $a0
 	BOOL condtmp2; // $v0
 	int sc_str_as_int; // $a0
 	char *cachedev; // $a1
@@ -3163,7 +3163,7 @@ u32 __cdecl sceCdPosToInt(sceCdlLOCCD *p)
 //----- (00403F38) --------------------------------------------------------
 int __fastcall read_id_from_rom(int mode, int *buf)
 {
-	char *rdstart; // $a3
+	const char *rdstart; // $a3
 	char *rdstackptr1; // $t0
 	int rdpos; // $a1
 	unsigned int i; // $t1
@@ -4164,7 +4164,7 @@ int __cdecl disc_read(int size, int loc, void *buffer, int layer)
 	int pathcachecnt; // $s2
 	int pathcachei; // $s0
 	int pathcacheo; // $s1
-	CDVDMAN_PATHTBL_T *pathcaches; // $v1
+	const CDVDMAN_PATHTBL_T *pathcaches; // $v1
 	int pathcachei2; // $s0
 	bool condtmp; // dc
 	int result; // $v0
@@ -5547,7 +5547,7 @@ u32 __cdecl sceCdLsnDualChg(u32 lsn)
 	u8 *ptoc_tmp; // $s2
 	int read0_result; // $s0
 	int i; // $a1
-	u8 *ptoc_tmp2; // $v0
+	const u8 *ptoc_tmp2; // $v0
 	int master_disk_offs; // $a1
 	sceCdRMode cdrmode; // [sp+18h] [-10h] BYREF
 	u32 traycnt[2]; // [sp+20h] [-8h] BYREF
@@ -5750,7 +5750,7 @@ int __cdecl sceCdReadDvdDualInfo(int *on_dual, unsigned int *layer1_start)
 	u8 *ptoc_tmp; // $s0
 	int read0_result; // $s1
 	int i; // $a1
-	u8 *ptoc_tmp2; // $v0
+	const u8 *ptoc_tmp2; // $v0
 	sceCdRMode cdrmode; // [sp+18h] [-8h] BYREF
 
 	*on_dual = 0;
@@ -6305,7 +6305,7 @@ void __cdecl cdvdman_write_scmd(cdvdman_internal_struct_t *s)
 	int trycndmx; // $a0
 	char *curptrx; // $v0
 	int rdcnt2; // $a0
-	char *rdptr; // $v0
+	const char *rdptr; // $v0
 	int rdx2; // $a0
 	cdvdman_internal_struct_t *stmp2; // $v1
 	char stmp3; // $v0
@@ -6456,7 +6456,7 @@ int __cdecl cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdat
 	int cmdresoverflow; // $a1
 	int rdextra; // $a0
 	int rdcpy1; // $a0
-	char *rdtmp1; // $v0
+	const char *rdtmp1; // $v0
 	char *rdtmp2; // $v1
 	char rdstart[64]; // [sp+18h] [-50h] BYREF
 	u32 efbits; // [sp+58h] [-10h] BYREF
@@ -6843,7 +6843,7 @@ int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, 
 	int reg_00A_tmp1; // $a1
 	int reg_00A_tmp2; // $v0
 	int ndlencur; // $v1
-	vu8 *ndataptr; // $v0
+	const vu8 *ndataptr; // $v0
 	u32 efbits; // [sp+14h] [-4h] BYREF
 
 	ncmd_tmp1 = ncmd;
