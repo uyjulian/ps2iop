@@ -1547,7 +1547,6 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	int fds2; // $s0
 	int opensuccess1; // $a0
 	int opensuccess2; // $a1
-	int *p_fd_flags; // $v1
 	int fdflags_band_8h; // $v0
 	CDVDMAN_FILEDATA *filedata1; // $s1
 	int srchspd; // $v0
@@ -1577,25 +1576,22 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	WaitEventFlag(fio_fsv_evid, 1u, 16, &efbits);
 	opensuccess1 = 0;
 	opensuccess2 = 0;
-	p_fd_flags = &cdvdman_handles[0].fd_flags;
 	do
 	{
-		fdflags_band_8h = *p_fd_flags & 8;
-		if ( !*p_fd_flags )
+		fdflags_band_8h = cdvdman_handles[fds2].fd_flags & 8;
+		if ( !cdvdman_handles[fds2].fd_flags )
 		{
 			if ( !opensuccess1 )
 			{
 				fds1 = fds2;
 				opensuccess1 = 1;
 			}
-			fdflags_band_8h = *p_fd_flags & 8;
 		}
 		if ( fdflags_band_8h )
 		{
 			opensuccess2 = 1;
 		}
 		++fds2;
-		p_fd_flags += 12;
 	}
 	while ( fds2 < 16 );
 	if ( !opensuccess1 || opensuccess2 )
