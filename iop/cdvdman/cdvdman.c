@@ -103,13 +103,13 @@ int __cdecl sceCdReadDvdDualInfo(int *on_dual, unsigned int *layer1_start);
 int __cdecl sceCdSC(int code, int *param);
 void __cdecl nullsub_2();
 int __cdecl cdvdman_init();
-int __cdecl sceCdInit(int init_mode);
+int __cdecl sceCdInit(int mode);
 int __cdecl set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata, int rdlen, int check_sef);
 void __cdecl cdvdman_write_scmd(cdvdman_internal_struct_t *s);
 int __cdecl cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int rdlen, int check_sef);
 int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff);
 int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff);
-int __fastcall sceCdApplySCmd3(u8 cmd, const void *wdata, unsigned long int wdlen, void *rdata);
+int __fastcall sceCdApplySCmd3(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff);
 int sceCdBreak(void);
 int __fastcall cd_ncmd_timeout_callback(iop_sys_clock_t *sys_clock);
 int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s);
@@ -155,7 +155,7 @@ int __cdecl sceCdMmode(int media);
 int __cdecl sceCdCancelPOffRdy(u32 *result);
 unsigned int __fastcall alarm_cb_poff(cdvdman_internal_struct_t *s);
 int __cdecl sceCdPowerOff(u32 *result);
-int __cdecl sceCdCtrlADout(int arg1, u32 *status);
+int __cdecl sceCdCtrlADout(int mode, u32 *status);
 int __cdecl sceCdReadClock(sceCdCLOCK *clock);
 int __cdecl sceCdRC(sceCdCLOCK *clock);
 int __cdecl sceCdTrayReq(int param, u32 *traychk);
@@ -163,7 +163,7 @@ int __fastcall cdvdman_scmd_sender_3B(int arg1);
 int __cdecl sceCdReadDiskID(unsigned int *id);
 int __cdecl cdvdman_179(u32 *status);
 int __cdecl cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3);
-int __cdecl sceCdDecSet(u8 arg1, u8 arg2, u8 shift);
+int __cdecl sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval);
 #if 0
 void *__cdecl AllocSysMemory(int mode, int size, void *ptr);
 int __cdecl FreeSysMemory(void *ptr);
@@ -6066,7 +6066,7 @@ int __cdecl cdvdman_init()
 // BF402000: using guessed type dev5_regs_t dev5_regs;
 
 //----- (004083E8) --------------------------------------------------------
-int __cdecl sceCdInit(int init_mode)
+int __cdecl sceCdInit(int mode)
 {
 	vu8 ready_status_tmp; // $s1
 	vu8 ready_status; // $s0
@@ -6075,9 +6075,9 @@ int __cdecl sceCdInit(int init_mode)
 
 	if ( cdvdman_verbose > 0 )
 	{
-		printf("sceCdInit called mode= %d\n", init_mode);
+		printf("sceCdInit called mode= %d\n", mode);
 	}
-	if ( init_mode == 5 )
+	if ( mode == 5 )
 	{
 		cdvdman_istruct.cd_inited = 0;
 		sceCdBreak();
@@ -6107,7 +6107,7 @@ int __cdecl sceCdInit(int init_mode)
 		cdvdman_init();
 		cdvdman_istruct.cd_inited = 1;
 	}
-	if ( !init_mode )
+	if ( !mode )
 	{
 		ready_status_tmp = 0;
 		if ( cdvdman_verbose > 0 )
@@ -6595,12 +6595,12 @@ int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned long int inB
 }
 
 //----- (004090C8) --------------------------------------------------------
-int __fastcall sceCdApplySCmd3(u8 cmd, const void *wdata, unsigned long int wdlen, void *rdata)
+int __fastcall sceCdApplySCmd3(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff)
 {
 	int timeoutcnt; // $s0
 
 	timeoutcnt = 0;
-	while ( !set_prev_command((unsigned __int8)cmd, wdata, wdlen, rdata, 16, 1) )
+	while ( !set_prev_command((unsigned __int8)cmdNum, inBuff, inBuffSize, outBuff, 16, 1) )
 	{
 		DelayThread(2000);
 		if ( timeoutcnt++ >= 2501 )
@@ -8622,11 +8622,11 @@ int __cdecl sceCdPowerOff(u32 *result)
 // 4114C0: using guessed type iop_sys_clock_t cdvdman_poff_to;
 
 //----- (0040C290) --------------------------------------------------------
-int __cdecl sceCdCtrlADout(int arg1, u32 *status)
+int __cdecl sceCdCtrlADout(int mode, u32 *status)
 {
 	char wdata[4]; // [sp+20h] [+8h] BYREF
 
-	*(_DWORD *)wdata = arg1;
+	*(_DWORD *)wdata = mode;
 	*status = 0;
 	DelayThread(2000);
 	if ( cdvdman_verbose > 0 )
@@ -8971,19 +8971,19 @@ int __cdecl cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3)
 }
 
 //----- (0040CB64) --------------------------------------------------------
-int __cdecl sceCdDecSet(u8 arg1, u8 arg2, u8 shift)
+int __cdecl sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval)
 {
 	vu8 shift1; // $a2
 	vu8 shift2; // $v1
 
-	cdvdman_cd36key = arg2 | shift;
-	shift1 = 16 * (shift & 7);
+	cdvdman_cd36key = enable_shift | shiftval;
+	shift1 = 16 * (shiftval & 7);
 	shift2 = shift1;
-	if ( arg1 )
+	if ( enable_xor )
 	{
 		shift2 = shift1 | 2;
 	}
-	if ( arg2 )
+	if ( enable_shift )
 	{
 		shift2 |= 1u;
 	}
