@@ -984,9 +984,9 @@ LABEL_37:
 			return result;
 		case 5u:
 			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_normal_thunk);
-			chunks_sectors = posszarg1 / (posszarg2_bytes >> 11);
 			if ( !(posszarg2_bytes >> 11) )
 				_break(7u, 0);
+			chunks_sectors = posszarg1 / (posszarg2_bytes >> 11);
 			cdvdstm_bufsz2 = posszarg1;
 			cdvdstm_sectorcount2 = posszarg1 / (posszarg2_bytes >> 11);
 			cdvdstm_chunksz2 = chunks_sectors << 11;
@@ -1525,7 +1525,7 @@ LABEL_7:
 			posszarg2 = instruct->posszarg2;
 			if ( !posszarg2 )
 				_break(7u, 0);
-			chunks_sectors = posszarg1 / instruct->posszarg2;
+			chunks_sectors = posszarg1 / posszarg2;
 			cdvdstm_bufsz2 = posszarg1;
 			cdvdstm_sectorcount2 = posszarg1 / posszarg2;
 			posszarg2_tmp = instruct->posszarg2;
