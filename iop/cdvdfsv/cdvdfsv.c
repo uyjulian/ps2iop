@@ -925,7 +925,7 @@ LABEL_82:
 						csec = nsec - csec_comm_tmp;
 					ClearEventFlag(cdvdfsv_ef, 0xFFFFFFDF);
 					dmac_ch_set_chcr(3u, 0);
-					chcr = dmac_ch_get_chcr(3u);
+					dmac_ch_get_chcr(3u);
 					cdvdfsv_cdvdman_internal_struct_ptr->dma3prm.dma3_maddress = rtocbuf_plus_4680;
 					dmac_ch_set_madr(3u, (u32)rtocbuf_plus_4680);
 					dmac_ch_set_bcr(

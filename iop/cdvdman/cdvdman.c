@@ -2077,7 +2077,6 @@ LABEL_84:
 			if ( cdvdman_verbose > 0 )
 			{
 				printf("FIO Usr addr LSN:%d SEC:%d ADDR:%08x\n", (int)lbn, (int)sectors, (unsigned int)(uiptr)addr);
-				lbn_tmp3 = lbn;
 			}
 			while ( !sceCdRE(lbn_tmp3, sectors, addr, rmode) )
 			{
@@ -2971,7 +2970,6 @@ int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 		pathptrtmp = &path[pathlen];
 		if ( pathlen >= 1023 )
 		{
-			ftble = (CDVDMAN_FILETBL_ENTRY_T *)fp;
 			break;
 		}
 	}
@@ -3732,7 +3730,6 @@ int __cdecl sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer)
 				return -2;
 			}
 			cdvdman_fs_cache = 1;
-			dsec_tmp = dsec;
 		}
 		condtmp = CD_cachefile(dsec_tmp, layer) != 0;
 		index_mul_8 = 8 * index;
@@ -4019,12 +4016,6 @@ int __fastcall CD_cachefile(int dsec, int layer)
 	int file_year; // $s1
 	u32 loc; // [sp+30h] [-18h]
 	u32 *sizeptr2; // [sp+34h] [-14h]
-	u8 *date2ptrtmp1; // [sp+38h] [-10h]
-	u8 *date2ptrtmp2; // [sp+38h] [-10h]
-	u8 *date1ptrtmp1; // [sp+3Ch] [-Ch]
-	u8 *date1ptrtmp2; // [sp+3Ch] [-Ch]
-	u32 *sizeptr1tmp1; // [sp+40h] [-8h]
-	u32 *sizeptr1tmp2; // [sp+40h] [-8h]
 
 	if ( dsec == cdvdman_fs_cdsec )
 	{
@@ -4090,14 +4081,8 @@ int __fastcall CD_cachefile(int dsec, int layer)
 				}
 				else
 				{
-					date2ptrtmp1 = date2ptr;
-					date1ptrtmp1 = date1ptr;
-					sizeptr1tmp1 = sizeptr1;
 					memcpy(nameptr, toc1->filename, toc1->filenameLength);
 					cdvdman_filetbl[filetbli].file_struct.name[toc1->filenameLength] = 0;
-					sizeptr1 = sizeptr1tmp1;
-					date1ptr = date1ptrtmp1;
-					date2ptr = date2ptrtmp1;
 				}
 			}
 			else
@@ -4106,9 +4091,6 @@ int __fastcall CD_cachefile(int dsec, int layer)
 			}
 			if ( cdvdman_verbose >= 2 )
 			{
-				date2ptrtmp2 = date2ptr;
-				date1ptrtmp2 = date1ptr;
-				sizeptr1tmp2 = sizeptr1;
 				printf(
 					"\t lsn %d size %d name:%d:%s %d/%d/%d %d:%d:%d\n",
 					(int)(filetble->file_struct.lsn),
@@ -4121,9 +4103,6 @@ int __fastcall CD_cachefile(int dsec, int layer)
 					*date3ptr,
 					*date2ptr,
 					*date1ptr);
-				sizeptr1 = sizeptr1tmp2;
-				date1ptr = date1ptrtmp2;
-				date2ptr = date2ptrtmp2;
 			}
 			date1ptr += 36;
 			date2ptr += 36;
@@ -5157,7 +5136,6 @@ int __fastcall cdvdman_intr_cb(cdvdman_internal_struct_t *s)
 			{
 				read_chunk = s->read_sectors;
 			}
-			s->read_chunk_reprocial_32 = 0x20 / read_chunk;
 			read_chunk_tmp = 1;
 			if ( 0x20 / read_chunk )
 			{
@@ -5408,7 +5386,6 @@ int __fastcall intrh_cdrom(cdvdman_internal_struct_t *s)
 	{
 		dev5_reg_006 = dev5_regs.dev5_reg_006;
 		s->last_error = dev5_reg_006;
-		s->last_error = dev5_reg_006;
 	}
 	dev5_reg_008 = dev5_regs.dev5_reg_008;
 	if ( (dev5_reg_008 & 1) != 0 )
@@ -5558,7 +5535,6 @@ u32 __cdecl sceCdLsnDualChg(u32 lsn)
 	if ( !condtmp )
 	{
 		condtmp = DvdDual_infochk() == 0;
-		result = lsn;
 		if ( !condtmp )
 		{
 			if ( cdvdman_istruct.dual_layer_emulation )
@@ -5587,7 +5563,6 @@ u32 __cdecl sceCdLsnDualChg(u32 lsn)
 				else
 				{
 					condtmp = QueryIntrContext() != 0;
-					result = lsn;
 					if ( !condtmp )
 					{
 						if ( cdvdman_verbose >= 0 )
@@ -8841,23 +8816,18 @@ int __cdecl sceCdReadDiskID(unsigned int *id)
 			if ( (dev5_reg_038 & 4) != 0 )
 			{
 				dev5_reg_030 = dev5_regs.dev5_reg_030;
-				*(_BYTE *)id = dev5_reg_030;
 				dev5_reg_039 = dev5_regs.dev5_reg_039;
 				*(_BYTE *)id = dev5_reg_030 ^ dev5_reg_039;
 				dev5_reg_031 = dev5_regs.dev5_reg_031;
-				*((_BYTE *)id + 1) = dev5_reg_031;
 				reg_039_tmp2 = dev5_regs.dev5_reg_039;
 				*((_BYTE *)id + 1) = dev5_reg_031 ^ reg_039_tmp2;
 				dev5_reg_032 = dev5_regs.dev5_reg_032;
-				*((_BYTE *)id + 2) = dev5_reg_032;
 				reg_039_tmp3 = dev5_regs.dev5_reg_039;
 				*((_BYTE *)id + 2) = dev5_reg_032 ^ reg_039_tmp3;
 				dev5_reg_033 = dev5_regs.dev5_reg_033;
-				*((_BYTE *)id + 3) = dev5_reg_033;
 				reg_039_tmp4 = dev5_regs.dev5_reg_039;
 				*((_BYTE *)id + 3) = dev5_reg_033 ^ reg_039_tmp4;
 				dev5_reg_034 = dev5_regs.dev5_reg_034;
-				*((_BYTE *)id + 4) = dev5_reg_034;
 				reg_039_tmp5 = dev5_regs.dev5_reg_039;
 				retval = 1;
 				*((_BYTE *)id + 4) = dev5_reg_034 ^ reg_039_tmp5;

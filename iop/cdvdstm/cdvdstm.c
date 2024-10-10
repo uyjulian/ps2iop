@@ -467,7 +467,6 @@ LABEL_30:
 								if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] )
 								{
 									cdvdstm_bankcur_iop = bankcur_next_tmp1;
-									written_chunk_size_tmp = written_chunk_size;
 								}
 								goto LABEL_63;
 							}
@@ -512,7 +511,6 @@ LABEL_30:
 								(unsigned __int8)cdvdstm_usedmap_iop[4],
 								cdvdstm_bankgp_iop,
 								cdvdstm_bankcur_iop);
-							written_chunk_size_tmp = written_chunk_size;
 						}
 					}
 LABEL_63:
@@ -602,7 +600,6 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 		if ( cdvdstm_verbose > 0 )
 		{
 			Kprintf("IOP Stream read Error code= 0x%02x retry= %d\n", scres1, cdvdstm_retrycnt_iop);
-			retryerr_tmp = scres1;
 		}
 		retrycnt_tmp = 1;
 		if ( retryerr_tmp == 48 || retryerr_tmp == 1 )
