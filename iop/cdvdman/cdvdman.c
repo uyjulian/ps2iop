@@ -1325,9 +1325,9 @@ LABEL_28:
 				break;
 			}
 			readpos_minus_cluster_cur = ++readpos_bsr_14_2 - cluster_cur;
-			if ( readpos_plus_nbytes_bsr_14 < readpos_bsr_14_2 )
+			condtmp1 = readpos_plus_nbytes_bsr_14 < readpos_bsr_14_2;
+			if ( condtmp1 )
 			{
-				condtmp1 = readpos_plus_nbytes_bsr_14 < readpos_bsr_14_2;
 				return condtmp1 ^ 1;
 			}
 		}
@@ -2559,11 +2559,8 @@ LABEL_27:
 				}
 				goto LABEL_88;
 			case 0x438A:
+				sceCdInit(*(_DWORD *)argp);
 				retval2 = 0;
-				if ( !sceCdInit(*(_DWORD *)argp) )
-				{
-					retval2 = -5;
-				}
 				goto LABEL_88;
 			case 0x438C:
 				cdvdman_spinnom = 2;

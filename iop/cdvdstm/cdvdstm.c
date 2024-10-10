@@ -785,10 +785,10 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 			if ( a3 == 0x4393 )
 			{
 				cmdid = instruct->cmdid;
-				if ( cmdid - 7 < 2 || cmdid == 5 || (p_rmode = &instruct->rmode, cmdid == 3) )
+				p_rmode = &instruct->rmode;
+				if ( cmdid == 5 || cmdid == 3 || cmdid - 7 < 2 )
 				{
 					vSetEventFlag();
-					p_rmode = &instruct->rmode;
 				}
 				*outres_ptr = iop_stream_handler(
 												instruct->posszarg1,

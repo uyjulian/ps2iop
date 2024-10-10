@@ -1179,7 +1179,6 @@ int __fastcall readproc1(
 	int read_res; // $v0
 	int cmd_error; // $s0
 	int result; // $v0
-	int sid_err_recover_cnt_tmp; // $v0
 	int Error; // [sp+20h] [-10h] BYREF
 	int state; // [sp+24h] [-Ch] BYREF
 	u32 syncdec_mask; // [sp+28h] [-8h] BYREF
@@ -1235,18 +1234,14 @@ int __fastcall readproc1(
 			break;
 		if ( !enable_retries )
 			goto LABEL_32;
-		sid_err_recover_cnt_tmp = cdvdfsv_sid_err_recover_cnt - 1;
 		if ( !cdvdfsv_sid_err_recover_cnt )
 		{
 			++cdvdfsv_err_count;
 			if ( cdvdfsv_verbose > 0 )
 				printf("Read_CD/DVD-ROM Sector_ID Error Recover Start\n");
 			cdvdfsv_sid_err_recover_cnt = 3;
-			sid_err_recover_cnt_tmp = cdvdfsv_sid_err_recover_cnt - 1;
-			if ( !cdvdfsv_sid_err_recover_cnt )
-				continue;
 		}
-		cdvdfsv_sid_err_recover_cnt = sid_err_recover_cnt_tmp;
+		cdvdfsv_sid_err_recover_cnt = cdvdfsv_sid_err_recover_cnt - 1;
 	}
 	if ( enable_retries && syncdec_mask )
 		sc_fffffffe_tmp = 32;
