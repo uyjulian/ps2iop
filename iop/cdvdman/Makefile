@@ -2,7 +2,7 @@ IOP_BIN = cdvdman.irx
 
 IOP_OBJS = cdvdman.o imports.o exports.o
 
-IOP_WARNFLAGS += -Wextra
+IOP_WARNFLAGS += -Wall -Wextra
 
 all: $(IOP_BIN)
 
