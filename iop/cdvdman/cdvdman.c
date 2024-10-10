@@ -6080,7 +6080,7 @@ int __cdecl sceCdInit(int init_mode)
 	{
 		printf("sceCdInit called mode= %d\n", init_mode);
 	}
-	if ( init_mode >= 0 && init_mode >= 2 && init_mode == 5 )
+	if ( init_mode == 5 )
 	{
 		cdvdman_istruct.cd_inited = 0;
 		sceCdBreak();

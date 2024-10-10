@@ -1642,7 +1642,7 @@ int __fastcall cdvdfsv_chreadee(
 		else
 		{
 			secsize = 2048;
-			if ( rmode.datapattern >= 2u && rmode.datapattern == 2 )
+			if ( rmode.datapattern == 2 )
 				secsize = 2340;
 		}
 		rmode.datapattern = 2;
@@ -1908,7 +1908,7 @@ int __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int buf
 	mode = &inbuf->scecdrmodeC;
 	rtocbuf_tmp = cdvdfsv_rtocbuf;
 	sector_size = 2352;
-	if ( inbuf->scecdrmodeC.datapattern && inbuf->scecdrmodeC.datapattern == 1 )
+	if ( inbuf->scecdrmodeC.datapattern == 1 )
 		sector_size = 2368;
 	buf_offs = 0;
 	all_sec_bytes = sector_size * all_sec;
