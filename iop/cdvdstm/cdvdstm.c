@@ -997,9 +997,9 @@ LABEL_37:
 			cdvdstm_bankcnt2 = posszarg2_bytes >> 11;
 			printf(
 				"Stream Buffer 1Bank %dbyte %dbanks %dbyte used\n",
-				chunks_sectors << 11,
-				posszarg2_bytes >> 11,
-				(chunks_sectors << 11) * (posszarg2_bytes >> 11));
+				(int)(chunks_sectors << 11),
+				(int)(posszarg2_bytes >> 11),
+				(int)((chunks_sectors << 11) * (posszarg2_bytes >> 11)));
 			result = 1;
 			goto LABEL_37;
 		case 3u:
@@ -1537,9 +1537,9 @@ LABEL_7:
 			cdvdstm_bankcnt2 = posszarg2_tmp;
 			printf(
 				"DA Stream Buffer 1Bank %dbyte %dbanks %dbyte used\n",
-				chunks_sectors * cdvdstm_usedchunksize2,
-				posszarg2_tmp,
-				chunks_sectors * cdvdstm_usedchunksize2 * posszarg2_tmp);
+				(int)(chunks_sectors * cdvdstm_usedchunksize2),
+				(int)posszarg2_tmp,
+				(int)(chunks_sectors * cdvdstm_usedchunksize2 * posszarg2_tmp));
 			result = 1;
 			goto LABEL_7;
 		case 3u:

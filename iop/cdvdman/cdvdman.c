@@ -1860,7 +1860,7 @@ int __fastcall cdrom_internal_read(iop_file_t *f, char *addr, int nbytes)
 		filesize_bsr_11 += file_lsn;
 		if ( cdvdman_verbose > 0 )
 		{
-			printf("fds= %d read file_lbn= %d offset= %d\n", privdata, file_lsn, read_pos);
+			printf("fds= %d read file_lbn= %d offset= %d\n", (int)(uiptr)privdata, (int)file_lsn, (int)read_pos);
 		}
 		buf = 0;
 		if ( !nbytes )
@@ -1953,7 +1953,7 @@ LABEL_38:
 			}
 			if ( cdvdman_verbose > 0 )
 			{
-				printf("sce_Read LBN= %d sectors= %d\n", lbn, sectors);
+				printf("sce_Read LBN= %d sectors= %d\n", (int)lbn, (int)sectors);
 			}
 			addr_unaligned = (uiptr)addr & 3;
 			if ( cdvdman_iocache )
@@ -1987,7 +1987,7 @@ LABEL_59:
 				condtmp2 = sec < 9;
 				if ( cdvdman_verbose > 0 )
 				{
-					printf("FIO Cache LSN:%d SEC:%d ADDR:%08x\n", lbn, sec, buf);
+					printf("FIO Cache LSN:%d SEC:%d ADDR:%08x\n", (int)lbn, (int)sec, (unsigned int)(uiptr)buf);
 					condtmp2 = sec < 9;
 				}
 				sectors_count = 0;
@@ -2076,7 +2076,7 @@ LABEL_84:
 			lbn_tmp3 = lbn;
 			if ( cdvdman_verbose > 0 )
 			{
-				printf("FIO Usr addr LSN:%d SEC:%d ADDR:%08x\n", lbn, sectors, addr);
+				printf("FIO Usr addr LSN:%d SEC:%d ADDR:%08x\n", (int)lbn, (int)sectors, (unsigned int)(uiptr)addr);
 				lbn_tmp3 = lbn;
 			}
 			while ( !sceCdRE(lbn_tmp3, sectors, addr, rmode) )
@@ -3805,7 +3805,7 @@ int __cdecl CD_newmedia(int arg)
 	{
 		if ( cdvdman_verbose > 0 )
 		{
-			printf("CD_newmedia: Illegal disc media type =%d\n", DiskType);
+			printf("CD_newmedia: Illegal disc media type =%d\n", (int)DiskType);
 		}
 		return 0;
 	}
@@ -4111,8 +4111,8 @@ int __fastcall CD_cachefile(int dsec, int layer)
 				sizeptr1tmp2 = sizeptr1;
 				printf(
 					"\t lsn %d size %d name:%d:%s %d/%d/%d %d:%d:%d\n",
-					filetble->file_struct.lsn,
-					cdvdman_filetbl[filetbli].file_struct.size,
+					(int)(filetble->file_struct.lsn),
+					(int)(cdvdman_filetbl[filetbli].file_struct.size),
 					toc1->filenameLength,
 					nameptr,
 					file_year,

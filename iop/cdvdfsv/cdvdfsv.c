@@ -598,7 +598,7 @@ void __cdecl cdvdfsv_rpc5h_0D_iopmread(cdvdfsv_rpc5h_0D_packet *inbuf, int bufle
 	cdvdfsv_iomrsdd.attr = 0;
 	cdvdfsv_iomrsdd.dest = readpos_dest_addr;
 	if ( cdvdfsv_verbose > 0 )
-		printf("sceCdReadIOPm addr= 0x%08x sector= %d\n", inbuf->buf, inbuf->sectors);
+		printf("sceCdReadIOPm addr= 0x%08x sector= %d\n", (unsigned int)(uiptr)(inbuf->buf), (int)(inbuf->sectors));
 	cmd_error = sceCdRE(inbuf->lsn, inbuf->sectors, inbuf->buf, &inbuf->mode);
 	while ( sceCdSync(1) )
 	{
@@ -721,10 +721,10 @@ int __cdecl cdvdfsv_checksid(u32 lsn, u32 sectors, u32 ps2dvd, void *buf, int de
 		if ( cdvdfsv_verbose > 0 )
 			printf(
 				"Read_EE Sector_ID error lsn= %d readlsn= %d layer= %d layer1_start %d\n",
-				lsn_tmp,
-				readlsn,
+				(int)lsn_tmp,
+				(int)readlsn,
 				layer,
-				cdvdfsv_cdvdman_internal_struct_ptr->layer_1_lsn);
+				(int)(cdvdfsv_cdvdman_internal_struct_ptr->layer_1_lsn));
 		return 0;
 	}
 	else
@@ -736,7 +736,7 @@ LABEL_22:
 			result = 1;
 			if ( cdvdfsv_verbose > 0 )
 			{
-				printf("Read_EE NO_Data_zone error lsn= %d layer= %d SecID %02x\n", lsn, layer, *syncdec_mask);
+				printf("Read_EE NO_Data_zone error lsn= %d layer= %d SecID %02x\n", (int)lsn, layer, (int)(*syncdec_mask));
 				return 1;
 			}
 		}
@@ -1398,7 +1398,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 		if ( len2_plus_sec2 < sc_ffffffe9_tmp + buf_offs_sum / secsize + 2 )
 			sectors = 1;
 		if ( cdvdfsv_verbose > 0 )
-			printf("0 CD_READ LBN= %d sectors= %d all= %d\n", sc_ffffffe9_tmp + buf_offs_sum / secsize, sectors, all_sec);
+			printf("0 CD_READ LBN= %d sectors= %d all= %d\n", (int)(sc_ffffffe9_tmp + buf_offs_sum / secsize), (int)sectors, all_sec);
 		if ( !readproc1(
 						sc_ffffffe9_tmp + buf_offs_sum / secsize,
 						sectors,
@@ -1506,7 +1506,7 @@ LABEL_55:
 		if ( len2_plus_sec2 < sc_ffffffe9_tmp + buf_offs_sum / secsize + 2 )
 			sectors_1 = 1;
 		if ( cdvdfsv_verbose > 0 )
-			printf("2 CD_READ LBN= %d sectors= %d\n", sc_ffffffe9_tmp + buf_offs_sum / secsize, sectors_1);
+			printf("2 CD_READ LBN= %d sectors= %d\n", (int)(sc_ffffffe9_tmp + buf_offs_sum / secsize), (int)sectors_1);
 		if ( !readproc1(
 						sc_ffffffe9_tmp + buf_offs_sum / secsize,
 						sectors_1,
@@ -1559,7 +1559,7 @@ LABEL_83:
 	cdvdfsv_eereadx.b1dst = paddr;
 	cdvdfsv_eereadx.b2dst = saddr;
 	if ( cdvdfsv_verbose > 0 )
-		printf("b psize= %d paddr= %08x bsize= %d ssize= %d saddr %08x\n", psize, paddr, bsize, ssize, saddr);
+		printf("b psize= %d paddr= %08x bsize= %d ssize= %d saddr %08x\n", (int)psize, paddr, (int)bsize, (int)ssize, saddr);
 	while ( cdvdfsv_checkdmastat(trid) >= 0 )
 		;
 	cdvdfsv_datasdd.src = &cdvdfsv_eereadx;
@@ -1775,7 +1775,7 @@ LABEL_8:
 		{
 			result = cdvdfsv_verbose;
 			if ( cdvdfsv_verbose > 0 )
-				return printf("ReadChain cnt %d on sceCdBreak()\n", cnt);
+				return printf("ReadChain cnt %d on sceCdBreak()\n", (int)cnt);
 			return result;
 		}
 		buf_tmp = i->buffer;
@@ -1794,9 +1794,9 @@ LABEL_8:
 			if ( cdvdfsv_verbose > 0 )
 				printf(
 					"ReadChain lsn= %d nsec= %d buf= %08x secsize= %d\n",
-					i->lbn,
-					i->sectors,
-					buf,
+					(int)(i->lbn),
+					(int)(i->sectors),
+					(unsigned int)(uiptr)buf,
 					p_scecdrmode30C->datapattern);
 			re_result = sceCdRE(lbn, sectors, buf, p_scecdrmode30C);
 			if ( re_result == 1 )
@@ -1812,7 +1812,7 @@ LABEL_8:
 		else
 		{
 			if ( cdvdfsv_verbose > 0 )
-				printf("ReadChain EE  Memory addr= 0x%08x sector= %d\n", i->lbn, i->sectors);
+				printf("ReadChain EE  Memory addr= 0x%08x sector= %d\n", (unsigned int)(i->lbn), (int)(i->sectors));
 			disktype_14 = MEMORY[0xBF40200F] == 0x14;
 			sc_fffffffc_res = sceCdSC(0xFFFFFFFC, &sc_fffffffc_tmp);
 			re_result = cdvdfsv_chreadee(lbn, sectors, (char *)buf_tmp, p_scecdrmode30C, disktype_14, sc_fffffffc_res == 0);
@@ -1935,7 +1935,7 @@ int __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int buf
 		if ( lbn_1_end < lbn_1 + buf_offs / sector_size + 2 )
 			sectors_1 = 1;
 		if ( cdvdfsv_verbose > 0 )
-			printf("0 CD_READ LBN= %d sectors= %d all= %d\n", lbn_1 + buf_offs_sectors, sectors_1, all_sec);
+			printf("0 CD_READ LBN= %d sectors= %d all= %d\n", (int)(lbn_1 + buf_offs_sectors), (int)sectors_1, all_sec);
 		cmd_error = sceCdReadCDDA(lbn_1 + buf_offs_sectors, sectors_1, rtocbuf_tmp, mode);
 		sceCdSync(3);
 		error_code = sceCdGetError();
@@ -2039,10 +2039,10 @@ int __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int buf
 		if ( lbn_1_end < lsn_3 + 2 )
 			sectors_3 = 1;
 		if ( cdvdfsv_verbose > 0 )
-			printf("0 CD_READ LBN= %d sectors= %d all= %d\n", lbn_1 + buf_offs / sector_size, sectors_3, all_sec);
+			printf("0 CD_READ LBN= %d sectors= %d all= %d\n", (int)(lbn_1 + buf_offs / sector_size), (int)sectors_3, all_sec);
 		buf_offs_mod_sector_size_3 = buf_offs % sector_size;
 		if ( cdvdfsv_verbose > 0 )
-			printf("2 CD_READ LBN= %d sectors= %d\n", lsn_3, sectors_3);
+			printf("2 CD_READ LBN= %d sectors= %d\n", (int)lsn_3, (int)sectors_3);
 		cmd_error_3 = sceCdReadCDDA(lsn_3, sectors_3, rtocbuf_tmp, mode);
 		sceCdSync(3);
 		error_code_3 = sceCdGetError();
@@ -2183,7 +2183,7 @@ int __fastcall cdvdfsv_rpc5h_04_gettoc(void *inbuf, int buflen, cdvdfsv_rpc5h_04
 	(void)buflen;
 
 	if ( cdvdfsv_verbose > 0 )
-		printf("GET TOC call 0x%08x\n", inbuf);
+		printf("GET TOC call 0x%08x\n", (int)inbuf);
 	Toc = sceCdGetToc(cdvdfsv_rtocbuf);
 	if ( cdvdfsv_verbose > 0 )
 		printf("GET TOC called\n");
@@ -2618,7 +2618,7 @@ CDVDReadResult *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int lengt
 			break;
 		case 5:
 			if ( cdvdfsv_verbose > 0 )
-				printf("Call Seek lsn= %d\n", *(_DWORD *)buffer);
+				printf("Call Seek lsn= %d\n", (int)(*(_DWORD *)buffer));
 			crr[0] = sceCdSeek(*(_DWORD *)buffer);
 			if ( cdvdfsv_verbose > 0 )
 				printf("Call Seek end\n");
