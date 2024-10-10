@@ -848,6 +848,7 @@ int __cdecl cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
 	CDVDMAN_FILETBL_ENTRY_T fileinfo; // [sp+10h] [-30h] BYREF
 	u32 efbits[2]; // [sp+38h] [-8h] BYREF
 
+	memset(&fileinfo, 0, sizeof(fileinfo));
 	if ( cdvdman_verbose > 0 )
 	{
 		printf("fileIO DREAD\n");
@@ -3066,7 +3067,7 @@ int sceCdGetDiskType(void)
 {
 	int result; // $v0
 
-	LOBYTE(result) = dev5_regs.dev5_reg_00F;
+	result = dev5_regs.dev5_reg_00F;
 	return (unsigned __int8)result;
 }
 // BF402000: using guessed type dev5_regs_t dev5_regs;
