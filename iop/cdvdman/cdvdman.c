@@ -3175,7 +3175,7 @@ int __fastcall read_id_from_rom(int mode, int *buf)
 	} rdstack;
 
 	rdstart = (char *)0xBFBF0000;
-	rdstackptr1 = (char *)&rdstack;
+	rdstackptr1 = (char *)&rdstack.m_unk10;
 	rdpos = 0;
 	for ( i = 0; i < 0x20; ++i )
 	{
