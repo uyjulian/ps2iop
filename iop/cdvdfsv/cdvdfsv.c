@@ -362,6 +362,8 @@ void __cdecl cdvdfsv_main_th(void *arg)
 	iop_thread_t thparam1; // [sp+10h] [-30h] BYREF
 	iop_thread_t thparam2; // [sp+28h] [-18h] BYREF
 
+	(void)arg;
+
 	if ( !sceSifCheckInit() )
 		sceSifInit();
 	sceSifInitRpc(0);
@@ -469,6 +471,9 @@ CDVDInitResult *__fastcall cbrpc_rpc1_cdinit(int fno, void *buffer, int length)
 {
 	int scres; // [sp+10h] [-8h] BYREF
 
+	(void)fno;
+	(void)length;
+
 	if ( cdvdfsv_verbose > 0 )
 		printf("sceCdInit call\n");
 	sceCdInit(*(_DWORD *)buffer);
@@ -491,6 +496,9 @@ int __fastcall cdvdfsv_rpc3h_16_break(void *inbuf, int buflen, void *outbuf)
 {
 	int result; // $v0
 
+	(void)inbuf;
+	(void)buflen;
+
 	if ( cdvdfsv_verbose > 0 )
 		printf("sceCdAbort call\n");
 	sceCdBreak();
@@ -509,6 +517,8 @@ CDVDSearchResult *__fastcall cbrpc_rpc4_fscall(int fno, void *buffer, int length
 	CDVDSearchResult *result; // $v0
 	int scres; // [sp+10h] [-8h] BYREF
 	int state; // [sp+14h] [-4h] BYREF
+
+	(void)fno;
 
 	scres = 255;
 	sceCdSC(0xFFFFFFF6, &scres);
@@ -575,6 +585,9 @@ void __cdecl cdvdfsv_rpc5h_0D_iopmread(cdvdfsv_rpc5h_0D_packet *inbuf, int bufle
 	int trid; // $s0
 	int error_code; // [sp+10h] [-8h] BYREF
 	int state; // [sp+14h] [-4h] BYREF
+
+	(void)buflen;
+	(void)outbuf;
 
 	cdvdfsv_rderror = 254;
 	cdvdfsv_read_to.hi = 0;
@@ -1303,6 +1316,8 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 	int decval; // [sp+5Ch] [-Ch]
 	cdvdfsv_rpc5h_01_packet *pkt_tmp; // [sp+60h] [-8h]
 
+	(void)buflen;
+
 	trid = 0;
 	decval = 0;
 	buf_offs_sum = 0;
@@ -1723,6 +1738,9 @@ int __fastcall cdvdfsv_rpc5h_0F_readchain(cdvdfsv_rpc5h_0F_packet *inbuf, int bu
 	int sc_fffffffc_tmp; // [sp+18h] [-8h] BYREF
 	int state; // [sp+1Ch] [-4h] BYREF
 
+	(void)buflen;
+	(void)outbuf;
+
 	cdvdfsv_rderror = 254;
 	p_scecdrmode30C = &inbuf->scecdrmode30C;
 	cdvdfsv_readpos = 0;
@@ -2105,6 +2123,9 @@ int *__fastcall cbrpc_rpc2_diskready(int fno, void *buffer, int length)
 	int scres; // [sp+10h] [-8h] BYREF
 	u32 efres; // [sp+14h] [-4h] BYREF
 
+	(void)fno;
+	(void)length;
+
 	inbuf_arg_tmp = *(_DWORD *)buffer;
 	if ( cdvdfsv_verbose > 0 )
 		Kprintf("DISK READY call 0x%02x\n", MEMORY[0xBF40200A]);
@@ -2158,6 +2179,8 @@ int __fastcall cdvdfsv_rpc5h_04_gettoc(void *inbuf, int buflen, cdvdfsv_rpc5h_04
 	int trid; // $s0
 	int result; // $v0
 	int state; // [sp+10h] [-8h] BYREF
+
+	(void)buflen;
 
 	if ( cdvdfsv_verbose > 0 )
 		printf("GET TOC call 0x%08x\n", inbuf);
@@ -2217,6 +2240,9 @@ int __fastcall cdvdfsv_rpc3h_03_disktype(void *inbuf, int buflen, void *outbuf)
 {
 	int result; // $v0
 
+	(void)inbuf;
+	(void)buflen;
+
 	result = sceCdGetDiskType();
 	*(_DWORD *)outbuf = result;
 	return result;
@@ -2226,6 +2252,9 @@ int __fastcall cdvdfsv_rpc3h_03_disktype(void *inbuf, int buflen, void *outbuf)
 int __fastcall cdvdfsv_rpc3h_0C_cdstatus(void *inbuf, int buflen, void *outbuf)
 {
 	int result; // $v0
+
+	(void)inbuf;
+	(void)buflen;
 
 	result = sceCdStatus();
 	*(_DWORD *)outbuf = result;
@@ -2238,6 +2267,9 @@ void __cdecl cdvdfsv_rpc3h_06_ri(void *inbuf, int buflen, cdvdfsv_rpc3h_06_outpa
 	int retry_cnt; // $s1
 	int retval; // $v0
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
+
+	(void)inbuf;
+	(void)buflen;
 
 	retry_cnt = 0;
 	do
@@ -2258,6 +2290,9 @@ void __cdecl cdvdfsv_rpc3h_1A_rm(void *inbuf, int buflen, cdvdfsv_rpc3h_1A_outpa
 	int retval; // $v0
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
 
+	(void)inbuf;
+	(void)buflen;
+
 	retry_cnt = 0;
 	do
 	{
@@ -2277,6 +2312,9 @@ void __cdecl cdvdfsv_rpc3h_24_readguid(void *inbuf, int buflen, cdvdfsv_rpc3h_24
 	int retval; // $v0
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
 
+	(void)inbuf;
+	(void)buflen;
+
 	retry_cnt = 0;
 	do
 	{
@@ -2295,6 +2333,9 @@ void __cdecl cdvdfsv_rpc3h_26_readmodelid(void *inbuf, int buflen, cdvdfsv_rpc3h
 	int retry_cnt; // $s0
 	int retval; // $v0
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
+
+	(void)inbuf;
+	(void)buflen;
 
 	retry_cnt = 0;
 	do
@@ -2326,6 +2367,8 @@ int __fastcall cdvdfsv_rpc3h_23_changethreadpriority(void *inbuf, int buflen, vo
 {
 	int result; // $v0
 
+	(void)buflen;
+
 	result = sceCdChangeThreadPriority(*(_DWORD *)inbuf);
 	*(_DWORD *)outbuf = result;
 	return result;
@@ -2337,6 +2380,9 @@ void __cdecl cdvdfsv_rpc3h_21_poweroff(void *inbuf, int buflen, cdvdfsv_rpc3h_21
 	int retry_cnt; // $s0
 	int retval; // $v0
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
+
+	(void)inbuf;
+	(void)buflen;
 
 	retry_cnt = 0;
 	do
@@ -2357,6 +2403,9 @@ void __cdecl cdvdfsv_rpc3h_15_ctrladout(void *inbuf, int buflen, cdvdfsv_rpc3h_1
 	int retval; // $v0
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
 
+	(void)inbuf;
+	(void)buflen;
+
 	retry_cnt = 0;
 	do
 	{
@@ -2375,6 +2424,9 @@ void __cdecl cdvdfsv_rpc3h_01_readclock(void *inbuf, int buflen, cdvdfsv_rpc3h_0
 	int retry_cnt; // $s0
 	int retval; // $v0
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
+
+	(void)inbuf;
+	(void)buflen;
 
 	retry_cnt = 0;
 	do
@@ -2395,6 +2447,9 @@ int __fastcall cdvdfsv_rpc5h_11_readdiskid(void *inbuf, int buflen, cdvdfsv_rpc5
 	__int16 diskid_tmp2; // $a1
 	u8 diskid_tmp[6]; // [sp+10h] [-10h] BYREF
 
+	(void)inbuf;
+	(void)buflen;
+
 	result = sceCdReadDiskID((unsigned int *)diskid_tmp);
 	outbuf->dword0 = result;
 	diskid_tmp2 = *(_WORD *)&diskid_tmp[4];
@@ -2407,6 +2462,9 @@ int __fastcall cdvdfsv_rpc5h_11_readdiskid(void *inbuf, int buflen, cdvdfsv_rpc5
 int __fastcall cdvdfsv_rpc5h_17_doesuniquekeyexist(void *inbuf, int buflen, cdvdfsv_rpc5h_17_outpacket *outbuf)
 {
 	int result; // $v0
+
+	(void)inbuf;
+	(void)buflen;
 
 	result = sceCdDoesUniqueKeyExist(&outbuf->arg1);
 	outbuf->dword0 = result;
@@ -2425,6 +2483,8 @@ int __fastcall cdvdfsv_rpc3h_0B_applyscmd(
 	int res3_tmp; // $t2
 	int buf_tmp[4]; // [sp+10h] [-10h] BYREF
 
+	(void)buflen;
+
 	result = sceCdApplySCmd(inbuf->cmdNum, &inbuf->inBuff, inbuf->inBuffSize, buf_tmp);
 	res1_tmp = buf_tmp[1];
 	res2_tmp = buf_tmp[2];
@@ -2439,6 +2499,8 @@ int __fastcall cdvdfsv_rpc3h_0B_applyscmd(
 //----- (00403B64) --------------------------------------------------------
 int __fastcall cdvdfsv_rpc5h_0C_applyncmd(cdvdfsv_rpc5h_0C_packet *inbuf, int buflen, void *outbuf)
 {
+	(void)buflen;
+
 	*(_DWORD *)outbuf = sceCdApplyNCmd(inbuf->cmdNum, &inbuf->inBuff, inbuf->inBuffSize);
 	return sceCdSync(2);
 }
@@ -2447,6 +2509,9 @@ int __fastcall cdvdfsv_rpc5h_0C_applyncmd(cdvdfsv_rpc5h_0C_packet *inbuf, int bu
 int __fastcall cdvdfsv_rpc3h_04_geterror(void *inbuf, int buflen, void *outbuf)
 {
 	int result; // $v0
+
+	(void)inbuf;
+	(void)buflen;
 
 	result = sceCdGetError();
 	*(_DWORD *)outbuf = result;
@@ -2459,6 +2524,8 @@ void __cdecl cdvdfsv_rpc3h_05_trayreq(void *inbuf, int buflen, cdvdfsv_rpc3h_05_
 	int retry_cnt; // $s0
 	int retval; // $v0
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
+
+	(void)buflen;
 
 	retry_cnt = 0;
 	do
@@ -2477,6 +2544,8 @@ int __fastcall cdvdfsv_rpc3h_25_settimeout(cdvdfsv_rpc3h_25_packet *inbuf, int b
 {
 	int result; // $v0
 
+	(void)buflen;
+
 	result = sceCdSetTimeout(inbuf->param, inbuf->timeout);
 	*(_DWORD *)outbuf = result;
 	return result;
@@ -2486,6 +2555,9 @@ int __fastcall cdvdfsv_rpc3h_25_settimeout(cdvdfsv_rpc3h_25_packet *inbuf, int b
 int __fastcall cdvdfsv_rpc3h_27_readdvddualinfo(void *inbuf, int buflen, cdvdfsv_rpc3h_27_outpacket *outbuf)
 {
 	int result; // $v0
+
+	(void)inbuf;
+	(void)buflen;
 
 	result = sceCdReadDvdDualInfo(&outbuf->on_dual, &outbuf->layer1_start);
 	outbuf->dword0 = result;
@@ -2736,6 +2808,8 @@ void __cdecl cdvdfsv_rpc1_th(void *arg)
 {
 	int ThreadId; // $v0
 
+	(void)arg;
+
 	ThreadId = GetThreadId();
 	sceSifSetRpcQueue(&rpc_qdata1, ThreadId);
 	sceSifRegisterRpc(&rpc_sdata1, 0x80000592, (SifRpcFunc_t)cbrpc_rpc1_cdinit, rpc_buffer1, 0, 0, &rpc_qdata1);
@@ -2750,6 +2824,8 @@ void __cdecl cdvdfsv_rpc3_th(void *arg)
 {
 	int ThreadId; // $v0
 
+	(void)arg;
+
 	ThreadId = GetThreadId();
 	sceSifSetRpcQueue(&rpc_qdata3, ThreadId);
 	sceSifRegisterRpc(&rpc_sdata6, 0x8000059C, (SifRpcFunc_t)cbrpc_rpc2_diskready, rpc_buffer2, 0, 0, &rpc_qdata3);
@@ -2761,6 +2837,8 @@ void __cdecl cdvdfsv_rpc3_th(void *arg)
 void __cdecl cdvdfsv_rpc2_th(void *arg)
 {
 	int ThreadId; // $v0
+
+	(void)arg;
 
 	ThreadId = GetThreadId();
 	sceSifSetRpcQueue(&rpc_qdata2, ThreadId);

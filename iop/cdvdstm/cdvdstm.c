@@ -18,7 +18,7 @@ BOOL __fastcall alarm_cb(void *);
 int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *error_ptr);
 int __fastcall sceCdStream0(int rdsize_sectors, char *addrarg, int modearg, int *error_ptr);
 unsigned int __fastcall iop_stream_handler(unsigned int posszarg1, unsigned int posszarg2, void *buffer, int cmdid, sceCdRMode *rmode, int *error_ptr);
-unsigned int __cdecl iop_stream_intr_cb(void *a1);
+unsigned int __cdecl iop_stream_intr_cb(void *userdata);
 int cdrom_stm_init();
 int cdrom_stm_deinit();
 int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
@@ -26,10 +26,10 @@ int __cdecl cdrom_stm_nulldev();
 __int64 __cdecl cdrom_stm_nulldev64();
 int __fastcall _start(int);
 BOOL __fastcall stm_alarm_timeout_cb(void *a1);
-int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int outres_len, int *outres_ptr);
-unsigned int __fastcall ee_stream_intr_cb_normal(void *a1);
-int __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int outres_len, int *outres_ptr);
-unsigned int __fastcall ee_stream_intr_cb_cdda(void *a1);
+int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
+unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata);
+int __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
+unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata);
 unsigned int __fastcall cdvdstm_memcpy(_DWORD *a1, _DWORD *a2, unsigned int a3);
 void cdvdstm_1();
 int Kprintf(const char *format, ...);
@@ -67,19 +67,19 @@ int __cdecl sceCdSC(int code, int *param);
 int sceCdStStop(void);
 int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMode *mode);
 
-static void iop_stream_intr_cb_thunk(int a1)
+static void iop_stream_intr_cb_thunk(int userdata)
 {
-	iop_stream_intr_cb((void *)a1);
+	iop_stream_intr_cb((void *)userdata);
 }
 
-static void ee_stream_intr_cb_normal_thunk(int a1)
+static void ee_stream_intr_cb_normal_thunk(int userdata)
 {
-	ee_stream_intr_cb_normal((void *)a1);
+	ee_stream_intr_cb_normal((void *)userdata);
 }
 
-static void ee_stream_intr_cb_cdda_thunk(int a1)
+static void ee_stream_intr_cb_cdda_thunk(int userdata)
 {
-	ee_stream_intr_cb_cdda((void *)a1);
+	ee_stream_intr_cb_cdda((void *)userdata);
 }
 
 //-------------------------------------------------------------------------
@@ -553,7 +553,7 @@ LABEL_63:
 // 4049A4: using guessed type int cdvdstm_stmstart_iop;
 
 //----- (00400D30) --------------------------------------------------------
-unsigned int __cdecl iop_stream_intr_cb(void *a1)
+unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 {
 	int disk_type_ex; // $a0
 	int retryerr_tmp; // $a1
@@ -565,6 +565,8 @@ unsigned int __cdecl iop_stream_intr_cb(void *a1)
 	bool v8; // dc
 	unsigned int i; // $v1
 	int scres1; // [sp+28h] [-8h] BYREF
+
+	(void)userdata;
 
 	if ( cdvdstm_verbose > 0 )
 		Kprintf("Intr Read call\n");
@@ -762,6 +764,10 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 	cdrom_stm_devctl_t *instruct;
 	int *outres_ptr;
 
+	(void)f;
+	(void)a2;
+	(void)outbuf_len;
+
 	instruct = inbuf;
 	outres_ptr = outbuf;
 	WaitSema(cdvdstm_semid);
@@ -893,7 +899,7 @@ BOOL __fastcall stm_alarm_timeout_cb(void *a1)
 }
 
 //----- (00401724) --------------------------------------------------------
-int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int outres_len, int *outres_ptr)
+int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
 {
 	int retryflag; // $fp
 	char *buffer; // $s6
@@ -919,6 +925,8 @@ int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int outres
 	int state; // [sp+24h] [-Ch] BYREF
 	unsigned int i; // [sp+28h] [-8h]
 	u32 posszarg1; // [sp+2Ch] [-4h] BYREF
+
+	(void)inbuf_len;
 
 	retryflag = 0;
 	buffer = (char *)instruct->buffer;
@@ -1220,7 +1228,7 @@ LABEL_73:
 // 404BF4: using guessed type int cdvdstm_stmstart_ee;
 
 //----- (00402230) --------------------------------------------------------
-unsigned int __fastcall ee_stream_intr_cb_normal(void *a1)
+unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 {
 	int disk_type_ex; // $a0
 	int retryerr_tmp; // $a2
@@ -1232,6 +1240,8 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *a1)
 	int gptmp; // $a0
 	bool condtmp; // dc
 	unsigned int i; // $v1
+
+	(void)userdata;
 
 	if ( cdvdstm_verbose > 0 )
 		Kprintf("Intr EE Stm Read call\n");
@@ -1411,7 +1421,7 @@ LABEL_64:
 // 404BF4: using guessed type int cdvdstm_stmstart_ee;
 
 //----- (0040289C) --------------------------------------------------------
-int __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int outres_len, int *outres_ptr)
+int __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
 {
 	char *buffer; // $s6
 	u32 cmdid; // $s1
@@ -1440,6 +1450,8 @@ int __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int outres_l
 	unsigned int posszarg2_bytes_overrun; // [sp+20h] [-10h]
 	int state; // [sp+24h] [-Ch] BYREF
 	unsigned int i; // [sp+28h] [-8h]
+
+	(void)inbuf_len;
 
 	buffer = (char *)instruct->buffer;
 	cmdid = instruct->cmdid;
@@ -1775,7 +1787,7 @@ LABEL_99:
 // 404BF4: using guessed type int cdvdstm_stmstart_ee;
 
 //----- (00403530) --------------------------------------------------------
-unsigned int __fastcall ee_stream_intr_cb_cdda(void *a1)
+unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 {
 	int disk_type_ex; // $a0
 	int retryerr_tmp; // $a2
@@ -1785,6 +1797,8 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *a1)
 	int gptmp; // $a0
 	bool condtmp; // dc
 	unsigned int i; // $v1
+
+	(void)userdata;
 
 	if ( cdvdstm_verbose > 0 )
 		Kprintf("Intr EE DA Stm Read call\n");

@@ -343,6 +343,9 @@ int __cdecl _start(int argc, char **argv)
 	bool condtmp; // dc
 	int result; // $v0
 
+	(void)argc;
+	(void)argv;
+
 	condtmp = RegisterLibraryEntries(&_exp_cdvdman) != 0;
 	result = 1;
 	if ( !condtmp )
@@ -381,6 +384,8 @@ int __cdecl cdrom_init(iop_device_t *dev)
 	int handlei2; // $v0
 	iop_event_t event; // [sp+10h] [-18h] BYREF
 	int cd_sc_tmp; // [sp+20h] [-8h] BYREF
+
+	(void)dev;
 
 	printf("cdvdman Init\n");
 	cdvdman_istruct.wait_flag = 1;
@@ -719,6 +724,8 @@ void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTR
 	iox_stat_t *buftmp; // $v1
 	u8 datetmp; // $v0
 	int mode_tmp; // $v1
+
+	(void)dummy;
 
 	offi = 0;
 	buf->attr = 0;
@@ -1559,6 +1566,8 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	u32 efbits; // [sp+D8h] [-8h] BYREF
 	int buf; // [sp+DCh] [-4h] BYREF
 
+	(void)arg4;
+
 	fds1 = 0;
 	if ( cdvdman_verbose > 0 )
 	{
@@ -2229,6 +2238,8 @@ LABEL_24:
 //----- (00402A2C) --------------------------------------------------------
 int __fastcall cdrom_ioctl(iop_file_t *f, int arg, void *param)
 {
+	(void)f;
+
 	if ( arg != 0x10000 )
 	{
 		return -5;
@@ -2249,6 +2260,11 @@ int __cdecl cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, 
 	cdrom_stm_devctl_t devctl_req; // [sp+18h] [-20h] BYREF
 	u32 efbits; // [sp+30h] [-8h] BYREF
 	int buf; // [sp+34h] [-4h] BYREF
+
+	(void)argp;
+	(void)arglen;
+	(void)bufp;
+	(void)buflen;
 
 	WaitEventFlag(fio_fsv_evid, 1u, 16, &efbits);
 	filedata = &cdvdman_handles[(int)f->privdata];
@@ -2351,6 +2367,10 @@ int __cdecl cdrom_devctl(
 	u32 efbits; // [sp+30h] [-10h] BYREF
 	int on_dual_tmp; // [sp+34h] [-Ch] BYREF
 	int condtmpstk; // [sp+38h] [-8h] BYREF
+
+	(void)f;
+	(void)a2;
+	(void)buflen;
 
 	sc_tmp = 0;
 	if ( cmd == 0x4328 )
@@ -3407,6 +3427,8 @@ int __cdecl sceCdStRead(u32 sectors, u32 *buffer, u32 mode, u32 *error)
 	int devctl_res; // $v0
 	cdrom_stm_devctl_t devctl_req; // [sp+18h] [-20h] BYREF
 	int buf; // [sp+30h] [-8h] BYREF
+
+	(void)mode;
 
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.cmdid = 1;
@@ -8225,6 +8247,9 @@ void __cdecl Read2intrCDVD(int read2_flag)
 //----- (0040B89C) --------------------------------------------------------
 int __cdecl sceCdReadChain(sceCdRChain *tag, sceCdRMode *mode)
 {
+	(void)tag;
+	(void)mode;
+
 	return 0;
 }
 
