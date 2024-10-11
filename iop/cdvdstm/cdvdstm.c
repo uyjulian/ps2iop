@@ -26,9 +26,9 @@ int __cdecl cdrom_stm_nulldev();
 __int64 __cdecl cdrom_stm_nulldev64();
 int __fastcall _start(int);
 BOOL __fastcall stm_alarm_timeout_cb(void *a1);
-int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
+void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
 unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata);
-int __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
+void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
 unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata);
 unsigned int __fastcall cdvdstm_memcpy(_DWORD *a1, _DWORD *a2, unsigned int a3);
 void cdvdstm_1();
@@ -278,7 +278,6 @@ unsigned int __fastcall iop_stream_handler(
 	int *error_ptr_tmp; // $fp
 	int cmdid_tmp; // $s1
 	int retryflag; // $s7
-	unsigned int result; // $v0
 	bool condtmp1; // dc
 	int bankcur_tmp; // $v1
 	unsigned int i; // $s1
@@ -305,16 +304,15 @@ unsigned int __fastcall iop_stream_handler(
 	if ( cdvdstm_verbose > 0 )
 		Kprintf("CD Stream Call mode= %d\n", cmdid);
 	*error_ptr_tmp = 0;
-	if ( cdvdstm_stmstart_iop != 2 || cmdid_tmp == 9 || (result = 0, cmdid_tmp == 3) )
+	if ( cdvdstm_stmstart_iop != 2 || cmdid_tmp == 9 || cmdid_tmp == 3 )
 	{
 		switch ( cmdid_tmp )
 		{
 			case 8:
 				sceCdSC(1, &cdvdstm_last_error_for_iop);
 				condtmp1 = sceCdNop() == 0;
-				result = 1;
 				if ( !condtmp1 )
-					return result;
+					return 1;
 LABEL_44:
 				sceCdSC(0, &cdvdstm_last_error_for_iop);
 				return 0;
@@ -388,7 +386,6 @@ LABEL_30:
 				if ( cmdid_tmp == 9 )
 				{
 					condtmp1 = sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_iop) == 0;
-					result = 0;
 					if ( !condtmp1 )
 					{
 						CpuSuspendIntr(state);
@@ -399,6 +396,7 @@ LABEL_30:
 						CpuResumeIntr(state[0]);
 						return 1;
 					}
+					return 0;
 				}
 				else
 				{
@@ -517,7 +515,6 @@ LABEL_63:
 					if ( written_chunk_size_tmp == 0xFFFFFFFF )
 						written_chunk_size_tmp = posszarg2;
 					CpuResumeIntr(state[0]);
-					result = 1;
 					if ( !retryflag )
 					{
 						if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_iop) != 1
@@ -529,15 +526,16 @@ LABEL_63:
 						retryerr = 0;
 						if ( cdvdstm_retryerr_iop )
 							retryerr = cdvdstm_retryerr_iop;
-						result = written_chunk_size_tmp;
 						*error_ptr_tmp = retryerr;
 						cdvdstm_retryerr_iop = 0;
+						return written_chunk_size_tmp;
 					}
+					return 1;
 				}
 				break;
 		}
 	}
-	return result;
+	return 0;
 }
 // 4005AC: conditional instruction was optimized away because $s6.4!=0
 // 404688: using guessed type int cdvdstm_verbose;
@@ -558,7 +556,6 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	int retrycnt_tmp; // $v0
 	int retry_minus_one; // $v0
 	unsigned int tgttmp; // $s0
-	unsigned int result; // $v0
 	int gptmp; // $a0
 	bool v8; // dc
 	unsigned int i; // $v1
@@ -671,11 +668,9 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 					cdvdstm_mode_iop.spindlctrl);
 			cdvdstm_curclk_iop.lo = 294912;
 			v8 = iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop) == 0;
-			result = 0;
 			if ( !v8 )
 			{
 				v8 = sceCdNop() != 0;
-				result = 0;
 				if ( !v8 )
 				{
 					sceCdSC(0, &scres1);
@@ -714,11 +709,10 @@ LABEL_64:
 				}
 				cdvdstm_retrycnt_iop = 1;
 			}
-			result = 0;
 			cdvdstm_lsn_iop += cdvdstm_sectorcount;
 		}
 	}
-	return result;
+	return 0;
 }
 // 404688: using guessed type int cdvdstm_verbose;
 // 404698: using guessed type int cdvdstm_numbytes;
@@ -841,7 +835,6 @@ __int64 __cdecl cdrom_stm_nulldev64()
 int __fastcall _start(int a1)
 {
 	bool condtmp; // dc
-	int result; // $v0
 	int relres; // $s0
 	int scres; // [sp+10h] [-8h] BYREF
 	int state; // [sp+14h] [-4h] BYREF
@@ -849,7 +842,6 @@ int __fastcall _start(int a1)
 	if ( a1 < 0 )
 	{
 		condtmp = sceCdSC(0xFFFFFFFF, &scres) != 0;
-		result = 2;
 		if ( !condtmp )
 		{
 			cdvdstm_in_deldrv = 1;
@@ -859,18 +851,17 @@ int __fastcall _start(int a1)
 			CpuResumeIntr(state);
 			if ( !relres )
 				return 1;
-			result = 2;
 			if ( relres == -213 )
 				return 1;
 			cdvdstm_in_deldrv = 0;
 		}
+		return 2;
 	}
 	else
 	{
 		condtmp = RegisterLibraryEntries(&_exp_cdvdstm) != 0;
-		result = 1;
 		if ( condtmp )
-			return result;
+			return 1;
 		DelDrv("cdrom_stm");
 		if ( AddDrv(&cdrom_stm_dev) )
 		{
@@ -880,7 +871,6 @@ int __fastcall _start(int a1)
 		cdvdstm_ef = sceCdSC(0xFFFFFFF5, &scres);
 		return 2;
 	}
-	return result;
 }
 // 404690: using guessed type int cdvdstm_in_deldrv;
 
@@ -896,14 +886,13 @@ BOOL __fastcall stm_alarm_timeout_cb(void *a1)
 }
 
 //----- (00401724) --------------------------------------------------------
-int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
+void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
 {
 	int retryflag; // $fp
 	char *buffer; // $s6
 	u32 posszarg2; // $s5
 	u32 cmdid; // $s1
 	u32 posszarg2_bytes; // $s5
-	int result; // $v0
 	bool condtmp1; // dc
 	int bankcur_tmp; // $a0
 	unsigned int chunks_sectors; // $lo
@@ -933,7 +922,6 @@ int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_
 	posszarg2_bytes = posszarg2 << 11;
 	if ( cdvdstm_stmstart_ee == 2 )
 	{
-		result = 3;
 		if ( cmdid != 9 && cmdid != 3 )
 			goto LABEL_46;
 	}
@@ -942,14 +930,13 @@ int __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_
 		case 8u:
 			sceCdSC(2, &cdvdstm_last_error_for_ee);
 			condtmp1 = sceCdNop() != 0;
-			result = 1;
 			if ( !condtmp1 )
 			{
-				result = sceCdSC(0, &cdvdstm_last_error_for_ee);
+				sceCdSC(0, &cdvdstm_last_error_for_ee);
 				outres_tmp1 = 0;
 LABEL_38:
 				*outres_ptr = outres_tmp1;
-				return result;
+				return;
 			}
 LABEL_37:
 			outres_tmp1 = 1;
@@ -961,7 +948,8 @@ LABEL_37:
 			CpuResumeIntr(state);
 			sceCdSync(0);
 			*outres_ptr = 1;
-			return CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
+			CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
+			return;
 		case 6u:
 			bankcur_tmp = cdvdstm_bankcur_ee;
 			if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
@@ -979,9 +967,8 @@ LABEL_37:
 				if ( (unsigned int)(++bankcur_tmp) >= (unsigned int)cdvdstm_bankcnt2 )
 					bankcur_tmp = 0;
 			}
-			result = (unsigned int)cdvdstm_chunksz2 >> 11;
 			*outres_ptr = i * ((unsigned int)cdvdstm_chunksz2 >> 11);
-			return result;
+			return;
 		case 5u:
 			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_normal_thunk);
 			if ( !(posszarg2_bytes >> 11) )
@@ -997,7 +984,6 @@ LABEL_37:
 				(int)(chunks_sectors << 11),
 				(int)(posszarg2_bytes >> 11),
 				(int)((chunks_sectors << 11) * (posszarg2_bytes >> 11)));
-			result = 1;
 			goto LABEL_37;
 		case 3u:
 			CpuSuspendIntr(&state);
@@ -1024,7 +1010,8 @@ LABEL_37:
 			sceCdSync(0);
 			cdvdstm_last_error_for_ee = 0;
 			sceCdSC(0xFFFFFFFE, &cdvdstm_last_error_for_ee);
-			return CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
+			CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
+			return;
 		case 1u:
 			cdvdstm_mode_ee.datapattern = instruct->rmode.datapattern;
 			cdvdstm_mode_ee.trycount = instruct->rmode.trycount;
@@ -1034,8 +1021,7 @@ LABEL_37:
 	}
 	if ( cmdid == 9 )
 	{
-		result = sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
-		if ( result )
+		if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee) )
 		{
 			CpuSuspendIntr(&state);
 			cdvdstm_lsn_ee = posszarg1;
@@ -1052,7 +1038,6 @@ LABEL_37:
 			}
 			cdvdstm_stmstart_ee = 2;
 			CpuResumeIntr(state);
-			result = 1;
 			goto LABEL_37;
 		}
 LABEL_46:
@@ -1103,7 +1088,7 @@ LABEL_46:
 		sceCdSC(2, &cdvdstm_last_error_for_ee);
 		if ( !sceCdNop() )
 		{
-			result = sceCdSC(0, &cdvdstm_last_error_for_ee);
+			sceCdSC(0, &cdvdstm_last_error_for_ee);
 			goto LABEL_46;
 		}
 	}
@@ -1195,24 +1180,21 @@ LABEL_73:
 	outres_tmp2 = posszarg2_bytes_overrun / 2048;
 	if ( retryflag )
 	{
-		result = 1;
 		outres_tmp2 = 1;
 	}
 	else
 	{
 		if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee) != 2 && !outres_tmp2 && !cdvdstm_retryerr_ee )
 			cdvdstm_retryerr_ee = 273;
-		result = cdvdstm_retryerr_ee;
 		if ( cdvdstm_retryerr_ee )
 		{
 			retryerr = cdvdstm_retryerr_ee;
 			cdvdstm_retryerr_ee = 0;
-			result = retryerr << 16;
-			outres_tmp2 = (unsigned __int16)outres_tmp2 | result;
+			outres_tmp2 = (unsigned __int16)outres_tmp2 | (retryerr << 16);
 		}
 	}
 	*outres_ptr = outres_tmp2;
-	return result;
+	return;
 }
 // 404688: using guessed type int cdvdstm_verbose;
 // 404744: using guessed type int cdvdstm_bufsz2;
@@ -1233,7 +1215,6 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	int retry_minus_one; // $v0
 	int tgttmp1; // $a0
 	unsigned int tgttmp2; // $a0
-	unsigned int result; // $v0
 	int gptmp; // $a0
 	bool condtmp; // dc
 	unsigned int i; // $v1
@@ -1352,11 +1333,9 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 									&cdvdstm_curclk_ee,
 									(unsigned int (__cdecl *)(void *))ee_stream_intr_cb_normal,
 									&cdvdstm_curclk_ee) == 0;
-			result = 0;
 			if ( !condtmp )
 			{
 				condtmp = sceCdNop() != 0;
-				result = 0;
 				if ( !condtmp )
 				{
 					sceCdSC(0, &cdvdstm_last_error_for_ee);
@@ -1400,11 +1379,10 @@ LABEL_64:
 				}
 				cdvdstm_retrycnt_ee_normal = 1;
 			}
-			result = 0;
 			cdvdstm_lsn_ee += cdvdstm_sectorcount2;
 		}
 	}
-	return result;
+	return 0;
 }
 // 404688: using guessed type int cdvdstm_verbose;
 // 404748: using guessed type int cdvdstm_chunksz2;
@@ -1418,14 +1396,13 @@ LABEL_64:
 // 404BF4: using guessed type int cdvdstm_stmstart_ee;
 
 //----- (0040289C) --------------------------------------------------------
-int __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
+void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
 {
 	char *buffer; // $s6
 	u32 cmdid; // $s1
 	u32 posszarg1; // $s2
 	u32 posszarg2_bytes; // $s5
 	int retryflag; // $fp
-	int result; // $v0
 	int bankcur_tmp; // $a0
 	int datapattern; // $v1
 	int sectorsz; // $v0
@@ -1457,7 +1434,6 @@ int __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_le
 	retryflag = 0;
 	if ( cdvdstm_stmstart_ee == 2 )
 	{
-		result = 3;
 		if ( cmdid != 9 && cmdid != 3 )
 			goto LABEL_59;
 	}
@@ -1468,7 +1444,6 @@ int __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_le
 			if ( sceCdNop() )
 			{
 LABEL_6:
-				result = 1;
 LABEL_7:
 				posszarg2_overrun_chunks2 = 1;
 				goto LABEL_99;
@@ -1481,7 +1456,8 @@ LABEL_7:
 			CpuResumeIntr(state);
 			sceCdSync(0);
 			*outres_ptr = 1;
-			return CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
+			CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
+			return;
 		case 6u:
 			bankcur_tmp = cdvdstm_bankcur_ee;
 			if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
@@ -1501,9 +1477,8 @@ LABEL_7:
 			}
 			if ( !cdvdstm_usedchunksize2 )
 				_break(7u, 0);
-			result = i;
 			*outres_ptr = i * (cdvdstm_chunksz2 / (unsigned int)cdvdstm_usedchunksize2);
-			return result;
+			return;
 		case 5u:
 			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_cdda_thunk);
 			datapattern = instruct->rmode.datapattern;
@@ -1537,7 +1512,6 @@ LABEL_7:
 				(int)(chunks_sectors * cdvdstm_usedchunksize2),
 				(int)posszarg2_tmp,
 				(int)(chunks_sectors * cdvdstm_usedchunksize2 * posszarg2_tmp));
-			result = 1;
 			goto LABEL_7;
 		case 3u:
 			CpuSuspendIntr(&state);
@@ -1564,7 +1538,8 @@ LABEL_7:
 			sceCdSync(0);
 			cdvdstm_last_error_for_ee = 0;
 			sceCdSC(0xFFFFFFFE, &cdvdstm_last_error_for_ee);
-			return CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
+			CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
+			return;
 		case 1u:
 			cdvdstm_mode_ee.datapattern = instruct->rmode.datapattern;
 			cdvdstm_mode_ee.trycount = instruct->rmode.trycount;
@@ -1574,8 +1549,7 @@ LABEL_7:
 	}
 	if ( cmdid == 9 )
 	{
-		result = sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
-		if ( result )
+		if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee) )
 		{
 			CpuSuspendIntr(&state);
 			cdvdstm_lsn_ee = posszarg1;
@@ -1592,7 +1566,6 @@ LABEL_7:
 			}
 			cdvdstm_stmstart_ee = 2;
 			CpuResumeIntr(state);
-			result = 1;
 			goto LABEL_7;
 		}
 LABEL_59:
@@ -1663,7 +1636,7 @@ LABEL_59:
 		if ( !sceCdNop() )
 		{
 LABEL_58:
-			result = sceCdSC(0, &cdvdstm_last_error_for_ee);
+			sceCdSC(0, &cdvdstm_last_error_for_ee);
 			goto LABEL_59;
 		}
 	}
@@ -1759,17 +1732,14 @@ LABEL_88:
 		goto LABEL_6;
 	if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee) != 2 && !posszarg2_overrun_chunks2 && !cdvdstm_retryerr_ee )
 		cdvdstm_retryerr_ee = 273;
-	result = cdvdstm_retryerr_ee;
 	if ( cdvdstm_retryerr_ee )
 	{
 		retryerr = cdvdstm_retryerr_ee;
 		cdvdstm_retryerr_ee = 0;
-		result = retryerr << 16;
-		posszarg2_overrun_chunks2 = (unsigned __int16)posszarg2_overrun_chunks2 | result;
+		posszarg2_overrun_chunks2 = (unsigned __int16)posszarg2_overrun_chunks2 | (retryerr << 16);
 	}
 LABEL_99:
 	*outres_ptr = posszarg2_overrun_chunks2;
-	return result;
 }
 // 402B7C: conditional instruction was optimized away because $v0.4!=0
 // 404688: using guessed type int cdvdstm_verbose;
@@ -1790,7 +1760,6 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	int retryerr_tmp; // $a2
 	int retry_minus_one; // $v0
 	u32 tgttmp; // $v1
-	unsigned int result; // $v0
 	int gptmp; // $a0
 	bool condtmp; // dc
 	unsigned int i; // $v1
@@ -1914,11 +1883,9 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 									&cdvdstm_curclk_ee,
 									(unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda,
 									&cdvdstm_curclk_ee) == 0;
-			result = 0;
 			if ( !condtmp )
 			{
 				condtmp = sceCdNop() != 0;
-				result = 0;
 				if ( !condtmp )
 				{
 					sceCdSC(0, &cdvdstm_last_error_for_ee);
@@ -1959,11 +1926,10 @@ LABEL_68:
 				}
 				cdvdstm_retrycnt_ee_cdda = 1;
 			}
-			result = 0;
 			cdvdstm_lsn_ee += cdvdstm_sectorcount2;
 		}
 	}
-	return result;
+	return 0;
 }
 // 404688: using guessed type int cdvdstm_verbose;
 // 404748: using guessed type int cdvdstm_chunksz2;
