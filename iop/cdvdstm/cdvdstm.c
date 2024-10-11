@@ -240,7 +240,9 @@ int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modear
 	if ( !modearg )
 		return iop_stream_handler(0, rdsize, addrarg, 2, &rmode_for_stream0, error_ptr);
 	vSetEventFlag();
-	do
+	err = 0;
+	streamres = 0;
+	while ( (!err || streamres) )
 	{
 		WaitEventFlag(cdvdstm_ef, 8u, 0, &efbits);
 		streamres = iop_stream_handler(0, rdsize - cur_size, &addrarg[cur_size], 2, &rmode_for_stream0, &err);
@@ -251,8 +253,9 @@ int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modear
 			curerr = err;
 		if ( cdvdstm_verbose > 0 )
 			Kprintf("sceCdStream0 BLK cur_size= %d req_size= %d err 0x%x\n", cur_size, rdsize, err);
+		if ( (unsigned int)cur_size == rdsize )
+			break;
 	}
-	while ( (unsigned int)cur_size != rdsize && (!err || streamres) );
 	*error_ptr = curerr;
 	return cur_size;
 }
@@ -896,9 +899,6 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	bool condtmp1; // dc
 	int bankcur_tmp; // $a0
 	unsigned int chunks_sectors; // $lo
-	unsigned int i_tmp1; // $v0
-	unsigned int i_tmp2; // $v0
-	unsigned int i_tmp3; // $v0
 	unsigned int posszarg2_bytes_remain; // $s2
 	int bankcur_next_tmp1; // $a1
 	int posszarg2_bytes_clamped; // $s1
@@ -993,15 +993,10 @@ LABEL_37:
 			CpuResumeIntr(state);
 			sceCdBreak();
 			i = 0;
-			if ( cdvdstm_bankcnt2 )
+			while ( i < (unsigned int)cdvdstm_bankcnt2 )
 			{
-				do
-				{
-					i_tmp1 = i;
-					cdvdstm_usedmap_ee[i] = 0;
-					i = i_tmp1 + 1;
-				}
-				while ( i_tmp1 + 1 < (unsigned int)cdvdstm_bankcnt2 );
+				cdvdstm_usedmap_ee[i] = 0;
+				i += 1;
 			}
 			cdvdstm_bankoffs_ee = 0;
 			cdvdstm_bankcur_ee = 0;
@@ -1026,15 +1021,10 @@ LABEL_37:
 			CpuSuspendIntr(&state);
 			cdvdstm_lsn_ee = posszarg1;
 			i = 0;
-			if ( cdvdstm_bankcnt2 )
+			while ( i < (unsigned int)cdvdstm_bankcnt2 )
 			{
-				do
-				{
-					i_tmp2 = i;
-					cdvdstm_usedmap_ee[i] = 0;
-					i = i_tmp2 + 1;
-				}
-				while ( i_tmp2 + 1 < (unsigned int)cdvdstm_bankcnt2 );
+				cdvdstm_usedmap_ee[i] = 0;
+				i += 1;
 			}
 			cdvdstm_stmstart_ee = 2;
 			CpuResumeIntr(state);
@@ -1068,15 +1058,10 @@ LABEL_46:
 		CpuResumeIntr(state);
 		retryflag = 1;
 		i = 0;
-		if ( cdvdstm_bankcnt2 )
+		while ( i < (unsigned int)cdvdstm_bankcnt2 )
 		{
-			do
-			{
-				i_tmp3 = i;
-				cdvdstm_usedmap_ee[i] = 0;
-				i = i_tmp3 + 1;
-			}
-			while ( i_tmp3 + 1 < (unsigned int)cdvdstm_bankcnt2 );
+			cdvdstm_usedmap_ee[i] = 0;
+			i += 1;
 		}
 		cdvdstm_lsn_ee = posszarg1;
 		sceCdSC(0xFFFFFFE9, (int *)&posszarg1);
@@ -1409,9 +1394,6 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	u32 posszarg2; // $a0
 	u32 chunks_sectors; // $lo
 	u32 posszarg2_tmp; // $v0
-	unsigned int i_tmp1; // $v0
-	unsigned int i_tmp2; // $v0
-	unsigned int i_tmp3; // $v0
 	signed int posszarg2_chunks; // $s0
 	unsigned int posszarg2_bytes_remain; // $s2
 	int bankcur_next_tmp1; // $a1
@@ -1521,15 +1503,10 @@ LABEL_7:
 			CpuResumeIntr(state);
 			sceCdBreak();
 			i = 0;
-			if ( cdvdstm_bankcnt2 )
+			while ( i < (unsigned int)cdvdstm_bankcnt2 )
 			{
-				do
-				{
-					i_tmp1 = i;
-					cdvdstm_usedmap_ee[i] = 0;
-					i = i_tmp1 + 1;
-				}
-				while ( i_tmp1 + 1 < (unsigned int)cdvdstm_bankcnt2 );
+				cdvdstm_usedmap_ee[i] = 0;
+				i += 1;
 			}
 			cdvdstm_bankoffs_ee = 0;
 			cdvdstm_bankcur_ee = 0;
@@ -1554,15 +1531,10 @@ LABEL_7:
 			CpuSuspendIntr(&state);
 			cdvdstm_lsn_ee = posszarg1;
 			i = 0;
-			if ( cdvdstm_bankcnt2 )
+			while ( i < (unsigned int)cdvdstm_bankcnt2 )
 			{
-				do
-				{
-					i_tmp2 = i;
-					cdvdstm_usedmap_ee[i] = 0;
-					i = i_tmp2 + 1;
-				}
-				while ( i_tmp2 + 1 < (unsigned int)cdvdstm_bankcnt2 );
+				cdvdstm_usedmap_ee[i] = 0;
+				i += 1;
 			}
 			cdvdstm_stmstart_ee = 2;
 			CpuResumeIntr(state);
@@ -1596,15 +1568,10 @@ LABEL_59:
 		CpuResumeIntr(state);
 		retryflag = 1;
 		i = 0;
-		if ( cdvdstm_bankcnt2 )
+		while ( i < (unsigned int)cdvdstm_bankcnt2 )
 		{
-			do
-			{
-				i_tmp3 = i;
-				cdvdstm_usedmap_ee[i] = 0;
-				i = i_tmp3 + 1;
-			}
-			while ( i_tmp3 + 1 < (unsigned int)cdvdstm_bankcnt2 );
+			cdvdstm_usedmap_ee[i] = 0;
+			i += 1;
 		}
 		cdvdstm_lsn_ee = posszarg1;
 		cdvdstm_bankoffs_ee = 0;
@@ -1617,19 +1584,16 @@ LABEL_59:
 		if ( posszarg2_bytes % cdvdstm_chunksz2 )
 			posszarg2_chunks = posszarg2_bytes / cdvdstm_chunksz2 + 1;
 		cdvdstm_bankgp_ee = 0;
-		if ( posszarg2_chunks > 0 )
+		while ( cdvdstm_bankgp_ee < posszarg2_chunks )
 		{
-			do
-			{
-				outres_tmp2 = sceCdReadCDDA(cdvdstm_lsn_ee, cdvdstm_sectorcount2, cdvdstm_buffer2, &cdvdstm_mode_ee);
-				sceCdSync(3);
-				sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
-				if ( cdvdstm_last_error_for_ee || !outres_tmp2 )
-					goto LABEL_58;
-				cdvdstm_lsn_ee += cdvdstm_sectorcount2;
-				cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] = 1;
-			}
-			while ( ++cdvdstm_bankgp_ee < posszarg2_chunks );
+			outres_tmp2 = sceCdReadCDDA(cdvdstm_lsn_ee, cdvdstm_sectorcount2, cdvdstm_buffer2, &cdvdstm_mode_ee);
+			sceCdSync(3);
+			sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
+			if ( cdvdstm_last_error_for_ee || !outres_tmp2 )
+				goto LABEL_58;
+			cdvdstm_lsn_ee += cdvdstm_sectorcount2;
+			cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] = 1;
+			cdvdstm_bankgp_ee += 1;
 		}
 		cdvdstm_stmstart_ee = 1;
 		sceCdSC(2, &cdvdstm_last_error_for_ee);
