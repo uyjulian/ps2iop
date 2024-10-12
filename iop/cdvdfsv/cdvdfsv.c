@@ -232,13 +232,11 @@ int __cdecl cdvdfsv_cleanuprpc()
 	sceSifRemoveRpcQueue(&rpc_qdata1);
 	sceSifRemoveRpcQueue(&rpc_qdata2);
 	sceSifRemoveRpcQueue(&rpc_qdata3);
-	i = 0;
 	tid_cur = cdvdfsv_thids;
 	cdvdfsv_nopocm = 1;
 	cdvdfsv_plbreak = 1;
-	while ( i < 4 )
+	for ( i = 0; i < 4; i += 1 )
 	{
-		++i;
 		TerminateThread(*tid_cur);
 		tid_val = *tid_cur++;
 		DeleteThread(tid_val);
@@ -405,9 +403,8 @@ void __cdecl cdvdfsv_parseargs(int ac, char **av)
 	const char **curargptr; // $s0
 	int thpri; // $a1
 
-	curargind = 1;
 	cdvdfsv_def_pri = 81;
-	while ( curargind < ac )
+	for ( curargind = 1; curargind < ac; curargind += 1 )
 	{
 		curargptr = (const char **)(av + curargind);
 		if ( !strncmp(*curargptr, "thpri=", 6) )
@@ -422,7 +419,6 @@ void __cdecl cdvdfsv_parseargs(int ac, char **av)
 				thpri = 10;
 			cdvdfsv_def_pri = thpri;
 		}
-		++curargind;
 	}
 }
 
@@ -642,75 +638,62 @@ int __cdecl cdvdfsv_checksid(u32 lsn, u32 sectors, u32 ps2dvd, void *buf, int de
 		scret = sceCdSC(0xFFFFFFE8, &scres);
 	else
 		scret = 0;
-	i = 0;
-	if ( sectors )
+	lsn_tmp = lsn;
+	error_lsn = (u8 *)buf;
+	buf_tmp = (u8 *)buf;
+	for ( i = 0; i < sectors; i += 1 )
 	{
-		lsn_tmp = lsn;
-		error_lsn = (u8 *)buf;
-		buf_tmp = (u8 *)buf;
-		while ( 1 )
+		if ( ps2dvd )
 		{
-			if ( ps2dvd )
+			syncdec_1 = cdvdfsv_syncdec(decflag, scret, decshift, error_lsn[3]);
+			syncdec_2 = syncdec_1 + (cdvdfsv_syncdec(decflag, scret, decshift, error_lsn[2]) << 8);
+			syncdec_3 = syncdec_2 + (cdvdfsv_syncdec(decflag, scret, decshift, error_lsn[1]) << 16);
+			syncdec_4 = cdvdfsv_syncdec(decflag, scret, decshift, *error_lsn);
+			layer = syncdec_4 & 1;
+			if ( i )
 			{
-				syncdec_1 = cdvdfsv_syncdec(decflag, scret, decshift, error_lsn[3]);
-				syncdec_2 = syncdec_1 + (cdvdfsv_syncdec(decflag, scret, decshift, error_lsn[2]) << 8);
-				syncdec_3 = syncdec_2 + (cdvdfsv_syncdec(decflag, scret, decshift, error_lsn[1]) << 16);
-				syncdec_4 = cdvdfsv_syncdec(decflag, scret, decshift, *error_lsn);
-				layer = syncdec_4 & 1;
-				if ( i )
-				{
-					if ( !*syncdec_mask )
-						ipi_emu = syncdec_4 & 0xC;
-				}
-				else
-				{
-					*syncdec_mask = syncdec_4 & 0xC;
-				}
-				readlsn = syncdec_3 - 0x30000;
-				if ( cdvdfsv_cdvdman_internal_struct_ptr->opo_or_para
-					&& lsn_tmp >= cdvdfsv_cdvdman_internal_struct_ptr->layer_1_lsn
-					&& cdvdfsv_cdvdman_internal_struct_ptr->opo_or_para == 1 )
-				{
-					readlsn += cdvdfsv_cdvdman_internal_struct_ptr->layer_1_lsn;
-				}
+				if ( !*syncdec_mask )
+					ipi_emu = syncdec_4 & 0xC;
 			}
 			else
 			{
-				rpos.minute = cdvdfsv_syncdec(decflag, scret, decshift, *buf_tmp);
-				rpos.second = cdvdfsv_syncdec(decflag, scret, decshift, buf_tmp[1]);
-				rpos.sector = cdvdfsv_syncdec(decflag, scret, decshift, buf_tmp[2]);
-				readlsn = sceCdPosToInt(&rpos);
+				*syncdec_mask = syncdec_4 & 0xC;
 			}
-			if ( readlsn != lsn_tmp )
-				break;
-			error_lsn += 2064;
-			if ( ipi_emu )
-				break;
-			++lsn_tmp;
-			++i;
-			buf_tmp += 2340;
-			if ( i >= sectors )
-				goto LABEL_22;
+			readlsn = syncdec_3 - 0x30000;
+			if ( cdvdfsv_cdvdman_internal_struct_ptr->opo_or_para
+				&& lsn_tmp >= cdvdfsv_cdvdman_internal_struct_ptr->layer_1_lsn
+				&& cdvdfsv_cdvdman_internal_struct_ptr->opo_or_para == 1 )
+			{
+				readlsn += cdvdfsv_cdvdman_internal_struct_ptr->layer_1_lsn;
+			}
 		}
-		if ( cdvdfsv_verbose > 0 )
-			printf(
-				"Read_EE Sector_ID error lsn= %d readlsn= %d layer= %d layer1_start %d\n",
-				(int)lsn_tmp,
-				(int)readlsn,
-				layer,
-				(int)(cdvdfsv_cdvdman_internal_struct_ptr->layer_1_lsn));
-		return 0;
-	}
-	else
-	{
-LABEL_22:
-		if ( *syncdec_mask )
+		else
+		{
+			rpos.minute = cdvdfsv_syncdec(decflag, scret, decshift, *buf_tmp);
+			rpos.second = cdvdfsv_syncdec(decflag, scret, decshift, buf_tmp[1]);
+			rpos.sector = cdvdfsv_syncdec(decflag, scret, decshift, buf_tmp[2]);
+			readlsn = sceCdPosToInt(&rpos);
+		}
+		if ( readlsn != lsn_tmp || ipi_emu )
 		{
 			if ( cdvdfsv_verbose > 0 )
-			{
-				printf("Read_EE NO_Data_zone error lsn= %d layer= %d SecID %02x\n", (int)lsn, layer, (int)(*syncdec_mask));
-				return 1;
-			}
+				printf(
+					"Read_EE Sector_ID error lsn= %d readlsn= %d layer= %d layer1_start %d\n",
+					(int)lsn_tmp,
+					(int)readlsn,
+					layer,
+					(int)(cdvdfsv_cdvdman_internal_struct_ptr->layer_1_lsn));
+			return 0;
+		}
+		error_lsn += 2064;
+		++lsn_tmp;
+		buf_tmp += 2340;
+	}
+	if ( *syncdec_mask )
+	{
+		if ( cdvdfsv_verbose > 0 )
+		{
+			printf("Read_EE NO_Data_zone error lsn= %d layer= %d SecID %02x\n", (int)lsn, layer, (int)(*syncdec_mask));
 		}
 	}
 	return 1;
@@ -737,11 +720,9 @@ int __fastcall readproc2(
 	cdvdman_internal_struct_t *si1; // $v1
 	u32 lsnmul; // $a0
 	int read_res1; // $v0
-	int read_res1_tmp; // $s0
+	int read_res_tmp; // $s0
 	int read_res2; // $v0
-	int read_res2_tmp; // $s0
 	int i2; // $s6
-	int nsec_div_cdvdfsv_sectors_1; // $t0
 	BOOL condtmp1; // $fp
 	int csec_minus_one; // $s0
 	_DWORD *rtocbuf_dest_1; // $a0
@@ -751,7 +732,6 @@ int __fastcall readproc2(
 	int i3; // $s4
 	char *ee_addr_offs; // $a0
 	int bytes_size; // $lo
-	int i3_1; // $v1
 	int size_2; // $s4
 	_DWORD *rtocbuf_dest_3; // $s2
 	u8 *rtocbuf_src_3; // $s0
@@ -795,12 +775,10 @@ int __fastcall readproc2(
 	rtocbuf_plus_2340 = (unsigned int *)(cdvdfsv_rtocbuf + 2340);
 	if ( secsize != 2340 && !fssift )
 	{
-		i1 = 0;
-		while ( i1 < 16 )
+		for ( i1 = 0; i1 < 16; i1 += 1 )
 		{
 			cdvdfsv_multi_dmat[i1].attr = 0;
 			cdvdfsv_multi_dmat[i1].size = secsize;
-			++i1;
 		}
 	}
 	p_sector_size = &sector_sizes[sector_size_selection];
@@ -826,258 +804,255 @@ int __fastcall readproc2(
 				cdvdfsv_cdvdman_internal_struct_ptr->dec_shift = dec_shift;
 				si1->dec_state = 2;
 			}
-			if ( !cdvdfsv_r2retry )
-				break;
-			if ( cdvdfsv_verbose > 0 )
-				Kprintf("Rty_Read\n");
-			if ( lsn >= 0x60 )
-				lsnmul = lsn - 16 * cdvdfsv_r2retry;
-			else
-				lsnmul = lsn + 16 * cdvdfsv_r2retry + 96;
-			if ( sector_size_selection )
-				read_res1 = sceCdRV(lsnmul, 0x10u, rtocbuf_plus_4680, mode, 0, 0);
-			else
-				read_res1 = sceCdRead0(lsnmul, 0x10u, rtocbuf_plus_4680, mode, 0, 0);
-			read_res1_tmp = read_res1;
-			CpuResumeIntr(state);
-			if ( !read_res1_tmp )
+			if ( cdvdfsv_r2retry )
 			{
-LABEL_104:
+				if ( cdvdfsv_verbose > 0 )
+					Kprintf("Rty_Read\n");
+				if ( lsn >= 0x60 )
+					lsnmul = lsn - 16 * cdvdfsv_r2retry;
+				else
+					lsnmul = lsn + 16 * cdvdfsv_r2retry + 96;
+				if ( sector_size_selection )
+					read_res1 = sceCdRV(lsnmul, 0x10u, rtocbuf_plus_4680, mode, 0, 0);
+				else
+					read_res1 = sceCdRead0(lsnmul, 0x10u, rtocbuf_plus_4680, mode, 0, 0);
+				read_res_tmp = read_res1;
+				CpuResumeIntr(state);
+			}
+			else
+			{
+				if ( sector_size_selection )
+					read_res2 = sceCdRV(lsn, nsec, rtocbuf_plus_4680, mode, csec, cdvdfsv_cb_read);
+				else
+					read_res2 = sceCdRead0(lsn, nsec, rtocbuf_plus_4680, mode, csec, cdvdfsv_cb_read);
+				read_res_tmp = read_res2;
+				CpuResumeIntr(state);
+				if ( read_res_tmp )
+				{
+					SetAlarm(&cdvdfsv_read_to, (unsigned int (__cdecl *)(void *))alarm_cb, &cdvdfsv_read_to);
+					csec_comm = 0;
+					retry_flag1 = 0;
+					break;
+				}
+			}
+			if ( !read_res_tmp )
+			{
 				si2 = cdvdfsv_cdvdman_internal_struct_ptr;
 				cdvdfsv_cdvdman_internal_struct_ptr->dec_state = 0;
 				si2->dec_mode_set = 0;
-LABEL_105:
 				sceCdSC(-2, &cdvdfsv_rderror);
 				return 0;
 			}
 			sceCdSync(3);
 			--cdvdfsv_r2retry;
 		}
-		if ( sector_size_selection )
-			read_res2 = sceCdRV(lsn, nsec, rtocbuf_plus_4680, mode, csec, cdvdfsv_cb_read);
-		else
-			read_res2 = sceCdRead0(lsn, nsec, rtocbuf_plus_4680, mode, csec, cdvdfsv_cb_read);
-		read_res2_tmp = read_res2;
-		CpuResumeIntr(state);
-		if ( !read_res2_tmp )
-			goto LABEL_104;
-		SetAlarm(&cdvdfsv_read_to, (unsigned int (__cdecl *)(void *))alarm_cb, &cdvdfsv_read_to);
-		i2 = 0;
-		csec_comm = 0;
-		retry_flag1 = 0;
-		if ( nsec_div_cdvdfsv_sectors )
+		for ( i2 = 0; i2 < nsec_div_cdvdfsv_sectors; i2 += 1 )
 		{
-			nsec_div_cdvdfsv_sectors_1 = nsec_div_cdvdfsv_sectors;
-			while ( 1 )
+			condtmp1 = i2 == nsec_div_cdvdfsv_sectors - 1;
+			sceCdSync(32);
+			if ( cdvdfsv_cdvdman_internal_struct_ptr->dec_mode_last_set )
+				break;
+			if ( !sceCdGetError() )
 			{
-				condtmp1 = i2 == nsec_div_cdvdfsv_sectors_1 - 1;
-				sceCdSync(32);
-				if ( cdvdfsv_cdvdman_internal_struct_ptr->dec_mode_last_set )
-					goto LABEL_89;
-				if ( !sceCdGetError() )
-					break;
-				retry_flag1 = 1;
-LABEL_82:
-				CpuSuspendIntr(&state);
-				if ( condtmp1 )
+				if ( cdvdfsv_checksid(
+							 lsn + csec_comm,
+							 csec,
+							 sector_size_selection,
+							 rtocbuf_plus_4680,
+							 enable_dec_shift,
+							 dec_shift,
+							 &syncdec_mask) )
 				{
-					DisableIntr(35, (int *)&chcr);
-				}
-				else
-				{
-					csec_comm_tmp = csec_comm + csec;
-					csec = 16;
-					csec_comm = csec_comm_tmp;
-					if ( nsec < csec_comm_tmp + 16 )
-						csec = nsec - csec_comm_tmp;
-					ClearEventFlag(cdvdfsv_ef, 0xFFFFFFDF);
-					dmac_ch_set_chcr(3u, 0);
-					dmac_ch_get_chcr(3u);
-					cdvdfsv_cdvdman_internal_struct_ptr->dma3prm.dma3_maddress = rtocbuf_plus_4680;
-					dmac_ch_set_madr(3u, (u32)rtocbuf_plus_4680);
-					dmac_ch_set_bcr(
-						3u,
-						cdvdfsv_cdvdman_internal_struct_ptr->dma3prm.dma3_blkwords | ((cdvdfsv_cdvdman_internal_struct_ptr->dma3prm.dma3_blkcount
-																																				 * csec) << 16));
-					dmac_ch_set_chcr(3u, 0x41000200u);
-					chcr = dmac_ch_get_chcr(3u);
-					if ( post_dmat )
+					if ( do_multi_retries && syncdec_mask && !i2 )
 					{
-						cdvdfsv_readpos += secsize * csec;
-						sceSifSetDma(post_dmat, 1);
+						retry_flag1 = 1;
+						sc_fffffffe_res = 32;
 					}
 				}
-				++i2;
-				CpuResumeIntr(state);
-				nsec_div_cdvdfsv_sectors_1 = nsec_div_cdvdfsv_sectors;
-				if ( i2 >= nsec_div_cdvdfsv_sectors )
-					goto LABEL_89;
-			}
-			if ( cdvdfsv_checksid(
-						 lsn + csec_comm,
-						 csec,
-						 sector_size_selection,
-						 rtocbuf_plus_4680,
-						 enable_dec_shift,
-						 dec_shift,
-						 &syncdec_mask) )
-			{
-				if ( do_multi_retries && syncdec_mask && !i2 )
+				else if ( do_multi_retries )
 				{
+					retry_flag2 = 1;
 					retry_flag1 = 1;
-					sc_fffffffe_res = 32;
 				}
-			}
-			else if ( do_multi_retries )
-			{
-				retry_flag2 = 1;
-				retry_flag1 = 1;
-			}
-			if ( retry_flag1 || cdvdfsv_r2retry )
-				goto LABEL_82;
-			if ( secsize == 2340 && !sector_size_selection )
-			{
-				if ( fssift )
+				if ( retry_flag1 || cdvdfsv_r2retry )
+					goto LABEL_82;
+				if ( secsize == 2340 && !sector_size_selection )
 				{
-					csec_minus_one = csec - 1;
-					if ( i2 )
+					if ( fssift )
 					{
-						cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)((char *)rtocbuf_tmp + fssift), 2340 - fssift);
-						cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec - 2340], 0x924u);
-						if ( condtmp1 )
-							cdvdfsv_rdp2sdd.size = dmasize_tmp;
+						csec_minus_one = csec - 1;
+						if ( i2 )
+						{
+							cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)((char *)rtocbuf_tmp + fssift), 2340 - fssift);
+							cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec - 2340], 0x924u);
+							if ( condtmp1 )
+								cdvdfsv_rdp2sdd.size = dmasize_tmp;
+							else
+								cdvdfsv_rdp2sdd.size = 2340 * (csec - 1) + fssift;
+							rtocbuf_src_1 = rtocbuf_plus_4680;
+							size_1 = cdvdfsv_rdp2sdd.size;
+							rtocbuf_dest_1 = (_DWORD *)((char *)rtocbuf_plus_2340 + 2340 - fssift);
+						}
 						else
-							cdvdfsv_rdp2sdd.size = 2340 * (csec - 1) + fssift;
-						rtocbuf_src_1 = rtocbuf_plus_4680;
-						size_1 = cdvdfsv_rdp2sdd.size;
-						rtocbuf_dest_1 = (_DWORD *)((char *)rtocbuf_plus_2340 + 2340 - fssift);
+						{
+							cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec_minus_one], 0x924u);
+							if ( condtmp1 )
+								cdvdfsv_rdp2sdd.size = dmasize_tmp;
+							else
+								cdvdfsv_rdp2sdd.size = 2340 * csec_minus_one;
+							rtocbuf_dest_1 = rtocbuf_plus_2340;
+							size_1 = cdvdfsv_rdp2sdd.size;
+							rtocbuf_src_1 = &rtocbuf_plus_4680[fssift];
+						}
+						cdvdfsv_memcpy(rtocbuf_dest_1, (_DWORD *)rtocbuf_src_1, size_1);
+						cdvdfsv_rdp2sdd.src = rtocbuf_plus_2340;
 					}
 					else
 					{
-						cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec_minus_one], 0x924u);
-						if ( condtmp1 )
-							cdvdfsv_rdp2sdd.size = dmasize_tmp;
-						else
-							cdvdfsv_rdp2sdd.size = 2340 * csec_minus_one;
-						rtocbuf_dest_1 = rtocbuf_plus_2340;
-						size_1 = cdvdfsv_rdp2sdd.size;
-						rtocbuf_src_1 = &rtocbuf_plus_4680[fssift];
+						cdvdfsv_rdp2sdd.src = rtocbuf_plus_4680;
+						cdvdfsv_rdp2sdd.size = 2340 * csec;
 					}
-					cdvdfsv_memcpy(rtocbuf_dest_1, (_DWORD *)rtocbuf_src_1, size_1);
-					cdvdfsv_rdp2sdd.src = rtocbuf_plus_2340;
+					cdvdfsv_rdp2sdd.attr = 0;
+					cdvdfsv_rdp2sdd.dest = ee_addr_tmp;
+					ee_addr_tmp += cdvdfsv_rdp2sdd.size;
+					dmasize_tmp -= cdvdfsv_rdp2sdd.size;
+					while ( 1 )
+					{
+						CpuSuspendIntr(&state);
+						trid = sceSifSetDma(&cdvdfsv_rdp2sdd, 1);
+						CpuResumeIntr(state);
+						if ( trid )
+							break;
+						DelayThread(500);
+					}
+					while ( cdvdfsv_checkdmastat(trid) >= 0 )
+						;
+					goto LABEL_82;
+				}
+				if ( !fssift )
+				{
+					ee_addr_offs = &ee_addr[csec_comm * secsize];
+					for ( i3 = 0; i3 < csec; i3 += 1 )
+					{
+						bytes_size = i3 * *p_sector_size;
+						cdvdfsv_multi_dmat[i3].dest = ee_addr_offs;
+						cdvdfsv_multi_dmat[i3].src = &rtocbuf_plus_4680[bytes_size + 12];
+						ee_addr_offs += secsize;
+					}
+					while ( 1 )
+					{
+						CpuSuspendIntr(&state);
+						trid = sceSifSetDma(cdvdfsv_multi_dmat, csec);
+						CpuResumeIntr(state);
+						if ( trid )
+							break;
+						DelayThread(500);
+					}
+					while ( cdvdfsv_checkdmastat(trid) >= 0 )
+						;
 				}
 				else
 				{
-					cdvdfsv_rdp2sdd.src = rtocbuf_plus_4680;
-					cdvdfsv_rdp2sdd.size = 2340 * csec;
-				}
-				cdvdfsv_rdp2sdd.attr = 0;
-				cdvdfsv_rdp2sdd.dest = ee_addr_tmp;
-				ee_addr_tmp += cdvdfsv_rdp2sdd.size;
-				dmasize_tmp -= cdvdfsv_rdp2sdd.size;
-				while ( 1 )
-				{
-					CpuSuspendIntr(&state);
-					trid = sceSifSetDma(&cdvdfsv_rdp2sdd, 1);
-					CpuResumeIntr(state);
-					if ( trid )
-						break;
-					DelayThread(500);
-				}
-				goto LABEL_81;
-			}
-			if ( !fssift )
-			{
-				i3 = 0;
-				ee_addr_offs = &ee_addr[csec_comm * secsize];
-				while ( i3 < csec )
-				{
-					bytes_size = i3 * *p_sector_size;
-					i3_1 = i3;
-					cdvdfsv_multi_dmat[i3_1].dest = ee_addr_offs;
-					++i3;
-					cdvdfsv_multi_dmat[i3_1].src = &rtocbuf_plus_4680[bytes_size + 12];
-					ee_addr_offs += secsize;
-				}
-				while ( 1 )
-				{
-					CpuSuspendIntr(&state);
-					trid = sceSifSetDma(cdvdfsv_multi_dmat, csec);
-					CpuResumeIntr(state);
-					if ( trid )
-						break;
-					DelayThread(500);
-				}
-				goto LABEL_81;
-			}
-			size_2 = secsize;
-			if ( !condtmp1 )
-				size_2 = fssift;
-			if ( i2 )
-			{
-				cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)((char *)rtocbuf_tmp + fssift + 12), secsize - fssift);
-				rtocbuf_src_2 = (_DWORD *)(rtocbuf_plus_4680 + 12);
-				rtocbuf_src_tmp_2 = (_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift);
-				i4 = 0;
-				cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[(csec - 1) * *p_sector_size], *p_sector_size);
-				while ( i4 < csec - 1 )
-				{
-					cdvdfsv_memcpy(rtocbuf_src_tmp_2, rtocbuf_src_2, secsize);
-					++i4;
-					rtocbuf_src_2 = (_DWORD *)((char *)rtocbuf_src_2 + *p_sector_size);
-					rtocbuf_src_tmp_2 = (_DWORD *)((char *)rtocbuf_src_tmp_2 + secsize);
-				}
-				rtocbuf_dest_2 = rtocbuf_src_tmp_2;
-				cdvdfsv_memcpy(rtocbuf_dest_2, rtocbuf_src_2, size_2);
-				if ( !condtmp1 )
-				{
-					csec_bytes = secsize * csec;
-					goto LABEL_76;
+					size_2 = secsize;
+					if ( !condtmp1 )
+						size_2 = fssift;
+					if ( i2 )
+					{
+						cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)((char *)rtocbuf_tmp + fssift + 12), secsize - fssift);
+						rtocbuf_src_2 = (_DWORD *)(rtocbuf_plus_4680 + 12);
+						rtocbuf_src_tmp_2 = (_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift);
+						cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[(csec - 1) * *p_sector_size], *p_sector_size);
+						for ( i4 = 0; i4 < csec - 1; i4 += 1 )
+						{
+							cdvdfsv_memcpy(rtocbuf_src_tmp_2, rtocbuf_src_2, secsize);
+							rtocbuf_src_2 = (_DWORD *)((char *)rtocbuf_src_2 + *p_sector_size);
+							rtocbuf_src_tmp_2 = (_DWORD *)((char *)rtocbuf_src_tmp_2 + secsize);
+						}
+						rtocbuf_dest_2 = rtocbuf_src_tmp_2;
+						cdvdfsv_memcpy(rtocbuf_dest_2, rtocbuf_src_2, size_2);
+						if ( !condtmp1 )
+						{
+							csec_bytes = secsize * csec;
+							goto LABEL_76;
+						}
+					}
+					else
+					{
+						cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[(csec - 1) * *p_sector_size], *p_sector_size);
+						cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)&rtocbuf_plus_4680[fssift + 12], secsize - fssift);
+						rtocbuf_dest_3 = (_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift);
+						rtocbuf_src_3 = &rtocbuf_plus_4680[*p_sector_size + 12];
+						for ( i5 = 0; i5 < csec - 2; rtocbuf_dest_3 = (_DWORD *)((char *)rtocbuf_dest_3 + secsize) )
+						{
+							cdvdfsv_memcpy(rtocbuf_dest_3, (_DWORD *)rtocbuf_src_3, secsize);
+							++i5;
+							rtocbuf_src_3 += *p_sector_size;
+						}
+						cdvdfsv_memcpy(rtocbuf_dest_3, (_DWORD *)rtocbuf_src_3, size_2);
+						if ( !condtmp1 )
+						{
+							csec_bytes = secsize * (csec - 1);
+	LABEL_76:
+							cdvdfsv_rdp2sdd.size = csec_bytes;
+							goto LABEL_78;
+						}
+					}
+					cdvdfsv_rdp2sdd.size = dmasize_tmp;
+	LABEL_78:
+					cdvdfsv_rdp2sdd.src = rtocbuf_plus_2340;
+					cdvdfsv_rdp2sdd.attr = 0;
+					cdvdfsv_rdp2sdd.dest = ee_addr_tmp;
+					ee_addr_tmp += cdvdfsv_rdp2sdd.size;
+					dmasize_tmp -= cdvdfsv_rdp2sdd.size;
+					while ( 1 )
+					{
+						CpuSuspendIntr(&state);
+						trid = sceSifSetDma(&cdvdfsv_rdp2sdd, 1);
+						CpuResumeIntr(state);
+						if ( trid )
+							break;
+						DelayThread(500);
+					}
+					while ( cdvdfsv_checkdmastat(trid) >= 0 )
+						;
 				}
 			}
 			else
 			{
-				cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[(csec - 1) * *p_sector_size], *p_sector_size);
-				cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)&rtocbuf_plus_4680[fssift + 12], secsize - fssift);
-				rtocbuf_dest_3 = (_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift);
-				rtocbuf_src_3 = &rtocbuf_plus_4680[*p_sector_size + 12];
-				for ( i5 = 0; i5 < csec - 2; rtocbuf_dest_3 = (_DWORD *)((char *)rtocbuf_dest_3 + secsize) )
-				{
-					cdvdfsv_memcpy(rtocbuf_dest_3, (_DWORD *)rtocbuf_src_3, secsize);
-					++i5;
-					rtocbuf_src_3 += *p_sector_size;
-				}
-				cdvdfsv_memcpy(rtocbuf_dest_3, (_DWORD *)rtocbuf_src_3, size_2);
-				if ( !condtmp1 )
-				{
-					csec_bytes = secsize * (csec - 1);
-LABEL_76:
-					cdvdfsv_rdp2sdd.size = csec_bytes;
-					goto LABEL_78;
-				}
+				retry_flag1 = 1;
 			}
-			cdvdfsv_rdp2sdd.size = dmasize_tmp;
-LABEL_78:
-			cdvdfsv_rdp2sdd.src = rtocbuf_plus_2340;
-			cdvdfsv_rdp2sdd.attr = 0;
-			cdvdfsv_rdp2sdd.dest = ee_addr_tmp;
-			ee_addr_tmp += cdvdfsv_rdp2sdd.size;
-			dmasize_tmp -= cdvdfsv_rdp2sdd.size;
-			while ( 1 )
+LABEL_82:
+			CpuSuspendIntr(&state);
+			if ( condtmp1 )
 			{
-				CpuSuspendIntr(&state);
-				trid = sceSifSetDma(&cdvdfsv_rdp2sdd, 1);
-				CpuResumeIntr(state);
-				if ( trid )
-					break;
-				DelayThread(500);
+				DisableIntr(35, (int *)&chcr);
 			}
-LABEL_81:
-			while ( cdvdfsv_checkdmastat(trid) >= 0 )
-				;
-			goto LABEL_82;
+			else
+			{
+				csec_comm_tmp = csec_comm + csec;
+				csec = 16;
+				csec_comm = csec_comm_tmp;
+				if ( nsec < csec_comm_tmp + 16 )
+					csec = nsec - csec_comm_tmp;
+				ClearEventFlag(cdvdfsv_ef, 0xFFFFFFDF);
+				dmac_ch_set_chcr(3u, 0);
+				dmac_ch_get_chcr(3u);
+				cdvdfsv_cdvdman_internal_struct_ptr->dma3prm.dma3_maddress = rtocbuf_plus_4680;
+				dmac_ch_set_madr(3u, (u32)rtocbuf_plus_4680);
+				dmac_ch_set_bcr(
+					3u,
+					cdvdfsv_cdvdman_internal_struct_ptr->dma3prm.dma3_blkwords | ((cdvdfsv_cdvdman_internal_struct_ptr->dma3prm.dma3_blkcount
+																																			 * csec) << 16));
+				dmac_ch_set_chcr(3u, 0x41000200u);
+				chcr = dmac_ch_get_chcr(3u);
+				if ( post_dmat )
+				{
+					cdvdfsv_readpos += secsize * csec;
+					sceSifSetDma(post_dmat, 1);
+				}
+			}
+			CpuResumeIntr(state);
 		}
-LABEL_89:
 		sceCdSync(5);
 		CancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdfsv_read_to);
 		si3 = cdvdfsv_cdvdman_internal_struct_ptr;
@@ -1102,7 +1077,6 @@ LABEL_89:
 			if ( cdvdfsv_verbose > 0 )
 			{
 				Kprintf("secid_chk_ee_trns lsn %d nsec %d IPI Err\n", lsn, nsec);
-				return 0;
 			}
 			return 0;
 		}
@@ -1115,7 +1089,10 @@ LABEL_89:
 		}
 	}
 	if ( cdvdfsv_r2count >= 5 && !sc_fffffff1_res )
-		goto LABEL_105;
+	{
+		sceCdSC(-2, &cdvdfsv_rderror);
+		return 0;
+	}
 	return 0;
 }
 
@@ -1185,9 +1162,13 @@ int __fastcall readproc1(
 			return 0;
 		}
 		if ( cdvdfsv_checksid(lsn, nsec, ps2dvd, retptr, dec_shift_enable, dec_shift_value, &syncdec_mask) )
+		{
+			if ( enable_retries && syncdec_mask )
+				sc_fffffffe_tmp = 32;
 			break;
+		}
 		if ( !enable_retries )
-			goto LABEL_32;
+			break;
 		if ( !cdvdfsv_sid_err_recover_cnt )
 		{
 			++cdvdfsv_err_count;
@@ -1197,9 +1178,6 @@ int __fastcall readproc1(
 		}
 		cdvdfsv_sid_err_recover_cnt = cdvdfsv_sid_err_recover_cnt - 1;
 	}
-	if ( enable_retries && syncdec_mask )
-		sc_fffffffe_tmp = 32;
-LABEL_32:
 	if ( !sc_fffffffe_tmp )
 		return 1;
 	sceCdSC(0xFFFFFFFE, &sc_fffffffe_tmp);
@@ -1381,7 +1359,7 @@ LABEL_29:
 		}
 		buf_offs_sum += psize;
 	}
-	while ( bsize )
+	for ( ; bsize; bsize -= sizestuff )
 	{
 		if ( cdvdfsv_spinctl != -1 )
 			cdvdfsv_rmodeee.spindlctrl = cdvdfsv_spinctl;
@@ -1445,7 +1423,6 @@ LABEL_55:
 		flag_offs += dmasize;
 		trid = sceSifSetDma(&cdvdfsv_eerpsdd, 1);
 		CpuResumeIntr(state);
-		bsize -= sizestuff;
 		buf_offs_sum += sizestuff;
 	}
 	sectors_1 = 2;
@@ -1468,28 +1445,27 @@ LABEL_55:
 			goto LABEL_29;
 		if ( datapattern != 2 || ps2dvd )
 		{
-			i2 = 0;
 			if ( buf_offs_sum_bytes_in_sector )
 			{
 				pbuf2 = cdvdfsv_eereadx.pbuf2;
 				rtocbuf_after_logo = &cdvdfsv_rtocbuf[buf_offs_sum_bytes_in_sector + 12];
-				while ( i2 < ssize )
+				for ( i2 = 0; i2 < ssize; i2 += 1 )
 				{
 					if ( i2 % secsize == secsize - buf_offs_sum_bytes_in_sector )
 						rtocbuf_after_logo += sector_sizes[ps2dvd] - secsize;
-					++i2;
 					val_tmp1 = *rtocbuf_after_logo++;
 					*pbuf2++ = val_tmp1;
 				}
 			}
 			else
 			{
-				i2_offs = 12;
-				while ( i2 < ssize )
+				// CHECKME i2_offs
+				i2_offs = 0;
+				for ( i2 = 0; i2 < ssize; i2 += 1 )
 				{
 					if ( i2 && !(i2 % secsize) )
 						i2_offs += sector_sizes[ps2dvd] - secsize;
-					cdvdfsv_eereadx.pbuf2[i2++] = cdvdfsv_rtocbuf[i2_offs++];
+					cdvdfsv_eereadx.pbuf2[i2] = cdvdfsv_rtocbuf[i2_offs++];
 				}
 			}
 		}
@@ -1599,63 +1575,44 @@ int __fastcall cdvdfsv_chreadee(
 		}
 		rmode.datapattern = 2;
 	}
-	bytescount = secsize * seccount;
 	offs = 0;
-	if ( bytescount )
+	for ( bytescount = secsize * seccount; bytescount; bytescount -= readsize_bytes )
 	{
-		while ( 1 )
+		sectors_partial = (sc_ffffffe9_res + offs / secsize) & 0xF;
+		bytescount_in_sectors = 16;
+		readsize_bytes = secsize * bytescount_in_sectors;
+		dmasize = secsize * bytescount_in_sectors;
+		if ( (unsigned int)readsize_bytes >= bytescount )
 		{
-			sectors_partial = (sc_ffffffe9_res + offs / secsize) & 0xF;
-			if ( 16 * secsize >= bytescount )
-			{
-				bytescount_in_sectors = bytescount / secsize;
-				readsize_bytes = bytescount;
-				dmasize = bytescount;
-				if ( bytescount % secsize )
-					bytescount_in_sectors = bytescount / secsize + 1;
-				goto LABEL_21;
-			}
-			readsize_bytes = 16 * secsize;
-			if ( sectors_partial )
-			{
-				dmasize = 16 * secsize;
-				if ( (secsize & 0xF) == 0 )
-				{
-					bytescount_in_sectors = 16 - sectors_partial;
-					readsize_bytes = secsize * bytescount_in_sectors;
-					dmasize = secsize * bytescount_in_sectors;
-					goto LABEL_21;
-				}
-			}
-			else
-			{
-				dmasize = 16 * secsize;
-			}
-			bytescount_in_sectors = 16;
-LABEL_21:
-			readproc2_res = readproc2(
-												sc_ffffffe9_res + offs / secsize,
-												bytescount_in_sectors,
-												&rmode,
-												disktype_14_tmp,
-												sync,
-												0,
-												0,
-												ee_addr,
-												0,
-												secsize,
-												dmasize,
-												0);
-			ee_addr += dmasize;
-			if ( readproc2_res )
-			{
-				bytescount -= readsize_bytes;
-				offs += readsize_bytes;
-				if ( bytescount )
-					continue;
-			}
-			return 1;
+			bytescount_in_sectors = bytescount / secsize;
+			readsize_bytes = bytescount;
+			dmasize = bytescount;
+			if ( bytescount % secsize )
+				bytescount_in_sectors = bytescount / secsize + 1;
 		}
+		else if ( sectors_partial && (secsize & 0xF) == 0 )
+		{
+			bytescount_in_sectors = 16 - sectors_partial;
+		}
+		readproc2_res = readproc2(
+											sc_ffffffe9_res + offs / secsize,
+											bytescount_in_sectors,
+											&rmode,
+											disktype_14_tmp,
+											sync,
+											0,
+											0,
+											ee_addr,
+											0,
+											secsize,
+											dmasize,
+											0);
+		if ( !readproc2_res )
+		{
+			break;
+		}
+		ee_addr += dmasize;
+		offs += readsize_bytes;
 	}
 	return 1;
 }
@@ -1889,17 +1846,16 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int bu
 			}
 			error_code_tmp = error_code;
 		}
-		i1 = 0;
 		rtocbuf_tmp_offs = rtocbuf_tmp;
-		while ( i1 < buf_toalign )
+		for ( i1 = 0; i1 < buf_toalign; i1 += 1 )
 		{
-			cdvdfsv_eereadx.pbuf1[i1++] = *rtocbuf_tmp_offs;
+			cdvdfsv_eereadx.pbuf1[i1] = *rtocbuf_tmp_offs;
 			rtocbuf_tmp_offs = &rtocbuf_tmp[i1];
 		}
 		buf_offs += buf_toalign;
 	}
 	sector_size_in_bytes_tmp = 8 * sector_size;
-	while ( buf_align_remain )
+	for ( ; buf_align_remain; buf_align_remain -= sector_size_in_bytes )
 	{
 		buf_offs_mod_sector_size = buf_offs % sector_size;
 		lsn_2 = lbn_1 + buf_offs / sector_size;
@@ -1959,7 +1915,6 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int bu
 			sceSifSetDma(&cdvdfsv_eereadfull_dma2, 1);
 			CpuResumeIntr(state);
 		}
-		buf_align_remain -= sector_size_in_bytes;
 		buf_aligned += sector_count_in_bytes;
 		buf_offs += sector_size_in_bytes;
 	}
@@ -1988,11 +1943,9 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int bu
 			else
 				buf_sec_tmp = 0;
 		}
-		i3 = 0;
-		while ( i3 < buf_sec_tmp )
+		for ( i3 = 0; i3 < buf_sec_tmp; i3 += 1 )
 		{
 			cdvdfsv_eereadx.pbuf2[i3] = rtocbuf_tmp[buf_offs_mod_sector_size_3 + i3];
-			i3 += 1;
 		}
 		buf_offs += buf_sec_tmp;
 	}
@@ -2181,15 +2134,13 @@ void __cdecl cdvdfsv_rpc3h_06_ri(void *inbuf, int buflen, cdvdfsv_rpc3h_06_outpa
 	(void)inbuf;
 	(void)buflen;
 
-	retry_cnt = 0;
-	while ( retry_cnt < 3 )
+	for ( retry_cnt = 0; retry_cnt < 3; retry_cnt += 1 )
 	{
 		WaitEventFlag(cdvdman_scmd_ef, 1u, 0, efres);
 		retval = sceCdRI(&outbuf->buffer, &outbuf->result);
 		outbuf->dword0 = retval;
 		if ( retval )
 			break;
-		retry_cnt += 1;
 	}
 }
 
@@ -2203,15 +2154,13 @@ void __cdecl cdvdfsv_rpc3h_1A_rm(void *inbuf, int buflen, cdvdfsv_rpc3h_1A_outpa
 	(void)inbuf;
 	(void)buflen;
 
-	retry_cnt = 0;
-	while ( retry_cnt < 3 )
+	for ( retry_cnt = 0; retry_cnt < 3; retry_cnt += 1 )
 	{
 		WaitEventFlag(cdvdman_scmd_ef, 1u, 0, efres);
 		retval = sceCdRM(&outbuf->buffer, &outbuf->status);
 		outbuf->dword0 = retval;
 		if ( retval )
 			break;
-		retry_cnt += 1;
 	}
 }
 
@@ -2225,15 +2174,13 @@ void __cdecl cdvdfsv_rpc3h_24_readguid(void *inbuf, int buflen, cdvdfsv_rpc3h_24
 	(void)inbuf;
 	(void)buflen;
 
-	retry_cnt = 0;
-	while ( retry_cnt < 3 )
+	for ( retry_cnt = 0; retry_cnt < 3; retry_cnt += 1 )
 	{
 		WaitEventFlag(cdvdman_scmd_ef, 1u, 0, efres);
 		retval = sceCdReadGUID(&outbuf->guid);
 		outbuf->dword0 = retval;
 		if ( retval )
 			break;
-		retry_cnt += 1;
 	}
 }
 
@@ -2247,15 +2194,13 @@ void __cdecl cdvdfsv_rpc3h_26_readmodelid(void *inbuf, int buflen, cdvdfsv_rpc3h
 	(void)inbuf;
 	(void)buflen;
 
-	retry_cnt = 0;
-	while ( retry_cnt++ < 3 )
+	for ( retry_cnt = 0; retry_cnt < 3; retry_cnt += 1 )
 	{
 		WaitEventFlag(cdvdman_scmd_ef, 1u, 0, efres);
 		retval = sceCdReadModelID(&outbuf->id);
 		outbuf->dword0 = retval;
 		if ( retval )
 			break;
-		retry_cnt += 1;
 	}
 }
 
@@ -2286,15 +2231,13 @@ void __cdecl cdvdfsv_rpc3h_21_poweroff(void *inbuf, int buflen, cdvdfsv_rpc3h_21
 	(void)inbuf;
 	(void)buflen;
 
-	retry_cnt = 0;
-	while ( retry_cnt < 3 )
+	for ( retry_cnt = 0; retry_cnt < 3; retry_cnt += 1 )
 	{
 		WaitEventFlag(cdvdman_scmd_ef, 1u, 0, efres);
 		retval = sceCdPowerOff(&outbuf->result);
 		outbuf->dword0 = retval;
 		if ( retval )
 			break;
-		retry_cnt += 1;
 	}
 }
 
@@ -2308,15 +2251,13 @@ void __cdecl cdvdfsv_rpc3h_15_ctrladout(void *inbuf, int buflen, cdvdfsv_rpc3h_1
 	(void)inbuf;
 	(void)buflen;
 
-	retry_cnt = 0;
-	while ( retry_cnt < 3 )
+	for ( retry_cnt = 0; retry_cnt < 3; retry_cnt += 1 )
 	{
 		WaitEventFlag(cdvdman_scmd_ef, 1u, 0, efres);
 		retval = sceCdCtrlADout(*(_DWORD *)inbuf, &outbuf->status);
 		outbuf->dword0 = retval;
 		if ( retval )
 			break;
-		retry_cnt += 1;
 	}
 }
 
@@ -2330,15 +2271,13 @@ void __cdecl cdvdfsv_rpc3h_01_readclock(void *inbuf, int buflen, cdvdfsv_rpc3h_0
 	(void)inbuf;
 	(void)buflen;
 
-	retry_cnt = 0;
-	while ( retry_cnt < 3 )
+	for ( retry_cnt = 0; retry_cnt < 3; retry_cnt += 1 )
 	{
 		WaitEventFlag(cdvdman_scmd_ef, 1u, 0, efres);
 		retval = sceCdReadClock(&outbuf->clock);
 		outbuf->dword0 = retval;
 		if ( retval )
 			break;
-		retry_cnt += 1;
 	}
 }
 
@@ -2416,15 +2355,13 @@ void __cdecl cdvdfsv_rpc3h_05_trayreq(void *inbuf, int buflen, cdvdfsv_rpc3h_05_
 
 	(void)buflen;
 
-	retry_cnt = 0;
-	while ( retry_cnt < 3 )
+	for ( retry_cnt = 0; retry_cnt < 3; retry_cnt += 1 )
 	{
 		WaitEventFlag(cdvdman_scmd_ef, 1u, 0, efres);
 		retval = sceCdTrayReq(*(_DWORD *)inbuf, &outbuf->traychk);
 		outbuf->dword0 = retval;
 		if ( retval )
 			break;
-		retry_cnt += 1;
 	}
 }
 
@@ -2732,15 +2669,13 @@ void __fastcall cdvdfsv_unused_xorfun(unsigned int *a1, int a2)
 	bool v7; // dc
 
 	v2 = 0;
-	while ( a2 )
+	for ( ; a2; a2 -= 4 )
 	{
 		v3 = *a1;
-		v4 = 4;
-		while ( v4 )
+		for ( v4 = 4; v4; v4 -= 1 )
 		{
-			v5 = 8;
 			v6 = (unsigned __int8)v3;
-			while ( v5 )
+			for ( v5 = 8; v5; v5 -= 1 )
 			{
 				v7 = v2 >= 0;
 				v2 *= 2;
@@ -2750,12 +2685,9 @@ void __fastcall cdvdfsv_unused_xorfun(unsigned int *a1, int a2)
 				v6 *= 2;
 				if ( !v7 )
 					v2 ^= 1u;
-				--v5;
 			}
-			--v4;
 			v3 >>= 8;
 		}
-		a2 -= 4;
 		++a1;
 	}
 }

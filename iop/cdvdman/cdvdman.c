@@ -424,12 +424,10 @@ int __cdecl cdrom_init(iop_device_t *dev)
 	cdvdman_spinnom = -1;
 	cdvdman_trycnt = -1;
 	sceCdSC(0xFFFFFFF3, &cd_sc_tmp);
-	handlei1 = 15;
 	handlei2 = 15;
-	while ( handlei1 >= 0 )
+	for ( handlei1 = 15; handlei1 >= 0; handlei1 -= 1 )
 	{
 		cdvdman_handles[handlei2].fd_flags = 0;
-		--handlei1;
 		--handlei2;
 	}
 	return 0;
@@ -441,7 +439,6 @@ void __fastcall cdvdman_termcall(int with_stop)
 	int i; // $s0
 	int oldstate; // [sp+10h] [-8h] BYREF
 
-	i = 0;
 	if ( cdvdman_verbose > 0 )
 	{
 		Kprintf("CDVD:library Terminate Call %d\n", with_stop);
@@ -454,14 +451,13 @@ void __fastcall cdvdman_termcall(int with_stop)
 		{
 			cdvdman_ncmd_sender_06();
 		}
-		while ( (dev5_regs.dev5_reg_017 & 0x80) != 0 )
+		for ( i = 0; i <= 49999; i += 1 )
 		{
-			if ( i > 49999 )
+			if ( (dev5_regs.dev5_reg_017 & 0x80) == 0 )
 			{
 				break;
 			}
 			DelayThread(100);
-			++i;
 		}
 		sceCdDecSet(0, 0, 0);
 		if ( (dmac_ch_get_chcr(3u) & 0x1000000) != 0 )
@@ -483,12 +479,10 @@ int __cdecl cdrom_deinit()
 	int i1; // $v1
 	int i2; // $v0
 
-	i1 = 15;
 	i2 = 15;
-	while ( i1 >= 0 )
+	for ( i1 = 15; i1 >= 0; i1 -= 1 )
 	{
 		cdvdman_handles[i2].fd_flags = 0;
-		--i1;
 		--i2;
 	}
 	DeleteEventFlag(fio_fsv_evid);
@@ -636,15 +630,13 @@ int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname)
 		printf("fileIO DOPEN name= %s layer %d\n", dirname, f->unit);
 	}
 	WaitEventFlag(fio_fsv_evid, 1u, 16, efbits);
-	handle_ind1 = 0;
 	handle_ind2 = 0;
-	while ( handle_ind1 < 16 )
+	for ( handle_ind1 = 0; handle_ind1 < 16; handle_ind1 += 1 )
 	{
 		if ( !cdvdman_handles[handle_ind2].fd_flags )
 		{
 			break;
 		}
-		++handle_ind1;
 		++handle_ind2;
 	}
 	if ( handle_ind1 == 16 )
@@ -713,7 +705,7 @@ void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTR
 
 	(void)dummy;
 
-	offi = 0;
+	
 	buf->attr = 0;
 	buf->private_5 = 0;
 	buf->private_4 = 0;
@@ -723,13 +715,13 @@ void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTR
 	buf->private_0 = 0;
 	buf->hisize = 0;
 	buftmp = buf;
-	while ( offi < 8 )                           // This is a memset 0
+	for ( offi = 0; offi < 8; offi += 1 )                           // This is a memset 0
 	{
-		datetmp = fp->file_struct.date[offi++];
+		buftmp = (iox_stat_t *)((char *)buf + offi);
+		datetmp = fp->file_struct.date[offi];
 		buftmp->mtime[0] = datetmp;
 		buftmp->atime[0] = datetmp;
 		buftmp->ctime[0] = datetmp;
-		buftmp = (iox_stat_t *)((char *)buf + offi);
 	}
 	buf->size = fp->file_struct.size;
 	mode_tmp = 0x2000;
@@ -960,11 +952,10 @@ int __cdecl cdvd_odcinit(CDVDMAN_FILEDATA *fh, int open_or_close, int id)
 	{
 		++file_size_bsr_17;
 	}
-	rcvbufi = 0;
 	ioctl_arg = (file_size_bsr_17 + file_size_sectors + 8) << 11;
-	while ( rcvbufi < fh->fd_rbsize )
+	for ( rcvbufi = 0; rcvbufi < fh->fd_rbsize; rcvbufi += 1 )
 	{
-		fh->fd_rcvbuf[rcvbufi++] = 0;
+		fh->fd_rcvbuf[rcvbufi] = 0;
 	}
 	is_pfs_res = strncmp(cache_filename, "pfs", 3);
 	cache_fd3 = cache_fd1;
@@ -978,112 +969,90 @@ int __cdecl cdvd_odcinit(CDVDMAN_FILEDATA *fh, int open_or_close, int id)
 		}
 	}
 	cache_fd1 = lseek(cache_fd3, 0, 0);
-	i = 0;
 	if ( cache_fd1 < 0 )
 	{
 		goto LABEL_39;
 	}
-	while ( i <= 0x7FFF )
+	for ( i = 0; i <= 0x7FFF; i += 1 )
 	{
-		tmp_ptr = (char *)cdvdman_temp_buffer_ptr + i++;
+		tmp_ptr = (char *)cdvdman_temp_buffer_ptr + i;
 		*tmp_ptr = 0;
 	}
 	ioctl_arg3 = ioctl_arg;
 	ioctl_arg2 = ioctl_arg >> 15;
-	sector_ind1 = 0;
-	if ( ioctl_arg >> 15 )
+	cache_fd4 = cache_fd2;
+	for ( sector_ind1 = 0; sector_ind1 < ioctl_arg2; sector_ind1 += 1 )
 	{
-		cache_fd4 = cache_fd2;
-		while ( 1 )
+		cache_fd1 = write(cache_fd4, cdvdman_temp_buffer_ptr, 0x8000);
+		if ( cache_fd1 != 0x8000 )
 		{
-			cache_fd1 = write(cache_fd4, cdvdman_temp_buffer_ptr, 0x8000);
-			if ( cache_fd1 != 0x8000 )
-			{
-				goto LABEL_33;
-			}
-			++sector_ind1;
-			cache_fd4 = cache_fd2;
-			if ( sector_ind1 >= ioctl_arg2 )
-			{
-				ioctl_arg3 = ioctl_arg;
-				break;
-			}
+			goto LABEL_33;
 		}
+		cache_fd4 = cache_fd2;
 	}
 	ioctl_arg4 = (ioctl_arg3 >> 11) - 16 * ioctl_arg2;
-	sector_ind2 = 0;
-	if ( ioctl_arg4 > 0 )
+	cache_fd5 = cache_fd2;
+	for ( sector_ind2 = 0; sector_ind2 < ioctl_arg4; sector_ind2 += 1 )
 	{
-		cache_fd5 = cache_fd2;
-		while ( 1 )
+		cache_fd1 = write(cache_fd5, fh->fd_rcvbuf, 2048);
+		if ( cache_fd1 != 2048 )
 		{
-			cache_fd1 = write(cache_fd5, fh->fd_rcvbuf, 2048);
-			if ( cache_fd1 != 2048 )
-			{
-				break;
-			}
-			++sector_ind2;
-			cache_fd5 = cache_fd2;
-			if ( sector_ind2 >= ioctl_arg4 )
-			{
-				goto LABEL_36;
-			}
-		}
 LABEL_33:
-		if ( cache_fd1 >= 0 )
-		{
-			cache_fd1 = -5;
-		}
-LABEL_39:
-		cache_file_fd = fh->cache_file_fd;
-		if ( cache_file_fd != -1 )
-		{
-			cache_close_result = close(cache_file_fd);
-			cache_remove_result = cache_close_result;
-			if ( cdvdman_verbose > 0 )
+			if ( cache_fd1 >= 0 )
 			{
-				Kprintf("Cache File Close: %d\n", cache_close_result);
+				cache_fd1 = -5;
 			}
-			if ( cache_remove_result >= 0 )
+LABEL_39:
+			cache_file_fd = fh->cache_file_fd;
+			if ( cache_file_fd != -1 )
 			{
-				if ( !strncmp(cache_filename, "pfs", 3) )
-				{
-					cache_remove_result = remove(cache_filename);
-				}
-				else if ( !strncmp(cache_filename, "host", 4) )
-				{
-					cache_remove_result = 0;
-					remove(cache_filename);
-				}
+				cache_close_result = close(cache_file_fd);
+				cache_remove_result = cache_close_result;
 				if ( cdvdman_verbose > 0 )
 				{
-					Kprintf("Cache File %s remove: %d\n", cache_filename, cache_remove_result);
+					Kprintf("Cache File Close: %d\n", cache_close_result);
+				}
+				if ( cache_remove_result >= 0 )
+				{
+					if ( !strncmp(cache_filename, "pfs", 3) )
+					{
+						cache_remove_result = remove(cache_filename);
+					}
+					else if ( !strncmp(cache_filename, "host", 4) )
+					{
+						cache_remove_result = 0;
+						remove(cache_filename);
+					}
+					if ( cdvdman_verbose > 0 )
+					{
+						Kprintf("Cache File %s remove: %d\n", cache_filename, cache_remove_result);
+					}
 				}
 			}
+			fh->cache_file_fd = -1;
+			fh->max_cluster = 0;
+			fh->cluster_cur = -1;
+			fh->sector_count_total = 0;
+			CpuSuspendIntr(&state);
+			FreeSysMemory(fh->fd_rcvbuf);
+			CpuResumeIntr(state);
+			fh->fd_rcvbuf = 0;
+			if ( cache_fd1 < 0 && cdvdman_verbose > 0 )
+			{
+				Kprintf("cdvd_odcinit Open  Error %d\n", cache_fd1);
+			}
+			if ( cache_remove_result < 0 && cdvdman_verbose > 0 )
+			{
+				Kprintf("cdvd_odcinit Close Error %d\n", cache_remove_result);
+			}
+			if ( !open_or_close )
+			{
+				return cache_remove_result;
+			}
+			return cache_fd1;
 		}
-		fh->cache_file_fd = -1;
-		fh->max_cluster = 0;
-		fh->cluster_cur = -1;
-		fh->sector_count_total = 0;
-		CpuSuspendIntr(&state);
-		FreeSysMemory(fh->fd_rcvbuf);
-		CpuResumeIntr(state);
-		fh->fd_rcvbuf = 0;
-		if ( cache_fd1 < 0 && cdvdman_verbose > 0 )
-		{
-			Kprintf("cdvd_odcinit Open  Error %d\n", cache_fd1);
-		}
-		if ( cache_remove_result < 0 && cdvdman_verbose > 0 )
-		{
-			Kprintf("cdvd_odcinit Close Error %d\n", cache_remove_result);
-		}
-		if ( !open_or_close )
-		{
-			return cache_remove_result;
-		}
-		return cache_fd1;
+		cache_fd5 = cache_fd2;
 	}
-LABEL_36:
 	verbose_tmp = cdvdman_verbose;
 	fh->sector_count_total = file_size_bsr_17 << 11;
 	fh->cache_file_fd = cache_fd2;
@@ -1110,41 +1079,27 @@ int __cdecl cdvdman_cache_invalidate(CDVDMAN_FILEDATA *filedata1, int index)
 	{
 		return 0;
 	}
-	i1 = 0;
 	filedata1->cluster_cur = -1;
-	while ( i1 < filedata1->fd_rbsize )
+	for ( i1 = 0; i1 < filedata1->fd_rbsize; i1 += 1 )
 	{
-		filedata1->fd_rcvbuf[i1++] = 0;
+		filedata1->fd_rcvbuf[i1] = 0;
 	}
 	sector_count_bsr_11 = (unsigned int)filedata1->sector_count_total >> 11;
 	fileio_res = lseek(filedata1->cache_file_fd, 0, 0);
 	filedata2 = filedata1;
 	if ( fileio_res >= 0 )
 	{
-		i2 = 0;
-		if ( sector_count_bsr_11 )
+		for ( i2 = 0; i2 < sector_count_bsr_11; i2 += 1 )
 		{
-			while ( 1 )
+			fileio_res = write(filedata1->cache_file_fd, filedata1->fd_rcvbuf, 2048);
+			if ( fileio_res < 0 )
 			{
-				fileio_res = write(filedata1->cache_file_fd, filedata1->fd_rcvbuf, 2048);
-				++i2;
-				if ( fileio_res < 0 )
-				{
-					break;
-				}
-				if ( i2 >= sector_count_bsr_11 )
-				{
-					goto LABEL_9;
-				}
+				break;
 			}
 		}
-		else
+		if ( fileio_res >= 0 )
 		{
-LABEL_9:
-			if ( fileio_res >= 0 )
-			{
-				return fileio_res;
-			}
+			return fileio_res;
 		}
 		filedata2 = filedata1;
 	}
@@ -1160,17 +1115,15 @@ int __cdecl cdvdman_invcaches()
 	CDVDMAN_FILEDATA *fileinfo; // $s2
 	int i2; // $s1
 
-	i1 = 0;
 	fileinfo = cdvdman_handles;
 	i2 = 0;
-	while ( i1 < 16 )
+	for ( i1 = 0; i1 < 16; i1 += 1 )
 	{
 		if ( (cdvdman_handles[i2].fd_flags & 4) != 0 )
 		{
 			cdvdman_cache_invalidate(fileinfo, i1);
 		}
 		++fileinfo;
-		++i1;
 		++i2;
 	}
 	return 0;
@@ -1196,7 +1149,6 @@ int __fastcall cdrom_internal_cache_read(const iop_file_t *f, int nbytes)
 	int fd_rbsize; // $s1
 	unsigned int readpos_minus_cluster_cur; // $v0
 	int filedata_bw; // $v1
-	u32 condtmp1; // $v0
 
 	filedata = &cdvdman_handles[(int)f->privdata];
 	if ( cdvdman_devready() < 0 )
@@ -1239,7 +1191,6 @@ int __fastcall cdrom_internal_cache_read(const iop_file_t *f, int nbytes)
 			filedata->cluster_cur);
 	}
 	cluster_cur = filedata->cluster_cur;
-	readpos_bsr_14_2 = readpos_bsr_14;
 	if ( cluster_cur < 0 )
 	{
 		cluster_cur = 0;
@@ -1275,27 +1226,15 @@ LABEL_28:
 			return -5;
 		}
 		cluster_cur = filedata->cluster_cur;
-		readpos_bsr_14_2 = readpos_bsr_14;
 	}
-	if ( readpos_plus_nbytes_bsr_14 >= readpos_bsr_14_2 )
+	for ( readpos_bsr_14_2 = readpos_bsr_14; readpos_plus_nbytes_bsr_14 >= readpos_bsr_14_2; readpos_bsr_14_2 += 1 )
 	{
 		readpos_minus_cluster_cur = readpos_bsr_14_2 - cluster_cur;
-		while ( 1 )
+		filedata_bw = ((int)filedata->fd_rcvbuf[readpos_minus_cluster_cur >> 3] >> (readpos_minus_cluster_cur & 7)) & 1;
+		if ( !filedata_bw )
 		{
-			filedata_bw = ((int)filedata->fd_rcvbuf[readpos_minus_cluster_cur >> 3] >> (readpos_minus_cluster_cur & 7)) & 1;
-			condtmp1 = readpos_plus_nbytes_bsr_14 < readpos_bsr_14_2;
-			if ( !filedata_bw )
-			{
-				break;
-			}
-			readpos_minus_cluster_cur = ++readpos_bsr_14_2 - cluster_cur;
-			condtmp1 = readpos_plus_nbytes_bsr_14 < readpos_bsr_14_2;
-			if ( condtmp1 )
-			{
-				return condtmp1 ^ 1;
-			}
+			return (readpos_plus_nbytes_bsr_14 < readpos_bsr_14_2) ^ 1;
 		}
-		return condtmp1 ^ 1;
 	}
 	return 0;
 }
@@ -1511,7 +1450,6 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	CDVDMAN_FILEDATA *filedata1; // $s1
 	int srchspd; // $v0
 	int underscoreind; // $s0
-	u32 condtmp1; // $v0
 	int devready_tmp; // $s0
 	int fsv_evid_tmp1; // $a0
 	int fsv_evid_tmp2; // $a0
@@ -1526,17 +1464,15 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	int buf; // [sp+DCh] [-4h] BYREF
 
 	(void)arg4;
-
 	fds1 = 0;
 	if ( cdvdman_verbose > 0 )
 	{
 		printf("fileIO OPEN name= %s mode= 0x%08x layer %d\n", name, mode, f->unit);
 	}
-	fds2 = 0;
 	WaitEventFlag(fio_fsv_evid, 1u, 16, &efbits);
 	opensuccess1 = 0;
 	opensuccess2 = 0;
-	while ( fds2 < 16 )
+	for ( fds2 = 0; fds2 < 16; fds2 += 1 )
 	{
 		fdflags_band_8h = cdvdman_handles[fds2].fd_flags & 8;
 		if ( !cdvdman_handles[fds2].fd_flags )
@@ -1551,7 +1487,6 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 		{
 			opensuccess2 = 1;
 		}
-		++fds2;
 	}
 	if ( !opensuccess1 || opensuccess2 )
 	{
@@ -1584,16 +1519,14 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	{
 		strncpy(filename, name, 128);
 		underscoreind = 12;
-		if ( filename[12] != 95 )
+		if ( filename[underscoreind] != 95 )
 		{
-			condtmp1 = 1;
-			while ( condtmp1 )
+			for ( ; underscoreind < 128; underscoreind += 1 )
 			{
-				if ( !filename[underscoreind++] )
+				if ( !filename[underscoreind] )
 				{
 					break;
 				}
-				condtmp1 = underscoreind < 128;
 				if ( filename[underscoreind] == 95 )
 				{
 					goto LABEL_28;
@@ -1749,27 +1682,20 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 	int unit; // $a2
 	unsigned int readpos_end; // $v0
 	u32 file_size; // $v1
-	CDVDMAN_FILEDATA *filedata1; // $t0
 	int nbytes_tmp; // $s5
 	unsigned int lbn; // $s1
 	int pos_extra; // $s4
 	unsigned int sectors_minus_1; // $a1
-	unsigned int lbn_plus_8; // $v0
 	int nbytes_div_2048; // $a1
-	int addr_unaligned; // $v0
 	char *addr_tmp; // $a0
 	unsigned int nbytes_tmp2; // $a2
 	const char *pos_tmp2; // $a1
 	unsigned int sec; // $s2
-	u32 condtmp1; // $v0
-	unsigned int lbn_tmp3; // $a0
 	int read_error; // $v0
-	u32 condtmp2; // $v0
 	unsigned int sectors_count; // $s0
 	unsigned int lbn_tmp2; // $a0
 	int Error; // $v0
 	unsigned int i; // $a0
-	bool condtmp3; // dc
 	sceCdRMode rmode[2]; // [sp+10h] [-28h] BYREF
 	int read_res; // [sp+18h] [-20h]
 	int lbn_tmp; // [sp+1Ch] [-1Ch]
@@ -1795,189 +1721,138 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 	unit = f->unit;
 	filedata2 = &cdvdman_handles[(_DWORD)privdata];
 	cdvdman_iormode(rmode, filedata2->filemode, unit);
-	if ( nbytes >= 0 )
+	if ( nbytes < 0 )
 	{
-		read_res = 0;
-		readpos_end = filedata2->read_pos + nbytes;
-		read_pos = filedata2->read_pos;
-		file_size = filedata2->file_size;
-		file_lsn = filedata2->file_lsn;
-		if ( file_size < readpos_end )
+		return -22;
+	}
+	read_res = 0;
+	readpos_end = filedata2->read_pos + nbytes;
+	read_pos = filedata2->read_pos;
+	file_size = filedata2->file_size;
+	file_lsn = filedata2->file_lsn;
+	if ( file_size < readpos_end )
+	{
+		nbytes = file_size - read_pos;
+	}
+	filesize_bsr_11 = file_size >> 11;
+	if ( (file_size & 0x7FF) != 0 )
+	{
+		filesize_bsr_11 = (file_size >> 11) + 1;
+	}
+	filesize_bsr_11 += file_lsn;
+	if ( cdvdman_verbose > 0 )
+	{
+		printf("fds= %d read file_lbn= %d offset= %d\n", (int)(uiptr)privdata, (int)file_lsn, (int)read_pos);
+	}
+	buf = 0;
+	for ( ; nbytes; nbytes -= nbytes_tmp )
+	{
+		if ( cdvdman_spinctl != -1 )
 		{
-			nbytes = file_size - read_pos;
-		}
-		filesize_bsr_11 = file_size >> 11;
-		if ( (file_size & 0x7FF) != 0 )
-		{
-			filesize_bsr_11 = (file_size >> 11) + 1;
-		}
-		filesize_bsr_11 += file_lsn;
-		if ( cdvdman_verbose > 0 )
-		{
-			printf("fds= %d read file_lbn= %d offset= %d\n", (int)(uiptr)privdata, (int)file_lsn, (int)read_pos);
-		}
-		buf = 0;
-		if ( !nbytes )
-		{
-LABEL_87:
-			condtmp3 = cdvdman_verbose <= 0;
-			filedata2->read_pos = read_pos;
-			if ( !condtmp3 )
+			rmode[0].spindlctrl = cdvdman_spinctl;
+			switch ( cdvdman_spinctl )
 			{
-				printf("fileIO read ended\n");
+				case 0:
+					filedata2->filemode = 0;
+					break;
+				case 1:
+					filedata2->filemode = 1;
+					break;
+				case 2:
+					filedata2->filemode = 2;
+					break;
+				case 3:
+					filedata2->filemode = 3;
+					break;
+				case 4:
+					filedata2->filemode = 4;
+					break;
+				case 5:
+					filedata2->filemode = 5;
+					break;
+				default:
+					filedata2->filemode = 1;
+					break;
 			}
-			cdvdman_spinctl = -1;
-			return read_res;
 		}
-		while ( 1 )
+		nbytes_tmp = nbytes;
+		pos_sub_2048 = 0;
+		lbn = file_lsn + (read_pos >> 11);
+		lbn_tmp = lbn;
+		pos_extra = read_pos & 0x7FF;
+		if ( nbytes < 16385 )
 		{
-			if ( cdvdman_spinctl != -1 )
+			nbytes_div_2048 = nbytes / 2048;
+			if ( (nbytes & 0x7FF) != 0 )
 			{
-				rmode[0].spindlctrl = cdvdman_spinctl;
-				switch ( cdvdman_spinctl )
-				{
-					case 0:
-						filedata2->filemode = 0;
-						break;
-					case 1:
-						filedata1 = filedata2;
-						goto LABEL_26;
-					case 2:
-						filedata2->filemode = 2;
-						break;
-					case 3:
-						filedata2->filemode = 3;
-						break;
-					case 4:
-						filedata2->filemode = 4;
-						break;
-					case 5:
-						filedata2->filemode = 5;
-						break;
-					default:
-						filedata1 = filedata2;
-LABEL_26:
-						filedata1->filemode = 1;
-						break;
-				}
+				++nbytes_div_2048;
 			}
-			nbytes_tmp = nbytes;
-			pos_sub_2048 = 0;
-			lbn = file_lsn + (read_pos >> 11);
-			lbn_tmp = lbn;
-			pos_extra = read_pos & 0x7FF;
-			if ( nbytes < 16385 )
+			sectors = nbytes_div_2048 + (pos_extra != 0);
+		}
+		else
+		{
+			nbytes_tmp = 0x4000;
+			if ( buf && (read_pos & 0x7FF) != 0 && cdvdman_iocache )
 			{
-				nbytes_div_2048 = nbytes / 2048;
-				if ( (nbytes & 0x7FF) != 0 )
-				{
-					++nbytes_div_2048;
-				}
-				sectors = nbytes_div_2048 + (pos_extra != 0);
+				sectors_minus_1 = sectors - 1;
+				sectors = 8;
+				++lbn;
+				pos_sub_2048 = 2048 - pos_extra;
+				cdvdman_memcpy(
+					addr,
+					(const char *)cdvdman_temp_buffer_ptr + 2048 * sectors_minus_1 + pos_extra,
+					2048 - pos_extra);
+				cdvdman_iocache = 0;
 			}
 			else
 			{
-				nbytes_tmp = 0x4000;
-				if ( buf && (read_pos & 0x7FF) != 0 && cdvdman_iocache )
-				{
-					sectors_minus_1 = sectors - 1;
-					sectors = 8;
-					++lbn;
-					pos_sub_2048 = 2048 - pos_extra;
-					cdvdman_memcpy(
-						addr,
-						(const char *)cdvdman_temp_buffer_ptr + 2048 * sectors_minus_1 + pos_extra,
-						2048 - pos_extra);
-					cdvdman_iocache = 0;
-					lbn_plus_8 = lbn + 8;
-					goto LABEL_38;
-				}
 				sectors = 8;
 				if ( (read_pos & 0x7FF) != 0 )
 				{
 					sectors = 9;
 				}
 			}
-			lbn_plus_8 = lbn + sectors;
-LABEL_38:
-			buf = cdvdman_temp_buffer_ptr;
-			if ( filesize_bsr_11 < lbn_plus_8 )
+		}
+		buf = cdvdman_temp_buffer_ptr;
+		if ( filesize_bsr_11 < (unsigned int)(lbn + sectors) )
+		{
+			sectors = filesize_bsr_11 - lbn;
+		}
+		if ( cdvdman_verbose > 0 )
+		{
+			printf("sce_Read LBN= %d sectors= %d\n", (int)lbn, (int)sectors);
+		}
+		if ( cdvdman_iocache && (lbn >= cdvdman_lcn_offset) && (cdvdman_lcn_offset + cdvdman_numbytes_offset >= lbn + sectors) )
+		{
+			addr_tmp = addr;
+			nbytes_tmp2 = nbytes_tmp;
+			pos_tmp2 = (char *)buf + 2048 * (lbn - cdvdman_lcn_offset) + pos_extra;
+			cdvdman_memcpy(addr_tmp, pos_tmp2, nbytes_tmp2);
+		}
+		else if ( ((uiptr)addr & 3) || pos_extra || (nbytes_tmp != 0x4000) )
+		{
+			sec = 8;
+			if ( sectors >= 8 )
 			{
-				sectors = filesize_bsr_11 - lbn;
+				sec = sectors;
+			}
+			if ( filesize_bsr_11 < lbn + sec )
+			{
+				sec = filesize_bsr_11 - lbn;
 			}
 			if ( cdvdman_verbose > 0 )
 			{
-				printf("sce_Read LBN= %d sectors= %d\n", (int)lbn, (int)sectors);
+				printf("FIO Cache LSN:%d SEC:%d ADDR:%08x\n", (int)lbn, (int)sec, (unsigned int)(uiptr)buf);
 			}
-			addr_unaligned = (uiptr)addr & 3;
-			if ( cdvdman_iocache )
+			sectors_count = 0;
+			if ( sec >= 9 )
 			{
-				addr_unaligned = (uiptr)addr & 3;
-				if ( lbn >= cdvdman_lcn_offset )
-				{
-					addr_unaligned = (uiptr)addr & 3;
-					if ( cdvdman_lcn_offset + cdvdman_numbytes_offset >= lbn + sectors )
-					{
-						addr_tmp = addr;
-						nbytes_tmp2 = nbytes_tmp;
-						pos_tmp2 = (char *)buf + 2048 * (lbn - cdvdman_lcn_offset) + pos_extra;
-						goto LABEL_84;
-					}
-				}
+				sectors_count = sec - 8;
 			}
-			sec = 8;
-			if ( addr_unaligned )
+			lbn_tmp2 = lbn;
+			if ( sectors_count )
 			{
-				condtmp1 = sectors < 8;
-LABEL_59:
-				if ( !condtmp1 )
-				{
-					sec = sectors;
-				}
-				if ( filesize_bsr_11 < lbn + sec )
-				{
-					sec = filesize_bsr_11 - lbn;
-				}
-				condtmp2 = sec < 9;
-				if ( cdvdman_verbose > 0 )
-				{
-					printf("FIO Cache LSN:%d SEC:%d ADDR:%08x\n", (int)lbn, (int)sec, (unsigned int)(uiptr)buf);
-					condtmp2 = sec < 9;
-				}
-				sectors_count = 0;
-				if ( !condtmp2 )
-				{
-					sectors_count = sec - 8;
-				}
-				lbn_tmp2 = lbn;
-				if ( sectors_count )
-				{
-					while ( !sceCdRE(lbn_tmp2, sectors_count, buf, rmode) )
-					{
-						if ( cdvdman_verbose > 0 )
-						{
-							printf("sce_Read ON Delay\n");
-						}
-						if ( (sceCdStatus() & 1) != 0 )
-						{
-LABEL_7:
-							cdvdman_iocache = 0;
-							cdvdman_spinctl = -1;
-							return -5;
-						}
-						DelayThread(10000);
-						lbn_tmp2 = lbn;
-					}
-					sceCdSync(0);
-					Error = sceCdGetError();
-					if ( Error )
-					{
-						goto LABEL_8;
-					}
-				}
-				for ( i = lbn + sectors_count;
-							!sceCdRE(i, sec - sectors_count, (char *)buf + 2048 * sectors_count, rmode);
-							i = lbn + sectors_count )
+				while ( !sceCdRE(lbn_tmp2, sectors_count, buf, rmode) )
 				{
 					if ( cdvdman_verbose > 0 )
 					{
@@ -1985,54 +1860,25 @@ LABEL_7:
 					}
 					if ( (sceCdStatus() & 1) != 0 )
 					{
-						goto LABEL_7;
+						cdvdman_iocache = 0;
+						cdvdman_spinctl = -1;
+						return -5;
 					}
 					DelayThread(10000);
+					lbn_tmp2 = lbn;
 				}
 				sceCdSync(0);
 				Error = sceCdGetError();
 				if ( Error )
 				{
-LABEL_8:
 					printf("Read Error= 0x%02x\n", Error);
 					cdvdman_iocache = 0;
-					goto LABEL_87;
+					break;
 				}
-				cdvdman_lcn_offset = lbn_tmp;
-				cdvdman_numbytes_offset = sec;
-				cdvdman_iocache = 1;
-				addr_tmp = &addr[pos_sub_2048];
-				if ( pos_sub_2048 )
-				{
-					pos_tmp2 = (const char *)cdvdman_temp_buffer_ptr;
-					nbytes_tmp2 = nbytes_tmp - pos_sub_2048;
-				}
-				else
-				{
-					addr_tmp = addr;
-					nbytes_tmp2 = nbytes_tmp;
-					pos_tmp2 = (char *)cdvdman_temp_buffer_ptr + pos_extra;
-				}
-LABEL_84:
-				cdvdman_memcpy(addr_tmp, pos_tmp2, nbytes_tmp2);
-				goto LABEL_85;
 			}
-			condtmp1 = sectors < 8;
-			if ( pos_extra )
-			{
-				goto LABEL_59;
-			}
-			condtmp1 = sectors < 8;
-			if ( nbytes_tmp != 0x4000 )
-			{
-				goto LABEL_59;
-			}
-			lbn_tmp3 = lbn;
-			if ( cdvdman_verbose > 0 )
-			{
-				printf("FIO Usr addr LSN:%d SEC:%d ADDR:%08x\n", (int)lbn, (int)sectors, (unsigned int)(uiptr)addr);
-			}
-			while ( !sceCdRE(lbn_tmp3, sectors, addr, rmode) )
+			for ( i = lbn + sectors_count;
+						!sceCdRE(i, sec - sectors_count, (char *)buf + 2048 * sectors_count, rmode);
+						i = lbn + sectors_count )
 			{
 				if ( cdvdman_verbose > 0 )
 				{
@@ -2040,10 +1886,56 @@ LABEL_84:
 				}
 				if ( (sceCdStatus() & 1) != 0 )
 				{
-					goto LABEL_7;
+					cdvdman_iocache = 0;
+					cdvdman_spinctl = -1;
+					return -5;
 				}
 				DelayThread(10000);
-				lbn_tmp3 = lbn;
+			}
+			sceCdSync(0);
+			Error = sceCdGetError();
+			if ( Error )
+			{
+				printf("Read Error= 0x%02x\n", Error);
+				cdvdman_iocache = 0;
+				break;
+			}
+			cdvdman_lcn_offset = lbn_tmp;
+			cdvdman_numbytes_offset = sec;
+			cdvdman_iocache = 1;
+			addr_tmp = &addr[pos_sub_2048];
+			if ( pos_sub_2048 )
+			{
+				pos_tmp2 = (const char *)cdvdman_temp_buffer_ptr;
+				nbytes_tmp2 = nbytes_tmp - pos_sub_2048;
+			}
+			else
+			{
+				addr_tmp = addr;
+				nbytes_tmp2 = nbytes_tmp;
+				pos_tmp2 = (char *)cdvdman_temp_buffer_ptr + pos_extra;
+			}
+			cdvdman_memcpy(addr_tmp, pos_tmp2, nbytes_tmp2);
+		}
+		else
+		{
+			if ( cdvdman_verbose > 0 )
+			{
+				printf("FIO Usr addr LSN:%d SEC:%d ADDR:%08x\n", (int)lbn, (int)sectors, (unsigned int)(uiptr)addr);
+			}
+			while ( !sceCdRE(lbn, sectors, addr, rmode) )
+			{
+				if ( cdvdman_verbose > 0 )
+				{
+					printf("sce_Read ON Delay\n");
+				}
+				if ( (sceCdStatus() & 1) != 0 )
+				{
+					cdvdman_iocache = 0;
+					cdvdman_spinctl = -1;
+					return -5;
+				}
+				DelayThread(10000);
 			}
 			sceCdSync(0);
 			read_error = sceCdGetError();
@@ -2051,25 +1943,25 @@ LABEL_84:
 			if ( read_error )
 			{
 				printf("Read Error= 0x%02x\n", read_error);
-				goto LABEL_87;
-			}
-LABEL_85:
-			addr += nbytes_tmp;
-			if ( nbytes_tmp <= 0 )
-			{
-				cdvdman_spinctl = -1;
-				return nbytes_tmp;
-			}
-			nbytes -= nbytes_tmp;
-			read_pos += nbytes_tmp;
-			read_res += nbytes_tmp;
-			if ( !nbytes )
-			{
-				goto LABEL_87;
+				break;
 			}
 		}
+		addr += nbytes_tmp;
+		if ( nbytes_tmp <= 0 )
+		{
+			cdvdman_spinctl = -1;
+			return nbytes_tmp;
+		}
+		read_pos += nbytes_tmp;
+		read_res += nbytes_tmp;
 	}
-	return -22;
+	filedata2->read_pos = read_pos;
+	if ( cdvdman_verbose > 0 )
+	{
+		printf("fileIO read ended\n");
+	}
+	cdvdman_spinctl = -1;
+	return read_res;
 }
 
 //----- (00402740) --------------------------------------------------------
@@ -2307,8 +2199,6 @@ int __cdecl cdrom_devctl(
 	const char *sc_tmp_2; // $v1
 	unsigned int sc_tmp_3; // $a1
 	unsigned int sc_tmp_4; // $s0
-	const u8 *sc_tmp_4_addptr; // $a0
-	BOOL condtmp2; // $v0
 	int sc_str_as_int; // $a0
 	char *cachedev; // $a1
 	int cacheaction; // $a2
@@ -2323,7 +2213,6 @@ int __cdecl cdrom_devctl(
 	(void)a2;
 	(void)buflen;
 
-	sc_tmp = 0;
 	if ( cmd == 0x4328 )
 	{
 		retval1 = 0;
@@ -2341,7 +2230,7 @@ int __cdecl cdrom_devctl(
 		switch ( cmd )
 		{
 			case 0x430C:
-				while ( sc_tmp < 3 )
+				for ( sc_tmp = 0; sc_tmp < 3; sc_tmp += 1 )
 				{
 					WaitEventFlag(scmd_evid, 1u, 0, &efbits);
 					Clock = sceCdReadClock((sceCdCLOCK *)bufp);
@@ -2349,11 +2238,10 @@ int __cdecl cdrom_devctl(
 					{
 						break;
 					}
-					sc_tmp += 1;
 				}
 				goto LABEL_46;
 			case 0x431D:
-				while ( sc_tmp < 3 )
+				for ( sc_tmp = 0; sc_tmp < 3; sc_tmp += 1 )
 				{
 					WaitEventFlag(scmd_evid, 1u, 0, &efbits);
 					Clock = sceCdReadGUID((u64 *)bufp);
@@ -2361,7 +2249,6 @@ int __cdecl cdrom_devctl(
 					{
 						break;
 					}
-					sc_tmp += 1;
 				}
 				goto LABEL_46;
 			case 0x431E:
@@ -2391,7 +2278,7 @@ LABEL_23:
 				*(_DWORD *)bufp = sceCdStatus();
 				goto LABEL_88;
 			case 0x4323:
-				while ( sc_tmp < 3 )
+				for ( sc_tmp = 0; sc_tmp < 3; sc_tmp += 1 )
 				{
 					WaitEventFlag(scmd_evid, 1u, 0, &efbits);
 					Clock = sceCdPowerOff((u32 *)bufp);
@@ -2399,7 +2286,6 @@ LABEL_23:
 					{
 						break;
 					}
-					sc_tmp += 1;
 				}
 				goto LABEL_46;
 			case 0x4324:
@@ -2409,7 +2295,7 @@ LABEL_23:
 				*(_DWORD *)bufp = sceCdDiskReady(*(_DWORD *)argp);
 				goto LABEL_88;
 			case 0x4326:
-				while ( sc_tmp < 3 )
+				for ( sc_tmp = 0; sc_tmp < 3; sc_tmp += 1 )
 				{
 					WaitEventFlag(scmd_evid, 1u, 0, &efbits);
 					Clock = sceCdReadModelID((unsigned int *)bufp);
@@ -2417,7 +2303,6 @@ LABEL_23:
 					{
 						break;
 					}
-					sc_tmp += 1;
 				}
 LABEL_46:
 				condtmp1 = Clock == 1;
@@ -2545,42 +2430,46 @@ LABEL_27:
 				sc_tmp_ex = 0;
 				if ( arglen )
 				{
-					sc_tmp_2 = (char *)argp;
-					while ( *sc_tmp_2 != ',' )
+					for ( sc_tmp_2 = (char *)argp; sc_tmp_ex < arglen && *sc_tmp_2 != ','; sc_tmp_ex += 1 )
 					{
 						if ( !*sc_tmp_2 )
 						{
 							break;
 						}
-						aHost0[sc_tmp_ex++] = *sc_tmp_2++;
-						if ( sc_tmp_ex >= arglen )
-						{
-							break;
-						}
+						aHost0[sc_tmp_ex] = *sc_tmp_2++;
 					}
 				}
+				retval2 = -22;
 				sc_tmp_3 = sc_tmp_ex;
-				if ( arglen < sc_tmp_ex )
+				sc_tmp_4 = sc_tmp_ex;
+				if ( arglen >= sc_tmp_ex )
 				{
-					goto LABEL_78;
+					sc_tmp_4 = sc_tmp_ex + 1;
+					for ( ; (sc_tmp_4 < arglen) && *((u8 *)argp + sc_tmp_4) && (*((u8 *)argp + sc_tmp_4) != ','); sc_tmp_4 += 1 )
+					{
+					}
 				}
-				sc_tmp_4 = sc_tmp_ex + 1;
-				sc_tmp_4_addptr = (u8 *)argp + sc_tmp_4;
-				if ( sc_tmp_4 >= arglen || *sc_tmp_4_addptr == 44 )
+				if ( arglen >= sc_tmp_4 )
 				{
-					goto LABEL_76;
+					*((_BYTE *)argp + sc_tmp_4) = 0;
+					cdvdman_cache_sector_size_count = strtol((const char *)argp + sc_tmp_3, 0, 10);
+					sc_str_as_int = strtol((const char *)argp + sc_tmp_4 + 1, 0, 10);
+					cachedev = aHost0;
+					cacheaction = 1;
+LABEL_85:
+					retval3 = path_tbl_init(sc_str_as_int, cachedev, cacheaction);
+LABEL_86:
+					retval2 = retval3;
 				}
 				break;
 			case 0x4397:
-				sc_tmp_5 = 0;
 				sc_tmp_6 = 0;
-				while ( sc_tmp_5 < 0x10 )
+				for ( sc_tmp_5 = 0; sc_tmp_5 < 0x10; sc_tmp_5 += 1 )
 				{
 					if ( (cdvdman_handles[sc_tmp_6].fd_flags & 4) != 0 )
 					{
 						break;
 					}
-					++sc_tmp_5;
 					++sc_tmp_6;
 				}
 				retval2 = -16;
@@ -2595,39 +2484,6 @@ LABEL_27:
 			default:
 				retval2 = -5;
 				goto LABEL_88;
-		}
-		while ( 1 )
-		{
-			condtmp2 = arglen < sc_tmp_4;
-			if ( !*sc_tmp_4_addptr )
-			{
-				break;
-			}
-			++sc_tmp_4;
-			sc_tmp_4_addptr = (u8 *)argp + sc_tmp_4;
-			if ( sc_tmp_4 >= arglen || *sc_tmp_4_addptr == 44 )
-			{
-LABEL_76:
-				condtmp2 = arglen < sc_tmp_4;
-				break;
-			}
-		}
-		if ( condtmp2 )
-		{
-LABEL_78:
-			retval2 = -22;
-		}
-		else
-		{
-			*((_BYTE *)argp + sc_tmp_4) = 0;
-			cdvdman_cache_sector_size_count = strtol((const char *)argp + sc_tmp_3, 0, 10);
-			sc_str_as_int = strtol((const char *)argp + sc_tmp_4 + 1, 0, 10);
-			cachedev = aHost0;
-			cacheaction = 1;
-LABEL_85:
-			retval3 = path_tbl_init(sc_str_as_int, cachedev, cacheaction);
-LABEL_86:
-			retval2 = retval3;
 		}
 LABEL_88:
 		SetEventFlag(fio_fsv_evid, 1u);
@@ -2890,13 +2746,12 @@ int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 	u32 efbits[2]; // [sp+10h] [-8h] BYREF
 
 	efret = PollEventFlag(sfile_evid, 1u, 16, efbits);
-	pathlen = 0;
 	if ( efret == -421 )
 	{
 		return 0;
 	}
 	pathptrtmp = path;
-	while ( 1 )
+	for ( pathlen = 0; pathlen < 1023; pathlen += 1 )
 	{
 		pathchrtmp = *pathptrtmp;
 		ftble = (CDVDMAN_FILETBL_ENTRY_T *)fp;
@@ -2904,12 +2759,8 @@ int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 		{
 			break;
 		}
-		cdvdman_sfname[pathlen++] = pathchrtmp;
+		cdvdman_sfname[pathlen] = pathchrtmp;
 		pathptrtmp = &path[pathlen];
-		if ( pathlen >= 1023 )
-		{
-			break;
-		}
 	}
 	cdvdman_sfname[pathlen] = 0;
 	cdvdman_srchspd = 1;
@@ -2934,10 +2785,6 @@ int __cdecl sceCdGetToc(u8 *toc)
 int __cdecl sceCdDiskReady(int mode)
 {
 	vu8 dev5_reg_005; // $a1
-	vu8 dev5_reg_00F; // $v1
-	vu8 reg005_fmp1; // $v0
-	vu8 reg00F_tmp1; // $v0
-	vu8 reg005_tmp2; // $v1
 	int reg005_bcheck_c0h; // $v0
 	u32 efbits[2]; // [sp+10h] [-8h] BYREF
 
@@ -2972,27 +2819,12 @@ int __cdecl sceCdDiskReady(int mode)
 			dev5_reg_005 = dev5_regs.dev5_reg_005;
 			Kprintf("Wait Drive Ready %x\n", dev5_reg_005);
 		}
-		dev5_reg_00F = dev5_regs.dev5_reg_00F;
-		reg005_fmp1 = dev5_regs.dev5_reg_005;
-		if ( (reg005_fmp1 & 0xC0) != 64 || cdvdman_istruct.read2_flag || (unsigned int)dev5_reg_00F - 1 < 4 )
+		while ( cdvdman_istruct.read2_flag || (unsigned int)(((u8)dev5_regs.dev5_reg_00F) - 1) < 4 )
 		{
-			while ( 1 )
+			while ( (dev5_regs.dev5_reg_005 & 0xC0) != 64 )
 			{
-				reg005_tmp2 = 0;
-				while ( (reg005_tmp2 & 0xC0) != 64 )
-				{
-					vDelayThread(2000);
-					WaitEventFlag(cdvdman_intr_efid, 1u, 0, efbits);
-					reg00F_tmp1 = dev5_regs.dev5_reg_00F;
-					reg005_tmp2 = dev5_regs.dev5_reg_005;
-				}
-				if ( !cdvdman_istruct.read2_flag )
-				{
-					if ( (unsigned int)(reg00F_tmp1 - 1) >= 4 )
-					{
-						break;
-					}
-				}
+				vDelayThread(2000);
+				WaitEventFlag(cdvdman_intr_efid, 1u, 0, efbits);
 			}
 		}
 	}
@@ -3108,13 +2940,11 @@ int __fastcall read_id_from_rom(int mode, int *buf)
 	rdstart = (char *)0xBFBF0000;
 	rdstackptr1 = (char *)&rdstack.m_unk10;
 	rdpos = 0;
-	for ( i = 0; i < 0x20; ++i )
+	for ( i = 0; i < 0x20; i += 1 )
 	{
 		ptr1 = rdstack.m_unk90;
-		rdind1 = 0;
-		while ( rdind1 < 4 )
+		for ( rdind1 = 0; rdind1 < 4; rdind1 += 1 )
 		{
-			++rdind1;
 			rdtmp1 = *rdstart++;
 			*rdstackptr1++ = rdtmp1;
 			*(_BYTE *)ptr1 = rdtmp1;
@@ -3122,18 +2952,15 @@ int __fastcall read_id_from_rom(int mode, int *buf)
 		}
 		rdpos += rdstack.m_unk90[0];
 	}
-	for ( ; i < 0x4000; rdpos += rdstack.m_unk90[0] )
+	for ( ; i < 0x4000; i += 1, rdpos += rdstack.m_unk90[0] )
 	{
 		rdstackptr2 = rdstack.m_unk90;
-		rdind2 = 0;
-		while ( rdind2 < 4 )
+		for ( rdind2 = 0; rdind2 < 4; rdind2 += 1 )
 		{
-			++rdind2;
 			rdtmp2 = *rdstart++;
 			*(_BYTE *)rdstackptr2 = rdtmp2;
 			rdstackptr2 = (int *)((char *)rdstackptr2 + 1);
 		}
-		++i;
 	}
 	if ( rdpos )
 	{
@@ -3409,11 +3236,8 @@ int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int
 	int parent_level; // $a0
 	const char *nameptr1; // $s0
 	int path_level; // $s2
-	int name_chr1; // $v0
 	int name_chr2; // $v1
 	char *nameptr2; // $s1
-	u32 condtmp2; // $v0
-	bool condtmp1; // dc
 	int pathcnt; // $s2
 	CDVDMAN_FILETBL_ENTRY_T *filetbl; // $s3
 	char *filename; // $s0
@@ -3453,62 +3277,31 @@ int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int
 		}
 		cdvdman_fs_cache = 1;
 	}
-	if ( *name == 92 )
+	if ( *name == '\\' )
 	{
 		name_buf[0] = 0;
 		parent_level = 1;
 		nameptr1 = name;
-		path_level = 0;
-		while ( 1 )
+		nameptr2 = name_buf;
+		for ( path_level = 0; path_level < 8 && *nameptr1; path_level += 1, nameptr1 += 1 )
 		{
-			name_chr1 = *nameptr1;
 			name_chr2 = *(unsigned __int8 *)nameptr1;
 			nameptr2 = name_buf;
-			if ( name_chr1 != 92 )
+			for ( ; *nameptr1 != '\\'; nameptr1 += 1 )
 			{
-				break;
+				*nameptr2 = name_chr2;
+				name_chr2 = *(unsigned __int8 *)nameptr1;
+				++nameptr2;
 			}
-LABEL_22:
-			condtmp1 = name_chr1 == 0;
-			condtmp2 = path_level < 8;
-			if ( condtmp1 )
-			{
-				goto LABEL_26;
-			}
-			++nameptr1;
 			*nameptr2 = 0;
 			parent_level = cdvdman_finddir(parent_level, name_buf);
 			if ( parent_level == -1 )
 			{
 				name_buf[0] = 0;
-LABEL_25:
-				condtmp2 = path_level < 8;
-				goto LABEL_26;
-			}
-			if ( ++path_level >= 8 )
-			{
-				goto LABEL_25;
-			}
-		}
-		while ( 1 )
-		{
-			condtmp2 = path_level < 8;
-			if ( !name_chr2 )
-			{
 				break;
 			}
-			++nameptr1;
-			*nameptr2 = name_chr2;
-			name_chr2 = *(unsigned __int8 *)nameptr1;
-			++nameptr2;
-			if ( *nameptr1 == 92 )
-			{
-				name_chr1 = *nameptr1;
-				goto LABEL_22;
-			}
 		}
-LABEL_26:
-		if ( condtmp2 )
+		if ( path_level < 8 )
 		{
 			if ( name_buf[0] )
 			{
@@ -3521,16 +3314,14 @@ LABEL_26:
 					}
 					return 0;
 				}
-				pathcnt = 0;
 				if ( cdvdman_verbose >= 2 )
 				{
 					printf("CdSearchFile: searching %s...\n", name_buf);
-					pathcnt = 0;
 				}
 				filetbl = cdvdman_filetbl;
 				filename = cdvdman_filetbl[0].file_struct.name;
 				filetblind = 0;
-				while ( pathcnt < 64 )
+				for ( pathcnt = 0; pathcnt < 64; pathcnt += 1 )
 				{
 					if ( !cdvdman_filetbl[filetblind].file_struct.name[0] )
 					{
@@ -3547,8 +3338,7 @@ LABEL_26:
 							printf("%s:\t found\n", name_buf);
 						}
 						fptmp1 = fp;
-						filetbltmp1 = filetbl;
-						while ( filetbltmp1 != (CDVDMAN_FILETBL_ENTRY_T *)&filetbl->file_properties )
+						for ( filetbltmp1 = filetbl; filetbltmp1 != (CDVDMAN_FILETBL_ENTRY_T *)&filetbl->file_properties; filetbltmp1 = (CDVDMAN_FILETBL_ENTRY_T *)((char *)filetbltmp1 + 16) )
 						{
 							size = filetbltmp1->file_struct.size;
 							namecpytmp1 = *(_DWORD *)filetbltmp1->file_struct.name;
@@ -3557,7 +3347,6 @@ LABEL_26:
 							fptmp1->file_struct.size = size;
 							*(_DWORD *)fptmp1->file_struct.name = namecpytmp1;
 							*(_DWORD *)&fptmp1->file_struct.name[4] = namecpytmp2;
-							filetbltmp1 = (CDVDMAN_FILETBL_ENTRY_T *)((char *)filetbltmp1 + 16);
 							fptmp1 = (CDVDMAN_FILETBL_ENTRY_T *)((char *)fptmp1 + 16);
 						}
 						fptmp1->file_struct.lsn = filetbltmp1->file_struct.lsn;
@@ -3569,7 +3358,6 @@ LABEL_26:
 					}
 					++filetbl;
 					filename += 36;
-					++pathcnt;
 					++filetblind;
 				}
 				if ( cdvdman_verbose > 0 )
@@ -3654,8 +3442,7 @@ int __cdecl sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer)
 			printf("%s:\t found dir_point %d\n", &cdvdman_filetbl[0].file_struct.name[dir_point], index);
 		}
 		cdf = fp;
-		filetbl_offs = (char *)cdvdman_filetbl + dir_point;
-		while ( filetbl_offs != (char *)&cdvdman_filetbl[0].file_properties + dir_point )
+		for ( filetbl_offs = (char *)cdvdman_filetbl + dir_point; filetbl_offs != (char *)&cdvdman_filetbl[0].file_properties + dir_point; filetbl_offs += 16 )
 		{
 			cpytmp1 = *((_DWORD *)filetbl_offs + 1);
 			cpytmp2 = *((_DWORD *)filetbl_offs + 2);
@@ -3664,7 +3451,6 @@ int __cdecl sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer)
 			cdf->size = cpytmp1;
 			*(_DWORD *)cdf->name = cpytmp2;
 			*(_DWORD *)&cdf->name[4] = cpytmp3;
-			filetbl_offs += 16;
 			cdf = (sceCdlFILE *)((char *)cdf + 16);
 		}
 		cdf->lsn = *(_DWORD *)filetbl_offs;
@@ -3689,7 +3475,6 @@ int __cdecl CD_newmedia(int arg)
 	int dirind1; // $a1
 	int dirind2; // $s0
 	int parent_name; // $v0
-	int dirind3; // $s3
 	int state; // [sp+18h] [-8h] BYREF
 	int ptsector; // [sp+1Ch] [-4h]
 
@@ -3739,16 +3524,14 @@ int __cdecl CD_newmedia(int arg)
 		return 0;
 	}
 	CpuSuspendIntr(&state);
-	pathtblind = 0;
 	pathtbl_cur = cdvdman_pathtbl;
-	while ( pathtblind < cdvdman_pathtblsize )
+	for ( pathtblind = 0; pathtblind < cdvdman_pathtblsize; pathtblind += 1 )
 	{
 		pathtbl_cur->cache_hit_count = 0;
 		pathtbl_cur->layer = 0;
 		pathtbl_cur->nsec = 0;
 		pathtbl_cur->lsn = 0;
 		pathtbl_cur->cache_path_sz = 0;
-		++pathtblind;
 		++pathtbl_cur;
 	}
 	cache_count = 0;
@@ -3794,50 +3577,37 @@ LABEL_37:
 		}
 		return 0;
 	}
-	fs_rbuf_cur = cdvdman_fs_rbuf;
 	if ( cdvdman_verbose >= 2 )
 	{
 		printf("CD_newmedia: sarching dir..\n");
 	}
-	dirind1 = 0;
-	if ( cdvdman_fs_rbuf < &cdvdman_fs_rbuf[2048] )
+	for ( dirind1 = 0, fs_rbuf_cur = cdvdman_fs_rbuf; dirind1 < 128 && fs_rbuf_cur < &cdvdman_fs_rbuf[2048]; dirind1 += 1, fs_rbuf_cur += (unsigned __int8)*fs_rbuf_cur + (*fs_rbuf_cur & 1) + 8 )
 	{
-		while ( *fs_rbuf_cur )
+		if ( !*fs_rbuf_cur )
 		{
-			dirind2 = dirind1;
-			cdvdman_dirtbl[dirind2].extent = *(_DWORD *)(fs_rbuf_cur + 2);
-			parent_name = (unsigned __int8)fs_rbuf_cur[6];
-			dirind3 = dirind1 + 1;
-			cdvdman_dirtbl[dirind2].number = dirind1 + 1;
-			cdvdman_dirtbl[dirind2].parent = parent_name;
-			memcpy(cdvdman_dirtbl[dirind1].name, fs_rbuf_cur + 8, (unsigned __int8)*fs_rbuf_cur);
-			cdvdman_dirtbl[0].name[(unsigned __int8)*fs_rbuf_cur + dirind2 * 44] = 0;
-			fs_rbuf_cur += (unsigned __int8)*fs_rbuf_cur + (*fs_rbuf_cur & 1) + 8;
-			if ( cdvdman_verbose >= 2 )
-			{
-				printf(
-					"\t%08x,%04x,%04x,%s\n",
-					cdvdman_dirtbl[dirind2].extent,
-					cdvdman_dirtbl[dirind2].number,
-					cdvdman_dirtbl[dirind2].parent,
-					cdvdman_dirtbl[dirind2].name);
-			}
-			dirind1 = dirind3;
-			if ( dirind3 >= 128 )
-			{
-				goto LABEL_51;
-			}
-			if ( fs_rbuf_cur >= &cdvdman_fs_rbuf[2048] )
-			{
-				break;
-			}
+			break;
+		}
+		dirind2 = dirind1;
+		cdvdman_dirtbl[dirind2].extent = *(_DWORD *)(fs_rbuf_cur + 2);
+		parent_name = (unsigned __int8)fs_rbuf_cur[6];
+		cdvdman_dirtbl[dirind2].number = dirind1;
+		cdvdman_dirtbl[dirind2].parent = parent_name;
+		memcpy(cdvdman_dirtbl[dirind2].name, fs_rbuf_cur + 8, (unsigned __int8)*fs_rbuf_cur);
+		cdvdman_dirtbl[0].name[(unsigned __int8)*fs_rbuf_cur + dirind2 * 44] = 0;
+		if ( cdvdman_verbose >= 2 )
+		{
+			printf(
+				"\t%08x,%04x,%04x,%s\n",
+				cdvdman_dirtbl[dirind2].extent,
+				cdvdman_dirtbl[dirind2].number,
+				cdvdman_dirtbl[dirind2].parent,
+				cdvdman_dirtbl[dirind2].name);
 		}
 	}
 	if ( dirind1 < 128 )
 	{
 		cdvdman_dirtbl[dirind1].parent = 0;
 	}
-LABEL_51:
 	cdvdman_fs_cdsec = 0;
 	cdvdman_fs_layer = arg;
 	if ( cdvdman_verbose >= 2 )
@@ -3857,10 +3627,9 @@ int __fastcall cdvdman_finddir(int target_parent, const char *target_name)
 	int parent; // $v0
 	int cmpres; // $v0
 
-	i = 0;
 	name = cdvdman_dirtbl[0].name;
 	j = 0;
-	while ( i < 128 )
+	for ( i = 0; i < 128; i += 1 )
 	{
 		parent = cdvdman_dirtbl[j].parent;
 		if ( !parent )
@@ -3880,7 +3649,6 @@ int __fastcall cdvdman_finddir(int target_parent, const char *target_name)
 		{
 			name += 44;
 		}
-		++i;
 		++j;
 	}
 	return -1;
@@ -3916,7 +3684,6 @@ int __fastcall CD_cachefile(int dsec, int layer)
 	{
 		loc = *(&cdvdman_filetbl[63].file_struct.lsn + 11 * dsec);
 	}
-	toc1 = (struct dirTocEntry *)cdvdman_fs_rbuf;
 	if ( disc_read(1, loc, cdvdman_fs_rbuf, layer) != 1 )
 	{
 		if ( cdvdman_verbose > 0 )
@@ -3930,7 +3697,6 @@ int __fastcall CD_cachefile(int dsec, int layer)
 	{
 		printf("CD_cachefile: searching...\n");
 	}
-	filecnt = 0;
 	sizeptr1 = &cdvdman_filetbl[0].file_struct.size;
 	date1ptr = &cdvdman_filetbl[0].file_struct.date[1];
 	date2ptr = &cdvdman_filetbl[0].file_struct.date[2];
@@ -3941,7 +3707,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 	filetble = cdvdman_filetbl;
 	filetbli = 0;
 	sizeptr2 = &cdvdman_filetbl[0].file_struct.size;
-	while ( toc1 < (struct dirTocEntry *)&cdvdman_fs_rbuf[2048] )
+	for ( filecnt = 0, toc1 = (struct dirTocEntry *)cdvdman_fs_rbuf; filecnt < 64 && toc1 < (struct dirTocEntry *)&cdvdman_fs_rbuf[2048]; filecnt += 1, toc1 = (struct dirTocEntry *)((char *)toc1 + LOBYTE(toc1->length)) )
 	{
 		if ( !LOBYTE(toc1->length) )
 		{
@@ -3997,13 +3763,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 		nameptr += 36;
 		++filetble;
 		sizeptr2 += 9;
-		++filecnt;
-		toc1 = (struct dirTocEntry *)((char *)toc1 + LOBYTE(toc1->length));
 		++filetbli;
-		if ( filecnt >= 64 )
-		{
-			break;
-		}
 	}
 	cdvdman_fs_cdsec = dsec;
 	if ( filecnt < 64 )
@@ -4079,9 +3839,8 @@ LABEL_12:
 	{
 		pathcachecnt = cache_count;
 	}
-	pathcachei = 0;
 	pathcacheo = 0;
-	while ( pathcachei < pathcachecnt )
+	for ( pathcachei = 0; pathcachei < pathcachecnt; pathcachei += 1 )
 	{
 		if ( cdvdman_verbose > 0 )
 		{
@@ -4099,7 +3858,6 @@ LABEL_12:
 		{
 			break;
 		}
-		++pathcachei;
 		++pathcacheo;
 	}
 	if ( pathcachei != pathcachecnt )
@@ -4132,10 +3890,9 @@ LABEL_12:
 				cache_table = 0;
 			}
 			cachetblo1 = cache_table;
-			cachebli1 = 0;
 			cacheblo2 = cache_table;
 			cachebls1 = &cdvdman_pathtbl[cache_table];
-			while ( cachebli1 < cache_count )
+			for ( cachebli1 = 0; cachebli1 < cache_count; cachebli1 += 1 )
 			{
 				if ( cacheblo2 >= cdvdman_pathtblsize )
 				{
@@ -4147,7 +3904,6 @@ LABEL_12:
 				{
 					cachetblo1 = cacheblo2;
 				}
-				++cachebli1;
 				++cachebls1;
 				++cacheblo2;
 			}
@@ -4223,7 +3979,6 @@ int __cdecl path_tbl_init(u32 blocks, char *fname, int action)
 	int v; // $s1
 	int fd; // $v0
 	bool condtmp1; // dc
-	u32 condtmp2; // $v0
 	u32 blocksi; // $s0
 	u32 pathtbli1; // $s0
 	CDVDMAN_PATHTBL_T *pathtbls1; // $v1
@@ -4247,33 +4002,35 @@ int __cdecl path_tbl_init(u32 blocks, char *fname, int action)
 		sprintf(cachedir, "%sCache_Path", fname);
 		fd = open(cachedir, 1539, 511);
 		v = fd;
-		if ( fd >= 0 )
+		if ( v >= 0 )
 		{
 			cache_path_fd = fd;
 			condtmp1 = strncmp(cachedir, "pfs", 3) != 0;
-			condtmp2 = blocks != 0;
 			if ( !condtmp1 )
 			{
 				blocksbs = blocks << 11;
 				ioctl2(cache_path_fd, 28673, &blocksbs, 4u, 0, 0);
-				condtmp2 = blocks != 0;
 			}
-			blocksi = 0;
-			if ( !condtmp2 )
+			for ( blocksi = 0; blocksi < blocks; blocksi += 1 )
 			{
-LABEL_10:
+				v = write(cache_path_fd, cdvdman_fs_rbuf, 2048);
+				if ( v < 0 )
+				{
+					break;
+				}
+			}
+			if ( v >= 0 )
+			{
 				CpuSuspendIntr(&state);
 				cdvdman_pathtblsize = blocks;
-				pathtbli1 = 0;
 				pathtbls1 = cdvdman_pathtbl;
-				while ( pathtbli1 < blocks )
+				for ( pathtbli1 = 0; pathtbli1 < blocks; pathtbli1 += 1 )
 				{
 					pathtbls1->cache_hit_count = 0;
 					pathtbls1->layer = 0;
 					pathtbls1->nsec = 0;
 					pathtbls1->lsn = 0;
 					pathtbls1->cache_path_sz = 0;
-					++pathtbli1;
 					++pathtbls1;
 				}
 				cache_path_size = 0;
@@ -4282,19 +4039,6 @@ LABEL_10:
 				cdvdman_pathtblflag = 1;
 				CpuResumeIntr(state);
 				return 0;
-			}
-			while ( 1 )
-			{
-				v = write(cache_path_fd, cdvdman_fs_rbuf, 2048);
-				++blocksi;
-				if ( v < 0 )
-				{
-					break;
-				}
-				if ( blocksi >= blocks )
-				{
-					goto LABEL_10;
-				}
 			}
 		}
 	}
@@ -4346,15 +4090,13 @@ void __fastcall unused_40BA90(unsigned int *a1, int a2)
 	bool v7; // dc
 
 	v2 = 0;
-	while ( a2 )
+	for ( ; a2; a2 -= 4 )
 	{
 		v3 = *a1;
-		v4 = 4;
-		while ( v4 )
+		for ( v4 = 4; v4; v4 -= 1 )
 		{
-			v5 = 8;
 			v6 = (unsigned __int8)v3;
-			while ( v5 )
+			for ( v5 = 8; v5; v5 -= 1 )
 			{
 				v7 = v2 >= 0;
 				v2 *= 2;
@@ -4368,12 +4110,9 @@ void __fastcall unused_40BA90(unsigned int *a1, int a2)
 				{
 					v2 ^= 1u;
 				}
-				--v5;
 			}
-			--v4;
 			v3 >>= 8;
 		}
-		a2 -= 4;
 		++a1;
 	}
 }
@@ -4678,17 +4417,16 @@ int __fastcall hex_dump(u8 *addr_start, int length)
 	int tmpbyte; // $a1
 
 	Kprintf("Hex Dump addr %08x\n", addr_start);
-	ind1 = 0;
 	ind2 = 0;
-	while ( ind1 < length )
+	for ( ind1 = 0; ind1 < length; ind1 += 1 )
 	{
+		ind2 = ind1 & 0xF;
 		if ( !ind2 && ind1 )
 		{
 			printf("\n");
 		}
-		tmpbyte = addr_start[ind1++];
+		tmpbyte = addr_start[ind1];
 		Kprintf(" %02x", tmpbyte);
-		ind2 = ind1 & 0xF;
 	}
 	return Kprintf("\n");
 }
@@ -4701,39 +4439,38 @@ int __cdecl cdvdman_initcfg()
 	u8 m_version[5]; // [sp+18h] [-18h] BYREF
 	u32 eflag[2]; // [sp+28h] [-8h] BYREF
 
-	count = 0;
+	
 	eflag[0] = 0;
-	while ( !sceCdGetMVersion(m_version, eflag) && (eflag[0] & 0x80) != 0 )
+	for ( count = 0; count < 101; count += 1 )
 	{
-		if ( count >= 101 )
+		if ( !sceCdGetMVersion(m_version, eflag) && (eflag[0] & 0x80) != 0 )
 		{
-			return 0;
+			vDelayThread(2000);
+			if ( cdvdman_verbose > 0 )
+			{
+				Kprintf("_sceCdMV error\n");
+			}
 		}
-		vDelayThread(2000);
-		++count;
+		mvored = m_version[3] | (m_version[2] << 8) | (m_version[1] << 16);
+		cdvdman_emudvd9 = m_version[2] & 1;
 		if ( cdvdman_verbose > 0 )
 		{
-			Kprintf("_sceCdMV error\n");
+			Kprintf("MV %02x %02x %02x %02x\n", m_version[0], m_version[1], m_version[2], m_version[3]);
 		}
+		cdvdman_minver_10700 = mvored > 0x106FF;
+		cdvdman_minver_20200 = mvored > 0x201FF;
+		cdvdman_minver_20400 = mvored > 0x203FF;
+		cdvdman_minver_20800 = mvored > 0x207FF;
+		cdvdman_minver_50000 = mvored > 0x4FFFF;
+		cdvdman_minver_50200 = mvored > 0x501FF;
+		cdvdman_minver_50400 = mvored > 0x503FF;
+		cdvdman_minver_50600 = mvored > 0x505FF;
+		cdvdman_minver_x_model_15 = (mvored & 0xF) == 1;
+		cdvdman_minver_60000 = mvored > 0x5FFFF;
+		cdvdman_minver_60200 = mvored > 0x601FF;
+		return 1;
 	}
-	mvored = m_version[3] | (m_version[2] << 8) | (m_version[1] << 16);
-	cdvdman_emudvd9 = m_version[2] & 1;
-	if ( cdvdman_verbose > 0 )
-	{
-		Kprintf("MV %02x %02x %02x %02x\n", m_version[0], m_version[1], m_version[2], m_version[3]);
-	}
-	cdvdman_minver_10700 = mvored > 0x106FF;
-	cdvdman_minver_20200 = mvored > 0x201FF;
-	cdvdman_minver_20400 = mvored > 0x203FF;
-	cdvdman_minver_20800 = mvored > 0x207FF;
-	cdvdman_minver_50000 = mvored > 0x4FFFF;
-	cdvdman_minver_50200 = mvored > 0x501FF;
-	cdvdman_minver_50400 = mvored > 0x503FF;
-	cdvdman_minver_50600 = mvored > 0x505FF;
-	cdvdman_minver_x_model_15 = (mvored & 0xF) == 1;
-	cdvdman_minver_60000 = mvored > 0x5FFFF;
-	cdvdman_minver_60200 = mvored > 0x601FF;
-	return 1;
+	return 0;
 }
 
 //----- (0040694C) --------------------------------------------------------
@@ -5426,17 +5163,15 @@ u32 __cdecl sceCdLsnDualChg(u32 lsn)
 							{
 								read0_result = sceCdRead0(0xEu, 1u, ptoc_tmp, &cdrmode, 0, 0);
 								sceCdSync(3);
-								i = 0;
 								if ( !cdvdman_istruct.last_error || read0_result )
 								{
-									ptoc_tmp2 = ptoc_tmp;
-									while ( i < 20 )
+									for ( i = 0; i < 20; i += 1 )
 									{
+										ptoc_tmp2 = &ptoc_tmp[i];
 										if ( ptoc_tmp2[104] != masterdisc_header[i] )
 										{
 											break;
 										}
-										ptoc_tmp2 = &ptoc_tmp[++i];
 									}
 									if ( i == 20 && ptoc_tmp[131] == 2 && (ptoc_tmp[132] & 2) != 0 )
 									{
@@ -5583,15 +5318,13 @@ LABEL_18:
 		sceCdSync(3);
 		if ( !cdvdman_istruct.last_error || read0_result )
 		{
-			i = 0;
-			ptoc_tmp2 = ptoc_tmp;
-			while ( i < 20 )
+			for ( i = 0; i < 20; i += 1 )
 			{
+				ptoc_tmp2 = &ptoc_tmp[i];
 				if ( ptoc_tmp2[104] != masterdisc_header[i] )
 				{
 					break;
 				}
-				ptoc_tmp2 = &ptoc_tmp[++i];
 			}
 			if ( i != 20 )
 			{
@@ -5850,18 +5583,12 @@ void __cdecl cdvdman_init()
 		no_dec_flag_tmp = (*(_WORD *)BootMode & 0xFFFC) == 0x60;
 	}
 	cdvdman_istruct.no_dec_flag = no_dec_flag_tmp;
-	i = 0;
-	while ( 1 )
+	for ( i = 0; i < 0x3D; i += 1 )
 	{
 		poffready_tmp = sceCdCancelPOffRdy(&argres);
 		if ( !poffready_tmp || argres )
 		{
 			DelayThread(16000);
-		}
-		++i;
-		if ( i >= 0x3D )
-		{
-			break;
 		}
 		if ( poffready_tmp )
 		{
@@ -5923,12 +5650,10 @@ int __cdecl sceCdInit(int mode)
 		{
 			printf("sceCdInit Ready check start.\n");
 		}
-		ready_status_mask_c0h = 0;
-		while ( ready_status_mask_c0h != 64 )
+		for ( ready_status_mask_c0h = 0; ready_status_mask_c0h != 64; ready_status_mask_c0h = ready_status & 0xC0 )
 		{
 			ready_status = dev5_regs.dev5_reg_005;
 			vDelayThread(10000);
-			ready_status_mask_c0h = ready_status & 0xC0;
 			if ( ready_status != ready_status_tmp )
 			{
 				ready_status_tmp = ready_status;
@@ -5936,7 +5661,6 @@ int __cdecl sceCdInit(int mode)
 				{
 					printf("sceCdInit Dev5 Status %x\n", ready_status);
 				}
-				ready_status_mask_c0h = ready_status & 0xC0;
 			}
 		}
 		if ( cdvdman_verbose > 0 )
@@ -5973,24 +5697,18 @@ int __cdecl set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata,
 	cmd_1 = cmd;
 	if ( check_sef == 1 )
 	{
-		extrasd = 0;
 		if ( PollEventFlag(scmd_evid, 1u, 16, efbits) == -421 )
 		{
 			return 0;
 		}
 	}
-	else
-	{
-		extrasd = 0;
-	}
 	cdvdman_istruct.scmd = cmd_1;
 	cdvdman_istruct.sdlen = sdlen;
 	cdvdman_istruct.rdlen = rdlen;
-	sdata_tmp = sdata;
-	while ( extrasd < sdlen )
+	for ( extrasd = 0; extrasd < sdlen; extrasd += 1 )
 	{
-		cdvdman_istruct.scmd_sd[extrasd++] = *sdata_tmp;
 		sdata_tmp = &sdata[extrasd];
+		cdvdman_istruct.scmd_sd[extrasd] = *sdata_tmp;
 	}
 	if ( cdvdman_istruct.wait_flag )
 	{
@@ -6013,53 +5731,37 @@ LABEL_15:
 		goto LABEL_15;
 	}
 	cdvdman_istruct.scmd_flag = 0;
-	delaytmp = 0;
 LABEL_17:
 	delaybackoff = 1;
-	if ( cdvdman_istruct.scmd_flag )
+	for ( delaytmp = 0; delaytmp < 500; delaytmp += delaybackoff )
 	{
-LABEL_26:
-		readtmp = 0;
-		rdataptr_tmp = rdata;
-		while ( readtmp < rdlen )
+		if ( cdvdman_istruct.scmd_flag )
 		{
-			rdataptr_tmp2 = cdvdman_istruct.scmd_rd[readtmp++];
-			*rdataptr_tmp = rdataptr_tmp2;
-			rdataptr_tmp = &rdata[readtmp];
+			for ( readtmp = 0; readtmp < rdlen; readtmp += 1 )
+			{
+				rdataptr_tmp = &rdata[readtmp];
+				rdataptr_tmp2 = cdvdman_istruct.scmd_rd[readtmp];
+				*rdataptr_tmp = rdataptr_tmp2;
+			}
+			if ( check_sef == 1 )
+			{
+				vSetEventFlag(scmd_evid, 1u);
+			}
+			return (unsigned __int8)cdvdman_istruct.scmd;
 		}
-		if ( check_sef == 1 )
+		vDelayThread(1000 * delaybackoff);
+		if ( (delaytmp & 1) != 0 && delaybackoff < 16 )
 		{
-			vSetEventFlag(scmd_evid, 1u);
+			delaybackoff *= 2;
 		}
-		return (unsigned __int8)cdvdman_istruct.scmd;
 	}
-	else
+	cdvdman_istruct.scmd_flag = 1;
+	if ( check_sef != 1 )
 	{
-		while ( 1 )
-		{
-			vDelayThread(1000 * delaybackoff);
-			if ( (delaytmp & 1) != 0 && delaybackoff < 16 )
-			{
-				delaybackoff *= 2;
-			}
-			delaytmp += delaybackoff;
-			if ( delaytmp >= 500 )
-			{
-				break;
-			}
-			if ( cdvdman_istruct.scmd_flag )
-			{
-				goto LABEL_26;
-			}
-		}
-		cdvdman_istruct.scmd_flag = 1;
-		if ( check_sef != 1 )
-		{
-			return 0;
-		}
-		vSetEventFlag(scmd_evid, 1u);
 		return 0;
 	}
+	vSetEventFlag(scmd_evid, 1u);
+	return 0;
 }
 // 408834: conditional instruction was optimized away because $s0.4<1F4
 
@@ -6091,26 +5793,20 @@ void __cdecl cdvdman_write_scmd(cdvdman_internal_struct_t *s)
 		{
 			;
 		}
-		sdi = 0;
-		stmp1 = s;
-		while ( sdi < (unsigned __int8)s->sdlen )
+		for ( sdi = 0; sdi < (unsigned __int8)s->sdlen; sdi += 1 )
 		{
-			dev5_regs.dev5_reg_017 = stmp1->scmd_sd[0];
-			++sdi;
 			stmp1 = (cdvdman_internal_struct_t *)((char *)s + sdi);
+			dev5_regs.dev5_reg_017 = stmp1->scmd_sd[0];
 		}
 		dev5_regs.dev5_reg_016 = s->scmd;
-		delaymax = 0;
 		if ( QueryIntrContext() )
 		{
 			if ( (dev5_regs.dev5_reg_017 & 0x80) != 0 )
 			{
-				while ( delaymax <= 12500000 )
+				for ( delaymax = 0; delaymax <= 12500000; delaymax += 1 )
 				{
-					++delaymax;
 					if ( (dev5_regs.dev5_reg_017 & 0x80) == 0 )
 					{
-						rdcnt = 0;
 						goto LABEL_16;
 					}
 				}
@@ -6121,7 +5817,7 @@ LABEL_36:
 		}
 		else
 		{
-			for ( ; (dev5_regs.dev5_reg_017 & 0x80) != 0; ++delaymax )
+			for ( delaymax = 0; (dev5_regs.dev5_reg_017 & 0x80) != 0; ++delaymax )
 			{
 				DelayThread(100);
 				if ( delaymax > 50000 )
@@ -6130,25 +5826,20 @@ LABEL_36:
 				}
 			}
 		}
-		rdcnt = 0;
 LABEL_16:
 		overflowcond = 0;
-		if ( (dev5_regs.dev5_reg_017 & 0x40) == 0 )
+		for ( rdcnt = 0; rdcnt < (unsigned __int8)s->rdlen; rdcnt += 1 )
 		{
-			while ( rdcnt < (unsigned __int8)s->rdlen )
+			if ( (dev5_regs.dev5_reg_017 & 0x40) != 0 )
 			{
-				rdptr1[rdcnt++] = dev5_regs.dev5_reg_018;
-				if ( (dev5_regs.dev5_reg_017 & 0x40) != 0 )
-				{
-					goto LABEL_21;
-				}
+				goto LABEL_21;
 			}
-			overflowcond = 1;
-			if ( cdvdman_verbose > 0 )
-			{
-				Kprintf("Prev Cmd Result Over Flow\n", rdptr1);
-				overflowcond = 1;
-			}
+			rdptr1[rdcnt] = dev5_regs.dev5_reg_018;
+		}
+		overflowcond = 1;
+		if ( cdvdman_verbose > 0 )
+		{
+			Kprintf("Prev Cmd Result Over Flow\n", rdptr1);
 		}
 LABEL_21:
 		if ( (!overflowcond && rdcnt >= (unsigned __int8)s->rdlen) || s->rdlen == 16 )
@@ -6160,7 +5851,6 @@ LABEL_21:
 			Kprintf("Prev Cmd Result Illegal Size Try count:%d\n", i);
 		}
 	}
-	trycndmx = 15;
 	if ( i == 1 )
 	{
 		*(_WORD *)&s->scmd_flag = 1;
@@ -6168,31 +5858,26 @@ LABEL_21:
 	else
 	{
 		curptrx = (char *)&s->stream_flag + 3;
-		while ( trycndmx >= 0 )
+		for ( trycndmx = 15; trycndmx >= 0; trycndmx -= 1 )
 		{
 			curptrx[108] = 0;
-			--trycndmx;
 			--curptrx;
 		}
 		if ( s->rdlen == 16 )
 		{
-			rdx2 = 0;
-			stmp2 = s;
-			while ( rdx2 < rdcnt )
+			for ( rdx2 = 0; rdx2 < rdcnt; rdx2 += 1 )
 			{
-				stmp3 = rdptr1[rdx2++];
-				stmp2->scmd_rd[0] = stmp3;
 				stmp2 = (cdvdman_internal_struct_t *)((char *)s + rdx2);
+				stmp3 = rdptr1[rdx2];
+				stmp2->scmd_rd[0] = stmp3;
 			}
 		}
 		else
 		{
-			rdcnt2 = 0;
-			rdptr = rdptr1;
-			while ( rdcnt2 < (unsigned __int8)s->rdlen )
+			for ( rdcnt2 = 0; rdcnt2 < (unsigned __int8)s->rdlen; rdcnt2 += 1 )
 			{
-				s->scmd_rd[rdcnt2++] = *rdptr;
 				rdptr = &rdptr1[rdcnt2];
+				s->scmd_rd[rdcnt2] = *rdptr;
 			}
 		}
 		s->scmd_flag = 1;
@@ -6221,17 +5906,12 @@ int __cdecl cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdat
 	cmdtmp = cmd;
 	if ( check_sef == 1 )
 	{
-		trycnt = 0;
 		if ( PollEventFlag(scmd_evid, 1u, 16, &efbits) == -421 )
 		{
 			return 0;
 		}
 	}
-	else
-	{
-		trycnt = 0;
-	}
-	while ( trycnt <= 0 )
+	for ( trycnt = 0; trycnt <= 0; trycnt += 1 )
 	{
 		if ( (dev5_regs.dev5_reg_017 & 0x80) != 0 )
 		{
@@ -6254,24 +5934,19 @@ int __cdecl cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdat
 		{
 			DelayThread(100);
 		}
-		rdlecnt = 0;
 		cmdresoverflow = 0;
-		if ( (dev5_regs.dev5_reg_017 & 0x40) == 0 )
+		for ( rdlecnt = 0; rdlecnt < rdlen; rdlecnt += 1 )
 		{
-			while ( rdlecnt < rdlen )
+			if ( (dev5_regs.dev5_reg_017 & 0x40) != 0 )
 			{
-				rdstart[rdlecnt++] = dev5_regs.dev5_reg_018;
-				if ( (dev5_regs.dev5_reg_017 & 0x40) != 0 )
-				{
-					goto LABEL_19;
-				}
+				goto LABEL_19;
 			}
-			cmdresoverflow = 1;
-			if ( cdvdman_verbose > 0 )
-			{
-				Kprintf("Prev Cmd Result Over Flow\n");
-				cmdresoverflow = 1;
-			}
+			rdstart[rdlecnt] = dev5_regs.dev5_reg_018;
+		}
+		cmdresoverflow = 1;
+		if ( cdvdman_verbose > 0 )
+		{
+			Kprintf("Prev Cmd Result Over Flow\n");
 		}
 LABEL_19:
 		if ( (!cmdresoverflow && rdlecnt >= rdlen) || rdlen == 16 )
@@ -6286,12 +5961,7 @@ LABEL_19:
 		{
 			;
 		}
-		rdextra = 0;
-		while ( rdextra < 16 - rdlen )
-		{
-			++rdextra;
-		}
-		++trycnt;
+		for ( rdextra = 0; rdextra < 16 - rdlen; rdextra += 1 );
 	}
 	if ( trycnt == 1 )
 	{
@@ -6303,13 +5973,11 @@ LABEL_8:
 		}
 		return 0;
 	}
-	rdcpy1 = 0;
-	rdtmp1 = rdstart;
-	while ( rdcpy1 < rdlen )
+	for ( rdcpy1 = 0; rdcpy1 < rdlen; rdcpy1 += 1 )
 	{
-		rdtmp2 = (char *)rdata + rdcpy1++;
-		*rdtmp2 = *rdtmp1;
 		rdtmp1 = &rdstart[rdcpy1];
+		rdtmp2 = (char *)rdata + rdcpy1;
+		*rdtmp2 = *rdtmp1;
 	}
 	if ( check_sef == 1 )
 	{
@@ -6324,47 +5992,36 @@ LABEL_8:
 //----- (00408F50) --------------------------------------------------------
 int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff)
 {
-	int wdlen_tmp; // $s5
 	int timeout_tmp; // $s0
 
-	wdlen_tmp = inBuffSize;
-	timeout_tmp = 0;
-	while ( !set_prev_command(cmdNum, (const char *)inBuff, wdlen_tmp, (char *)outBuff, 16, 1) )
+	for ( timeout_tmp = 0; timeout_tmp < 2501; timeout_tmp += 1 )
 	{
-		DelayThread(2000);
-		if ( timeout_tmp++ >= 2501 )
+		if ( set_prev_command(cmdNum, (const char *)inBuff, inBuffSize, (char *)outBuff, 16, 1) )
 		{
-			Kprintf("CDVD: set_prev_command TIMEOUT 5(SEC)\n");
-			return 0;
+			DelayThread(2000);
+			return 1;
 		}
+		DelayThread(2000);
 	}
-	DelayThread(2000);
-	return 1;
+	Kprintf("CDVD: set_prev_command TIMEOUT 5(SEC)\n");
+	return 0;
 }
 
 //----- (00409014) --------------------------------------------------------
 int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff)
 {
 	int i; // $s0
-	bool condtmp; // dc
 
-	i = 0;
-	while ( 1 )
+	for ( i = 0; i < 2501; i += 1 )
 	{
-		condtmp = cdvdman_send_scmd2(cmdNum, inBuff, inBuffSize, outBuff, 16, 1) != 0;
-		if ( condtmp )
+		if ( cdvdman_send_scmd2(cmdNum, inBuff, inBuffSize, outBuff, 16, 1) != 0 )
 		{
-			break;
+			return 1;
 		}
 		DelayThread(2000);
-		condtmp = i++ < 2501;
-		if ( !condtmp )
-		{
-			Kprintf("CDVD: set_prev_command TIMEOUT 5(SEC)\n");
-			return 0;
-		}
 	}
-	return 1;
+	Kprintf("CDVD: set_prev_command TIMEOUT 5(SEC)\n");
+	return 0;
 }
 
 //----- (004090C8) --------------------------------------------------------
@@ -6372,18 +6029,17 @@ int __fastcall sceCdApplySCmd3(u8 cmdNum, const void *inBuff, unsigned long int 
 {
 	int timeoutcnt; // $s0
 
-	timeoutcnt = 0;
-	while ( !set_prev_command((unsigned __int8)cmdNum, inBuff, inBuffSize, outBuff, 16, 1) )
+	for ( timeoutcnt = 0; timeoutcnt < 2501; timeoutcnt += 1 )
 	{
 		DelayThread(2000);
-		if ( timeoutcnt++ >= 2501 )
+		if ( set_prev_command((unsigned __int8)cmdNum, inBuff, inBuffSize, outBuff, 16, 1) )
 		{
-			Kprintf("CDVD: set_prev_command TIMEOUT 5(SEC)\n");
-			return 0;
+			DelayThread(2000);
+			return 1;
 		}
 	}
-	DelayThread(2000);
-	return 1;
+	Kprintf("CDVD: set_prev_command TIMEOUT 5(SEC)\n");
+	return 0;
 }
 
 //----- (0040918C) --------------------------------------------------------
@@ -6579,9 +6235,7 @@ int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, 
 	vu8 dev5_reg_005; // $v0
 	int disk_ready_status; // $a1
 	vu8 dev5_reg_00F; // $v0
-	vu8 dev5_reg_00A; // $v1
 	int reg_00A_tmp1; // $a1
-	int reg_00A_tmp2; // $v0
 	int ndlencur; // $v1
 	const vu8 *ndataptr; // $v0
 	u32 efbits; // [sp+14h] [-4h] BYREF
@@ -6616,36 +6270,25 @@ int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, 
 			cdvdman_ncmd_to.hi = 0;
 			cdvdman_ncmd_to.lo = 0x6978000;
 			vSetAlarm(&cdvdman_ncmd_to, (unsigned int (__cdecl *)(void *))cd_ncmd_timeout_callback, &cdvdman_ncmd_to);
-			dev5_reg_00A = dev5_regs.dev5_reg_00A;
-			if ( dev5_reg_00A != 10 )
+			while ( dev5_regs.dev5_reg_00A != 10 )
 			{
-				while ( 1 )
+				if ( cdvdman_verbose > 0 )
 				{
-					if ( cdvdman_verbose > 0 )
-					{
-						reg_00A_tmp1 = dev5_regs.dev5_reg_00A;
-						Kprintf("Read Pause 1 chk status 0x%02x\n", reg_00A_tmp1);
-					}
-					if ( !cdvdman_ncmd_to.lo )
-					{
-						break;
-					}
-					vDelayThread(1000);
-					reg_00A_tmp2 = dev5_regs.dev5_reg_00A;
-					if ( reg_00A_tmp2 == 10 )
-					{
-						goto LABEL_33;
-					}
+					reg_00A_tmp1 = dev5_regs.dev5_reg_00A;
+					Kprintf("Read Pause 1 chk status 0x%02x\n", reg_00A_tmp1);
 				}
-				cdvdman_ncmd = ncmd_tmp1;
-				if ( check_cb == 1 )
+				if ( !cdvdman_ncmd_to.lo )
 				{
-					vSetEventFlag(ncmd_evid, 1u);
+					cdvdman_ncmd = ncmd_tmp1;
+					if ( check_cb == 1 )
+					{
+						vSetEventFlag(ncmd_evid, 1u);
+					}
+					Kprintf("Time Out Pause WAIT set_cd_commnad\n");
+					return -1;
 				}
-				Kprintf("Time Out Pause WAIT set_cd_commnad\n");
-				return -1;
+				vDelayThread(1000);
 			}
-LABEL_33:
 			vCancelAlarm((unsigned int (__cdecl *)(void *))cd_ncmd_timeout_callback, &cdvdman_ncmd_to);
 		}
 		cdvdman_ncmd = ncmd_tmp1;
@@ -6666,13 +6309,11 @@ LABEL_33:
 		{
 			ClearEventFlag(cdvdman_intr_efid, 0xFFFFFFFE);
 		}
-		ndlencur = 0;
 		ndataptr = (vu8 *)ndata;
-		while ( ndlencur < ndlen )
+		for ( ndlencur = 0; ndlencur < ndlen; ndlencur += 1 )
 		{
-			++ndlencur;
-			dev5_regs.dev5_reg_005 = *ndataptr;
 			ndataptr = (vu8 *)ndata + ndlencur;
+			dev5_regs.dev5_reg_005 = *ndataptr;
 		}
 		dev5_regs.dev5_reg_004 = ncmd_tmp1;
 		if ( check_cb == 1 )
@@ -6727,7 +6368,6 @@ int __cdecl cdvdman_mediactl(int code)
 	vu8 dev5_reg_00B; // $v0
 	int reg_00B_tmp_1; // $a1
 	int chflags_tmp; // $a0
-	int chflags_tmp2; // $v0
 	int restmp; // $s0
 	int code_tmp1; // $a0
 	int chflags_tmp3; // $v0
@@ -6743,7 +6383,6 @@ int __cdecl cdvdman_mediactl(int code)
 	}
 	dev5_reg_00B = dev5_regs.dev5_reg_00B;
 	reg_00B_tmp_1 = dev5_reg_00B & 1;
-	chflags_tmp = 0;
 	if ( reg_00B_tmp_1 == cdvdman_chmedia )
 	{
 		code_tmp1 = code;
@@ -6760,11 +6399,9 @@ int __cdecl cdvdman_mediactl(int code)
 	}
 	else
 	{
-		chflags_tmp2 = 0;
-		while ( chflags_tmp < 4 )
+		for ( chflags_tmp = 0; chflags_tmp < 4; chflags_tmp += 1 )
 		{
-			cdvdman_chflags[chflags_tmp2] = chflags_tmp++ != code;
-			chflags_tmp2 = chflags_tmp;
+			cdvdman_chflags[chflags_tmp] = chflags_tmp != code;
 		}
 		restmp = 1;
 	}
@@ -6821,12 +6458,11 @@ int __cdecl cdvdman_ncmd_sender_06()
 	char ndata[16]; // [sp+30h] [-10h] BYREF
 
 	dev5_reg_00F = dev5_regs.dev5_reg_00F;
-	i = 0;
 	if ( !dev5_reg_00F )
 	{
 		return 1;
 	}
-	while ( 1 )
+	for ( i = 0; i < 48; i += 8 )
 	{
 		Kprintf("CMD_READP call\n");
 		ndata[0] = i + 17;
@@ -6850,16 +6486,11 @@ int __cdecl cdvdman_ncmd_sender_06()
 		condtmp = cdvdman_send_ncmd(6, ndata, 11, 5, &b18, 1) < 0;
 		if ( condtmp )
 		{
-			break;
+			return 0;
 		}
 		sceCdSync(3);
-		i += 8;
-		if ( i >= 48 )
-		{
-			return 1;
-		}
 	}
-	return 0;
+	return 1;
 }
 // BF402000: using guessed type dev5_regs_t dev5_regs;
 
@@ -7454,100 +7085,90 @@ int __cdecl read_cdvd_cb(cdvdman_internal_struct_t *common)
 
 	cdlayer = 0;
 	sblock = 0;
-	sectorcnti = 0;
-	if ( common->dma3prm.dma3_csectors )
+	dvoff = 0;
+	cdoff = 0;
+	for ( sectorcnti = 0; sectorcnti < common->dma3prm.dma3_csectors; sectorcnti += 1 )
 	{
-		dvoff = 0;
-		cdoff = 0;
-		while ( 1 )
+		if ( common->read2_flag == 3 )
 		{
-			if ( common->read2_flag == 3 )
+			sblock = 2340;
+			cdrloc.minute = cdvdman_syncdec(
+												common->dec_state,
+												common->check_version,
+												common->dec_shift,
+												cdvdman_ptoc[cdoff]);
+			cdrloc.second = cdvdman_syncdec(
+												common->dec_state,
+												common->check_version,
+												common->dec_shift,
+												cdvdman_ptoc[cdoff + 1]);
+			cdrloc.sector = cdvdman_syncdec(
+												common->dec_state,
+												common->check_version,
+												common->dec_shift,
+												cdvdman_ptoc[cdoff + 2]);
+			cdreadlsn = sceCdPosToInt(&cdrloc);
+		}
+		else
+		{
+			sblock = 2064;
+			syncdec_res_1 = (unsigned __int8)cdvdman_syncdec(
+																				 common->dec_state,
+																				 common->check_version,
+																				 common->dec_shift,
+																				 cdvdman_ptoc[dvoff + 3]);
+			syncdec_res_2 = syncdec_res_1
+										+ ((unsigned __int8)cdvdman_syncdec(
+																					common->dec_state,
+																					common->check_version,
+																					common->dec_shift,
+																					cdvdman_ptoc[dvoff + 2]) << 8);
+			syncdec_res_3 = syncdec_res_2
+										+ ((unsigned __int8)cdvdman_syncdec(
+																					common->dec_state,
+																					common->check_version,
+																					common->dec_shift,
+																					cdvdman_ptoc[dvoff + 1]) << 16);
+			syncdec_res_4 = cdvdman_syncdec(
+												common->dec_state,
+												common->check_version,
+												common->dec_shift,
+												cdvdman_ptoc[dvoff]);
+			cdlayer = syncdec_res_4 & 1;
+			if ( !common->cdvdman_dma3sec && !common->interupt_read_state )
 			{
-				sblock = 2340;
-				cdrloc.minute = cdvdman_syncdec(
-													common->dec_state,
-													common->check_version,
-													common->dec_shift,
-													cdvdman_ptoc[cdoff]);
-				cdrloc.second = cdvdman_syncdec(
-													common->dec_state,
-													common->check_version,
-													common->dec_shift,
-													cdvdman_ptoc[cdoff + 1]);
-				cdrloc.sector = cdvdman_syncdec(
-													common->dec_state,
-													common->check_version,
-													common->dec_shift,
-													cdvdman_ptoc[cdoff + 2]);
-				cdreadlsn = sceCdPosToInt(&cdrloc);
-			}
-			else
-			{
-				sblock = 2064;
-				syncdec_res_1 = (unsigned __int8)cdvdman_syncdec(
-																					 common->dec_state,
-																					 common->check_version,
-																					 common->dec_shift,
-																					 cdvdman_ptoc[dvoff + 3]);
-				syncdec_res_2 = syncdec_res_1
-											+ ((unsigned __int8)cdvdman_syncdec(
-																						common->dec_state,
-																						common->check_version,
-																						common->dec_shift,
-																						cdvdman_ptoc[dvoff + 2]) << 8);
-				syncdec_res_3 = syncdec_res_2
-											+ ((unsigned __int8)cdvdman_syncdec(
-																						common->dec_state,
-																						common->check_version,
-																						common->dec_shift,
-																						cdvdman_ptoc[dvoff + 1]) << 16);
-				syncdec_res_4 = cdvdman_syncdec(
-													common->dec_state,
-													common->check_version,
-													common->dec_shift,
-													cdvdman_ptoc[dvoff]);
-				cdlayer = syncdec_res_4 & 1;
-				if ( !common->cdvdman_dma3sec && !common->interupt_read_state )
+				intr_read_state_tmp = syncdec_res_4 & 0xC;
+				if ( (syncdec_res_4 & 0xC) != 0 )
 				{
-					intr_read_state_tmp = syncdec_res_4 & 0xC;
-					if ( (syncdec_res_4 & 0xC) != 0 )
+					common->interupt_read_state = intr_read_state_tmp;
+					if ( sectorcnti )
 					{
-						common->interupt_read_state = intr_read_state_tmp;
-						if ( sectorcnti )
-						{
-							common->interupt_read_state = intr_read_state_tmp | 0x80;
-						}
-					}
-				}
-				cdreadlsn = syncdec_res_3 - 196608;
-				if ( common->opo_or_para )
-				{
-					layer_1_lsn = common->layer_1_lsn;
-					if ( (unsigned int)(common->cdvdman_lsn + common->cdvdman_csec + sectorcnti) >= layer_1_lsn && common->opo_or_para == 1 )
-					{
-						cdreadlsn += layer_1_lsn;
+						common->interupt_read_state = intr_read_state_tmp | 0x80;
 					}
 				}
 			}
-			errlsn = common->cdvdman_lsn + common->cdvdman_csec + common->cdvdman_dma3sec + sectorcnti;
-			if ( cdreadlsn != (u32)errlsn )
+			cdreadlsn = syncdec_res_3 - 196608;
+			if ( common->opo_or_para )
 			{
-				break;
-			}
-			dvoff += 2064;
-			++sectorcnti;
-			cdoff += 2340;
-			if ( sectorcnti >= common->dma3prm.dma3_csectors )
-			{
-				goto LABEL_18;
+				layer_1_lsn = common->layer_1_lsn;
+				if ( (unsigned int)(common->cdvdman_lsn + common->cdvdman_csec + sectorcnti) >= layer_1_lsn && common->opo_or_para == 1 )
+				{
+					cdreadlsn += layer_1_lsn;
+				}
 			}
 		}
-		if ( cdvdman_verbose > 0 )
+		errlsn = common->cdvdman_lsn + common->cdvdman_csec + common->cdvdman_dma3sec + sectorcnti;
+		if ( cdreadlsn != (u32)errlsn )
 		{
-			Kprintf("Read_IOP Sector_ID error lsn= %d readlsn= %d layer= %d\n", errlsn, cdreadlsn, cdlayer);
+			if ( cdvdman_verbose > 0 )
+			{
+				Kprintf("Read_IOP Sector_ID error lsn= %d readlsn= %d layer= %d\n", errlsn, cdreadlsn, cdlayer);
+			}
+			break;
 		}
+		dvoff += 2064;
+		cdoff += 2340;
 	}
-LABEL_18:
 	if ( sectorcnti == common->dma3prm.dma3_csectors )
 	{
 		cdvdman_pattern = common->cdvdman_pattern;
@@ -7565,13 +7186,12 @@ LABEL_18:
 			{
 				size = 2048;
 			}
-			index_ = 0;
 			offset_ = 12;
-			while ( index_ < common->dma3prm.dma3_csectors )
+			for ( index_ = 0; index_ < common->dma3prm.dma3_csectors; index_ += 1 )
 			{
 				tocptr = (const char *)&cdvdman_ptoc[offset_];
 				offset_ += sblock;
-				cdvdman_memcpy((char *)(common->cdvdman_rbuffer + (common->cdvdman_dma3sec + index_++) * size), tocptr, size);
+				cdvdman_memcpy((char *)(common->cdvdman_rbuffer + (common->cdvdman_dma3sec + index_) * size), tocptr, size);
 			}
 		}
 		cdvdman_readptr = common->cdvdman_csec + common->cdvdman_dma3sec;
@@ -8633,13 +8253,11 @@ LABEL_10:
 	rmode[0].trycount = 0;
 	if ( disktype_tmp )
 	{
-		retrycnt = 0;
 		sectoroffset = 75;
-		while ( retrycnt < 0x14 )
+		for ( retrycnt = 0; retrycnt < 0x14; retrycnt += 1 )
 		{
 			sceCdRead0(sectoroffset, 0x10u, ptoc_tmp, rmode, 0, 0);
 			sectoroffset += 16;
-			++retrycnt;
 			CpuResumeIntr(state);
 			sceCdSync(3);
 			CpuSuspendIntr(&state);
