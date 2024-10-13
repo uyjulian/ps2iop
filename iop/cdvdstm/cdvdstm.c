@@ -316,7 +316,6 @@ unsigned int __fastcall iop_stream_handler(
 				condtmp1 = sceCdNop() == 0;
 				if ( !condtmp1 )
 					return 1;
-LABEL_44:
 				sceCdSC(0, &cdvdstm_last_error_for_iop);
 				return 0;
 			case 7:
@@ -325,7 +324,6 @@ LABEL_44:
 				sceCdSC(0, &cdvdstm_last_error_for_iop);
 				CpuResumeIntr(state[0]);
 				sceCdSync(0);
-LABEL_30:
 				vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
 				return 1;
 			case 6:
@@ -378,7 +376,8 @@ LABEL_30:
 						sceCdSync(0);
 						cdvdstm_last_error_for_iop = 0;
 						sceCdSC(0xFFFFFFFE, &cdvdstm_last_error_for_iop);
-						goto LABEL_30;
+						vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
+						return 1;;
 					case 1:
 						cdvdstm_mode_iop.datapattern = rmode_tmp->datapattern;
 						cdvdstm_mode_iop.trycount = rmode_tmp->trycount;
@@ -439,7 +438,10 @@ LABEL_30:
 						cdvdstm_stmstart_iop = 1;
 						sceCdSC(1, &cdvdstm_last_error_for_iop);
 						if ( !sceCdNop() )
-							goto LABEL_44;
+						{
+							sceCdSC(0, &cdvdstm_last_error_for_iop);
+							return 0;
+						}
 					}
 					CpuSuspendIntr(state);
 					written_chunk_size_tmp = -1;
@@ -639,13 +641,14 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	}
 	else
 	{
-		if ( cdvdstm_stmstart_iop )
-			goto LABEL_64;
-		cdvdstm_usedmap_iop[cdvdstm_bankgp_iop] = 1;
-		gptmp = cdvdstm_bankgp_iop++;
-		if ( (unsigned int)cdvdstm_bankgp_iop >= (unsigned int)cdvdstm_bankmax )
-			cdvdstm_bankgp_iop = 0;
-		if ( cdvdstm_usedmap_iop[cdvdstm_bankgp_iop] || cdvdstm_bankcur_iop == cdvdstm_bankgp_iop )
+		if ( !cdvdstm_stmstart_iop )
+		{
+			cdvdstm_usedmap_iop[cdvdstm_bankgp_iop] = 1;
+			gptmp = cdvdstm_bankgp_iop++;
+			if ( (unsigned int)cdvdstm_bankgp_iop >= (unsigned int)cdvdstm_bankmax )
+				cdvdstm_bankgp_iop = 0;
+		}
+		if ( !cdvdstm_stmstart_iop && (cdvdstm_usedmap_iop[cdvdstm_bankgp_iop] || cdvdstm_bankcur_iop == cdvdstm_bankgp_iop) )
 		{
 			cdvdstm_bankgp_iop = gptmp;
 			cdvdstm_usedmap_iop[gptmp] = 0;
@@ -674,7 +677,6 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 		}
 		else
 		{
-LABEL_64:
 			if ( cdvdstm_stmstart_iop == 2 )
 			{
 				cdvdstm_bankoffs_iop = 0;
@@ -762,50 +764,37 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 		SignalSema(cdvdstm_semid);
 		return -5;
 	}
-	if ( a3 == 0x4394 )
+	switch ( a3 )
 	{
-		*outres_ptr = sceCdStream0(instruct->posszarg2, (char *)instruct->buffer, instruct->cmdid, (int *)&instruct->error);
-	}
-	else
-	{
-		if ( a3 < 0x4395 )
-		{
-			if ( a3 == 0x4393 )
+		case 0x4393:
+			cmdid = instruct->cmdid;
+			p_rmode = &instruct->rmode;
+			if ( cmdid == 5 || cmdid == 3 || cmdid - 7 < 2 )
 			{
-				cmdid = instruct->cmdid;
-				p_rmode = &instruct->rmode;
-				if ( cmdid == 5 || cmdid == 3 || cmdid - 7 < 2 )
-				{
-					vSetEventFlag();
-				}
-				*outres_ptr = iop_stream_handler(
-												instruct->posszarg1,
-												instruct->posszarg2,
-												instruct->buffer,
-												instruct->cmdid,
-												p_rmode,
-												(int *)&instruct->error);
-				goto LABEL_19;
+				vSetEventFlag();
 			}
-			goto LABEL_18;
-		}
-		if ( a3 == 0x4396 )
-		{
+			*outres_ptr = iop_stream_handler(
+											instruct->posszarg1,
+											instruct->posszarg2,
+											instruct->buffer,
+											instruct->cmdid,
+											p_rmode,
+											(int *)&instruct->error);
+			break;
+		case 0x4394:
+			*outres_ptr = sceCdStream0(instruct->posszarg2, (char *)instruct->buffer, instruct->cmdid, (int *)&instruct->error);
+			break;
+		case 0x4396:
 			ee_stream_handler_normal(instruct, inbuf_len, outres_ptr);
-		}
-		else
-		{
-			if ( a3 != 0x4398 )
-			{
-LABEL_18:
-				printf("Un-support devctl %08x\n", a3);
-				retres = -5;
-				goto LABEL_19;
-			}
+			break;
+		case 0x4398:
 			ee_stream_handler_cdda(instruct, inbuf_len, outres_ptr);
-		}
+			break;
+		default:
+			printf("Un-support devctl %08x\n", a3);
+			retres = -5;
+			break;
 	}
-LABEL_19:
 	SignalSema(cdvdstm_semid);
 	return retres;
 }
@@ -914,7 +903,11 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	if ( cdvdstm_stmstart_ee == 2 )
 	{
 		if ( cmdid != 9 && cmdid != 3 )
-			goto LABEL_46;
+		{
+			outres_tmp1 = 0;
+			*outres_ptr = outres_tmp1;
+			return;
+		}
 	}
 	switch ( cmdid )
 	{
@@ -925,13 +918,12 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 			{
 				sceCdSC(0, &cdvdstm_last_error_for_ee);
 				outres_tmp1 = 0;
-LABEL_38:
 				*outres_ptr = outres_tmp1;
 				return;
 			}
-LABEL_37:
 			outres_tmp1 = 1;
-			goto LABEL_38;
+			*outres_ptr = outres_tmp1;
+			return;
 		case 7u:
 			CpuSuspendIntr(&state);
 			CancelAlarm((unsigned int (__cdecl *)(void *))ee_stream_intr_cb_normal, &cdvdstm_curclk_ee);
@@ -975,7 +967,9 @@ LABEL_37:
 				(int)(chunks_sectors << 11),
 				(int)(posszarg2_bytes >> 11),
 				(int)((chunks_sectors << 11) * (posszarg2_bytes >> 11)));
-			goto LABEL_37;
+			outres_tmp1 = 1;
+			*outres_ptr = outres_tmp1;
+			return;
 		case 3u:
 			CpuSuspendIntr(&state);
 			cdvdstm_stmstart_ee = 0;
@@ -1015,11 +1009,13 @@ LABEL_37:
 			}
 			cdvdstm_stmstart_ee = 2;
 			CpuResumeIntr(state);
-			goto LABEL_37;
+			outres_tmp1 = 1;
+			*outres_ptr = outres_tmp1;
+			return;
 		}
-LABEL_46:
 		outres_tmp1 = 0;
-		goto LABEL_38;
+		*outres_ptr = outres_tmp1;
+		return;
 	}
 	if ( cmdid == 4 )
 	{
@@ -1059,7 +1055,9 @@ LABEL_46:
 		if ( !sceCdNop() )
 		{
 			sceCdSC(0, &cdvdstm_last_error_for_ee);
-			goto LABEL_46;
+			outres_tmp1 = 0;
+			*outres_ptr = outres_tmp1;
+			return;
 		}
 	}
 	posszarg2_bytes_overrun = -1;
@@ -1273,13 +1271,14 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	}
 	else
 	{
-		if ( cdvdstm_stmstart_ee )
-			goto LABEL_64;
-		cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] = 1;
-		gptmp = cdvdstm_bankgp_ee++;
-		if ( (unsigned int)cdvdstm_bankgp_ee >= (unsigned int)cdvdstm_bankcnt2 )
-			cdvdstm_bankgp_ee = 0;
-		if ( cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] || cdvdstm_bankcur_ee == cdvdstm_bankgp_ee )
+		if ( !cdvdstm_stmstart_ee )
+		{
+			cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] = 1;
+			gptmp = cdvdstm_bankgp_ee++;
+			if ( (unsigned int)cdvdstm_bankgp_ee >= (unsigned int)cdvdstm_bankcnt2 )
+				cdvdstm_bankgp_ee = 0;
+		}
+		if ( !cdvdstm_stmstart_ee && (cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] || cdvdstm_bankcur_ee == cdvdstm_bankgp_ee) )
 		{
 			cdvdstm_bankgp_ee = gptmp;
 			cdvdstm_usedmap_ee[gptmp] = 0;
@@ -1311,7 +1310,6 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 		}
 		else
 		{
-LABEL_64:
 			if ( cdvdstm_stmstart_ee == 2 )
 			{
 				cdvdstm_bankoffs_ee = 0;
@@ -1398,7 +1396,11 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	if ( cdvdstm_stmstart_ee == 2 )
 	{
 		if ( cmdid != 9 && cmdid != 3 )
-			goto LABEL_59;
+		{
+			posszarg2_overrun_chunks2 = 0;
+			*outres_ptr = posszarg2_overrun_chunks2;
+			return;
+		}
 	}
 	switch ( cmdid )
 	{
@@ -1406,12 +1408,14 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 			sceCdSC(2, &cdvdstm_last_error_for_ee);
 			if ( sceCdNop() )
 			{
-LABEL_6:
-LABEL_7:
 				posszarg2_overrun_chunks2 = 1;
-				goto LABEL_99;
+			*outres_ptr = posszarg2_overrun_chunks2;
+			return;
 			}
-			goto LABEL_58;
+			sceCdSC(0, &cdvdstm_last_error_for_ee);
+			posszarg2_overrun_chunks2 = 0;
+			*outres_ptr = posszarg2_overrun_chunks2;
+			return;
 		case 7u:
 			CpuSuspendIntr(&state);
 			CancelAlarm((unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda, &cdvdstm_curclk_ee);
@@ -1475,7 +1479,9 @@ LABEL_7:
 				(int)(chunks_sectors * cdvdstm_usedchunksize2),
 				(int)posszarg2_tmp,
 				(int)(chunks_sectors * cdvdstm_usedchunksize2 * posszarg2_tmp));
-			goto LABEL_7;
+			posszarg2_overrun_chunks2 = 1;
+			*outres_ptr = posszarg2_overrun_chunks2;
+			return;
 		case 3u:
 			CpuSuspendIntr(&state);
 			cdvdstm_stmstart_ee = 0;
@@ -1515,11 +1521,13 @@ LABEL_7:
 			}
 			cdvdstm_stmstart_ee = 2;
 			CpuResumeIntr(state);
-			goto LABEL_7;
+			posszarg2_overrun_chunks2 = 1;
+			*outres_ptr = posszarg2_overrun_chunks2;
+			return;
 		}
-LABEL_59:
 		posszarg2_overrun_chunks2 = 0;
-		goto LABEL_99;
+		*outres_ptr = posszarg2_overrun_chunks2;
+		return;
 	}
 	if ( cmdid == 4 )
 	{
@@ -1564,7 +1572,12 @@ LABEL_59:
 			sceCdSync(3);
 			sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
 			if ( cdvdstm_last_error_for_ee || !outres_tmp2 )
-				goto LABEL_58;
+			{
+				sceCdSC(0, &cdvdstm_last_error_for_ee);
+				posszarg2_overrun_chunks2 = 0;
+				*outres_ptr = posszarg2_overrun_chunks2;
+				return;
+			}
 			cdvdstm_lsn_ee += cdvdstm_sectorcount2;
 			cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] = 1;
 		}
@@ -1572,9 +1585,10 @@ LABEL_59:
 		sceCdSC(2, &cdvdstm_last_error_for_ee);
 		if ( !sceCdNop() )
 		{
-LABEL_58:
 			sceCdSC(0, &cdvdstm_last_error_for_ee);
-			goto LABEL_59;
+			posszarg2_overrun_chunks2 = 0;
+			*outres_ptr = posszarg2_overrun_chunks2;
+			return;
 		}
 	}
 	posszarg2_bytes_overrun = -1;
@@ -1662,7 +1676,11 @@ LABEL_58:
 		_break(7u, 0);
 	posszarg2_overrun_chunks2 = posszarg2_bytes_overrun / cdvdstm_usedchunksize2;
 	if ( retryflag )
-		goto LABEL_6;
+	{
+		posszarg2_overrun_chunks2 = 1;
+		*outres_ptr = posszarg2_overrun_chunks2;
+		return;
+	}
 	if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee) != 2 && !posszarg2_overrun_chunks2 && !cdvdstm_retryerr_ee )
 		cdvdstm_retryerr_ee = 273;
 	if ( cdvdstm_retryerr_ee )
@@ -1671,7 +1689,6 @@ LABEL_58:
 		cdvdstm_retryerr_ee = 0;
 		posszarg2_overrun_chunks2 = (unsigned __int16)posszarg2_overrun_chunks2 | (retryerr << 16);
 	}
-LABEL_99:
 	*outres_ptr = posszarg2_overrun_chunks2;
 }
 // 402B7C: conditional instruction was optimized away because $v0.4!=0
@@ -1790,13 +1807,14 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	}
 	else
 	{
-		if ( cdvdstm_stmstart_ee )
-			goto LABEL_68;
-		cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] = 1;
-		gptmp = cdvdstm_bankgp_ee++;
-		if ( (unsigned int)cdvdstm_bankgp_ee >= (unsigned int)cdvdstm_bankcnt2 )
-			cdvdstm_bankgp_ee = 0;
-		if ( cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] || cdvdstm_bankcur_ee == cdvdstm_bankgp_ee )
+		if ( !cdvdstm_stmstart_ee )
+		{
+			cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] = 1;
+			gptmp = cdvdstm_bankgp_ee++;
+			if ( (unsigned int)cdvdstm_bankgp_ee >= (unsigned int)cdvdstm_bankcnt2 )
+				cdvdstm_bankgp_ee = 0;
+		}
+		if ( !cdvdstm_stmstart_ee && (cdvdstm_usedmap_ee[cdvdstm_bankgp_ee] || cdvdstm_bankcur_ee == cdvdstm_bankgp_ee) )
 		{
 			cdvdstm_bankgp_ee = gptmp;
 			cdvdstm_usedmap_ee[gptmp] = 0;
@@ -1828,7 +1846,6 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 		}
 		else
 		{
-LABEL_68:
 			if ( cdvdstm_stmstart_ee == 2 )
 			{
 				cdvdstm_bankoffs_ee = 0;

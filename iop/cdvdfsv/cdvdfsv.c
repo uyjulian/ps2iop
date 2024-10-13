@@ -247,7 +247,6 @@ int __cdecl cdvdfsv_cleanuprpc()
 //----- (00400158) --------------------------------------------------------
 int __fastcall _start(int ac, char **av)
 {
-	bool condtmp1; // dc
 	u32 condtmp2; // $s0
 	const unsigned __int16 *LibraryEntryTable; // $v0
 	int error_code; // $s0
@@ -259,8 +258,8 @@ int __fastcall _start(int ac, char **av)
 		{
 			if ( !cdvdfsv_rpc3flg )
 			{
-				condtmp1 = cdvdfsv_cleanuprpc() == 0;
-				if ( !condtmp1 )
+				// cppcheck-suppress knownConditionTrueFalse
+				if ( cdvdfsv_cleanuprpc() != 0 )
 				{
 					CpuSuspendIntr(state);
 					error_code = ReleaseLibraryEntries(&_exp_cdvdfsv);
@@ -280,8 +279,7 @@ int __fastcall _start(int ac, char **av)
 	}
 	else
 	{
-		condtmp1 = RegisterLibraryEntries(&_exp_cdvdfsv) != 0;
-		if ( !condtmp1 )
+		if ( RegisterLibraryEntries(&_exp_cdvdfsv) == 0 )
 		{
 			cdvdfsv_fsvrbuf = sceGetFsvRbuf();
 			dword_40575C = (int)dword_405750;
@@ -723,7 +721,6 @@ int __fastcall readproc2(
 	int read_res_tmp; // $s0
 	int read_res2; // $v0
 	int i2; // $s6
-	BOOL condtmp1; // $fp
 	int csec_minus_one; // $s0
 	_DWORD *rtocbuf_dest_1; // $a0
 	int size_1; // $a2
@@ -848,7 +845,6 @@ int __fastcall readproc2(
 		}
 		for ( i2 = 0; i2 < nsec_div_cdvdfsv_sectors; i2 += 1 )
 		{
-			condtmp1 = i2 == nsec_div_cdvdfsv_sectors - 1;
 			sceCdSync(32);
 			if ( cdvdfsv_cdvdman_internal_struct_ptr->dec_mode_last_set )
 				break;
@@ -875,8 +871,9 @@ int __fastcall readproc2(
 					retry_flag1 = 1;
 				}
 				if ( retry_flag1 || cdvdfsv_r2retry )
-					goto LABEL_82;
-				if ( secsize == 2340 && !sector_size_selection )
+				{
+				}
+				else if ( secsize == 2340 && !sector_size_selection )
 				{
 					if ( fssift )
 					{
@@ -885,7 +882,7 @@ int __fastcall readproc2(
 						{
 							cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)((char *)rtocbuf_tmp + fssift), 2340 - fssift);
 							cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec - 2340], 0x924u);
-							if ( condtmp1 )
+							if ( i2 == nsec_div_cdvdfsv_sectors - 1 )
 								cdvdfsv_rdp2sdd.size = dmasize_tmp;
 							else
 								cdvdfsv_rdp2sdd.size = 2340 * (csec - 1) + fssift;
@@ -896,7 +893,7 @@ int __fastcall readproc2(
 						else
 						{
 							cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec_minus_one], 0x924u);
-							if ( condtmp1 )
+							if ( i2 == nsec_div_cdvdfsv_sectors - 1 )
 								cdvdfsv_rdp2sdd.size = dmasize_tmp;
 							else
 								cdvdfsv_rdp2sdd.size = 2340 * csec_minus_one;
@@ -927,9 +924,8 @@ int __fastcall readproc2(
 					}
 					while ( cdvdfsv_checkdmastat(trid) >= 0 )
 						;
-					goto LABEL_82;
 				}
-				if ( !fssift )
+				else if ( !fssift )
 				{
 					ee_addr_offs = &ee_addr[csec_comm * secsize];
 					for ( i3 = 0; i3 < csec; i3 += 1 )
@@ -954,8 +950,9 @@ int __fastcall readproc2(
 				else
 				{
 					size_2 = secsize;
-					if ( !condtmp1 )
+					if ( i2 != nsec_div_cdvdfsv_sectors - 1 )
 						size_2 = fssift;
+					csec_bytes = dmasize_tmp;
 					if ( i2 )
 					{
 						cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)((char *)rtocbuf_tmp + fssift + 12), secsize - fssift);
@@ -970,10 +967,9 @@ int __fastcall readproc2(
 						}
 						rtocbuf_dest_2 = rtocbuf_src_tmp_2;
 						cdvdfsv_memcpy(rtocbuf_dest_2, rtocbuf_src_2, size_2);
-						if ( !condtmp1 )
+						if ( i2 != nsec_div_cdvdfsv_sectors - 1 )
 						{
 							csec_bytes = secsize * csec;
-							goto LABEL_76;
 						}
 					}
 					else
@@ -989,16 +985,12 @@ int __fastcall readproc2(
 							rtocbuf_src_3 += *p_sector_size;
 						}
 						cdvdfsv_memcpy(rtocbuf_dest_3, (_DWORD *)rtocbuf_src_3, size_2);
-						if ( !condtmp1 )
+						if ( i2 != nsec_div_cdvdfsv_sectors - 1 )
 						{
 							csec_bytes = secsize * (csec - 1);
-	LABEL_76:
-							cdvdfsv_rdp2sdd.size = csec_bytes;
-							goto LABEL_78;
 						}
 					}
-					cdvdfsv_rdp2sdd.size = dmasize_tmp;
-	LABEL_78:
+					cdvdfsv_rdp2sdd.size = csec_bytes;
 					cdvdfsv_rdp2sdd.src = rtocbuf_plus_2340;
 					cdvdfsv_rdp2sdd.attr = 0;
 					cdvdfsv_rdp2sdd.dest = ee_addr_tmp;
@@ -1021,9 +1013,8 @@ int __fastcall readproc2(
 			{
 				retry_flag1 = 1;
 			}
-LABEL_82:
 			CpuSuspendIntr(&state);
-			if ( condtmp1 )
+			if ( i2 == nsec_div_cdvdfsv_sectors - 1 )
 			{
 				DisableIntr(35, (int *)&chcr);
 			}
@@ -1242,9 +1233,11 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 	int trid; // [sp+58h] [-10h]
 	int decval; // [sp+5Ch] [-Ch]
 	cdvdfsv_rpc5h_01_packet *pkt_tmp; // [sp+60h] [-8h]
+	int early_break;
 
 	(void)buflen;
 
+	early_break = 0;
 	trid = 0;
 	decval = 0;
 	buf_offs_sum = 0;
@@ -1274,14 +1267,17 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 			ssize = 0;
 			saddr = 0;
 			paddr = 0;
-			goto LABEL_83;
+			early_break = 1;
 		}
-		sc_ffffffe9_res = sceCdSC(0xFFFFFFE9, &sc_ffffffe9_tmp);
-		secsize = 2048;
-		datapattern = 0;
-		pkt_tmp->lsn = sc_ffffffe9_res;
-		sc_ffffffe9_tmp = sc_ffffffe9_res;
-		cdvdfsv_rmodeee.datapattern = 0;
+		else
+		{
+			sc_ffffffe9_res = sceCdSC(0xFFFFFFE9, &sc_ffffffe9_tmp);
+			secsize = 2048;
+			datapattern = 0;
+			pkt_tmp->lsn = sc_ffffffe9_res;
+			sc_ffffffe9_tmp = sc_ffffffe9_res;
+			cdvdfsv_rmodeee.datapattern = 0;
+		}
 	}
 	else
 	{
@@ -1298,30 +1294,31 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 		}
 		cdvdfsv_rmodeee.datapattern = 2;
 	}
-	all_sec_bytes = secsize * all_sec;
-	if ( cdvdfsv_spinctl != -1 )
-		cdvdfsv_rmodeee.spindlctrl = cdvdfsv_spinctl;
 	len2 = pkt_tmp->lsn;
 	sec2 = pkt_tmp->sec;
 	len2_plus_sec2 = len2 + sec2;
-	if ( (flag & 0x3F) != 0 )
-		psize = (flag & 0xFFFFFFC0) - (flag - 64);
-	else
-		psize = 0;
-	paddr = flag;
-	flag_offs = (char *)(flag + psize);
-	bsize = ((flag + all_sec_bytes) & 0xFFFFFFC0) - (flag + psize);
-	ssize = flag + all_sec_bytes - ((flag + all_sec_bytes) & 0xFFFFFFC0);
-	saddr = (flag + all_sec_bytes) & 0xFFFFFFC0;
-	if ( cdvdfsv_verbose > 0 )
+	if ( !early_break )
 	{
-		Kprintf("CD/DVD-ROM lsn= %d sec= %d\n", sc_ffffffe9_tmp, all_sec);
+		all_sec_bytes = secsize * all_sec;
+		if ( cdvdfsv_spinctl != -1 )
+			cdvdfsv_rmodeee.spindlctrl = cdvdfsv_spinctl;
+		if ( (flag & 0x3F) != 0 )
+			psize = (flag & 0xFFFFFFC0) - (flag - 64);
+		else
+			psize = 0;
+		paddr = flag;
+		bsize = ((flag + all_sec_bytes) & 0xFFFFFFC0) - (flag + psize);
+		ssize = flag + all_sec_bytes - ((flag + all_sec_bytes) & 0xFFFFFFC0);
+		saddr = (flag + all_sec_bytes) & 0xFFFFFFC0;
+		if ( cdvdfsv_verbose > 0 )
+			Kprintf("CD/DVD-ROM lsn= %d sec= %d\n", sc_ffffffe9_tmp, all_sec);
 		if ( cdvdfsv_verbose > 0 )
 			Kprintf("f psize= %d bsize= %d ssize= %d\n", psize, bsize, ssize);
 	}
-	sectors = 2;
+	flag_offs = (char *)(flag + psize);
 	if ( psize )
 	{
+		sectors = 2;
 		if ( len2_plus_sec2 < sc_ffffffe9_tmp + buf_offs_sum / secsize + 2 )
 			sectors = 1;
 		if ( cdvdfsv_verbose > 0 )
@@ -1338,26 +1335,27 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 		{
 			ssize = 0;
 			psize = 0;
-LABEL_29:
 			bsize = 0;
-			goto LABEL_83;
-		}
-		rtoc_ind = 12;
-		if ( datapattern != 2 || ps2dvd )
-		{
-			for ( i = 0; i < psize; ++i )
-			{
-				if ( i && !(i % secsize) )
-					rtoc_ind += sector_sizes[ps2dvd] - secsize;
-				cdvdfsv_eereadx.pbuf1[i] = cdvdfsv_rtocbuf[rtoc_ind++];
-			}
 		}
 		else
 		{
-			for ( j = 0; j < psize; ++j )
-				cdvdfsv_eereadx.pbuf1[j] = cdvdfsv_rtocbuf[j];
+			rtoc_ind = 12;
+			if ( datapattern != 2 || ps2dvd )
+			{
+				for ( i = 0; i < psize; ++i )
+				{
+					if ( i && !(i % secsize) )
+						rtoc_ind += sector_sizes[ps2dvd] - secsize;
+					cdvdfsv_eereadx.pbuf1[i] = cdvdfsv_rtocbuf[rtoc_ind++];
+				}
+			}
+			else
+			{
+				for ( j = 0; j < psize; ++j )
+					cdvdfsv_eereadx.pbuf1[j] = cdvdfsv_rtocbuf[j];
+			}
+			buf_offs_sum += psize;
 		}
-		buf_offs_sum += psize;
 	}
 	for ( ; bsize; bsize -= sizestuff )
 	{
@@ -1377,29 +1375,23 @@ LABEL_29:
 		}
 		else
 		{
-			if ( (offs_sector_only & 0xF) != 0 )
+			sizestuff = secsize << 6;
+			if ( ((offs_sector_only & 0xF) != 0) && ((secsize & 0xF) == 0) )
 			{
-				sizestuff = secsize << 6;
-				if ( (secsize & 0xF) == 0 )
-				{
-					needed_offset = 16 - offs_sector_mask;
-					sizestuff = secsize * (16 - offs_sector_mask);
-					dmasize = sizestuff;
-					if ( offs_in_sector )
-						++needed_offset;
-					goto LABEL_55;
-				}
+				needed_offset = 16 - offs_sector_mask;
+				sizestuff = secsize * (16 - offs_sector_mask);
+				dmasize = sizestuff;
+				if ( offs_in_sector )
+					++needed_offset;
 			}
 			else
 			{
-				sizestuff = secsize << 6;
+				dmasize = sizestuff;
+				needed_offset = 64;
+				if ( buf_offs_sum % secsize )
+					needed_offset = 65;
 			}
-			dmasize = sizestuff;
-			needed_offset = 64;
-			if ( buf_offs_sum % secsize )
-				needed_offset = 65;
 		}
-LABEL_55:
 		if ( len2_plus_sec2 < offs_sector_only + needed_offset )
 			needed_offset = len2_plus_sec2 - (sc_ffffffe9_tmp + buf_offs_sum / secsize);
 		cdvdfsv_readpos = buf_offs_sum;
@@ -1416,7 +1408,11 @@ LABEL_55:
 						secsize,
 						dmasize,
 						&cdvdfsv_eerpsdd) )
-			goto LABEL_29;
+		{
+			bsize = 0;
+			early_break = 1;
+			break;
+		}
 		while ( cdvdfsv_checkdmastat(trid) >= 0 )
 			;
 		CpuSuspendIntr(&state);
@@ -1425,9 +1421,9 @@ LABEL_55:
 		CpuResumeIntr(state);
 		buf_offs_sum += sizestuff;
 	}
-	sectors_1 = 2;
-	if ( ssize )
+	if ( !early_break && ssize )
 	{
+		sectors_1 = 2;
 		buf_offs_sum_bytes_in_sector = buf_offs_sum % secsize;
 		if ( len2_plus_sec2 < sc_ffffffe9_tmp + buf_offs_sum / secsize + 2 )
 			sectors_1 = 1;
@@ -1442,41 +1438,45 @@ LABEL_55:
 						sync,
 						decflag,
 						decval) )
-			goto LABEL_29;
-		if ( datapattern != 2 || ps2dvd )
 		{
-			if ( buf_offs_sum_bytes_in_sector )
+			bsize = 0;
+		}
+		else
+		{
+			if ( datapattern != 2 || ps2dvd )
 			{
-				pbuf2 = cdvdfsv_eereadx.pbuf2;
-				rtocbuf_after_logo = &cdvdfsv_rtocbuf[buf_offs_sum_bytes_in_sector + 12];
-				for ( i2 = 0; i2 < ssize; i2 += 1 )
+				if ( buf_offs_sum_bytes_in_sector )
 				{
-					if ( i2 % secsize == secsize - buf_offs_sum_bytes_in_sector )
-						rtocbuf_after_logo += sector_sizes[ps2dvd] - secsize;
-					val_tmp1 = *rtocbuf_after_logo++;
-					*pbuf2++ = val_tmp1;
+					pbuf2 = cdvdfsv_eereadx.pbuf2;
+					rtocbuf_after_logo = &cdvdfsv_rtocbuf[buf_offs_sum_bytes_in_sector + 12];
+					for ( i2 = 0; i2 < ssize; i2 += 1 )
+					{
+						if ( i2 % secsize == secsize - buf_offs_sum_bytes_in_sector )
+							rtocbuf_after_logo += sector_sizes[ps2dvd] - secsize;
+						val_tmp1 = *rtocbuf_after_logo++;
+						*pbuf2++ = val_tmp1;
+					}
+				}
+				else
+				{
+					// CHECKME i2_offs
+					i2_offs = 0;
+					for ( i2 = 0; i2 < ssize; i2 += 1 )
+					{
+						if ( i2 && !(i2 % secsize) )
+							i2_offs += sector_sizes[ps2dvd] - secsize;
+						cdvdfsv_eereadx.pbuf2[i2] = cdvdfsv_rtocbuf[i2_offs++];
+					}
 				}
 			}
 			else
 			{
-				// CHECKME i2_offs
-				i2_offs = 0;
-				for ( i2 = 0; i2 < ssize; i2 += 1 )
-				{
-					if ( i2 && !(i2 % secsize) )
-						i2_offs += sector_sizes[ps2dvd] - secsize;
-					cdvdfsv_eereadx.pbuf2[i2] = cdvdfsv_rtocbuf[i2_offs++];
-				}
+				for ( k = 0; k < ssize; ++k )
+					cdvdfsv_eereadx.pbuf2[k] = cdvdfsv_rtocbuf[buf_offs_sum_bytes_in_sector + k];
 			}
+			buf_offs_sum += ssize;
 		}
-		else
-		{
-			for ( k = 0; k < ssize; ++k )
-				cdvdfsv_eereadx.pbuf2[k] = cdvdfsv_rtocbuf[buf_offs_sum_bytes_in_sector + k];
-		}
-		buf_offs_sum += ssize;
 	}
-LABEL_83:
 	cdvdfsv_eereadx.b1len = psize;
 	cdvdfsv_eereadx.b2len = ssize;
 	cdvdfsv_eereadx.b1dst = paddr;
@@ -1654,23 +1654,20 @@ void __fastcall cdvdfsv_rpc5h_0F_readchain(cdvdfsv_rpc5h_0F_packet *inbuf, int b
 	cdvdfsv_chrdsdd.attr = 0;
 	cdvdfsv_chrdsdd.dest = readPos;
 	datapattern = p_scecdrmode30C->datapattern;
-	if ( datapattern == 1 )
+	switch ( datapattern )
 	{
-		sector_size = 2328;
-	}
-	else
-	{
-		sector_size = 2048;
-		if ( p_scecdrmode30C->datapattern >= 2u )
-		{
-			cnt = 0;
-			if ( datapattern != 2 )
-				goto LABEL_8;
+		case 1:
+			sector_size = 2328;
+			break;
+		case 2:
 			sector_size = 2340;
-		}
+			break;
+		case 0:
+		default:
+			sector_size = 2048;
+			break;
 	}
 	cnt = 0;
-LABEL_8:
 	for ( i = (sceCdRChain *)inbuf; ; ++i )
 	{
 		if ( cdvdfsv_cdvdman_internal_struct_ptr->m_break_cdvdfsv_readchain )
@@ -1765,13 +1762,9 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int bu
 	int sector_count_in_bytes; // $s5
 	u32 sector_count; // $s0
 	int sector_count_tmp; // $a1
-	int cmd_error_1; // $s1
-	int error_code_1; // $s0
 	u32 sectors_3; // $s0
 	u32 lsn_3; // $s1
 	unsigned int buf_offs_mod_sector_size_3; // $hi
-	int cmd_error_3; // $s1
-	int error_code_3; // $s0
 	unsigned int i3; // $v1
 	void *eeremaindest; // $a1
 	int trid2; // $s7
@@ -1839,117 +1832,126 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int bu
 				sceCdSC(0xFFFFFFFE, &cdvdfsv_rderror);
 			if ( cdvdfsv_verbose > 0 )
 				printf("Read error code %x cmd error %d\n", error_code, cmd_error);
-			if ( error_code != 50 && error_code != 56 )
+			if ( error_code == 50 || error_code == 56 )
+				error_code_tmp = error_code;
+			else
 			{
 				buf_toalign = 0;
-				goto LABEL_74;
 			}
-			error_code_tmp = error_code;
 		}
-		rtocbuf_tmp_offs = rtocbuf_tmp;
-		for ( i1 = 0; i1 < buf_toalign; i1 += 1 )
+		if ( error_code_tmp != 0 && error_code_tmp != 50 && error_code_tmp != 56 )
 		{
-			cdvdfsv_eereadx.pbuf1[i1] = *rtocbuf_tmp_offs;
-			rtocbuf_tmp_offs = &rtocbuf_tmp[i1];
+			for ( i1 = 0; i1 < buf_toalign; i1 += 1 )
+			{
+				rtocbuf_tmp_offs = &rtocbuf_tmp[i1];
+				cdvdfsv_eereadx.pbuf1[i1] = *rtocbuf_tmp_offs;
+			}
+			buf_offs += buf_toalign;
 		}
-		buf_offs += buf_toalign;
 	}
-	sector_size_in_bytes_tmp = 8 * sector_size;
-	for ( ; buf_align_remain; buf_align_remain -= sector_size_in_bytes )
+	if ( error_code_tmp != 0 && error_code_tmp != 50 && error_code_tmp != 56 )
 	{
-		buf_offs_mod_sector_size = buf_offs % sector_size;
-		lsn_2 = lbn_1 + buf_offs / sector_size;
-		sector_size_in_bytes = sector_size_in_bytes_tmp;
-		if ( sector_size_in_bytes_tmp >= buf_align_remain )
+		for ( ; buf_align_remain; buf_align_remain -= sector_size_in_bytes )
 		{
-			sector_count_tmp = buf_align_remain / sector_size;
-			sector_size_in_bytes = buf_align_remain;
-			sector_count_in_bytes = buf_align_remain;
-			if ( buf_align_remain % sector_size )
-				sector_count_tmp = buf_align_remain / sector_size + 1;
-			sector_count = sector_count_tmp + (buf_offs_mod_sector_size != 0);
-		}
-		else
-		{
-			sector_count_in_bytes = sector_size_in_bytes_tmp;
-			sector_count = 8;
-			if ( buf_offs % sector_size )
-				sector_count = 9;
-		}
-		if ( lbn_1_end < lsn_2 + sector_count )
-			sector_count = lbn_1_end - lsn_2;
-		while ( cdvdfsv_checkdmastat(trid1) >= 0 )
-			;
-		cmd_error_1 = sceCdReadCDDA(lsn_2, sector_count, rtocbuf_tmp, mode);
-		sceCdSync(3);
-		error_code_1 = sceCdGetError();
-		if ( error_code_1 || !cmd_error_1 )
-		{
-			if ( !cmd_error_1 )
-				sceCdSC(0xFFFFFFFE, &cdvdfsv_rderror);
-			if ( cdvdfsv_verbose > 0 )
-				printf("Read error code %x cmd error %d\n", error_code_1, cmd_error_1);
-			if ( error_code_1 != 50 && error_code_1 != 56 )
-				goto LABEL_74;
-			error_code_tmp = error_code_1;
-		}
-		if ( buf_offs_mod_sector_size )
-			cdvdfsv_memcpy((_DWORD *)rtocbuf_tmp, (_DWORD *)&rtocbuf_tmp[buf_offs_mod_sector_size], sector_count_in_bytes);
-		cdvdfsv_eereadfull_dma1.src = rtocbuf_tmp;
-		cdvdfsv_eereadfull_dma1.size = sector_count_in_bytes;
-		cdvdfsv_eereadfull_dma1.attr = 0;
-		cdvdfsv_eereadfull_dma1.dest = buf_aligned;
-		cdvdfsv_readpos = buf_offs;
-		while ( 1 )
-		{
-			CpuSuspendIntr(&state);
-			trid1 = sceSifSetDma(&cdvdfsv_eereadfull_dma1, 1);
-			CpuResumeIntr(state);
-			if ( trid1 )
-				break;
-			DelayThread(500);
-		}
-		if ( cnodtmp1 )
-		{
-			CpuSuspendIntr(&state);
-			sceSifSetDma(&cdvdfsv_eereadfull_dma2, 1);
-			CpuResumeIntr(state);
-		}
-		buf_aligned += sector_count_in_bytes;
-		buf_offs += sector_size_in_bytes;
-	}
-	sectors_3 = 2;
-	if ( buf_sec_tmp )
-	{
-		lsn_3 = lbn_1 + buf_offs / sector_size;
-		if ( lbn_1_end < lsn_3 + 2 )
-			sectors_3 = 1;
-		if ( cdvdfsv_verbose > 0 )
-			printf("0 CD_READ LBN= %d sectors= %d all= %d\n", (int)(lbn_1 + buf_offs / sector_size), (int)sectors_3, all_sec);
-		buf_offs_mod_sector_size_3 = buf_offs % sector_size;
-		if ( cdvdfsv_verbose > 0 )
-			printf("2 CD_READ LBN= %d sectors= %d\n", (int)lsn_3, (int)sectors_3);
-		cmd_error_3 = sceCdReadCDDA(lsn_3, sectors_3, rtocbuf_tmp, mode);
-		sceCdSync(3);
-		error_code_3 = sceCdGetError();
-		if ( error_code_3 || !cmd_error_3 )
-		{
-			if ( !cmd_error_3 )
-				sceCdSC(0xFFFFFFFE, &cdvdfsv_rderror);
-			if ( cdvdfsv_verbose > 0 )
-				printf("Read error code %x cmd error %d\n", error_code_3, cmd_error_3);
-			if ( error_code_3 == 50 || error_code_3 == 56 )
-				error_code_tmp = error_code_3;
+			sector_size_in_bytes_tmp = 8 * sector_size;
+			buf_offs_mod_sector_size = buf_offs % sector_size;
+			lsn_2 = lbn_1 + buf_offs / sector_size;
+			sector_size_in_bytes = sector_size_in_bytes_tmp;
+			if ( sector_size_in_bytes_tmp >= buf_align_remain )
+			{
+				sector_count_tmp = buf_align_remain / sector_size;
+				sector_size_in_bytes = buf_align_remain;
+				sector_count_in_bytes = buf_align_remain;
+				if ( buf_align_remain % sector_size )
+					sector_count_tmp = buf_align_remain / sector_size + 1;
+				sector_count = sector_count_tmp + (buf_offs_mod_sector_size != 0);
+			}
 			else
-				buf_sec_tmp = 0;
+			{
+				sector_count_in_bytes = sector_size_in_bytes_tmp;
+				sector_count = 8;
+				if ( buf_offs % sector_size )
+					sector_count = 9;
+			}
+			if ( lbn_1_end < lsn_2 + sector_count )
+				sector_count = lbn_1_end - lsn_2;
+			while ( cdvdfsv_checkdmastat(trid1) >= 0 )
+				;
+			cmd_error = sceCdReadCDDA(lsn_2, sector_count, rtocbuf_tmp, mode);
+			sceCdSync(3);
+			error_code = sceCdGetError();
+			if ( error_code || !cmd_error )
+			{
+				if ( !cmd_error )
+					sceCdSC(0xFFFFFFFE, &cdvdfsv_rderror);
+				if ( cdvdfsv_verbose > 0 )
+					printf("Read error code %x cmd error %d\n", error_code, cmd_error);
+				if ( error_code == 50 || error_code == 56 )
+					error_code_tmp = error_code;
+			}
+			if ( error_code_tmp != 0 && error_code_tmp != 50 && error_code_tmp != 56 )
+			{
+				if ( buf_offs_mod_sector_size )
+					cdvdfsv_memcpy((_DWORD *)rtocbuf_tmp, (_DWORD *)&rtocbuf_tmp[buf_offs_mod_sector_size], sector_count_in_bytes);
+				cdvdfsv_eereadfull_dma1.src = rtocbuf_tmp;
+				cdvdfsv_eereadfull_dma1.size = sector_count_in_bytes;
+				cdvdfsv_eereadfull_dma1.attr = 0;
+				cdvdfsv_eereadfull_dma1.dest = buf_aligned;
+				cdvdfsv_readpos = buf_offs;
+				while ( 1 )
+				{
+					CpuSuspendIntr(&state);
+					trid1 = sceSifSetDma(&cdvdfsv_eereadfull_dma1, 1);
+					CpuResumeIntr(state);
+					if ( trid1 )
+						break;
+					DelayThread(500);
+				}
+				if ( cnodtmp1 )
+				{
+					CpuSuspendIntr(&state);
+					sceSifSetDma(&cdvdfsv_eereadfull_dma2, 1);
+					CpuResumeIntr(state);
+				}
+				buf_aligned += sector_count_in_bytes;
+				buf_offs += sector_size_in_bytes;
+			}
 		}
-		for ( i3 = 0; i3 < buf_sec_tmp; i3 += 1 )
-		{
-			cdvdfsv_eereadx.pbuf2[i3] = rtocbuf_tmp[buf_offs_mod_sector_size_3 + i3];
-		}
-		buf_offs += buf_sec_tmp;
 	}
-LABEL_74:
+	if ( error_code_tmp != 0 && error_code_tmp != 50 && error_code_tmp != 56 )
+	{
+		if ( buf_sec_tmp )
+		{
+			sectors_3 = 2;
+			lsn_3 = lbn_1 + buf_offs / sector_size;
+			if ( lbn_1_end < lsn_3 + 2 )
+				sectors_3 = 1;
+			if ( cdvdfsv_verbose > 0 )
+				printf("0 CD_READ LBN= %d sectors= %d all= %d\n", (int)(lbn_1 + buf_offs / sector_size), (int)sectors_3, all_sec);
+			buf_offs_mod_sector_size_3 = buf_offs % sector_size;
+			if ( cdvdfsv_verbose > 0 )
+				printf("2 CD_READ LBN= %d sectors= %d\n", (int)lsn_3, (int)sectors_3);
+			cmd_error = sceCdReadCDDA(lsn_3, sectors_3, rtocbuf_tmp, mode);
+			sceCdSync(3);
+			error_code = sceCdGetError();
+			if ( error_code || !cmd_error )
+			{
+				if ( !cmd_error )
+					sceCdSC(0xFFFFFFFE, &cdvdfsv_rderror);
+				if ( cdvdfsv_verbose > 0 )
+					printf("Read error code %x cmd error %d\n", error_code, cmd_error);
+				if ( error_code == 50 || error_code == 56 )
+					error_code_tmp = error_code;
+				else
+					buf_sec_tmp = 0;
+			}
+			for ( i3 = 0; i3 < buf_sec_tmp; i3 += 1 )
+			{
+				cdvdfsv_eereadx.pbuf2[i3] = rtocbuf_tmp[buf_offs_mod_sector_size_3 + i3];
+			}
+			buf_offs += buf_sec_tmp;
+		}
+	}
 	cdvdfsv_eereadx.b1len = buf_toalign;
 	cdvdfsv_eereadx.b2len = buf_sec_tmp;
 	cdvdfsv_eereadx.b1dst = buf_1;
@@ -2076,34 +2078,18 @@ void __fastcall cdvdfsv_rpc5h_04_gettoc(void *inbuf, int buflen, cdvdfsv_rpc5h_0
 	}
 	while ( cdvdfsv_checkdmastat(trid) >= 0 )
 		;
-	if ( MEMORY[0xBF40200F] == 20 )
-		goto LABEL_16;
-	outbuf->dword4 = 0;
-	if ( MEMORY[0xBF40200F] < 0x15u )
-		goto LABEL_18;
-	if ( MEMORY[0xBF40200F] == 253 )
+	switch ( MEMORY[0xBF40200F] )
 	{
-		outbuf->dword4 = 0;
-		goto LABEL_18;
-	}
-	if ( MEMORY[0xBF40200F] >= 0xFEu )
-	{
-		outbuf->dword4 = 0;
-		if ( MEMORY[0xBF40200F] == 254 )
-			goto LABEL_16;
-LABEL_18:
-		outbuf->dword0 = Toc;
-		goto LABEL_19;
-	}
-	outbuf->dword4 = 0;
-	if ( MEMORY[0xBF40200F] == 252 )
-	{
-LABEL_16:
-		outbuf->dword4 = 1;
-		goto LABEL_18;
+		case 20:
+		case 252:
+		case 254:
+			outbuf->dword4 = 1;
+			break;
+		default:
+			outbuf->dword4 = 0;
+			break;
 	}
 	outbuf->dword0 = Toc;
-LABEL_19:
 }
 
 //----- (004036EC) --------------------------------------------------------
@@ -2438,7 +2424,8 @@ CDVDReadResult *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int lengt
 			crr[0] = sceCdSeek(*(_DWORD *)buffer);
 			if ( cdvdfsv_verbose > 0 )
 				printf("Call Seek end\n");
-			goto LABEL_24;
+			sceCdSync(6);
+			break;
 		case 6:
 			if ( cdvdfsv_verbose > 0 )
 				printf("Call Standby\n");
@@ -2457,15 +2444,15 @@ CDVDReadResult *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int lengt
 			if ( cdvdfsv_verbose > 0 )
 				printf("Call Pause\n");
 			crr[0] = sceCdPause();
-LABEL_24:
 			sceCdSync(6);
 			break;
 		case 9:
 			stm_devctl_val = 17302;
-			goto LABEL_28;
+			if ( devctl("cdrom_stm0:", stm_devctl_val, buffer, length, crr, 4u) < 0 )
+				crr[0] = 0;
+			break;
 		case 10:
 			stm_devctl_val = 17304;
-LABEL_28:
 			if ( devctl("cdrom_stm0:", stm_devctl_val, buffer, length, crr, 4u) < 0 )
 				crr[0] = 0;
 			break;
