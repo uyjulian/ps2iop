@@ -1397,7 +1397,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 				i2_offs = 12;
 				for ( i = 0; i < ssize; i += 1 )
 				{
-					if ( (buf_offs_sum_bytes_in_sector ? i : 1) && (i % secsize) == (buf_offs_sum_bytes_in_sector ? (secsize - buf_offs_sum_bytes_in_sector) : 0) )
+					if ( (i + buf_offs_sum_bytes_in_sector) && (i % secsize) == (secsize - (buf_offs_sum_bytes_in_sector ? buf_offs_sum_bytes_in_sector : secsize)) )
 						i2_offs += sector_sizes[ps2dvd] - secsize;
 					cdvdfsv_eereadx.pbuf2[i] = cdvdfsv_rtocbuf[buf_offs_sum_bytes_in_sector + i2_offs + i];
 				}
