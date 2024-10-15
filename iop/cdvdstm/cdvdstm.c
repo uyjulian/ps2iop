@@ -284,17 +284,11 @@ unsigned int __fastcall iop_stream_handler(
 	bool condtmp1; // dc
 	int bankcur_tmp; // $v1
 	unsigned int i; // $s1
-	unsigned int j; // $s1
-	unsigned int k; // $s1
-	char *buffer_curwriteptr; // $s5
-	unsigned int m; // $s1
 	unsigned int written_chunk_size_tmp; // $s4
 	unsigned int posszarg2_remain; // $s3
-	unsigned int written_chunk_size; // $s1
 	int bankcur_next_tmp1; // $a0
 	int chunk_size; // $s0
 	int bankcur_next_tmp2; // $a0
-	_DWORD *areadst; // $a0
 	int retryerr; // $v1
 	int state[2]; // [sp+20h] [-8h] BYREF
 	unsigned int posszarg1_tmp; // [sp+50h] [+28h] BYREF
@@ -328,19 +322,18 @@ unsigned int __fastcall iop_stream_handler(
 				return 1;
 			case 6:
 				bankcur_tmp = cdvdstm_bankcur_iop;
-				if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] )
+				if ( !cdvdstm_usedmap_iop[bankcur_tmp] )
 				{
-					bankcur_tmp = cdvdstm_bankcur_iop + 1;
-					if ( (unsigned int)(cdvdstm_bankcur_iop + 1) >= (unsigned int)cdvdstm_bankmax )
+					bankcur_tmp += 1;
+					if ( (unsigned int)bankcur_tmp >= (unsigned int)cdvdstm_bankmax )
 						bankcur_tmp = 0;
 					if ( !cdvdstm_usedmap_iop[bankcur_tmp] )
 						bankcur_tmp = cdvdstm_bankcur_iop;
 				}
-				for ( i = 0; i < (unsigned int)cdvdstm_bankmax; ++i )
+				for ( i = 0; (i < (unsigned int)cdvdstm_bankmax) && cdvdstm_usedmap_iop[bankcur_tmp] && (cdvdstm_bankgp_iop != bankcur_tmp); i += 1 )
 				{
-					if ( !cdvdstm_usedmap_iop[bankcur_tmp] || cdvdstm_bankgp_iop == bankcur_tmp )
-						break;
-					if ( (unsigned int)(++bankcur_tmp) >= (unsigned int)cdvdstm_bankmax )
+					bankcur_tmp += 1;
+					if ( (unsigned int)bankcur_tmp >= (unsigned int)cdvdstm_bankmax )
 						bankcur_tmp = 0;
 				}
 				return i * ((unsigned int)cdvdstm_numbytes >> 11);
@@ -368,8 +361,8 @@ unsigned int __fastcall iop_stream_handler(
 						sceCdSC(0, &cdvdstm_last_error_for_iop);
 						CpuResumeIntr(state[0]);
 						sceCdBreak();
-						for ( j = 0; j < (unsigned int)cdvdstm_bankmax; ++j )
-							cdvdstm_usedmap_iop[j] = 0;
+						for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
+							cdvdstm_usedmap_iop[i] = 0;
 						cdvdstm_bankoffs_iop = 0;
 						cdvdstm_bankcur_iop = 0;
 						cdvdstm_bankgp_iop = 0;
@@ -392,8 +385,8 @@ unsigned int __fastcall iop_stream_handler(
 					{
 						CpuSuspendIntr(state);
 						cdvdstm_lsn_iop = posszarg1_tmp;
-						for ( k = 0; k < (unsigned int)cdvdstm_bankmax; ++k )
-							cdvdstm_usedmap_iop[k] = 0;
+						for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
+							cdvdstm_usedmap_iop[i] = 0;
 						cdvdstm_stmstart_iop = 2;
 						CpuResumeIntr(state[0]);
 						return 1;
@@ -418,7 +411,6 @@ unsigned int __fastcall iop_stream_handler(
 						sceCdSync(0);
 						vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
 					}
-					buffer_curwriteptr = (char *)buffer;
 					if ( cmdid_tmp == 1 )
 					{
 						CpuSuspendIntr(state);
@@ -426,8 +418,8 @@ unsigned int __fastcall iop_stream_handler(
 						vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
 						sceCdSC(0, &cdvdstm_last_error_for_iop);
 						CpuResumeIntr(state[0]);
-						for ( m = 0; m < (unsigned int)cdvdstm_bankmax; ++m )
-							cdvdstm_usedmap_iop[m] = 0;
+						for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
+							cdvdstm_usedmap_iop[i] = 0;
 						cdvdstm_lsn_iop = posszarg1_tmp;
 						sceCdSC(0xFFFFFFE9, (int *)&posszarg1_tmp);
 						cdvdstm_bankoffs_iop = 0;
@@ -445,8 +437,7 @@ unsigned int __fastcall iop_stream_handler(
 					}
 					CpuSuspendIntr(state);
 					written_chunk_size_tmp = -1;
-					posszarg2_remain = posszarg2;
-					for ( written_chunk_size = 0; written_chunk_size < posszarg2; written_chunk_size += chunk_size )
+					for ( i = 0; i < posszarg2; i += chunk_size )
 					{
 						if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] )
 						{
@@ -463,25 +454,25 @@ unsigned int __fastcall iop_stream_handler(
 							bankcur_next_tmp1 = cdvdstm_bankcur_iop++;
 							if ( (unsigned int)cdvdstm_bankcur_iop >= (unsigned int)cdvdstm_bankmax )
 								cdvdstm_bankcur_iop = 0;
-							written_chunk_size_tmp = written_chunk_size;
+							written_chunk_size_tmp = i;
 							if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] )
 							{
 								cdvdstm_bankcur_iop = bankcur_next_tmp1;
 							}
 							break;
 						}
-						chunk_size = 0x800;
 						if ( (unsigned int)cdvdstm_bankoffs_iop >= (unsigned int)cdvdstm_numbytes )
 						{
 							cdvdstm_bankoffs_iop = 0;
 							cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] = 0;
-							bankcur_next_tmp2 = cdvdstm_bankcur_iop++;
+							bankcur_next_tmp2 = cdvdstm_bankcur_iop;
+							cdvdstm_bankcur_iop += 1;
 							if ( (unsigned int)cdvdstm_bankcur_iop >= (unsigned int)cdvdstm_bankmax )
 								cdvdstm_bankcur_iop = 0;
 							if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] || cdvdstm_bankgp_iop == cdvdstm_bankcur_iop )
 							{
 								cdvdstm_bankcur_iop = bankcur_next_tmp2;
-								written_chunk_size_tmp = written_chunk_size;
+								written_chunk_size_tmp = i;
 								if ( cdvdstm_verbose > 0 )
 								{
 									Kprintf(
@@ -497,15 +488,14 @@ unsigned int __fastcall iop_stream_handler(
 								break;
 							}
 						}
-						if ( posszarg2_remain < 0x800 )
-							chunk_size = posszarg2_remain;
-						areadst = (_DWORD *)buffer_curwriteptr;
-						buffer_curwriteptr += chunk_size;
 						cdvdstm_memcpy(
-							areadst,
+							(_DWORD *)((char *)buffer + i),
 							(_DWORD *)((char *)cdvdstm_buffer + cdvdstm_bankcur_iop * cdvdstm_numbytes + cdvdstm_bankoffs_iop),
 							0x800u);
-						posszarg2_remain -= chunk_size;
+						posszarg2_remain = posszarg2 - i;
+						chunk_size = 0x800;
+						if ( posszarg2_remain < 0x800 )
+							chunk_size = posszarg2_remain;
 						cdvdstm_bankoffs_iop += chunk_size;
 					}
 					if ( written_chunk_size_tmp == 0xFFFFFFFF )
@@ -682,7 +672,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 				cdvdstm_bankoffs_iop = 0;
 				cdvdstm_bankcur_iop = 0;
 				cdvdstm_bankgp_iop = 0;
-				for ( i = 0; i < (unsigned int)cdvdstm_bankmax; ++i )
+				for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
 					cdvdstm_usedmap_iop[i] = 0;
 			}
 			cdvdstm_stmstart_iop = 0;
@@ -935,19 +925,18 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 			return;
 		case 6u:
 			bankcur_tmp = cdvdstm_bankcur_ee;
-			if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
+			if ( !cdvdstm_usedmap_ee[bankcur_tmp] )
 			{
-				bankcur_tmp = cdvdstm_bankcur_ee + 1;
-				if ( (unsigned int)(cdvdstm_bankcur_ee + 1) >= (unsigned int)cdvdstm_bankcnt2 )
+				bankcur_tmp += 1;
+				if ( (unsigned int)bankcur_tmp >= (unsigned int)cdvdstm_bankcnt2 )
 					bankcur_tmp = 0;
 				if ( !cdvdstm_usedmap_ee[bankcur_tmp] )
 					bankcur_tmp = cdvdstm_bankcur_ee;
 			}
-			for ( i = 0; i < (unsigned int)cdvdstm_bankcnt2; ++i )
+			for ( i = 0; (i < (unsigned int)cdvdstm_bankcnt2) && cdvdstm_usedmap_ee[bankcur_tmp] && (cdvdstm_bankgp_ee != bankcur_tmp); i += 1 )
 			{
-				if ( !cdvdstm_usedmap_ee[bankcur_tmp] || cdvdstm_bankgp_ee == bankcur_tmp )
-					break;
-				if ( (unsigned int)(++bankcur_tmp) >= (unsigned int)cdvdstm_bankcnt2 )
+				bankcur_tmp += 1;
+				if ( (unsigned int)bankcur_tmp >= (unsigned int)cdvdstm_bankcnt2 )
 					bankcur_tmp = 0;
 			}
 			*outres_ptr = i * ((unsigned int)cdvdstm_chunksz2 >> 11);
@@ -1061,8 +1050,9 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 		}
 	}
 	posszarg2_bytes_overrun = -1;
-	for ( posszarg2_bytes_remain = posszarg2_bytes; posszarg2_bytes_remain; posszarg2_bytes_remain -= posszarg2_bytes_clamped )
+	for ( i = 0; i < posszarg2_bytes; i += posszarg2_bytes_clamped )
 	{
+		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
 		{
 			if ( cdvdstm_verbose > 0 )
@@ -1088,7 +1078,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 		posszarg2_bytes_clamped = posszarg2_bytes_remain;
 		if ( (unsigned int)(cdvdstm_chunksz2 - cdvdstm_bankoffs_ee) < posszarg2_bytes_remain )
 			posszarg2_bytes_clamped = cdvdstm_chunksz2 - cdvdstm_bankoffs_ee;
-		cdvdstm_dmat.dest = buffer;
+		cdvdstm_dmat.dest = buffer + i;
 		cdvdstm_dmat.size = posszarg2_bytes_clamped;
 		cdvdstm_dmat.attr = 0;
 		cdvdstm_dmat.src = (char *)cdvdstm_buffer2 + cdvdstm_bankcur_ee * cdvdstm_chunksz2 + cdvdstm_bankoffs_ee;
@@ -1137,7 +1127,6 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 				break;
 			}
 		}
-		buffer += posszarg2_bytes_clamped;
 	}
 	if ( posszarg2_bytes_overrun == -1 )
 		posszarg2_bytes_overrun = posszarg2_bytes;
@@ -1315,7 +1304,7 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 				cdvdstm_bankoffs_ee = 0;
 				cdvdstm_bankcur_ee = 0;
 				cdvdstm_bankgp_ee = 0;
-				for ( i = 0; i < (unsigned int)cdvdstm_bankcnt2; ++i )
+				for ( i = 0; i < (unsigned int)cdvdstm_bankcnt2; i += 1 )
 					cdvdstm_usedmap_ee[i] = 0;
 			}
 			cdvdstm_stmstart_ee = 0;
@@ -1427,19 +1416,18 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 			return;
 		case 6u:
 			bankcur_tmp = cdvdstm_bankcur_ee;
-			if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
+			if ( !cdvdstm_usedmap_ee[bankcur_tmp] )
 			{
-				bankcur_tmp = cdvdstm_bankcur_ee + 1;
-				if ( (unsigned int)(cdvdstm_bankcur_ee + 1) >= (unsigned int)cdvdstm_bankcnt2 )
+				bankcur_tmp += 1;
+				if ( (unsigned int)bankcur_tmp >= (unsigned int)cdvdstm_bankcnt2 )
 					bankcur_tmp = 0;
 				if ( !cdvdstm_usedmap_ee[bankcur_tmp] )
 					bankcur_tmp = cdvdstm_bankcur_ee;
 			}
-			for ( i = 0; i < (unsigned int)cdvdstm_bankcnt2; ++i )
+			for ( i = 0; (i < (unsigned int)cdvdstm_bankcnt2) && cdvdstm_usedmap_ee[bankcur_tmp] && (cdvdstm_bankgp_ee != bankcur_tmp); i += 1 )
 			{
-				if ( !cdvdstm_usedmap_ee[bankcur_tmp] || cdvdstm_bankgp_ee == bankcur_tmp )
-					break;
-				if ( (unsigned int)(++bankcur_tmp) >= (unsigned int)cdvdstm_bankcnt2 )
+				bankcur_tmp += 1;
+				if ( (unsigned int)(bankcur_tmp) >= (unsigned int)cdvdstm_bankcnt2 )
 					bankcur_tmp = 0;
 			}
 			if ( !cdvdstm_usedchunksize2 )
@@ -1592,8 +1580,9 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 		}
 	}
 	posszarg2_bytes_overrun = -1;
-	for ( posszarg2_bytes_remain = posszarg2_bytes; posszarg2_bytes_remain; posszarg2_bytes_remain -= posszarg2_bytes_clamped )
+	for ( i = 0; i < posszarg2_bytes; i += posszarg2_bytes_clamped )
 	{
+		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
 		{
 			if ( cdvdstm_verbose > 0 )
@@ -1619,7 +1608,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 		posszarg2_bytes_clamped = posszarg2_bytes_remain;
 		if ( (unsigned int)(cdvdstm_chunksz2 - cdvdstm_bankoffs_ee) < posszarg2_bytes_remain )
 			posszarg2_bytes_clamped = cdvdstm_chunksz2 - cdvdstm_bankoffs_ee;
-		cdvdstm_dmat2.dest = buffer;
+		cdvdstm_dmat2.dest = buffer + i;
 		cdvdstm_dmat2.size = posszarg2_bytes_clamped;
 		cdvdstm_dmat2.attr = 0;
 		cdvdstm_dmat2.src = (char *)cdvdstm_buffer2 + cdvdstm_bankcur_ee * cdvdstm_chunksz2 + cdvdstm_bankoffs_ee;
@@ -1668,7 +1657,6 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 				break;
 			}
 		}
-		buffer += posszarg2_bytes_clamped;
 	}
 	if ( posszarg2_bytes_overrun == 0xFFFFFFFF )
 		posszarg2_bytes_overrun = posszarg2_bytes;
@@ -1851,7 +1839,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 				cdvdstm_bankoffs_ee = 0;
 				cdvdstm_bankcur_ee = 0;
 				cdvdstm_bankgp_ee = 0;
-				for ( i = 0; i < (unsigned int)cdvdstm_bankcnt2; ++i )
+				for ( i = 0; i < (unsigned int)cdvdstm_bankcnt2; i += 1 )
 					cdvdstm_usedmap_ee[i] = 0;
 			}
 			cdvdstm_stmstart_ee = 0;
