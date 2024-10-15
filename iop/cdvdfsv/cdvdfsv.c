@@ -165,7 +165,7 @@ u8 *cdvdfsv_rtocbuf; // idb
 SifDmaTransfer_t cdvdfsv_fssdd; // idb
 SifDmaTransfer_t cdvdfsv_iomrsdd; // idb
 SifDmaTransfer_t cdvdfsv_rdp2sdd; // idb
-SifDmaTransfer_t cdvdfsv_multi_dmat[17];
+SifDmaTransfer_t cdvdfsv_multi_dmat[16];
 sceCdRMode cdvdfsv_rmodeee;
 SifDmaTransfer_t cdvdfsv_datasdd; // idb
 SifDmaTransfer_t cdvdfsv_eerpsdd; // idb
@@ -219,7 +219,7 @@ int __fastcall cdvdfsv_checkdmastat(int trid)
 //----- (00400058) --------------------------------------------------------
 int __cdecl cdvdfsv_cleanuprpc()
 {
-	int i; // $s1
+	unsigned int i; // $s1
 
 	sceSifRemoveRpc(&rpc_sdata1, &rpc_qdata1);
 	sceSifRemoveRpc(&rpc_sdata2, &rpc_qdata1);
@@ -232,7 +232,7 @@ int __cdecl cdvdfsv_cleanuprpc()
 	sceSifRemoveRpcQueue(&rpc_qdata3);
 	cdvdfsv_nopocm = 1;
 	cdvdfsv_plbreak = 1;
-	for ( i = 0; i < 4; i += 1 )
+	for ( i = 0; i < (sizeof(cdvdfsv_thids)/sizeof(cdvdfsv_thids[0])); i += 1 )
 	{
 		TerminateThread(cdvdfsv_thids[i]);
 		DeleteThread(cdvdfsv_thids[i]);
@@ -698,7 +698,7 @@ int __fastcall readproc2(
 				SifDmaTransfer_t *post_dmat)
 {
 	u8 *rtocbuf_plus_4680; // $s7
-	int i; // $v0
+	unsigned int i; // $v0
 	int csec; // $s5
 	cdvdman_internal_struct_t *si1; // $v1
 	u32 lsnmul; // $a0
@@ -747,7 +747,7 @@ int __fastcall readproc2(
 	rtocbuf_plus_2340 = (unsigned int *)(cdvdfsv_rtocbuf + 2340);
 	if ( secsize != 2340 && !fssift )
 	{
-		for ( i = 0; i < 16; i += 1 )
+		for ( i = 0; i < (sizeof(cdvdfsv_multi_dmat)/sizeof(cdvdfsv_multi_dmat[0])); i += 1 )
 		{
 			cdvdfsv_multi_dmat[i].attr = 0;
 			cdvdfsv_multi_dmat[i].size = secsize;
@@ -818,7 +818,7 @@ int __fastcall readproc2(
 			sceCdSync(3);
 			--cdvdfsv_r2retry;
 		}
-		for ( i = 0; i < nsec_div_cdvdfsv_sectors; i += 1 )
+		for ( i = 0; (int)i < nsec_div_cdvdfsv_sectors; i += 1 )
 		{
 			sceCdSync(32);
 			if ( cdvdfsv_cdvdman_internal_struct_ptr->dec_mode_last_set )
@@ -857,7 +857,7 @@ int __fastcall readproc2(
 						{
 							cdvdfsv_memcpy(rtocbuf_plus_2340, (_DWORD *)((char *)rtocbuf_tmp + fssift), 2340 - fssift);
 							cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec - 2340], 0x924u);
-							if ( i == nsec_div_cdvdfsv_sectors - 1 )
+							if ( (int)i == nsec_div_cdvdfsv_sectors - 1 )
 								cdvdfsv_rdp2sdd.size = dmasize_tmp;
 							else
 								cdvdfsv_rdp2sdd.size = 2340 * (csec - 1) + fssift;
@@ -868,7 +868,7 @@ int __fastcall readproc2(
 						else
 						{
 							cdvdfsv_memcpy(rtocbuf_tmp, (_DWORD *)&rtocbuf_plus_4680[2340 * csec_minus_one], 0x924u);
-							if ( i == nsec_div_cdvdfsv_sectors - 1 )
+							if ( (int)i == nsec_div_cdvdfsv_sectors - 1 )
 								cdvdfsv_rdp2sdd.size = dmasize_tmp;
 							else
 								cdvdfsv_rdp2sdd.size = 2340 * csec_minus_one;
@@ -922,7 +922,7 @@ int __fastcall readproc2(
 				else
 				{
 					size_2 = secsize;
-					if ( i != nsec_div_cdvdfsv_sectors - 1 )
+					if ( (int)i != nsec_div_cdvdfsv_sectors - 1 )
 						size_2 = fssift;
 					csec_bytes = dmasize_tmp;
 					if ( i )
@@ -934,7 +934,7 @@ int __fastcall readproc2(
 							cdvdfsv_memcpy((_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift + (j * secsize)), (_DWORD *)((char *)rtocbuf_plus_4680 + 12 + (j * sector_size)), secsize);
 						}
 						cdvdfsv_memcpy((_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift + ((csec - 1) * secsize)), (_DWORD *)((char *)rtocbuf_plus_4680 + 12 + ((csec - 1) * sector_size)), size_2);
-						if ( i != nsec_div_cdvdfsv_sectors - 1 )
+						if ( (int)i != nsec_div_cdvdfsv_sectors - 1 )
 						{
 							csec_bytes = secsize * csec;
 						}
@@ -948,7 +948,7 @@ int __fastcall readproc2(
 							cdvdfsv_memcpy((_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift + (j * secsize)), (_DWORD *)&rtocbuf_plus_4680[sector_size + 12 + (j * sector_size)], secsize);
 						}
 						cdvdfsv_memcpy((_DWORD *)((char *)rtocbuf_plus_2340 + secsize - fssift + ((csec - 2) * secsize)), (_DWORD *)&rtocbuf_plus_4680[sector_size + 12 + ((csec - 2) * sector_size)], size_2);
-						if ( i != nsec_div_cdvdfsv_sectors - 1 )
+						if ( (int)i != nsec_div_cdvdfsv_sectors - 1 )
 						{
 							csec_bytes = secsize * (csec - 1);
 						}
@@ -977,7 +977,7 @@ int __fastcall readproc2(
 				retry_flag1 = 1;
 			}
 			CpuSuspendIntr(&state);
-			if ( i == nsec_div_cdvdfsv_sectors - 1 )
+			if ( (int)i == nsec_div_cdvdfsv_sectors - 1 )
 			{
 				DisableIntr(35, (int *)&chcr);
 			}

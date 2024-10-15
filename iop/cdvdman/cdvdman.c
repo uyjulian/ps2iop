@@ -378,7 +378,7 @@ void *sceGetFsvRbuf(void)
 //----- (004000B0) --------------------------------------------------------
 int __cdecl cdrom_init(iop_device_t *dev)
 {
-	int i; // $v1
+	unsigned int i; // $v1
 	iop_event_t event; // [sp+10h] [-18h] BYREF
 	int cd_sc_tmp; // [sp+20h] [-8h] BYREF
 
@@ -423,7 +423,7 @@ int __cdecl cdrom_init(iop_device_t *dev)
 	cdvdman_spinnom = -1;
 	cdvdman_trycnt = -1;
 	sceCdSC(0xFFFFFFF3, &cd_sc_tmp);
-	for ( i = 0; i < 16; i += 1 )
+	for ( i = 0; i < (sizeof(cdvdman_handles)/sizeof(cdvdman_handles[0])); i += 1 )
 	{
 		cdvdman_handles[i].fd_flags = 0;
 	}
@@ -473,9 +473,9 @@ void __fastcall cdvdman_termcall(int with_stop)
 //----- (00400390) --------------------------------------------------------
 int __cdecl cdrom_deinit()
 {
-	int i; // $v1
+	unsigned int i; // $v1
 
-	for ( i = 0; i < 16; i += 1 )
+	for ( i = 0; i < (sizeof(cdvdman_handles)/sizeof(cdvdman_handles[0])); i += 1 )
 	{
 		cdvdman_handles[i].fd_flags = 0;
 	}
@@ -594,7 +594,7 @@ void __cdecl cdvdman_iormode(sceCdRMode *rmode, int fmode, int layer)
 //----- (00400658) --------------------------------------------------------
 int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname)
 {
-	int i; // $v1
+	unsigned int i; // $v1
 	CDVDMAN_FILEDATA *handle; // $s1
 	int is_devready; // $s0
 	size_t path_name_len; // $v1
@@ -611,10 +611,10 @@ int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname)
 		printf("fileIO DOPEN name= %s layer %d\n", dirname, f->unit);
 	}
 	WaitEventFlag(fio_fsv_evid, 1u, 16, efbits);
-	for ( i = 0; (i < 16) && cdvdman_handles[i].fd_flags; i += 1 )
+	for ( i = 0; (i < (sizeof(cdvdman_handles)/sizeof(cdvdman_handles[0]))) && cdvdman_handles[i].fd_flags; i += 1 )
 	{
 	}
-	if ( i == 16 )
+	if ( i == (sizeof(cdvdman_handles)/sizeof(cdvdman_handles[0])) )
 	{
 		SetEventFlag(fio_fsv_evid, 1u);
 		return -24;
@@ -627,7 +627,7 @@ int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname)
 		SetEventFlag(fio_fsv_evid, 1u);
 		return is_devready;
 	}
-	strncpy(path_name, dirname, 128);
+	strncpy(path_name, dirname, sizeof(path_name));
 	if ( !strcmp(path_name, ".") )
 	{
 		strcpy(path_name, "\\.");
@@ -739,7 +739,7 @@ int __cdecl cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf)
 	devready_tmp = cdvdman_devready();
 	if ( devready_tmp >= 0 )
 	{
-		strncpy(filename, name, 128);
+		strncpy(filename, name, sizeof(filename));
 		if ( !strcmp(filename, ".") )
 		{
 			strcpy(filename, "\\.");
@@ -814,7 +814,7 @@ int __cdecl cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
 			++filedata->read_pos;
 			devready_tmp = strlen(fileinfo.file_struct.name);
 		}
-		strncpy(buf->name, fileinfo.file_struct.name, 256);
+		strncpy(buf->name, fileinfo.file_struct.name, sizeof(buf->name));
 		cdvdman_fillstat(fileinfo.file_struct.name, &buf->stat, &fileinfo);
 	}
 	SetEventFlag(fio_fsv_evid, 1u);
@@ -1068,9 +1068,9 @@ int __cdecl cdvdman_cache_invalidate(CDVDMAN_FILEDATA *filedata1, int index)
 //----- (00401228) --------------------------------------------------------
 int __cdecl cdvdman_invcaches()
 {
-	int i; // $s0
+	unsigned int i; // $s0
 
-	for ( i = 0; i < 16; i += 1 )
+	for ( i = 0; i < (sizeof(cdvdman_handles)/sizeof(cdvdman_handles[0])); i += 1 )
 	{
 		if ( (cdvdman_handles[i].fd_flags & 4) != 0 )
 		{
@@ -1378,7 +1378,7 @@ int __cdecl cdvdfile_cache_fill_read(const iop_file_t *f, void *buf, int nbytes)
 int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 {
 	int fds1; // $s1
-	int i; // $s0
+	unsigned int i; // $s0
 	int emptyfdfound; // $a0
 	int streamfdfound; // $a1
 	CDVDMAN_FILEDATA *filedata1; // $s1
@@ -1405,7 +1405,7 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	WaitEventFlag(fio_fsv_evid, 1u, 16, &efbits);
 	emptyfdfound = 0;
 	streamfdfound = 0;
-	for ( i = 0; i < 16; i += 1 )
+	for ( i = 0; i < (sizeof(cdvdman_handles)/sizeof(cdvdman_handles[0])); i += 1 )
 	{
 		if ( !cdvdman_handles[i].fd_flags )
 		{
@@ -1428,7 +1428,7 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	}
 	f->privdata = (void *)fds1;
 	filedata1 = &cdvdman_handles[fds1];
-	strncpy(filename, name, 128);
+	strncpy(filename, name, sizeof(filename));
 	cdvdman_cdfname(filename);
 	if ( (mode & 0x40000000) != 0 || cdvdman_l0check(f->unit) )
 	{
@@ -1451,10 +1451,10 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	{
 		if ( !strncmp(name, "sce_cdvd_lsn", 12) )
 		{
-			strncpy(filename, name, 128);
+			strncpy(filename, name, sizeof(filename));
 			// Unofficial: Avoid out of bounds access
-			for ( i = 12; i < (128 - 5) && filename[i] && filename[i] != 95; i += 1 );
-			if ( !filename[i] || i >= (128 - 5) )
+			for ( i = 12; i < (sizeof(filename) - 5) && filename[i] && filename[i] != 95; i += 1 );
+			if ( !filename[i] || i >= (sizeof(filename) - 5) )
 			{
 				devready_tmp = -2;
 			}
@@ -2318,7 +2318,7 @@ int __cdecl cdrom_devctl(
 				}
 				break;
 			case 0x4397:
-				for ( i = 0; i < 0x10; i += 1 )
+				for ( i = 0; i < (sizeof(cdvdman_handles)/sizeof(cdvdman_handles[0])); i += 1 )
 				{
 					if ( (cdvdman_handles[i].fd_flags & 4) != 0 )
 					{
@@ -2576,7 +2576,7 @@ int __cdecl sceCdSpinCtrlIOP(u32 speed)
 int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 {
 	int efret; // $v0
-	int i; // $a3
+	unsigned int i; // $a3
 	int search_res; // $s0
 	u32 efbits[2]; // [sp+10h] [-8h] BYREF
 
@@ -2585,7 +2585,7 @@ int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 	{
 		return 0;
 	}
-	for ( i = 0; i < 1023 && path[i]; i += 1 )
+	for ( i = 0; i < ((sizeof(cdvdman_sfname)/sizeof(cdvdman_sfname[0])) - 1) && path[i]; i += 1 )
 	{
 		cdvdman_sfname[i] = path[i];
 	}
@@ -3063,7 +3063,7 @@ int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int
 	const char *nameptr1; // $s0
 	int i; // $s2
 	char *nameptr2; // $s1
-	int j; // $s2
+	unsigned int j; // $s2
 	char *filename; // $s0
 	CDVDMAN_FILETBL_ENTRY_T *fptmp1; // $v1
 	CDVDMAN_FILETBL_ENTRY_T *filetbltmp1; // $v0
@@ -3139,7 +3139,7 @@ int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int
 				{
 					printf("CdSearchFile: searching %s...\n", name_buf);
 				}
-				for ( j = 0; j < 64; j += 1 )
+				for ( j = 0; j < (sizeof(cdvdman_filetbl)/sizeof(cdvdman_filetbl[0])); j += 1 )
 				{
 					filename = cdvdman_filetbl[j].file_struct.name;
 					if ( !filename[0] )
@@ -3148,7 +3148,7 @@ int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int
 					}
 					if ( cdvdman_verbose > 0 )
 					{
-						printf("%d %s %s\n", j, filename, name_buf);
+						printf("%d %s %s\n", (int)j, filename, name_buf);
 					}
 					if ( cdvdman_cmpname(filename, name_buf) )
 					{
@@ -3384,7 +3384,7 @@ int __cdecl CD_newmedia(int arg)
 	{
 		printf("CD_newmedia: sarching dir..\n");
 	}
-	for ( i = 0, fs_rbuf_cur = cdvdman_fs_rbuf; i < 128 && fs_rbuf_cur < &cdvdman_fs_rbuf[2048] && *fs_rbuf_cur; i += 1, fs_rbuf_cur += (unsigned __int8)*fs_rbuf_cur + (*fs_rbuf_cur & 1) + 8 )
+	for ( i = 0, fs_rbuf_cur = cdvdman_fs_rbuf; i < (sizeof(cdvdman_dirtbl)/sizeof(cdvdman_dirtbl[0])) && fs_rbuf_cur < &cdvdman_fs_rbuf[2048] && *fs_rbuf_cur; i += 1, fs_rbuf_cur += (unsigned __int8)*fs_rbuf_cur + (*fs_rbuf_cur & 1) + 8 )
 	{
 		cdvdman_dirtbl[i].extent = *(_DWORD *)(fs_rbuf_cur + 2);
 		cdvdman_dirtbl[i].number = i;
@@ -3418,10 +3418,10 @@ int __cdecl CD_newmedia(int arg)
 //----- (00405168) --------------------------------------------------------
 int __fastcall cdvdman_finddir(int target_parent, const char *target_name)
 {
-	int i; // $s0
+	unsigned int i; // $s0
 	int parent; // $v0
 
-	for ( i = 0; i < 128; i += 1 )
+	for ( i = 0; i < (sizeof(cdvdman_dirtbl)/sizeof(cdvdman_dirtbl[0])); i += 1 )
 	{
 		parent = cdvdman_dirtbl[i].parent;
 		if ( !parent )
@@ -3443,7 +3443,7 @@ int __fastcall cdvdman_finddir(int target_parent, const char *target_name)
 int __fastcall CD_cachefile(int dsec, int layer)
 {
 	struct dirTocEntry *toc1; // $s0
-	int i; // $s2
+	unsigned int i; // $s2
 	int file_year; // $s1
 	u32 loc; // [sp+30h] [-18h]
 
@@ -3472,7 +3472,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 	{
 		printf("CD_cachefile: searching...\n");
 	}
-	for ( i = 0, toc1 = (struct dirTocEntry *)cdvdman_fs_rbuf; i < 64 && toc1 < (struct dirTocEntry *)&cdvdman_fs_rbuf[2048]; i += 1, toc1 = (struct dirTocEntry *)((char *)toc1 + LOBYTE(toc1->length)) )
+	for ( i = 0, toc1 = (struct dirTocEntry *)cdvdman_fs_rbuf; i < (sizeof(cdvdman_filetbl)/sizeof(cdvdman_filetbl[0])) && toc1 < (struct dirTocEntry *)&cdvdman_fs_rbuf[2048]; i += 1, toc1 = (struct dirTocEntry *)((char *)toc1 + LOBYTE(toc1->length)) )
 	{
 		if ( !LOBYTE(toc1->length) )
 		{
@@ -3528,7 +3528,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 	}
 	if ( cdvdman_verbose >= 2 )
 	{
-		printf("CD_cachefile: %d files found\n", i);
+		printf("CD_cachefile: %d files found\n", (int)i);
 	}
 	return 1;
 }
@@ -5508,8 +5508,8 @@ int __cdecl set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata,
 void __cdecl cdvdman_write_scmd(cdvdman_internal_struct_t *s)
 {
 	int i; // $s5
-	int j;
-	int rdcnt;
+	unsigned int j;
+	unsigned int rdcnt;
 	int overflowcond; // $a2
 	char rdptr1[64]; // [sp+18h] [-40h] BYREF
 
@@ -5585,11 +5585,11 @@ void __cdecl cdvdman_write_scmd(cdvdman_internal_struct_t *s)
 	}
 	else
 	{
-		for ( j = 0; j < 16; j += 1 )
+		for ( j = 0; j < (sizeof(s->scmd_rd)/sizeof(s->scmd_rd[0])); j += 1 )
 		{
 			s->scmd_rd[j] = 0;
 		}
-		if ( s->rdlen == 16 )
+		if ( s->rdlen == (sizeof(s->scmd_rd)/sizeof(s->scmd_rd[0])) )
 		{
 			for ( j = 0; j < rdcnt; j += 1 )
 			{
@@ -6072,7 +6072,7 @@ int __cdecl cdvdman_mediactl(int code)
 {
 	vu8 dev5_reg_00B; // $v0
 	int reg_00B_tmp_1; // $a1
-	int i; // $a0
+	unsigned int i; // $a0
 	int restmp; // $s0
 	int code_tmp1; // $a0
 	int chflags_tmp3; // $v0
@@ -6104,9 +6104,9 @@ int __cdecl cdvdman_mediactl(int code)
 	}
 	else
 	{
-		for ( i = 0; i < 4; i += 1 )
+		for ( i = 0; i < (sizeof(cdvdman_chflags)/sizeof(cdvdman_chflags[0])); i += 1 )
 		{
-			cdvdman_chflags[i] = i != code;
+			cdvdman_chflags[i] = i != (unsigned int)code;
 		}
 		restmp = 1;
 	}
