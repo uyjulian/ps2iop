@@ -805,4 +805,29 @@ typedef struct cdvdfsv_rpc3h_27_outpacket_
 } cdvdfsv_rpc3h_27_outpacket;
 #endif
 
+#if 1
+#define PRINTF(...) \
+	{ \
+		printf(__VA_ARGS__); \
+	}
+#define KPRINTF(...) \
+	{ \
+		Kprintf(__VA_ARGS__); \
+	}
+#define VERBOSE_PRINTF(level, ...) \
+	{ \
+		if ( g_verbose_level >= (level) ) \
+		{ \
+			printf(__VA_ARGS__);\
+		} \
+	}
+#define VERBOSE_KPRINTF(level, ...) \
+	{ \
+		if ( g_verbose_level >= (level) ) \
+		{ \
+			Kprintf(__VA_ARGS__);\
+		} \
+	}
+#endif
+
 #endif

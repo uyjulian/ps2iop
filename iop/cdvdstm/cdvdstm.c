@@ -85,7 +85,7 @@ static void ee_stream_intr_cb_cdda_thunk(int userdata)
 //-------------------------------------------------------------------------
 // Data declarations
 
-int cdvdstm_verbose = 0; // weak
+int g_verbose_level = 0; // weak
 int cdvdstm_in_deldrv = 0; // weak
 int cdvdstm_bufmax = 0; // weak
 int cdvdstm_numbytes = 0; // weak
@@ -183,13 +183,9 @@ int vClearEventFlag()
 //----- (004000F0) --------------------------------------------------------
 int cdvdstm_4()
 {
-	if ( cdvdstm_verbose >= 1 )
-	{
-		printf("Dummy Entry Called\n");
-	}
+	VERBOSE_PRINTF(1, "Dummy Entry Called\n");
 	return 0;
 }
-// 404688: using guessed type int cdvdstm_verbose;
 
 //----- (00400124) --------------------------------------------------------
 int cdvdstm_2()
@@ -210,7 +206,7 @@ int cdvdstm_2()
 //----- (00400174) --------------------------------------------------------
 BOOL __fastcall alarm_cb(void *a1)
 {
-	Kprintf("Stm Iop Read Time Out %d(msec)\n", *(_DWORD *)a1 / 0x9000u);
+	KPRINTF("Stm Iop Read Time Out %d(msec)\n", *(_DWORD *)a1 / 0x9000u);
 	return sceCdBreak() == 0;
 }
 
@@ -223,10 +219,7 @@ int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modear
 	u32 efbits; // [sp+1Ch] [-Ch] BYREF
 	int err; // [sp+20h] [-8h] BYREF
 
-	if ( cdvdstm_verbose >= 1 )
-	{
-		Kprintf("sceCdStream0 call read size= %d mode= %d addr= %08x\n", rdsize, modearg, addrarg);
-	}
+	VERBOSE_KPRINTF(1, "sceCdStream0 call read size= %d mode= %d addr= %08x\n", rdsize, modearg, addrarg);
 	cur_size = 0;
 	if ( !sceCdSC(0xFFFFFFFF, &scres) )
 		return 0;
@@ -245,16 +238,12 @@ int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modear
 		cur_size += streamres;
 		if ( err )
 			*error_ptr = err;
-		if ( cdvdstm_verbose >= 1 )
-		{
-			Kprintf("sceCdStream0 BLK cur_size= %d req_size= %d err 0x%x\n", cur_size, rdsize, err);
-		}
+		VERBOSE_KPRINTF(1, "sceCdStream0 BLK cur_size= %d req_size= %d err 0x%x\n", cur_size, rdsize, err);
 		if ( (unsigned int)cur_size == rdsize )
 			break;
 	}
 	return cur_size;
 }
-// 404688: using guessed type int cdvdstm_verbose;
 // 404770: using guessed type sceCdRMode rmode_for_stream0;
 
 //----- (00400358) --------------------------------------------------------
@@ -284,10 +273,7 @@ unsigned int __fastcall iop_stream_handler(
 
 	retryflag = 0;
 	posszarg1_stk = posszarg1;
-	if ( cdvdstm_verbose >= 1 )
-	{
-		Kprintf("CD Stream Call mode= %d\n", cmdid);
-	}
+	VERBOSE_KPRINTF(1, "CD Stream Call mode= %d\n", cmdid);
 	*error_ptr = 0;
 	if ( cdvdstm_stmstart_iop == 2 && cmdid != 9 && cmdid != 3 )
 	{
@@ -333,7 +319,7 @@ unsigned int __fastcall iop_stream_handler(
 			cdvdstm_numbytes = cdvdstm_sectorcount << 11;
 			cdvdstm_buffer = buffer;
 			cdvdstm_bankmax = posszarg2;
-			Kprintf(
+			KPRINTF(
 				"Stream Buffer 1Bank %dbyte %dbanks addr:%08x %dbyte used.\n",
 				cdvdstm_numbytes,
 				posszarg2,
@@ -421,10 +407,7 @@ unsigned int __fastcall iop_stream_handler(
 	{
 		if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] )
 		{
-			if ( cdvdstm_verbose >= 1 )
-			{
-				Kprintf("CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_iop[0], (unsigned __int8)cdvdstm_usedmap_iop[1], (unsigned __int8)cdvdstm_usedmap_iop[2], (unsigned __int8)cdvdstm_usedmap_iop[3], (unsigned __int8)cdvdstm_usedmap_iop[4], cdvdstm_bankgp_iop, cdvdstm_bankcur_iop);
-			}
+			VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_iop[0], (unsigned __int8)cdvdstm_usedmap_iop[1], (unsigned __int8)cdvdstm_usedmap_iop[2], (unsigned __int8)cdvdstm_usedmap_iop[3], (unsigned __int8)cdvdstm_usedmap_iop[4], cdvdstm_bankgp_iop, cdvdstm_bankcur_iop);
 			bankcur_next_tmp1 = cdvdstm_bankcur_iop;
 			cdvdstm_bankcur_iop += 1;
 			if ( (unsigned int)cdvdstm_bankcur_iop >= (unsigned int)cdvdstm_bankmax )
@@ -448,10 +431,7 @@ unsigned int __fastcall iop_stream_handler(
 			{
 				cdvdstm_bankcur_iop = bankcur_next_tmp2;
 				written_chunk_size_tmp = i;
-				if ( cdvdstm_verbose >= 1 )
-				{
-					Kprintf("CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_iop[0], (unsigned __int8)cdvdstm_usedmap_iop[1], (unsigned __int8)cdvdstm_usedmap_iop[2], (unsigned __int8)cdvdstm_usedmap_iop[3], (unsigned __int8)cdvdstm_usedmap_iop[4], cdvdstm_bankgp_iop, cdvdstm_bankcur_iop);
-				}
+				VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_iop[0], (unsigned __int8)cdvdstm_usedmap_iop[1], (unsigned __int8)cdvdstm_usedmap_iop[2], (unsigned __int8)cdvdstm_usedmap_iop[3], (unsigned __int8)cdvdstm_usedmap_iop[4], cdvdstm_bankgp_iop, cdvdstm_bankcur_iop);
 				break;
 			}
 		}
@@ -480,7 +460,6 @@ unsigned int __fastcall iop_stream_handler(
 	return 1;
 }
 // 4005AC: conditional instruction was optimized away because $s6.4!=0
-// 404688: using guessed type int cdvdstm_verbose;
 // 404694: using guessed type int cdvdstm_bufmax;
 // 404698: using guessed type int cdvdstm_numbytes;
 // 40469C: using guessed type int cdvdstm_bankmax;
@@ -498,10 +477,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 
 	(void)userdata;
 
-	if ( cdvdstm_verbose >= 1 )
-	{
-		Kprintf("Intr Read call\n");
-	}
+	VERBOSE_KPRINTF(1, "Intr Read call\n");
 	iCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
 	iCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
 	sceCdSC(0xFFFFFFFF, &scres1);
@@ -525,25 +501,16 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 		cdvdstm_retrycnt_iop = 0;
 	if ( cdvdstm_stmstart_iop || scres1 || cdvdstm_retrycnt_iop )
 	{
-		if ( cdvdstm_verbose >= 1 )
-		{
-			Kprintf("Stm Rtry stmstart:%d err:%02x retry:%d\n", cdvdstm_stmstart_iop, scres1, cdvdstm_retrycnt_iop);
-		}
+		VERBOSE_KPRINTF(1, "Stm Rtry stmstart:%d err:%02x retry:%d\n", cdvdstm_stmstart_iop, scres1, cdvdstm_retrycnt_iop);
 	}
 	cdvdstm_curclk_iop.lo = ( cdvdstm_stmstart_iop || scres1 || cdvdstm_retrycnt_iop ) ? 552960000 : (36864 * sceCdSC(0xFFFFFFEF, &scres1));
 	if ( scres1 )
 	{
-		if ( cdvdstm_verbose >= 1 )
-		{
-			Kprintf("IOP Stream read Error code= 0x%02x retry= %d\n", scres1, cdvdstm_retrycnt_iop);
-		}
+		VERBOSE_KPRINTF(1, "IOP Stream read Error code= 0x%02x retry= %d\n", scres1, cdvdstm_retrycnt_iop);
 		cdvdstm_retrycnt_iop = 1;
 		if ( scres1 == 48 || scres1 == 1 )
 		{
-			if ( cdvdstm_verbose >= 1 )
-			{
-				Kprintf("On err %08x\n", scres1);
-			}
+			VERBOSE_KPRINTF(1, "On err %08x\n", scres1);
 			if ( cdvdstm_retrycnt_iop )
 				cdvdstm_retryerr_iop = scres1;
 			cdvdstm_retrycnt_iop = 3;
@@ -559,10 +526,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 
 		cdvdstm_retrycnt_iop -= 1;
 		tgttmp = ( (unsigned int)cdvdstm_tgt >= (unsigned int)(16 * cdvdstm_retrycnt_iop) ) ? (cdvdstm_tgt - 16 * cdvdstm_retrycnt_iop) : (cdvdstm_tgt + 16 * cdvdstm_retrycnt_iop);
-		if ( cdvdstm_verbose >= 1 )
-		{
-			Kprintf("Stm Rtry Start Tgt=%d Cur= %d\n", cdvdstm_tgt, tgttmp);
-		}
+		VERBOSE_KPRINTF(1, "Stm Rtry Start Tgt=%d Cur= %d\n", cdvdstm_tgt, tgttmp);
 		if ( sceCdRE(
 					 tgttmp,
 					 cdvdstm_sectorcount,
@@ -596,10 +560,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 		{
 			cdvdstm_bankgp_iop = gptmp;
 			cdvdstm_usedmap_iop[gptmp] = 0;
-			if ( cdvdstm_verbose >= 1 )
-			{
-				Kprintf("read Full %d %d %d %d %d gp %d pp %d spn %d\n", (unsigned __int8)cdvdstm_usedmap_iop[0], (unsigned __int8)cdvdstm_usedmap_iop[1], (unsigned __int8)cdvdstm_usedmap_iop[2], (unsigned __int8)cdvdstm_usedmap_iop[3], (unsigned __int8)cdvdstm_usedmap_iop[4], cdvdstm_bankgp_iop, cdvdstm_bankcur_iop, cdvdstm_mode_iop.spindlctrl);
-			}
+			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (unsigned __int8)cdvdstm_usedmap_iop[0], (unsigned __int8)cdvdstm_usedmap_iop[1], (unsigned __int8)cdvdstm_usedmap_iop[2], (unsigned __int8)cdvdstm_usedmap_iop[3], (unsigned __int8)cdvdstm_usedmap_iop[4], cdvdstm_bankgp_iop, cdvdstm_bankcur_iop, cdvdstm_mode_iop.spindlctrl);
 			cdvdstm_curclk_iop.lo = 294912;
 			if ( iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop) != 0 && sceCdNop() == 0 )
 			{
@@ -643,7 +604,6 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	}
 	return 0;
 }
-// 404688: using guessed type int cdvdstm_verbose;
 // 404698: using guessed type int cdvdstm_numbytes;
 // 40469C: using guessed type int cdvdstm_bankmax;
 // 4046AC: using guessed type int cdvdstm_retryerr_iop;
@@ -720,7 +680,7 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 			ee_stream_handler_cdda(instruct, inbuf_len, outres_ptr);
 			break;
 		default:
-			printf("Un-support devctl %08x\n", a3);
+			PRINTF("Un-support devctl %08x\n", a3);
 			retres = -5;
 			break;
 	}
@@ -732,14 +692,14 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 //----- (00401588) --------------------------------------------------------
 int __cdecl cdrom_stm_nulldev()
 {
-	printf("nulldev0 call\n");
+	PRINTF("nulldev0 call\n");
 	return -5;
 }
 
 //----- (004015B0) --------------------------------------------------------
 __int64 __cdecl cdrom_stm_nulldev64()
 {
-	printf("nulldev0 call\n");
+	PRINTF("nulldev0 call\n");
 	return -5LL;
 }
 
@@ -789,7 +749,7 @@ BOOL __fastcall stm_alarm_timeout_cb(void *a1)
 	unsigned int scres; // [sp+10h] [-8h] BYREF
 
 	scres = *(_DWORD *)a1 / 0x9000u;
-	Kprintf("Stm EE Read Time Out %d(msec)\n", scres);
+	KPRINTF("Stm EE Read Time Out %d(msec)\n", scres);
 	sceCdSC(0xFFFFFFEE, (int *)&scres);
 	return sceCdBreak() == 0;
 }
@@ -871,7 +831,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 			cdvdstm_chunksz2 = chunks_sectors << 11;
 			cdvdstm_buffer2 = (char *)instruct->buffer;
 			cdvdstm_bankcnt2 = instruct->posszarg2;
-			printf(
+			PRINTF(
 				"Stream Buffer 1Bank %dbyte %dbanks %dbyte used\n",
 				(int)(chunks_sectors << 11),
 				(int)(instruct->posszarg2),
@@ -974,10 +934,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
 		{
-			if ( cdvdstm_verbose >= 1 )
-			{
-				Kprintf("CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee);
-			}
+			VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee);
 			CpuSuspendIntr(&state);
 			bankcur_next_tmp1 = cdvdstm_bankcur_ee;
 			cdvdstm_bankcur_ee += 1;
@@ -1026,10 +983,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 			{
 				cdvdstm_bankcur_ee = bankcur_next_tmp2;
 				CpuResumeIntr(state);
-				if ( cdvdstm_verbose >= 1 )
-				{
-					Kprintf("CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee);
-				}
+				VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee);
 				posszarg2_bytes_overrun = posszarg2_bytes - (posszarg2_bytes_remain - posszarg2_bytes_clamped);
 				break;
 			}
@@ -1051,7 +1005,6 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	*outres_ptr = outres_tmp2;
 	return;
 }
-// 404688: using guessed type int cdvdstm_verbose;
 // 404744: using guessed type int cdvdstm_bufsz2;
 // 404748: using guessed type int cdvdstm_chunksz2;
 // 40474C: using guessed type int cdvdstm_bankcnt2;
@@ -1068,10 +1021,7 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 
 	(void)userdata;
 
-	if ( cdvdstm_verbose >= 1 )
-	{
-		Kprintf("Intr EE Stm Read call\n");
-	}
+	VERBOSE_KPRINTF(1, "Intr EE Stm Read call\n");
 	iCancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
 	iCancelAlarm((unsigned int (__cdecl *)(void *))ee_stream_intr_cb_normal, &cdvdstm_curclk_ee);
 	sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
@@ -1096,18 +1046,12 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	cdvdstm_curclk_ee.lo = ( cdvdstm_stmstart_ee || cdvdstm_last_error_for_ee || cdvdstm_retrycnt_ee_normal ) ? 552960000 : (36864 * sceCdSC(0xFFFFFFEF, &cdvdstm_last_error_for_ee));
 	if ( cdvdstm_last_error_for_ee )
 	{
-		if ( cdvdstm_verbose >= 1 )
-		{
-			Kprintf("EE Stream read LBN= %d Error code= 0x%02x retry= %d\n", cdvdstm_readlbn_ee_normal, cdvdstm_last_error_for_ee, cdvdstm_retrycnt_ee_normal);
-		}
+		VERBOSE_KPRINTF(1, "EE Stream read LBN= %d Error code= 0x%02x retry= %d\n", cdvdstm_readlbn_ee_normal, cdvdstm_last_error_for_ee, cdvdstm_retrycnt_ee_normal);
 		if ( cdvdstm_last_error_for_ee == 48 || cdvdstm_last_error_for_ee == 1 )
 		{
 			if ( cdvdstm_retrycnt_ee_normal )
 			{
-				if ( cdvdstm_verbose >= 1 )
-				{
-					Kprintf("On Retry retry %d err %08x\n", cdvdstm_retrycnt_ee_normal, cdvdstm_last_error_for_ee);
-				}
+				VERBOSE_KPRINTF(1, "On Retry retry %d err %08x\n", cdvdstm_retrycnt_ee_normal, cdvdstm_last_error_for_ee);
 			}
 			cdvdstm_retrycnt_ee_normal = 3;
 		}
@@ -1130,10 +1074,7 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 		}
 		else
 		{
-			if ( cdvdstm_verbose >= 1 )
-			{
-				Kprintf("Stm Read Call fail\n");
-			}
+			VERBOSE_KPRINTF(1, "Stm Read Call fail\n");
 			cdvdstm_curclk_ee.lo = 7372800;
 			if ( iSetAlarm(&cdvdstm_curclk_ee, (unsigned int (__cdecl *)(void *))ee_stream_intr_cb_normal, &cdvdstm_curclk_ee) && !sceCdNop() )
 			{
@@ -1156,10 +1097,7 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 		{
 			cdvdstm_bankgp_ee = gptmp;
 			cdvdstm_usedmap_ee[gptmp] = 0;
-			if ( cdvdstm_verbose >= 1 )
-			{
-				Kprintf("read Full %d %d %d %d %d gp %d pp %d spn %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee, cdvdstm_mode_ee.spindlctrl);
-			}
+			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee, cdvdstm_mode_ee.spindlctrl);
 			cdvdstm_curclk_ee.lo = 294912;
 			if ( iSetAlarm(
 									&cdvdstm_curclk_ee,
@@ -1193,10 +1131,7 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 			}
 			else
 			{
-				if ( cdvdstm_verbose >= 1 )
-				{
-					Kprintf("Stm Read Call1 fail\n");
-				}
+				VERBOSE_KPRINTF(1, "Stm Read Call1 fail\n");
 				cdvdstm_curclk_ee.lo = 7372800;
 				if ( iSetAlarm(
 							 &cdvdstm_curclk_ee,
@@ -1213,7 +1148,6 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	}
 	return 0;
 }
-// 404688: using guessed type int cdvdstm_verbose;
 // 404748: using guessed type int cdvdstm_chunksz2;
 // 40474C: using guessed type int cdvdstm_bankcnt2;
 // 404758: using guessed type int cdvdstm_retryerr_ee;
@@ -1315,7 +1249,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 			cdvdstm_chunksz2 = chunks_sectors * cdvdstm_usedchunksize2;
 			cdvdstm_buffer2 = (char *)instruct->buffer;
 			cdvdstm_bankcnt2 = instruct->posszarg2;
-			printf(
+			PRINTF(
 				"DA Stream Buffer 1Bank %dbyte %dbanks %dbyte used\n",
 				(int)(chunks_sectors * cdvdstm_usedchunksize2),
 				(int)instruct->posszarg2,
@@ -1437,10 +1371,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
 		{
-			if ( cdvdstm_verbose >= 1 )
-			{
-				Kprintf("CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee);
-			}
+			VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee);
 			CpuSuspendIntr(&state);
 			bankcur_next_tmp1 = cdvdstm_bankcur_ee;
 			cdvdstm_bankcur_ee += 1;
@@ -1489,10 +1420,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 			{
 				cdvdstm_bankcur_ee = bankcur_next_tmp2;
 				CpuResumeIntr(state);
-				if ( cdvdstm_verbose >= 1 )
-				{
-					Kprintf("CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee);
-				}
+				VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee);
 				posszarg2_bytes_overrun = posszarg2_bytes - (posszarg2_bytes_remain - posszarg2_bytes_clamped);
 				break;
 			}
@@ -1518,7 +1446,6 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	*outres_ptr = posszarg2_overrun_chunks2;
 }
 // 402B7C: conditional instruction was optimized away because $v0.4!=0
-// 404688: using guessed type int cdvdstm_verbose;
 // 404744: using guessed type int cdvdstm_bufsz2;
 // 404748: using guessed type int cdvdstm_chunksz2;
 // 40474C: using guessed type int cdvdstm_bankcnt2;
@@ -1536,10 +1463,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 
 	(void)userdata;
 
-	if ( cdvdstm_verbose >= 1 )
-	{
-		Kprintf("Intr EE DA Stm Read call\n");
-	}
+	VERBOSE_KPRINTF(1, "Intr EE DA Stm Read call\n");
 	iCancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
 	iCancelAlarm((unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda, &cdvdstm_curclk_ee);
 	sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
@@ -1563,18 +1487,12 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	cdvdstm_curclk_ee.lo = ( cdvdstm_stmstart_ee || cdvdstm_last_error_for_ee || cdvdstm_retrycnt_ee_cdda ) ? 552960000 : (36864 * sceCdSC(0xFFFFFFEF, &cdvdstm_last_error_for_ee));
 	if ( cdvdstm_last_error_for_ee )
 	{
-		if ( cdvdstm_verbose >= 1 )
-		{
-			Kprintf("EE Stream read LBN= %d Error code= 0x%02x retry= %d\n", cdvdstm_readlbn_ee_cdda, cdvdstm_last_error_for_ee, cdvdstm_retrycnt_ee_cdda);
-		}
+		VERBOSE_KPRINTF(1, "EE Stream read LBN= %d Error code= 0x%02x retry= %d\n", cdvdstm_readlbn_ee_cdda, cdvdstm_last_error_for_ee, cdvdstm_retrycnt_ee_cdda);
 		if ( cdvdstm_last_error_for_ee == 48 || cdvdstm_last_error_for_ee == 1 )
 		{
 			if ( cdvdstm_retrycnt_ee_cdda )
 			{
-				if ( cdvdstm_verbose >= 1 )
-				{
-					Kprintf("On Retry retry %d err %08x\n", cdvdstm_retrycnt_ee_cdda, cdvdstm_last_error_for_ee);
-				}
+				VERBOSE_KPRINTF(1, "On Retry retry %d err %08x\n", cdvdstm_retrycnt_ee_cdda, cdvdstm_last_error_for_ee);
 			}
 			cdvdstm_retrycnt_ee_cdda = 4;
 		}
@@ -1606,10 +1524,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 		}
 		else
 		{
-			if ( cdvdstm_verbose >= 1 )
-			{
-				Kprintf("Stm Read Call fail\n");
-			}
+			VERBOSE_KPRINTF(1, "Stm Read Call fail\n");
 			cdvdstm_curclk_ee.lo = 7372800;
 			if ( iSetAlarm(&cdvdstm_curclk_ee, (unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda, &cdvdstm_curclk_ee) && !sceCdNop() )
 			{
@@ -1632,10 +1547,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 		{
 			cdvdstm_bankgp_ee = gptmp;
 			cdvdstm_usedmap_ee[gptmp] = 0;
-			if ( cdvdstm_verbose >= 1 )
-			{
-				Kprintf("read Full %d %d %d %d %d gp %d pp %d spn %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee, cdvdstm_mode_ee.spindlctrl);
-			}
+			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (unsigned __int8)cdvdstm_usedmap_ee[0], (unsigned __int8)cdvdstm_usedmap_ee[1], (unsigned __int8)cdvdstm_usedmap_ee[2], (unsigned __int8)cdvdstm_usedmap_ee[3], (unsigned __int8)cdvdstm_usedmap_ee[4], cdvdstm_bankgp_ee, cdvdstm_bankcur_ee, cdvdstm_mode_ee.spindlctrl);
 			cdvdstm_curclk_ee.lo = 294912;
 			if ( iSetAlarm(
 									&cdvdstm_curclk_ee,
@@ -1669,10 +1581,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 			}
 			else
 			{
-				if ( cdvdstm_verbose >= 1 )
-				{
-					Kprintf("Stm Read Call1 fail\n");
-				}
+				VERBOSE_KPRINTF(1, "Stm Read Call1 fail\n");
 				cdvdstm_curclk_ee.lo = 7372800;
 				if ( iSetAlarm(&cdvdstm_curclk_ee, (unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda, &cdvdstm_curclk_ee)
 					&& !sceCdNop() )
@@ -1686,7 +1595,6 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	}
 	return 0;
 }
-// 404688: using guessed type int cdvdstm_verbose;
 // 404748: using guessed type int cdvdstm_chunksz2;
 // 40474C: using guessed type int cdvdstm_bankcnt2;
 // 404758: using guessed type int cdvdstm_retryerr_ee;
