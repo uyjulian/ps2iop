@@ -325,13 +325,7 @@ typedef struct cdvdman_internal_struct_
 	int m_cd_inited;
 	int m_tray_is_open;
 	int m_break_cdvdfsv_readchain;
-	int m_field_0D8;
-	int m_field_0DC;
-	int m_var_sc_ffffffdb;
-	int m_field_0E4;
-	int m_var_sc_ffffffd9;
-	int m_field_0EC;
-	int m_pad[4];
+	int m_unused[10];
 } cdvdman_internal_struct_t;
 #endif
 
