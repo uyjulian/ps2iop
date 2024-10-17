@@ -1153,9 +1153,7 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	int devready_tmp; // $s0
 	char filename[128]; // [sp+18h] [-C8h] BYREF
 	sceCdlFILE fileinfo; // [sp+98h] [-48h] BYREF
-	cdrom_stm_devctl_t devctl_req; // [sp+C0h] [-20h] BYREF
 	u32 efbits; // [sp+D8h] [-8h] BYREF
-	int buf; // [sp+DCh] [-4h] BYREF
 
 	(void)arg4;
 	devready_tmp = 0;
@@ -1244,13 +1242,13 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	cdvdman_srchspd = 0;
 	if ( (mode & 0x40000000) != 0 )
 	{
-		memset(&devctl_req, 0, sizeof(devctl_req));
-		devctl_req.rmode.datapattern = 0;
-		devctl_req.rmode.spindlctrl = 0;
-		devctl_req.rmode.trycount = (cdvdman_trycnt == -1) ? 0 : cdvdman_trycnt;
-		devctl_req.cmdid = 1;
-		devctl_req.posszarg1 = fileinfo.lsn;
-		if ( devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0 || !buf )
+		sceCdRMode rmode;
+		memset(&rmode, 0, sizeof(rmode));
+		rmode.datapattern = 0;
+		rmode.spindlctrl = 0;
+		rmode.trycount = (cdvdman_trycnt == -1) ? 0 : cdvdman_trycnt;
+		// The following call to sceCdStStart was inlined
+		if ( !sceCdStStart(fileinfo.lsn, &rmode) )
 		{
 			filedata->fd_flags = 0;
 			SetEventFlag(fio_fsv_evid, 1u);
@@ -1296,9 +1294,7 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 int __cdecl cdrom_close(iop_file_t *f)
 {
 	CDVDMAN_FILEDATA *filedata; // $s0
-	cdrom_stm_devctl_t devctl_req; // [sp+18h] [-20h] BYREF
 	u32 efbits; // [sp+30h] [-8h] BYREF
-	int buf; // [sp+34h] [-4h] BYREF
 
 	VERBOSE_PRINTF(1, "fileIO CLOSE\n");
 	WaitEventFlag(fio_fsv_evid, 1u, 16, &efbits);
@@ -1306,9 +1302,8 @@ int __cdecl cdrom_close(iop_file_t *f)
 	if ( (filedata->fd_flags & 8) != 0 )
 	{
 		cdvdman_strmerr = 0;
-		memset(&devctl_req, 0, sizeof(devctl_req));
-		devctl_req.cmdid = 3;
-		if ( (devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0) || !buf )
+		// The following call to sceCdStStop was inlined
+		if ( !sceCdStStop() )
 		{
 			SetEventFlag(fio_fsv_evid, 1u);
 			return -5;
@@ -1539,7 +1534,6 @@ int __fastcall cdrom_stream_read(const iop_file_t *f, char *bbuf, int nbytes)
 {
 	CDVDMAN_FILEDATA *filedata; // $s0
 	sceCdRMode rmode; // [sp+18h] [-28h] BYREF
-	cdrom_stm_devctl_t devctl_req; // [sp+20h] [-20h] BYREF
 	int buf; // [sp+38h] [-8h] BYREF
 
 	filedata = &cdvdman_handles[(int)f->privdata];
@@ -1547,13 +1541,9 @@ int __fastcall cdrom_stream_read(const iop_file_t *f, char *bbuf, int nbytes)
 	cdvdman_iormode(&rmode, filedata->filemode, f->unit);
 	rmode.spindlctrl = 0;
 	rmode.trycount = 0;
-	memset(&devctl_req, 0, sizeof(devctl_req));
-	devctl_req.cmdid = 1;
-	devctl_req.posszarg2 = nbytes >> 11;
-	devctl_req.buffer = bbuf;
-	devctl("cdrom_stm0:", 17300, &devctl_req, 0x18u, &buf, 4u);
+	// The following sceCdStRead call was inlined
+	buf = sceCdStRead(nbytes >> 11, (u32 *)bbuf, 0, (u32 *)&cdvdman_strmerr);
 	filedata->read_pos += buf << 11;
-	cdvdman_strmerr = devctl_req.error;
 	return buf << 11;
 }
 
@@ -1644,10 +1634,7 @@ int __cdecl cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, 
 {
 	const CDVDMAN_FILEDATA *filedata; // $v1
 	int retval; // $s0
-	u32 reqind; // $v0
-	cdrom_stm_devctl_t devctl_req; // [sp+18h] [-20h] BYREF
 	u32 efbits; // [sp+30h] [-8h] BYREF
-	int buf; // [sp+34h] [-4h] BYREF
 
 	(void)argp;
 	(void)arglen;
@@ -1657,34 +1644,29 @@ int __cdecl cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, 
 	WaitEventFlag(fio_fsv_evid, 1u, 16, &efbits);
 	filedata = &cdvdman_handles[(int)f->privdata];
 	retval = -5;
-	reqind = 0;
 	if ( (filedata->fd_flags & 8) != 0 )
 	{
-		memset(&devctl_req, 0, sizeof(devctl_req));
 		switch ( request )
 		{
 			case 0x630d:
-				reqind = 7;
-				break;
-			case 0x630e:
-				reqind = 8;
-				break;
-			case 0x630f:
-				devctl_req.cmdid = 6;
-				retval = devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u);
-				if ( retval >= 0 )
+				// The following call to sceCdStPause was inlined
+				if ( sceCdStPause() )
 				{
-					retval = buf;
+					retval = 0;
 				}
 				break;
-		}
-	}
-	if ( reqind )
-	{
-		devctl_req.cmdid = reqind;
-		if ( devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u) >= 0 && buf )
-		{
-			retval = 0;
+			case 0x630e:
+				// The following call to sceCdStResume was inlined
+				if ( sceCdStResume() )
+				{
+					retval = 0;
+				}
+				break;
+			case 0x630f:
+				// The following call to sceCdStStat was inlined
+				// Unofficial: return 0 instead of negative value
+				retval = sceCdStStat();
+				break;
 		}
 	}
 	SetEventFlag(fio_fsv_evid, 1u);
@@ -1706,10 +1688,8 @@ int __cdecl cdrom_devctl(
 	int Clock; // $s1
 	char *sc_tmp_2; // $v1
 	unsigned int sc_tmp_3; // $a1
-	cdrom_stm_devctl_t devctl_req; // [sp+18h] [-28h] BYREF
 	u32 efbits; // [sp+30h] [-10h] BYREF
 	int on_dual_tmp; // [sp+34h] [-Ch] BYREF
-	int condtmpstk; // [sp+38h] [-8h] BYREF
 
 	(void)f;
 	(void)a2;
@@ -1798,12 +1778,8 @@ int __cdecl cdrom_devctl(
 			retval2 = (Clock != 1) ? -5 : 0;
 			break;
 		case 0x4327:
-			memset(&devctl_req, 0, sizeof(devctl_req));
-			devctl_req.posszarg1 = *(_DWORD *)argp;
-			devctl_req.posszarg2 = *((_DWORD *)argp + 1);
-			devctl_req.cmdid = 5;
-			devctl_req.buffer = (void *)*((_DWORD *)argp + 2);
-			retval2 = ( devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &condtmpstk, 4u) >= 0 && condtmpstk ) ? 0 : -5;
+			// The following call to sceCdStInit was inlined
+			retval2 = ( sceCdStInit(*(_DWORD *)argp, *((_DWORD *)argp + 1), (void *)*((_DWORD *)argp + 2)) ) ? 0 : -5;
 			break;
 		case 0x4380:
 			cdvdman_spinnom = 1;
@@ -1929,9 +1905,7 @@ int __cdecl cdrom_lseek(iop_file_t *f, int offset, int pos)
 {
 	int retval; // $s1
 	CDVDMAN_FILEDATA *filedata; // $s0
-	cdrom_stm_devctl_t devctl_req; // [sp+18h] [-20h] BYREF
 	u32 efbits; // [sp+30h] [-8h] BYREF
-	int buf; // [sp+34h] [-4h] BYREF
 
 	retval = -1;
 	VERBOSE_PRINTF(1, "fileIO SEEK\n");
@@ -1958,10 +1932,8 @@ int __cdecl cdrom_lseek(iop_file_t *f, int offset, int pos)
 	filedata->read_pos = retval;
 	if ( (filedata->fd_flags & 8) != 0 )
 	{
-		memset(&devctl_req, 0, sizeof(devctl_req));
-		devctl_req.cmdid = 9;
-		devctl_req.posszarg1 = filedata->file_lsn + retval / 2048;
-		if ( devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0 || !buf )
+		// The following call to sceCdStSeekF was inlined
+		if ( !sceCdStSeekF(filedata->file_lsn + retval / 2048) )
 		{
 			retval = -5;
 		}
@@ -2161,7 +2133,8 @@ int __cdecl sceCdDiskReady(int mode)
 			{
 				return 2;
 			}
-			switch ( dev5_regs.dev5_reg_00F )
+			// The following call to sceCdGetDiskType was inlined
+			switch ( sceCdGetDiskType() )
 			{
 				case 1:
 				case 2:
@@ -2205,7 +2178,8 @@ int sceCdStatus(void)
 	u32 status_tmp; // [sp+14h] [-4h] BYREF
 
 	reg_00A_tmp = dev5_regs.dev5_reg_00A;
-	if ( !dev5_regs.dev5_reg_00F )
+	// The following call to sceCdGetDiskType was inlined
+	if ( !sceCdGetDiskType() )
 	{
 		u8 rdata_tmp[4]; // [sp+10h] [-8h] BYREF
 
@@ -2387,7 +2361,7 @@ int __cdecl sceCdStInit(u32 bufmax, u32 bankmax, void *buffer)
 	devctl_req.posszarg1 = bufmax;
 	devctl_req.posszarg2 = bankmax;
 	devctl_req.buffer = buffer;
-	return (devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
 }
 
 //----- (004042C8) --------------------------------------------------------
@@ -2402,7 +2376,7 @@ int __cdecl sceCdStStart(u32 lbn, sceCdRMode *mode)
 	devctl_req.cmdid = 1;
 	devctl_req.posszarg1 = lbn;
 	devctl_req.rmode.trycount = mode->trycount;
-	return (devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
 }
 
 //----- (00404360) --------------------------------------------------------
@@ -2414,7 +2388,7 @@ int __cdecl sceCdStSeekF(unsigned int lsn)
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.cmdid = 9;
 	devctl_req.posszarg1 = lsn;
-	return (devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
 }
 
 //----- (004043D4) --------------------------------------------------------
@@ -2426,7 +2400,7 @@ int __cdecl sceCdStSeek(u32 lbn)
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.posszarg1 = lbn;
 	devctl_req.cmdid = 4;
-	return (devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
 }
 
 //----- (00404444) --------------------------------------------------------
@@ -2437,7 +2411,7 @@ int sceCdStStop(void)
 
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.cmdid = 3;
-	return (devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
 }
 
 //----- (004044AC) --------------------------------------------------------
@@ -2452,7 +2426,7 @@ int __cdecl sceCdStRead(u32 sectors, u32 *buffer, u32 mode, u32 *error)
 	devctl_req.cmdid = 1;
 	devctl_req.posszarg2 = sectors;
 	devctl_req.buffer = buffer;
-	if ( devctl("cdrom_stm0:", 17300, &devctl_req, 0x18u, &buf, 4u) < 0 )
+	if ( devctl("cdrom_stm0:", 0x4394, &devctl_req, 0x18u, &buf, 4u) < 0 )
 	{
 		buf = 0;
 	}
@@ -2468,7 +2442,7 @@ int sceCdStPause(void)
 
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.cmdid = 7;
-	return (devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
 }
 
 //----- (004045A8) --------------------------------------------------------
@@ -2479,7 +2453,7 @@ int sceCdStResume(void)
 
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.cmdid = 8;
-	return (devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
 }
 
 //----- (00404610) --------------------------------------------------------
@@ -2490,7 +2464,7 @@ int sceCdStStat(void)
 
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.cmdid = 6;
-	return (devctl("cdrom_stm0:", 17299, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, 0x18u, &buf, 4u) < 0) ? 0 : buf;
 }
 
 //----- (00404680) --------------------------------------------------------
@@ -4093,7 +4067,8 @@ int __cdecl sceCdSC(int code, int *param)
 			}
 			return 1;
 		case 0xFFFFFFF4:
-			switch ( dev5_regs.dev5_reg_00F )
+			// The following call to sceCdGetDiskType was inlined
+			switch ( sceCdGetDiskType() )
 			{
 				case 16:
 				case 17:
@@ -4716,6 +4691,7 @@ int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, 
 		cdvdman_setdma3(b18);
 	}
 	cdvdman_cmdfunc = func;
+	// The following call to sceCdGetDiskType was inlined
 	if ( !cdvdman_minver_10700
 		&& cdvdman_ncmd == 6
 		&& ncmd
@@ -4723,7 +4699,7 @@ int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, 
 		&& ncmd != 7
 		&& ncmd != 14
 		&& ncmd != 8
-		&& (dev5_regs.dev5_reg_00F != 253 || ncmd == 3) )
+		&& (sceCdGetDiskType() != 253 || ncmd == 3) )
 	{
 		cdvdman_ncmd_to.hi = 0;
 		cdvdman_ncmd_to.lo = 0x6978000;
@@ -4876,7 +4852,8 @@ int __cdecl cdvdman_ncmd_sender_06()
 	DMA3PARAM b18; // [sp+18h] [-28h] BYREF
 	char ndata[16]; // [sp+30h] [-10h] BYREF
 
-	if ( !dev5_regs.dev5_reg_00F )
+	// The following call to sceCdGetDiskType was inlined
+	if ( !sceCdGetDiskType() )
 	{
 		return 1;
 	}
@@ -4917,7 +4894,8 @@ int sceCdStandby(void)
 	DMA3PARAM b18; // [sp+18h] [-28h] BYREF
 	char ndata[16]; // [sp+30h] [-10h] BYREF
 
-	switch ( dev5_regs.dev5_reg_00F )
+	// The following call to sceCdGetDiskType was inlined
+	switch ( sceCdGetDiskType() )
 	{
 		case 16:
 		case 17:
@@ -4989,7 +4967,8 @@ int __cdecl cdvdman_readtoc(u8 *toc, int param, int func)
 	iop_sys_clock_t clk; // [sp+30h] [-10h] BYREF
 	char ndata[8]; // [sp+38h] [-8h] BYREF
 
-	switch ( dev5_regs.dev5_reg_00F )
+	// The following call to sceCdGetDiskType was inlined
+	switch ( sceCdGetDiskType() )
 	{
 		case 20:
 		case 252:
@@ -5135,7 +5114,8 @@ int __cdecl cdvdman_speedctl(u32 spindlctrl, int dvdflag, u32 maxlsn)
 //----- (0040A4F8) --------------------------------------------------------
 int __cdecl cdvdman_isdvd()
 {
-	switch ( dev5_regs.dev5_reg_00F )
+	// The following call to sceCdGetDiskType was inlined
+	switch ( sceCdGetDiskType() )
 	{
 		case 16:
 		case 17:
@@ -5253,7 +5233,8 @@ int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int
 			b18.cdvdreg_howto = 128;
 			break;
 	}
-	switch ( dev5_regs.dev5_reg_00F )
+	// The following call to sceCdGetDiskType was inlined
+	switch ( sceCdGetDiskType() )
 	{
 		case 16:
 		case 17:
@@ -5736,7 +5717,8 @@ int __cdecl cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *
 			b18.cdvdreg_howto = 140;
 			break;
 	}
-	switch ( dev5_regs.dev5_reg_00F )
+	// The following call to sceCdGetDiskType() was inlined
+	switch ( sceCdGetDiskType() )
 	{
 		case 17:
 		case 19:
@@ -5772,7 +5754,8 @@ int __cdecl sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5,
 	char ndata[11]; // [sp+30h] [-18h] BYREF
 	u32 efbits[2]; // [sp+40h] [-8h] BYREF
 
-	if ( dev5_regs.dev5_reg_00F != 20 || (cdvdman_mmode != 2 && cdvdman_mmode != 255) || (PollEventFlag(ncmd_evid, 1u, 16, efbits) == -421) )
+	// The following call to sceCdGetDiskType was inlined
+	if ( sceCdGetDiskType() != 20 || (cdvdman_mmode != 2 && cdvdman_mmode != 255) || (PollEventFlag(ncmd_evid, 1u, 16, efbits) == -421) )
 	{
 		return 0;
 	}

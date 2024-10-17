@@ -1424,7 +1424,8 @@ void __fastcall cdvdfsv_rpc5h_0F_readchain(cdvdfsv_rpc5h_0F_packet *inbuf, int b
 		else
 		{
 			VERBOSE_PRINTF(1, "ReadChain EE  Memory addr= 0x%08x sector= %d\n", (unsigned int)(chain[i].lbn), (int)(chain[i].sectors));
-			re_result = cdvdfsv_chreadee(chain[i].lbn, chain[i].sectors, (char *)chain[i].buffer, &(inbuf->scecdrmode30C), MEMORY[0xBF40200F] == 0x14, sceCdSC(0xFFFFFFFC, &sc_fffffffc_tmp) == 0);
+			// The following call to sceCdGetDiskType was inlined
+			re_result = cdvdfsv_chreadee(chain[i].lbn, chain[i].sectors, (char *)chain[i].buffer, &(inbuf->scecdrmode30C), sceCdGetDiskType() == 0x14, sceCdSC(0xFFFFFFFC, &sc_fffffffc_tmp) == 0);
 		}
 		if ( !re_result )
 		{
@@ -1657,52 +1658,13 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int bu
 //----- (004033BC) --------------------------------------------------------
 int *__fastcall cbrpc_rpc2_diskready(int fno, void *buffer, int length)
 {
-	int scres; // [sp+10h] [-8h] BYREF
-	u32 efres; // [sp+14h] [-4h] BYREF
-
 	(void)fno;
 	(void)length;
 
-	VERBOSE_KPRINTF(1, "DISK READY call 0x%02x\n", MEMORY[0xBF40200A]);
-	if ( *(_DWORD *)buffer )
-	{
-		diskready_res = 2;
-		if ( *(_DWORD *)buffer == 8 )
-		{
-			diskready_res = MEMORY[0xBF402005];
-		}
-		else if ( (MEMORY[0xBF402005] & 0xC0) != 64 || sceCdSC(0xFFFFFFFD, &scres) )
-		{
-			diskready_res = 6;
-			VERBOSE_KPRINTF(1, "Drive Not Ready\n");
-		}
-	}
-	else
-	{
-		VERBOSE_KPRINTF(1, "Wait Drive Ready %x\n", MEMORY[0xBF402005]);
-		cdvdfsv_ef = sceCdSC(0xFFFFFFF5, &scres);
-		while ( 1 )
-		{
-			switch ( MEMORY[0xBF40200F] )
-			{
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-					break;
-				default:
-					if ( (MEMORY[0xBF402005] & 0xC0) == 64 && !sceCdSC(0xFFFFFFFD, &scres) )
-					{
-						diskready_res = 2;
-						return &diskready_res;
-					}
-					break;
-			}
-			VERBOSE_KPRINTF(2, "Wait Drive Ready %x\n", MEMORY[0xBF402005]);
-			DelayThread(2000);
-			WaitEventFlag(cdvdfsv_ef, 1u, 0, &efres);
-		}
-	}
+	// The following call to sceCdStatus was inlined
+	VERBOSE_KPRINTF(1, "DISK READY call 0x%02x\n", sceCdStatus());
+	// The following call to sceCdDiskReady was inlined
+	diskready_res = sceCdDiskReady(*(_DWORD *)buffer);
 	return &diskready_res;
 }
 // 405BF0: using guessed type int diskready_res;
@@ -1733,7 +1695,8 @@ void __fastcall cdvdfsv_rpc5h_04_gettoc(void *inbuf, int buflen, cdvdfsv_rpc5h_0
 	}
 	while ( cdvdfsv_checkdmastat(trid) >= 0 )
 		;
-	switch ( MEMORY[0xBF40200F] )
+	// The following call to sceCdGetDiskType was inlined
+	switch ( sceCdGetDiskType() )
 	{
 		case 20:
 		case 252:
@@ -1994,7 +1957,8 @@ int __cdecl cdvdfsv_rpc5h_0E_diskready()
 	int scval_tmp[2]; // [sp+10h] [-8h] BYREF
 
 	is_detecting = 0;
-	switch ( MEMORY[0xBF40200F] )
+	// The following call to sceCdGetDiskType was inlined
+	switch ( sceCdGetDiskType() )
 	{
 		case 1:
 		case 2:
@@ -2005,7 +1969,8 @@ int __cdecl cdvdfsv_rpc5h_0E_diskready()
 		default:
 			break;
 	}
-	if ( (MEMORY[0xBF402005] & 0xC0) != 64
+	// The following call to sceCdDiskReady was inlined
+	if ( (sceCdDiskReady(8) & 0xC0) != 64
 		|| sceCdSC(0xFFFFFFFD, scval_tmp)
 		|| !sceCdSC(0xFFFFFFF4, scval_tmp)
 		|| is_detecting)
@@ -2029,7 +1994,8 @@ CDVDReadResult *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int lengt
 	switch ( fno )
 	{
 		case 1:
-			cdvdfsv_rpc5h_01_readee((cdvdfsv_rpc5h_01_packet *)buffer, length, crr, (MEMORY[0xBF40200F] ^ 0x14) == 0, sceCdSC(-4, sc_fffffff6_in) == 0, 0);
+			// The following call to sceCdGetDiskType was inlined
+			cdvdfsv_rpc5h_01_readee((cdvdfsv_rpc5h_01_packet *)buffer, length, crr, (sceCdGetDiskType() ^ 0x14) == 0, sceCdSC(-4, sc_fffffff6_in) == 0, 0);
 			break;
 		case 2:
 			cdvdfsv_rpc5h_02_readcdda((cdvdfsv_rpc5h_02_packet *)buffer, length, crr);
@@ -2060,11 +2026,11 @@ CDVDReadResult *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int lengt
 			sceCdSync(6);
 			break;
 		case 9:
-			if ( devctl("cdrom_stm0:", 17302, buffer, length, crr, 4u) < 0 )
+			if ( devctl("cdrom_stm0:", 0x4396, buffer, length, crr, 4u) < 0 )
 				crr[0] = 0;
 			break;
 		case 10:
-			if ( devctl("cdrom_stm0:", 17304, buffer, length, crr, 4u) < 0 )
+			if ( devctl("cdrom_stm0:", 0x4398, buffer, length, crr, 4u) < 0 )
 				crr[0] = 0;
 			break;
 		case 12:
@@ -2083,11 +2049,12 @@ CDVDReadResult *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int lengt
 			cdvdfsv_rpc5h_11_readdiskid(buffer, length, (cdvdfsv_rpc5h_11_outpacket *)crr);
 			break;
 		case 19:
+			// The following call to sceCdGetDiskType was inlined
 			cdvdfsv_rpc5h_01_readee(
 				(cdvdfsv_rpc5h_01_packet *)buffer,
 				length,
 				crr,
-				(MEMORY[0xBF40200F] ^ 0x14) == 0,
+				(sceCdGetDiskType() ^ 0x14) == 0,
 				1,
 				cdvdfsv_cdvdman_internal_struct_ptr->no_dec_flag == 0);
 			break;

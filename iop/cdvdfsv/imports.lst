@@ -84,6 +84,7 @@ I_sceCdGetToc
 I_sceCdSearchFile
 I_sceCdSync
 I_sceCdGetDiskType
+I_sceCdDiskReady
 I_sceCdTrayReq
 I_sceCdStop
 I_sceCdPosToInt
