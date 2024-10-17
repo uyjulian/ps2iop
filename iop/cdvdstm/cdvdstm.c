@@ -32,6 +32,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata);
 unsigned int __fastcall cdvdstm_memcpy(_DWORD *a1, _DWORD *a2, unsigned int a3);
 void cdvdstm_1();
+#if 0
 int Kprintf(const char *format, ...);
 int __cdecl RegisterLibraryEntries(struct irx_export_table *exports);
 int __cdecl ReleaseLibraryEntries(struct irx_export_table *exports);
@@ -66,6 +67,7 @@ int __cdecl sceCdstm1Cb(void (__cdecl *p)(int));
 int __cdecl sceCdSC(int code, int *param);
 int sceCdStStop(void);
 int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMode *mode);
+#endif
 
 static void iop_stream_intr_cb_thunk(int userdata)
 {
