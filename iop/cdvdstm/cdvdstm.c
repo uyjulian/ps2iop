@@ -165,28 +165,19 @@ iop_sys_clock_t cdvdstm_curclk_ee; // idb
 //----- (00400000) --------------------------------------------------------
 int __fastcall vCancelAlarm(unsigned int (__cdecl *alarm_cb)(void *), void *arg)
 {
-	if ( QueryIntrContext() )
-		return iCancelAlarm(alarm_cb, arg);
-	else
-		return CancelAlarm(alarm_cb, arg);
+	return (QueryIntrContext() ? iCancelAlarm : CancelAlarm)(alarm_cb, arg);
 }
 
 //----- (00400050) --------------------------------------------------------
 int vSetEventFlag()
 {
-	if ( QueryIntrContext() )
-		return iSetEventFlag(cdvdstm_ef, 8u);
-	else
-		return SetEventFlag(cdvdstm_ef, 8u);
+	return (QueryIntrContext() ? iSetEventFlag : SetEventFlag)(cdvdstm_ef, 8u);
 }
 
 //----- (004000A0) --------------------------------------------------------
 int vClearEventFlag()
 {
-	if ( QueryIntrContext() )
-		return iClearEventFlag(cdvdstm_ef, 0xFFFFFFF7);
-	else
-		return ClearEventFlag(cdvdstm_ef, 0xFFFFFFF7);
+	return (QueryIntrContext() ? iClearEventFlag : ClearEventFlag)(cdvdstm_ef, 0xFFFFFFF7);
 }
 
 //----- (004000F0) --------------------------------------------------------
@@ -290,222 +281,209 @@ unsigned int __fastcall iop_stream_handler(
 	if ( cdvdstm_verbose > 0 )
 		Kprintf("CD Stream Call mode= %d\n", cmdid);
 	*error_ptr = 0;
-	if ( cdvdstm_stmstart_iop != 2 || cmdid == 9 || cmdid == 3 )
+	if ( cdvdstm_stmstart_iop == 2 && cmdid != 9 && cmdid != 3 )
 	{
-		switch ( cmdid )
-		{
-			case 8:
-				sceCdSC(1, &cdvdstm_last_error_for_iop);
-				if ( sceCdNop() != 0 )
-					return 1;
-				sceCdSC(0, &cdvdstm_last_error_for_iop);
-				return 0;
-			case 7:
-				CpuSuspendIntr(state);
-				vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
-				sceCdSC(0, &cdvdstm_last_error_for_iop);
-				CpuResumeIntr(state[0]);
-				sceCdSync(0);
-				vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
+		return 0;
+	}
+	switch ( cmdid )
+	{
+		case 8:
+			sceCdSC(1, &cdvdstm_last_error_for_iop);
+			if ( sceCdNop() != 0 )
 				return 1;
-			case 6:
-				bankcur_tmp = cdvdstm_bankcur_iop;
+			sceCdSC(0, &cdvdstm_last_error_for_iop);
+			return 0;
+		case 7:
+			CpuSuspendIntr(state);
+			vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
+			sceCdSC(0, &cdvdstm_last_error_for_iop);
+			CpuResumeIntr(state[0]);
+			sceCdSync(0);
+			vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
+			return 1;
+		case 6:
+			bankcur_tmp = cdvdstm_bankcur_iop;
+			if ( !cdvdstm_usedmap_iop[bankcur_tmp] )
+			{
+				bankcur_tmp += 1;
+				if ( (unsigned int)bankcur_tmp >= (unsigned int)cdvdstm_bankmax )
+					bankcur_tmp = 0;
 				if ( !cdvdstm_usedmap_iop[bankcur_tmp] )
-				{
-					bankcur_tmp += 1;
-					if ( (unsigned int)bankcur_tmp >= (unsigned int)cdvdstm_bankmax )
-						bankcur_tmp = 0;
-					if ( !cdvdstm_usedmap_iop[bankcur_tmp] )
-						bankcur_tmp = cdvdstm_bankcur_iop;
-				}
-				for ( i = 0; (i < (unsigned int)cdvdstm_bankmax) && cdvdstm_usedmap_iop[bankcur_tmp] && (cdvdstm_bankgp_iop != bankcur_tmp); i += 1 )
-				{
-					bankcur_tmp += 1;
-					if ( (unsigned int)bankcur_tmp >= (unsigned int)cdvdstm_bankmax )
-						bankcur_tmp = 0;
-				}
-				return i * ((unsigned int)cdvdstm_numbytes >> 11);
-			default:
-				switch ( cmdid )
-				{
-					case 5:
-						sceCdstm0Cb((void (__cdecl *)(int))iop_stream_intr_cb_thunk);
-						cdvdstm_bufmax = posszarg1;
-						cdvdstm_sectorcount = posszarg1 / posszarg2;
-						cdvdstm_numbytes = cdvdstm_sectorcount << 11;
-						cdvdstm_buffer = buffer;
-						cdvdstm_bankmax = posszarg2;
-						Kprintf(
-							"Stream Buffer 1Bank %dbyte %dbanks addr:%08x %dbyte used.\n",
-							cdvdstm_numbytes,
-							posszarg2,
-							buffer,
-							cdvdstm_numbytes * posszarg2);
-						return 1;
-					case 3:
-						CpuSuspendIntr(state);
-						cdvdstm_stmstart_iop = 0;
-						vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
-						sceCdSC(0, &cdvdstm_last_error_for_iop);
-						CpuResumeIntr(state[0]);
-						sceCdBreak();
-						for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
-							cdvdstm_usedmap_iop[i] = 0;
-						cdvdstm_bankoffs_iop = 0;
-						cdvdstm_bankcur_iop = 0;
-						cdvdstm_bankgp_iop = 0;
-						sceCdSync(0);
-						cdvdstm_last_error_for_iop = 0;
-						sceCdSC(0xFFFFFFFE, &cdvdstm_last_error_for_iop);
-						vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
-						return 1;;
-					case 1:
-						cdvdstm_mode_iop.datapattern = rmode->datapattern;
-						cdvdstm_mode_iop.trycount = rmode->trycount;
-						cdvdstm_mode_iop.spindlctrl = rmode->spindlctrl;
-						cdvdstm_retryerr_iop = 0;
-						break;
-				}
-				if ( cmdid == 9 )
-				{
-					if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_iop) != 0 )
-					{
-						CpuSuspendIntr(state);
-						cdvdstm_lsn_iop = posszarg1;
-						for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
-							cdvdstm_usedmap_iop[i] = 0;
-						cdvdstm_stmstart_iop = 2;
-						CpuResumeIntr(state[0]);
-						return 1;
-					}
-					return 0;
-				}
-				else
-				{
-					if ( cmdid == 4 )
-					{
-						CpuSuspendIntr(state);
-						vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
-						sceCdSC(0, &cdvdstm_last_error_for_iop);
-						retryflag = 1;
-						CpuResumeIntr(state[0]);
-						posszarg2 = 0;
-						cmdid = 1;
-						cdvdstm_lsn_iop = posszarg1;
-						cdvdstm_bankoffs_iop = 0;
-						cdvdstm_bankcur_iop = 0;
-						cdvdstm_bankgp_iop = 0;
-						sceCdSync(0);
-						vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
-					}
-					if ( cmdid == 1 )
-					{
-						CpuSuspendIntr(state);
-						retryflag = 1;
-						vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
-						sceCdSC(0, &cdvdstm_last_error_for_iop);
-						CpuResumeIntr(state[0]);
-						for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
-							cdvdstm_usedmap_iop[i] = 0;
-						cdvdstm_lsn_iop = posszarg1;
-						sceCdSC(0xFFFFFFE9, (int *)&posszarg1_stk);
-						cdvdstm_bankoffs_iop = 0;
-						cdvdstm_bankcur_iop = 0;
-						cdvdstm_bankgp_iop = 0;
-						sceCdSync(0);
-						vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
-						cdvdstm_stmstart_iop = 1;
-						sceCdSC(1, &cdvdstm_last_error_for_iop);
-						if ( !sceCdNop() )
-						{
-							sceCdSC(0, &cdvdstm_last_error_for_iop);
-							return 0;
-						}
-					}
-					CpuSuspendIntr(state);
-					written_chunk_size_tmp = -1;
-					for ( i = 0; i < posszarg2; i += chunk_size )
-					{
-						if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] )
-						{
-							if ( cdvdstm_verbose > 0 )
-								Kprintf(
-									"CD read buffer over run %d %d %d %d %d gp %d pp %d\n",
-									(unsigned __int8)cdvdstm_usedmap_iop[0],
-									(unsigned __int8)cdvdstm_usedmap_iop[1],
-									(unsigned __int8)cdvdstm_usedmap_iop[2],
-									(unsigned __int8)cdvdstm_usedmap_iop[3],
-									(unsigned __int8)cdvdstm_usedmap_iop[4],
-									cdvdstm_bankgp_iop,
-									cdvdstm_bankcur_iop);
-							bankcur_next_tmp1 = cdvdstm_bankcur_iop;
-							cdvdstm_bankcur_iop += 1;
-							if ( (unsigned int)cdvdstm_bankcur_iop >= (unsigned int)cdvdstm_bankmax )
-								cdvdstm_bankcur_iop = 0;
-							written_chunk_size_tmp = i;
-							if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] )
-							{
-								cdvdstm_bankcur_iop = bankcur_next_tmp1;
-							}
-							break;
-						}
-						if ( (unsigned int)cdvdstm_bankoffs_iop >= (unsigned int)cdvdstm_numbytes )
-						{
-							cdvdstm_bankoffs_iop = 0;
-							cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] = 0;
-							bankcur_next_tmp2 = cdvdstm_bankcur_iop;
-							cdvdstm_bankcur_iop += 1;
-							if ( (unsigned int)cdvdstm_bankcur_iop >= (unsigned int)cdvdstm_bankmax )
-								cdvdstm_bankcur_iop = 0;
-							if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] || cdvdstm_bankgp_iop == cdvdstm_bankcur_iop )
-							{
-								cdvdstm_bankcur_iop = bankcur_next_tmp2;
-								written_chunk_size_tmp = i;
-								if ( cdvdstm_verbose > 0 )
-								{
-									Kprintf(
-										"CD read buffer over run %d %d %d %d %d gp %d pp %d\n",
-										(unsigned __int8)cdvdstm_usedmap_iop[0],
-										(unsigned __int8)cdvdstm_usedmap_iop[1],
-										(unsigned __int8)cdvdstm_usedmap_iop[2],
-										(unsigned __int8)cdvdstm_usedmap_iop[3],
-										(unsigned __int8)cdvdstm_usedmap_iop[4],
-										cdvdstm_bankgp_iop,
-										cdvdstm_bankcur_iop);
-								}
-								break;
-							}
-						}
-						cdvdstm_memcpy(
-							(_DWORD *)((char *)buffer + i),
-							(_DWORD *)((char *)cdvdstm_buffer + cdvdstm_bankcur_iop * cdvdstm_numbytes + cdvdstm_bankoffs_iop),
-							0x800u);
-						chunk_size = 0x800;
-						if ( (unsigned int)chunk_size > posszarg2 - i )
-							chunk_size = posszarg2 - i;
-						cdvdstm_bankoffs_iop += chunk_size;
-					}
-					if ( written_chunk_size_tmp == 0xFFFFFFFF )
-						written_chunk_size_tmp = posszarg2;
-					CpuResumeIntr(state[0]);
-					if ( !retryflag )
-					{
-						if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_iop) != 1
-							&& !written_chunk_size_tmp
-							&& !cdvdstm_retryerr_iop )
-						{
-							cdvdstm_retryerr_iop = 273;
-						}
-						*error_ptr = cdvdstm_retryerr_iop;
-						cdvdstm_retryerr_iop = 0;
-						return written_chunk_size_tmp;
-					}
-					return 1;
-				}
-				break;
+					bankcur_tmp = cdvdstm_bankcur_iop;
+			}
+			for ( i = 0; (i < (unsigned int)cdvdstm_bankmax) && cdvdstm_usedmap_iop[bankcur_tmp] && (cdvdstm_bankgp_iop != bankcur_tmp); i += 1 )
+			{
+				bankcur_tmp += 1;
+				if ( (unsigned int)bankcur_tmp >= (unsigned int)cdvdstm_bankmax )
+					bankcur_tmp = 0;
+			}
+			return i * ((unsigned int)cdvdstm_numbytes >> 11);
+		case 5:
+			sceCdstm0Cb((void (__cdecl *)(int))iop_stream_intr_cb_thunk);
+			cdvdstm_bufmax = posszarg1;
+			cdvdstm_sectorcount = posszarg1 / posszarg2;
+			cdvdstm_numbytes = cdvdstm_sectorcount << 11;
+			cdvdstm_buffer = buffer;
+			cdvdstm_bankmax = posszarg2;
+			Kprintf(
+				"Stream Buffer 1Bank %dbyte %dbanks addr:%08x %dbyte used.\n",
+				cdvdstm_numbytes,
+				posszarg2,
+				buffer,
+				cdvdstm_numbytes * posszarg2);
+			return 1;
+		case 3:
+			CpuSuspendIntr(state);
+			cdvdstm_stmstart_iop = 0;
+			vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
+			sceCdSC(0, &cdvdstm_last_error_for_iop);
+			CpuResumeIntr(state[0]);
+			sceCdBreak();
+			for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
+				cdvdstm_usedmap_iop[i] = 0;
+			cdvdstm_bankoffs_iop = 0;
+			cdvdstm_bankcur_iop = 0;
+			cdvdstm_bankgp_iop = 0;
+			sceCdSync(0);
+			cdvdstm_last_error_for_iop = 0;
+			sceCdSC(0xFFFFFFFE, &cdvdstm_last_error_for_iop);
+			vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
+			return 1;
+		case 9:
+			if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_iop) != 0 )
+			{
+				CpuSuspendIntr(state);
+				cdvdstm_lsn_iop = posszarg1;
+				for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
+					cdvdstm_usedmap_iop[i] = 0;
+				cdvdstm_stmstart_iop = 2;
+				CpuResumeIntr(state[0]);
+				return 1;
+			}
+			return 0;
+		case 1:
+			cdvdstm_mode_iop.datapattern = rmode->datapattern;
+			cdvdstm_mode_iop.trycount = rmode->trycount;
+			cdvdstm_mode_iop.spindlctrl = rmode->spindlctrl;
+			cdvdstm_retryerr_iop = 0;
+			break;
+		case 4:
+			CpuSuspendIntr(state);
+			vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
+			sceCdSC(0, &cdvdstm_last_error_for_iop);
+			retryflag = 1;
+			CpuResumeIntr(state[0]);
+			posszarg2 = 0;
+			cmdid = 1;
+			cdvdstm_lsn_iop = posszarg1;
+			cdvdstm_bankoffs_iop = 0;
+			cdvdstm_bankcur_iop = 0;
+			cdvdstm_bankgp_iop = 0;
+			sceCdSync(0);
+			vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
+			break;
+	}
+	if ( cmdid == 1 )
+	{
+		CpuSuspendIntr(state);
+		retryflag = 1;
+		vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
+		sceCdSC(0, &cdvdstm_last_error_for_iop);
+		CpuResumeIntr(state[0]);
+		for ( i = 0; i < (unsigned int)cdvdstm_bankmax; i += 1 )
+			cdvdstm_usedmap_iop[i] = 0;
+		cdvdstm_lsn_iop = posszarg1;
+		sceCdSC(0xFFFFFFE9, (int *)&posszarg1_stk);
+		cdvdstm_bankoffs_iop = 0;
+		cdvdstm_bankcur_iop = 0;
+		cdvdstm_bankgp_iop = 0;
+		sceCdSync(0);
+		vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
+		cdvdstm_stmstart_iop = 1;
+		sceCdSC(1, &cdvdstm_last_error_for_iop);
+		if ( !sceCdNop() )
+		{
+			sceCdSC(0, &cdvdstm_last_error_for_iop);
+			return 0;
 		}
 	}
-	return 0;
+	CpuSuspendIntr(state);
+	written_chunk_size_tmp = -1;
+	for ( i = 0; i < posszarg2; i += chunk_size )
+	{
+		if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] )
+		{
+			if ( cdvdstm_verbose > 0 )
+				Kprintf(
+					"CD read buffer over run %d %d %d %d %d gp %d pp %d\n",
+					(unsigned __int8)cdvdstm_usedmap_iop[0],
+					(unsigned __int8)cdvdstm_usedmap_iop[1],
+					(unsigned __int8)cdvdstm_usedmap_iop[2],
+					(unsigned __int8)cdvdstm_usedmap_iop[3],
+					(unsigned __int8)cdvdstm_usedmap_iop[4],
+					cdvdstm_bankgp_iop,
+					cdvdstm_bankcur_iop);
+			bankcur_next_tmp1 = cdvdstm_bankcur_iop;
+			cdvdstm_bankcur_iop += 1;
+			if ( (unsigned int)cdvdstm_bankcur_iop >= (unsigned int)cdvdstm_bankmax )
+				cdvdstm_bankcur_iop = 0;
+			written_chunk_size_tmp = i;
+			if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] )
+			{
+				cdvdstm_bankcur_iop = bankcur_next_tmp1;
+			}
+			break;
+		}
+		if ( (unsigned int)cdvdstm_bankoffs_iop >= (unsigned int)cdvdstm_numbytes )
+		{
+			cdvdstm_bankoffs_iop = 0;
+			cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] = 0;
+			bankcur_next_tmp2 = cdvdstm_bankcur_iop;
+			cdvdstm_bankcur_iop += 1;
+			if ( (unsigned int)cdvdstm_bankcur_iop >= (unsigned int)cdvdstm_bankmax )
+				cdvdstm_bankcur_iop = 0;
+			if ( !cdvdstm_usedmap_iop[cdvdstm_bankcur_iop] || cdvdstm_bankgp_iop == cdvdstm_bankcur_iop )
+			{
+				cdvdstm_bankcur_iop = bankcur_next_tmp2;
+				written_chunk_size_tmp = i;
+				if ( cdvdstm_verbose > 0 )
+				{
+					Kprintf(
+						"CD read buffer over run %d %d %d %d %d gp %d pp %d\n",
+						(unsigned __int8)cdvdstm_usedmap_iop[0],
+						(unsigned __int8)cdvdstm_usedmap_iop[1],
+						(unsigned __int8)cdvdstm_usedmap_iop[2],
+						(unsigned __int8)cdvdstm_usedmap_iop[3],
+						(unsigned __int8)cdvdstm_usedmap_iop[4],
+						cdvdstm_bankgp_iop,
+						cdvdstm_bankcur_iop);
+				}
+				break;
+			}
+		}
+		cdvdstm_memcpy(
+			(_DWORD *)((char *)buffer + i),
+			(_DWORD *)((char *)cdvdstm_buffer + cdvdstm_bankcur_iop * cdvdstm_numbytes + cdvdstm_bankoffs_iop),
+			0x800u);
+		chunk_size = ( (unsigned int)0x800 > posszarg2 - i ) ? (posszarg2 - i) : 0x800;
+		cdvdstm_bankoffs_iop += chunk_size;
+	}
+	if ( written_chunk_size_tmp == 0xFFFFFFFF )
+		written_chunk_size_tmp = posszarg2;
+	CpuResumeIntr(state[0]);
+	if ( !retryflag )
+	{
+		if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_iop) != 1
+			&& !written_chunk_size_tmp
+			&& !cdvdstm_retryerr_iop )
+		{
+			cdvdstm_retryerr_iop = 273;
+		}
+		*error_ptr = cdvdstm_retryerr_iop;
+		cdvdstm_retryerr_iop = 0;
+		return written_chunk_size_tmp;
+	}
+	return 1;
 }
 // 4005AC: conditional instruction was optimized away because $s6.4!=0
 // 404688: using guessed type int cdvdstm_verbose;
@@ -551,12 +529,8 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	{
 		if ( cdvdstm_verbose > 0 )
 			Kprintf("Stm Rtry stmstart:%d err:%02x retry:%d\n", cdvdstm_stmstart_iop, scres1, cdvdstm_retrycnt_iop);
-		cdvdstm_curclk_iop.lo = 552960000;
 	}
-	else
-	{
-		cdvdstm_curclk_iop.lo = 36864 * sceCdSC(0xFFFFFFEF, &scres1);
-	}
+	cdvdstm_curclk_iop.lo = ( cdvdstm_stmstart_iop || scres1 || cdvdstm_retrycnt_iop ) ? 552960000 : (36864 * sceCdSC(0xFFFFFFEF, &scres1));
 	if ( scres1 )
 	{
 		if ( cdvdstm_verbose > 0 )
@@ -580,9 +554,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	if ( cdvdstm_retrycnt_iop )
 	{
 		cdvdstm_retrycnt_iop -= 1;
-		tgttmp = cdvdstm_tgt + 16 * cdvdstm_retrycnt_iop;
-		if ( (unsigned int)cdvdstm_tgt >= (unsigned int)(16 * cdvdstm_retrycnt_iop) )
-			tgttmp = cdvdstm_tgt - 16 * cdvdstm_retrycnt_iop;
+		tgttmp = ( (unsigned int)cdvdstm_tgt >= (unsigned int)(16 * cdvdstm_retrycnt_iop) ) ? (cdvdstm_tgt - 16 * cdvdstm_retrycnt_iop) : (cdvdstm_tgt + 16 * cdvdstm_retrycnt_iop);
 		if ( cdvdstm_verbose > 0 )
 			Kprintf("Stm Rtry Start Tgt=%d Cur= %d\n", cdvdstm_tgt, tgttmp);
 		if ( sceCdRE(
@@ -592,19 +564,17 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 					 &cdvdstm_mode_iop) )
 		{
 			iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
-			return 0;
 		}
 		else
 		{
 			cdvdstm_curclk_iop.lo = 7372800;
-			if ( iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop) )
+			if ( iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop) && !sceCdNop() )
 			{
-				if ( !sceCdNop() )
-					sceCdSC(0, &scres1);
+				sceCdSC(0, &scres1);
 			}
 			cdvdstm_retrycnt_iop += 1;
-			return 0;
 		}
+		return 0;
 	}
 	else
 	{
@@ -632,13 +602,9 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 					cdvdstm_bankcur_iop,
 					cdvdstm_mode_iop.spindlctrl);
 			cdvdstm_curclk_iop.lo = 294912;
-			if ( iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop) != 0 )
+			if ( iSetAlarm(&cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop) != 0 && sceCdNop() == 0 )
 			{
-				if ( sceCdNop() == 0 )
-				{
-					sceCdSC(0, &scres1);
-					return 0;
-				}
+				sceCdSC(0, &scres1);
 			}
 		}
 		else
@@ -787,32 +753,31 @@ int __fastcall _start(int a1)
 	{
 		if ( sceCdSC(0xFFFFFFFF, &scres) == 0 )
 		{
-			cdvdstm_in_deldrv = 1;
-			DelDrv("cdrom_stm");
-			CpuSuspendIntr(&state);
-			relres = ReleaseLibraryEntries(&_exp_cdvdstm);
-			CpuResumeIntr(state);
-			if ( !relres )
-				return 1;
-			if ( relres == -213 )
-				return 1;
-			cdvdstm_in_deldrv = 0;
+			return 2;
 		}
-		return 2;
-	}
-	else
-	{
-		if ( RegisterLibraryEntries(&_exp_cdvdstm) != 0 )
-			return 1;
+		cdvdstm_in_deldrv = 1;
 		DelDrv("cdrom_stm");
-		if ( AddDrv(&cdrom_stm_dev) )
+		CpuSuspendIntr(&state);
+		relres = ReleaseLibraryEntries(&_exp_cdvdstm);
+		CpuResumeIntr(state);
+		cdvdstm_in_deldrv = 0;
+		if ( relres && relres != -213 )
 		{
-			cdrom_stm_deinit();
-			return 1;
+			cdvdstm_in_deldrv = 0;
+			return 2;
 		}
-		cdvdstm_ef = sceCdSC(0xFFFFFFF5, &scres);
-		return 2;
+		return 1;
 	}
+	if ( RegisterLibraryEntries(&_exp_cdvdstm) != 0 )
+		return 1;
+	DelDrv("cdrom_stm");
+	if ( AddDrv(&cdrom_stm_dev) )
+	{
+		cdrom_stm_deinit();
+		return 1;
+	}
+	cdvdstm_ef = sceCdSC(0xFFFFFFF5, &scres);
+	return 2;
 }
 // 404690: using guessed type int cdvdstm_in_deldrv;
 
@@ -851,13 +816,10 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	retryflag = 0;
 	cmdid = instruct->cmdid;
 	posszarg1_stk = instruct->posszarg1;
-	if ( cdvdstm_stmstart_ee == 2 )
+	if ( cdvdstm_stmstart_ee == 2 && (cmdid != 9 && cmdid != 3) )
 	{
-		if ( cmdid != 9 && cmdid != 3 )
-		{
-			*outres_ptr = 0;
-			return;
-		}
+		*outres_ptr = 0;
+		return;
 	}
 	switch ( cmdid )
 	{
@@ -1030,9 +992,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 			CpuResumeIntr(state);
 			break;
 		}
-		posszarg2_bytes_clamped = posszarg2_bytes_remain;
-		if ( (unsigned int)(cdvdstm_chunksz2 - cdvdstm_bankoffs_ee) < posszarg2_bytes_remain )
-			posszarg2_bytes_clamped = cdvdstm_chunksz2 - cdvdstm_bankoffs_ee;
+		posszarg2_bytes_clamped = ( (unsigned int)(cdvdstm_chunksz2 - cdvdstm_bankoffs_ee) < posszarg2_bytes_remain ) ? (unsigned int)(cdvdstm_chunksz2 - cdvdstm_bankoffs_ee) : posszarg2_bytes_remain;
 		cdvdstm_dmat.dest = ((char *)instruct->buffer) + i;
 		cdvdstm_dmat.size = posszarg2_bytes_clamped;
 		cdvdstm_dmat.attr = 0;
@@ -1086,12 +1046,8 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	}
 	if ( posszarg2_bytes_overrun == -1 )
 		posszarg2_bytes_overrun = posszarg2_bytes;
-	outres_tmp2 = posszarg2_bytes_overrun / 2048;
-	if ( retryflag )
-	{
-		outres_tmp2 = 1;
-	}
-	else
+	outres_tmp2 = ( retryflag ) ? 1 : (posszarg2_bytes_overrun / 2048);
+	if ( !retryflag )
 	{
 		if ( sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee) != 2 && !outres_tmp2 && !cdvdstm_retryerr_ee )
 			cdvdstm_retryerr_ee = 273;
@@ -1118,7 +1074,6 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 {
 	int disk_type_ex; // $a0
-	unsigned int tgttmp2; // $a0
 	int gptmp; // $a0
 	unsigned int i; // $v1
 
@@ -1142,10 +1097,7 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	cdvdstm_curclk_ee.hi = 0;
 	if ( cdvdstm_stmstart_ee )
 		cdvdstm_retrycnt_ee_normal = 0;
-	if ( cdvdstm_stmstart_ee || cdvdstm_last_error_for_ee || cdvdstm_retrycnt_ee_normal )
-		cdvdstm_curclk_ee.lo = 552960000;
-	else
-		cdvdstm_curclk_ee.lo = 36864 * sceCdSC(0xFFFFFFEF, &cdvdstm_last_error_for_ee);
+	cdvdstm_curclk_ee.lo = ( cdvdstm_stmstart_ee || cdvdstm_last_error_for_ee || cdvdstm_retrycnt_ee_normal ) ? 552960000 : (36864 * sceCdSC(0xFFFFFFEF, &cdvdstm_last_error_for_ee));
 	if ( cdvdstm_last_error_for_ee )
 	{
 		if ( cdvdstm_verbose > 0 )
@@ -1174,30 +1126,24 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	if ( cdvdstm_retrycnt_ee_normal )
 	{
 		cdvdstm_retrycnt_ee_normal -= 1;
-		tgttmp2 = cdvdstm_readlbn_ee_normal + 16 * cdvdstm_retrycnt_ee_normal;
-		if ( (unsigned int)cdvdstm_readlbn_ee_normal >= (unsigned int)(16 * cdvdstm_retrycnt_ee_normal) )
-			tgttmp2 = cdvdstm_readlbn_ee_normal - 16 * cdvdstm_retrycnt_ee_normal;
 		if ( sceCdRE(
-					 tgttmp2,
+					 ( (unsigned int)cdvdstm_readlbn_ee_normal >= (unsigned int)(16 * cdvdstm_retrycnt_ee_normal) ) ? (cdvdstm_readlbn_ee_normal - 16 * cdvdstm_retrycnt_ee_normal) : (cdvdstm_readlbn_ee_normal + 16 * cdvdstm_retrycnt_ee_normal),
 					 cdvdstm_sectorcount2,
 					 (char *)cdvdstm_buffer2 + cdvdstm_bankgp_ee * cdvdstm_chunksz2,
 					 &cdvdstm_mode_ee) )
 		{
 			iSetAlarm(&cdvdstm_curclk_ee, (unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
-			return 0;
 		}
 		else
 		{
 			if ( cdvdstm_verbose > 0 )
 				Kprintf("Stm Read Call fail\n");
 			cdvdstm_curclk_ee.lo = 7372800;
-			if ( iSetAlarm(&cdvdstm_curclk_ee, (unsigned int (__cdecl *)(void *))ee_stream_intr_cb_normal, &cdvdstm_curclk_ee) )
+			if ( iSetAlarm(&cdvdstm_curclk_ee, (unsigned int (__cdecl *)(void *))ee_stream_intr_cb_normal, &cdvdstm_curclk_ee) && !sceCdNop() )
 			{
-				if ( !sceCdNop() )
-					sceCdSC(0, &cdvdstm_last_error_for_ee);
+				sceCdSC(0, &cdvdstm_last_error_for_ee);
 			}
 			cdvdstm_retrycnt_ee_normal += 1;
-			return 0;
 		}
 	}
 	else
@@ -1229,13 +1175,9 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 			if ( iSetAlarm(
 									&cdvdstm_curclk_ee,
 									(unsigned int (__cdecl *)(void *))ee_stream_intr_cb_normal,
-									&cdvdstm_curclk_ee) != 0 )
+									&cdvdstm_curclk_ee) != 0 && sceCdNop() == 0 )
 			{
-				if ( sceCdNop() == 0 )
-				{
-					sceCdSC(0, &cdvdstm_last_error_for_ee);
-					return 0;
-				}
+				sceCdSC(0, &cdvdstm_last_error_for_ee);
 			}
 		}
 		else
@@ -1314,13 +1256,10 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	cmdid = instruct->cmdid;
 	posszarg2_bytes = instruct->posszarg2 * cdvdstm_usedchunksize2;
 	retryflag = 0;
-	if ( cdvdstm_stmstart_ee == 2 )
+	if ( cdvdstm_stmstart_ee == 2 && (cmdid != 9 && cmdid != 3) )
 	{
-		if ( cmdid != 9 && cmdid != 3 )
-		{
-			*outres_ptr = 0;
-			return;
-		}
+		*outres_ptr = 0;
+		return;
 	}
 	switch ( cmdid )
 	{
@@ -1472,9 +1411,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 		CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
 		if ( !cdvdstm_chunksz2 )
 			_break(7u, 0);
-		posszarg2_chunks = posszarg2_bytes / cdvdstm_chunksz2;
-		if ( posszarg2_bytes % cdvdstm_chunksz2 )
-			posszarg2_chunks += 1;
+		posszarg2_chunks = (posszarg2_bytes / cdvdstm_chunksz2) + (( posszarg2_bytes % cdvdstm_chunksz2 ) ? 1 : 0);
 		for ( cdvdstm_bankgp_ee = 0; cdvdstm_bankgp_ee < posszarg2_chunks; cdvdstm_bankgp_ee += 1 )
 		{
 			outres_tmp2 = sceCdReadCDDA(cdvdstm_lsn_ee, cdvdstm_sectorcount2, cdvdstm_buffer2, &cdvdstm_mode_ee);
@@ -1525,9 +1462,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 			CpuResumeIntr(state);
 			break;
 		}
-		posszarg2_bytes_clamped = posszarg2_bytes_remain;
-		if ( (unsigned int)(cdvdstm_chunksz2 - cdvdstm_bankoffs_ee) < posszarg2_bytes_remain )
-			posszarg2_bytes_clamped = cdvdstm_chunksz2 - cdvdstm_bankoffs_ee;
+		posszarg2_bytes_clamped = ( (unsigned int)(cdvdstm_chunksz2 - cdvdstm_bankoffs_ee) < posszarg2_bytes_remain ) ? (unsigned int)(cdvdstm_chunksz2 - cdvdstm_bankoffs_ee) : posszarg2_bytes_remain;
 		cdvdstm_dmat2.dest = ((char *)instruct->buffer) + i;
 		cdvdstm_dmat2.size = posszarg2_bytes_clamped;
 		cdvdstm_dmat2.attr = 0;
@@ -1636,10 +1571,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	cdvdstm_curclk_ee.hi = 0;
 	if ( cdvdstm_stmstart_ee )
 		cdvdstm_retrycnt_ee_cdda = 0;
-	if ( cdvdstm_stmstart_ee || cdvdstm_last_error_for_ee || cdvdstm_retrycnt_ee_cdda )
-		cdvdstm_curclk_ee.lo = 552960000;
-	else
-		cdvdstm_curclk_ee.lo = 36864 * sceCdSC(0xFFFFFFEF, &cdvdstm_last_error_for_ee);
+	cdvdstm_curclk_ee.lo = ( cdvdstm_stmstart_ee || cdvdstm_last_error_for_ee || cdvdstm_retrycnt_ee_cdda ) ? 552960000 : (36864 * sceCdSC(0xFFFFFFEF, &cdvdstm_last_error_for_ee));
 	if ( cdvdstm_last_error_for_ee )
 	{
 		if ( cdvdstm_verbose > 0 )
@@ -1674,9 +1606,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 		cdvdstm_retrycnt_ee_cdda -= 1;
 		if ( !cdvdstm_retrycnt_ee_cdda && (cdvdstm_last_error_for_ee == 48 || cdvdstm_last_error_for_ee == 1) )
 		{
-			cdvdstm_readlbn_ee_cdda = cdvdstm_lsn_ee;
-			if ( cdvdstm_sectorcount2 < 0x1D )
-				cdvdstm_readlbn_ee_cdda += 29 - cdvdstm_sectorcount2;
+			cdvdstm_readlbn_ee_cdda = cdvdstm_lsn_ee + (( cdvdstm_sectorcount2 < 0x1D ) ? (29 - cdvdstm_sectorcount2) : 0);
 			cdvdstm_lsn_ee = cdvdstm_readlbn_ee_cdda + cdvdstm_sectorcount2;
 		}
 		if ( sceCdReadCDDA(
@@ -1686,20 +1616,17 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 					 &cdvdstm_mode_ee) )
 		{
 			iSetAlarm(&cdvdstm_curclk_ee, (unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
-			return 0;
 		}
 		else
 		{
 			if ( cdvdstm_verbose > 0 )
 				Kprintf("Stm Read Call fail\n");
 			cdvdstm_curclk_ee.lo = 7372800;
-			if ( iSetAlarm(&cdvdstm_curclk_ee, (unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda, &cdvdstm_curclk_ee) )
+			if ( iSetAlarm(&cdvdstm_curclk_ee, (unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda, &cdvdstm_curclk_ee) && !sceCdNop() )
 			{
-				if ( !sceCdNop() )
-					sceCdSC(0, &cdvdstm_last_error_for_ee);
+				sceCdSC(0, &cdvdstm_last_error_for_ee);
 			}
 			++cdvdstm_retrycnt_ee_cdda;
-			return 0;
 		}
 	}
 	else
@@ -1731,13 +1658,9 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 			if ( iSetAlarm(
 									&cdvdstm_curclk_ee,
 									(unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda,
-									&cdvdstm_curclk_ee) != 0 )
+									&cdvdstm_curclk_ee) != 0 && sceCdNop() == 0 )
 			{
-				if ( sceCdNop() == 0 )
-				{
-					sceCdSC(0, &cdvdstm_last_error_for_ee);
-					return 0;
-				}
+				sceCdSC(0, &cdvdstm_last_error_for_ee);
 			}
 		}
 		else
