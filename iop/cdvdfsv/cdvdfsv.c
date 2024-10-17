@@ -1692,7 +1692,6 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(cdvdfsv_rpc5h_02_packet *inbuf, int bu
 //----- (004033BC) --------------------------------------------------------
 int *__fastcall cbrpc_rpc2_diskready(int fno, void *buffer, int length)
 {
-	int i; // $s0
 	int sc_fffffffd_res; // $v0
 	int scres; // [sp+10h] [-8h] BYREF
 	u32 efres; // [sp+14h] [-4h] BYREF
@@ -1725,11 +1724,19 @@ int *__fastcall cbrpc_rpc2_diskready(int fno, void *buffer, int length)
 		cdvdfsv_ef = sceCdSC(0xFFFFFFF5, &scres);
 		while ( 1 )
 		{
-			i = MEMORY[0xBF40200F];
-			if ( (MEMORY[0xBF402005] & 0xC0) == 64 && !sceCdSC(0xFFFFFFFD, &scres) )
+			switch ( MEMORY[0xBF40200F] )
 			{
-				diskready_res = 2;
-				if ( (unsigned int)(i - 1) >= 4 )
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+					break;
+				default:
+					if ( (MEMORY[0xBF402005] & 0xC0) == 64 && !sceCdSC(0xFFFFFFFD, &scres) )
+					{
+						diskready_res = 2;
+						return &diskready_res;
+					}
 					break;
 			}
 			if ( cdvdfsv_verbose >= 2 )
@@ -2027,14 +2034,25 @@ void __fastcall cdvdfsv_rpc3h_27_readdvddualinfo(void *inbuf, int buflen, cdvdfs
 //----- (00403CA4) --------------------------------------------------------
 int __cdecl cdvdfsv_rpc5h_0E_diskready()
 {
-	int sc_ffffffda_res; // $s1
+	int is_detecting; // $s1
 	int scval_tmp[2]; // [sp+10h] [-8h] BYREF
 
-	sc_ffffffda_res = MEMORY[0xBF40200F];
+	is_detecting = 0;
+	switch ( MEMORY[0xBF40200F] )
+	{
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+			is_detecting = 1;
+			break;
+		default:
+			break;
+	}
 	if ( (MEMORY[0xBF402005] & 0xC0) != 64
 		|| sceCdSC(0xFFFFFFFD, scval_tmp)
 		|| !sceCdSC(0xFFFFFFF4, scval_tmp)
-		|| (unsigned int)(sc_ffffffda_res - 1) < 4 )
+		|| is_detecting)
 	{
 		if ( cdvdfsv_verbose > 0 )
 		{

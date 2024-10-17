@@ -1800,7 +1800,6 @@ int __cdecl cdrom_devctl(
 	unsigned int i; // $s0
 	int retval2; // $s1
 	int Clock; // $s1
-	int disk_type_res; // $v1
 	char *sc_tmp_2; // $v1
 	unsigned int sc_tmp_3; // $a1
 	cdrom_stm_devctl_t devctl_req; // [sp+18h] [-28h] BYREF
@@ -1930,8 +1929,17 @@ int __cdecl cdrom_devctl(
 				sceCdSync(6);
 				break;
 			case 0x4387:
-				disk_type_res = sceCdGetDiskType();
-				retval2 = ( (unsigned int)(disk_type_res - 18) < 2 || disk_type_res == 16 || disk_type_res == 17 ) ? ((sceCdGetToc((u8 *)bufp) != 1) ? -5 : 0) : -5;
+				switch ( sceCdGetDiskType() )
+				{
+					case 16:
+					case 17:
+					case 18:
+					case 19:
+						retval2 = (sceCdGetToc((u8 *)bufp) != 1) ? -5 : 0;
+						break;
+					default:
+						break;
+				}
 				break;
 			case 0x4388:
 				retval2 = (sceCdSetTimeout(1, *(_DWORD *)argp) != 1) ? -5 : 0;
@@ -2267,15 +2275,28 @@ int __cdecl sceCdDiskReady(int mode)
 		{
 			Kprintf("Wait Drive Ready %x\n", dev5_regs.dev5_reg_005);
 		}
-		while ( cdvdman_istruct.read2_flag || (unsigned int)(((u8)dev5_regs.dev5_reg_00F) - 1) < 4 )
+		while ( 1 )
 		{
+			if ( !cdvdman_istruct.read2_flag )
+			{
+				return 2;
+			}
+			switch ( dev5_regs.dev5_reg_00F )
+			{
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+					break;
+				default:
+					return 2;
+			}
 			while ( (dev5_regs.dev5_reg_005 & 0xC0) != 64 )
 			{
 				vDelayThread(2000);
 				WaitEventFlag(cdvdman_intr_efid, 1u, 0, efbits);
 			}
 		}
-		return 2;
 	}
 	if ( mode == 8 )
 	{
@@ -2773,20 +2794,23 @@ int __cdecl CD_newmedia(int arg)
 
 	ptsector = 0;
 	DiskType = sceCdGetDiskType();
-	if ( DiskType != 20
-		&& DiskType != 18
-		&& DiskType != 19
-		&& DiskType != 16
-		&& DiskType != 17
-		&& DiskType != 255
-		&& DiskType != 254
-		&& DiskType != 252 )
+	switch ( DiskType )
 	{
-		if ( cdvdman_verbose > 0 )
-		{
-			printf("CD_newmedia: Illegal disc media type =%d\n", (int)DiskType);
-		}
-		return 0;
+		case 16:
+		case 17:
+		case 18:
+		case 19:
+		case 20:
+		case 252:
+		case 254:
+		case 255:
+			break;
+		default:
+			if ( cdvdman_verbose > 0 )
+			{
+				printf("CD_newmedia: Illegal disc media type =%d\n", (int)DiskType);
+			}
+			return 0;
 	}
 	cdvdman_fs_base2 = 0;
 	if ( DiskType == 20 )
@@ -2830,21 +2854,27 @@ int __cdecl CD_newmedia(int arg)
 		}
 		return 0;
 	}
-	if ( DiskType == 20 || DiskType == 252 || DiskType == 254 )
+	switch ( DiskType )
 	{
-		if ( cdvdman_verbose > 0 )
-		{
-			printf("CD_newmedia: DVD Read mode\n");
-		}
-		ptsector = 257;
-	}
-	else if ( DiskType < 0x15 )
-	{
-		if ( cdvdman_verbose > 0 )
-		{
-			printf("CD_newmedia: CD Read mode\n");
-		}
-		ptsector = *(_DWORD *)&cdvdman_fs_rbuf[140];
+		case 16:
+		case 17:
+		case 18:
+		case 19:
+			if ( cdvdman_verbose > 0 )
+			{
+				printf("CD_newmedia: CD Read mode\n");
+			}
+			ptsector = *(_DWORD *)&cdvdman_fs_rbuf[140];
+			break;
+		case 20:
+		case 252:
+		case 254:
+			if ( cdvdman_verbose > 0 )
+			{
+				printf("CD_newmedia: DVD Read mode\n");
+			}
+			ptsector = 257;
+			break;
 	}
 	if ( disc_read(1, cdvdman_fs_base2 + ptsector, cdvdman_fs_rbuf, arg) != 1 )
 	{
@@ -4308,7 +4338,6 @@ int __cdecl sceCdSC(int code, int *param)
 {
 	void *poffarg_tmp; // $s0
 	int *BootMode; // $v0
-	int reg_00F_tmp; // $v1
 	int state; // [sp+10h] [-8h] BYREF
 	u32 efbits; // [sp+14h] [-4h] BYREF
 
@@ -4357,40 +4386,20 @@ int __cdecl sceCdSC(int code, int *param)
 			}
 			return 1;
 		case 0xFFFFFFF4:
-			reg_00F_tmp = dev5_regs.dev5_reg_00F;
-			if ( reg_00F_tmp == 20 )
+			switch ( dev5_regs.dev5_reg_00F )
 			{
-				if ( cdvdman_mmode == 2 )
-				{
-					return 1;
-				}
+				case 16:
+				case 17:
+				case 18:
+				case 19:
+					return cdvdman_mmode == 1 || cdvdman_mmode == 255;
+				case 20:
+					return cdvdman_mmode == 2 || cdvdman_mmode == 255;
+				case 253:
+					return cdvdman_mmode == 255;
+				default:
+					return 0;
 			}
-			else
-			{
-				if ( (unsigned int)reg_00F_tmp < 0x15u )
-				{
-					if ( reg_00F_tmp < 16 )
-					{
-						return 0;
-					}
-				}
-				else
-				{
-					if ( reg_00F_tmp != 253 )
-					{
-						return 0;
-					}
-				}
-				if ( cdvdman_mmode == 1 )
-				{
-					return 1;
-				}
-			}
-			if ( cdvdman_mmode == 255 )
-			{
-				return 1;
-			}
-			return 0;
 		case 0xFFFFFFF5:
 			return cdvdman_intr_efid;
 		case 0xFFFFFFF6:
@@ -5257,34 +5266,38 @@ int __cdecl cdvdman_ncmd_sender_06()
 //----- (00409EE4) --------------------------------------------------------
 int sceCdStandby(void)
 {
-	u8 disk_type; // $v0
 	DMA3PARAM b18; // [sp+18h] [-28h] BYREF
 	char ndata[16]; // [sp+30h] [-10h] BYREF
 
-	disk_type = dev5_regs.dev5_reg_00F;
-	if ( disk_type >= 0x14u || disk_type < 0x10u )
+	switch ( dev5_regs.dev5_reg_00F )
 	{
-		return cdvdman_send_ncmd(2, 0, 0, 5, 0, 1) >= 0;
+		case 16:
+		case 17:
+		case 18:
+		case 19:
+		case 20:
+			ndata[0] = 16;
+			ndata[4] = 1;
+			ndata[9] = 1;
+			b18.cdvdreg_howto = 128;
+			b18.dma3_blkwords = 32;
+			b18.dma3_blkcount = 16;
+			ndata[3] = 0;
+			ndata[2] = 0;
+			ndata[1] = 0;
+			ndata[7] = 0;
+			ndata[6] = 0;
+			ndata[5] = 0;
+			ndata[8] = 0;
+			ndata[10] = 0;
+			b18.dma3_csectors = 0;
+			b18.dma3_msectors = 0;
+			b18.dma3_callback = 0;
+			b18.dma3_maddress = cdvdman_ptoc;
+			return cdvdman_send_ncmd(6, ndata, 11, 5, &b18, 1) >= 0;
+		default:
+			return cdvdman_send_ncmd(2, 0, 0, 5, 0, 1) >= 0;
 	}
-	ndata[0] = 16;
-	ndata[4] = 1;
-	ndata[9] = 1;
-	b18.cdvdreg_howto = 128;
-	b18.dma3_blkwords = 32;
-	b18.dma3_blkcount = 16;
-	ndata[3] = 0;
-	ndata[2] = 0;
-	ndata[1] = 0;
-	ndata[7] = 0;
-	ndata[6] = 0;
-	ndata[5] = 0;
-	ndata[8] = 0;
-	ndata[10] = 0;
-	b18.dma3_csectors = 0;
-	b18.dma3_msectors = 0;
-	b18.dma3_callback = 0;
-	b18.dma3_maddress = cdvdman_ptoc;
-	return cdvdman_send_ncmd(6, ndata, 11, 5, &b18, 1) >= 0;
 }
 // BF402000: using guessed type dev5_regs_t dev5_regs;
 
@@ -5323,38 +5336,42 @@ int __fastcall readtoc_timeout_func(iop_sys_clock_t *s)
 //----- (0040A0EC) --------------------------------------------------------
 int __cdecl cdvdman_readtoc(u8 *toc, int param, int func)
 {
-	int disk_type; // $v1
 	int errcond; // $s0
 	DMA3PARAM b18; // [sp+18h] [-28h] BYREF
 	iop_sys_clock_t clk; // [sp+30h] [-10h] BYREF
 	char ndata[8]; // [sp+38h] [-8h] BYREF
 
-	disk_type = dev5_regs.dev5_reg_00F;
-	if ( disk_type == 20 || disk_type == 252 || disk_type == 254 )
+	switch ( dev5_regs.dev5_reg_00F )
 	{
-		b18.cdvdreg_howto = 132;
-		b18.dma3_blkwords = 4;
-		b18.dma3_blkcount = 129;
-		b18.dma3_maddress = toc;
-		b18.dma3_msectors = 0;
-		b18.dma3_csectors = 0;
-		b18.dma3_callback = 0;
-		ndata[0] = param;
-	}
-	else if ( disk_type >= 16 && disk_type <= 20 )
-	{
-		b18.cdvdreg_howto = 128;
-		b18.dma3_blkwords = 32;
-		b18.dma3_blkcount = 8;
-		b18.dma3_maddress = toc;
-		b18.dma3_msectors = 0;
-		b18.dma3_csectors = 0;
-		b18.dma3_callback = 0;
-		ndata[0] = 0;
-	}
-	else if ( disk_type != 253 )
-	{
-		return 0;
+		case 20:
+		case 252:
+		case 254:
+			b18.cdvdreg_howto = 132;
+			b18.dma3_blkwords = 4;
+			b18.dma3_blkcount = 129;
+			b18.dma3_maddress = toc;
+			b18.dma3_msectors = 0;
+			b18.dma3_csectors = 0;
+			b18.dma3_callback = 0;
+			ndata[0] = param;
+			break;
+		case 16:
+		case 17:
+		case 18:
+		case 19:
+			b18.cdvdreg_howto = 128;
+			b18.dma3_blkwords = 32;
+			b18.dma3_blkcount = 8;
+			b18.dma3_maddress = toc;
+			b18.dma3_msectors = 0;
+			b18.dma3_csectors = 0;
+			b18.dma3_callback = 0;
+			ndata[0] = 0;
+			break;
+		case 253:
+			break;
+		default:
+			return 0;
 	}
 	if ( cdvdman_send_ncmd(9, ndata, 1, func, &b18, 1) < 0 )
 	{
@@ -5473,40 +5490,27 @@ int __cdecl cdvdman_speedctl(u32 spindlctrl, int dvdflag, u32 maxlsn)
 //----- (0040A4F8) --------------------------------------------------------
 int __cdecl cdvdman_isdvd()
 {
-	int disk_type; // $v1
-
-	disk_type = dev5_regs.dev5_reg_00F;
-	if ( disk_type == 20 )
+	switch ( dev5_regs.dev5_reg_00F )
 	{
-		cdvdman_istruct.tray_is_open = 1;
-		return 1;
-	}
-	if ( (unsigned int)disk_type >= 0x15u )
-	{
-		if ( disk_type == 253 )
-		{
+		case 16:
+		case 17:
+		case 18:
+		case 19:
 			cdvdman_istruct.tray_is_open = 1;
 			return 0;
-		}
-		if ( disk_type >= 254 )
-		{
-			if ( disk_type != 254 )
-			{
-				return 0;
-			}
-		}
-		else if ( disk_type != 252 )
-		{
+		case 20:
+			cdvdman_istruct.tray_is_open = 1;
+			return 1;
+		case 252:
+		case 254:
+			cdvdman_istruct.tray_is_open = 1;
+			return 1;
+		case 253:
+			cdvdman_istruct.tray_is_open = 1;
 			return 0;
-		}
-		cdvdman_istruct.tray_is_open = 1;
-		return 1;
-	}
-	if ( disk_type >= 16 )
-	{
-		cdvdman_istruct.tray_is_open = 1;
-	}
-	return 0;
+		default:
+			return 0;
+	}	
 }
 // BF402000: using guessed type dev5_regs_t dev5_regs;
 
@@ -5574,7 +5578,6 @@ int __cdecl sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, const sceCdRMode *mode,
 //----- (0040A79C) --------------------------------------------------------
 int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int csec, void *callback)
 {
-	int reg_00F_tmp; // $v1
 	DMA3PARAM b18; // [sp+20h] [-30h] BYREF
 	char ndata[11]; // [sp+38h] [-18h] BYREF
 	u32 efbits[2]; // [sp+48h] [-8h] BYREF
@@ -5618,34 +5621,30 @@ int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int
 			b18.cdvdreg_howto = 128;
 			break;
 	}
-	reg_00F_tmp = dev5_regs.dev5_reg_00F;
-	if ( (unsigned int)reg_00F_tmp < 0x10u )
+	switch ( dev5_regs.dev5_reg_00F )
 	{
-		vSetEventFlag(ncmd_evid, 1u);
-		return 0;
-	}
-	if ( (unsigned int)reg_00F_tmp < 0x14u )
-	{
-		if ( cdvdman_mmode != 1 && cdvdman_mmode != 255 )
-		{
+		case 16:
+		case 17:
+		case 18:
+		case 19:
+			if ( cdvdman_mmode != 1 && cdvdman_mmode != 255 )
+			{
+				vSetEventFlag(ncmd_evid, 1u);
+				return 0;
+			}
+			cdvdman_istruct.dvd_flag = 0;
+			break;
+		case 20:
+			if ( cdvdman_mmode != 2 && cdvdman_mmode != 255 )
+			{
+				vSetEventFlag(ncmd_evid, 1u);
+				return 0;
+			}
+			cdvdman_istruct.dvd_flag = 1;
+			break;
+		default:
 			vSetEventFlag(ncmd_evid, 1u);
 			return 0;
-		}
-		cdvdman_istruct.dvd_flag = 0;
-	}
-	else
-	{
-		if ( reg_00F_tmp != 20 )
-		{
-			vSetEventFlag(ncmd_evid, 1u);
-			return 0;
-		}
-		if ( cdvdman_mmode != 2 && cdvdman_mmode != 255 )
-		{
-			vSetEventFlag(ncmd_evid, 1u);
-			return 0;
-		}
-		cdvdman_istruct.dvd_flag = 1;
 	}
 	cdvdman_istruct.read_mode = *mode;
 	cdvdman_istruct.read_callback = callback;
@@ -6091,7 +6090,6 @@ int __cdecl sceCdReadChain(sceCdRChain *tag, sceCdRMode *mode)
 //----- (0040B8A4) --------------------------------------------------------
 int __cdecl cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *mode, int flag)
 {
-	int disk_type; // $v1
 	DMA3PARAM b18; // [sp+18h] [-28h] BYREF
 	char ndata[11]; // [sp+30h] [-10h] BYREF
 
@@ -6123,23 +6121,14 @@ int __cdecl cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *
 			b18.cdvdreg_howto = 140;
 			break;
 	}
-	disk_type = dev5_regs.dev5_reg_00F;
-	if ( disk_type != 19 )
+	switch ( dev5_regs.dev5_reg_00F )
 	{
-		if ( (unsigned int)disk_type < 0x14u )
-		{
-			if ( disk_type != 17 )
-			{
-				return 0;
-			}
-		}
-		else
-		{
-			if ( disk_type != 253 )
-			{
-				return 0;
-			}
-		}
+		case 17:
+		case 19:
+		case 253:
+			break;
+		default:
+			return 0;
 	}
 	if ( cdvdman_mmode != 1 && cdvdman_mmode != 255 )
 	{
@@ -6491,7 +6480,6 @@ int __fastcall cdvdman_scmd_sender_3B(int arg1)
 //----- (0040C5B8) --------------------------------------------------------
 int __cdecl sceCdReadDiskID(unsigned int *id)
 {
-	int disk_type; // $v0
 	sceCdRMode rmode; // [sp+18h] [-810h] BYREF
 	char sectbuf[2048]; // [sp+20h] [-808h] BYREF
 	u32 efbits[2]; // [sp+820h] [-8h] BYREF
@@ -6501,10 +6489,14 @@ int __cdecl sceCdReadDiskID(unsigned int *id)
 	*((_BYTE *)id + 2) = 0;
 	*((_BYTE *)id + 1) = 0;
 	*(_BYTE *)id = 0;
-	disk_type = sceCdGetDiskType();
-	if ( disk_type >= 21 || disk_type < 18 )
+	switch ( sceCdGetDiskType() )
 	{
-		return 0;
+		case 18:
+		case 19:
+		case 20:
+			break;
+		default:
+			return 0;
 	}
 	rmode.spindlctrl = 18;
 	rmode.datapattern = 0;
@@ -6541,7 +6533,6 @@ int __cdecl sceCdReadDiskID(unsigned int *id)
 int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 {
 	int disktype_tmp; // $s0
-	int disk_type; // $v1
 	unsigned int i; // $s0
 	vu8 dev5_reg_038; // $s0
 	sceCdRMode rmode[2]; // [sp+18h] [-18h] BYREF
@@ -6556,15 +6547,17 @@ int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 		return 0;
 	}
 	*status = 0;
-	disk_type = sceCdGetDiskType();
-	if ( disk_type < 18 || disk_type > 20 )
+	switch ( sceCdGetDiskType() )
 	{
-		*status = 20;
-		return 0;
-	}
-	if ( disk_type != 20 )
-	{
-		disktype_tmp = 1;
+		case 18:
+		case 19:
+			disktype_tmp = 1;
+			break;
+		case 20:
+			break;
+		default:
+			*status = 20;
+			return 0;
 	}
 	CpuSuspendIntr(&state);
 	if ( cdvdman_istruct.stream_flag || cdvdman_istruct.read2_flag )

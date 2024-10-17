@@ -499,7 +499,6 @@ unsigned int __fastcall iop_stream_handler(
 //----- (00400D30) --------------------------------------------------------
 unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 {
-	int disk_type_ex; // $a0
 	unsigned int tgttmp; // $s0
 	int gptmp; // $a0
 	unsigned int i; // $v1
@@ -512,15 +511,20 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	iCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &cdvdstm_curclk_iop);
 	iCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &cdvdstm_curclk_iop);
 	sceCdSC(0xFFFFFFFF, &scres1);
-	disk_type_ex = sceCdGetDiskType();
-	if ( !scres1
-		&& disk_type_ex != 20
-		&& disk_type_ex != 18
-		&& disk_type_ex != 19
-		&& disk_type_ex != 16
-		&& disk_type_ex != 17 )
+	if ( !scres1 )
 	{
-		scres1 = 253;
+		switch ( sceCdGetDiskType() )
+		{
+			case 16:
+			case 17:
+			case 18:
+			case 19:
+			case 20:
+				break;
+			default:
+				scres1 = 253;
+				break;
+		}
 	}
 	cdvdstm_curclk_iop.hi = 0;
 	if ( cdvdstm_stmstart_iop )
@@ -1073,7 +1077,6 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 //----- (00402230) --------------------------------------------------------
 unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 {
-	int disk_type_ex; // $a0
 	int gptmp; // $a0
 	unsigned int i; // $v1
 
@@ -1084,15 +1087,20 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	iCancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
 	iCancelAlarm((unsigned int (__cdecl *)(void *))ee_stream_intr_cb_normal, &cdvdstm_curclk_ee);
 	sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
-	disk_type_ex = sceCdGetDiskType();
-	if ( !cdvdstm_last_error_for_ee
-		&& disk_type_ex != 20
-		&& disk_type_ex != 18
-		&& disk_type_ex != 19
-		&& disk_type_ex != 16
-		&& disk_type_ex != 17 )
+	if ( !cdvdstm_last_error_for_ee )
 	{
-		cdvdstm_last_error_for_ee = 253;
+		switch ( sceCdGetDiskType() )
+		{
+			case 16:
+			case 17:
+			case 18:
+			case 19:
+			case 20:
+				break;
+			default:
+				cdvdstm_last_error_for_ee = 253;
+				break;
+		}
 	}
 	cdvdstm_curclk_ee.hi = 0;
 	if ( cdvdstm_stmstart_ee )
@@ -1548,7 +1556,6 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 //----- (00403530) --------------------------------------------------------
 unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 {
-	int disk_type_ex; // $a0
 	int gptmp; // $a0
 	unsigned int i; // $v1
 
@@ -1559,14 +1566,19 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	iCancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &cdvdstm_curclk_ee);
 	iCancelAlarm((unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda, &cdvdstm_curclk_ee);
 	sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
-	disk_type_ex = sceCdGetDiskType();
-	if ( !cdvdstm_last_error_for_ee
-		&& disk_type_ex != 253
-		&& disk_type_ex != 33
-		&& disk_type_ex != 19
-		&& disk_type_ex != 17 )
+	if ( !cdvdstm_last_error_for_ee )
 	{
-		cdvdstm_last_error_for_ee = 253;
+		switch ( sceCdGetDiskType() )
+		{
+			case 17:
+			case 19:
+			case 33:
+			case 253:
+				break;
+			default:
+				cdvdstm_last_error_for_ee = 253;
+				break;
+		}
 	}
 	cdvdstm_curclk_ee.hi = 0;
 	if ( cdvdstm_stmstart_ee )
