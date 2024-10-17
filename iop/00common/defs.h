@@ -274,7 +274,8 @@ typedef struct cdvdman_internal_struct_
 {
 	char m_cdvdman_command;
 	char m_last_error;
-	char m_field_002[2];
+	char m_unused_002;
+	char m_ncmd_intr_count;
 	int m_wait_flag;
 	int m_thread_id;
 	int m_stream_flag;

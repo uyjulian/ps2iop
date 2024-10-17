@@ -3768,7 +3768,7 @@ int __fastcall intrh_cdrom(cdvdman_internal_struct_t *s)
 	else
 	{
 		s->m_waf_set_test = 1;
-		s->m_field_002[1] += 2;
+		s->m_ncmd_intr_count += 1;
 		dev5_regs.m_dev5_reg_008 = 2;
 	}
 	iReferEventFlagStatus(g_cdvdman_intr_efid, &efinfo);
