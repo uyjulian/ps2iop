@@ -196,10 +196,10 @@ int cdvdstm_2()
 	int outres[8]; // [sp+28h] [-20h] BYREF
 
 	memset(&instruct, 0, 12);
-	instruct.cmdid = 3;
-	instruct.rmode.datapattern = 0;
-	instruct.rmode.spindlctrl = 0;
-	instruct.rmode.trycount = 0;
+	instruct.m_cmdid = 3;
+	instruct.m_rmode.datapattern = 0;
+	instruct.m_rmode.spindlctrl = 0;
+	instruct.m_rmode.trycount = 0;
 	ee_stream_handler_normal(&instruct, 20, outres);
 	sceCdStStop();
 	return 0;
@@ -660,20 +660,20 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 	switch ( a3 )
 	{
 		case 0x4393:
-			if ( instruct->cmdid == 5 || instruct->cmdid == 3 || instruct->cmdid - 7 < 2 )
+			if ( instruct->m_cmdid == 5 || instruct->m_cmdid == 3 || instruct->m_cmdid - 7 < 2 )
 			{
 				vSetEventFlag();
 			}
 			*outres_ptr = iop_stream_handler(
-											instruct->posszarg1,
-											instruct->posszarg2,
-											instruct->buffer,
-											instruct->cmdid,
-											&instruct->rmode,
-											(int *)&instruct->error);
+											instruct->m_posszarg1,
+											instruct->m_posszarg2,
+											instruct->m_buffer,
+											instruct->m_cmdid,
+											&instruct->m_rmode,
+											(int *)&instruct->m_error);
 			break;
 		case 0x4394:
-			*outres_ptr = sceCdStream0(instruct->posszarg2, (char *)instruct->buffer, instruct->cmdid, (int *)&instruct->error);
+			*outres_ptr = sceCdStream0(instruct->m_posszarg2, (char *)instruct->m_buffer, instruct->m_cmdid, (int *)&instruct->m_error);
 			break;
 		case 0x4396:
 			ee_stream_handler_normal(instruct, inbuf_len, outres_ptr);
@@ -777,8 +777,8 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	(void)inbuf_len;
 
 	retryflag = 0;
-	cmdid = instruct->cmdid;
-	posszarg1_stk = instruct->posszarg1;
+	cmdid = instruct->m_cmdid;
+	posszarg1_stk = instruct->m_posszarg1;
 	if ( g_cdvdstm_stmstart_ee == 2 && (cmdid != 9 && cmdid != 3) )
 	{
 		*outres_ptr = 0;
@@ -825,19 +825,19 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 			return;
 		case 5u:
 			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_normal_thunk);
-			if ( !instruct->posszarg2 )
+			if ( !instruct->m_posszarg2 )
 				_break(7u, 0);
-			chunks_sectors = instruct->posszarg1 / instruct->posszarg2;
-			g_cdvdstm_bufsz2 = instruct->posszarg1;
+			chunks_sectors = instruct->m_posszarg1 / instruct->m_posszarg2;
+			g_cdvdstm_bufsz2 = instruct->m_posszarg1;
 			g_cdvdstm_sectorcount2 = chunks_sectors;
 			g_cdvdstm_chunksz2 = chunks_sectors << 11;
-			g_cdvdstm_buffer2 = (char *)instruct->buffer;
-			g_cdvdstm_bankcnt2 = instruct->posszarg2;
+			g_cdvdstm_buffer2 = (char *)instruct->m_buffer;
+			g_cdvdstm_bankcnt2 = instruct->m_posszarg2;
 			PRINTF(
 				"Stream Buffer 1Bank %dbyte %dbanks %dbyte used\n",
 				(int)(chunks_sectors << 11),
-				(int)(instruct->posszarg2),
-				(int)((chunks_sectors << 11) * (instruct->posszarg2)));
+				(int)(instruct->m_posszarg2),
+				(int)((chunks_sectors << 11) * (instruct->m_posszarg2)));
 			*outres_ptr = 1;
 			return;
 		case 3u:
@@ -861,19 +861,19 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 			CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
 			return;
 		case 1u:
-			g_cdvdstm_mode_ee.datapattern = instruct->rmode.datapattern;
-			g_cdvdstm_mode_ee.trycount = instruct->rmode.trycount;
-			g_cdvdstm_mode_ee.spindlctrl = instruct->rmode.spindlctrl;
+			g_cdvdstm_mode_ee.datapattern = instruct->m_rmode.datapattern;
+			g_cdvdstm_mode_ee.trycount = instruct->m_rmode.trycount;
+			g_cdvdstm_mode_ee.spindlctrl = instruct->m_rmode.spindlctrl;
 			g_cdvdstm_retryerr_ee = 0;
 			break;
 	}
-	posszarg2_bytes = instruct->posszarg2 << 11;
+	posszarg2_bytes = instruct->m_posszarg2 << 11;
 	if ( cmdid == 9 )
 	{
 		if ( sceCdSC(0xFFFFFFFF, &g_cdvdstm_last_error_for_ee) )
 		{
 			CpuSuspendIntr(&state);
-			g_cdvdstm_lsn_ee = instruct->posszarg1;
+			g_cdvdstm_lsn_ee = instruct->m_posszarg1;
 			for ( i = 0; i < (unsigned int)g_cdvdstm_bankcnt2; i += 1 )
 			{
 				g_cdvdstm_usedmap_ee[i] = 0;
@@ -895,7 +895,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 		posszarg2_bytes = 0;
 		cmdid = 1;
 		CpuResumeIntr(state);
-		g_cdvdstm_lsn_ee = instruct->posszarg1;
+		g_cdvdstm_lsn_ee = instruct->m_posszarg1;
 		g_cdvdstm_bankoffs_ee = 0;
 		g_cdvdstm_bankcur_ee = 0;
 		g_cdvdstm_bankgp_ee = 0;
@@ -913,7 +913,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 		{
 			g_cdvdstm_usedmap_ee[i] = 0;
 		}
-		g_cdvdstm_lsn_ee = instruct->posszarg1;
+		g_cdvdstm_lsn_ee = instruct->m_posszarg1;
 		sceCdSC(0xFFFFFFE9, (int *)&posszarg1_stk);
 		g_cdvdstm_bankoffs_ee = 0;
 		g_cdvdstm_bankcur_ee = 0;
@@ -949,7 +949,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 			break;
 		}
 		posszarg2_bytes_clamped = ( (unsigned int)(g_cdvdstm_chunksz2 - g_cdvdstm_bankoffs_ee) < posszarg2_bytes_remain ) ? (unsigned int)(g_cdvdstm_chunksz2 - g_cdvdstm_bankoffs_ee) : posszarg2_bytes_remain;
-		g_cdvdstm_dmat.dest = ((char *)instruct->buffer) + i;
+		g_cdvdstm_dmat.dest = ((char *)instruct->m_buffer) + i;
 		g_cdvdstm_dmat.size = posszarg2_bytes_clamped;
 		g_cdvdstm_dmat.attr = 0;
 		g_cdvdstm_dmat.src = (char *)g_cdvdstm_buffer2 + g_cdvdstm_bankcur_ee * g_cdvdstm_chunksz2 + g_cdvdstm_bankoffs_ee;
@@ -1179,8 +1179,8 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 
 	(void)inbuf_len;
 
-	cmdid = instruct->cmdid;
-	posszarg2_bytes = instruct->posszarg2 * g_cdvdstm_usedchunksize2;
+	cmdid = instruct->m_cmdid;
+	posszarg2_bytes = instruct->m_posszarg2 * g_cdvdstm_usedchunksize2;
 	retryflag = 0;
 	if ( g_cdvdstm_stmstart_ee == 2 && (cmdid != 9 && cmdid != 3) )
 	{
@@ -1230,7 +1230,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 			return;
 		case 5u:
 			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_cdda_thunk);
-			switch ( instruct->rmode.datapattern )
+			switch ( instruct->m_rmode.datapattern )
 			{
 				case 1:
 					g_cdvdstm_usedchunksize2 = 2368;
@@ -1243,19 +1243,19 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 					g_cdvdstm_usedchunksize2 = 2352;
 					break;
 			}
-			if ( !instruct->posszarg2 )
+			if ( !instruct->m_posszarg2 )
 				_break(7u, 0);
-			chunks_sectors = instruct->posszarg1 / instruct->posszarg2;
-			g_cdvdstm_bufsz2 = instruct->posszarg1;
+			chunks_sectors = instruct->m_posszarg1 / instruct->m_posszarg2;
+			g_cdvdstm_bufsz2 = instruct->m_posszarg1;
 			g_cdvdstm_sectorcount2 = chunks_sectors;
 			g_cdvdstm_chunksz2 = chunks_sectors * g_cdvdstm_usedchunksize2;
-			g_cdvdstm_buffer2 = (char *)instruct->buffer;
-			g_cdvdstm_bankcnt2 = instruct->posszarg2;
+			g_cdvdstm_buffer2 = (char *)instruct->m_buffer;
+			g_cdvdstm_bankcnt2 = instruct->m_posszarg2;
 			PRINTF(
 				"DA Stream Buffer 1Bank %dbyte %dbanks %dbyte used\n",
 				(int)(chunks_sectors * g_cdvdstm_usedchunksize2),
-				(int)instruct->posszarg2,
-				(int)(chunks_sectors * g_cdvdstm_usedchunksize2 * instruct->posszarg2));
+				(int)instruct->m_posszarg2,
+				(int)(chunks_sectors * g_cdvdstm_usedchunksize2 * instruct->m_posszarg2));
 			*outres_ptr = 1;
 			return;
 		case 3u:
@@ -1279,9 +1279,9 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 			CancelAlarm((unsigned int (__cdecl *)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
 			return;
 		case 1u:
-			g_cdvdstm_mode_ee.datapattern = instruct->rmode.datapattern;
-			g_cdvdstm_mode_ee.trycount = instruct->rmode.trycount;
-			g_cdvdstm_mode_ee.spindlctrl = instruct->rmode.spindlctrl;
+			g_cdvdstm_mode_ee.datapattern = instruct->m_rmode.datapattern;
+			g_cdvdstm_mode_ee.trycount = instruct->m_rmode.trycount;
+			g_cdvdstm_mode_ee.spindlctrl = instruct->m_rmode.spindlctrl;
 			g_cdvdstm_retryerr_ee = 0;
 			break;
 	}
@@ -1290,7 +1290,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 		if ( sceCdSC(0xFFFFFFFF, &g_cdvdstm_last_error_for_ee) )
 		{
 			CpuSuspendIntr(&state);
-			g_cdvdstm_lsn_ee = instruct->posszarg1;
+			g_cdvdstm_lsn_ee = instruct->m_posszarg1;
 			for ( i = 0; i < (unsigned int)g_cdvdstm_bankcnt2; i += 1 )
 			{
 				g_cdvdstm_usedmap_ee[i] = 0;
@@ -1312,7 +1312,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 		posszarg2_bytes = 0;
 		cmdid = 1;
 		CpuResumeIntr(state);
-		g_cdvdstm_lsn_ee = instruct->posszarg1;
+		g_cdvdstm_lsn_ee = instruct->m_posszarg1;
 		g_cdvdstm_bankoffs_ee = 0;
 		g_cdvdstm_bankcur_ee = 0;
 		g_cdvdstm_bankgp_ee = 0;
@@ -1332,7 +1332,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 		{
 			g_cdvdstm_usedmap_ee[i] = 0;
 		}
-		g_cdvdstm_lsn_ee = instruct->posszarg1;
+		g_cdvdstm_lsn_ee = instruct->m_posszarg1;
 		g_cdvdstm_bankoffs_ee = 0;
 		g_cdvdstm_bankcur_ee = 0;
 		sceCdSync(0);
@@ -1386,7 +1386,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 			break;
 		}
 		posszarg2_bytes_clamped = ( (unsigned int)(g_cdvdstm_chunksz2 - g_cdvdstm_bankoffs_ee) < posszarg2_bytes_remain ) ? (unsigned int)(g_cdvdstm_chunksz2 - g_cdvdstm_bankoffs_ee) : posszarg2_bytes_remain;
-		g_cdvdstm_dmat2.dest = ((char *)instruct->buffer) + i;
+		g_cdvdstm_dmat2.dest = ((char *)instruct->m_buffer) + i;
 		g_cdvdstm_dmat2.size = posszarg2_bytes_clamped;
 		g_cdvdstm_dmat2.attr = 0;
 		g_cdvdstm_dmat2.src = (char *)g_cdvdstm_buffer2 + g_cdvdstm_bankcur_ee * g_cdvdstm_chunksz2 + g_cdvdstm_bankoffs_ee;
