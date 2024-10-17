@@ -499,9 +499,7 @@ unsigned int __fastcall iop_stream_handler(
 //----- (00400D30) --------------------------------------------------------
 unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 {
-	unsigned int tgttmp; // $s0
 	int gptmp; // $a0
-	unsigned int i; // $v1
 	int scres1; // [sp+28h] [-8h] BYREF
 
 	(void)userdata;
@@ -557,6 +555,8 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	}
 	if ( cdvdstm_retrycnt_iop )
 	{
+		unsigned int tgttmp; // $s0
+
 		cdvdstm_retrycnt_iop -= 1;
 		tgttmp = ( (unsigned int)cdvdstm_tgt >= (unsigned int)(16 * cdvdstm_retrycnt_iop) ) ? (cdvdstm_tgt - 16 * cdvdstm_retrycnt_iop) : (cdvdstm_tgt + 16 * cdvdstm_retrycnt_iop);
 		if ( cdvdstm_verbose > 0 )
@@ -615,6 +615,8 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 		{
 			if ( cdvdstm_stmstart_iop == 2 )
 			{
+				unsigned int i; // $v1
+
 				cdvdstm_bankoffs_iop = 0;
 				cdvdstm_bankcur_iop = 0;
 				cdvdstm_bankgp_iop = 0;
@@ -749,12 +751,13 @@ __int64 __cdecl cdrom_stm_nulldev64()
 //----- (004015DC) --------------------------------------------------------
 int __fastcall _start(int a1)
 {
-	int relres; // $s0
 	int scres; // [sp+10h] [-8h] BYREF
 	int state; // [sp+14h] [-4h] BYREF
 
 	if ( a1 < 0 )
 	{
+		int relres; // $s0
+
 		if ( sceCdSC(0xFFFFFFFF, &scres) == 0 )
 		{
 			return 2;
@@ -804,7 +807,6 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	u32 posszarg2_bytes; // $s5
 	int bankcur_tmp; // $a0
 	unsigned int chunks_sectors; // $lo
-	unsigned int posszarg2_bytes_remain; // $s2
 	int bankcur_next_tmp1; // $a1
 	int posszarg2_bytes_clamped; // $s1
 	int dmat1; // $s0
@@ -972,6 +974,8 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	posszarg2_bytes_overrun = -1;
 	for ( i = 0; i < posszarg2_bytes; i += posszarg2_bytes_clamped )
 	{
+		unsigned int posszarg2_bytes_remain; // $s2
+
 		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
 		{
@@ -1078,7 +1082,6 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 {
 	int gptmp; // $a0
-	unsigned int i; // $v1
 
 	(void)userdata;
 
@@ -1192,6 +1195,8 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 		{
 			if ( cdvdstm_stmstart_ee == 2 )
 			{
+				unsigned int i; // $v1
+
 				cdvdstm_bankoffs_ee = 0;
 				cdvdstm_bankcur_ee = 0;
 				cdvdstm_bankgp_ee = 0;
@@ -1247,14 +1252,11 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	int retryflag; // $fp
 	int bankcur_tmp; // $a0
 	u32 chunks_sectors; // $lo
-	signed int posszarg2_chunks; // $s0
-	unsigned int posszarg2_bytes_remain; // $s2
 	int bankcur_next_tmp1; // $a1
 	int posszarg2_bytes_clamped; // $s1
 	int dmat2; // $s0
 	int bankcur_next_tmp2; // $a1
 	int posszarg2_overrun_chunks2; // [sp+20h] [-10h]
-	int outres_tmp2; // [sp+20h] [-10h]
 	unsigned int posszarg2_bytes_overrun; // [sp+20h] [-10h]
 	int state; // [sp+24h] [-Ch] BYREF
 	unsigned int i; // [sp+28h] [-8h]
@@ -1403,6 +1405,8 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	}
 	if ( cmdid == 1 )
 	{
+		signed int posszarg2_chunks; // $s0
+
 		CpuSuspendIntr(&state);
 		CancelAlarm((unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda, &cdvdstm_curclk_ee);
 		sceCdSC(0, &cdvdstm_last_error_for_ee);
@@ -1422,6 +1426,8 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 		posszarg2_chunks = (posszarg2_bytes / cdvdstm_chunksz2) + (( posszarg2_bytes % cdvdstm_chunksz2 ) ? 1 : 0);
 		for ( cdvdstm_bankgp_ee = 0; cdvdstm_bankgp_ee < posszarg2_chunks; cdvdstm_bankgp_ee += 1 )
 		{
+			int outres_tmp2; // [sp+20h] [-10h]
+
 			outres_tmp2 = sceCdReadCDDA(cdvdstm_lsn_ee, cdvdstm_sectorcount2, cdvdstm_buffer2, &cdvdstm_mode_ee);
 			sceCdSync(3);
 			sceCdSC(0xFFFFFFFF, &cdvdstm_last_error_for_ee);
@@ -1446,6 +1452,8 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	posszarg2_bytes_overrun = -1;
 	for ( i = 0; i < posszarg2_bytes; i += posszarg2_bytes_clamped )
 	{
+		unsigned int posszarg2_bytes_remain; // $s2
+
 		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !cdvdstm_usedmap_ee[cdvdstm_bankcur_ee] )
 		{
@@ -1557,7 +1565,6 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 {
 	int gptmp; // $a0
-	unsigned int i; // $v1
 
 	(void)userdata;
 
@@ -1679,6 +1686,8 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 		{
 			if ( cdvdstm_stmstart_ee == 2 )
 			{
+				unsigned int i; // $v1
+
 				cdvdstm_bankoffs_ee = 0;
 				cdvdstm_bankcur_ee = 0;
 				cdvdstm_bankgp_ee = 0;
