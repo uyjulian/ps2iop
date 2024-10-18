@@ -1620,13 +1620,15 @@ int __fastcall cdrom_ioctl(iop_file_t *f, int arg, void *param)
 {
 	(void)f;
 
-	if ( arg != 0x10000 )
+	switch ( arg )
 	{
-		return -5;
+		case 0x10000:
+			g_cdvdman_spinnom = -1;
+			sceCdSpinCtrlIOP((u32)param);
+			return 0;
+		default:
+			return -5;
 	}
-	g_cdvdman_spinnom = -1;
-	sceCdSpinCtrlIOP((u32)param);
-	return 0;
 }
 
 //----- (00402A7C) --------------------------------------------------------
@@ -1667,6 +1669,8 @@ int __cdecl cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, 
 				// Unofficial: return 0 instead of negative value
 				retval = sceCdStStat();
 				break;
+			default:
+				break;
 		}
 	}
 	SetEventFlag(g_fio_fsv_evid, 1u);
@@ -1685,7 +1689,6 @@ int __cdecl cdrom_devctl(
 {
 	unsigned int i; // $s0
 	int retval2; // $s1
-	int Clock; // $s1
 	char *sc_tmp_2; // $v1
 	unsigned int sc_tmp_3; // $a1
 	u32 efbits; // [sp+30h] [-10h] BYREF
@@ -1709,28 +1712,20 @@ int __cdecl cdrom_devctl(
 	switch ( cmd )
 	{
 		case 0x430C:
-			for ( i = 0; i < 3; i += 1 )
+			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
 				WaitEventFlag(g_scmd_evid, 1u, 0, &efbits);
-				Clock = sceCdReadClock((sceCdCLOCK *)bufp);
-				if ( Clock )
-				{
-					break;
-				}
+				retval2 = sceCdReadClock((sceCdCLOCK *)bufp);
 			}
-			retval2 = (Clock != 1) ? -5 : 0;
+			retval2 = (retval2 != 1) ? -5 : 0;
 			break;
 		case 0x431D:
-			for ( i = 0; i < 3; i += 1 )
+			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
 				WaitEventFlag(g_scmd_evid, 1u, 0, &efbits);
-				Clock = sceCdReadGUID((u64 *)bufp);
-				if ( Clock )
-				{
-					break;
-				}
+				retval2 = sceCdReadGUID((u64 *)bufp);
 			}
-			retval2 = (Clock != 1) ? -5 : 0;
+			retval2 = (retval2 != 1) ? -5 : 0;
 			break;
 		case 0x431E:
 			retval2 = (sceCdReadDiskID((unsigned int *)bufp) != 1) ? -5 : 0;
@@ -1748,16 +1743,12 @@ int __cdecl cdrom_devctl(
 			*(_DWORD *)bufp = sceCdStatus();
 			break;
 		case 0x4323:
-			for ( i = 0; i < 3; i += 1 )
+			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
 				WaitEventFlag(g_scmd_evid, 1u, 0, &efbits);
-				Clock = sceCdPowerOff((u32 *)bufp);
-				if ( Clock )
-				{
-					break;
-				}
+				retval2 = sceCdPowerOff((u32 *)bufp);
 			}
-			retval2 = (Clock != 1) ? -5 : 0;
+			retval2 = (retval2 != 1) ? -5 : 0;
 			break;
 		case 0x4324:
 			sceCdMmode(*(_DWORD *)argp);
@@ -1766,16 +1757,12 @@ int __cdecl cdrom_devctl(
 			*(_DWORD *)bufp = sceCdDiskReady(*(_DWORD *)argp);
 			break;
 		case 0x4326:
-			for ( i = 0; i < 3; i += 1 )
+			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
 				WaitEventFlag(g_scmd_evid, 1u, 0, &efbits);
-				Clock = sceCdReadModelID((unsigned int *)bufp);
-				if ( Clock )
-				{
-					break;
-				}
+				retval2 = sceCdReadModelID((unsigned int *)bufp);
 			}
-			retval2 = (Clock != 1) ? -5 : 0;
+			retval2 = (retval2 != 1) ? -5 : 0;
 			break;
 		case 0x4327:
 			// The following call to sceCdStInit was inlined
