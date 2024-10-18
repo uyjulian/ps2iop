@@ -2,6 +2,8 @@
 #include "irx_imports.h"
 #include "../00common/defs.h"
 
+#include <cdvd-ioctl.h>
+
 IRX_ID("cdvd_driver", 2, 38);
 
 extern struct irx_export_table _exp_cdvdman;
@@ -1650,21 +1652,21 @@ int __cdecl cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, 
 	{
 		switch ( request )
 		{
-			case 0x630d:
+			case CIOCSTREAMPAUSE:
 				// The following call to sceCdStPause was inlined
 				if ( sceCdStPause() )
 				{
 					retval = 0;
 				}
 				break;
-			case 0x630e:
+			case CIOCSTREAMRESUME:
 				// The following call to sceCdStResume was inlined
 				if ( sceCdStResume() )
 				{
 					retval = 0;
 				}
 				break;
-			case 0x630f:
+			case CIOCSTREAMSTAT:
 				// The following call to sceCdStStat was inlined
 				// Unofficial: return 0 instead of negative value
 				retval = sceCdStStat();
@@ -1699,19 +1701,13 @@ int __cdecl cdrom_devctl(
 	(void)buflen;
 
 	retval2 = 0;
-	if ( cmd == 0x4328 )
+	if ( cmd != CDIOC_BREAK )
 	{
-		if ( !sceCdBreak() )
-		{
-			retval2 = -5;
-		}
-		sceCdSync(4);
-		return retval2;
+		WaitEventFlag(g_fio_fsv_evid, 1u, 16, &efbits);
 	}
-	WaitEventFlag(g_fio_fsv_evid, 1u, 16, &efbits);
 	switch ( cmd )
 	{
-		case 0x430C:
+		case CDIOC_READCLOCK:
 			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
 				WaitEventFlag(g_scmd_evid, 1u, 0, &efbits);
@@ -1730,19 +1726,19 @@ int __cdecl cdrom_devctl(
 		case 0x431E:
 			retval2 = (sceCdReadDiskID((unsigned int *)bufp) != 1) ? -5 : 0;
 			break;
-		case 0x431F:
+		case CDIOC_GETDISKTYP:
 			*(_DWORD *)bufp = sceCdGetDiskType();
 			break;
-		case 0x4320:
+		case CDIOC_GETERROR:
 			*(_DWORD *)bufp = g_cdvdman_strmerr ? g_cdvdman_strmerr : sceCdGetError();
 			break;
-		case 0x4321:
+		case CDIOC_TRAYREQ:
 			retval2 = (sceCdTrayReq(*(_DWORD *)argp, (u32 *)bufp) != 1) ? -5 : 0;
 			break;
-		case 0x4322:
+		case CDIOC_STATUS:
 			*(_DWORD *)bufp = sceCdStatus();
 			break;
-		case 0x4323:
+		case CDIOC_POWEROFF:
 			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
 				WaitEventFlag(g_scmd_evid, 1u, 0, &efbits);
@@ -1750,10 +1746,10 @@ int __cdecl cdrom_devctl(
 			}
 			retval2 = (retval2 != 1) ? -5 : 0;
 			break;
-		case 0x4324:
+		case CDIOC_MMODE:
 			sceCdMmode(*(_DWORD *)argp);
 			break;
-		case 0x4325:
+		case CDIOC_DISKRDY:
 			*(_DWORD *)bufp = sceCdDiskReady(*(_DWORD *)argp);
 			break;
 		case 0x4326:
@@ -1764,36 +1760,40 @@ int __cdecl cdrom_devctl(
 			}
 			retval2 = (retval2 != 1) ? -5 : 0;
 			break;
-		case 0x4327:
+		case CDIOC_STREAMINIT:
 			// The following call to sceCdStInit was inlined
 			retval2 = ( sceCdStInit(*(_DWORD *)argp, *((_DWORD *)argp + 1), (void *)*((_DWORD *)argp + 2)) ) ? 0 : -5;
 			break;
-		case 0x4380:
+		case CDIOC_BREAK:
+			retval2 = (!sceCdBreak()) ? -5 : 0;
+			sceCdSync(4);
+			break;
+		case CDIOC_SPINNOM:
 			g_cdvdman_spinnom = 1;
 			break;
-		case 0x4381:
+		case CDIOC_SPINSTM:
 			g_cdvdman_spinnom = 0;
 			break;
-		case 0x4382:
+		case CDIOC_TRYCNT:
 			g_cdvdman_trycnt = *(unsigned __int8 *)argp;
 			break;
 		case 0x4383:
 			retval2 = (sceCdSeek(*(_DWORD *)argp) != 1) ? -5 : 0;
 			sceCdSync(6);
 			break;
-		case 0x4384:
+		case CDIOC_STANDBY:
 			retval2 = (sceCdStandby() != 1) ? -5 : 0;
 			sceCdSync(4);
 			break;
-		case 0x4385:
+		case CDIOC_STOP:
 			retval2 = (sceCdStop() != 1) ? -5 : 0;
 			sceCdSync(4);
 			break;
-		case 0x4386:
+		case CDIOC_PAUSE:
 			retval2 = (sceCdPause() != 1) ? -5 : 0;
 			sceCdSync(6);
 			break;
-		case 0x4387:
+		case CDIOC_GETTOC:
 			switch ( sceCdGetDiskType() )
 			{
 				case 16:
@@ -1806,13 +1806,13 @@ int __cdecl cdrom_devctl(
 					break;
 			}
 			break;
-		case 0x4388:
+		case CDIOC_SETTIMEOUT:
 			retval2 = (sceCdSetTimeout(1, *(_DWORD *)argp) != 1) ? -5 : 0;
 			break;
-		case 0x4389:
+		case CDIOC_READDVDDUALINFO:
 			retval2 = (!sceCdReadDvdDualInfo(&on_dual_tmp, (unsigned int *)bufp)) ? -5 : 0;
 			break;
-		case 0x438A:
+		case CDIOC_INIT:
 			sceCdInit(*(_DWORD *)argp);
 			retval2 = 0;
 			break;
@@ -1837,7 +1837,7 @@ int __cdecl cdrom_devctl(
 		case 0x4392:
 			retval2 = (sceCdApplySCmd(*(_BYTE *)argp, (char *)argp + 4, arglen - 4, bufp) != 1) ? -5 : 0;
 			break;
-		case 0x4395:
+		case CDIOC_FSCACHEINIT:
 			retval2 = -16;
 			if ( g_cache_path_fd != -1 )
 			{
@@ -1864,7 +1864,7 @@ int __cdecl cdrom_devctl(
 				retval2 = path_tbl_init(strtol(&sc_tmp_2[i + 1], 0, 10), g_cdvdman_cache_name, 1);
 			}
 			break;
-		case 0x4397:
+		case CDIOC_FSCACHEDELETE:
 			for ( i = 0; i < (sizeof(g_cdvdman_handles)/sizeof(g_cdvdman_handles[0])); i += 1 )
 			{
 				if ( (g_cdvdman_handles[i].m_fd_flags & 4) != 0 )
@@ -1872,17 +1872,16 @@ int __cdecl cdrom_devctl(
 					break;
 				}
 			}
-			retval2 = -16;
-			if ( i == 16 )
-			{
-				retval2 = path_tbl_init(0, 0, 0);
-			}
+			retval2 = (i == 16) ? path_tbl_init(0, 0, 0) : -16;
 			break;
 		default:
 			retval2 = -5;
 			break;
 	}
-	SetEventFlag(g_fio_fsv_evid, 1u);
+	if ( cmd != CDIOC_BREAK )
+	{
+		SetEventFlag(g_fio_fsv_evid, 1u);
+	}
 	return retval2;
 }
 // 402ED0: conditional instruction was optimized away because $v1.4 is in (<10u|>=12u)
