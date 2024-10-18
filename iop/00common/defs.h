@@ -331,56 +331,58 @@ typedef struct cdvdman_internal_struct_
 #endif
 
 #if 1
-typedef struct _nonblock_io_data CDVDReadResult;
-typedef struct _init_io_data
+typedef struct cdvdfsv_rpc1h_outpacket_
 {
-	int m_result;
+	int m_retres;
 	int m_cdvdfsv_ver;
 	int m_cdvdman_ver;
 	int m_debug_mode;
-} CDVDInitResult;
-typedef struct _eeread_extra
+} cdvdfsv_rpc1h_outpacket;
+typedef struct cdvdfsv_unaligned_data_outpacket_
 {
-	unsigned int m_b1len;
-	unsigned int m_b2len;
-	unsigned int m_b1dst;
-	unsigned int m_b2dst;
-	unsigned __int8 m_pbuf1[64];
-	unsigned __int8 m_pbuf2[64];
-} CDVDReadExtra;
-typedef struct _block_io_data CDVDCmdResult;
-typedef struct _fs_search_data
+	u32 m_b1len;
+	u32 m_b2len;
+	u32 m_b1dst;
+	u32 m_b2dst;
+	u8 m_pbuf1[64];
+	u8 m_pbuf2[64];
+} cdvdfsv_unaligned_data_outpacket;
+typedef struct cdvdfsv_rpc4h_outpacket_
 {
-	int m_result;
+	int m_retres;
 	int m_padding[3];
-} CDVDSearchResult;
+} cdvdfsv_rpc4h_outpacket;
 
 
 typedef struct cdvdfsv_rpc5h_01_packet_
 {
-	int m_lsn;
-	_DWORD m_sec;
-	_DWORD m_flag;
+	u32 m_lbn;
+	u32 m_sectors;
+	uiptr m_paddr;
 	sceCdRMode m_rmodeee;
+	uiptr m_eeremaindest;
+	uiptr m_eedest;
+	u32 m_decval;
 } cdvdfsv_rpc5h_01_packet;
 
 typedef struct cdvdfsv_rpc5h_0D_packet_
 {
-	_DWORD m_lsn;
-	_DWORD m_sectors;
+	u32 m_lbn;
+	u32 m_sectors;
 	void *m_buf;
 	sceCdRMode m_mode;
-	_BYTE m_gap10[4];
-	_DWORD m_readpos_dest_addr;
+	u8 m_unused[4];
+	uiptr m_eedest;
 } cdvdfsv_rpc5h_0D_packet;
 
 typedef struct cdvdfsv_rpc5h_0F_packet_
 {
 	sceCdRChain m_readChain[65];
-	sceCdRMode m_scecdrmode30C;
-	_DWORD m_readPos;
+	sceCdRMode m_mode;
+	uiptr m_eedest;
 } cdvdfsv_rpc5h_0F_packet;
 
+#if 0
 typedef struct cdvdfsc_rpc5h_03_packet_
 {
 	_DWORD m_lbn;
@@ -389,23 +391,25 @@ typedef struct cdvdfsc_rpc5h_03_packet_
 	sceCdRMode m_scecdrmodeC;
 	_DWORD m_eedest;
 } cdvdfsc_rpc5h_03_packet;
+#endif
 
 typedef struct cdvdfsv_rpc5h_02_packet_
 {
-	_DWORD m_lbn;
-	_DWORD m_nsectors;
-	_DWORD m_buf;
-	sceCdRMode m_scecdrmodeC;
-	_DWORD m_eeremaindest;
-	_DWORD m_eedest;
+	u32 m_lbn;
+	u32 m_sectors;
+	uiptr m_buf;
+	sceCdRMode m_mode;
+	uiptr m_eeremaindest;
+	uiptr m_eedest;
 } cdvdfsv_rpc5h_02_packet;
 
 typedef struct cdvdfsv_rpc3h_22_packet_
 {
-	_DWORD m_media;
+	int m_media;
 	char m_char4;
 } cdvdfsv_rpc3h_22_packet;
 
+#if 0
 typedef struct cdvdfsv_rpc3h_28_packet_
 {
 	const sceCdCLOCK m_clock;
@@ -452,61 +456,64 @@ typedef struct cdvdfsv_rpc3h_0A_packet_
 	_BYTE m_arg2;
 	_BYTE m_shift;
 } cdvdfsv_rpc3h_0A_packet;
+#endif
 
 typedef struct cdvdfsv_rpc3h_0B_packet_
 {
-	_BYTE m_cmdNum;
-	_BYTE m_gap1;
-	_WORD m_inBuffSize;
-	char m_inBuff;
+	u8 m_cmdNum;
+	u8 m_gap1;
+	u16 m_inBuffSize;
+	u8 m_inBuff[16];
 } cdvdfsv_rpc3h_0B_packet;
 
 typedef struct cdvdfsv_rpc5h_0C_packet_
 {
-	_BYTE m_cmdNum;
-	_BYTE m_gap1;
-	_WORD m_inBuffSize;
-	char m_inBuff;
+	u8 m_cmdNum;
+	u8 m_gap1;
+	u16 m_inBuffSize;
+	// TODO: check the size of the following member
+	u8 m_inBuff[16];
 } cdvdfsv_rpc5h_0C_packet;
 
 typedef struct cdvdfsv_rpc3h_25_packet_
 {
-	_DWORD m_param;
-	_DWORD m_timeout;
+	int m_param;
+	int m_timeout;
 } cdvdfsv_rpc3h_25_packet;
 
 typedef struct cdvdfsv_rpc5h_04_outpacket_
 {
-	_DWORD m_dword0;
-	_DWORD m_dword4;
+	int m_retres;
+	int m_isdvd;
 } cdvdfsv_rpc5h_04_outpacket;
 
 typedef struct cdvdfsv_rpc3h_06_outpacket_
 {
-	_DWORD m_dword0;
+	int m_retres;
 	u32 m_result;
-	u8 m_buffer;
+	u8 m_buffer[8];
 } cdvdfsv_rpc3h_06_outpacket;
 
 typedef struct cdvdfsv_rpc3h_1A_outpacket_
 {
-	_DWORD m_dword0;
+	int m_retres;
 	u32 m_status;
-	char m_buffer;
+	char m_buffer[16];
 } cdvdfsv_rpc3h_1A_outpacket;
 
 typedef struct cdvdfsv_rpc3h_24_outpacket_
 {
-	_DWORD m_dword0;
+	int m_retres;
 	u64 m_guid;
 } cdvdfsv_rpc3h_24_outpacket;
 
 typedef struct cdvdfsv_rpc3h_26_outpacket_
 {
-	_DWORD m_dword0;
+	int m_retres;
 	unsigned int m_id;
 } cdvdfsv_rpc3h_26_outpacket;
 
+#if 0
 typedef struct cdvdfsv_rpc3h_12_outpacket_
 {
 	_DWORD m_dword0;
@@ -545,25 +552,29 @@ typedef struct cdvdfsv_rpc3h_1F_outpacket_
 	_DWORD m_dword0;
 	u32 m_result;
 } cdvdfsv_rpc3h_1F_outpacket;
+#endif
 
 typedef struct cdvdfsv_rpc3h_21_outpacket_
 {
-	_DWORD m_dword0;
+	int m_retres;
 	u32 m_result;
 } cdvdfsv_rpc3h_21_outpacket;
 
+#if 0
 typedef struct cdvdfsv_rpc3h_20_outpacket_
 {
 	_DWORD m_dword0;
 	u32 m_result;
 } cdvdfsv_rpc3h_20_outpacket;
+#endif
 
 typedef struct cdvdfsv_rpc3h_15_outpacket_
 {
-	_DWORD m_dword0;
+	int m_retres;
 	u32 m_status;
 } cdvdfsv_rpc3h_15_outpacket;
 
+#if 0
 typedef struct cdvdfsv_rpc3h_19_outpacket_
 {
 	_DWORD m_dword0;
@@ -657,13 +668,15 @@ typedef struct cdvdfsv_rpc3h_35_outpacket_
 	_DWORD m_dword0;
 	u32 m_result;
 } cdvdfsv_rpc3h_35_outpacket;
+#endif
 
 typedef struct cdvdfsv_rpc3h_01_outpacke_
 {
-	_DWORD m_dword0;
+	int m_retres;
 	sceCdCLOCK m_clock;
 } cdvdfsv_rpc3h_01_outpacke;
 
+#if 0
 typedef struct cdvdfsv_rpc3h_02_outpacket_
 {
 	_DWORD m_dword0;
@@ -755,20 +768,21 @@ typedef struct cdvdfsv_rpc3h_11_outpacket_
 	_DWORD m_dword0;
 	u32 m_result;
 } cdvdfsv_rpc3h_11_outpacket;
+#endif
 
 typedef struct cdvdfsv_rpc5h_11_outpacket_
 {
-	_DWORD m_dword0;
-	_DWORD m_dword4;
-	_WORD m_word8;
+	int m_retres;
+	u8 m_diskid[5];
 } cdvdfsv_rpc5h_11_outpacket;
 
 typedef struct cdvdfsv_rpc5h_17_outpacket_
 {
-	_DWORD m_dword0;
-	u32 m_arg1;
+	int m_retres;
+	u32 m_status;
 } cdvdfsv_rpc5h_17_outpacket;
 
+#if 0
 typedef struct cdvdfsv_rpc5h_0B_outpacket_
 {
 	_DWORD m_dword0;
@@ -777,24 +791,22 @@ typedef struct cdvdfsv_rpc5h_0B_outpacket_
 	_DWORD m_dwordC;
 	_DWORD m_dword10;
 } cdvdfsv_rpc5h_0B_outpacket;
+#endif
 
 typedef struct cdvdfsv_rpc3h_0B_outpacket_
 {
-	_DWORD m_dword0;
-	_DWORD m_dword4;
-	_DWORD m_dword8;
-	_DWORD m_dwordC;
+	u8 m_outbuf[16];
 } cdvdfsv_rpc3h_0B_outpacket;
 
 typedef struct cdvdfsv_rpc3h_05_outpacket_
 {
-	_DWORD m_dword0;
+	int m_retres;
 	u32 m_traychk;
 } cdvdfsv_rpc3h_05_outpacket;
 
 typedef struct cdvdfsv_rpc3h_27_outpacket_
 {
-	_DWORD m_dword0;
+	int m_retres;
 	int m_on_dual;
 	unsigned int m_layer1_start;
 } cdvdfsv_rpc3h_27_outpacket;
