@@ -1025,7 +1025,7 @@ int __fastcall cdrom_internal_write_cache(const iop_file_t *f, unsigned int nbyt
 	unsigned int i; // $s2
 	int tray_open; // $s0
 	int Error; // $a1
-	sceCdRMode rmode[2]; // [sp+18h] [-8h] BYREF
+	sceCdRMode rmode; // [sp+18h] [-8h] BYREF
 
 	g_cdvdman_iocache = 0;
 	if ( cdvdman_devready() < 0 )
@@ -1045,7 +1045,7 @@ int __fastcall cdrom_internal_write_cache(const iop_file_t *f, unsigned int nbyt
 	cur = ((filedata->m_read_pos + nbytes) >> 14) - (( ((filedata->m_read_pos + nbytes) & 0x3FFF) == 0 ) ? 1 : 0);
 	rst = filedata->m_read_pos >> 14;
 	cluster_cur = ( filedata->m_cluster_cur < 0 ) ? 0 : filedata->m_cluster_cur;
-	cdvdman_iormode(rmode, filedata->m_filemode, f->unit);
+	cdvdman_iormode(&rmode, filedata->m_filemode, f->unit);
 	write_ret = 0;
 	VERBOSE_KPRINTF(1, "cache_fill rst:%d<->%d cur:%d cnt:%d\n", rst, cur, filedata->m_read_pos, nbytes);
 	for ( i = rst; i <= cur; i += 1 )
@@ -1054,7 +1054,7 @@ int __fastcall cdrom_internal_write_cache(const iop_file_t *f, unsigned int nbyt
 		if ( (((int)filedata->m_fd_rcvbuf[(i - cluster_cur) >> 3] >> ((i - cluster_cur) & 7)) & 1) == 0 )
 		{
 			tray_open = 0;
-			while ( !sceCdRE(filedata->m_file_lsn + 8 * i, 8u, g_cdvdman_temp_buffer_ptr, rmode) )
+			while ( !sceCdRE(filedata->m_file_lsn + 8 * i, 8u, g_cdvdman_temp_buffer_ptr, &rmode) )
 			{
 				if ( (sceCdStatus() & 1) != 0 )
 				{
@@ -1338,7 +1338,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 	int read_error; // $v0
 	unsigned int sectors_count; // $s0
 	int Error; // $v0
-	sceCdRMode rmode[2]; // [sp+10h] [-28h] BYREF
+	sceCdRMode rmode; // [sp+10h] [-28h] BYREF
 	int i; // [sp+18h] [-20h]
 	unsigned int filesize_bsr_11; // [sp+28h] [-10h]
 	CDVDMAN_FILEDATA *filedata; // [sp+30h] [-8h]
@@ -1353,7 +1353,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 		return op_result;
 	}
 	filedata = &g_cdvdman_handles[(_DWORD)f->privdata];
-	cdvdman_iormode(rmode, filedata->m_filemode, f->unit);
+	cdvdman_iormode(&rmode, filedata->m_filemode, f->unit);
 	if ( nbytes < 0 )
 	{
 		return -22;
@@ -1376,7 +1376,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 		nbytes_cur = nbytes - i;
 		if ( g_cdvdman_spinctl != -1 )
 		{
-			rmode[0].spindlctrl = g_cdvdman_spinctl;
+			rmode.spindlctrl = g_cdvdman_spinctl;
 			switch ( g_cdvdman_spinctl )
 			{
 				case 0:
@@ -1452,7 +1452,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 			sectors_count = ( sec >= 9 ) ? (sec - 8) : 0;
 			if ( sectors_count )
 			{
-				while ( !sceCdRE(lbn, sectors_count, buf, rmode) )
+				while ( !sceCdRE(lbn, sectors_count, buf, &rmode) )
 				{
 					VERBOSE_PRINTF(1, "sce_Read ON Delay\n");
 					if ( (sceCdStatus() & 1) != 0 )
@@ -1472,7 +1472,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 					break;
 				}
 			}
-			while ( !sceCdRE(lbn + sectors_count, sec - sectors_count, (char *)buf + 0x800 * sectors_count, rmode) )
+			while ( !sceCdRE(lbn + sectors_count, sec - sectors_count, (char *)buf + 0x800 * sectors_count, &rmode) )
 			{
 				VERBOSE_PRINTF(1, "sce_Read ON Delay\n");
 				if ( (sceCdStatus() & 1) != 0 )
@@ -1499,7 +1499,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 		else
 		{
 			VERBOSE_PRINTF(1, "FIO Usr addr LSN:%d SEC:%d ADDR:%08x\n", (int)lbn, (int)sectors, (unsigned int)(uiptr)(addr + i));
-			while ( !sceCdRE(lbn, sectors, addr + i, rmode) )
+			while ( !sceCdRE(lbn, sectors, addr + i, &rmode) )
 			{
 				VERBOSE_PRINTF(1, "sce_Read ON Delay\n");
 				if ( (sceCdStatus() & 1) != 0 )
@@ -2772,12 +2772,12 @@ int __cdecl disc_read(int size, int loc, void *buffer, int layer)
 {
 	int f; // $s6
 	int i; // $s0
-	sceCdRMode rmode[2]; // [sp+20h] [-8h] BYREF
+	sceCdRMode rmode; // [sp+20h] [-8h] BYREF
 	int has_success;
 
 	has_success = 1;
 	f = 0;
-	rmode[0].trycount = 16;
+	rmode.trycount = 16;
 	VERBOSE_PRINTF(1, "cd_read:lsn= %d size= %d layer= %d\n", loc, size, layer);
 	if ( cdvdman_l0check(layer) )
 	{
@@ -2788,17 +2788,17 @@ int __cdecl disc_read(int size, int loc, void *buffer, int layer)
 		case 2:
 		case 3:
 		case 4:
-			rmode[0].spindlctrl = g_cdvdman_srchspd;
+			rmode.spindlctrl = g_cdvdman_srchspd;
 			break;
 		case 0:
 		case 1:
-			rmode[0].spindlctrl = g_cdvdman_srchspd != 0;
+			rmode.spindlctrl = g_cdvdman_srchspd != 0;
 			break;
 		default:
-			rmode[0].spindlctrl = 1;
+			rmode.spindlctrl = 1;
 			break;
 	}
-	rmode[0].datapattern = 0;
+	rmode.datapattern = 0;
 	if ( !g_cdvdman_pathtblflag )
 	{
 		has_success = 1;
@@ -2829,7 +2829,7 @@ int __cdecl disc_read(int size, int loc, void *buffer, int layer)
 		}
 		if ( !has_success )
 		{
-			if ( sceCdRE(loc, size, buffer, rmode) == 0 )
+			if ( sceCdRE(loc, size, buffer, &rmode) == 0 )
 			{
 				return 0;
 			}
@@ -2906,7 +2906,7 @@ int __cdecl disc_read(int size, int loc, void *buffer, int layer)
 		{
 			return size;
 		}
-		if ( sceCdRE(loc, size, buffer, rmode) == 0 )
+		if ( sceCdRE(loc, size, buffer, &rmode) == 0 )
 		{
 			return 0;
 		}
@@ -3369,14 +3369,14 @@ int __cdecl cdvdman_initcfg()
 {
 	int i; // $s0
 	u8 m_version[5]; // [sp+18h] [-18h] BYREF
-	u32 eflag[2]; // [sp+28h] [-8h] BYREF
+	u32 eflag; // [sp+28h] [-8h] BYREF
 
-	eflag[0] = 0;
+	eflag = 0;
 	for ( i = 0; i <= 100; i += 1 )
 	{
 		unsigned int mvored; // $s0
 
-		if ( !sceCdGetMVersion(m_version, eflag) && (eflag[0] & 0x80) != 0 )
+		if ( !sceCdGetMVersion(m_version, &eflag) && (eflag & 0x80) != 0 )
 		{
 			vDelayThread(2000);
 			VERBOSE_KPRINTF(1, "_sceCdMV error\n");
@@ -3450,14 +3450,14 @@ int __fastcall vDelayThread(int usec)
 //----- (00406B90) --------------------------------------------------------
 BOOL __fastcall alarm_cb_read(iop_sys_clock_t *a1)
 {
-	int rdto[2]; // [sp+10h] [-8h] BYREF
+	int rdto; // [sp+10h] [-8h] BYREF
 
-	rdto[0] = a1->lo / 0x9000;
-	KPRINTF("Read Time Out %d(msec)\n", rdto[0]);
-	sceCdSC(0xFFFFFFEE, rdto);
+	rdto = a1->lo / 0x9000;
+	KPRINTF("Read Time Out %d(msec)\n", rdto);
+	sceCdSC(0xFFFFFFEE, &rdto);
 	return sceCdBreak() == 0;
 }
-// 406B90: using guessed type u32 rdto[2];
+// 406B90: using guessed type u32 rdto;
 
 //----- (00406BE4) --------------------------------------------------------
 sceCdCBFunc __cdecl sceCdCallback(sceCdCBFunc function)
@@ -3836,10 +3836,10 @@ u32 __cdecl sceCdLsnDualChg(u32 lsn)
 			}
 			else if ( QueryIntrContext() == 0 )
 			{
-				u32 traycnt[2]; // [sp+20h] [-8h] BYREF
+				u32 traychk; // [sp+20h] [-8h] BYREF
 
 				VERBOSE_KPRINTF(0, "CDVD: Exchange it for the Layer_%d_Disk Please.\n", layer_disk_needed);
-				while ( g_cdvdman_minver_60200 ? !cdvdman_scmd_sender_3B(0) : !sceCdTrayReq(0, traycnt) )
+				while ( g_cdvdman_minver_60200 ? !cdvdman_scmd_sender_3B(0) : !sceCdTrayReq(0, &traychk) )
 				{
 					;
 				}
@@ -3881,7 +3881,7 @@ u32 __cdecl sceCdLsnDualChg(u32 lsn)
 									{
 										layer_disk_needed = 1;
 									}
-									while ( g_cdvdman_minver_60200 ? !cdvdman_scmd_sender_3B(0) : !sceCdTrayReq(0, traycnt) )
+									while ( g_cdvdman_minver_60200 ? !cdvdman_scmd_sender_3B(0) : !sceCdTrayReq(0, &traychk) )
 									{
 										;
 									}
@@ -3890,7 +3890,7 @@ u32 __cdecl sceCdLsnDualChg(u32 lsn)
 							else
 							{
 								VERBOSE_KPRINTF(0, "CDVD: Not Master Disk %s\n", (const char *)&g_cdvdman_ptoc[i + 104]);
-								while ( g_cdvdman_minver_60200 ? !cdvdman_scmd_sender_3B(0) : !sceCdTrayReq(0, traycnt) )
+								while ( g_cdvdman_minver_60200 ? !cdvdman_scmd_sender_3B(0) : !sceCdTrayReq(0, &traychk) )
 								{
 									;
 								}
@@ -4161,7 +4161,7 @@ int __cdecl sceCdInit(int mode)
 	VERBOSE_PRINTF(1, "sceCdInit called mode= %d\n", mode);
 	if ( mode == 5 )
 	{
-		int oldstate[2]; // [sp+10h] [-8h] BYREF
+		int oldstate; // [sp+10h] [-8h] BYREF
 
 		g_cdvdman_istruct.m_cd_inited = 0;
 		sceCdBreak();
@@ -4169,9 +4169,9 @@ int __cdecl sceCdInit(int mode)
 		cdvdman_ncmd_sender_06();
 		sceCdSync(0);
 		VERBOSE_PRINTF(1, "Cdvdman Exit\n");
-		DisableIntr(2, oldstate);
+		DisableIntr(2, &oldstate);
 		ReleaseIntrHandler(2);
-		DisableIntr(35, oldstate);
+		DisableIntr(35, &oldstate);
 		ReleaseIntrHandler(35);
 	}
 	else
@@ -5533,7 +5533,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 	}
 	else if ( !g_cdvdman_istruct.m_interupt_read_state || g_cdvdman_istruct.m_cdvdman_csec )
 	{
-		int sc_result[2]; // [sp+18h] [-8h] BYREF
+		int sc_result; // [sp+18h] [-8h] BYREF
 
 		g_cdvdman_istruct.m_interupt_read_state = 0;
 		if ( g_cdvdman_istruct.m_sync_error )
@@ -5564,7 +5564,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 										read_cdvd_cb) )
 			{
 				g_cdvdman_racb_to.hi = 0;
-				g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, sc_result);
+				g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &sc_result);
 				iSetAlarm(&g_cdvdman_racb_to, (unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 			}
 			else
@@ -5616,7 +5616,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 											read_cdvd_cb) )
 				{
 					g_cdvdman_racb_to.hi = 0;
-					g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, sc_result);
+					g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &sc_result);
 					iSetAlarm(&g_cdvdman_racb_to, (unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 				}
 				else
@@ -5917,9 +5917,9 @@ int __cdecl sceCdPowerOff(u32 *result)
 	{
 		while ( (sceCdStatus() & 1) != 0 )
 		{
-			u32 trayreq[2]; // [sp+18h] [-8h] BYREF
+			u32 traychk; // [sp+18h] [-8h] BYREF
 
-			sceCdTrayReq(1, trayreq);
+			sceCdTrayReq(1, &traychk);
 			vDelayThread(250000);
 		}
 	}
@@ -6093,7 +6093,7 @@ int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 {
 	int disktype_tmp; // $s0
 	vu8 dev5_reg_038; // $s0
-	sceCdRMode rmode[2]; // [sp+18h] [-18h] BYREF
+	sceCdRMode rmode; // [sp+18h] [-18h] BYREF
 	char ndata[7]; // [sp+20h] [-10h] BYREF
 	int state; // [sp+28h] [-8h] BYREF
 	u32 efbits; // [sp+2Ch] [-4h] BYREF
@@ -6135,16 +6135,16 @@ int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 		sceCdSync(3);
 	}
 	CpuSuspendIntr(&state);
-	rmode[0].spindlctrl = 18;
-	rmode[0].datapattern = 0;
-	rmode[0].trycount = 0;
+	rmode.spindlctrl = 18;
+	rmode.datapattern = 0;
+	rmode.trycount = 0;
 	if ( disktype_tmp )
 	{
 		unsigned int i; // $s0
 
 		for ( i = 0; i < 20; i += 1 )
 		{
-			sceCdRead0(75 + (0x10 * i), 0x10, g_cdvdman_ptoc, rmode, 0, 0);
+			sceCdRead0(75 + (0x10 * i), 0x10, g_cdvdman_ptoc, &rmode, 0, 0);
 			CpuResumeIntr(state);
 			sceCdSync(3);
 			CpuSuspendIntr(&state);
@@ -6153,7 +6153,7 @@ int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 	}
 	else
 	{
-		sceCdRead0(0x4B, 1, g_cdvdman_ptoc, rmode, 0, 0);
+		sceCdRead0(0x4B, 1, g_cdvdman_ptoc, &rmode, 0, 0);
 		CpuResumeIntr(state);
 		sceCdSync(3);
 	}

@@ -1946,7 +1946,7 @@ void __fastcall cdvdfsv_rpc3h_27_readdvddualinfo(const cdvdfsv_rpc3h_packet *inb
 int __cdecl cdvdfsv_rpc5h_0E_diskready()
 {
 	int is_detecting; // $s1
-	int scval_tmp[2]; // [sp+10h] [-8h] BYREF
+	int scval_tmp; // [sp+10h] [-8h] BYREF
 
 	is_detecting = 0;
 	// The following call to sceCdGetDiskType was inlined
@@ -1963,8 +1963,8 @@ int __cdecl cdvdfsv_rpc5h_0E_diskready()
 	}
 	// The following call to sceCdDiskReady was inlined
 	if ( (sceCdDiskReady(8) & 0xC0) != 0x40
-		|| sceCdSC(0xFFFFFFFD, scval_tmp)
-		|| !sceCdSC(0xFFFFFFF4, scval_tmp)
+		|| sceCdSC(0xFFFFFFFD, &scval_tmp)
+		|| !sceCdSC(0xFFFFFFF4, &scval_tmp)
 		|| is_detecting)
 	{
 		VERBOSE_PRINTF(1, "Drive Not Ready\n");
@@ -1976,7 +1976,7 @@ int __cdecl cdvdfsv_rpc5h_0E_diskready()
 //----- (00403D4C) --------------------------------------------------------
 void *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 {
-	int sc_fffffff6_in[2]; // [sp+18h] [-8h] BYREF
+	int sc_fffffff6_in; // [sp+18h] [-8h] BYREF
 	int fno_1; // [sp+30h] [+10h] BYREF
 
 	fno_1 = fno;
@@ -1987,7 +1987,7 @@ void *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 	{
 		case 1:
 			// The following call to sceCdGetDiskType was inlined
-			cdvdfsv_rpc5h_01_readee(buffer, length, &g_crr, (sceCdGetDiskType() ^ 0x14) == 0, sceCdSC(0xFFFFFFFC, sc_fffffff6_in) == 0, 0);
+			cdvdfsv_rpc5h_01_readee(buffer, length, &g_crr, (sceCdGetDiskType() ^ 0x14) == 0, sceCdSC(0xFFFFFFFC, &sc_fffffff6_in) == 0, 0);
 			break;
 		case 2:
 			cdvdfsv_rpc5h_02_readcdda(buffer, length, &g_crr);
@@ -2058,8 +2058,8 @@ void *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 			g_crr.m_retres = 0;
 			break;
 	}
-	sc_fffffff6_in[0] = 0;
-	sceCdSC(0xFFFFFFF6, sc_fffffff6_in);
+	sc_fffffff6_in = 0;
+	sceCdSC(0xFFFFFFF6, &sc_fffffff6_in);
 	g_cdvdfsv_rpc5flg = 0;
 	VERBOSE_PRINTF(1, "sce_cdvd N cmd end\n");
 	return (void *)&g_crr;

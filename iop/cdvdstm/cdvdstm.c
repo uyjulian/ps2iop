@@ -193,14 +193,14 @@ int cdvdstm_4()
 int cdvdstm_2()
 {
 	cdrom_stm_devctl_t instruct; // [sp+10h] [-38h] BYREF
-	int outres[8]; // [sp+28h] [-20h] BYREF
+	int outres; // [sp+28h] [-20h] BYREF
 
 	memset(&instruct, 0, sizeof(instruct));
 	instruct.m_cmdid = 3;
 	instruct.m_rmode.datapattern = 0;
 	instruct.m_rmode.spindlctrl = 0;
 	instruct.m_rmode.trycount = 0;
-	ee_stream_handler_normal(&instruct, 0x14, outres);
+	ee_stream_handler_normal(&instruct, 0x14, &outres);
 	sceCdStStop();
 	return 0;
 }
