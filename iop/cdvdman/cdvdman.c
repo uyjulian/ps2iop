@@ -570,10 +570,10 @@ int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname)
 	size_t path_name_ind; // $a0
 	int file_lsn_tmp; // $v0
 	char path_name[128]; // [sp+10h] [-88h] BYREF
-	u32 efbits[2]; // [sp+90h] [-8h] BYREF
+	u32 efbits; // [sp+90h] [-8h] BYREF
 
 	VERBOSE_PRINTF(1, "fileIO DOPEN name= %s layer %d\n", dirname, f->unit);
-	WaitEventFlag(g_fio_fsv_evid, 1, 0x10, efbits);
+	WaitEventFlag(g_fio_fsv_evid, 1, 0x10, &efbits);
 	for ( i = 0; (i < (sizeof(g_cdvdman_handles)/sizeof(g_cdvdman_handles[0]))) && g_cdvdman_handles[i].m_fd_flags; i += 1 )
 	{
 	}
@@ -669,10 +669,10 @@ int __cdecl cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf)
 	int devready_tmp; // $s0
 	CDVDMAN_FILETBL_ENTRY_T filetble; // [sp+10h] [-B0h] BYREF
 	char filename[128]; // [sp+38h] [-88h] BYREF
-	u32 efbits[2]; // [sp+B8h] [-8h] BYREF
+	u32 efbits; // [sp+B8h] [-8h] BYREF
 
 	VERBOSE_PRINTF(1, "fileIO GETSTAT name= %s layer= %d\n", name, f->unit);
-	WaitEventFlag(g_fio_fsv_evid, 1, 0x10, efbits);
+	WaitEventFlag(g_fio_fsv_evid, 1, 0x10, &efbits);
 	devready_tmp = cdvdman_devready();
 	if ( devready_tmp < 0 )
 	{
@@ -714,11 +714,11 @@ int __cdecl cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
 	int devready_tmp; // $s1
 	CDVDMAN_FILEDATA *filedata; // $s0
 	CDVDMAN_FILETBL_ENTRY_T fileinfo; // [sp+10h] [-30h] BYREF
-	u32 efbits[2]; // [sp+38h] [-8h] BYREF
+	u32 efbits; // [sp+38h] [-8h] BYREF
 
 	memset(&fileinfo, 0, sizeof(fileinfo));
 	VERBOSE_PRINTF(1, "fileIO DREAD\n");
-	WaitEventFlag(g_fio_fsv_evid, 1, 0x10, efbits);
+	WaitEventFlag(g_fio_fsv_evid, 1, 0x10, &efbits);
 	devready_tmp = cdvdman_devready();
 	if ( devready_tmp < 0 )
 	{
@@ -1554,13 +1554,13 @@ int __cdecl cdrom_read(iop_file_t *f, void *buf, int nbytes)
 {
 	CDVDMAN_FILEDATA *filedata; // $s1
 	int rc; // $s0
-	u32 efbits[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
 	if ( nbytes < 0 )
 	{
 		return -22;
 	}
-	WaitEventFlag(g_fio_fsv_evid, 1, 0x10, efbits);
+	WaitEventFlag(g_fio_fsv_evid, 1, 0x10, &efbits);
 	filedata = &g_cdvdman_handles[(int)f->privdata];
 	if ( cdvdman_mediactl(2) )
 	{
@@ -1974,7 +1974,7 @@ int __cdecl sceCdSync(int mode)
 {
 	iop_sys_clock_t sysclk; // [sp+10h] [-30h] BYREF
 	iop_event_info_t efinfo; // [sp+18h] [-28h] BYREF
-	u32 resbits[2]; // [sp+38h] [-8h] BYREF
+	u32 efbits; // [sp+38h] [-8h] BYREF
 
 	VERBOSE_KPRINTF(1, "sceCdSync: Call mode %d Com %x\n", mode, (unsigned __int8)g_cdvdman_istruct.m_cdvdman_command);
 	switch ( mode )
@@ -1982,7 +1982,7 @@ int __cdecl sceCdSync(int mode)
 		case 0:
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag )
 			{
-				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, resbits);
+				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
 			break;
 		case 1:
@@ -1993,7 +1993,7 @@ int __cdecl sceCdSync(int mode)
 			vSetAlarm(&sysclk, (unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag )
 			{
-				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, resbits);
+				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
 			vCancelAlarm((unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
 			break;
@@ -2003,14 +2003,14 @@ int __cdecl sceCdSync(int mode)
 			vSetAlarm(&sysclk, (unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag )
 			{
-				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, resbits);
+				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
 			vCancelAlarm((unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
 			break;
 		case 5:
 			while ( !sceCdCheckCmd() )
 			{
-				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, resbits);
+				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
 			break;
 		case 6:
@@ -2019,14 +2019,14 @@ int __cdecl sceCdSync(int mode)
 			vSetAlarm(&sysclk, (unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag )
 			{
-				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, resbits);
+				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
 			vCancelAlarm((unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
 			break;
 		case 16:
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag || g_cdvdman_strm_id || g_cdvdman_istruct.m_stream_flag )
 			{
-				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, resbits);
+				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 				if ( g_cdvdman_strm_id )
 				{
 					DelayThread(8000);
@@ -2036,7 +2036,7 @@ int __cdecl sceCdSync(int mode)
 		case 17:
 			return (!sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag || g_cdvdman_strm_id || (g_cdvdman_istruct.m_stream_flag != 0)) ? 1 : 0;
 		case 32:
-			WaitEventFlag(g_cdvdman_intr_efid, 0x21, 1, resbits);
+			WaitEventFlag(g_cdvdman_intr_efid, 0x21, 1, &efbits);
 			ReferEventFlagStatus(g_cdvdman_intr_efid, &efinfo);
 			if ( (efinfo.currBits & 0x20) == 0 )
 			{
@@ -2046,14 +2046,14 @@ int __cdecl sceCdSync(int mode)
 				}
 				else
 				{
-					WaitEventFlag(g_cdvdman_intr_efid, 0x20, 0, resbits);
+					WaitEventFlag(g_cdvdman_intr_efid, 0x20, 0, &efbits);
 				}
 			}
 			break;
 		default:
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag )
 			{
-				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, resbits);
+				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
 			break;
 	}
@@ -2074,9 +2074,9 @@ int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 {
 	unsigned int i; // $a3
 	int search_res; // $s0
-	u32 efbits[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
-	if ( PollEventFlag(g_sfile_evid, 1, 0x10, efbits) == -421 )
+	if ( PollEventFlag(g_sfile_evid, 1, 0x10, &efbits) == -421 )
 	{
 		return 0;
 	}
@@ -2106,9 +2106,9 @@ int __cdecl sceCdGetToc(u8 *toc)
 //----- (00403B24) --------------------------------------------------------
 int __cdecl sceCdDiskReady(int mode)
 {
-	u32 efbits[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
-	efbits[0] = 0;
+	efbits = 0;
 	VERBOSE_KPRINTF(1, "DISK READY call from iop\n");
 	if ( mode == 0 )
 	{
@@ -2133,7 +2133,7 @@ int __cdecl sceCdDiskReady(int mode)
 			while ( (dev5_regs.m_dev5_reg_005 & 0xC0) != 0x40 )
 			{
 				vDelayThread(2000);
-				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, efbits);
+				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
 		}
 	}
@@ -3463,9 +3463,9 @@ BOOL __fastcall alarm_cb_read(iop_sys_clock_t *a1)
 sceCdCBFunc __cdecl sceCdCallback(sceCdCBFunc function)
 {
 	void (__cdecl *rc)(int); // $s0
-	u32 efbits[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
-	if ( sceCdSync(1) != 0 || PollEventFlag(g_ncmd_evid, 1, 0x10, efbits) == -421 )
+	if ( sceCdSync(1) != 0 || PollEventFlag(g_ncmd_evid, 1, 0x10, &efbits) == -421 )
 	{
 		return 0;
 	}
@@ -4224,9 +4224,9 @@ int __cdecl set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata,
 	int i; // $s0
 	int delaybackoff; // $s1
 	int j; // $s0
-	u32 efbits[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
-	if ( check_sef == 1 && PollEventFlag(g_scmd_evid, 1, 0x10, efbits) == -421 )
+	if ( check_sef == 1 && PollEventFlag(g_scmd_evid, 1, 0x10, &efbits) == -421 )
 	{
 		return 0;
 	}
@@ -4719,11 +4719,11 @@ int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, 
 	g_cdvdman_istruct.m_thread_id = GetThreadId();
 	if ( QueryIntrContext() )
 	{
-		iClearEventFlag(g_cdvdman_intr_efid, ~0x1);
+		iClearEventFlag(g_cdvdman_intr_efid, ~1);
 	}
 	else
 	{
-		ClearEventFlag(g_cdvdman_intr_efid, ~0x1);
+		ClearEventFlag(g_cdvdman_intr_efid, ~1);
 	}
 	for ( i = 0; i < ndlen; i += 1 )
 	{
@@ -5188,9 +5188,9 @@ int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int
 {
 	DMA3PARAM b18; // [sp+20h] [-30h] BYREF
 	char ndata[11]; // [sp+38h] [-18h] BYREF
-	u32 efbits[2]; // [sp+48h] [-8h] BYREF
+	u32 efbits; // [sp+48h] [-8h] BYREF
 
-	if ( PollEventFlag(g_ncmd_evid, 1, 0x10, efbits) == -421 )
+	if ( PollEventFlag(g_ncmd_evid, 1, 0x10, &efbits) == -421 )
 	{
 		return 0;
 	}
@@ -5492,7 +5492,7 @@ int __cdecl sceCdRead(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode)
 		CpuResumeIntr(state);
 		return 0;
 	}
-	vClearEventFlag(g_fio_fsv_evid, ~0x1);
+	vClearEventFlag(g_fio_fsv_evid, ~1);
 	CpuResumeIntr(state);
 	return cdvdman_read(lbn, sectors, buffer, mode, 0, 0, g_fio_fsv_evid, 1);
 }
@@ -5738,10 +5738,10 @@ int __cdecl sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5,
 {
 	DMA3PARAM b18; // [sp+18h] [-30h] BYREF
 	char ndata[11]; // [sp+30h] [-18h] BYREF
-	u32 efbits[2]; // [sp+40h] [-8h] BYREF
+	u32 efbits; // [sp+40h] [-8h] BYREF
 
 	// The following call to sceCdGetDiskType was inlined
-	if ( sceCdGetDiskType() != 0x14 || (g_cdvdman_mmode != 2 && g_cdvdman_mmode != 0xFF) || (PollEventFlag(g_ncmd_evid, 1, 0x10, efbits) == -421) )
+	if ( sceCdGetDiskType() != 0x14 || (g_cdvdman_mmode != 2 && g_cdvdman_mmode != 0xFF) || (PollEventFlag(g_ncmd_evid, 1, 0x10, &efbits) == -421) )
 	{
 		return 0;
 	}
@@ -5814,7 +5814,7 @@ int __cdecl sceCdRM(char *buffer, u32 *status)
 	int cmd_tmp2; // $v0
 	u8 rdata[9]; // [sp+18h] [-20h] BYREF
 	char wdata[8]; // [sp+28h] [-10h] BYREF
-	u32 efbits[2]; // [sp+30h] [-8h] BYREF
+	u32 efbits; // [sp+30h] [-8h] BYREF
 
 	*status = 0;
 	if ( sceCdGetMVersion(rdata, status) != 1 || (unsigned int)(rdata[3] | (rdata[2] << 8) | (rdata[1] << 16)) < 0x10500 )
@@ -5824,7 +5824,7 @@ int __cdecl sceCdRM(char *buffer, u32 *status)
 		*status |= 0x40;
 		return 1;
 	}
-	if ( PollEventFlag(g_scmd_evid, 1, 0x10, efbits) == -421 )
+	if ( PollEventFlag(g_scmd_evid, 1, 0x10, &efbits) == -421 )
 	{
 		return 0;
 	}
@@ -6041,7 +6041,7 @@ int __cdecl sceCdReadDiskID(unsigned int *id)
 {
 	sceCdRMode rmode; // [sp+18h] [-810h] BYREF
 	char sectbuf[2048]; // [sp+20h] [-808h] BYREF
-	u32 efbits[2]; // [sp+820h] [-8h] BYREF
+	u32 efbits; // [sp+820h] [-8h] BYREF
 
 	*((_BYTE *)id + 4) = 0;
 	*((_BYTE *)id + 3) = 0;
@@ -6071,7 +6071,7 @@ int __cdecl sceCdReadDiskID(unsigned int *id)
 	{
 		return 0;
 	}
-	WaitEventFlag(g_scmd_evid, 1, 0, efbits);
+	WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
 	if ( (dev5_regs.m_dev5_reg_038 & 4) == 0 )
 	{
 		vSetEventFlag(g_scmd_evid, 1);

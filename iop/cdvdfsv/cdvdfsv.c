@@ -1728,7 +1728,7 @@ void __fastcall cdvdfsv_rpc3h_0C_cdstatus(const cdvdfsv_rpc3h_packet *inbuf, int
 void __cdecl cdvdfsv_rpc3h_06_ri(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	int i; // $s1
-	u32 efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
 	(void)inbuf;
 	(void)buflen;
@@ -1736,7 +1736,7 @@ void __cdecl cdvdfsv_rpc3h_06_ri(const cdvdfsv_rpc3h_packet *inbuf, int buflen, 
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, efres);
+		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, &efbits);
 		outbuf->m_retres = sceCdRI(outbuf->m_pkt_06.m_buffer, &outbuf->m_pkt_06.m_result);
 	}
 }
@@ -1745,7 +1745,7 @@ void __cdecl cdvdfsv_rpc3h_06_ri(const cdvdfsv_rpc3h_packet *inbuf, int buflen, 
 void __cdecl cdvdfsv_rpc3h_1A_rm(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	int i; // $s1
-	u32 efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
 	(void)inbuf;
 	(void)buflen;
@@ -1753,7 +1753,7 @@ void __cdecl cdvdfsv_rpc3h_1A_rm(const cdvdfsv_rpc3h_packet *inbuf, int buflen, 
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, efres);
+		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, &efbits);
 		outbuf->m_retres = sceCdRM(outbuf->m_pkt_1A.m_buffer, &outbuf->m_pkt_1A.m_status);
 	}
 }
@@ -1762,7 +1762,7 @@ void __cdecl cdvdfsv_rpc3h_1A_rm(const cdvdfsv_rpc3h_packet *inbuf, int buflen, 
 void __cdecl cdvdfsv_rpc3h_24_readguid(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	int i; // $s0
-	u32 efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
 	(void)inbuf;
 	(void)buflen;
@@ -1770,7 +1770,7 @@ void __cdecl cdvdfsv_rpc3h_24_readguid(const cdvdfsv_rpc3h_packet *inbuf, int bu
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, efres);
+		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, &efbits);
 		outbuf->m_retres = sceCdReadGUID(&outbuf->m_pkt_24.m_guid);
 	}
 }
@@ -1779,7 +1779,7 @@ void __cdecl cdvdfsv_rpc3h_24_readguid(const cdvdfsv_rpc3h_packet *inbuf, int bu
 void __cdecl cdvdfsv_rpc3h_26_readmodelid(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	int i; // $s0
-	u32 efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
 	(void)inbuf;
 	(void)buflen;
@@ -1787,7 +1787,7 @@ void __cdecl cdvdfsv_rpc3h_26_readmodelid(const cdvdfsv_rpc3h_packet *inbuf, int
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, efres);
+		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, &efbits);
 		outbuf->m_retres = sceCdReadModelID(&outbuf->m_pkt_26.m_id);
 	}
 }
@@ -1813,7 +1813,7 @@ void __fastcall cdvdfsv_rpc3h_23_changethreadpriority(const cdvdfsv_rpc3h_packet
 void __cdecl cdvdfsv_rpc3h_21_poweroff(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	int i; // $s0
-	u32 efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
 	(void)inbuf;
 	(void)buflen;
@@ -1821,7 +1821,7 @@ void __cdecl cdvdfsv_rpc3h_21_poweroff(const cdvdfsv_rpc3h_packet *inbuf, int bu
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, efres);
+		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, &efbits);
 		outbuf->m_retres = sceCdPowerOff(&outbuf->m_pkt_21.m_result);
 	}
 }
@@ -1830,13 +1830,13 @@ void __cdecl cdvdfsv_rpc3h_21_poweroff(const cdvdfsv_rpc3h_packet *inbuf, int bu
 void __cdecl cdvdfsv_rpc3h_15_ctrladout(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	int i; // $s0
-	u32 efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
 	(void)buflen;
 
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, efres);
+		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, &efbits);
 		outbuf->m_retres = sceCdCtrlADout(inbuf->m_pkt_15.m_mode, &outbuf->m_pkt_15.m_status);
 	}
 }
@@ -1845,14 +1845,14 @@ void __cdecl cdvdfsv_rpc3h_15_ctrladout(const cdvdfsv_rpc3h_packet *inbuf, int b
 void __cdecl cdvdfsv_rpc3h_01_readclock(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	int i; // $s0
-	u32 efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
 	(void)inbuf;
 	(void)buflen;
 
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, efres);
+		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, &efbits);
 		outbuf->m_retres = sceCdReadClock(&outbuf->m_pkt_01.m_clock);
 	}
 }
@@ -1914,13 +1914,13 @@ void __fastcall cdvdfsv_rpc3h_04_geterror(const cdvdfsv_rpc3h_packet *inbuf, int
 void __cdecl cdvdfsv_rpc3h_05_trayreq(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	int i; // $s0
-	u32 efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efbits; // [sp+10h] [-8h] BYREF
 
 	(void)buflen;
 
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, efres);
+		WaitEventFlag(g_cdvdman_scmd_ef, 1, 0, &efbits);
 		outbuf->m_retres = sceCdTrayReq(inbuf->m_pkt_05.m_param, &outbuf->m_pkt_05.m_traychk);
 	}
 }
@@ -2141,13 +2141,13 @@ void __cdecl cdvdfsv_poffloop()
 	int trid; // $s0
 	char cmdpkt[16]; // [sp+18h] [-18h] BYREF
 	int scres; // [sp+28h] [-8h] BYREF
-	u32 efres; // [sp+2Ch] [-4h] BYREF
+	u32 efbits; // [sp+2Ch] [-4h] BYREF
 
 	g_cdvdfsv_ef = sceCdSC(0xFFFFFFF5, &scres);
 	while ( 1 )
 	{
-		ClearEventFlag(g_cdvdfsv_ef, 0xFFFFFFFB);
-		WaitEventFlag(g_cdvdfsv_ef, 4, 0, &efres);
+		ClearEventFlag(g_cdvdfsv_ef, ~4);
+		WaitEventFlag(g_cdvdfsv_ef, 4, 0, &efbits);
 		if ( g_cdvdfsv_nopocm )
 			break;
 		if ( !g_cdvdfsv_plbreak )
