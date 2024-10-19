@@ -244,7 +244,7 @@ int __cdecl cdvdfsv_cleanuprpc()
 int __fastcall _start(int ac, char **av)
 {
 	const unsigned __int16 *LibraryEntryTable; // $v0
-	int state[2]; // [sp+10h] [-8h] BYREF
+	int state; // [sp+10h] [-8h] BYREF
 
 	if ( ac < 0 )
 	{
@@ -255,9 +255,9 @@ int __fastcall _start(int ac, char **av)
 		{
 			return 2;
 		}
-		CpuSuspendIntr(state);
+		CpuSuspendIntr(&state);
 		error_code = ReleaseLibraryEntries(&_exp_cdvdfsv);
-		CpuResumeIntr(state[0]);
+		CpuResumeIntr(state);
 		if ( error_code && error_code != -213 )
 		{
 			KPRINTF("ReleaseLibraryEntries Error code %d\n", error_code);
@@ -274,9 +274,9 @@ int __fastcall _start(int ac, char **av)
 	g_cdvdfsv_rtocbuf = (u8 *)cdvdfsv_fsvrbuf;
 	cdvdfsv_parseargs(ac, av);
 	cdvdfsv_init();
-	CpuSuspendIntr(state);
+	CpuSuspendIntr(&state);
 	LibraryEntryTable = (unsigned __int16 *)QueryLibraryEntryTable(&g_modload_libinfo);
-	CpuResumeIntr(state[0]);
+	CpuResumeIntr(state);
 	if ( !LibraryEntryTable || (*(LibraryEntryTable - 6) < 0x104) )
 	{
 		KPRINTF("Warning cdvdfsv.irx: Unload function can't be used.\n");

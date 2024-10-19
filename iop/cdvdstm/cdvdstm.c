@@ -270,7 +270,7 @@ unsigned int __fastcall iop_stream_handler(
 	int bankcur_next_tmp1; // $a0
 	int chunk_size; // $s0
 	int bankcur_next_tmp2; // $a0
-	int state[2]; // [sp+20h] [-8h] BYREF
+	int state; // [sp+20h] [-8h] BYREF
 	unsigned int posszarg1_stk; // [sp+50h] [+28h] BYREF
 
 	retryflag = 0;
@@ -290,10 +290,10 @@ unsigned int __fastcall iop_stream_handler(
 			sceCdSC(0, &g_cdvdstm_last_error_for_iop);
 			return 0;
 		case 7:
-			CpuSuspendIntr(state);
+			CpuSuspendIntr(&state);
 			vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop);
 			sceCdSC(0, &g_cdvdstm_last_error_for_iop);
-			CpuResumeIntr(state[0]);
+			CpuResumeIntr(state);
 			sceCdSync(0);
 			vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &g_cdvdstm_curclk_iop);
 			return 1;
@@ -329,11 +329,11 @@ unsigned int __fastcall iop_stream_handler(
 				g_cdvdstm_numbytes * posszarg2);
 			return 1;
 		case 3:
-			CpuSuspendIntr(state);
+			CpuSuspendIntr(&state);
 			g_cdvdstm_stmstart_iop = 0;
 			vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop);
 			sceCdSC(0, &g_cdvdstm_last_error_for_iop);
-			CpuResumeIntr(state[0]);
+			CpuResumeIntr(state);
 			sceCdBreak();
 			for ( i = 0; i < (unsigned int)g_cdvdstm_bankmax; i += 1 )
 				g_cdvdstm_usedmap_iop[i] = 0;
@@ -348,12 +348,12 @@ unsigned int __fastcall iop_stream_handler(
 		case 9:
 			if ( sceCdSC(0xFFFFFFFF, &g_cdvdstm_last_error_for_iop) != 0 )
 			{
-				CpuSuspendIntr(state);
+				CpuSuspendIntr(&state);
 				g_cdvdstm_lsn_iop = posszarg1;
 				for ( i = 0; i < (unsigned int)g_cdvdstm_bankmax; i += 1 )
 					g_cdvdstm_usedmap_iop[i] = 0;
 				g_cdvdstm_stmstart_iop = 2;
-				CpuResumeIntr(state[0]);
+				CpuResumeIntr(state);
 				return 1;
 			}
 			return 0;
@@ -364,11 +364,11 @@ unsigned int __fastcall iop_stream_handler(
 			g_cdvdstm_retryerr_iop = 0;
 			break;
 		case 4:
-			CpuSuspendIntr(state);
+			CpuSuspendIntr(&state);
 			vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop);
 			sceCdSC(0, &g_cdvdstm_last_error_for_iop);
 			retryflag = 1;
-			CpuResumeIntr(state[0]);
+			CpuResumeIntr(state);
 			posszarg2 = 0;
 			cmdid = 1;
 			g_cdvdstm_lsn_iop = posszarg1;
@@ -381,11 +381,11 @@ unsigned int __fastcall iop_stream_handler(
 	}
 	if ( cmdid == 1 )
 	{
-		CpuSuspendIntr(state);
+		CpuSuspendIntr(&state);
 		retryflag = 1;
 		vCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop);
 		sceCdSC(0, &g_cdvdstm_last_error_for_iop);
-		CpuResumeIntr(state[0]);
+		CpuResumeIntr(state);
 		for ( i = 0; i < (unsigned int)g_cdvdstm_bankmax; i += 1 )
 			g_cdvdstm_usedmap_iop[i] = 0;
 		g_cdvdstm_lsn_iop = posszarg1;
@@ -403,7 +403,7 @@ unsigned int __fastcall iop_stream_handler(
 			return 0;
 		}
 	}
-	CpuSuspendIntr(state);
+	CpuSuspendIntr(&state);
 	written_chunk_size_tmp = -1;
 	for ( i = 0; i < posszarg2; i += chunk_size )
 	{
@@ -446,7 +446,7 @@ unsigned int __fastcall iop_stream_handler(
 	}
 	if ( written_chunk_size_tmp == 0xFFFFFFFF )
 		written_chunk_size_tmp = posszarg2;
-	CpuResumeIntr(state[0]);
+	CpuResumeIntr(state);
 	if ( !retryflag )
 	{
 		if ( sceCdSC(0xFFFFFFFF, &g_cdvdstm_last_error_for_iop) != 1
