@@ -144,7 +144,7 @@ u32 g_cdvdstm_retrycnt_ee_cdda = 0;
 sceCdRMode g_rmode_for_stream0; // weak
 int g_cdvdstm_tgt; // weak
 int g_cdvdstm_semid; // idb
-int g_cdvdstm_ef; // idb
+int g_cdvdman_intr_efid; // idb
 char g_cdvdstm_usedmap_iop[512]; // weak
 unsigned int g_cdvdstm_lsn_iop; // idb
 int g_cdvdstm_bankgp_iop; // weak
@@ -176,13 +176,13 @@ int __fastcall vCancelAlarm(unsigned int (__cdecl *alarm_cb)(void *), void *arg)
 //----- (00400050) --------------------------------------------------------
 int vSetEventFlag()
 {
-	return (QueryIntrContext() ? iSetEventFlag : SetEventFlag)(g_cdvdstm_ef, 8);
+	return (QueryIntrContext() ? iSetEventFlag : SetEventFlag)(g_cdvdman_intr_efid, 8);
 }
 
 //----- (004000A0) --------------------------------------------------------
 int vClearEventFlag()
 {
-	return (QueryIntrContext() ? iClearEventFlag : ClearEventFlag)(g_cdvdstm_ef, ~8);
+	return (QueryIntrContext() ? iClearEventFlag : ClearEventFlag)(g_cdvdman_intr_efid, ~8);
 }
 
 //----- (004000F0) --------------------------------------------------------
@@ -220,13 +220,13 @@ int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modear
 {
 	int cur_size; // $s2
 	unsigned int streamres; // $s1
-	int scres; // [sp+18h] [-10h] BYREF
+	int last_error; // [sp+18h] [-10h] BYREF
 	u32 efbits; // [sp+1Ch] [-Ch] BYREF
 	int err; // [sp+20h] [-8h] BYREF
 
 	VERBOSE_KPRINTF(1, "sceCdStream0 call read size= %d mode= %d addr= %08x\n", rdsize, modearg, addrarg);
 	cur_size = 0;
-	if ( !sceCdSC(0xFFFFFFFF, &scres) )
+	if ( !sceCdSC(0xFFFFFFFF, &last_error) )
 		return 0;
 	*error_ptr = 0;
 	if ( !modearg )
@@ -236,7 +236,7 @@ int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modear
 	streamres = 0;
 	while ( (!err || streamres) )
 	{
-		WaitEventFlag(g_cdvdstm_ef, 8, 0, &efbits);
+		WaitEventFlag(g_cdvdman_intr_efid, 8, 0, &efbits);
 		streamres = iop_stream_handler(0, rdsize - cur_size, &addrarg[cur_size], 2, &g_rmode_for_stream0, &err);
 		if ( rdsize - cur_size != streamres )
 			vClearEventFlag();
@@ -274,10 +274,8 @@ unsigned int __fastcall iop_stream_handler(
 	int chunk_size; // $s0
 	int bankcur_next_tmp2; // $a0
 	int state; // [sp+20h] [-8h] BYREF
-	unsigned int posszarg1_stk; // [sp+50h] [+28h] BYREF
 
 	retryflag = 0;
-	posszarg1_stk = posszarg1;
 	VERBOSE_KPRINTF(1, "CD Stream Call mode= %d\n", cmdid);
 	*error_ptr = 0;
 	if ( g_cdvdstm_stmstart_iop == 2 && cmdid != 9 && cmdid != 3 )
@@ -392,7 +390,7 @@ unsigned int __fastcall iop_stream_handler(
 		for ( i = 0; i < (unsigned int)g_cdvdstm_bankmax; i += 1 )
 			g_cdvdstm_usedmap_iop[i] = 0;
 		g_cdvdstm_lsn_iop = posszarg1;
-		sceCdSC(0xFFFFFFE9, (int *)&posszarg1_stk);
+		sceCdSC(0xFFFFFFE9, (int *)&g_cdvdstm_lsn_iop);
 		g_cdvdstm_bankoffs_iop = 0;
 		g_cdvdstm_bankcur_iop = 0;
 		g_cdvdstm_bankgp_iop = 0;
@@ -478,15 +476,16 @@ unsigned int __fastcall iop_stream_handler(
 unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 {
 	int gptmp; // $a0
-	int scres1; // [sp+28h] [-8h] BYREF
+	int last_error; // [sp+28h] [-8h] BYREF
+	int scres_unused;
 
 	(void)userdata;
 
 	VERBOSE_KPRINTF(1, "Intr Read call\n");
 	iCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, &g_cdvdstm_curclk_iop);
 	iCancelAlarm((unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop);
-	sceCdSC(0xFFFFFFFF, &scres1);
-	if ( !scres1 )
+	sceCdSC(0xFFFFFFFF, &last_error);
+	if ( !last_error )
 	{
 		switch ( sceCdGetDiskType() )
 		{
@@ -497,32 +496,32 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 			case SCECdPS2DVD:
 				break;
 			default:
-				scres1 = SCECdErREADCF;
+				last_error = SCECdErREADCF;
 				break;
 		}
 	}
 	g_cdvdstm_curclk_iop.hi = 0;
 	if ( g_cdvdstm_stmstart_iop )
 		g_cdvdstm_retrycnt_iop = 0;
-	if ( g_cdvdstm_stmstart_iop || scres1 || g_cdvdstm_retrycnt_iop )
+	if ( g_cdvdstm_stmstart_iop || last_error || g_cdvdstm_retrycnt_iop )
 	{
-		VERBOSE_KPRINTF(1, "Stm Rtry stmstart:%d err:%02x retry:%d\n", g_cdvdstm_stmstart_iop, scres1, g_cdvdstm_retrycnt_iop);
+		VERBOSE_KPRINTF(1, "Stm Rtry stmstart:%d err:%02x retry:%d\n", g_cdvdstm_stmstart_iop, last_error, g_cdvdstm_retrycnt_iop);
 	}
-	g_cdvdstm_curclk_iop.lo = ( g_cdvdstm_stmstart_iop || scres1 || g_cdvdstm_retrycnt_iop ) ? 0x20f58000 : (0x9000 * sceCdSC(0xFFFFFFEF, &scres1));
-	if ( scres1 )
+	g_cdvdstm_curclk_iop.lo = ( g_cdvdstm_stmstart_iop || last_error || g_cdvdstm_retrycnt_iop ) ? 0x20f58000 : (0x9000 * sceCdSC(0xFFFFFFEF, &scres_unused));
+	if ( last_error )
 	{
-		VERBOSE_KPRINTF(1, "IOP Stream read Error code= 0x%02x retry= %d\n", scres1, g_cdvdstm_retrycnt_iop);
+		VERBOSE_KPRINTF(1, "IOP Stream read Error code= 0x%02x retry= %d\n", last_error, g_cdvdstm_retrycnt_iop);
 		g_cdvdstm_retrycnt_iop = 1;
-		if ( scres1 == SCECdErREAD || scres1 == SCECdErABRT )
+		if ( last_error == SCECdErREAD || last_error == SCECdErABRT )
 		{
-			VERBOSE_KPRINTF(1, "On err %08x\n", scres1);
+			VERBOSE_KPRINTF(1, "On err %08x\n", last_error);
 			if ( g_cdvdstm_retrycnt_iop )
-				g_cdvdstm_retryerr_iop = scres1;
+				g_cdvdstm_retryerr_iop = last_error;
 			g_cdvdstm_retrycnt_iop = 3;
 		}
 		else
 		{
-			g_cdvdstm_retryerr_iop = scres1;
+			g_cdvdstm_retryerr_iop = last_error;
 		}
 	}
 	if ( g_cdvdstm_retrycnt_iop )
@@ -545,7 +544,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 			g_cdvdstm_curclk_iop.lo = 0x708000;
 			if ( iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop) && !sceCdNop() )
 			{
-				sceCdSC(0, &scres1);
+				sceCdSC(0, &last_error);
 			}
 			g_cdvdstm_retrycnt_iop += 1;
 		}
@@ -569,7 +568,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 			g_cdvdstm_curclk_iop.lo = 0x48000;
 			if ( iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop) != 0 && sceCdNop() == 0 )
 			{
-				sceCdSC(0, &scres1);
+				sceCdSC(0, &last_error);
 			}
 		}
 		else
@@ -600,7 +599,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 				if ( iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (__cdecl *)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop)
 					&& !sceCdNop() )
 				{
-					sceCdSC(0, &scres1);
+					sceCdSC(0, &last_error);
 				}
 				g_cdvdstm_retrycnt_iop = 1;
 			}
@@ -711,14 +710,15 @@ __int64 __cdecl cdrom_stm_nulldev64()
 //----- (004015DC) --------------------------------------------------------
 int __fastcall _start(int a1)
 {
-	int scres; // [sp+10h] [-8h] BYREF
+	int last_error; // [sp+10h] [-8h] BYREF
+	int scres_unused;
 	int state; // [sp+14h] [-4h] BYREF
 
 	if ( a1 < 0 )
 	{
 		int relres; // $s0
 
-		if ( sceCdSC(0xFFFFFFFF, &scres) == 0 )
+		if ( sceCdSC(0xFFFFFFFF, &last_error) == 0 )
 		{
 			return 2;
 		}
@@ -743,7 +743,7 @@ int __fastcall _start(int a1)
 		cdrom_stm_deinit();
 		return 1;
 	}
-	g_cdvdstm_ef = sceCdSC(0xFFFFFFF5, &scres);
+	g_cdvdman_intr_efid = sceCdSC(0xFFFFFFF5, &scres_unused);
 	return 2;
 }
 // 404690: using guessed type int g_cdvdstm_in_deldrv;
@@ -751,11 +751,11 @@ int __fastcall _start(int a1)
 //----- (004016D0) --------------------------------------------------------
 BOOL __fastcall stm_alarm_timeout_cb(void *a1)
 {
-	unsigned int scres; // [sp+10h] [-8h] BYREF
+	unsigned int read_to; // [sp+10h] [-8h] BYREF
 
-	scres = *(_DWORD *)a1 / 0x9000;
-	KPRINTF("Stm EE Read Time Out %d(msec)\n", scres);
-	sceCdSC(0xFFFFFFEE, (int *)&scres);
+	read_to = *(_DWORD *)a1 / 0x9000;
+	KPRINTF("Stm EE Read Time Out %d(msec)\n", read_to);
+	sceCdSC(0xFFFFFFEE, (int *)&read_to);
 	return sceCdBreak() == 0;
 }
 
@@ -775,13 +775,11 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	int outres_tmp2; // [sp+20h] [-10h]
 	int state; // [sp+24h] [-Ch] BYREF
 	unsigned int i; // [sp+28h] [-8h]
-	u32 posszarg1_stk; // [sp+2Ch] [-4h] BYREF
 
 	(void)inbuf_len;
 
 	retryflag = 0;
 	cmdid = instruct->m_cmdid;
-	posszarg1_stk = instruct->m_posszarg1;
 	if ( g_cdvdstm_stmstart_ee == 2 && (cmdid != 9 && cmdid != 3) )
 	{
 		*outres_ptr = 0;
@@ -917,7 +915,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 			g_cdvdstm_usedmap_ee[i] = 0;
 		}
 		g_cdvdstm_lsn_ee = instruct->m_posszarg1;
-		sceCdSC(0xFFFFFFE9, (int *)&posszarg1_stk);
+		sceCdSC(0xFFFFFFE9, (int *)&g_cdvdstm_lsn_ee);
 		g_cdvdstm_bankoffs_ee = 0;
 		g_cdvdstm_bankcur_ee = 0;
 		sceCdSync(0);
@@ -1023,6 +1021,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 {
 	int gptmp; // $a0
+	int scres_unused;
 
 	(void)userdata;
 
@@ -1048,7 +1047,7 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	g_cdvdstm_curclk_ee.hi = 0;
 	if ( g_cdvdstm_stmstart_ee )
 		g_cdvdstm_retrycnt_ee_normal = 0;
-	g_cdvdstm_curclk_ee.lo = ( g_cdvdstm_stmstart_ee || g_cdvdstm_last_error_for_ee || g_cdvdstm_retrycnt_ee_normal ) ? 0x20f58000 : (0x9000 * sceCdSC(0xFFFFFFEF, &g_cdvdstm_last_error_for_ee));
+	g_cdvdstm_curclk_ee.lo = ( g_cdvdstm_stmstart_ee || g_cdvdstm_last_error_for_ee || g_cdvdstm_retrycnt_ee_normal ) ? 0x20f58000 : (0x9000 * sceCdSC(0xFFFFFFEF, &scres_unused));
 	if ( g_cdvdstm_last_error_for_ee )
 	{
 		VERBOSE_KPRINTF(1, "EE Stream read LBN= %d Error code= 0x%02x retry= %d\n", g_cdvdstm_readlbn_ee_normal, g_cdvdstm_last_error_for_ee, g_cdvdstm_retrycnt_ee_normal);
@@ -1465,6 +1464,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 {
 	int gptmp; // $a0
+	int scres_unused;
 
 	(void)userdata;
 
@@ -1489,7 +1489,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	g_cdvdstm_curclk_ee.hi = 0;
 	if ( g_cdvdstm_stmstart_ee )
 		g_cdvdstm_retrycnt_ee_cdda = 0;
-	g_cdvdstm_curclk_ee.lo = ( g_cdvdstm_stmstart_ee || g_cdvdstm_last_error_for_ee || g_cdvdstm_retrycnt_ee_cdda ) ? 0x20f58000 : (0x9000 * sceCdSC(0xFFFFFFEF, &g_cdvdstm_last_error_for_ee));
+	g_cdvdstm_curclk_ee.lo = ( g_cdvdstm_stmstart_ee || g_cdvdstm_last_error_for_ee || g_cdvdstm_retrycnt_ee_cdda ) ? 0x20f58000 : (0x9000 * sceCdSC(0xFFFFFFEF, &scres_unused));
 	if ( g_cdvdstm_last_error_for_ee )
 	{
 		VERBOSE_KPRINTF(1, "EE Stream read LBN= %d Error code= 0x%02x retry= %d\n", g_cdvdstm_readlbn_ee_cdda, g_cdvdstm_last_error_for_ee, g_cdvdstm_retrycnt_ee_cdda);

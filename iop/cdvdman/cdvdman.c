@@ -291,7 +291,7 @@ int g_cdvdman_fs_cache = 0;
 int g_cdvdman_fs_base2 = 0;
 int g_cdvdman_clk_flg = 0;
 int g_cdvdman_cd36key = 0;
-int g_cdvdman_strm_id = 0;
+int g_cdvdman_ee_rpc_fno = 0;
 int g_cdvdman_mmode = 0;
 int g_cdvdman_last_cmdfunc = 0;
 int g_cdvdman_minver_10700 = 0;
@@ -379,7 +379,7 @@ int __cdecl cdrom_init(iop_device_t *dev)
 {
 	unsigned int i; // $v1
 	iop_event_t event; // [sp+10h] [-18h] BYREF
-	int cd_sc_tmp; // [sp+20h] [-8h] BYREF
+	int scres_unused; // [sp+20h] [-8h] BYREF
 
 	(void)dev;
 
@@ -402,7 +402,7 @@ int __cdecl cdrom_init(iop_device_t *dev)
 	g_cdvdman_istruct.m_no_dec_flag = 0;
 	g_cdvdman_istruct.m_cd_inited = 0;
 	g_cdvdman_istruct.m_tray_is_open = 0;
-	g_cdvdman_strm_id = 0;
+	g_cdvdman_ee_rpc_fno = 0;
 	g_cdvdman_spinctl = -1;
 	event.attr = 2;
 	event.bits = 0;
@@ -421,7 +421,7 @@ int __cdecl cdrom_init(iop_device_t *dev)
 	SetEventFlag(g_fio_fsv_evid, 1);
 	g_cdvdman_spinnom = -1;
 	g_cdvdman_trycnt = -1;
-	sceCdSC(0xFFFFFFF3, &cd_sc_tmp);
+	sceCdSC(0xFFFFFFF3, &scres_unused);
 	for ( i = 0; i < (sizeof(g_cdvdman_handles)/sizeof(g_cdvdman_handles[0])); i += 1 )
 	{
 		g_cdvdman_handles[i].m_fd_flags = 0;
@@ -496,7 +496,7 @@ int __cdecl cdvdman_devready()
 			g_cdvdman_iocache = 0;
 			return -EIO;
 		}
-		if ( (dev5_regs.m_dev5_reg_005 & 0xC0) == 0x40 && !g_cdvdman_istruct.m_read2_flag && !g_cdvdman_strm_id )
+		if ( (dev5_regs.m_dev5_reg_005 & 0xC0) == 0x40 && !g_cdvdman_istruct.m_read2_flag && !g_cdvdman_ee_rpc_fno )
 		{
 			return 1;
 		}
@@ -1698,6 +1698,7 @@ int __cdecl cdrom_devctl(
 	unsigned int sc_tmp_3; // $a1
 	u32 efbits; // [sp+30h] [-10h] BYREF
 	int on_dual_tmp; // [sp+34h] [-Ch] BYREF
+	int scres_unused;
 
 	(void)f;
 	(void)a2;
@@ -1835,7 +1836,7 @@ int __cdecl cdrom_devctl(
 			g_cdvdman_spinnom = SCECdSpinMx;
 			break;
 		case 0x4391:
-			*(_DWORD *)bufp = sceCdSC(0xFFFFFFF5, &on_dual_tmp);
+			*(_DWORD *)bufp = sceCdSC(0xFFFFFFF5, &scres_unused);
 			break;
 		case 0x4392:
 			retval2 = (sceCdApplySCmd(*(_BYTE *)argp, (char *)argp + 4, arglen - 4, bufp) != 1) ? -EIO : 0;
@@ -2027,17 +2028,17 @@ int __cdecl sceCdSync(int mode)
 			vCancelAlarm((unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
 			break;
 		case 16:
-			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag || g_cdvdman_strm_id || g_cdvdman_istruct.m_stream_flag )
+			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag || g_cdvdman_ee_rpc_fno || g_cdvdman_istruct.m_stream_flag )
 			{
 				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
-				if ( g_cdvdman_strm_id )
+				if ( g_cdvdman_ee_rpc_fno )
 				{
 					DelayThread(8000);
 				}
 			}
 			break;
 		case 17:
-			return (!sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag || g_cdvdman_strm_id || (g_cdvdman_istruct.m_stream_flag != 0)) ? 1 : 0;
+			return (!sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag || g_cdvdman_ee_rpc_fno || (g_cdvdman_istruct.m_stream_flag != 0)) ? 1 : 0;
 		case 32:
 			WaitEventFlag(g_cdvdman_intr_efid, 0x21, 1, &efbits);
 			ReferEventFlagStatus(g_cdvdman_intr_efid, &efinfo);
@@ -3453,14 +3454,14 @@ int __fastcall vDelayThread(int usec)
 //----- (00406B90) --------------------------------------------------------
 BOOL __fastcall alarm_cb_read(iop_sys_clock_t *a1)
 {
-	int rdto; // [sp+10h] [-8h] BYREF
+	int read_to; // [sp+10h] [-8h] BYREF
 
-	rdto = a1->lo / 0x9000;
-	KPRINTF("Read Time Out %d(msec)\n", rdto);
-	sceCdSC(0xFFFFFFEE, &rdto);
+	read_to = a1->lo / 0x9000;
+	KPRINTF("Read Time Out %d(msec)\n", read_to);
+	sceCdSC(0xFFFFFFEE, &read_to);
 	return sceCdBreak() == 0;
 }
-// 406B90: using guessed type u32 rdto;
+// 406B90: using guessed type u32 read_to;
 
 //----- (00406BE4) --------------------------------------------------------
 sceCdCBFunc __cdecl sceCdCallback(sceCdCBFunc function)
@@ -4082,9 +4083,9 @@ int __cdecl sceCdSC(int code, int *param)
 			{
 				SetEventFlag(g_fio_fsv_evid, 1);
 			}
-			g_cdvdman_strm_id = *param;
+			g_cdvdman_ee_rpc_fno = *param;
 			VERBOSE_KPRINTF(1, "EE_ncmd_working code= %d\n", *param);
-			return g_cdvdman_strm_id;
+			return g_cdvdman_ee_rpc_fno;
 		case 0xFFFFFFF7:
 			return (unsigned __int16)_irx_id.v;
 		case 0xFFFFFFF8:
@@ -4125,7 +4126,7 @@ void __cdecl cdvdman_init()
 {
 	int *BootMode; // $v0
 	unsigned int i; // $s0
-	int scres; // [sp+10h] [-8h] BYREF
+	int scres_unused; // [sp+10h] [-8h] BYREF
 	u32 argres; // [sp+14h] [-4h] BYREF
 
 	g_cdvdman_user_cb = 0;
@@ -4135,7 +4136,7 @@ void __cdecl cdvdman_init()
 	RegisterIntrHandler(IOP_IRQ_CDVD, 1, (int (__cdecl *)(void *))intrh_cdrom, &g_cdvdman_istruct);
 	RegisterIntrHandler(35, 1, (int (__cdecl *)(void *))intrh_dma_3, &g_cdvdman_istruct);
 	EnableIntr(IOP_IRQ_CDVD);
-	sceCdSC(0xFFFFFFF3, &scres);
+	sceCdSC(0xFFFFFFF3, &scres_unused);
 	dmac_set_dpcr(dmac_get_dpcr() | 0x8000);
 	dmac_ch_set_chcr(3, 0);
 	if ( (dev5_regs.m_dev5_reg_008 & 4) != 0 )
@@ -5385,7 +5386,7 @@ int __cdecl cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int 
 {
 	int read_res; // $v0
 	int state; // [sp+18h] [-10h] BYREF
-	int sc_result; // [sp+1Ch] [-Ch] BYREF
+	int scres_unused; // [sp+1Ch] [-Ch] BYREF
 	int dvd; // [sp+20h] [-8h]
 
 	dvd = cdvdman_isdvd();
@@ -5449,7 +5450,7 @@ int __cdecl cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int 
 	g_cdvdman_istruct.m_interupt_read_state = 0;
 	g_cdvdman_istruct.m_cdvdman_rsec = ( sectors >= 0x41 ) ? (( (lsn & 0xF) != 0 ) ? (0x10 - (lsn & 0xF)) : 0x40) : sectors;
 	g_cdvdman_racb_to.hi = 0;
-	g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &sc_result);
+	g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
 	vSetAlarm(&g_cdvdman_racb_to, (unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 	read_res = (dvd ? sceCdRV : sceCdRead0)(lsn, g_cdvdman_istruct.m_cdvdman_rsec, g_cdvdman_ptoc, dvd ? mode : &g_cdvdman_istruct.m_cdvdman_cdrmode, 0x10, read_cdvd_cb);
 	if ( !read_res )
@@ -5536,7 +5537,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 	}
 	else if ( !g_cdvdman_istruct.m_interupt_read_state || g_cdvdman_istruct.m_cdvdman_csec )
 	{
-		int sc_result; // [sp+18h] [-8h] BYREF
+		int scres_unused; // [sp+18h] [-8h] BYREF
 
 		g_cdvdman_istruct.m_interupt_read_state = 0;
 		if ( g_cdvdman_istruct.m_sync_error )
@@ -5567,7 +5568,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 										read_cdvd_cb) )
 			{
 				g_cdvdman_racb_to.hi = 0;
-				g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &sc_result);
+				g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
 				iSetAlarm(&g_cdvdman_racb_to, (unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 			}
 			else
@@ -5619,7 +5620,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 											read_cdvd_cb) )
 				{
 					g_cdvdman_racb_to.hi = 0;
-					g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &sc_result);
+					g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
 					iSetAlarm(&g_cdvdman_racb_to, (unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 				}
 				else
