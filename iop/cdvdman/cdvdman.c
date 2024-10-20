@@ -82,7 +82,7 @@ int __fastcall CD_cachefile(int dsec, int layer);
 int __cdecl disc_read(int size, int loc, void *buffer, int layer);
 int __cdecl path_tbl_init(u32 blocks, char *fname, int action);
 void __fastcall unused_40BA90(unsigned int *, int);
-unsigned int __fastcall cdvdman_memcpy(char *dst, const char *src, unsigned int n);
+unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n);
 void __cdecl cdvdman_1();
 int __cdecl cdvdman_retonly();
 void __fastcall hex_dump(u8 *addr_start, int length);
@@ -1422,9 +1422,9 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 			{
 				lbn += 1;
 				pos_sub_2048 = 0x800 - pos_extra;
-				cdvdman_memcpy(
-					addr + i,
-					(const char *)g_cdvdman_temp_buffer_ptr + 0x800 * (sectors - 1) + pos_extra,
+				optimized_memcpy(
+					&addr[i],
+					&((const char *)g_cdvdman_temp_buffer_ptr)[0x800 * (sectors - 1) + pos_extra],
 					0x800 - pos_extra);
 				g_cdvdman_iocache = 0;
 				sectors = 8;
@@ -1442,7 +1442,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 		VERBOSE_PRINTF(1, "sce_Read LBN= %d sectors= %d\n", (int)lbn, (int)sectors);
 		if ( g_cdvdman_iocache && (lbn >= g_cdvdman_lcn_offset) && (g_cdvdman_lcn_offset + g_cdvdman_numbytes_offset >= lbn + sectors) )
 		{
-			cdvdman_memcpy(addr + i, (char *)buf + 0x800 * (lbn - g_cdvdman_lcn_offset) + pos_extra, nbytes_segment);
+			optimized_memcpy(&addr[i], &((char *)buf)[0x800 * (lbn - g_cdvdman_lcn_offset) + pos_extra], nbytes_segment);
 		}
 		else if ( ((uiptr)(addr + i) & 3) || pos_extra || (nbytes_segment != 0x4000) )
 		{
@@ -1497,7 +1497,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 			g_cdvdman_lcn_offset = lbn_tmp;
 			g_cdvdman_numbytes_offset = sec;
 			g_cdvdman_iocache = 1;
-			cdvdman_memcpy(((char *)&addr[pos_sub_2048] + i), (const char *)g_cdvdman_temp_buffer_ptr + (pos_sub_2048 ? 0 : pos_extra), nbytes_segment - pos_sub_2048);
+			optimized_memcpy(&addr[pos_sub_2048 + i], &((const char *)g_cdvdman_temp_buffer_ptr)[pos_sub_2048 ? 0 : pos_extra], nbytes_segment - pos_sub_2048);
 		}
 		else
 		{
@@ -3059,7 +3059,7 @@ void __fastcall unused_40BA90(unsigned int *a1, int a2)
 }
 
 //----- (00405ECC) --------------------------------------------------------
-unsigned int __fastcall cdvdman_memcpy(char *dst, const char *src, unsigned int n)
+unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n)
 {
 	int v3; // $a3
 	int v4; // $v1
@@ -5358,8 +5358,8 @@ int __cdecl read_cdvd_cb(cdvdman_internal_struct_t *common)
 				size = 0x918;
 				break;
 			case 2:
-				cdvdman_memcpy(
-					(char *)(common->m_cdvdman_rbuffer + 0x924 * common->m_cdvdman_dma3sec),
+				optimized_memcpy(
+					&((char *)(common->m_cdvdman_rbuffer))[0x924 * common->m_cdvdman_dma3sec],
 					(const char *)g_cdvdman_ptoc,
 					0x924 * i);
 				break;
@@ -5368,7 +5368,7 @@ int __cdecl read_cdvd_cb(cdvdman_internal_struct_t *common)
 		{
 			for ( i = 0; i < common->m_dma3prm.m_dma3_csectors; i += 1 )
 			{
-				cdvdman_memcpy((char *)(common->m_cdvdman_rbuffer + (common->m_cdvdman_dma3sec + i) * size), (const char *)&g_cdvdman_ptoc[12 + (i * sblock)], size);
+				optimized_memcpy(&((char *)(common->m_cdvdman_rbuffer))[(common->m_cdvdman_dma3sec + i) * size], (const char *)&g_cdvdman_ptoc[12 + (i * sblock)], size);
 			}
 		}
 		g_cdvdman_readptr = common->m_cdvdman_csec + common->m_cdvdman_dma3sec;
