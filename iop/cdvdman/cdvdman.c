@@ -2281,9 +2281,9 @@ int __cdecl cdvdman_readID(int mode, int *buf)
 {
 	u8 id_val[8]; // [sp+10h] [-18h] BYREF
 	iop_sys_clock_t sysclk; // [sp+18h] [-10h] BYREF
-	u32 id_result[2]; // [sp+20h] [-8h] BYREF
+	u32 id_result; // [sp+20h] [-8h] BYREF
 
-	id_result[0] = -1;
+	id_result = -1;
 	if ( query_boot_mode_6_nonzero() )
 	{
 		if ( read_id_from_rom(mode, buf) != 0 && mode == 1 )
@@ -2300,7 +2300,7 @@ int __cdecl cdvdman_readID(int mode, int *buf)
 	{
 		if ( query_boot_mode_6_zero() )
 		{
-			if ( sceCdRI(id_val, id_result) == 0 || id_result[0] )
+			if ( sceCdRI(id_val, &id_result) == 0 || id_result )
 			{
 				return 0;
 			}
