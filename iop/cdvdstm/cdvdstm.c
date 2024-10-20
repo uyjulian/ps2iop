@@ -2,6 +2,9 @@
 #include "irx_imports.h"
 #include "../00common/defs.h"
 
+#include <errno.h>
+#include <kerr.h>
+
 IRX_ID("cdvd_st_driver", 2, 2);
 
 extern struct irx_export_table _exp_cdvdstm;
@@ -197,8 +200,8 @@ int cdvdstm_2()
 
 	memset(&instruct, 0, sizeof(instruct));
 	instruct.m_cmdid = 3;
-	instruct.m_rmode.datapattern = 0;
-	instruct.m_rmode.spindlctrl = 0;
+	instruct.m_rmode.datapattern = SCECdSecS2048;
+	instruct.m_rmode.spindlctrl = SCECdSpinMax;
 	instruct.m_rmode.trycount = 0;
 	ee_stream_handler_normal(&instruct, 0x14, &outres);
 	sceCdStStop();
@@ -487,14 +490,14 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	{
 		switch ( sceCdGetDiskType() )
 		{
-			case 0x10:
-			case 0x11:
-			case 0x12:
-			case 0x13:
-			case 0x14:
+			case SCECdPSCD:
+			case SCECdPSCDDA:
+			case SCECdPS2CD:
+			case SCECdPS2CDDA:
+			case SCECdPS2DVD:
 				break;
 			default:
-				scres1 = 253;
+				scres1 = SCECdErREADCF;
 				break;
 		}
 	}
@@ -510,7 +513,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	{
 		VERBOSE_KPRINTF(1, "IOP Stream read Error code= 0x%02x retry= %d\n", scres1, g_cdvdstm_retrycnt_iop);
 		g_cdvdstm_retrycnt_iop = 1;
-		if ( scres1 == 48 || scres1 == 1 )
+		if ( scres1 == SCECdErREAD || scres1 == SCECdErABRT )
 		{
 			VERBOSE_KPRINTF(1, "On err %08x\n", scres1);
 			if ( g_cdvdstm_retrycnt_iop )
@@ -655,7 +658,7 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 	if ( g_cdvdstm_in_deldrv )
 	{
 		SignalSema(g_cdvdstm_semid);
-		return -5;
+		return -EIO;
 	}
 	switch ( a3 )
 	{
@@ -683,7 +686,7 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 			break;
 		default:
 			PRINTF("Un-support devctl %08x\n", a3);
-			retres = -5;
+			retres = -EIO;
 			break;
 	}
 	SignalSema(g_cdvdstm_semid);
@@ -695,14 +698,14 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 int __cdecl cdrom_stm_nulldev()
 {
 	PRINTF("nulldev0 call\n");
-	return -5;
+	return -EIO;
 }
 
 //----- (004015B0) --------------------------------------------------------
 __int64 __cdecl cdrom_stm_nulldev64()
 {
 	PRINTF("nulldev0 call\n");
-	return -5LL;
+	return -EIO;
 }
 
 //----- (004015DC) --------------------------------------------------------
@@ -725,7 +728,7 @@ int __fastcall _start(int a1)
 		relres = ReleaseLibraryEntries(&_exp_cdvdstm);
 		CpuResumeIntr(state);
 		g_cdvdstm_in_deldrv = 0;
-		if ( relres && relres != -213 )
+		if ( relres && relres != KE_LIBRARY_NOTFOUND )
 		{
 			g_cdvdstm_in_deldrv = 0;
 			return 2;
@@ -1031,14 +1034,14 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	{
 		switch ( sceCdGetDiskType() )
 		{
-			case 0x10:
-			case 0x11:
-			case 0x12:
-			case 0x13:
-			case 0x14:
+			case SCECdPSCD:
+			case SCECdPSCDDA:
+			case SCECdPS2CD:
+			case SCECdPS2CDDA:
+			case SCECdPS2DVD:
 				break;
 			default:
-				g_cdvdstm_last_error_for_ee = 253;
+				g_cdvdstm_last_error_for_ee = SCECdErREADCF;
 				break;
 		}
 	}
@@ -1049,7 +1052,7 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	if ( g_cdvdstm_last_error_for_ee )
 	{
 		VERBOSE_KPRINTF(1, "EE Stream read LBN= %d Error code= 0x%02x retry= %d\n", g_cdvdstm_readlbn_ee_normal, g_cdvdstm_last_error_for_ee, g_cdvdstm_retrycnt_ee_normal);
-		if ( g_cdvdstm_last_error_for_ee == 48 || g_cdvdstm_last_error_for_ee == 1 )
+		if ( g_cdvdstm_last_error_for_ee == SCECdErREAD || g_cdvdstm_last_error_for_ee == SCECdErABRT )
 		{
 			if ( g_cdvdstm_retrycnt_ee_normal )
 			{
@@ -1232,13 +1235,13 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 			sceCdstm1Cb((void (__cdecl *)(int))ee_stream_intr_cb_cdda_thunk);
 			switch ( instruct->m_rmode.datapattern )
 			{
-				case 1:
+				case SCECdSecS2368:
 					g_cdvdstm_usedchunksize2 = 2368;
 					break;
-				case 2:
+				case SCECdSecS2448:
 					g_cdvdstm_usedchunksize2 = 2448;
 					break;
-				case 0:
+				case SCECdSecS2352:
 				default:
 					g_cdvdstm_usedchunksize2 = 0x930;
 					break;
@@ -1473,13 +1476,13 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	{
 		switch ( sceCdGetDiskType() )
 		{
-			case 0x11:
-			case 0x13:
+			case SCECdPSCDDA:
+			case SCECdPS2CDDA:
 			case 0x21:
-			case 0xFD:
+			case SCECdCDDA:
 				break;
 			default:
-				g_cdvdstm_last_error_for_ee = 253;
+				g_cdvdstm_last_error_for_ee = SCECdErREADCF;
 				break;
 		}
 	}
@@ -1490,7 +1493,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	if ( g_cdvdstm_last_error_for_ee )
 	{
 		VERBOSE_KPRINTF(1, "EE Stream read LBN= %d Error code= 0x%02x retry= %d\n", g_cdvdstm_readlbn_ee_cdda, g_cdvdstm_last_error_for_ee, g_cdvdstm_retrycnt_ee_cdda);
-		if ( g_cdvdstm_last_error_for_ee == 48 || g_cdvdstm_last_error_for_ee == 1 )
+		if ( g_cdvdstm_last_error_for_ee == SCECdErREAD || g_cdvdstm_last_error_for_ee == SCECdErABRT )
 		{
 			if ( g_cdvdstm_retrycnt_ee_cdda )
 			{
@@ -1511,7 +1514,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	if ( g_cdvdstm_retrycnt_ee_cdda )
 	{
 		g_cdvdstm_retrycnt_ee_cdda -= 1;
-		if ( !g_cdvdstm_retrycnt_ee_cdda && (g_cdvdstm_last_error_for_ee == 48 || g_cdvdstm_last_error_for_ee == 1) )
+		if ( !g_cdvdstm_retrycnt_ee_cdda && (g_cdvdstm_last_error_for_ee == SCECdErREAD || g_cdvdstm_last_error_for_ee == SCECdErABRT) )
 		{
 			g_cdvdstm_readlbn_ee_cdda = g_cdvdstm_lsn_ee + (( g_cdvdstm_sectorcount2 < 0x1D ) ? (0x1D - g_cdvdstm_sectorcount2) : 0);
 			g_cdvdstm_lsn_ee = g_cdvdstm_readlbn_ee_cdda + g_cdvdstm_sectorcount2;

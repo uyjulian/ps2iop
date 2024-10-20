@@ -2,6 +2,8 @@
 #include "irx_imports.h"
 #include "../00common/defs.h"
 
+#include <kerr.h>
+
 IRX_ID("cdvd_ee_driver", 2, 38);
 
 extern struct irx_export_table _exp_cdvdfsv;
@@ -258,7 +260,7 @@ int __fastcall _start(int ac, char **av)
 		CpuSuspendIntr(&state);
 		error_code = ReleaseLibraryEntries(&_exp_cdvdfsv);
 		CpuResumeIntr(state);
-		if ( error_code && error_code != -213 )
+		if ( error_code && error_code != KE_LIBRARY_NOTFOUND )
 		{
 			KPRINTF("ReleaseLibraryEntries Error code %d\n", error_code);
 			return 2;
@@ -510,7 +512,7 @@ void __cdecl cdvdfsv_rpc5h_0D_iopmread(const cdvdfsv_rpc5h_packet *inbuf, int bu
 	(void)buflen;
 	(void)outbuf;
 
-	g_cdvdfsv_rderror = 254;
+	g_cdvdfsv_rderror = SCECdErREADCFR;
 	g_cdvdfsv_read_to.hi = 0;
 	g_cdvdfsv_read_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &error_code);
 	g_cdvdfsv_iomrsdd.src = &g_cdvdfsv_readpos;
@@ -657,7 +659,7 @@ int __fastcall readproc2(
 	sector_sizes[1] = 0x810;
 	g_cdvdfsv_read_to.hi = 0;
 	g_cdvdfsv_read_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &sc_fffffff1_res);
-	g_cdvdfsv_rderror = 253;
+	g_cdvdfsv_rderror = SCECdErREADCF;
 	g_cdvdfsv_r2retry = 0;
 	g_cdvdfsv_r2count = 0;
 	if ( secsize != 0x924 && !fssift )
@@ -733,7 +735,7 @@ int __fastcall readproc2(
 					if ( do_multi_retries && syncdec_mask && !i )
 					{
 						retry_flag1 = 1;
-						sc_fffffffe_res = 32;
+						sc_fffffffe_res = SCECdErIPI;
 					}
 				}
 				else if ( do_multi_retries )
@@ -860,7 +862,7 @@ int __fastcall readproc2(
 			CpuSuspendIntr(&state);
 			if ( (int)i == nsec_div_cdvdfsv_sectors - 1 )
 			{
-				DisableIntr(35, (int *)&chcr);
+				DisableIntr(IOP_IRQ_DMA_CDVD, (int *)&chcr);
 			}
 			else
 			{
@@ -939,7 +941,7 @@ int __fastcall readproc1(
 	sc_fffffffe_tmp = 0;
 	g_cdvdfsv_read_to.hi = 0;
 	g_cdvdfsv_read_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &Error);
-	g_cdvdfsv_rderror = 253;
+	g_cdvdfsv_rderror = SCECdErREADCF;
 	g_cdvdfsv_sid_err_recover_cnt = 0;
 	g_cdvdfsv_err_count = 0;
 	while ( 1 )
@@ -972,7 +974,7 @@ int __fastcall readproc1(
 		if ( cdvdfsv_checksid(lsn, nsec, ps2dvd, retptr, dec_shift_enable, dec_shift_value, &syncdec_mask) )
 		{
 			if ( enable_retries && syncdec_mask )
-				sc_fffffffe_tmp = 32;
+				sc_fffffffe_tmp = SCECdErIPI;
 			break;
 		}
 		if ( !enable_retries )
@@ -1042,7 +1044,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 	{
 		if ( !sceCdSC(0xFFFFFFEA, &sc_ffffffea_tmp) )
 		{
-			g_cdvdfsv_rderror = 254;
+			g_cdvdfsv_rderror = SCECdErREADCFR;
 			sceCdSC(0xFFFFFFFE, &g_cdvdfsv_rderror);
 			bsize = 0;
 			psize = 0;
@@ -1057,9 +1059,9 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 
 			sc_ffffffe9_res = sceCdSC(0xFFFFFFE9, &sc_ffffffe9_tmp);
 			secsize = 0x800;
-			datapattern = 0;
+			datapattern = SCECdSecS2048;
 			sc_ffffffe9_tmp = sc_ffffffe9_res;
-			g_cdvdfsv_rmodeee.datapattern = 0;
+			g_cdvdfsv_rmodeee.datapattern = SCECdSecS2048;
 		}
 	}
 	else
@@ -1067,18 +1069,18 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 		datapattern = g_cdvdfsv_rmodeee.datapattern;
 		switch ( datapattern )
 		{
-			case 1:
+			case SCECdSecS2328:
 				secsize = 0x918;
 				break;
-			case 2:
+			case SCECdSecS2340:
 				secsize = 0x924;
 				break;
-			case 0:
+			case SCECdSecS2048:
 			default:
 				secsize = 0x800;
 				break;
 		}
-		g_cdvdfsv_rmodeee.datapattern = 2;
+		g_cdvdfsv_rmodeee.datapattern = SCECdSecS2340;
 	}
 	len2_plus_sec2 = sc_ffffffe9_tmp + inbuf->m_pkt_01.m_sectors;
 	if ( !early_break )
@@ -1118,7 +1120,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 		}
 		else
 		{
-			if ( datapattern != 2 || ps2dvd )
+			if ( datapattern != SCECdSecS2340 || ps2dvd )
 			{
 				int rtoc_ind; // $a1
 
@@ -1208,7 +1210,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 		}
 		else
 		{
-			if ( datapattern != 2 || ps2dvd )
+			if ( datapattern != SCECdSecS2340 || ps2dvd )
 			{
 				int i2_offs; // $a1
 
@@ -1293,30 +1295,30 @@ int __fastcall cdvdfsv_chreadee(
 	{
 		if ( !sceCdSC(0xFFFFFFEA, &scres1) )
 		{
-			g_cdvdfsv_rderror = 254;
+			g_cdvdfsv_rderror = SCECdErREADCFR;
 			sceCdSC(0xFFFFFFFE, &g_cdvdfsv_rderror);
 			return 1;
 		}
 		secsize = 0x800;
 		sc_ffffffe9_res = sceCdSC(0xFFFFFFE9, &sc_ffffffe9_res);
-		rmode.datapattern = 0;
+		rmode.datapattern = SCECdSecS2048;
 	}
 	else
 	{
 		switch ( rmode.datapattern )
 		{
-			case 1:
+			case SCECdSecS2328:
 				secsize = 0x918;
 				break;
-			case 2:
+			case SCECdSecS2340:
 				secsize = 0x924;
 				break;
-			case 0:
+			case SCECdSecS2048:
 			default:
 				secsize = 0x800;
 				break;
 		}
-		rmode.datapattern = 2;
+		rmode.datapattern = SCECdSecS2340;
 	}
 	for ( i = 0; i < (unsigned int)(secsize * seccount); i += readsize_bytes )
 	{
@@ -1375,7 +1377,7 @@ void __fastcall cdvdfsv_rpc5h_0F_readchain(const cdvdfsv_rpc5h_packet *inbuf, in
 	(void)buflen;
 	(void)outbuf;
 
-	g_cdvdfsv_rderror = 254;
+	g_cdvdfsv_rderror = SCECdErREADCFR;
 	g_cdvdfsv_readpos = 0;
 	g_cdvdfsv_cdvdman_internal_struct_ptr->m_break_cdvdfsv_readchain = 0;
 	g_cdvdfsv_chrdsdd.src = &g_cdvdfsv_readpos;
@@ -1384,13 +1386,13 @@ void __fastcall cdvdfsv_rpc5h_0F_readchain(const cdvdfsv_rpc5h_packet *inbuf, in
 	g_cdvdfsv_chrdsdd.dest = (void *)inbuf->m_pkt_0F.m_eedest;
 	switch ( inbuf->m_pkt_0F.m_mode.datapattern )
 	{
-		case 1:
+		case SCECdSecS2328:
 			sector_size = 0x918;
 			break;
-		case 2:
+		case SCECdSecS2340:
 			sector_size = 0x924;
 			break;
-		case 0:
+		case SCECdSecS2048:
 		default:
 			sector_size = 0x800;
 			break;
@@ -1424,7 +1426,7 @@ void __fastcall cdvdfsv_rpc5h_0F_readchain(const cdvdfsv_rpc5h_packet *inbuf, in
 		{
 			VERBOSE_PRINTF(1, "ReadChain EE  Memory addr= 0x%08x sector= %d\n", (unsigned int)(chain[i].lbn), (int)(chain[i].sectors));
 			// The following call to sceCdGetDiskType was inlined
-			re_result = cdvdfsv_chreadee(chain[i].lbn, chain[i].sectors, (char *)chain[i].buffer, &(inbuf->m_pkt_0F.m_mode), sceCdGetDiskType() == 0x14, sceCdSC(0xFFFFFFFC, &sc_fffffffc_tmp) == 0);
+			re_result = cdvdfsv_chreadee(chain[i].lbn, chain[i].sectors, (char *)chain[i].buffer, &(inbuf->m_pkt_0F.m_mode), sceCdGetDiskType() == SCECdPS2DVD, sceCdSC(0xFFFFFFFC, &sc_fffffffc_tmp) == 0);
 		}
 		if ( !re_result )
 		{
@@ -1465,7 +1467,7 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 	unsigned int lbn_1_end; // [sp+34h] [-1Ch]
 
 	trid1 = 0;
-	g_cdvdfsv_rderror = 254;
+	g_cdvdfsv_rderror = SCECdErREADCFR;
 	error_code_tmp = 0;
 	g_cdvdfsv_eereadfull_dma2.src = &g_cdvdfsv_readpos;
 	g_cdvdfsv_eereadfull_dma2.size = sizeof(g_cdvdfsv_readpos);
@@ -1473,11 +1475,11 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 	g_cdvdfsv_eereadfull_dma2.dest = (void *)inbuf->m_pkt_02.m_eedest;
 	switch ( inbuf->m_pkt_02.m_mode.datapattern )
 	{
-		case 1:
+		case SCECdSecS2368:
 			sector_size = 0x940;
 			break;
-		case 0:
-		case 2:
+		case SCECdSecS2352:
+		case SCECdSecS2448:
 		default:
 			sector_size = 0x930;
 			break;
@@ -1504,14 +1506,14 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 			if ( !cmd_error )
 				sceCdSC(0xFFFFFFFE, &g_cdvdfsv_rderror);
 			VERBOSE_PRINTF(1, "Read error code %x cmd error %d\n", error_code, cmd_error);
-			if ( error_code == 50 || error_code == 56 )
+			if ( error_code == SCECdErEOM || error_code == SCECdErSFRMTNG )
 				error_code_tmp = error_code;
 			else
 			{
 				buf_toalign = 0;
 			}
 		}
-		if ( error_code_tmp != 0 && error_code_tmp != 50 && error_code_tmp != 56 )
+		if ( error_code_tmp != 0 && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG )
 		{
 			for ( i = 0; i < buf_toalign; i += 1 )
 			{
@@ -1520,7 +1522,7 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 			buf_offs += buf_toalign;
 		}
 	}
-	if ( error_code_tmp != 0 && error_code_tmp != 50 && error_code_tmp != 56 )
+	if ( error_code_tmp != 0 && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG )
 	{
 		unsigned int sector_count_in_bytes; // $s5
 		unsigned int buf_aligned; // [sp+28h] [-28h]
@@ -1557,7 +1559,7 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 				if ( !cmd_error )
 					sceCdSC(0xFFFFFFFE, &g_cdvdfsv_rderror);
 				VERBOSE_PRINTF(1, "Read error code %x cmd error %d\n", error_code, cmd_error);
-				if ( error_code == 50 || error_code == 56 )
+				if ( error_code == SCECdErEOM || error_code == SCECdErSFRMTNG )
 				{
 					error_code_tmp = error_code;
 					break;
@@ -1588,7 +1590,7 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 			buf_offs += sector_count_in_bytes;
 		}
 	}
-	if ( (error_code_tmp != 0 && error_code_tmp != 50 && error_code_tmp != 56) && buf_sec_tmp )
+	if ( (error_code_tmp != 0 && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG) && buf_sec_tmp )
 	{
 		u32 sectors_3; // $s0
 		u32 lsn_3; // $s1
@@ -1605,7 +1607,7 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 			if ( !cmd_error )
 				sceCdSC(0xFFFFFFFE, &g_cdvdfsv_rderror);
 			VERBOSE_PRINTF(1, "Read error code %x cmd error %d\n", error_code, cmd_error);
-			if ( error_code == 50 || error_code == 56 )
+			if ( error_code == SCECdErEOM || error_code == SCECdErSFRMTNG )
 				error_code_tmp = error_code;
 			else
 				buf_sec_tmp = 0;
@@ -1695,9 +1697,9 @@ void __fastcall cdvdfsv_rpc5h_04_gettoc(const cdvdfsv_rpc5h_packet *inbuf, int b
 	// The following call to sceCdGetDiskType was inlined
 	switch ( sceCdGetDiskType() )
 	{
-		case 0x14:
-		case 0xFC:
-		case 0xFE:
+		case SCECdPS2DVD:
+		case SCECdDVDVR:
+		case SCECdDVDV:
 			outbuf->m_pkt_04.m_isdvd = 1;
 			break;
 		default:
@@ -1952,10 +1954,10 @@ int __cdecl cdvdfsv_rpc5h_0E_diskready()
 	// The following call to sceCdGetDiskType was inlined
 	switch ( sceCdGetDiskType() )
 	{
-		case 1:
-		case 2:
-		case 3:
-		case 4:
+		case SCECdDETCT:
+		case SCECdDETCTCD:
+		case SCECdDETCTDVDS:
+		case SCECdDETCTDVDD:
 			is_detecting = 1;
 			break;
 		default:
@@ -1987,7 +1989,7 @@ void *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 	{
 		case 1:
 			// The following call to sceCdGetDiskType was inlined
-			cdvdfsv_rpc5h_01_readee(buffer, length, &g_crr, (sceCdGetDiskType() ^ 0x14) == 0, sceCdSC(0xFFFFFFFC, &sc_fffffff6_in) == 0, 0);
+			cdvdfsv_rpc5h_01_readee(buffer, length, &g_crr, (sceCdGetDiskType() ^ SCECdPS2DVD) == 0, sceCdSC(0xFFFFFFFC, &sc_fffffff6_in) == 0, 0);
 			break;
 		case 2:
 			cdvdfsv_rpc5h_02_readcdda(buffer, length, &g_crr);
@@ -2046,7 +2048,7 @@ void *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 				buffer,
 				length,
 				&g_crr,
-				(sceCdGetDiskType() ^ 0x14) == 0,
+				(sceCdGetDiskType() ^ SCECdPS2DVD) == 0,
 				1,
 				g_cdvdfsv_cdvdman_internal_struct_ptr->m_no_dec_flag == 0);
 			break;
