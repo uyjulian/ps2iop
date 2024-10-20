@@ -251,24 +251,99 @@ typedef struct CDVDMAN_PATHTBL_
 typedef struct CDVDMAN_FILETBL_ENTRY_
 {
 	sceCdlFILE m_file_struct;
-	int m_file_properties;
+	int m_flags;
 } CDVDMAN_FILETBL_ENTRY_T;
 
-struct __attribute__((packed)) dirTocEntry
+typedef struct iso9660_desc_
 {
-	__int16 m_length;
-	u32 m_fileLBA;
-	u32 m_fileLBA_bigend;
-	u32 m_fileSize;
-	u32 m_fileSize_bigend;
-	u8 m_dateStamp[6];
-	u8 m_reserved1;
-	u8 m_fileProperties;
-	u8 m_reserved2[6];
-	u8 m_filenameLength;
-	char m_filename[128];
-};
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_type[1];
+	unsigned char m_id[5];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_version[1];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused1[1];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_system_id[32];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_id[32];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused2[8];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_space_size[8];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused3[32];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_set_size[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_sequence_number[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_logical_block_size[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_path_table_size[8];
+	unsigned char m_type_l_path_table[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_opt_type_l_path_table[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_type_m_path_table[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_opt_type_m_path_table[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_root_directory_record[34];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_set_id[128];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_publisher_id[128];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_preparer_id[128];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_application_id[128];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_copyright_file_id[37];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_abstract_file_id[37];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_bibliographic_file_id[37];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_creation_date[17];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_modification_date[17];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_expiration_date[17];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_effective_date[17];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_file_structure_version[1];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused4[1];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_application_data[512];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused5[653];
+} iso9660_desc_t;
 
+typedef struct iso9660_path_
+{
+	unsigned char m_name_len[2];
+	unsigned char m_extent[4];
+	unsigned char m_parent[2];
+	unsigned char m_name[];
+} iso9660_path_t;
+
+typedef struct iso9660_dirent_
+{
+	unsigned char m_length[1];
+	unsigned char m_ext_attr_length[1];
+	unsigned char m_extent[8];
+	unsigned char m_size[8];
+	unsigned char m_date[7];
+	unsigned char m_flags[1];
+	unsigned char m_file_unit_size[1];
+	unsigned char m_interleave[1];
+	unsigned char m_volume_sequence_number[4];
+	unsigned char m_name_len[1];
+	unsigned char m_name[];
+} iso9660_dirent_t;
 
 typedef struct cdvdman_internal_struct_
 {

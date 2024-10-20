@@ -649,7 +649,7 @@ void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTR
 		buf->ctime[i] = fp->m_file_struct.date[i];
 	}
 	buf->size = fp->m_file_struct.size;
-	buf->mode = (((fp->m_file_properties & 2) != 0) ? (FIO_S_IFDIR | FIO_S_IXUSR | FIO_S_IXGRP | FIO_S_IXOTH) : FIO_S_IFREG) | (FIO_S_IRUSR | FIO_S_IRGRP | FIO_S_IROTH);
+	buf->mode = (((fp->m_flags & 2) != 0) ? (FIO_S_IFDIR | FIO_S_IXUSR | FIO_S_IXGRP | FIO_S_IXOTH) : FIO_S_IFREG) | (FIO_S_IRUSR | FIO_S_IRGRP | FIO_S_IROTH);
 }
 
 //----- (004008F4) --------------------------------------------------------
@@ -2591,7 +2591,7 @@ int __cdecl CD_newmedia(int arg)
 {
 	unsigned int DiskType; // $s0
 	unsigned int i; // $a1
-	char *fs_rbuf_cur; // $s1
+	iso9660_path_t *path_cur; // $s1
 	int state; // [sp+18h] [-8h] BYREF
 	int ptsector; // [sp+1Ch] [-4h]
 
@@ -2640,7 +2640,7 @@ int __cdecl CD_newmedia(int arg)
 	g_cache_table = 0;
 	g_cache_path_size = 0;
 	CpuResumeIntr(state);
-	if ( strncmp(&g_cdvdman_fs_rbuf[1], "CD001", 5) )
+	if ( strncmp((char *)((iso9660_desc_t *)g_cdvdman_fs_rbuf)->m_id, "CD001", 5) )
 	{
 		VERBOSE_PRINTF(1, "CD_newmedia: Disc format error in cd_read(PVD)\n");
 		return 0;
@@ -2652,7 +2652,7 @@ int __cdecl CD_newmedia(int arg)
 		case 0x12:
 		case 0x13:
 			VERBOSE_PRINTF(1, "CD_newmedia: CD Read mode\n");
-			ptsector = *(_DWORD *)&g_cdvdman_fs_rbuf[140];
+			ptsector = *(_DWORD *)(((iso9660_desc_t *)g_cdvdman_fs_rbuf)->m_type_l_path_table);
 			break;
 		case 0x14:
 		case 0xFC:
@@ -2667,13 +2667,13 @@ int __cdecl CD_newmedia(int arg)
 		return 0;
 	}
 	VERBOSE_PRINTF(2, "CD_newmedia: sarching dir..\n");
-	for ( i = 0, fs_rbuf_cur = g_cdvdman_fs_rbuf; i < (sizeof(g_cdvdman_dirtbl)/sizeof(g_cdvdman_dirtbl[0])) && fs_rbuf_cur < &g_cdvdman_fs_rbuf[sizeof(g_cdvdman_fs_rbuf)] && *fs_rbuf_cur; i += 1, fs_rbuf_cur += (unsigned __int8)*fs_rbuf_cur + (*fs_rbuf_cur & 1) + 8 )
+	for ( i = 0, path_cur = (iso9660_path_t *)g_cdvdman_fs_rbuf; i < (sizeof(g_cdvdman_dirtbl)/sizeof(g_cdvdman_dirtbl[0])) && path_cur < (iso9660_path_t *)&g_cdvdman_fs_rbuf[sizeof(g_cdvdman_fs_rbuf)] && path_cur->m_name_len[0]; i += 1, path_cur = (iso9660_path_t *)(((char *)path_cur) + path_cur->m_name_len[0] + (path_cur->m_name_len[0] & 1) + sizeof(iso9660_path_t)) )
 	{
-		g_cdvdman_dirtbl[i].m_extent = *(_DWORD *)(fs_rbuf_cur + 2);
+		memcpy(&g_cdvdman_dirtbl[i].m_extent, path_cur->m_extent, sizeof(path_cur->m_extent));
 		g_cdvdman_dirtbl[i].m_number = i;
-		g_cdvdman_dirtbl[i].m_parent = (unsigned __int8)fs_rbuf_cur[6];
-		memcpy(g_cdvdman_dirtbl[i].m_name, fs_rbuf_cur + 8, (unsigned __int8)*fs_rbuf_cur);
-		g_cdvdman_dirtbl[i].m_name[(unsigned __int8)*fs_rbuf_cur] = 0;
+		memcpy(&g_cdvdman_dirtbl[i].m_parent, path_cur->m_parent, sizeof(path_cur->m_parent));
+		memcpy(g_cdvdman_dirtbl[i].m_name, path_cur->m_name, path_cur->m_name_len[0]);
+		g_cdvdman_dirtbl[i].m_name[path_cur->m_name_len[0]] = 0;
 		VERBOSE_PRINTF(2, "\t%08x,%04x,%04x,%s\n", g_cdvdman_dirtbl[i].m_extent, g_cdvdman_dirtbl[i].m_number, g_cdvdman_dirtbl[i].m_parent, g_cdvdman_dirtbl[i].m_name);
 	}
 	if ( i < (sizeof(g_cdvdman_dirtbl)/sizeof(g_cdvdman_dirtbl[0])) )
@@ -2705,7 +2705,7 @@ int __fastcall cdvdman_finddir(int target_parent, const char *target_name)
 //----- (0040520C) --------------------------------------------------------
 int __fastcall CD_cachefile(int dsec, int layer)
 {
-	struct dirTocEntry *toc1; // $s0
+	iso9660_dirent_t *dirent_cur; // $s0
 	unsigned int i; // $s2
 
 	if ( dsec == g_cdvdman_fs_cdsec )
@@ -2719,25 +2719,25 @@ int __fastcall CD_cachefile(int dsec, int layer)
 		return 0;
 	}
 	VERBOSE_PRINTF(2, "CD_cachefile: searching...\n");
-	for ( i = 0, toc1 = (struct dirTocEntry *)g_cdvdman_fs_rbuf; i < (sizeof(g_cdvdman_filetbl)/sizeof(g_cdvdman_filetbl[0])) && toc1 < (struct dirTocEntry *)&g_cdvdman_fs_rbuf[sizeof(g_cdvdman_fs_rbuf)]; i += 1, toc1 = (struct dirTocEntry *)((char *)toc1 + LOBYTE(toc1->m_length)) )
+	for ( i = 0, dirent_cur = (iso9660_dirent_t *)g_cdvdman_fs_rbuf; i < (sizeof(g_cdvdman_filetbl)/sizeof(g_cdvdman_filetbl[0])) && dirent_cur < (iso9660_dirent_t *)&g_cdvdman_fs_rbuf[sizeof(g_cdvdman_fs_rbuf)]; i += 1, dirent_cur = (iso9660_dirent_t *)((char *)dirent_cur + dirent_cur->m_length[0]) )
 	{
 		int file_year; // $s1
 
-		if ( !LOBYTE(toc1->m_length) )
+		if ( !dirent_cur->m_length[0] )
 		{
 			break;
 		}
-		g_cdvdman_filetbl[i].m_file_struct.lsn = toc1->m_fileLBA;
-		g_cdvdman_filetbl[i].m_file_struct.size = toc1->m_fileSize;
-		file_year = toc1->m_dateStamp[0] + 1900;
+		memcpy(&g_cdvdman_filetbl[i].m_file_struct.lsn, dirent_cur->m_extent, sizeof(g_cdvdman_filetbl[i].m_file_struct.lsn));
+		memcpy(&g_cdvdman_filetbl[i].m_file_struct.size, dirent_cur->m_size, sizeof(g_cdvdman_filetbl[i].m_file_struct.size));
+		file_year = dirent_cur->m_date[0] + 1900;
 		g_cdvdman_filetbl[i].m_file_struct.date[7] = BYTE1(file_year);
 		g_cdvdman_filetbl[i].m_file_struct.date[6] = file_year;
-		g_cdvdman_filetbl[i].m_file_struct.date[5] = toc1->m_dateStamp[1];
-		g_cdvdman_filetbl[i].m_file_struct.date[4] = toc1->m_dateStamp[2];
-		g_cdvdman_filetbl[i].m_file_struct.date[3] = toc1->m_dateStamp[3];
-		g_cdvdman_filetbl[i].m_file_struct.date[2] = toc1->m_dateStamp[4];
-		g_cdvdman_filetbl[i].m_file_struct.date[1] = toc1->m_dateStamp[5];
-		g_cdvdman_filetbl[i].m_file_properties = toc1->m_fileProperties;
+		g_cdvdman_filetbl[i].m_file_struct.date[5] = dirent_cur->m_date[1];
+		g_cdvdman_filetbl[i].m_file_struct.date[4] = dirent_cur->m_date[2];
+		g_cdvdman_filetbl[i].m_file_struct.date[3] = dirent_cur->m_date[3];
+		g_cdvdman_filetbl[i].m_file_struct.date[2] = dirent_cur->m_date[4];
+		g_cdvdman_filetbl[i].m_file_struct.date[1] = dirent_cur->m_date[5];
+		g_cdvdman_filetbl[i].m_flags = dirent_cur->m_flags[0];
 		switch ( i )
 		{
 			case 0:
@@ -2747,11 +2747,11 @@ int __fastcall CD_cachefile(int dsec, int layer)
 				strcpy(g_cdvdman_filetbl[i].m_file_struct.name, "..");
 				break;
 			default:
-				memcpy(g_cdvdman_filetbl[i].m_file_struct.name, toc1->m_filename, toc1->m_filenameLength);
-				g_cdvdman_filetbl[i].m_file_struct.name[toc1->m_filenameLength] = 0;
+				memcpy(g_cdvdman_filetbl[i].m_file_struct.name, dirent_cur->m_name, dirent_cur->m_name_len[0]);
+				g_cdvdman_filetbl[i].m_file_struct.name[dirent_cur->m_name_len[0]] = 0;
 				break;
 		}
-		VERBOSE_PRINTF(2, "\t lsn %d size %d name:%d:%s %d/%d/%d %d:%d:%d\n", (int)(g_cdvdman_filetbl[i].m_file_struct.lsn), (int)(g_cdvdman_filetbl[i].m_file_struct.size), toc1->m_filenameLength, g_cdvdman_filetbl[i].m_file_struct.name, file_year, g_cdvdman_filetbl[i].m_file_struct.date[5], g_cdvdman_filetbl[i].m_file_struct.date[4], g_cdvdman_filetbl[i].m_file_struct.date[3], g_cdvdman_filetbl[i].m_file_struct.date[2], g_cdvdman_filetbl[i].m_file_struct.date[1]);
+		VERBOSE_PRINTF(2, "\t lsn %d size %d name:%d:%s %d/%d/%d %d:%d:%d\n", (int)(g_cdvdman_filetbl[i].m_file_struct.lsn), (int)(g_cdvdman_filetbl[i].m_file_struct.size), dirent_cur->m_name_len[0], g_cdvdman_filetbl[i].m_file_struct.name, file_year, g_cdvdman_filetbl[i].m_file_struct.date[5], g_cdvdman_filetbl[i].m_file_struct.date[4], g_cdvdman_filetbl[i].m_file_struct.date[3], g_cdvdman_filetbl[i].m_file_struct.date[2], g_cdvdman_filetbl[i].m_file_struct.date[1]);
 	}
 	g_cdvdman_fs_cdsec = dsec;
 	if ( i < (sizeof(g_cdvdman_filetbl)/sizeof(g_cdvdman_filetbl[0])) )
