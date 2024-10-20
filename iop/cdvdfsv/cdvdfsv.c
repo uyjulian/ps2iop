@@ -714,7 +714,7 @@ int __fastcall readproc2(
 				return 0;
 			}
 			sceCdSync(3);
-			--g_cdvdfsv_r2retry;
+			g_cdvdfsv_r2retry -= 1;
 		}
 		for ( i = 0; (int)i < nsec_div_cdvdfsv_sectors; i += 1 )
 		{
@@ -910,7 +910,7 @@ int __fastcall readproc2(
 		}
 		if ( !g_cdvdfsv_r2retry )
 		{
-			++g_cdvdfsv_r2count;
+			g_cdvdfsv_r2count += 1;
 			VERBOSE_PRINTF(1, "Read_CD/DVD-ROM Error Recover Start\n");
 			g_cdvdfsv_r2retry = 3;
 		}
@@ -981,7 +981,7 @@ int __fastcall readproc1(
 			break;
 		if ( !g_cdvdfsv_sid_err_recover_cnt )
 		{
-			++g_cdvdfsv_err_count;
+			g_cdvdfsv_err_count += 1;
 			VERBOSE_PRINTF(1, "Read_CD/DVD-ROM Sector_ID Error Recover Start\n");
 			g_cdvdfsv_sid_err_recover_cnt = 3;
 		}
@@ -2235,7 +2235,7 @@ void __fastcall cdvdfsv_unused_xorfun(unsigned int *a1, int a2)
 			}
 			v3 >>= 8;
 		}
-		++a1;
+		a1 += 1;
 	}
 }
 

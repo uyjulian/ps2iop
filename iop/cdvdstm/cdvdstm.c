@@ -1535,7 +1535,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 			{
 				sceCdSC(0, &g_cdvdstm_last_error_for_ee);
 			}
-			++g_cdvdstm_retrycnt_ee_cdda;
+			g_cdvdstm_retrycnt_ee_cdda += 1;
 		}
 	}
 	else

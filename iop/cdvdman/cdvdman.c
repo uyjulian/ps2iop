@@ -738,7 +738,7 @@ int __cdecl cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
 	}
 	if ( devready_tmp )
 	{
-		++filedata->m_read_pos;
+		filedata->m_read_pos += 1;
 		devready_tmp = strlen(fileinfo.m_file_struct.name);
 	}
 	strncpy(buf->name, fileinfo.m_file_struct.name, sizeof(buf->name));
@@ -1420,7 +1420,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 			nbytes_segment = 0x4000;
 			if ( buf && ((filedata->m_read_pos + i) & 0x7FF) != 0 && g_cdvdman_iocache )
 			{
-				++lbn;
+				lbn += 1;
 				pos_sub_2048 = 0x800 - pos_extra;
 				cdvdman_memcpy(
 					addr + i,
@@ -2866,7 +2866,7 @@ int __cdecl disc_read(int size, int loc, void *buffer, int layer)
 				{
 					cachetblo1 = cacheblo2;
 				}
-				++cacheblo2;
+				cacheblo2 += 1;
 			}
 			cache_path_sz = g_cdvdman_pathtbl[cachetblo1].m_cache_path_sz;
 			g_cache_table = cachetblo1;
@@ -3054,7 +3054,7 @@ void __fastcall unused_40BA90(unsigned int *a1, int a2)
 			}
 			v3 >>= 8;
 		}
-		++a1;
+		a1 += 1;
 	}
 }
 
@@ -5375,7 +5375,7 @@ int __cdecl read_cdvd_cb(cdvdman_internal_struct_t *common)
 	}
 	else
 	{
-		++common->m_sync_error;
+		common->m_sync_error += 1;
 	}
 	return 1;
 }
@@ -5546,7 +5546,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 			if ( !g_cdvdman_rtindex )
 			{
 				g_cdvdman_rtindex = 3;
-				++g_cdvdman_retries;
+				g_cdvdman_retries += 1;
 			}
 			g_cdvdman_istruct.m_sync_error = 0;
 			lsn_tmp = g_cdvdman_istruct.m_cdvdman_lsn + g_cdvdman_istruct.m_cdvdman_csec;
