@@ -2663,7 +2663,7 @@ int __cdecl CD_newmedia(int arg)
 		return 0;
 	}
 	VERBOSE_PRINTF(2, "CD_newmedia: sarching dir..\n");
-	for ( i = 0, fs_rbuf_cur = g_cdvdman_fs_rbuf; i < (sizeof(g_cdvdman_dirtbl)/sizeof(g_cdvdman_dirtbl[0])) && fs_rbuf_cur < &g_cdvdman_fs_rbuf[0x800] && *fs_rbuf_cur; i += 1, fs_rbuf_cur += (unsigned __int8)*fs_rbuf_cur + (*fs_rbuf_cur & 1) + 8 )
+	for ( i = 0, fs_rbuf_cur = g_cdvdman_fs_rbuf; i < (sizeof(g_cdvdman_dirtbl)/sizeof(g_cdvdman_dirtbl[0])) && fs_rbuf_cur < &g_cdvdman_fs_rbuf[sizeof(g_cdvdman_fs_rbuf)] && *fs_rbuf_cur; i += 1, fs_rbuf_cur += (unsigned __int8)*fs_rbuf_cur + (*fs_rbuf_cur & 1) + 8 )
 	{
 		g_cdvdman_dirtbl[i].m_extent = *(_DWORD *)(fs_rbuf_cur + 2);
 		g_cdvdman_dirtbl[i].m_number = i;
@@ -2724,7 +2724,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 		return 0;
 	}
 	VERBOSE_PRINTF(2, "CD_cachefile: searching...\n");
-	for ( i = 0, toc1 = (struct dirTocEntry *)g_cdvdman_fs_rbuf; i < (sizeof(g_cdvdman_filetbl)/sizeof(g_cdvdman_filetbl[0])) && toc1 < (struct dirTocEntry *)&g_cdvdman_fs_rbuf[0x800]; i += 1, toc1 = (struct dirTocEntry *)((char *)toc1 + LOBYTE(toc1->m_length)) )
+	for ( i = 0, toc1 = (struct dirTocEntry *)g_cdvdman_fs_rbuf; i < (sizeof(g_cdvdman_filetbl)/sizeof(g_cdvdman_filetbl[0])) && toc1 < (struct dirTocEntry *)&g_cdvdman_fs_rbuf[sizeof(g_cdvdman_fs_rbuf)]; i += 1, toc1 = (struct dirTocEntry *)((char *)toc1 + LOBYTE(toc1->m_length)) )
 	{
 		int file_year; // $s1
 
@@ -2956,7 +2956,7 @@ int __cdecl path_tbl_init(u32 blocks, char *fname, int action)
 			}
 			for ( i = 0; i < blocks; i += 1 )
 			{
-				v = write(g_cache_path_fd, g_cdvdman_fs_rbuf, 0x800);
+				v = write(g_cache_path_fd, g_cdvdman_fs_rbuf, sizeof(g_cdvdman_fs_rbuf));
 				if ( v < 0 )
 				{
 					break;
@@ -4836,7 +4836,7 @@ int __cdecl cdvdman_ncmd_sender_06()
 {
 	int i; // $s0
 	DMA3PARAM b18; // [sp+18h] [-28h] BYREF
-	char ndata[16]; // [sp+30h] [-10h] BYREF
+	char ndata[11]; // [sp+30h] [-10h] BYREF
 
 	// The following call to sceCdGetDiskType was inlined
 	if ( !sceCdGetDiskType() )
@@ -4864,7 +4864,7 @@ int __cdecl cdvdman_ncmd_sender_06()
 		b18.m_dma3_msectors = 0;
 		b18.m_dma3_callback = 0;
 		b18.m_dma3_maddress = g_cdvdman_ptoc;
-		if ( cdvdman_send_ncmd(6, ndata, 11, 5, &b18, 1) < 0 )
+		if ( cdvdman_send_ncmd(6, ndata, sizeof(ndata), 5, &b18, 1) < 0 )
 		{
 			return 0;
 		}
@@ -4878,7 +4878,7 @@ int __cdecl cdvdman_ncmd_sender_06()
 int sceCdStandby(void)
 {
 	DMA3PARAM b18; // [sp+18h] [-28h] BYREF
-	char ndata[16]; // [sp+30h] [-10h] BYREF
+	char ndata[11]; // [sp+30h] [-10h] BYREF
 
 	// The following call to sceCdGetDiskType was inlined
 	switch ( sceCdGetDiskType() )
@@ -4906,7 +4906,7 @@ int sceCdStandby(void)
 			b18.m_dma3_msectors = 0;
 			b18.m_dma3_callback = 0;
 			b18.m_dma3_maddress = g_cdvdman_ptoc;
-			return cdvdman_send_ncmd(6, ndata, 11, 5, &b18, 1) >= 0;
+			return cdvdman_send_ncmd(6, ndata, sizeof(ndata), 5, &b18, 1) >= 0;
 		default:
 			return cdvdman_send_ncmd(2, 0, 0, 5, 0, 1) >= 0;
 	}
@@ -4928,10 +4928,10 @@ int sceCdPause(void)
 //----- (0040A048) --------------------------------------------------------
 int __cdecl cdvdman_ncmd_sender_0B()
 {
-	char ndata[16]; // [sp+18h] [-10h] BYREF
+	char ndata; // [sp+18h] [-10h] BYREF
 
-	ndata[0] = 1;
-	return cdvdman_send_ncmd(11, ndata, 1, 0, 0, 1) >= 0;
+	ndata = 1;
+	return cdvdman_send_ncmd(11, &ndata, sizeof(ndata), 0, 0, 1) >= 0;
 }
 // 40A048: using guessed type char ndata[16];
 
@@ -4951,7 +4951,7 @@ int __cdecl cdvdman_readtoc(u8 *toc, int param, int func)
 	int errcond; // $s0
 	DMA3PARAM b18; // [sp+18h] [-28h] BYREF
 	iop_sys_clock_t clk; // [sp+30h] [-10h] BYREF
-	char ndata[8]; // [sp+38h] [-8h] BYREF
+	char ndata; // [sp+38h] [-8h] BYREF
 
 	// The following call to sceCdGetDiskType was inlined
 	switch ( sceCdGetDiskType() )
@@ -4966,7 +4966,7 @@ int __cdecl cdvdman_readtoc(u8 *toc, int param, int func)
 			b18.m_dma3_msectors = 0;
 			b18.m_dma3_csectors = 0;
 			b18.m_dma3_callback = 0;
-			ndata[0] = param;
+			ndata = param;
 			break;
 		case 0x10:
 		case 0x11:
@@ -4979,14 +4979,14 @@ int __cdecl cdvdman_readtoc(u8 *toc, int param, int func)
 			b18.m_dma3_msectors = 0;
 			b18.m_dma3_csectors = 0;
 			b18.m_dma3_callback = 0;
-			ndata[0] = 0;
+			ndata = 0;
 			break;
 		case 0xFD:
 			break;
 		default:
 			return 0;
 	}
-	if ( cdvdman_send_ncmd(9, ndata, 1, func, &b18, 1) < 0 )
+	if ( cdvdman_send_ncmd(9, &ndata, sizeof(ndata), func, &b18, 1) < 0 )
 	{
 		return 0;
 	}
@@ -5164,7 +5164,7 @@ int __cdecl sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, const sceCdRMode *mode,
 				b18.m_cdvdreg_howto = 128;
 				break;
 		}
-		if ( cdvdman_send_ncmd(ncmd, ndata, 11, 1, &b18, 0) >= 0 )
+		if ( cdvdman_send_ncmd(ncmd, ndata, sizeof(ndata), 1, &b18, 0) >= 0 )
 		{
 			return 1;
 		}
@@ -5175,7 +5175,7 @@ int __cdecl sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, const sceCdRMode *mode,
 		b18.m_dma3_blkcount *= 43;
 		b18.m_cdvdreg_howto = 140;
 		ndata[10] = 0;
-		if ( cdvdman_send_ncmd(ncmd, ndata, 11, 14, &b18, 0) >= 0 )
+		if ( cdvdman_send_ncmd(ncmd, ndata, sizeof(ndata), 14, &b18, 0) >= 0 )
 		{
 			return 1;
 		}
@@ -5258,7 +5258,7 @@ int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int
 	ndata[10] = mode->datapattern;
 	b18.m_dma3_maddress = buffer;
 	VERBOSE_KPRINTF(1, "Read Command call\n");
-	if ( cdvdman_send_ncmd(6, ndata, 11, 1, &b18, 0) < 0 )
+	if ( cdvdman_send_ncmd(6, ndata, sizeof(ndata), 1, &b18, 0) < 0 )
 	{
 		vSetEventFlag(g_ncmd_evid, 1);
 		return 0;
@@ -5723,7 +5723,7 @@ int __cdecl cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *
 	ndata[9] = cdvdman_speedctl(mode->spindlctrl, 0, lsn + sectors);
 	b18.m_dma3_maddress = buf;
 	ndata[10] = mode->datapattern;
-	return cdvdman_send_ncmd((!flag) ? 7 : 14, ndata, 11, (!flag) ? 2 : 12, &b18, 1) >= 0;
+	return cdvdman_send_ncmd((!flag) ? 7 : 14, ndata, sizeof(ndata), (!flag) ? 2 : 12, &b18, 1) >= 0;
 }
 // BF402000: using guessed type dev5_regs_t dev5_regs;
 
@@ -5767,7 +5767,7 @@ int __cdecl sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5,
 	b18.m_dma3_callback = (int (__cdecl *)(void))cb;
 	g_cdvdman_istruct.m_read_callback = cb;
 	b18.m_dma3_maddress = buf;
-	if ( cdvdman_send_ncmd(8, ndata, 11, 14, &b18, 0) < 0 )
+	if ( cdvdman_send_ncmd(8, ndata, sizeof(ndata), 14, &b18, 0) < 0 )
 	{
 		vSetEventFlag(g_ncmd_evid, 1);
 		return 0;
@@ -5800,7 +5800,7 @@ int __cdecl sceCdRI(u8 *buffer, u32 *result)
 	int command; // $v0
 	u8 rdata[9]; // [sp+18h] [-10h] BYREF
 
-	command = set_prev_command(18, 0, 0, (char *)rdata, 9, 1);
+	command = set_prev_command(18, 0, 0, (char *)rdata, sizeof(rdata), 1);
 	*result = rdata[0];
 	*(_DWORD *)buffer = *(_DWORD *)&rdata[1];
 	*((_DWORD *)buffer + 1) = *(_DWORD *)&rdata[5];
@@ -5813,7 +5813,7 @@ int __cdecl sceCdRM(char *buffer, u32 *status)
 	int command; // $v0
 	int cmd_tmp2; // $v0
 	u8 rdata[9]; // [sp+18h] [-20h] BYREF
-	char wdata[8]; // [sp+28h] [-10h] BYREF
+	char wdata; // [sp+28h] [-10h] BYREF
 	u32 efbits; // [sp+30h] [-8h] BYREF
 
 	*status = 0;
@@ -5829,14 +5829,14 @@ int __cdecl sceCdRM(char *buffer, u32 *status)
 		return 0;
 	}
 	DelayThread(2000);
-	wdata[0] = 0;
-	command = set_prev_command(0x17, wdata, 1, (char *)rdata, 9, 0);
+	wdata = 0;
+	command = set_prev_command(0x17, &wdata, sizeof(wdata), (char *)rdata, sizeof(rdata), 0);
 	*status = rdata[0];
 	*(_DWORD *)buffer = *(_DWORD *)&rdata[1];
 	*((_DWORD *)buffer + 1) = *(_DWORD *)&rdata[5];
 	DelayThread(2000);
-	wdata[0] = 8;
-	cmd_tmp2 = set_prev_command(0x17, wdata, 1, (char *)rdata, 9, 0);
+	wdata = 8;
+	cmd_tmp2 = set_prev_command(0x17, &wdata, sizeof(wdata), (char *)rdata, sizeof(rdata), 0);
 	*status |= rdata[0];
 	*((_DWORD *)buffer + 2) = *(_DWORD *)&rdata[1];
 	*((_DWORD *)buffer + 3) = *(_DWORD *)&rdata[5];
@@ -5849,13 +5849,13 @@ int __cdecl sceCdGetMVersion(u8 *buffer, u32 *status)
 {
 	int command; // $v0
 	char rdata[4]; // [sp+18h] [-10h] BYREF
-	char wdata[8]; // [sp+20h] [-8h] BYREF
+	char wdata[1]; // [sp+20h] [-8h] BYREF
 
 	wdata[0] = 0;
-	command = set_prev_command(3, wdata, 1, rdata, 4, 1);
+	command = set_prev_command(3, wdata, sizeof(wdata), rdata, sizeof(rdata), 1);
 	*status = rdata[0] & 0x80;
 	VERBOSE_KPRINTF(1, "MV 0x%02x,0x%02x,0x%02x,0x%02x\n", (unsigned __int8)rdata[0], (unsigned __int8)rdata[1], (unsigned __int8)rdata[2], (unsigned __int8)rdata[3]);
-	rdata[0] &= ~0x80u;
+	rdata[0] &= ~0x80;
 	*(_DWORD *)buffer = *(_DWORD *)rdata;
 	return command;
 }
@@ -5865,8 +5865,8 @@ int __cdecl sceCdGetMVersion(u8 *buffer, u32 *status)
 int __fastcall cdvdman_scmd_sender_03_48(u8 *buf, u32 *status)
 {
 	int retval; // $v0
-	char rdata[16]; // [sp+18h] [-18h] BYREF
-	char wdata[8]; // [sp+28h] [-8h] BYREF
+	char rdata[2]; // [sp+18h] [-18h] BYREF
+	char wdata[2]; // [sp+28h] [-8h] BYREF
 
 	if ( g_cdvdman_minver_50000 )
 	{
@@ -5874,7 +5874,7 @@ int __fastcall cdvdman_scmd_sender_03_48(u8 *buf, u32 *status)
 	}
 	wdata[0] = 48;
 	wdata[1] = 2;
-	retval = set_prev_command(3, wdata, 2, rdata, 2, 1);
+	retval = set_prev_command(3, wdata, sizeof(wdata), rdata, sizeof(rdata), 1);
 	*status = (unsigned __int8)rdata[0];
 	*buf = rdata[1];
 	return retval;
@@ -5941,13 +5941,13 @@ int __cdecl sceCdPowerOff(u32 *result)
 //----- (0040C290) --------------------------------------------------------
 int __cdecl sceCdCtrlADout(int mode, u32 *status)
 {
-	char wdata[4]; // [sp+20h] [+8h] BYREF
+	char wdata; // [sp+20h] [+8h] BYREF
 
-	*(_DWORD *)wdata = mode;
+	wdata = mode;
 	*status = 0;
 	DelayThread(2000);
-	VERBOSE_KPRINTF(1, "Audio Digital Out: Set param %d\n", *(_DWORD *)wdata);
-	return set_prev_command(20, wdata, 1, (char *)status, 1, 1);
+	VERBOSE_KPRINTF(1, "Audio Digital Out: Set param %d\n", wdata);
+	return set_prev_command(20, &wdata, sizeof(wdata), (char *)status, 1, 1);
 }
 
 //----- (0040C308) --------------------------------------------------------
@@ -5991,7 +5991,7 @@ int __cdecl sceCdRC(sceCdCLOCK *clock)
 int __cdecl sceCdTrayReq(int param, u32 *traychk)
 {
 	char wdata; // [sp+18h] [-8h] BYREF
-	char rdata[7]; // [sp+19h] [-7h] BYREF
+	char rdata; // [sp+19h] [-7h] BYREF
 
 	if ( param == 2 )
 	{
@@ -6005,7 +6005,7 @@ int __cdecl sceCdTrayReq(int param, u32 *traychk)
 	}
 	wdata = param;
 	g_cdvdman_iocache = 0;
-	if ( set_prev_command(6, &wdata, 1, rdata, 1, 1) != 0 && !rdata[0] )
+	if ( set_prev_command(6, &wdata, sizeof(wdata), &rdata, sizeof(rdata), 1) != 0 && !rdata )
 	{
 		vDelayThread(11000);
 		return 1;
@@ -6019,7 +6019,7 @@ int __cdecl sceCdTrayReq(int param, u32 *traychk)
 int __fastcall cdvdman_scmd_sender_3B(int arg1)
 {
 	char wdata; // [sp+18h] [-8h] BYREF
-	char rdata[7]; // [sp+19h] [-7h] BYREF
+	char rdata; // [sp+19h] [-7h] BYREF
 
 	if ( g_cdvdman_minver_x_model_15 && arg1 == 1 )
 	{
@@ -6027,7 +6027,7 @@ int __fastcall cdvdman_scmd_sender_3B(int arg1)
 	}
 	wdata = arg1;
 	g_cdvdman_iocache = 0;
-	if ( set_prev_command(59, &wdata, 1, rdata, 1, 1) != 0 && !rdata[0] )
+	if ( set_prev_command(59, &wdata, sizeof(wdata), &rdata, sizeof(rdata), 1) != 0 && !rdata )
 	{
 		vDelayThread(11000);
 		return 1;
@@ -6172,7 +6172,7 @@ int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 	ndata[2] = 0;
 	ndata[1] = 0;
 	ndata[0] = 0;
-	if ( cdvdman_send_ncmd(12, ndata, 7, 0, 0, 1) < 0 )
+	if ( cdvdman_send_ncmd(12, ndata, sizeof(ndata), 0, 0, 1) < 0 )
 	{
 		*status = 253;
 		CpuResumeIntr(state);
@@ -6202,7 +6202,7 @@ int __cdecl cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3)
 	ndata[0] = arg1;
 	ndata[2] = arg2 >> 8 != 0;
 	*(_DWORD *)&ndata[3] = arg1 ? 0 : arg3;
-	return cdvdman_send_ncmd(12, ndata, 7, 0, 0, 1) >= 0;
+	return cdvdman_send_ncmd(12, ndata, sizeof(ndata), 0, 0, 1) >= 0;
 }
 
 //----- (0040CB64) --------------------------------------------------------

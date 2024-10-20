@@ -673,7 +673,7 @@ int __fastcall readproc2(
 	{
 		while ( 1 )
 		{
-			csec = ( nsec <= 0x10 ) ? nsec : 0x10;
+			csec = ( nsec <= (sizeof(g_cdvdfsv_multi_dmat)/sizeof(g_cdvdfsv_multi_dmat[0])) ) ? nsec : (sizeof(g_cdvdfsv_multi_dmat)/sizeof(g_cdvdfsv_multi_dmat[0]));
 			nsec_div_cdvdfsv_sectors = (nsec >> 4) + (( (nsec & 0xF) != 0 ) ? 1 : 0);
 			retry_flag2 = 0;
 			ee_addr_tmp = ee_addr;
@@ -865,7 +865,7 @@ int __fastcall readproc2(
 			else
 			{
 				csec_comm = csec_comm + csec;
-				csec = ( (unsigned int)csec > nsec - (unsigned int)csec_comm ) ? (nsec - (unsigned int)csec_comm) : 0x10;
+				csec = ( (unsigned int)csec > nsec - (unsigned int)csec_comm ) ? (nsec - (unsigned int)csec_comm) : (sizeof(g_cdvdfsv_multi_dmat)/sizeof(g_cdvdfsv_multi_dmat[0]));
 				ClearEventFlag(g_cdvdfsv_ef, ~0x20);
 				dmac_ch_set_chcr(3, 0);
 				dmac_ch_get_chcr(3);
