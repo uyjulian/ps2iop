@@ -2707,21 +2707,12 @@ int __fastcall CD_cachefile(int dsec, int layer)
 {
 	struct dirTocEntry *toc1; // $s0
 	unsigned int i; // $s2
-	u32 loc; // [sp+30h] [-18h]
 
 	if ( dsec == g_cdvdman_fs_cdsec )
 	{
 		return 1;
 	}
-	if ( layer )                                  // This actually accesses g_cdvdman_dirtbl
-	{
-		loc = g_cdvdman_fs_base2 + *(&g_cdvdman_filetbl[63].m_file_struct.lsn + 11 * dsec);
-	}
-	else
-	{
-		loc = *(&g_cdvdman_filetbl[63].m_file_struct.lsn + 11 * dsec);
-	}
-	if ( disc_read(1, loc, g_cdvdman_fs_rbuf, layer) != 1 )
+	if ( disc_read(1, g_cdvdman_dirtbl[dsec - 1].m_extent + (layer ? g_cdvdman_fs_base2 : 0), g_cdvdman_fs_rbuf, layer) != 1 )
 	{
 		VERBOSE_PRINTF(1, "CD_cachefile: dir not found\n");
 		g_cdvdman_fs_cdsec = 0;
