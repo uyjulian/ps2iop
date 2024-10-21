@@ -19,7 +19,7 @@ int sceCdChangeThreadPriority(int priority);
 void *cbrpc_rpc1_cdinit(int fno, void *buffer, int length);
 void cdvdfsv_rpc3_16_break(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
 void *cbrpc_rpc4_fscall(int fno, void *buffer, int length);
-int alarm_cb(void *a1);
+int read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock);
 void cdvdfsv_rpc5_0D_iopmread(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
 u8 cdvdfsv_syncdec(int flag, int xorkey, int arg2, u8 data);
 int cdvdfsv_cb_read();
@@ -87,7 +87,7 @@ SifDmaTransfer_t g_cdvdfsv_chrdsdd;
 SifDmaTransfer_t g_cdvdfsv_eereadfull_dma1;
 SifDmaTransfer_t g_cdvdfsv_eereadfull_dma2;
 SifDmaTransfer_t g_cdvdfsv_rtocsdd;
-iop_sys_clock_t g_cdvdfsv_read_to;
+iop_sys_clock_t g_cdvdfsv_read_timeout;
 int g_cdvdman_intr_efid;
 int g_scmd_evid;
 int g_cdvdfsv_thids[4];
@@ -385,13 +385,13 @@ void *cbrpc_rpc4_fscall(int fno, void *buffer, int length)
 	return (void *)&g_cdvdfsv_srchres;
 }
 
-int alarm_cb(void *a1)
+int read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 {
-	unsigned int read_to;
+	int read_timeout;
 
-	read_to = *(u32 *)a1 / 0x9000;
-	KPRINTF("Read Time Out %d(msec)\n", read_to);
-	sceCdSC(0xFFFFFFEE, (int *)&read_to);
+	read_timeout = sys_clock->lo / 0x9000;
+	KPRINTF("Read Time Out %d(msec)\n", read_timeout);
+	sceCdSC(0xFFFFFFEE, &read_timeout);
 	return sceCdBreak() == 0;
 }
 
@@ -407,8 +407,8 @@ void cdvdfsv_rpc5_0D_iopmread(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, 
 	(void)outbuf;
 
 	g_cdvdfsv_rderror = SCECdErREADCFR;
-	g_cdvdfsv_read_to.hi = 0;
-	g_cdvdfsv_read_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
+	g_cdvdfsv_read_timeout.hi = 0;
+	g_cdvdfsv_read_timeout.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
 	g_cdvdfsv_iomrsdd.src = &g_cdvdfsv_readpos;
 	g_cdvdfsv_iomrsdd.size = sizeof(g_cdvdfsv_readpos);
 	g_cdvdfsv_iomrsdd.attr = 0;
@@ -548,8 +548,8 @@ int readproc2(
 	error_code_tmp = 0;
 	sector_sizes[0] = 0x924;
 	sector_sizes[1] = 0x810;
-	g_cdvdfsv_read_to.hi = 0;
-	g_cdvdfsv_read_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
+	g_cdvdfsv_read_timeout.hi = 0;
+	g_cdvdfsv_read_timeout.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
 	g_cdvdfsv_rderror = SCECdErREADCF;
 	g_cdvdfsv_r2retry = 0;
 	g_cdvdfsv_r2count = 0;
@@ -591,7 +591,7 @@ int readproc2(
 				CpuResumeIntr(state);
 				if ( read_res_tmp )
 				{
-					SetAlarm(&g_cdvdfsv_read_to, (unsigned int (*)(void *))alarm_cb, &g_cdvdfsv_read_to);
+					SetAlarm(&g_cdvdfsv_read_timeout, (unsigned int (*)(void *))read_timeout_alarm_cb, &g_cdvdfsv_read_timeout);
 					csec_comm = 0;
 					retry_flag1 = 0;
 					break;
@@ -779,7 +779,7 @@ int readproc2(
 			CpuResumeIntr(state);
 		}
 		sceCdSync(5);
-		CancelAlarm((unsigned int (*)(void *))alarm_cb, &g_cdvdfsv_read_to);
+		CancelAlarm((unsigned int (*)(void *))read_timeout_alarm_cb, &g_cdvdfsv_read_timeout);
 		g_cdvdman_istruct_ptr->m_dec_mode_set = 0;
 		g_cdvdman_istruct_ptr->m_dec_state = 0;
 		error_code = sceCdGetError();
@@ -830,8 +830,8 @@ int readproc1(
 	int error_code_tmp;
 
 	error_code_tmp = 0;
-	g_cdvdfsv_read_to.hi = 0;
-	g_cdvdfsv_read_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
+	g_cdvdfsv_read_timeout.hi = 0;
+	g_cdvdfsv_read_timeout.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
 	g_cdvdfsv_rderror = SCECdErREADCF;
 	g_cdvdfsv_sid_err_recover_cnt = 0;
 	g_cdvdfsv_err_count = 0;
@@ -848,9 +848,9 @@ int readproc1(
 		cmd_error = (ps2dvd ? sceCdRV : sceCdRead0)(( lsn >= 0x30 ) ? (lsn - 0x10 * g_cdvdfsv_sid_err_recover_cnt) : (lsn + 0x10 * g_cdvdfsv_sid_err_recover_cnt), nsec, retptr, rmode, 0, 0);
 		CpuResumeIntr(state);
 		if ( cmd_error )
-			SetAlarm(&g_cdvdfsv_read_to, (unsigned int (*)(void *))alarm_cb, &g_cdvdfsv_read_to);
+			SetAlarm(&g_cdvdfsv_read_timeout, (unsigned int (*)(void *))read_timeout_alarm_cb, &g_cdvdfsv_read_timeout);
 		sceCdSync(5);
-		CancelAlarm((unsigned int (*)(void *))alarm_cb, &g_cdvdfsv_read_to);
+		CancelAlarm((unsigned int (*)(void *))read_timeout_alarm_cb, &g_cdvdfsv_read_timeout);
 		g_cdvdman_istruct_ptr->m_dec_state = 0;
 		error_code = sceCdGetError();
 		if ( error_code || !cmd_error || g_cdvdfsv_err_count >= 5 )

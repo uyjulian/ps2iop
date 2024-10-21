@@ -14,18 +14,18 @@ int vSetEventFlag();
 int vClearEventFlag();
 int cdvdstm_4();
 int cdvdstm_2();
-u32 alarm_cb(void *);
+int stm_iop_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock);
 int sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *error_ptr);
 int sceCdStream0(int rdsize_sectors, char *addrarg, int modearg, int *error_ptr);
 unsigned int iop_stream_handler(unsigned int posszarg1, unsigned int posszarg2, void *buffer, int cmdid, const sceCdRMode *rmode, int *error_ptr);
 unsigned int iop_stream_intr_cb(void *userdata);
 int cdrom_stm_init();
 int cdrom_stm_deinit();
-int cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
+int cdrom_stm_devctl(iop_file_t *f, const char *name, int cmd, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
 int cdrom_stm_nulldev();
 s64 cdrom_stm_nulldev64();
 int _start(int);
-u32 stm_alarm_timeout_cb(void *a1);
+int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock);
 void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
 unsigned int ee_stream_intr_cb_normal(void *userdata);
 void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
@@ -159,9 +159,9 @@ int cdvdstm_2()
 	return 0;
 }
 
-u32 alarm_cb(void *a1)
+int stm_iop_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 {
-	KPRINTF("Stm Iop Read Time Out %d(msec)\n", *(u32 *)a1 / 0x9000);
+	KPRINTF("Stm Iop Read Time Out %d(msec)\n", sys_clock->lo / 0x9000);
 	return sceCdBreak() == 0;
 }
 
@@ -242,7 +242,7 @@ unsigned int iop_stream_handler(
 			sceCdSC(0, &g_cdvdstm_last_error_for_iop);
 			CpuResumeIntr(state);
 			sceCdSync(0);
-			vCancelAlarm((unsigned int (*)(void *))alarm_cb, &g_cdvdstm_curclk_iop);
+			vCancelAlarm((unsigned int (*)(void *))stm_iop_read_timeout_alarm_cb, &g_cdvdstm_curclk_iop);
 			return 1;
 		case 6:
 			bankcur_tmp = g_cdvdstm_bankcur_iop;
@@ -290,7 +290,7 @@ unsigned int iop_stream_handler(
 			sceCdSync(0);
 			g_cdvdstm_last_error_for_iop = 0;
 			sceCdSC(0xFFFFFFFE, &g_cdvdstm_last_error_for_iop);
-			vCancelAlarm((unsigned int (*)(void *))alarm_cb, &g_cdvdstm_curclk_iop);
+			vCancelAlarm((unsigned int (*)(void *))stm_iop_read_timeout_alarm_cb, &g_cdvdstm_curclk_iop);
 			return 1;
 		case 9:
 			if ( sceCdSC(0xFFFFFFFF, &g_cdvdstm_last_error_for_iop) != 0 )
@@ -323,7 +323,7 @@ unsigned int iop_stream_handler(
 			g_cdvdstm_bankcur_iop = 0;
 			g_cdvdstm_bankgp_iop = 0;
 			sceCdSync(0);
-			vCancelAlarm((unsigned int (*)(void *))alarm_cb, &g_cdvdstm_curclk_iop);
+			vCancelAlarm((unsigned int (*)(void *))stm_iop_read_timeout_alarm_cb, &g_cdvdstm_curclk_iop);
 			break;
 	}
 	if ( cmdid == 1 )
@@ -341,7 +341,7 @@ unsigned int iop_stream_handler(
 		g_cdvdstm_bankcur_iop = 0;
 		g_cdvdstm_bankgp_iop = 0;
 		sceCdSync(0);
-		vCancelAlarm((unsigned int (*)(void *))alarm_cb, &g_cdvdstm_curclk_iop);
+		vCancelAlarm((unsigned int (*)(void *))stm_iop_read_timeout_alarm_cb, &g_cdvdstm_curclk_iop);
 		g_cdvdstm_stmstart_iop = 1;
 		sceCdSC(1, &g_cdvdstm_last_error_for_iop);
 		if ( !sceCdNop() )
@@ -418,7 +418,7 @@ unsigned int iop_stream_intr_cb(void *userdata)
 	(void)userdata;
 
 	VERBOSE_KPRINTF(1, "Intr Read call\n");
-	iCancelAlarm((unsigned int (*)(void *))alarm_cb, &g_cdvdstm_curclk_iop);
+	iCancelAlarm((unsigned int (*)(void *))stm_iop_read_timeout_alarm_cb, &g_cdvdstm_curclk_iop);
 	iCancelAlarm((unsigned int (*)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop);
 	sceCdSC(0xFFFFFFFF, &last_error);
 	if ( !last_error )
@@ -473,7 +473,7 @@ unsigned int iop_stream_intr_cb(void *userdata)
 					 (char *)g_cdvdstm_buffer + g_cdvdstm_bankgp_iop * g_cdvdstm_numbytes,
 					 &g_cdvdstm_mode_iop) )
 		{
-			iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (*)(void *))alarm_cb, &g_cdvdstm_curclk_iop);
+			iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (*)(void *))stm_iop_read_timeout_alarm_cb, &g_cdvdstm_curclk_iop);
 		}
 		else
 		{
@@ -527,7 +527,7 @@ unsigned int iop_stream_intr_cb(void *userdata)
 						 (char *)g_cdvdstm_buffer + g_cdvdstm_bankgp_iop * g_cdvdstm_numbytes,
 						 &g_cdvdstm_mode_iop) )
 			{
-				iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (*)(void *))alarm_cb, &g_cdvdstm_curclk_iop);
+				iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (*)(void *))stm_iop_read_timeout_alarm_cb, &g_cdvdstm_curclk_iop);
 			}
 			else
 			{
@@ -564,14 +564,14 @@ int cdrom_stm_deinit()
 	return 0;
 }
 
-int cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len)
+int cdrom_stm_devctl(iop_file_t *f, const char *name, int cmd, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len)
 {
 	int retres;
 	cdrom_stm_devctl_t *instruct;
 	int *outres_ptr;
 
 	(void)f;
-	(void)a2;
+	(void)name;
 	(void)outbuf_len;
 
 	instruct = inbuf;
@@ -583,7 +583,7 @@ int cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigne
 		SignalSema(g_cdvdstm_semid);
 		return -EIO;
 	}
-	switch ( a3 )
+	switch ( cmd )
 	{
 		case 0x4393:
 			if ( instruct->m_cmdid == 5 || instruct->m_cmdid == 3 || instruct->m_cmdid - 7 < 2 )
@@ -608,7 +608,7 @@ int cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigne
 			ee_stream_handler_cdda(instruct, inbuf_len, outres_ptr);
 			break;
 		default:
-			PRINTF("Un-support devctl %08x\n", a3);
+			PRINTF("Un-support devctl %08x\n", cmd);
 			retres = -EIO;
 			break;
 	}
@@ -667,13 +667,13 @@ int _start(int a1)
 	return 2;
 }
 
-u32 stm_alarm_timeout_cb(void *a1)
+int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 {
-	unsigned int read_to;
+	int read_timeout;
 
-	read_to = *(u32 *)a1 / 0x9000;
-	KPRINTF("Stm EE Read Time Out %d(msec)\n", read_to);
-	sceCdSC(0xFFFFFFEE, (int *)&read_to);
+	read_timeout = sys_clock->lo / 0x9000;
+	KPRINTF("Stm EE Read Time Out %d(msec)\n", read_timeout);
+	sceCdSC(0xFFFFFFEE, &read_timeout);
 	return sceCdBreak() == 0;
 }
 
@@ -721,7 +721,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 			CpuResumeIntr(state);
 			sceCdSync(0);
 			*outres_ptr = 1;
-			CancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+			CancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 			return;
 		case 6:
 			bankcur_tmp = g_cdvdstm_bankcur_ee;
@@ -776,7 +776,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 			sceCdSync(0);
 			g_cdvdstm_last_error_for_ee = 0;
 			sceCdSC(0xFFFFFFFE, &g_cdvdstm_last_error_for_ee);
-			CancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+			CancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 			return;
 		case 1:
 			g_cdvdstm_mode_ee.datapattern = instruct->m_rmode.datapattern;
@@ -818,7 +818,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 		g_cdvdstm_bankcur_ee = 0;
 		g_cdvdstm_bankgp_ee = 0;
 		sceCdSync(0);
-		CancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+		CancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 	}
 	if ( cmdid == 1 )
 	{
@@ -836,7 +836,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 		g_cdvdstm_bankoffs_ee = 0;
 		g_cdvdstm_bankcur_ee = 0;
 		sceCdSync(0);
-		CancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+		CancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 		g_cdvdstm_stmstart_ee = 1;
 		sceCdSC(2, &g_cdvdstm_last_error_for_ee);
 		if ( !sceCdNop() )
@@ -934,7 +934,7 @@ unsigned int ee_stream_intr_cb_normal(void *userdata)
 	(void)userdata;
 
 	VERBOSE_KPRINTF(1, "Intr EE Stm Read call\n");
-	iCancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+	iCancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 	iCancelAlarm((unsigned int (*)(void *))ee_stream_intr_cb_normal, &g_cdvdstm_curclk_ee);
 	sceCdSC(0xFFFFFFFF, &g_cdvdstm_last_error_for_ee);
 	if ( !g_cdvdstm_last_error_for_ee )
@@ -982,7 +982,7 @@ unsigned int ee_stream_intr_cb_normal(void *userdata)
 					 (char *)g_cdvdstm_buffer2 + g_cdvdstm_bankgp_ee * g_cdvdstm_chunksz2,
 					 &g_cdvdstm_mode_ee) )
 		{
-			iSetAlarm(&g_cdvdstm_curclk_ee, (unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+			iSetAlarm(&g_cdvdstm_curclk_ee, (unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 		}
 		else
 		{
@@ -1039,7 +1039,7 @@ unsigned int ee_stream_intr_cb_normal(void *userdata)
 						 (char *)g_cdvdstm_buffer2 + g_cdvdstm_bankgp_ee * g_cdvdstm_chunksz2,
 						 &g_cdvdstm_mode_ee) )
 			{
-				iSetAlarm(&g_cdvdstm_curclk_ee, (unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+				iSetAlarm(&g_cdvdstm_curclk_ee, (unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 			}
 			else
 			{
@@ -1106,7 +1106,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 			CpuResumeIntr(state);
 			sceCdSync(0);
 			*outres_ptr = 1;
-			CancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+			CancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 			return;
 		case 6:
 			bankcur_tmp = g_cdvdstm_bankcur_ee;
@@ -1176,7 +1176,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 			sceCdSync(0);
 			g_cdvdstm_last_error_for_ee = 0;
 			sceCdSC(0xFFFFFFFE, &g_cdvdstm_last_error_for_ee);
-			CancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+			CancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 			return;
 		case 1:
 			g_cdvdstm_mode_ee.datapattern = instruct->m_rmode.datapattern;
@@ -1217,7 +1217,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 		g_cdvdstm_bankcur_ee = 0;
 		g_cdvdstm_bankgp_ee = 0;
 		sceCdSync(0);
-		CancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+		CancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 	}
 	if ( cmdid == 1 )
 	{
@@ -1236,7 +1236,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 		g_cdvdstm_bankoffs_ee = 0;
 		g_cdvdstm_bankcur_ee = 0;
 		sceCdSync(0);
-		CancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+		CancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 		if ( !g_cdvdstm_chunksz2 )
 			__builtin_trap();
 		posszarg2_chunks = (posszarg2_bytes / g_cdvdstm_chunksz2) + (( posszarg2_bytes % g_cdvdstm_chunksz2 ) ? 1 : 0);
@@ -1356,7 +1356,7 @@ unsigned int ee_stream_intr_cb_cdda(void *userdata)
 	(void)userdata;
 
 	VERBOSE_KPRINTF(1, "Intr EE DA Stm Read call\n");
-	iCancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+	iCancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 	iCancelAlarm((unsigned int (*)(void *))ee_stream_intr_cb_cdda, &g_cdvdstm_curclk_ee);
 	sceCdSC(0xFFFFFFFF, &g_cdvdstm_last_error_for_ee);
 	if ( !g_cdvdstm_last_error_for_ee )
@@ -1412,7 +1412,7 @@ unsigned int ee_stream_intr_cb_cdda(void *userdata)
 					 (char *)g_cdvdstm_buffer2 + g_cdvdstm_bankgp_ee * g_cdvdstm_chunksz2,
 					 &g_cdvdstm_mode_ee) )
 		{
-			iSetAlarm(&g_cdvdstm_curclk_ee, (unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+			iSetAlarm(&g_cdvdstm_curclk_ee, (unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 		}
 		else
 		{
@@ -1469,7 +1469,7 @@ unsigned int ee_stream_intr_cb_cdda(void *userdata)
 						 (char *)g_cdvdstm_buffer2 + g_cdvdstm_bankgp_ee * g_cdvdstm_chunksz2,
 						 &g_cdvdstm_mode_ee) )
 			{
-				iSetAlarm(&g_cdvdstm_curclk_ee, (unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
+				iSetAlarm(&g_cdvdstm_curclk_ee, (unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 			}
 			else
 			{

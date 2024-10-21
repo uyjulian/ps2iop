@@ -378,7 +378,7 @@ typedef struct cdvdman_internal_struct_
 	char m_scmd_sd[16];
 	char m_scmd_rd[16];
 	int m_sync_error;
-	int m_read_to;
+	int m_last_read_timeout;
 	int m_power_flag;
 	u32 m_layer_1_lsn;
 	char m_use_toc;
