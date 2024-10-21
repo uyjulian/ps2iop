@@ -36,15 +36,19 @@ void cdvdfsv_rpc3_03_disktype(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, 
 void cdvdfsv_rpc3_0C_cdstatus(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
 void cdvdfsv_rpc3_06_ri(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
 void cdvdfsv_rpc3_1A_rm(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
+#if CDVD_VARIANT_DNAS
 void cdvdfsv_rpc3_24_readguid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
 void cdvdfsv_rpc3_26_readmodelid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
+#endif
 void cdvdfsv_rpc3_22_mmode(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
 void cdvdfsv_rpc3_23_changethreadpriority(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
 void cdvdfsv_rpc3_21_poweroff(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
 void cdvdfsv_rpc3_15_ctrladout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
 void cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
+#if CDVD_VARIANT_DNAS
 void cdvdfsv_rpc5_11_readdiskid(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
 void cdvdfsv_rpc5_17_doesuniquekeyexist(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
+#endif
 void cdvdfsv_rpc3_0B_applyscmd(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
 void cdvdfsv_rpc5_0C_applyncmd(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
 void cdvdfsv_rpc3_04_geterror(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
@@ -1621,6 +1625,7 @@ void cdvdfsv_rpc3_1A_rm(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfs
 	}
 }
 
+#if CDVD_VARIANT_DNAS
 void cdvdfsv_rpc3_24_readguid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
@@ -1652,6 +1657,7 @@ void cdvdfsv_rpc3_26_readmodelid(const cdvdfsv_rpc3_inpacket_t *inbuf, int bufle
 		outbuf->m_retres = sceCdReadModelID(&outbuf->m_pkt_26.m_id);
 	}
 }
+#endif
 
 void cdvdfsv_rpc3_22_mmode(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
@@ -1715,6 +1721,7 @@ void cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen,
 	}
 }
 
+#if CDVD_VARIANT_DNAS
 void cdvdfsv_rpc5_11_readdiskid(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
 {
 	(void)inbuf;
@@ -1730,6 +1737,7 @@ void cdvdfsv_rpc5_17_doesuniquekeyexist(const cdvdfsv_rpc5_inpacket_t *inbuf, in
 
 	outbuf->m_retres = sceCdDoesUniqueKeyExist(&outbuf->m_pkt_17.m_status);
 }
+#endif
 
 void cdvdfsv_rpc3_0B_applyscmd(
 				const cdvdfsv_rpc3_inpacket_t *inbuf,
@@ -1880,9 +1888,11 @@ void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 		case 15:
 			cdvdfsv_rpc5_0F_readchain(buffer, length, &g_crr);
 			break;
+#if CDVD_VARIANT_DNAS
 		case 17:
 			cdvdfsv_rpc5_11_readdiskid(buffer, length, &g_crr);
 			break;
+#endif
 		case 19:
 			// The following call to sceCdGetDiskType was inlined
 			cdvdfsv_rpc5_01_readee(
@@ -1893,9 +1903,11 @@ void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 				1,
 				!g_cdvdman_istruct_ptr->m_no_dec_flag);
 			break;
+#if CDVD_VARIANT_DNAS
 		case 23:
 			cdvdfsv_rpc5_17_doesuniquekeyexist(buffer, length, &g_crr);
 			break;
+#endif
 		default:
 			VERBOSE_PRINTF(1, "sce_cdvd no block IO :unrecognized code %x\n", fno);
 			g_crr.m_retres = 0;
@@ -1954,15 +1966,19 @@ void *cbrpc_rpc3_cdvdscmds(int fno, void *buffer, int length)
 		case 35:
 			cdvdfsv_rpc3_23_changethreadpriority(buffer, length, &g_outbuf);
 			break;
+#if CDVD_VARIANT_DNAS
 		case 36:
 			cdvdfsv_rpc3_24_readguid(buffer, length, &g_outbuf);
 			break;
+#endif
 		case 37:
 			cdvdfsv_rpc3_25_settimeout(buffer, length, &g_outbuf);
 			break;
+#if CDVD_VARIANT_DNAS
 		case 38:
 			cdvdfsv_rpc3_26_readmodelid(buffer, length, &g_outbuf);
 			break;
+#endif
 		case 39:
 			cdvdfsv_rpc3_27_readdvddualinfo(buffer, length, &g_outbuf);
 			break;

@@ -43,10 +43,12 @@ int cdrom_nulldev();
 s64 cdrom_nulldev64();
 int sync_timeout_alarm_cb(const iop_sys_clock_t *sys_clock);
 int sceCdSpinCtrlIOP(u32 speed);
+#if CDVD_VARIANT_DNAS
 int read_id_from_rom(int mode, int *buf);
 int query_boot_mode_6_nonzero();
 int query_boot_mode_6_zero();
 int cdvdman_readID(int mode, int *buf);
+#endif
 int CdSearchFileInner(cdvdman_filetbl_entry_t *fp, const char *name, int layer);
 int sceCdSearchDir(char *dirname, int layer);
 int sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer);
@@ -101,7 +103,9 @@ int cdvdman_scmd_sender_03_48(u8 *buf, u32 *status);
 int sceCdCancelPOffRdy(u32 *result);
 unsigned int power_off_alarm_cb(cdvdman_internal_struct_t *s);
 int cdvdman_scmd_sender_3B(int arg1);
+#if CDVD_VARIANT_DNAS
 int cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3);
+#endif
 int sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval);
 
 char g_cdvdman_cache_name[256] = "host0:";
@@ -1559,6 +1563,7 @@ int cdrom_devctl(
 			}
 			retval2 = (retval2 != 1) ? -EIO : 0;
 			break;
+#if CDVD_VARIANT_DNAS
 		case 0x431D:
 			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
@@ -1570,6 +1575,7 @@ int cdrom_devctl(
 		case 0x431E:
 			retval2 = (sceCdReadDiskID((unsigned int *)bufp) != 1) ? -EIO : 0;
 			break;
+#endif
 		case CDIOC_GETDISKTYP:
 			*(u32 *)bufp = sceCdGetDiskType();
 			break;
@@ -1596,6 +1602,7 @@ int cdrom_devctl(
 		case CDIOC_DISKRDY:
 			*(u32 *)bufp = sceCdDiskReady(*(u32 *)argp);
 			break;
+#if CDVD_VARIANT_DNAS
 		case 0x4326:
 			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
@@ -1604,6 +1611,7 @@ int cdrom_devctl(
 			}
 			retval2 = (retval2 != 1) ? -EIO : 0;
 			break;
+#endif
 		case CDIOC_STREAMINIT:
 			// The following call to sceCdStInit was inlined
 			retval2 = ( sceCdStInit(*(u32 *)argp, *((u32 *)argp + 1), (void *)*((u32 *)argp + 2)) ) ? 0 : -EIO;
@@ -2039,6 +2047,7 @@ u32 sceCdPosToInt(sceCdlLOCCD *p)
 			 - 150;
 }
 
+#if CDVD_VARIANT_DNAS
 int read_id_from_rom(int mode, int *buf)
 {
 	int chksumint;
@@ -2155,6 +2164,7 @@ int sceCdReadModelID(unsigned int *id)
 {
 	return cdvdman_readID(1, (int *)id);
 }
+#endif
 
 int sceCdStInit(u32 bufmax, u32 bankmax, void *buffer)
 {
@@ -5662,6 +5672,7 @@ int cdvdman_scmd_sender_3B(int arg1)
 	return 0;
 }
 
+#if CDVD_VARIANT_DNAS
 int sceCdReadDiskID(unsigned int *id)
 {
 	sceCdRMode rmode;
@@ -5824,10 +5835,13 @@ int cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3)
 	*(u32 *)&ndata[3] = arg1 ? 0 : arg3;
 	return cdvdman_send_ncmd(12, ndata, sizeof(ndata), 0, 0, 1) >= 0;
 }
+#endif
 
 int sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval)
 {
+#if CDVD_VARIANT_DNAS
 	g_cdvdman_cd36key = enable_shift | shiftval;
 	dev5_regs.m_dev5_reg_03A = (16 * (shiftval & 7)) | ((!!enable_xor) << 1) | (!!enable_shift);
+#endif
 	return 1;
 }

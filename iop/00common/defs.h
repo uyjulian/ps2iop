@@ -713,4 +713,10 @@ typedef union cdvdfsv_rpc5_outpacket_
 	}
 #endif
 
+#if 1
+#ifndef CDVD_VARIANT_DNAS
+#define CDVD_VARIANT_DNAS 1
+#endif
+#endif
+
 #endif
