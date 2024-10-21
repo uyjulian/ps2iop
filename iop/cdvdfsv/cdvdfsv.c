@@ -1681,6 +1681,7 @@ void cdvdfsv_rpc3_15_ctrladout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen,
 
 	(void)buflen;
 
+	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
 		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
@@ -1696,6 +1697,7 @@ void cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen,
 	(void)inbuf;
 	(void)buflen;
 
+	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
 		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
@@ -1758,6 +1760,7 @@ void cdvdfsv_rpc3_05_trayreq(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, c
 
 	(void)buflen;
 
+	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
 		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
