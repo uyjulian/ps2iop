@@ -24,7 +24,7 @@ int cdrom_stm_deinit();
 int cdrom_stm_devctl(iop_file_t *f, const char *name, int cmd, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
 int cdrom_stm_nulldev();
 s64 cdrom_stm_nulldev64();
-int _start(int);
+int _start(int ac, char **av);
 int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock);
 void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
 unsigned int ee_stream_intr_cb_normal(void *userdata);
@@ -628,13 +628,15 @@ s64 cdrom_stm_nulldev64()
 	return -EIO;
 }
 
-int _start(int a1)
+int _start(int ac, char **av)
 {
 	int last_error;
 	int scres_unused;
 	int state;
 
-	if ( a1 < 0 )
+	(void)av;
+
+	if ( ac < 0 )
 	{
 		int relres;
 

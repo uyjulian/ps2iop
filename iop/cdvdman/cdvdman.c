@@ -11,7 +11,7 @@ IRX_ID("cdvd_driver", 2, 38);
 
 extern struct irx_export_table _exp_cdvdman;
 
-int _start(int argc, char **argv);
+int _start(int ac, char **av);
 int cdrom_init(iop_device_t *dev);
 void cdvdman_termcall(int with_stop);
 int cdrom_deinit();
@@ -211,10 +211,10 @@ char g_cdvdman_fsvrbuf[42128];
 cdvdman_internal_struct_t g_cdvdman_istruct;
 dev5_regs_t dev5_regs;
 
-int _start(int argc, char **argv)
+int _start(int ac, char **av)
 {
-	(void)argc;
-	(void)argv;
+	(void)ac;
+	(void)av;
 
 	if ( RegisterLibraryEntries(&_exp_cdvdman) )
 	{
