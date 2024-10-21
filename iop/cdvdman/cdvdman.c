@@ -218,13 +218,13 @@ int _start(int ac, char **av)
 
 	if ( RegisterLibraryEntries(&_exp_cdvdman) )
 	{
-		return 1;
+		return MODULE_NO_RESIDENT_END;
 	}
 	DelDrv(g_cdvdman_cddev.name);
 	if ( AddDrv(&g_cdvdman_cddev) )
 	{
 		cdrom_deinit();
-		return 1;
+		return MODULE_NO_RESIDENT_END;
 	}
 	g_cdvdman_ptoc = (u8 *)&g_cdvdman_fsvrbuf[0x924];
 	g_cdvdman_temp_buffer_ptr = g_cdvdman_fsvrbuf;
@@ -236,7 +236,7 @@ int _start(int ac, char **av)
 	_exp_cdvdman.mode &= ~6;
 	_exp_cdvdman.mode |= 2;
 #endif
-	return 0;
+	return MODULE_RESIDENT_END;
 }
 
 void *sceGetFsvRbuf(void)

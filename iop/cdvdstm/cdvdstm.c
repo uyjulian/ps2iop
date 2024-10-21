@@ -642,7 +642,7 @@ int _start(int ac, char **av)
 
 		if ( !sceCdSC(0xFFFFFFFF, &last_error) )
 		{
-			return 2;
+			return MODULE_REMOVABLE_END;
 		}
 		g_cdvdstm_in_deldrv = 1;
 		DelDrv(g_cdrom_stm_dev.name);
@@ -653,20 +653,20 @@ int _start(int ac, char **av)
 		if ( relres && relres != KE_LIBRARY_NOTFOUND )
 		{
 			g_cdvdstm_in_deldrv = 0;
-			return 2;
+			return MODULE_REMOVABLE_END;
 		}
-		return 1;
+		return MODULE_NO_RESIDENT_END;
 	}
 	if ( RegisterLibraryEntries(&_exp_cdvdstm) )
-		return 1;
+		return MODULE_NO_RESIDENT_END;
 	DelDrv(g_cdrom_stm_dev.name);
 	if ( AddDrv(&g_cdrom_stm_dev) )
 	{
 		cdrom_stm_deinit();
-		return 1;
+		return MODULE_NO_RESIDENT_END;
 	}
 	g_cdvdman_intr_efid = sceCdSC(0xFFFFFFF5, &scres_unused);
-	return 2;
+	return MODULE_REMOVABLE_END;
 }
 
 int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)

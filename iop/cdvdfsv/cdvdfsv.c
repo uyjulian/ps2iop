@@ -163,7 +163,7 @@ int _start(int ac, char **av)
 		// cppcheck-suppress knownConditionTrueFalse
 		if ( g_cdvdfsv_rpc5flg || g_cdvdfsv_rpc3flg || !cdvdfsv_cleanuprpc() )
 		{
-			return 2;
+			return MODULE_REMOVABLE_END;
 		}
 		CpuSuspendIntr(&state);
 		error_code = ReleaseLibraryEntries(&_exp_cdvdfsv);
@@ -171,13 +171,13 @@ int _start(int ac, char **av)
 		if ( error_code && error_code != KE_LIBRARY_NOTFOUND )
 		{
 			KPRINTF("ReleaseLibraryEntries Error code %d\n", error_code);
-			return 2;
+			return MODULE_REMOVABLE_END;
 		}
-		return 1;
+		return MODULE_NO_RESIDENT_END;
 	}
 	if ( RegisterLibraryEntries(&_exp_cdvdfsv) )
 	{
-		return 1;
+		return MODULE_NO_RESIDENT_END;
 	}
 	cdvdfsv_fsvrbuf = sceGetFsvRbuf();
 	g_dword_40575C = (int)g_dword_405750;
@@ -190,9 +190,9 @@ int _start(int ac, char **av)
 	if ( !LibraryEntryTable || (*(LibraryEntryTable - 6) < 0x104) )
 	{
 		KPRINTF("Warning cdvdfsv.irx: Unload function can't be used.\n");
-		return 0;
+		return MODULE_RESIDENT_END;
 	}
-	return 2;
+	return MODULE_REMOVABLE_END;
 }
 
 int cdvdfsv_init()
