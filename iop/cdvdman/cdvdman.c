@@ -1994,12 +1994,12 @@ int sceCdStatus(void)
 	// The following call to sceCdGetDiskType was inlined
 	if ( sceCdGetDiskType() == SCECdNODISC )
 	{
-		u8 rdata_tmp[4];
+		u8 rdata_tmp;
 
-		if ( !g_cdvdman_istruct.m_tray_is_open && cdvdman_scmd_sender_03_48(rdata_tmp, &status_tmp) == 1 && !status_tmp )
+		if ( !g_cdvdman_istruct.m_tray_is_open && cdvdman_scmd_sender_03_48(&rdata_tmp, &status_tmp) == 1 && !status_tmp )
 		{
 			reg_00A_tmp &= ~SCECdStatShellOpen;
-			if ( (rdata_tmp[0] & 8) )
+			if ( (rdata_tmp & 8) )
 			{
 				reg_00A_tmp |= SCECdStatShellOpen;
 			}
