@@ -31,8 +31,8 @@ struct ioman_dev_listentry
 	iomanX_iop_device_t *device;
 };
 
-int showdrvflag = 1;
-iomanX_iop_device_ops_t dev_tty_dev_operations = {
+static int showdrvflag = 1;
+static iomanX_iop_device_ops_t dev_tty_dev_operations = {
 	(void *)&tty_noop,
 	(void *)&tty_noop,
 	(void *)&tty_noop,
@@ -61,26 +61,26 @@ iomanX_iop_device_ops_t dev_tty_dev_operations = {
 	NULL,
 	NULL,
 };
-iomanX_iop_device_t dev_tty = {
+static iomanX_iop_device_t dev_tty = {
 	"tty",
 	IOP_DT_CHAR,
 	1,
 	"CONSOLE",
 	&dev_tty_dev_operations,
 };
-iomanX_iop_device_t dev_dummytty = {
+static iomanX_iop_device_t dev_dummytty = {
 	"dummytty",
 	IOP_DT_CHAR,
 	1,
 	"CONSOLE",
 	&dev_tty_dev_operations,
 };
-int adddeldrv_in_process;
-struct ioman_dev_listentry *device_entry_empty_list_head;
-int errno_local;
-struct ioman_dev_listentry *device_entry_used_list_head;
-iomanX_iop_file_t file_table[32];
-struct ioman_dev_listentry device_entry_list[16];
+static int adddeldrv_in_process;
+static struct ioman_dev_listentry *device_entry_empty_list_head;
+static int errno_local;
+static struct ioman_dev_listentry *device_entry_used_list_head;
+static iomanX_iop_file_t file_table[32];
+static struct ioman_dev_listentry device_entry_list[16];
 
 #ifndef isnum
 #define isnum(c) ((c) >= '0' && (c) <= '9')
