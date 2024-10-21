@@ -31,7 +31,6 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata);
 void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
 unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata);
 unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n);
-void cdvdstm_1();
 
 static void iop_stream_intr_cb_thunk(int userdata)
 {
@@ -1766,9 +1765,4 @@ LABEL_33:
 		while ( v55 );
 	}
 	return n;
-}
-
-void cdvdstm_1()
-{
-	;
 }

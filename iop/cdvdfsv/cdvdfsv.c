@@ -58,9 +58,7 @@ void __cdecl cdvdfsv_poffloop();
 void __cdecl cdvdfsv_rpc1_th(void *arg);
 void __cdecl cdvdfsv_rpc3_th(void *arg);
 void __cdecl cdvdfsv_rpc2_th(void *arg);
-void __fastcall cdvdfsv_unused_xorfun(unsigned int *, int);
 unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n);
-void cdvdfsv_1();
 
 int g_cdvdfsv_def_pri = 81;
 int g_verbose_level = 0;
@@ -2033,39 +2031,7 @@ void __cdecl cdvdfsv_rpc2_th(void *arg)
 	ExitDeleteThread();
 }
 
-void __fastcall cdvdfsv_unused_xorfun(unsigned int *a1, int a2)
-{
-	int v2;
-	int v4;
-	int v5;
-	int v6;
-	bool v7;
-
-	v2 = 0;
-	for ( ; a2; a2 -= 4 )
-	{
-		unsigned int v3;
-
-		v3 = *a1;
-		for ( v4 = 4; v4; v4 -= 1 )
-		{
-			v6 = (unsigned __int8)v3;
-			for ( v5 = 8; v5; v5 -= 1 )
-			{
-				v7 = v2 >= 0;
-				v2 *= 2;
-				if ( !v7 )
-					v2 ^= 0x80000011;
-				v7 = (v6 & 0x80) == 0;
-				v6 *= 2;
-				if ( !v7 )
-					v2 ^= 1;
-			}
-			v3 >>= 8;
-		}
-		a1 += 1;
-	}
-}
+// Unofficial: unused obfuscation code was removed
 
 unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n)
 {
@@ -2344,9 +2310,4 @@ LABEL_33:
 		while ( v55 );
 	}
 	return n;
-}
-
-void cdvdfsv_1()
-{
-	;
 }

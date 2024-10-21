@@ -78,7 +78,6 @@ int __fastcall cdvdman_finddir(int target_parent, const char *target_name);
 int __fastcall CD_cachefile(int dsec, int layer);
 int __cdecl disc_read(int size, int loc, void *buffer, int layer);
 int __cdecl path_tbl_init(u32 blocks, char *fname, int action);
-void __fastcall unused_40BA90(unsigned int *, int);
 unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n);
 void __cdecl cdvdman_1();
 int __cdecl cdvdman_retonly();
@@ -103,7 +102,6 @@ int __cdecl DvdDual_infochk();
 u32 __cdecl sceCdLsnDualChg(u32 lsn);
 int __cdecl sceCdReadDvdDualInfo(int *on_dual, unsigned int *layer1_start);
 int __cdecl sceCdSC(int code, int *param);
-void __cdecl nullsub_2();
 void __cdecl cdvdman_init();
 int __cdecl sceCdInit(int mode);
 int __cdecl set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata, int rdlen, int check_sef);
@@ -142,7 +140,6 @@ int __cdecl cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int 
 int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMode *mode);
 int __cdecl sceCdRead(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode);
 int __cdecl cdvdman_syncdec(int decflag, int decxor, int shift, u32 data);
-int __cdecl dummy_nullsub();
 void __cdecl Read2intrCDVD(int read2_flag);
 int __cdecl sceCdReadChain(sceCdRChain *tag, sceCdRMode *mode);
 int __cdecl cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *mode, int flag);
@@ -2865,43 +2862,7 @@ int __cdecl path_tbl_init(u32 blocks, char *fname, int action)
 	return (!action) ? num : v;
 }
 
-void __fastcall unused_40BA90(unsigned int *a1, int a2)
-{
-	int v2;
-	int v4;
-	int v5;
-	int v6;
-	bool v7;
-
-	v2 = 0;
-	for ( ; a2; a2 -= 4 )
-	{
-		unsigned int v3;
-
-		v3 = *a1;
-		for ( v4 = 4; v4; v4 -= 1 )
-		{
-			v6 = (unsigned __int8)v3;
-			for ( v5 = 8; v5; v5 -= 1 )
-			{
-				v7 = v2 >= 0;
-				v2 *= 2;
-				if ( !v7 )
-				{
-					v2 ^= 0x80000011;
-				}
-				v7 = (v6 & 0x80) == 0;
-				v6 *= 2;
-				if ( !v7 )
-				{
-					v2 ^= 1;
-				}
-			}
-			v3 >>= 8;
-		}
-		a1 += 1;
-	}
-}
+// Unofficial: unused obfuscation code was removed
 
 unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n)
 {
@@ -3926,11 +3887,6 @@ int __cdecl sceCdSC(int code, int *param)
 			VERBOSE_KPRINTF(1, "sceCdSC func_num Not found %d\n", code);
 			return 0;
 	}
-}
-
-void __cdecl nullsub_2()
-{
-	;
 }
 
 void __cdecl cdvdman_init()
@@ -5259,11 +5215,6 @@ int __cdecl sceCdRead(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode)
 int __cdecl cdvdman_syncdec(int decflag, int decxor, int shift, u32 data)
 {
 	return decflag ? ((unsigned __int8)(((unsigned __int8)data << (shift % 8)) | ((unsigned __int8)data >> (8 - shift % 8))) ^ (unsigned __int8)decxor) : (unsigned __int8)data;
-}
-
-int __cdecl dummy_nullsub()
-{
-	return 0;
 }
 
 void __cdecl Read2intrCDVD(int read2_flag)
