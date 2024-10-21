@@ -2411,7 +2411,7 @@ int CD_newmedia(int arg)
 			return 0;
 	}
 	g_cdvdman_fs_base2 = 0;
-	if ( DiskType == 0x14 )
+	if ( DiskType == SCECdPS2DVD )
 	{
 		if ( !DvdDual_infochk() )
 		{
@@ -2445,16 +2445,16 @@ int CD_newmedia(int arg)
 	}
 	switch ( DiskType )
 	{
-		case 0x10:
-		case 0x11:
-		case 0x12:
-		case 0x13:
+		case SCECdPSCD:
+		case SCECdPSCDDA:
+		case SCECdPS2CD:
+		case SCECdPS2CDDA:
 			VERBOSE_PRINTF(1, "CD_newmedia: CD Read mode\n");
 			ptsector = *(u32 *)(((iso9660_desc_t *)g_cdvdman_fs_rbuf)->m_type_l_path_table);
 			break;
-		case 0x14:
-		case 0xFC:
-		case 0xFE:
+		case SCECdPS2DVD:
+		case SCECdDVDVR:
+		case SCECdDVDV:
 			VERBOSE_PRINTF(1, "CD_newmedia: DVD Read mode\n");
 			ptsector = 257;
 			break;
