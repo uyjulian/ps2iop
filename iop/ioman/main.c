@@ -774,8 +774,8 @@ int iomanX_AddDrv(iomanX_iop_device_t *device)
 	}
 	old_head = device_entry_used_list_head;
 	device_entry_used_list_head = entry;
-	showdrvflag = 1;
 	entry->next = old_head;
+	showdrvflag = 1;
 	adddeldrv_in_process = 0;
 	return 0;
 }
