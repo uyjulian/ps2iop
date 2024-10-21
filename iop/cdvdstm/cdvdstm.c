@@ -645,7 +645,7 @@ int _start(int ac, char **av)
 			return 2;
 		}
 		g_cdvdstm_in_deldrv = 1;
-		DelDrv("cdrom_stm");
+		DelDrv(g_cdrom_stm_dev.name);
 		CpuSuspendIntr(&state);
 		relres = ReleaseLibraryEntries(&_exp_cdvdstm);
 		CpuResumeIntr(state);
@@ -659,7 +659,7 @@ int _start(int ac, char **av)
 	}
 	if ( RegisterLibraryEntries(&_exp_cdvdstm) )
 		return 1;
-	DelDrv("cdrom_stm");
+	DelDrv(g_cdrom_stm_dev.name);
 	if ( AddDrv(&g_cdrom_stm_dev) )
 	{
 		cdrom_stm_deinit();

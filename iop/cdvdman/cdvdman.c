@@ -220,7 +220,7 @@ int _start(int ac, char **av)
 	{
 		return 1;
 	}
-	DelDrv("cdrom");
+	DelDrv(g_cdvdman_cddev.name);
 	if ( AddDrv(&g_cdvdman_cddev) )
 	{
 		cdrom_deinit();
