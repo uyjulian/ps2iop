@@ -3890,8 +3890,8 @@ int sceCdInit(int mode)
 	}
 	if ( mode == SCECdINIT )
 	{
-		vu8 ready_status_tmp;
-		vu8 ready_status;
+		u8 ready_status_tmp;
+		u8 ready_status;
 		int ready_status_mask_c0h;
 
 		ready_status_tmp = 0;
@@ -5707,7 +5707,7 @@ int sceCdReadDiskID(unsigned int *id)
 int sceCdDoesUniqueKeyExist(u32 *status)
 {
 	int disktype_tmp;
-	vu8 dev5_reg_038;
+	u8 dev5_reg_038;
 	sceCdRMode rmode;
 	char ndata[7];
 	int state;
