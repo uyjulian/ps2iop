@@ -8,9 +8,6 @@ IRX_ID("cdvd_ee_driver", 2, 38);
 
 extern struct irx_export_table _exp_cdvdfsv;
 
-//-------------------------------------------------------------------------
-// Function declarations
-
 int __fastcall cdvdfsv_checkdmastat(int trid);
 int __cdecl cdvdfsv_cleanuprpc();
 int __fastcall _start(int ac, char **av);
@@ -145,70 +142,65 @@ int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMod
 int __cdecl sceCdDoesUniqueKeyExist(u32 *status);
 #endif
 
-//-------------------------------------------------------------------------
-// Data declarations
-
 int g_cdvdfsv_def_pri = 81;
 int g_verbose_level = 0;
 int g_cdvdfsv_spinctl = -1;
 int g_cdvdfsv_plbreak = 0;
 int g_cdvdfsv_nopocm = 0;
 int g_cdvdfsv_rpc5flg = 0;
-int g_cdvdfsv_rpc3flg = 0; // weak
-iop_library_t g_modload_libinfo = { NULL, NULL, 256, 0, "modload", { NULL } }; // idb
+int g_cdvdfsv_rpc3flg = 0;
+iop_library_t g_modload_libinfo = { NULL, NULL, 256, 0, "modload", { NULL } };
 int g_cdvdfsv_r2retry = 0;
 int g_cdvdfsv_r2count = 0;
-int g_cdvdfsv_sid_err_recover_cnt = 0; // weak
-int g_cdvdfsv_err_count = 0; // weak
-int g_dword_405750[2]; // weak
+int g_cdvdfsv_sid_err_recover_cnt = 0;
+int g_cdvdfsv_err_count = 0;
+int g_dword_405750[2];
 void *cdvdfsv_fsvrbuf;
-int g_dword_40575C; // weak
-char *g_cdvdfsv_rtocbuf; // idb
-SifDmaTransfer_t g_cdvdfsv_fssdd; // idb
-SifDmaTransfer_t g_cdvdfsv_iomrsdd; // idb
-SifDmaTransfer_t g_cdvdfsv_rdp2sdd; // idb
+int g_dword_40575C;
+char *g_cdvdfsv_rtocbuf;
+SifDmaTransfer_t g_cdvdfsv_fssdd;
+SifDmaTransfer_t g_cdvdfsv_iomrsdd;
+SifDmaTransfer_t g_cdvdfsv_rdp2sdd;
 SifDmaTransfer_t g_cdvdfsv_multi_dmat[16];
 sceCdRMode g_cdvdfsv_rmodeee;
-SifDmaTransfer_t g_cdvdfsv_datasdd; // idb
-SifDmaTransfer_t g_cdvdfsv_eerpsdd; // idb
-SifDmaTransfer_t g_cdvdfsv_chrdsdd; // idb
-SifDmaTransfer_t g_cdvdfsv_eereadfull_dma1; // idb
-SifDmaTransfer_t g_cdvdfsv_eereadfull_dma2; // idb
-SifDmaTransfer_t g_cdvdfsv_rtocsdd; // idb
-iop_sys_clock_t g_cdvdfsv_read_to; // idb
-int g_cdvdman_intr_efid; // idb
-int g_scmd_evid; // idb
+SifDmaTransfer_t g_cdvdfsv_datasdd;
+SifDmaTransfer_t g_cdvdfsv_eerpsdd;
+SifDmaTransfer_t g_cdvdfsv_chrdsdd;
+SifDmaTransfer_t g_cdvdfsv_eereadfull_dma1;
+SifDmaTransfer_t g_cdvdfsv_eereadfull_dma2;
+SifDmaTransfer_t g_cdvdfsv_rtocsdd;
+iop_sys_clock_t g_cdvdfsv_read_to;
+int g_cdvdman_intr_efid;
+int g_scmd_evid;
 int g_cdvdfsv_thids[4];
 cdvdman_internal_struct_t *g_cdvdman_istruct_ptr;
-cdvdfsv_rpc1h_outpacket g_cdvdfsv_initres; // weak
+cdvdfsv_rpc1h_outpacket g_cdvdfsv_initres;
 cdvdfsv_unaligned_data_outpacket g_cdvdfsv_eereadx;
 SifRpcDataQueue_t g_rpc_qdata2;
 SifRpcDataQueue_t g_rpc_qdata1;
 SifRpcDataQueue_t g_rpc_qdata3;
-SifRpcServerData_t g_rpc_sdata1; // idb
-SifRpcServerData_t g_rpc_sdata4; // idb
-SifRpcServerData_t g_rpc_sdata5; // idb
-SifRpcServerData_t g_rpc_sdata2; // idb
-SifRpcServerData_t g_rpc_sdata6; // idb
-SifRpcServerData_t g_rpc_sdata3; // idb
+SifRpcServerData_t g_rpc_sdata1;
+SifRpcServerData_t g_rpc_sdata4;
+SifRpcServerData_t g_rpc_sdata5;
+SifRpcServerData_t g_rpc_sdata2;
+SifRpcServerData_t g_rpc_sdata6;
+SifRpcServerData_t g_rpc_sdata3;
 cdvdfsv_rpc4h_outpacket g_cdvdfsv_srchres;
 int g_cdvdfsv_readpos;
-int g_cdvdfsv_rderror; // idb
-cdvdfsv_rpc2h_outpacket g_diskready_res; // weak
+int g_cdvdfsv_rderror;
+cdvdfsv_rpc2h_outpacket g_diskready_res;
 cdvdfsv_rpc5h_outpacket g_crr;
-cdvdfsv_rpc3h_outpacket g_outbuf; // idb
+cdvdfsv_rpc3h_outpacket g_outbuf;
 int g_rpc_buffer3[260];
 int g_rpc_buffer5[256];
 int g_rpc_buffer1[4];
 int g_rpc_buffer4[76];
 int g_rpc_buffer2[4];
 
-
-//----- (00400000) --------------------------------------------------------
 int __fastcall cdvdfsv_checkdmastat(int trid)
 {
-	int retval; // $s0
-	int state; // [sp+10h] [-8h] BYREF
+	int retval;
+	int state;
 
 	if ( QueryIntrContext() )
 		return sceSifDmaStat(trid);
@@ -218,10 +210,9 @@ int __fastcall cdvdfsv_checkdmastat(int trid)
 	return retval;
 }
 
-//----- (00400058) --------------------------------------------------------
 int __cdecl cdvdfsv_cleanuprpc()
 {
-	unsigned int i; // $s1
+	unsigned int i;
 
 	sceSifRemoveRpc(&g_rpc_sdata1, &g_rpc_qdata1);
 	sceSifRemoveRpc(&g_rpc_sdata2, &g_rpc_qdata1);
@@ -242,15 +233,14 @@ int __cdecl cdvdfsv_cleanuprpc()
 	return 1;
 }
 
-//----- (00400158) --------------------------------------------------------
 int __fastcall _start(int ac, char **av)
 {
-	const unsigned __int16 *LibraryEntryTable; // $v0
-	int state; // [sp+10h] [-8h] BYREF
+	const unsigned __int16 *LibraryEntryTable;
+	int state;
 
 	if ( ac < 0 )
 	{
-		int error_code; // $s0
+		int error_code;
 
 		// cppcheck-suppress knownConditionTrueFalse
 		if ( g_cdvdfsv_rpc5flg || g_cdvdfsv_rpc3flg || cdvdfsv_cleanuprpc() == 0 )
@@ -286,16 +276,12 @@ int __fastcall _start(int ac, char **av)
 	}
 	return 2;
 }
-// 405720: using guessed type int g_cdvdfsv_rpc3flg;
-// 405750: using guessed type int g_dword_405750[2];
-// 40575C: using guessed type int g_dword_40575C;
 
-//----- (004002C0) --------------------------------------------------------
 int __cdecl cdvdfsv_init()
 {
-	const int *BootMode; // $v0
-	iop_thread_t thparam; // [sp+10h] [-20h] BYREF
-	int scres; // [sp+28h] [-8h] BYREF
+	const int *BootMode;
+	iop_thread_t thparam;
+	int scres;
 
 	BootMode = QueryBootMode(3);
 	if ( BootMode && (BootMode[1] & 2) != 0 )
@@ -319,11 +305,10 @@ int __cdecl cdvdfsv_init()
 	return 0;
 }
 
-//----- (00400394) --------------------------------------------------------
 void __cdecl cdvdfsv_main_th(void *arg)
 {
-	iop_thread_t thparam1; // [sp+10h] [-30h] BYREF
-	iop_thread_t thparam2; // [sp+28h] [-18h] BYREF
+	iop_thread_t thparam1;
+	iop_thread_t thparam2;
 
 	(void)arg;
 
@@ -356,7 +341,6 @@ void __cdecl cdvdfsv_main_th(void *arg)
 	ExitDeleteThread();
 }
 
-//----- (004004D4) --------------------------------------------------------
 int *__fastcall cdvdfsv_4(int arg1)
 {
 	VERBOSE_PRINTF(1, "Dummy Entry Called\n");
@@ -365,10 +349,9 @@ int *__fastcall cdvdfsv_4(int arg1)
 	return &g_verbose_level;
 }
 
-//----- (00400528) --------------------------------------------------------
 void __cdecl cdvdfsv_parseargs(int ac, char **av)
 {
-	int i; // $s1
+	int i;
 
 	g_cdvdfsv_def_pri = 81;
 	for ( i = 1; i < ac; i += 1 )
@@ -387,10 +370,9 @@ void __cdecl cdvdfsv_parseargs(int ac, char **av)
 	}
 }
 
-//----- (004005F8) --------------------------------------------------------
 int __cdecl sceCdChangeThreadPriority(int priority)
 {
-	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
+	iop_thread_info_t thinfo;
 
 	if ( (unsigned int)(priority - 9) >= 0x73 )
 		return -403;
@@ -404,12 +386,10 @@ int __cdecl sceCdChangeThreadPriority(int priority)
 	ChangeThreadPriority(g_cdvdfsv_thids[3], priority);
 	return 0;
 }
-// 4005F8: using guessed type iop_thread_info_t thinfo;
 
-//----- (00400694) --------------------------------------------------------
 void *__fastcall cbrpc_rpc1_cdinit(int fno, void *buffer, int length)
 {
-	int scres_unused; // [sp+10h] [-8h] BYREF
+	int scres_unused;
 
 	(void)fno;
 	(void)length;
@@ -424,9 +404,7 @@ void *__fastcall cbrpc_rpc1_cdinit(int fno, void *buffer, int length)
 	g_cdvdfsv_initres.m_retres = 1;
 	return (void *)&g_cdvdfsv_initres;
 }
-// 405940: using guessed type cdvdfsv_rpc1h_outpacket g_cdvdfsv_initres;
 
-//----- (00400760) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc3h_16_break(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	(void)inbuf;
@@ -437,11 +415,10 @@ void __fastcall cdvdfsv_rpc3h_16_break(const cdvdfsv_rpc3h_packet *inbuf, int bu
 	outbuf->m_retres = 1;
 }
 
-//----- (004007AC) --------------------------------------------------------
 void *__fastcall cbrpc_rpc4_fscall(int fno, void *buffer, int length)
 {
-	int scres; // [sp+10h] [-8h] BYREF
-	int state; // [sp+14h] [-4h] BYREF
+	int scres;
+	int state;
 	cdvdfsv_rpc4h_packet *inbuf;
 
 	(void)fno;
@@ -476,7 +453,7 @@ void *__fastcall cbrpc_rpc4_fscall(int fno, void *buffer, int length)
 	g_cdvdfsv_fssdd.attr = 0;
 	while ( 1 )
 	{
-		int trid; // $s0
+		int trid;
 
 		CpuSuspendIntr(&state);
 		trid = sceSifSetDma(&g_cdvdfsv_fssdd, 1);
@@ -490,10 +467,9 @@ void *__fastcall cbrpc_rpc4_fscall(int fno, void *buffer, int length)
 	return (void *)&g_cdvdfsv_srchres;
 }
 
-//----- (00400920) --------------------------------------------------------
 int __fastcall alarm_cb(void *a1)
 {
-	unsigned int read_to; // [sp+10h] [-8h] BYREF
+	unsigned int read_to;
 
 	read_to = *(_DWORD *)a1 / 0x9000;
 	KPRINTF("Read Time Out %d(msec)\n", read_to);
@@ -501,14 +477,13 @@ int __fastcall alarm_cb(void *a1)
 	return sceCdBreak() == 0;
 }
 
-//----- (00400974) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc5h_0D_iopmread(const cdvdfsv_rpc5h_packet *inbuf, int buflen, cdvdfsv_rpc5h_outpacket *outbuf)
 {
-	int cmd_error; // $s1
-	int trid; // $s0
+	int cmd_error;
+	int trid;
 	int scres_unused;
-	int error_code; // [sp+10h] [-8h] BYREF
-	int state; // [sp+14h] [-4h] BYREF
+	int error_code;
+	int state;
 
 	(void)buflen;
 	(void)outbuf;
@@ -547,30 +522,27 @@ void __cdecl cdvdfsv_rpc5h_0D_iopmread(const cdvdfsv_rpc5h_packet *inbuf, int bu
 	}
 }
 
-//----- (00400B0C) --------------------------------------------------------
 u8 __cdecl cdvdfsv_syncdec(int flag, int xorkey, int arg2, u8 data)
 {
 	return flag ? (((data << (arg2 % 8)) | (data >> (8 - arg2 % 8))) ^ xorkey) : data;
 }
 
-//----- (00400B58) --------------------------------------------------------
 int __cdecl cdvdfsv_cb_read()
 {
 	iSetEventFlag(g_cdvdman_intr_efid, 0x20);
 	return 0;
 }
 
-//----- (00400B80) --------------------------------------------------------
 int __cdecl cdvdfsv_checksid(u32 lsn, u32 sectors, u32 ps2dvd, void *buf, int decflag, int decshift, u32 *syncdec_mask)
 {
-	int scret; // $s1
-	u32 i; // $s5
-	u32 readlsn; // $s0
-	int syncdec; // $s0
-	u8 syncdec_4; // $v0
-	sceCdlLOCCD rpos; // [sp+18h] [-10h] BYREF
-	int scres; // [sp+20h] [-8h] BYREF
-	int ipi_emu; // [sp+24h] [-4h]
+	int scret;
+	u32 i;
+	u32 readlsn;
+	int syncdec;
+	u8 syncdec_4;
+	sceCdlLOCCD rpos;
+	int scres;
+	int ipi_emu;
 
 	ipi_emu = 0;
 	*syncdec_mask = 0;
@@ -620,7 +592,6 @@ int __cdecl cdvdfsv_checksid(u32 lsn, u32 sectors, u32 ps2dvd, void *buf, int de
 	return 1;
 }
 
-//----- (00400E40) --------------------------------------------------------
 int __fastcall readproc2(
 				u32 lsn,
 				u32 nsec,
@@ -635,26 +606,26 @@ int __fastcall readproc2(
 				int dmasize,
 				SifDmaTransfer_t *post_dmat)
 {
-	unsigned int i; // $v0
-	int csec; // $s5
-	int read_res_tmp; // $s0
-	int trid; // $s0
-	int j; // $s4
-	int size_2; // $s4
-	int sector_sizes[2]; // [sp+20h] [-40h] BYREF
+	unsigned int i;
+	int csec;
+	int read_res_tmp;
+	int trid;
+	int j;
+	int size_2;
+	int sector_sizes[2];
 	int error_code;
-	int scres_unused; // [sp+28h] [-38h] BYREF
-	int state; // [sp+2Ch] [-34h] BYREF
-	u32 syncdec_mask; // [sp+30h] [-30h] BYREF
-	u32 chcr; // [sp+34h] [-2Ch] BYREF
-	int error_code_tmp; // [sp+38h] [-28h] BYREF
-	char *ee_addr_tmp; // [sp+3Ch] [-24h]
-	int dmasize_tmp; // [sp+40h] [-20h]
-	int csec_comm; // [sp+44h] [-1Ch]
-	int nsec_div_cdvdfsv_sectors; // [sp+48h] [-18h]
-	int retry_flag1; // [sp+4Ch] [-14h]
-	int retry_flag2; // [sp+50h] [-10h]
-	int sector_size; // [sp+5Ch] [-4h]
+	int scres_unused;
+	int state;
+	u32 syncdec_mask;
+	u32 chcr;
+	int error_code_tmp;
+	char *ee_addr_tmp;
+	int dmasize_tmp;
+	int csec_comm;
+	int nsec_div_cdvdfsv_sectors;
+	int retry_flag1;
+	int retry_flag2;
+	int sector_size;
 
 	error_code_tmp = 0;
 	sector_sizes[0] = 0x924;
@@ -924,7 +895,6 @@ int __fastcall readproc2(
 	return 0;
 }
 
-//----- (00401A5C) --------------------------------------------------------
 int __fastcall readproc1(
 				unsigned int lsn,
 				u32 nsec,
@@ -935,11 +905,11 @@ int __fastcall readproc1(
 				int dec_shift_enable,
 				int dec_shift_value)
 {
-	int error_code; // [sp+20h] [-10h] BYREF
+	int error_code;
 	int scres_unused;
-	int state; // [sp+24h] [-Ch] BYREF
-	u32 syncdec_mask; // [sp+28h] [-8h] BYREF
-	int error_code_tmp; // [sp+2Ch] [-4h] BYREF
+	int state;
+	u32 syncdec_mask;
+	int error_code_tmp;
 
 	error_code_tmp = 0;
 	g_cdvdfsv_read_to.hi = 0;
@@ -949,7 +919,7 @@ int __fastcall readproc1(
 	g_cdvdfsv_err_count = 0;
 	while ( 1 )
 	{
-		int cmd_error; // $s0
+		int cmd_error;
 
 		CpuSuspendIntr(&state);
 		if ( dec_shift_enable )
@@ -996,10 +966,7 @@ int __fastcall readproc1(
 	VERBOSE_KPRINTF(1, "secid_chk lsn %d nsec %d IPI Err\n", lsn, nsec);
 	return 0;
 }
-// 405740: using guessed type int g_cdvdfsv_sid_err_recover_cnt;
-// 405744: using guessed type int g_cdvdfsv_err_count;
 
-//----- (00401DC4) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc5h_01_readee(
 				const cdvdfsv_rpc5h_packet *inbuf,
 				int buflen,
@@ -1008,25 +975,25 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 				int sync,
 				int decflag)
 {
-	unsigned int secsize; // $s1
-	unsigned int bsize; // $s5
+	unsigned int secsize;
+	unsigned int bsize;
 	unsigned int bsize_tmp;
-	unsigned int psize; // $s7
-	unsigned int ssize; // $s6
-	unsigned int i; // $a0
-	int sizestuff; // $s2
-	u32 needed_offset; // $s0
-	int sector_sizes[2]; // [sp+30h] [-38h]
-	int scres_unused; // [sp+38h] [-30h] BYREF
-	int lsndualchg_res; // [sp+3Ch] [-2Ch] BYREF
-	int state; // [sp+40h] [-28h] BYREF
-	unsigned int buf_offs_sum; // [sp+44h] [-24h]
-	unsigned int paddr; // [sp+48h] [-20h]
-	int saddr; // [sp+4Ch] [-1Ch]
-	int datapattern; // [sp+50h] [-18h]
-	unsigned int len2_plus_sec2; // [sp+54h] [-14h]
-	int trid; // [sp+58h] [-10h]
-	int decval; // [sp+5Ch] [-Ch]
+	unsigned int psize;
+	unsigned int ssize;
+	unsigned int i;
+	int sizestuff;
+	u32 needed_offset;
+	int sector_sizes[2];
+	int scres_unused;
+	int lsndualchg_res;
+	int state;
+	unsigned int buf_offs_sum;
+	unsigned int paddr;
+	int saddr;
+	int datapattern;
+	unsigned int len2_plus_sec2;
+	int trid;
+	int decval;
 	int early_break;
 
 	(void)buflen;
@@ -1085,7 +1052,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 	len2_plus_sec2 = lsndualchg_res + inbuf->m_pkt_01.m_sectors;
 	if ( !early_break )
 	{
-		int all_sec_bytes; // $lo
+		int all_sec_bytes;
 
 		all_sec_bytes = secsize * inbuf->m_pkt_01.m_sectors;
 		if ( g_cdvdfsv_spinctl != -1 )
@@ -1100,7 +1067,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 	}
 	if ( psize )
 	{
-		u32 sectors; // $s0
+		u32 sectors;
 
 		sectors = ( len2_plus_sec2 < lsndualchg_res + buf_offs_sum / secsize + 2 ) ? 1 : 2;
 		VERBOSE_PRINTF(1, "0 CD_READ LBN= %d sectors= %d all= %d\n", (int)(lsndualchg_res + buf_offs_sum / secsize), (int)sectors, (int)inbuf->m_pkt_01.m_sectors);
@@ -1122,7 +1089,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 		{
 			if ( datapattern != SCECdSecS2340 || ps2dvd )
 			{
-				int rtoc_ind; // $a1
+				int rtoc_ind;
 
 				rtoc_ind = 12;
 				for ( i = 0; i < psize; i += 1 )
@@ -1142,7 +1109,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 	bsize_tmp = bsize;
 	for ( i = 0; i < bsize; i += sizestuff )
 	{
-		u32 offs_sector_only; // $a0
+		u32 offs_sector_only;
 
 		bsize_tmp = bsize - i;
 		if ( g_cdvdfsv_spinctl != -1 )
@@ -1190,8 +1157,8 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 	bsize = bsize_tmp;
 	if ( !early_break && ssize )
 	{
-		u32 sectors_1; // $s0
-		unsigned int buf_offs_sum_bytes_in_sector; // $s3
+		u32 sectors_1;
+		unsigned int buf_offs_sum_bytes_in_sector;
 
 		buf_offs_sum_bytes_in_sector = buf_offs_sum % secsize;
 		sectors_1 = ( len2_plus_sec2 < lsndualchg_res + buf_offs_sum / secsize + 2 ) ? 1 : 2;
@@ -1212,7 +1179,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 		{
 			if ( datapattern != SCECdSecS2340 || ps2dvd )
 			{
-				int i2_offs; // $a1
+				int i2_offs;
 
 				i2_offs = 12;
 				for ( i = 0; i < ssize; i += 1 )
@@ -1257,23 +1224,7 @@ void __cdecl cdvdfsv_rpc5h_01_readee(
 	VERBOSE_PRINTF(1, "read end\n");
 	outbuf->m_retres = buf_offs_sum;
 }
-// 402038: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 402090: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 402118: conditional instruction was optimized away because $s7.4!=0
-// 402158: conditional instruction was optimized away because $s7.4!=0
-// 40217C: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 402214: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 40228C: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 4022D0: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 4023A8: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 402404: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 40247C: conditional instruction was optimized away because $s6.4!=0
-// 4024C4: conditional instruction was optimized away because $s6.4!=0
-// 4024E8: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 402560: conditional instruction was optimized away because $s6.4!=0
-// 40257C: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
 
-//----- (00402744) --------------------------------------------------------
 int __fastcall cdvdfsv_chreadee(
 				int secoffs,
 				int seccount,
@@ -1282,12 +1233,12 @@ int __fastcall cdvdfsv_chreadee(
 				u32 disktype_14,
 				int sync)
 {
-	unsigned int secsize; // $s1
-	unsigned int i; // $s4
-	int readsize_bytes; // $s2
-	sceCdRMode rmode; // [sp+30h] [-10h] BYREF
-	int scres_unused; // [sp+38h] [-8h] BYREF
-	int lsndualchg_res; // [sp+68h] [+28h] BYREF
+	unsigned int secsize;
+	unsigned int i;
+	int readsize_bytes;
+	sceCdRMode rmode;
+	int scres_unused;
+	int lsndualchg_res;
 
 	lsndualchg_res = secoffs;
 	rmode = *in_rmode;
@@ -1322,9 +1273,9 @@ int __fastcall cdvdfsv_chreadee(
 	}
 	for ( i = 0; i < (unsigned int)(secsize * seccount); i += readsize_bytes )
 	{
-		unsigned int bytescount; // $s0
-		int sectors_partial; // $a1
-		int bytescount_in_sectors; // $a1
+		unsigned int bytescount;
+		int sectors_partial;
+		int bytescount_in_sectors;
 
 		bytescount = (unsigned int)(secsize * seccount) - i;
 		sectors_partial = (lsndualchg_res + i / secsize) & 0xF;
@@ -1358,21 +1309,17 @@ int __fastcall cdvdfsv_chreadee(
 	}
 	return 1;
 }
-// 402844: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 4028A0: conditional instruction was optimized away because $s1.4 is in (==800|==918|==924)
-// 402744: using guessed type sceCdRMode rmode;
 
-//----- (0040293C) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc5h_0F_readchain(const cdvdfsv_rpc5h_packet *inbuf, int buflen, cdvdfsv_rpc5h_outpacket *outbuf)
 {
-	int sector_size; // $s7
-	unsigned int i; // $s5
-	const sceCdRChain *chain; // $s4
-	void *buf; // $s1
-	int re_result; // $s0
-	int trid; // $s0
-	int scres_unused; // [sp+18h] [-8h] BYREF
-	int state; // [sp+1Ch] [-4h] BYREF
+	int sector_size;
+	unsigned int i;
+	const sceCdRChain *chain;
+	void *buf;
+	int re_result;
+	int trid;
+	int scres_unused;
+	int state;
 
 	(void)buflen;
 	(void)outbuf;
@@ -1448,23 +1395,22 @@ void __fastcall cdvdfsv_rpc5h_0F_readchain(const cdvdfsv_rpc5h_packet *inbuf, in
 	}
 }
 
-//----- (00402C40) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int buflen, cdvdfsv_rpc5h_outpacket *outbuf)
 {
-	int trid1; // $s7
-	unsigned int sector_size; // $s3
-	int all_sec_bytes; // $t5
-	unsigned int buf_1_toalign; // $v0
-	int cmd_error; // $s1
-	int error_code; // $s0
-	unsigned int i; // $v1
-	int trid2; // $s7
-	int state; // [sp+10h] [-40h] BYREF
-	int error_code_tmp; // [sp+14h] [-3Ch] BYREF
-	unsigned int buf_offs; // [sp+18h] [-38h]
-	unsigned int buf_toalign; // [sp+1Ch] [-34h]
-	unsigned int buf_sec_tmp; // [sp+20h] [-30h]
-	unsigned int lbn_1_end; // [sp+34h] [-1Ch]
+	int trid1;
+	unsigned int sector_size;
+	int all_sec_bytes;
+	unsigned int buf_1_toalign;
+	int cmd_error;
+	int error_code;
+	unsigned int i;
+	int trid2;
+	int state;
+	int error_code_tmp;
+	unsigned int buf_offs;
+	unsigned int buf_toalign;
+	unsigned int buf_sec_tmp;
+	unsigned int lbn_1_end;
 
 	trid1 = 0;
 	g_cdvdfsv_rderror = SCECdErREADCFR;
@@ -1492,8 +1438,8 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 	buf_sec_tmp = all_sec_bytes - (buf_1_toalign - inbuf->m_pkt_02.m_buf);
 	if ( buf_toalign )
 	{
-		unsigned int buf_offs_sectors; // $lo
-		u32 sectors_1; // $s0
+		unsigned int buf_offs_sectors;
+		u32 sectors_1;
 
 		buf_offs_sectors = buf_offs / sector_size;
 		sectors_1 = ( lbn_1_end < inbuf->m_pkt_02.m_lbn + buf_offs / sector_size + 2 ) ? 1 : 2;
@@ -1524,15 +1470,15 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 	}
 	if ( error_code_tmp != 0 && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG )
 	{
-		unsigned int sector_count_in_bytes; // $s5
-		unsigned int buf_aligned; // [sp+28h] [-28h]
+		unsigned int sector_count_in_bytes;
+		unsigned int buf_aligned;
 
 		for ( buf_aligned = inbuf->m_pkt_02.m_buf + buf_toalign; buf_aligned < buf_1_toalign; buf_aligned += sector_count_in_bytes )
 		{
-			unsigned int buf_align_remain; // $s2
-			unsigned int buf_offs_mod_sector_size; // $s4
-			u32 lsn_2; // $s1
-			u32 sector_count; // $s0
+			unsigned int buf_align_remain;
+			unsigned int buf_offs_mod_sector_size;
+			u32 lsn_2;
+			u32 sector_count;
 
 			buf_align_remain = buf_1_toalign - buf_aligned;
 			buf_offs_mod_sector_size = buf_offs % sector_size;
@@ -1592,8 +1538,8 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 	}
 	if ( (error_code_tmp != 0 && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG) && buf_sec_tmp )
 	{
-		u32 sectors_3; // $s0
-		u32 lsn_3; // $s1
+		u32 sectors_3;
+		u32 lsn_3;
 
 		lsn_3 = inbuf->m_pkt_02.m_lbn + buf_offs / sector_size;
 		sectors_3 = ( lbn_1_end < lsn_3 + 2 ) ? 1 : 2;
@@ -1647,14 +1593,7 @@ void __fastcall cdvdfsv_rpc5h_02_readcdda(const cdvdfsv_rpc5h_packet *inbuf, int
 	VERBOSE_PRINTF(1, "read end\n");
 	outbuf->m_retres = buf_offs;
 }
-// 402D80: conditional instruction was optimized away because $s3.4 is in (==930|==940)
-// 402E80: conditional instruction was optimized away because %buf_toalign.4!=0
-// 402ED4: conditional instruction was optimized away because $s3.4 is in (==930|==940)
-// 402F14: conditional instruction was optimized away because $s3.4 is in (==930|==940)
-// 4030DC: conditional instruction was optimized away because $s3.4 is in (==930|==940)
-// 403140: conditional instruction was optimized away because $s3.4 is in (==930|==940)
 
-//----- (004033BC) --------------------------------------------------------
 void *__fastcall cbrpc_rpc2_diskready(int fno, void *buffer, int length)
 {
 	(void)fno;
@@ -1666,13 +1605,11 @@ void *__fastcall cbrpc_rpc2_diskready(int fno, void *buffer, int length)
 	g_diskready_res.m_retres = sceCdDiskReady(((const cdvdfsv_rpc2h_packet *)buffer)->m_mode);
 	return (void *)&g_diskready_res;
 }
-// 405BF0: using guessed type int g_diskready_res;
 
-//----- (0040358C) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc5h_04_gettoc(const cdvdfsv_rpc5h_packet *inbuf, int buflen, cdvdfsv_rpc5h_outpacket *outbuf)
 {
-	int trid; // $s0
-	int state; // [sp+10h] [-8h] BYREF
+	int trid;
+	int state;
 
 	(void)buflen;
 
@@ -1708,7 +1645,6 @@ void __fastcall cdvdfsv_rpc5h_04_gettoc(const cdvdfsv_rpc5h_packet *inbuf, int b
 	}
 }
 
-//----- (004036EC) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc3h_03_disktype(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	(void)inbuf;
@@ -1717,7 +1653,6 @@ void __fastcall cdvdfsv_rpc3h_03_disktype(const cdvdfsv_rpc3h_packet *inbuf, int
 	outbuf->m_retres = sceCdGetDiskType();
 }
 
-//----- (00403714) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc3h_0C_cdstatus(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	(void)inbuf;
@@ -1726,11 +1661,10 @@ void __fastcall cdvdfsv_rpc3h_0C_cdstatus(const cdvdfsv_rpc3h_packet *inbuf, int
 	outbuf->m_retres = sceCdStatus();
 }
 
-//----- (0040373C) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc3h_06_ri(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
-	int i; // $s1
-	u32 efbits; // [sp+10h] [-8h] BYREF
+	int i;
+	u32 efbits;
 
 	(void)inbuf;
 	(void)buflen;
@@ -1743,11 +1677,10 @@ void __cdecl cdvdfsv_rpc3h_06_ri(const cdvdfsv_rpc3h_packet *inbuf, int buflen, 
 	}
 }
 
-//----- (004037A4) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc3h_1A_rm(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
-	int i; // $s1
-	u32 efbits; // [sp+10h] [-8h] BYREF
+	int i;
+	u32 efbits;
 
 	(void)inbuf;
 	(void)buflen;
@@ -1760,11 +1693,10 @@ void __cdecl cdvdfsv_rpc3h_1A_rm(const cdvdfsv_rpc3h_packet *inbuf, int buflen, 
 	}
 }
 
-//----- (0040380C) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc3h_24_readguid(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
-	int i; // $s0
-	u32 efbits; // [sp+10h] [-8h] BYREF
+	int i;
+	u32 efbits;
 
 	(void)inbuf;
 	(void)buflen;
@@ -1777,11 +1709,10 @@ void __cdecl cdvdfsv_rpc3h_24_readguid(const cdvdfsv_rpc3h_packet *inbuf, int bu
 	}
 }
 
-//----- (00403870) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc3h_26_readmodelid(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
-	int i; // $s0
-	u32 efbits; // [sp+10h] [-8h] BYREF
+	int i;
+	u32 efbits;
 
 	(void)inbuf;
 	(void)buflen;
@@ -1794,7 +1725,6 @@ void __cdecl cdvdfsv_rpc3h_26_readmodelid(const cdvdfsv_rpc3h_packet *inbuf, int
 	}
 }
 
-//----- (004038D4) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc3h_22_mmode(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	if ( buflen == 4 || inbuf->m_pkt_22.m_char4 == 0 )
@@ -1803,7 +1733,6 @@ void __fastcall cdvdfsv_rpc3h_22_mmode(const cdvdfsv_rpc3h_packet *inbuf, int bu
 	}
 }
 
-//----- (0040391C) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc3h_23_changethreadpriority(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	(void)buflen;
@@ -1811,11 +1740,10 @@ void __fastcall cdvdfsv_rpc3h_23_changethreadpriority(const cdvdfsv_rpc3h_packet
 	outbuf->m_retres = sceCdChangeThreadPriority(inbuf->m_pkt_23.m_priority);
 }
 
-//----- (00403948) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc3h_21_poweroff(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
-	int i; // $s0
-	u32 efbits; // [sp+10h] [-8h] BYREF
+	int i;
+	u32 efbits;
 
 	(void)inbuf;
 	(void)buflen;
@@ -1828,11 +1756,10 @@ void __cdecl cdvdfsv_rpc3h_21_poweroff(const cdvdfsv_rpc3h_packet *inbuf, int bu
 	}
 }
 
-//----- (004039AC) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc3h_15_ctrladout(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
-	int i; // $s0
-	u32 efbits; // [sp+10h] [-8h] BYREF
+	int i;
+	u32 efbits;
 
 	(void)buflen;
 
@@ -1843,11 +1770,10 @@ void __cdecl cdvdfsv_rpc3h_15_ctrladout(const cdvdfsv_rpc3h_packet *inbuf, int b
 	}
 }
 
-//----- (00403A20) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc3h_01_readclock(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
-	int i; // $s0
-	u32 efbits; // [sp+10h] [-8h] BYREF
+	int i;
+	u32 efbits;
 
 	(void)inbuf;
 	(void)buflen;
@@ -1859,10 +1785,9 @@ void __cdecl cdvdfsv_rpc3h_01_readclock(const cdvdfsv_rpc3h_packet *inbuf, int b
 	}
 }
 
-//----- (00403A84) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc5h_11_readdiskid(const cdvdfsv_rpc5h_packet *inbuf, int buflen, cdvdfsv_rpc5h_outpacket *outbuf)
 {
-	u8 diskid_tmp[5]; // [sp+10h] [-10h] BYREF
+	u8 diskid_tmp[5];
 
 	(void)inbuf;
 	(void)buflen;
@@ -1871,7 +1796,6 @@ void __fastcall cdvdfsv_rpc5h_11_readdiskid(const cdvdfsv_rpc5h_packet *inbuf, i
 	memcpy(&(outbuf->m_pkt_11.m_diskid), &diskid_tmp, sizeof(diskid_tmp));
 }
 
-//----- (00403AC0) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc5h_17_doesuniquekeyexist(const cdvdfsv_rpc5h_packet *inbuf, int buflen, cdvdfsv_rpc5h_outpacket *outbuf)
 {
 	(void)inbuf;
@@ -1880,13 +1804,12 @@ void __fastcall cdvdfsv_rpc5h_17_doesuniquekeyexist(const cdvdfsv_rpc5h_packet *
 	outbuf->m_retres = sceCdDoesUniqueKeyExist(&outbuf->m_pkt_17.m_status);
 }
 
-//----- (00403AEC) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc3h_0B_applyscmd(
 				const cdvdfsv_rpc3h_packet *inbuf,
 				int buflen,
 				cdvdfsv_rpc3h_outpacket *outbuf)
 {
-	u8 resbuf[16]; // [sp+10h] [-10h] BYREF
+	u8 resbuf[16];
 
 	(void)buflen;
 
@@ -1894,7 +1817,6 @@ void __fastcall cdvdfsv_rpc3h_0B_applyscmd(
 	memcpy(&(outbuf->m_pkt_0B.m_outbuf), &resbuf, sizeof(resbuf));
 }
 
-//----- (00403B64) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc5h_0C_applyncmd(const cdvdfsv_rpc5h_packet *inbuf, int buflen, cdvdfsv_rpc5h_outpacket *outbuf)
 {
 	(void)buflen;
@@ -1903,7 +1825,6 @@ void __fastcall cdvdfsv_rpc5h_0C_applyncmd(const cdvdfsv_rpc5h_packet *inbuf, in
 	sceCdSync(2);
 }
 
-//----- (00403BA4) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc3h_04_geterror(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	(void)inbuf;
@@ -1912,11 +1833,10 @@ void __fastcall cdvdfsv_rpc3h_04_geterror(const cdvdfsv_rpc3h_packet *inbuf, int
 	outbuf->m_retres = sceCdGetError();
 }
 
-//----- (00403BCC) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc3h_05_trayreq(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
-	int i; // $s0
-	u32 efbits; // [sp+10h] [-8h] BYREF
+	int i;
+	u32 efbits;
 
 	(void)buflen;
 
@@ -1927,7 +1847,6 @@ void __cdecl cdvdfsv_rpc3h_05_trayreq(const cdvdfsv_rpc3h_packet *inbuf, int buf
 	}
 }
 
-//----- (00403C40) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc3h_25_settimeout(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	(void)buflen;
@@ -1935,7 +1854,6 @@ void __fastcall cdvdfsv_rpc3h_25_settimeout(const cdvdfsv_rpc3h_packet *inbuf, i
 	outbuf->m_retres = sceCdSetTimeout(inbuf->m_pkt_25.m_param, inbuf->m_pkt_25.m_timeout);
 }
 
-//----- (00403C74) --------------------------------------------------------
 void __fastcall cdvdfsv_rpc3h_27_readdvddualinfo(const cdvdfsv_rpc3h_packet *inbuf, int buflen, cdvdfsv_rpc3h_outpacket *outbuf)
 {
 	(void)inbuf;
@@ -1944,11 +1862,10 @@ void __fastcall cdvdfsv_rpc3h_27_readdvddualinfo(const cdvdfsv_rpc3h_packet *inb
 	outbuf->m_retres = sceCdReadDvdDualInfo(&outbuf->m_pkt_27.m_on_dual, &outbuf->m_pkt_27.m_layer1_start);
 }
 
-//----- (00403CA4) --------------------------------------------------------
 int __cdecl cdvdfsv_rpc5h_0E_diskready()
 {
-	int is_detecting; // $s1
-	int scres_unused; // [sp+10h] [-8h] BYREF
+	int is_detecting;
+	int scres_unused;
 
 	is_detecting = 0;
 	// The following call to sceCdGetDiskType was inlined
@@ -1975,11 +1892,10 @@ int __cdecl cdvdfsv_rpc5h_0E_diskready()
 	return 2;
 }
 
-//----- (00403D4C) --------------------------------------------------------
 void *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 {
-	int scres_unused; // [sp+18h] [-8h] BYREF
-	int fno_1; // [sp+30h] [+10h] BYREF
+	int scres_unused;
+	int fno_1;
 
 	fno_1 = fno;
 	VERBOSE_PRINTF(1, "sce_cdvd N cmd start %d\n", fno);
@@ -2067,7 +1983,6 @@ void *__fastcall cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 	return (void *)&g_crr;
 }
 
-//----- (00404160) --------------------------------------------------------
 // cppcheck-suppress constParameterCallback
 void *__fastcall cbrpc_rpc3_cdvdscmds(int fno, void *buffer, int length)
 {
@@ -2135,15 +2050,13 @@ void *__fastcall cbrpc_rpc3_cdvdscmds(int fno, void *buffer, int length)
 	g_cdvdfsv_rpc3flg = 0;
 	return (void *)&g_outbuf;
 }
-// 405720: using guessed type int g_cdvdfsv_rpc3flg;
 
-//----- (00404424) --------------------------------------------------------
 void __cdecl cdvdfsv_poffloop()
 {
-	int trid; // $s0
-	char cmdpkt[16]; // [sp+18h] [-18h] BYREF
-	int scres; // [sp+28h] [-8h] BYREF
-	u32 efbits; // [sp+2Ch] [-4h] BYREF
+	int trid;
+	char cmdpkt[16];
+	int scres;
+	u32 efbits;
 
 	g_cdvdman_intr_efid = sceCdSC(0xFFFFFFF5, &scres);
 	while ( 1 )
@@ -2166,9 +2079,7 @@ void __cdecl cdvdfsv_poffloop()
 		}
 	}
 }
-// 404424: using guessed type char cmdpkt[16];
 
-//----- (004044F4) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc1_th(void *arg)
 {
 	(void)arg;
@@ -2181,7 +2092,6 @@ void __cdecl cdvdfsv_rpc1_th(void *arg)
 	ExitDeleteThread();
 }
 
-//----- (004045CC) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc3_th(void *arg)
 {
 	(void)arg;
@@ -2192,7 +2102,6 @@ void __cdecl cdvdfsv_rpc3_th(void *arg)
 	ExitDeleteThread();
 }
 
-//----- (00404644) --------------------------------------------------------
 void __cdecl cdvdfsv_rpc2_th(void *arg)
 {
 	(void)arg;
@@ -2204,19 +2113,18 @@ void __cdecl cdvdfsv_rpc2_th(void *arg)
 	ExitDeleteThread();
 }
 
-//----- (004046F0) --------------------------------------------------------
 void __fastcall cdvdfsv_unused_xorfun(unsigned int *a1, int a2)
 {
-	int v2; // $v0
-	int v4; // $t1
-	int v5; // $t0
-	int v6; // $v1
-	bool v7; // dc
+	int v2;
+	int v4;
+	int v5;
+	int v6;
+	bool v7;
 
 	v2 = 0;
 	for ( ; a2; a2 -= 4 )
 	{
-		unsigned int v3; // $t7
+		unsigned int v3;
 
 		v3 = *a1;
 		for ( v4 = 4; v4; v4 -= 1 )
@@ -2239,62 +2147,61 @@ void __fastcall cdvdfsv_unused_xorfun(unsigned int *a1, int a2)
 	}
 }
 
-//----- (0040475C) --------------------------------------------------------
 unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n)
 {
-	int v3; // $a3
-	int v4; // $v1
-	int v5; // $v1
-	int v6; // $t0
-	int v7; // $t1
-	int v8; // $t2
-	int v9; // $t3
-	int v10; // $t4
-	int v11; // $t5
-	int v12; // $t6
-	int v13; // $t7
-	int v14; // $t8
-	int v15; // $t9
-	int v16; // $a3
-	int v17; // $v1
-	int v18; // $v1
-	int v19; // $t0
-	int v20; // $t1
-	int v21; // $t2
-	int v22; // $t3
-	int v23; // $t4
-	int v24; // $t5
-	int v25; // $t6
-	int v26; // $t7
-	int v27; // $t8
-	int v28; // $t9
-	int v29; // $a3
-	int v30; // $v1
-	int v31; // $v1
-	int v32; // $t0
-	int v33; // $t1
-	int v34; // $t2
-	int v35; // $t3
-	int v36; // $t4
-	int v37; // $t5
-	int v38; // $t6
-	int v39; // $t7
-	int v40; // $t8
-	int v41; // $t9
-	int v42; // $a3
-	int v43; // $v1
-	int v44; // $v1
-	int v45; // $t0
-	int v46; // $t1
-	int v47; // $t2
-	int v48; // $t3
-	int v49; // $t4
-	int v50; // $t5
-	int v51; // $t6
-	int v52; // $t7
-	int v53; // $t8
-	int v54; // $t9
-	unsigned int v55; // $v1
+	int v3;
+	int v4;
+	int v5;
+	int v6;
+	int v7;
+	int v8;
+	int v9;
+	int v10;
+	int v11;
+	int v12;
+	int v13;
+	int v14;
+	int v15;
+	int v16;
+	int v17;
+	int v18;
+	int v19;
+	int v20;
+	int v21;
+	int v22;
+	int v23;
+	int v24;
+	int v25;
+	int v26;
+	int v27;
+	int v28;
+	int v29;
+	int v30;
+	int v31;
+	int v32;
+	int v33;
+	int v34;
+	int v35;
+	int v36;
+	int v37;
+	int v38;
+	int v39;
+	int v40;
+	int v41;
+	int v42;
+	int v43;
+	int v44;
+	int v45;
+	int v46;
+	int v47;
+	int v48;
+	int v49;
+	int v50;
+	int v51;
+	int v52;
+	int v53;
+	int v54;
+	unsigned int v55;
 
 	if ( n >> 2 )
 	{
@@ -2519,257 +2426,202 @@ LABEL_33:
 	return n;
 }
 
-//----- (00404B90) --------------------------------------------------------
 void cdvdfsv_1()
 {
 	;
 }
 
 #if 0
-//----- (00404BB4) --------------------------------------------------------
 int Kprintf(const char *format, ...)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404BB4: variable 'result' is possibly undefined
 
-//----- (00404BD8) --------------------------------------------------------
 int __cdecl RegisterLibraryEntries(struct irx_export_table *exports)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404BD8: variable 'result' is possibly undefined
 
-//----- (00404BE0) --------------------------------------------------------
 int __cdecl ReleaseLibraryEntries(struct irx_export_table *exports)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404BE0: variable 'result' is possibly undefined
 
-//----- (00404BE8) --------------------------------------------------------
 void *__cdecl QueryLibraryEntryTable(iop_library_t *library)
 {
-	void *result; // $v0
+	void *result;
 
 	return result;
 }
-// 404BE8: variable 'result' is possibly undefined
 
-//----- (00404BF0) --------------------------------------------------------
 int *__cdecl QueryBootMode(int mode)
 {
-	int *result; // $v0
+	int *result;
 
 	return result;
 }
-// 404BF0: variable 'result' is possibly undefined
 
-//----- (00404C14) --------------------------------------------------------
 int __cdecl DisableIntr(int irq, int *res)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404C14: variable 'result' is possibly undefined
 
-//----- (00404C1C) --------------------------------------------------------
 int __cdecl CpuSuspendIntr(int *state)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404C1C: variable 'result' is possibly undefined
 
-//----- (00404C24) --------------------------------------------------------
 int __cdecl CpuResumeIntr(int state)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404C24: variable 'result' is possibly undefined
 
-//----- (00404C2C) --------------------------------------------------------
 int QueryIntrContext(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404C2C: variable 'result' is possibly undefined
 
-//----- (00404C50) --------------------------------------------------------
 int printf(const char *format, ...)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404C50: variable 'result' is possibly undefined
 
-//----- (00404C74) --------------------------------------------------------
 void __cdecl dmac_ch_set_madr(u32 channel, u32 val)
 {
 	;
 }
 
-//----- (00404C7C) --------------------------------------------------------
 void __cdecl dmac_ch_set_bcr(u32 channel, u32 val)
 {
 	;
 }
 
-//----- (00404C84) --------------------------------------------------------
 void __cdecl dmac_ch_set_chcr(u32 channel, u32 val)
 {
 	;
 }
 
-//----- (00404C8C) --------------------------------------------------------
 u32 __cdecl dmac_ch_get_chcr(u32 channel)
 {
-	u32 result; // $v0
+	u32 result;
 
 	return result;
 }
-// 404C8C: variable 'result' is possibly undefined
 
-//----- (00404CB0) --------------------------------------------------------
 int __cdecl CreateThread(iop_thread_t *thread)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CB0: variable 'result' is possibly undefined
 
-//----- (00404CB8) --------------------------------------------------------
 int __cdecl DeleteThread(int thid)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CB8: variable 'result' is possibly undefined
 
-//----- (00404CC0) --------------------------------------------------------
 int __cdecl StartThread(int thid, void *arg)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CC0: variable 'result' is possibly undefined
 
-//----- (00404CC8) --------------------------------------------------------
 int __cdecl ExitDeleteThread()
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CC8: variable 'result' is possibly undefined
 
-//----- (00404CD0) --------------------------------------------------------
 int __cdecl TerminateThread(int thid)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CD0: variable 'result' is possibly undefined
 
-//----- (00404CD8) --------------------------------------------------------
 int __cdecl ChangeThreadPriority(int thid, int priority)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CD8: variable 'result' is possibly undefined
 
-//----- (00404CE0) --------------------------------------------------------
 int GetThreadId(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CE0: variable 'result' is possibly undefined
 
-//----- (00404CE8) --------------------------------------------------------
 int __cdecl ReferThreadStatus(int thid, iop_thread_info_t *info)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CE8: variable 'result' is possibly undefined
 
-//----- (00404CF0) --------------------------------------------------------
 int __cdecl DelayThread(int usec)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CF0: variable 'result' is possibly undefined
 
-//----- (00404CF8) --------------------------------------------------------
 int __cdecl SetAlarm(iop_sys_clock_t *sys_clock, unsigned int (__cdecl *alarm_cb)(void *), void *arg)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404CF8: variable 'result' is possibly undefined
 
-//----- (00404D00) --------------------------------------------------------
 int __cdecl CancelAlarm(unsigned int (__cdecl *alarm_cb)(void *), void *arg)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404D00: variable 'result' is possibly undefined
 
-//----- (00404D24) --------------------------------------------------------
 int __cdecl iSetEventFlag(int ef, u32 bits)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404D24: variable 'result' is possibly undefined
 
-//----- (00404D2C) --------------------------------------------------------
 int __cdecl ClearEventFlag(int ef, u32 bits)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404D2C: variable 'result' is possibly undefined
 
-//----- (00404D34) --------------------------------------------------------
 int __cdecl WaitEventFlag(int ef, u32 bits, int mode, u32 *resbits)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404D34: variable 'result' is possibly undefined
 
-//----- (00404D58) --------------------------------------------------------
 unsigned int __cdecl sceSifSendCmd(
 				int cmd,
 				void *packet,
@@ -2778,19 +2630,16 @@ unsigned int __cdecl sceSifSendCmd(
 				void *dest_extra,
 				int size_extra)
 {
-	unsigned int result; // $v0
+	unsigned int result;
 
 	return result;
 }
-// 404D58: variable 'result' is possibly undefined
 
-//----- (00404D60) --------------------------------------------------------
 void __cdecl sceSifInitRpc(int mode)
 {
 	;
 }
 
-//----- (00404D68) --------------------------------------------------------
 void __cdecl sceSifRegisterRpc(
 				SifRpcServerData_t *sd,
 				int sid,
@@ -2803,423 +2652,328 @@ void __cdecl sceSifRegisterRpc(
 	;
 }
 
-//----- (00404D70) --------------------------------------------------------
 SifRpcDataQueue_t *__cdecl sceSifSetRpcQueue(SifRpcDataQueue_t *q, int thread_id)
 {
-	SifRpcDataQueue_t *result; // $v0
+	SifRpcDataQueue_t *result;
 
 	return result;
 }
-// 404D70: variable 'result' is possibly undefined
 
-//----- (00404D78) --------------------------------------------------------
 void __cdecl sceSifRpcLoop(SifRpcDataQueue_t *qd)
 {
 	;
 }
 
-//----- (00404D80) --------------------------------------------------------
 SifRpcServerData_t *__cdecl sceSifRemoveRpc(SifRpcServerData_t *sd, SifRpcDataQueue_t *qd)
 {
-	SifRpcServerData_t *result; // $v0
+	SifRpcServerData_t *result;
 
 	return result;
 }
-// 404D80: variable 'result' is possibly undefined
 
-//----- (00404D88) --------------------------------------------------------
 SifRpcDataQueue_t *__cdecl sceSifRemoveRpcQueue(SifRpcDataQueue_t *qd)
 {
-	SifRpcDataQueue_t *result; // $v0
+	SifRpcDataQueue_t *result;
 
 	return result;
 }
-// 404D88: variable 'result' is possibly undefined
 
-//----- (00404DAC) --------------------------------------------------------
 void __cdecl sceSifInit()
 {
 	;
 }
 
-//----- (00404DB4) --------------------------------------------------------
 int __cdecl sceSifSetDma(SifDmaTransfer_t *dmat, int count)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404DB4: variable 'result' is possibly undefined
 
-//----- (00404DBC) --------------------------------------------------------
 int __cdecl sceSifDmaStat(int trid)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404DBC: variable 'result' is possibly undefined
 
-//----- (00404DC4) --------------------------------------------------------
 int __cdecl sceSifCheckInit()
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404DC4: variable 'result' is possibly undefined
 
-//----- (00404DE8) --------------------------------------------------------
 int __cdecl strncmp(const char *p, const char *q, size_t size)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404DE8: variable 'result' is possibly undefined
 
-//----- (00404DF0) --------------------------------------------------------
 int __cdecl strtol(const char *s, char **endptr, int base)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404DF0: variable 'result' is possibly undefined
 
-//----- (00404E14) --------------------------------------------------------
 int __cdecl devctl(const char *name, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E14: variable 'result' is possibly undefined
 
-//----- (00404E38) --------------------------------------------------------
 int __cdecl sceCdInit(int mode)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E38: variable 'result' is possibly undefined
 
-//----- (00404E40) --------------------------------------------------------
 int sceCdStandby(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E40: variable 'result' is possibly undefined
 
-//----- (00404E48) --------------------------------------------------------
 int __cdecl sceCdSeek(u32 lbn)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E48: variable 'result' is possibly undefined
 
-//----- (00404E50) --------------------------------------------------------
 int sceCdGetError(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E50: variable 'result' is possibly undefined
 
-//----- (00404E58) --------------------------------------------------------
 int __cdecl sceCdGetToc(u8 *toc)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E58: variable 'result' is possibly undefined
 
-//----- (00404E60) --------------------------------------------------------
 int __cdecl sceCdSearchFile(sceCdlFILE *file, const char *name)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E60: variable 'result' is possibly undefined
 
-//----- (00404E68) --------------------------------------------------------
 int __cdecl sceCdSync(int mode)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E68: variable 'result' is possibly undefined
 
-//----- (00404E70) --------------------------------------------------------
 int sceCdGetDiskType(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E70: variable 'result' is possibly undefined
 
-//----- (00404E78) --------------------------------------------------------
 int __cdecl sceCdTrayReq(int param, u32 *traychk)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E78: variable 'result' is possibly undefined
 
-//----- (00404E80) --------------------------------------------------------
 int sceCdStop(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E80: variable 'result' is possibly undefined
 
-//----- (00404E88) --------------------------------------------------------
 u32 __cdecl sceCdPosToInt(sceCdlLOCCD *p)
 {
-	u32 result; // $v0
+	u32 result;
 
 	return result;
 }
-// 404E88: variable 'result' is possibly undefined
 
-//----- (00404E90) --------------------------------------------------------
 int __cdecl sceCdRI(u8 *buffer, u32 *result)
 {
-	int v2; // $v0
+	int v2;
 
 	return v2;
 }
-// 404E90: variable 'v2' is possibly undefined
 
-//----- (00404E98) --------------------------------------------------------
 int __cdecl sceCdReadClock(sceCdCLOCK *clock)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404E98: variable 'result' is possibly undefined
 
-//----- (00404EA0) --------------------------------------------------------
 int sceCdStatus(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404EA0: variable 'result' is possibly undefined
 
-//----- (00404EA8) --------------------------------------------------------
 int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff, u16 outBuffSize)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404EA8: variable 'result' is possibly undefined
 
-//----- (00404EB0) --------------------------------------------------------
 int sceCdPause(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404EB0: variable 'result' is possibly undefined
 
-//----- (00404EB8) --------------------------------------------------------
 int sceCdBreak(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404EB8: variable 'result' is possibly undefined
 
-//----- (00404EC0) --------------------------------------------------------
 int __cdecl sceCdReadCDDA(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404EC0: variable 'result' is possibly undefined
 
-//----- (00404EC8) --------------------------------------------------------
 u32 sceCdGetReadPos(void)
 {
-	u32 result; // $v0
+	u32 result;
 
 	return result;
 }
-// 404EC8: variable 'result' is possibly undefined
 
-//----- (00404ED0) --------------------------------------------------------
 int __cdecl sceCdCtrlADout(int arg1, u32 *status)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404ED0: variable 'result' is possibly undefined
 
-//----- (00404ED8) --------------------------------------------------------
 void *sceGetFsvRbuf(void)
 {
-	void *result; // $v0
+	void *result;
 
 	return result;
 }
-// 404ED8: variable 'result' is possibly undefined
 
-//----- (00404EE0) --------------------------------------------------------
 int __cdecl sceCdSC(int code, int *param)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404EE0: variable 'result' is possibly undefined
 
-//----- (00404EE8) --------------------------------------------------------
 int __cdecl sceCdApplyNCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404EE8: variable 'result' is possibly undefined
 
-//----- (00404EF0) --------------------------------------------------------
 int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int csec, void *callback)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404EF0: variable 'result' is possibly undefined
 
-//----- (00404EF8) --------------------------------------------------------
 int __cdecl sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5, void *cb)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404EF8: variable 'result' is possibly undefined
 
-//----- (00404F00) --------------------------------------------------------
 int __cdecl sceCdRM(char *buffer, u32 *status)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F00: variable 'result' is possibly undefined
 
-//----- (00404F08) --------------------------------------------------------
 int __cdecl sceCdPowerOff(u32 *result)
 {
-	int v1; // $v0
+	int v1;
 
 	return v1;
 }
-// 404F08: variable 'v1' is possibly undefined
 
-//----- (00404F10) --------------------------------------------------------
 int __cdecl sceCdMmode(int media)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F10: variable 'result' is possibly undefined
 
-//----- (00404F18) --------------------------------------------------------
 int __cdecl sceCdReadDiskID(unsigned int *id)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F18: variable 'result' is possibly undefined
 
-//----- (00404F20) --------------------------------------------------------
 int __cdecl sceCdReadGUID(u64 *guid)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F20: variable 'result' is possibly undefined
 
-//----- (00404F28) --------------------------------------------------------
 int __cdecl sceCdSetTimeout(int param, int timeout)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F28: variable 'result' is possibly undefined
 
-//----- (00404F30) --------------------------------------------------------
 int __cdecl sceCdReadModelID(unsigned int *id)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F30: variable 'result' is possibly undefined
 
-//----- (00404F38) --------------------------------------------------------
 int __cdecl sceCdReadDvdDualInfo(int *on_dual, unsigned int *layer1_start)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F38: variable 'result' is possibly undefined
 
-//----- (00404F40) --------------------------------------------------------
 int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F40: variable 'result' is possibly undefined
 
-//----- (00404F48) --------------------------------------------------------
 int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMode *mode)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F48: variable 'result' is possibly undefined
 
-//----- (00404F50) --------------------------------------------------------
 int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404F50: variable 'result' is possibly undefined
 #endif
-
-// nfuncs=131 queued=131 decompiled=131 lumina nreq=0 worse=0 better=0
-// ALL OK, 131 function(s) have been successfully decompiled

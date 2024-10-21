@@ -9,9 +9,6 @@ IRX_ID("cdvd_st_driver", 2, 2);
 
 extern struct irx_export_table _exp_cdvdstm;
 
-//-------------------------------------------------------------------------
-// Function declarations
-
 int __fastcall vCancelAlarm(unsigned int (__cdecl *alarm_cb)(void *), void *arg);
 int vSetEventFlag();
 int vClearEventFlag();
@@ -87,19 +84,16 @@ static void ee_stream_intr_cb_cdda_thunk(int userdata)
 	ee_stream_intr_cb_cdda((void *)userdata);
 }
 
-//-------------------------------------------------------------------------
-// Data declarations
-
-int g_verbose_level = 0; // weak
-int g_cdvdstm_in_deldrv = 0; // weak
-int g_cdvdstm_bufmax = 0; // weak
-int g_cdvdstm_numbytes = 0; // weak
-int g_cdvdstm_bankmax = 0; // weak
+int g_verbose_level = 0;
+int g_cdvdstm_in_deldrv = 0;
+int g_cdvdstm_bufmax = 0;
+int g_cdvdstm_numbytes = 0;
+int g_cdvdstm_bankmax = 0;
 void *g_cdvdstm_buffer = NULL;
-unsigned int g_cdvdstm_sectorcount = 0; // idb
-int g_cdvdstm_last_error_for_iop = 0; // idb
-int g_cdvdstm_retryerr_iop = 0; // weak
-int g_cdvdstm_retrycnt_iop = 0; // weak
+unsigned int g_cdvdstm_sectorcount = 0;
+int g_cdvdstm_last_error_for_iop = 0;
+int g_cdvdstm_retryerr_iop = 0;
+int g_cdvdstm_retrycnt_iop = 0;
 static iop_device_ops_t g_cdrom_stm_dev_ops =
     {
         &cdrom_stm_init,
@@ -130,73 +124,67 @@ static iop_device_ops_t g_cdrom_stm_dev_ops =
         (void *)&cdrom_stm_nulldev,
         &cdrom_stm_nulldev,
     };
-iop_device_t g_cdrom_stm_dev = { "cdrom_stm", 0x10000010, 1, "CD-ROM_STM ", &g_cdrom_stm_dev_ops }; // idb
+iop_device_t g_cdrom_stm_dev = { "cdrom_stm", 0x10000010, 1, "CD-ROM_STM ", &g_cdrom_stm_dev_ops };
 int g_cdvdstm_last_error_for_ee = 0;
-int g_cdvdstm_bufsz2 = 0; // weak
-int g_cdvdstm_chunksz2 = 0; // weak
-int g_cdvdstm_bankcnt2 = 0; // weak
+int g_cdvdstm_bufsz2 = 0;
+int g_cdvdstm_chunksz2 = 0;
+int g_cdvdstm_bankcnt2 = 0;
 void *g_cdvdstm_buffer2 = NULL;
-u32 g_cdvdstm_sectorcount2 = 0; // idb
-int g_cdvdstm_retryerr_ee = 0; // weak
-int g_cdvdstm_retrycnt_ee_normal = 0; // weak
-int g_cdvdstm_usedchunksize2 = 0x930; // weak
+u32 g_cdvdstm_sectorcount2 = 0;
+int g_cdvdstm_retryerr_ee = 0;
+int g_cdvdstm_retrycnt_ee_normal = 0;
+int g_cdvdstm_usedchunksize2 = 0x930;
 u32 g_cdvdstm_retrycnt_ee_cdda = 0;
-sceCdRMode g_rmode_for_stream0; // weak
-int g_cdvdstm_tgt; // weak
-int g_cdvdstm_semid; // idb
-int g_cdvdman_intr_efid; // idb
-char g_cdvdstm_usedmap_iop[512]; // weak
-unsigned int g_cdvdstm_lsn_iop; // idb
-int g_cdvdstm_bankgp_iop; // weak
-int g_cdvdstm_bankcur_iop; // weak
-int g_cdvdstm_bankoffs_iop; // weak
-sceCdRMode g_cdvdstm_mode_iop; // idb
-int g_cdvdstm_stmstart_iop; // weak
-iop_sys_clock_t g_cdvdstm_curclk_iop; // idb
-SifDmaTransfer_t g_cdvdstm_dmat; // idb
-int g_cdvdstm_readlbn_ee_normal; // weak
-SifDmaTransfer_t g_cdvdstm_dmat2; // idb
-u32 g_cdvdstm_readlbn_ee_cdda; // idb
+sceCdRMode g_rmode_for_stream0;
+int g_cdvdstm_tgt;
+int g_cdvdstm_semid;
+int g_cdvdman_intr_efid;
+char g_cdvdstm_usedmap_iop[512];
+unsigned int g_cdvdstm_lsn_iop;
+int g_cdvdstm_bankgp_iop;
+int g_cdvdstm_bankcur_iop;
+int g_cdvdstm_bankoffs_iop;
+sceCdRMode g_cdvdstm_mode_iop;
+int g_cdvdstm_stmstart_iop;
+iop_sys_clock_t g_cdvdstm_curclk_iop;
+SifDmaTransfer_t g_cdvdstm_dmat;
+int g_cdvdstm_readlbn_ee_normal;
+SifDmaTransfer_t g_cdvdstm_dmat2;
+u32 g_cdvdstm_readlbn_ee_cdda;
 char g_cdvdstm_usedmap_ee[512];
-u32 g_cdvdstm_lsn_ee; // idb
-int g_cdvdstm_bankgp_ee; // weak
-int g_cdvdstm_bankcur_ee; // weak
-int g_cdvdstm_bankoffs_ee; // weak
+u32 g_cdvdstm_lsn_ee;
+int g_cdvdstm_bankgp_ee;
+int g_cdvdstm_bankcur_ee;
+int g_cdvdstm_bankoffs_ee;
 sceCdRMode g_cdvdstm_mode_ee;
-int g_cdvdstm_stmstart_ee; // weak
-iop_sys_clock_t g_cdvdstm_curclk_ee; // idb
+int g_cdvdstm_stmstart_ee;
+iop_sys_clock_t g_cdvdstm_curclk_ee;
 
-
-//----- (00400000) --------------------------------------------------------
 int __fastcall vCancelAlarm(unsigned int (__cdecl *alarm_cb)(void *), void *arg)
 {
 	return (QueryIntrContext() ? iCancelAlarm : CancelAlarm)(alarm_cb, arg);
 }
 
-//----- (00400050) --------------------------------------------------------
 int vSetEventFlag()
 {
 	return (QueryIntrContext() ? iSetEventFlag : SetEventFlag)(g_cdvdman_intr_efid, 8);
 }
 
-//----- (004000A0) --------------------------------------------------------
 int vClearEventFlag()
 {
 	return (QueryIntrContext() ? iClearEventFlag : ClearEventFlag)(g_cdvdman_intr_efid, ~8);
 }
 
-//----- (004000F0) --------------------------------------------------------
 int cdvdstm_4()
 {
 	VERBOSE_PRINTF(1, "Dummy Entry Called\n");
 	return 0;
 }
 
-//----- (00400124) --------------------------------------------------------
 int cdvdstm_2()
 {
-	cdrom_stm_devctl_t instruct; // [sp+10h] [-38h] BYREF
-	int outres; // [sp+28h] [-20h] BYREF
+	cdrom_stm_devctl_t instruct;
+	int outres;
 
 	memset(&instruct, 0, sizeof(instruct));
 	instruct.m_cmdid = 3;
@@ -208,21 +196,19 @@ int cdvdstm_2()
 	return 0;
 }
 
-//----- (00400174) --------------------------------------------------------
 BOOL __fastcall alarm_cb(void *a1)
 {
 	KPRINTF("Stm Iop Read Time Out %d(msec)\n", *(_DWORD *)a1 / 0x9000);
 	return sceCdBreak() == 0;
 }
 
-//----- (004001B8) --------------------------------------------------------
 int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *error_ptr)
 {
-	int cur_size; // $s2
-	unsigned int streamres; // $s1
-	int last_error; // [sp+18h] [-10h] BYREF
-	u32 efbits; // [sp+1Ch] [-Ch] BYREF
-	int err; // [sp+20h] [-8h] BYREF
+	int cur_size;
+	unsigned int streamres;
+	int last_error;
+	u32 efbits;
+	int err;
 
 	VERBOSE_KPRINTF(1, "sceCdStream0 call read size= %d mode= %d addr= %08x\n", rdsize, modearg, addrarg);
 	cur_size = 0;
@@ -249,15 +235,12 @@ int __fastcall sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modear
 	}
 	return cur_size;
 }
-// 404770: using guessed type sceCdRMode g_rmode_for_stream0;
 
-//----- (00400358) --------------------------------------------------------
 int __fastcall sceCdStream0(int rdsize_sectors, char *addrarg, int modearg, int *error_ptr)
 {
 	return sceCdStream0_inner(rdsize_sectors << 11, addrarg, modearg, error_ptr) / 0x800;
 }
 
-//----- (00400384) --------------------------------------------------------
 unsigned int __fastcall iop_stream_handler(
 				unsigned int posszarg1,
 				unsigned int posszarg2,
@@ -266,14 +249,14 @@ unsigned int __fastcall iop_stream_handler(
 				const sceCdRMode *rmode,
 				int *error_ptr)
 {
-	int retryflag; // $s7
-	int bankcur_tmp; // $v1
-	unsigned int i; // $s1
-	unsigned int written_chunk_size_tmp; // $s4
-	int bankcur_next_tmp1; // $a0
-	int chunk_size; // $s0
-	int bankcur_next_tmp2; // $a0
-	int state; // [sp+20h] [-8h] BYREF
+	int retryflag;
+	int bankcur_tmp;
+	unsigned int i;
+	unsigned int written_chunk_size_tmp;
+	int bankcur_next_tmp1;
+	int chunk_size;
+	int bankcur_next_tmp2;
+	int state;
 
 	retryflag = 0;
 	VERBOSE_KPRINTF(1, "CD Stream Call mode= %d\n", cmdid);
@@ -462,21 +445,11 @@ unsigned int __fastcall iop_stream_handler(
 	}
 	return 1;
 }
-// 4005AC: conditional instruction was optimized away because $s6.4!=0
-// 404694: using guessed type int g_cdvdstm_bufmax;
-// 404698: using guessed type int g_cdvdstm_numbytes;
-// 40469C: using guessed type int g_cdvdstm_bankmax;
-// 4046AC: using guessed type int g_cdvdstm_retryerr_iop;
-// 404994: using guessed type int g_cdvdstm_bankgp_iop;
-// 404998: using guessed type int g_cdvdstm_bankcur_iop;
-// 40499C: using guessed type int g_cdvdstm_bankoffs_iop;
-// 4049A4: using guessed type int g_cdvdstm_stmstart_iop;
 
-//----- (00400D30) --------------------------------------------------------
 unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 {
-	int gptmp; // $a0
-	int last_error; // [sp+28h] [-8h] BYREF
+	int gptmp;
+	int last_error;
 	int scres_unused;
 
 	(void)userdata;
@@ -526,7 +499,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	}
 	if ( g_cdvdstm_retrycnt_iop )
 	{
-		unsigned int tgttmp; // $s0
+		unsigned int tgttmp;
 
 		g_cdvdstm_retrycnt_iop -= 1;
 		tgttmp = ( (unsigned int)g_cdvdstm_tgt >= (unsigned int)(0x10 * g_cdvdstm_retrycnt_iop) ) ? (g_cdvdstm_tgt - 0x10 * g_cdvdstm_retrycnt_iop) : (g_cdvdstm_tgt + 0x10 * g_cdvdstm_retrycnt_iop);
@@ -575,7 +548,7 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 		{
 			if ( g_cdvdstm_stmstart_iop == 2 )
 			{
-				unsigned int i; // $v1
+				unsigned int i;
 
 				g_cdvdstm_bankoffs_iop = 0;
 				g_cdvdstm_bankcur_iop = 0;
@@ -608,20 +581,10 @@ unsigned int __cdecl iop_stream_intr_cb(void *userdata)
 	}
 	return 0;
 }
-// 404698: using guessed type int g_cdvdstm_numbytes;
-// 40469C: using guessed type int g_cdvdstm_bankmax;
-// 4046AC: using guessed type int g_cdvdstm_retryerr_iop;
-// 4046B0: using guessed type int g_cdvdstm_retrycnt_iop;
-// 404780: using guessed type int g_cdvdstm_tgt;
-// 404994: using guessed type int g_cdvdstm_bankgp_iop;
-// 404998: using guessed type int g_cdvdstm_bankcur_iop;
-// 40499C: using guessed type int g_cdvdstm_bankoffs_iop;
-// 4049A4: using guessed type int g_cdvdstm_stmstart_iop;
 
-//----- (00401374) --------------------------------------------------------
 int cdrom_stm_init()
 {
-	iop_sema_t semaparam; // [sp+10h] [-10h] BYREF
+	iop_sema_t semaparam;
 
 	semaparam.attr = 1;
 	semaparam.initial = 1;
@@ -631,7 +594,6 @@ int cdrom_stm_init()
 	return 0;
 }
 
-//----- (004013B0) --------------------------------------------------------
 int cdrom_stm_deinit()
 {
 	SignalSema(g_cdvdstm_semid);
@@ -639,10 +601,9 @@ int cdrom_stm_deinit()
 	return 0;
 }
 
-//----- (004013E8) --------------------------------------------------------
 int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len)
 {
-	int retres; // $s5
+	int retres;
 	cdrom_stm_devctl_t *instruct;
 	int *outres_ptr;
 
@@ -691,32 +652,28 @@ int __fastcall cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inb
 	SignalSema(g_cdvdstm_semid);
 	return retres;
 }
-// 404690: using guessed type int g_cdvdstm_in_deldrv;
 
-//----- (00401588) --------------------------------------------------------
 int __cdecl cdrom_stm_nulldev()
 {
 	PRINTF("nulldev0 call\n");
 	return -EIO;
 }
 
-//----- (004015B0) --------------------------------------------------------
 __int64 __cdecl cdrom_stm_nulldev64()
 {
 	PRINTF("nulldev0 call\n");
 	return -EIO;
 }
 
-//----- (004015DC) --------------------------------------------------------
 int __fastcall _start(int a1)
 {
-	int last_error; // [sp+10h] [-8h] BYREF
+	int last_error;
 	int scres_unused;
-	int state; // [sp+14h] [-4h] BYREF
+	int state;
 
 	if ( a1 < 0 )
 	{
-		int relres; // $s0
+		int relres;
 
 		if ( sceCdSC(0xFFFFFFFF, &last_error) == 0 )
 		{
@@ -746,12 +703,10 @@ int __fastcall _start(int a1)
 	g_cdvdman_intr_efid = sceCdSC(0xFFFFFFF5, &scres_unused);
 	return 2;
 }
-// 404690: using guessed type int g_cdvdstm_in_deldrv;
 
-//----- (004016D0) --------------------------------------------------------
 BOOL __fastcall stm_alarm_timeout_cb(void *a1)
 {
-	unsigned int read_to; // [sp+10h] [-8h] BYREF
+	unsigned int read_to;
 
 	read_to = *(_DWORD *)a1 / 0x9000;
 	KPRINTF("Stm EE Read Time Out %d(msec)\n", read_to);
@@ -759,22 +714,21 @@ BOOL __fastcall stm_alarm_timeout_cb(void *a1)
 	return sceCdBreak() == 0;
 }
 
-//----- (00401724) --------------------------------------------------------
 void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
 {
-	int retryflag; // $fp
-	u32 cmdid; // $s1
-	u32 posszarg2_bytes; // $s5
-	int bankcur_tmp; // $a0
-	unsigned int chunks_sectors; // $lo
-	int bankcur_next_tmp1; // $a1
-	int posszarg2_bytes_clamped; // $s1
-	int dmat1; // $s0
-	int bankcur_next_tmp2; // $a1
-	int posszarg2_bytes_overrun; // [sp+20h] [-10h]
-	int outres_tmp2; // [sp+20h] [-10h]
-	int state; // [sp+24h] [-Ch] BYREF
-	unsigned int i; // [sp+28h] [-8h]
+	int retryflag;
+	u32 cmdid;
+	u32 posszarg2_bytes;
+	int bankcur_tmp;
+	unsigned int chunks_sectors;
+	int bankcur_next_tmp1;
+	int posszarg2_bytes_clamped;
+	int dmat1;
+	int bankcur_next_tmp2;
+	int posszarg2_bytes_overrun;
+	int outres_tmp2;
+	int state;
+	unsigned int i;
 
 	(void)inbuf_len;
 
@@ -932,7 +886,7 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	posszarg2_bytes_overrun = -1;
 	for ( i = 0; i < posszarg2_bytes; i += posszarg2_bytes_clamped )
 	{
-		unsigned int posszarg2_bytes_remain; // $s2
+		unsigned int posszarg2_bytes_remain;
 
 		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !g_cdvdstm_usedmap_ee[g_cdvdstm_bankcur_ee] )
@@ -1008,19 +962,10 @@ void __fastcall ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf
 	*outres_ptr = outres_tmp2;
 	return;
 }
-// 404744: using guessed type int g_cdvdstm_bufsz2;
-// 404748: using guessed type int g_cdvdstm_chunksz2;
-// 40474C: using guessed type int g_cdvdstm_bankcnt2;
-// 404758: using guessed type int g_cdvdstm_retryerr_ee;
-// 404BE4: using guessed type int g_cdvdstm_bankgp_ee;
-// 404BE8: using guessed type int g_cdvdstm_bankcur_ee;
-// 404BEC: using guessed type int g_cdvdstm_bankoffs_ee;
-// 404BF4: using guessed type int g_cdvdstm_stmstart_ee;
 
-//----- (00402230) --------------------------------------------------------
 unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 {
-	int gptmp; // $a0
+	int gptmp;
 	int scres_unused;
 
 	(void)userdata;
@@ -1115,7 +1060,7 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 		{
 			if ( g_cdvdstm_stmstart_ee == 2 )
 			{
-				unsigned int i; // $v1
+				unsigned int i;
 
 				g_cdvdstm_bankoffs_ee = 0;
 				g_cdvdstm_bankcur_ee = 0;
@@ -1152,32 +1097,22 @@ unsigned int __fastcall ee_stream_intr_cb_normal(void *userdata)
 	}
 	return 0;
 }
-// 404748: using guessed type int g_cdvdstm_chunksz2;
-// 40474C: using guessed type int g_cdvdstm_bankcnt2;
-// 404758: using guessed type int g_cdvdstm_retryerr_ee;
-// 40475C: using guessed type int g_cdvdstm_retrycnt_ee_normal;
-// 4049C0: using guessed type int g_cdvdstm_readlbn_ee_normal;
-// 404BE4: using guessed type int g_cdvdstm_bankgp_ee;
-// 404BE8: using guessed type int g_cdvdstm_bankcur_ee;
-// 404BEC: using guessed type int g_cdvdstm_bankoffs_ee;
-// 404BF4: using guessed type int g_cdvdstm_stmstart_ee;
 
-//----- (0040289C) --------------------------------------------------------
 void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
 {
-	u32 cmdid; // $s1
-	u32 posszarg2_bytes; // $s5
-	int retryflag; // $fp
-	int bankcur_tmp; // $a0
-	u32 chunks_sectors; // $lo
-	int bankcur_next_tmp1; // $a1
-	int posszarg2_bytes_clamped; // $s1
-	int dmat2; // $s0
-	int bankcur_next_tmp2; // $a1
-	int posszarg2_overrun_chunks2; // [sp+20h] [-10h]
-	unsigned int posszarg2_bytes_overrun; // [sp+20h] [-10h]
-	int state; // [sp+24h] [-Ch] BYREF
-	unsigned int i; // [sp+28h] [-8h]
+	u32 cmdid;
+	u32 posszarg2_bytes;
+	int retryflag;
+	int bankcur_tmp;
+	u32 chunks_sectors;
+	int bankcur_next_tmp1;
+	int posszarg2_bytes_clamped;
+	int dmat2;
+	int bankcur_next_tmp2;
+	int posszarg2_overrun_chunks2;
+	unsigned int posszarg2_bytes_overrun;
+	int state;
+	unsigned int i;
 
 	(void)inbuf_len;
 
@@ -1323,7 +1258,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	}
 	if ( cmdid == 1 )
 	{
-		signed int posszarg2_chunks; // $s0
+		signed int posszarg2_chunks;
 
 		CpuSuspendIntr(&state);
 		CancelAlarm((unsigned int (__cdecl *)(void *))ee_stream_intr_cb_cdda, &g_cdvdstm_curclk_ee);
@@ -1344,7 +1279,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 		posszarg2_chunks = (posszarg2_bytes / g_cdvdstm_chunksz2) + (( posszarg2_bytes % g_cdvdstm_chunksz2 ) ? 1 : 0);
 		for ( g_cdvdstm_bankgp_ee = 0; g_cdvdstm_bankgp_ee < posszarg2_chunks; g_cdvdstm_bankgp_ee += 1 )
 		{
-			int outres_tmp2; // [sp+20h] [-10h]
+			int outres_tmp2;
 
 			outres_tmp2 = sceCdReadCDDA(g_cdvdstm_lsn_ee, g_cdvdstm_sectorcount2, g_cdvdstm_buffer2, &g_cdvdstm_mode_ee);
 			sceCdSync(3);
@@ -1370,7 +1305,7 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	posszarg2_bytes_overrun = -1;
 	for ( i = 0; i < posszarg2_bytes; i += posszarg2_bytes_clamped )
 	{
-		unsigned int posszarg2_bytes_remain; // $s2
+		unsigned int posszarg2_bytes_remain;
 
 		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !g_cdvdstm_usedmap_ee[g_cdvdstm_bankcur_ee] )
@@ -1449,21 +1384,10 @@ void __fastcall ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_l
 	}
 	*outres_ptr = posszarg2_overrun_chunks2;
 }
-// 402B7C: conditional instruction was optimized away because $v0.4!=0
-// 404744: using guessed type int g_cdvdstm_bufsz2;
-// 404748: using guessed type int g_cdvdstm_chunksz2;
-// 40474C: using guessed type int g_cdvdstm_bankcnt2;
-// 404758: using guessed type int g_cdvdstm_retryerr_ee;
-// 404760: using guessed type int g_cdvdstm_usedchunksize2;
-// 404BE4: using guessed type int g_cdvdstm_bankgp_ee;
-// 404BE8: using guessed type int g_cdvdstm_bankcur_ee;
-// 404BEC: using guessed type int g_cdvdstm_bankoffs_ee;
-// 404BF4: using guessed type int g_cdvdstm_stmstart_ee;
 
-//----- (00403530) --------------------------------------------------------
 unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 {
-	int gptmp; // $a0
+	int gptmp;
 	int scres_unused;
 
 	(void)userdata;
@@ -1566,7 +1490,7 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 		{
 			if ( g_cdvdstm_stmstart_ee == 2 )
 			{
-				unsigned int i; // $v1
+				unsigned int i;
 
 				g_cdvdstm_bankoffs_ee = 0;
 				g_cdvdstm_bankcur_ee = 0;
@@ -1600,70 +1524,62 @@ unsigned int __fastcall ee_stream_intr_cb_cdda(void *userdata)
 	}
 	return 0;
 }
-// 404748: using guessed type int g_cdvdstm_chunksz2;
-// 40474C: using guessed type int g_cdvdstm_bankcnt2;
-// 404758: using guessed type int g_cdvdstm_retryerr_ee;
-// 404BE4: using guessed type int g_cdvdstm_bankgp_ee;
-// 404BE8: using guessed type int g_cdvdstm_bankcur_ee;
-// 404BEC: using guessed type int g_cdvdstm_bankoffs_ee;
-// 404BF4: using guessed type int g_cdvdstm_stmstart_ee;
 
-//----- (00403C10) --------------------------------------------------------
 unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n)
 {
-	int v3; // $a3
-	int v4; // $v1
-	int v5; // $v1
-	int v6; // $t0
-	int v7; // $t1
-	int v8; // $t2
-	int v9; // $t3
-	int v10; // $t4
-	int v11; // $t5
-	int v12; // $t6
-	int v13; // $t7
-	int v14; // $t8
-	int v15; // $t9
-	int v16; // $a3
-	int v17; // $v1
-	int v18; // $v1
-	int v19; // $t0
-	int v20; // $t1
-	int v21; // $t2
-	int v22; // $t3
-	int v23; // $t4
-	int v24; // $t5
-	int v25; // $t6
-	int v26; // $t7
-	int v27; // $t8
-	int v28; // $t9
-	int v29; // $a3
-	int v30; // $v1
-	int v31; // $v1
-	int v32; // $t0
-	int v33; // $t1
-	int v34; // $t2
-	int v35; // $t3
-	int v36; // $t4
-	int v37; // $t5
-	int v38; // $t6
-	int v39; // $t7
-	int v40; // $t8
-	int v41; // $t9
-	int v42; // $a3
-	int v43; // $v1
-	int v44; // $v1
-	int v45; // $t0
-	int v46; // $t1
-	int v47; // $t2
-	int v48; // $t3
-	int v49; // $t4
-	int v50; // $t5
-	int v51; // $t6
-	int v52; // $t7
-	int v53; // $t8
-	int v54; // $t9
-	unsigned int v55; // $v1
+	int v3;
+	int v4;
+	int v5;
+	int v6;
+	int v7;
+	int v8;
+	int v9;
+	int v10;
+	int v11;
+	int v12;
+	int v13;
+	int v14;
+	int v15;
+	int v16;
+	int v17;
+	int v18;
+	int v19;
+	int v20;
+	int v21;
+	int v22;
+	int v23;
+	int v24;
+	int v25;
+	int v26;
+	int v27;
+	int v28;
+	int v29;
+	int v30;
+	int v31;
+	int v32;
+	int v33;
+	int v34;
+	int v35;
+	int v36;
+	int v37;
+	int v38;
+	int v39;
+	int v40;
+	int v41;
+	int v42;
+	int v43;
+	int v44;
+	int v45;
+	int v46;
+	int v47;
+	int v48;
+	int v49;
+	int v50;
+	int v51;
+	int v52;
+	int v53;
+	int v54;
+	unsigned int v55;
 
 	if ( n >> 2 )
 	{
@@ -1888,319 +1804,247 @@ LABEL_33:
 	return n;
 }
 
-//----- (0040403C) --------------------------------------------------------
 void cdvdstm_1()
 {
 	;
 }
 
 #if 0
-//----- (00404064) --------------------------------------------------------
 int Kprintf(const char *format, ...)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404064: variable 'result' is possibly undefined
 
-//----- (00404088) --------------------------------------------------------
 int __cdecl RegisterLibraryEntries(struct irx_export_table *exports)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404088: variable 'result' is possibly undefined
 
-//----- (00404090) --------------------------------------------------------
 int __cdecl ReleaseLibraryEntries(struct irx_export_table *exports)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404090: variable 'result' is possibly undefined
 
-//----- (004040B4) --------------------------------------------------------
 int __cdecl CpuSuspendIntr(int *state)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 4040B4: variable 'result' is possibly undefined
 
-//----- (004040BC) --------------------------------------------------------
 int __cdecl CpuResumeIntr(int state)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 4040BC: variable 'result' is possibly undefined
 
-//----- (004040C4) --------------------------------------------------------
 int QueryIntrContext(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 4040C4: variable 'result' is possibly undefined
 
-//----- (004040E8) --------------------------------------------------------
 int printf(const char *format, ...)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 4040E8: variable 'result' is possibly undefined
 
-//----- (0040410C) --------------------------------------------------------
 int __cdecl DelayThread(int usec)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 40410C: variable 'result' is possibly undefined
 
-//----- (00404114) --------------------------------------------------------
 int __cdecl iSetAlarm(iop_sys_clock_t *sys_clock, unsigned int (__cdecl *alarm_cb)(void *), void *arg)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404114: variable 'result' is possibly undefined
 
-//----- (0040411C) --------------------------------------------------------
 int __cdecl CancelAlarm(unsigned int (__cdecl *alarm_cb)(void *), void *arg)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 40411C: variable 'result' is possibly undefined
 
-//----- (00404124) --------------------------------------------------------
 int __cdecl iCancelAlarm(unsigned int (__cdecl *alarm_cb)(void *), void *arg)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404124: variable 'result' is possibly undefined
 
-//----- (00404148) --------------------------------------------------------
 int __cdecl SetEventFlag(int ef, u32 bits)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404148: variable 'result' is possibly undefined
 
-//----- (00404150) --------------------------------------------------------
 int __cdecl iSetEventFlag(int ef, u32 bits)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404150: variable 'result' is possibly undefined
 
-//----- (00404158) --------------------------------------------------------
 int __cdecl ClearEventFlag(int ef, u32 bits)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404158: variable 'result' is possibly undefined
 
-//----- (00404160) --------------------------------------------------------
 int __cdecl iClearEventFlag(int ef, u32 bits)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404160: variable 'result' is possibly undefined
 
-//----- (00404168) --------------------------------------------------------
 int __cdecl WaitEventFlag(int ef, u32 bits, int mode, u32 *resbits)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404168: variable 'result' is possibly undefined
 
-//----- (0040418C) --------------------------------------------------------
 int __cdecl CreateSema(iop_sema_t *sema)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 40418C: variable 'result' is possibly undefined
 
-//----- (00404194) --------------------------------------------------------
 int __cdecl DeleteSema(int semid)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404194: variable 'result' is possibly undefined
 
-//----- (0040419C) --------------------------------------------------------
 int __cdecl SignalSema(int semid)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 40419C: variable 'result' is possibly undefined
 
-//----- (004041A4) --------------------------------------------------------
 int __cdecl WaitSema(int semid)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 4041A4: variable 'result' is possibly undefined
 
-//----- (004041C8) --------------------------------------------------------
 int __cdecl sceSifSetDma(SifDmaTransfer_t *dmat, int count)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 4041C8: variable 'result' is possibly undefined
 
-//----- (004041D0) --------------------------------------------------------
 int __cdecl sceSifDmaStat(int trid)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 4041D0: variable 'result' is possibly undefined
 
-//----- (004041F4) --------------------------------------------------------
 int __cdecl AddDrv(iop_device_t *device)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 4041F4: variable 'result' is possibly undefined
 
-//----- (004041FC) --------------------------------------------------------
 int __cdecl DelDrv(const char *name)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 4041FC: variable 'result' is possibly undefined
 
-//----- (00404220) --------------------------------------------------------
 int __cdecl sceCdSync(int mode)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404220: variable 'result' is possibly undefined
 
-//----- (00404228) --------------------------------------------------------
 int sceCdGetDiskType(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404228: variable 'result' is possibly undefined
 
-//----- (00404230) --------------------------------------------------------
 int sceCdBreak(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404230: variable 'result' is possibly undefined
 
-//----- (00404238) --------------------------------------------------------
 int __cdecl sceCdReadCDDA(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404238: variable 'result' is possibly undefined
 
-//----- (00404240) --------------------------------------------------------
 int sceCdNop(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404240: variable 'result' is possibly undefined
 
-//----- (00404248) --------------------------------------------------------
 int __cdecl sceCdstm0Cb(void (__cdecl *p)(int))
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404248: variable 'result' is possibly undefined
 
-//----- (00404250) --------------------------------------------------------
 int __cdecl sceCdstm1Cb(void (__cdecl *p)(int))
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404250: variable 'result' is possibly undefined
 
-//----- (00404258) --------------------------------------------------------
 int __cdecl sceCdSC(int code, int *param)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404258: variable 'result' is possibly undefined
 
-//----- (00404260) --------------------------------------------------------
 int sceCdStStop(void)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404260: variable 'result' is possibly undefined
 
-//----- (00404268) --------------------------------------------------------
 int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMode *mode)
 {
-	int result; // $v0
+	int result;
 
 	return result;
 }
-// 404268: variable 'result' is possibly undefined
 #endif
-
-// nfuncs=57 queued=57 decompiled=57 lumina nreq=0 worse=0 better=0
-// ALL OK, 57 function(s) have been successfully decompiled
