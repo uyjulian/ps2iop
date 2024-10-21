@@ -2809,284 +2809,286 @@ int path_tbl_init(u32 blocks, char *fname, int action)
 
 // Unofficial: unused obfuscation code was removed
 
-unsigned int optimized_memcpy(char *dst, const char *src, unsigned int n)
-{
-	int v3;
-	int v4;
-	int v5;
-	int v6;
-	int v7;
-	int v8;
-	int v9;
-	int v10;
-	int v11;
-	int v12;
-	int v13;
-	int v14;
-	int v15;
-	int v16;
-	int v17;
-	int v18;
-	int v19;
-	int v20;
-	int v21;
-	int v22;
-	int v23;
-	int v24;
-	int v25;
-	int v26;
-	int v27;
-	int v28;
-	int v29;
-	int v30;
-	int v31;
-	int v32;
-	int v33;
-	int v34;
-	int v35;
-	int v36;
-	int v37;
-	int v38;
-	int v39;
-	int v40;
-	int v41;
-	int v42;
-	int v43;
-	int v44;
-	int v45;
-	int v46;
-	int v47;
-	int v48;
-	int v49;
-	int v50;
-	int v51;
-	int v52;
-	int v53;
-	int v54;
-	unsigned int v55;
-
-	if ( n >> 2 )
-	{
-		if ( (((uiptr)dst | (uiptr)src) & 3) )
-		{
-			if ( ((uiptr)dst & 3) && ((uiptr)src & 3) )
-			{
-				v16 = (int)(n >> 2) / 12;
-				v17 = (int)(n >> 2) % 12;
-				if ( !v17 )
-				{
-					goto LABEL_30;
-				}
-				do
-				{
-					--v17;
-					*(u32 *)dst = *(u32 *)src;
-					src += 4;
-					dst += 4;
-				}
-				while ( v17 );
-				if ( v16 )
-				{
-LABEL_30:
-					do
-					{
-						v18 = *((u32 *)src + 1);
-						v19 = *((u32 *)src + 2);
-						v20 = *((u32 *)src + 3);
-						v21 = *((u32 *)src + 4);
-						v22 = *((u32 *)src + 5);
-						v23 = *((u32 *)src + 6);
-						v24 = *((u32 *)src + 7);
-						v25 = *((u32 *)src + 8);
-						v26 = *((u32 *)src + 9);
-						v27 = *((u32 *)src + 10);
-						v28 = *((u32 *)src + 11);
-						--v16;
-						*(u32 *)dst = *(u32 *)src;
-						*((u32 *)dst + 1) = v18;
-						*((u32 *)dst + 2) = v19;
-						*((u32 *)dst + 3) = v20;
-						*((u32 *)dst + 4) = v21;
-						*((u32 *)dst + 5) = v22;
-						*((u32 *)dst + 6) = v23;
-						*((u32 *)dst + 7) = v24;
-						*((u32 *)dst + 8) = v25;
-						*((u32 *)dst + 9) = v26;
-						*((u32 *)dst + 10) = v27;
-						*((u32 *)dst + 11) = v28;
-						src += 48;
-						dst += 48;
-					}
-					while ( v16 );
-				}
-			}
-			else if ( ((uiptr)dst & 3) )
-			{
-				v29 = (int)(n >> 2) / 12;
-				v30 = (int)(n >> 2) % 12;
-				if ( !v30 )
-				{
-					goto LABEL_31;
-				}
-				do
-				{
-					--v30;
-					*(u32 *)dst = *(u32 *)src;
-					src += 4;
-					dst += 4;
-				}
-				while ( v30 );
-				if ( v29 )
-				{
-LABEL_31:
-					do
-					{
-						v31 = *((u32 *)src + 1);
-						v32 = *((u32 *)src + 2);
-						v33 = *((u32 *)src + 3);
-						v34 = *((u32 *)src + 4);
-						v35 = *((u32 *)src + 5);
-						v36 = *((u32 *)src + 6);
-						v37 = *((u32 *)src + 7);
-						v38 = *((u32 *)src + 8);
-						v39 = *((u32 *)src + 9);
-						v40 = *((u32 *)src + 10);
-						v41 = *((u32 *)src + 11);
-						--v29;
-						*(u32 *)dst = *(u32 *)src;
-						*((u32 *)dst + 1) = v31;
-						*((u32 *)dst + 2) = v32;
-						*((u32 *)dst + 3) = v33;
-						*((u32 *)dst + 4) = v34;
-						*((u32 *)dst + 5) = v35;
-						*((u32 *)dst + 6) = v36;
-						*((u32 *)dst + 7) = v37;
-						*((u32 *)dst + 8) = v38;
-						*((u32 *)dst + 9) = v39;
-						*((u32 *)dst + 10) = v40;
-						*((u32 *)dst + 11) = v41;
-						src += 48;
-						dst += 48;
-					}
-					while ( v29 );
-				}
-			}
-			else
-			{
-				v42 = (int)(n >> 2) / 12;
-				v43 = (int)(n >> 2) % 12;
-				if ( !v43 )
-				{
-					goto LABEL_32;
-				}
-				do
-				{
-					--v43;
-					*(u32 *)dst = *(u32 *)src;
-					src += 4;
-					dst += 4;
-				}
-				while ( v43 );
-				if ( v42 )
-				{
-LABEL_32:
-					do
-					{
-						v44 = *((u32 *)src + 1);
-						v45 = *((u32 *)src + 2);
-						v46 = *((u32 *)src + 3);
-						v47 = *((u32 *)src + 4);
-						v48 = *((u32 *)src + 5);
-						v49 = *((u32 *)src + 6);
-						v50 = *((u32 *)src + 7);
-						v51 = *((u32 *)src + 8);
-						v52 = *((u32 *)src + 9);
-						v53 = *((u32 *)src + 10);
-						v54 = *((u32 *)src + 11);
-						--v42;
-						*(u32 *)dst = *(u32 *)src;
-						*((u32 *)dst + 1) = v44;
-						*((u32 *)dst + 2) = v45;
-						*((u32 *)dst + 3) = v46;
-						*((u32 *)dst + 4) = v47;
-						*((u32 *)dst + 5) = v48;
-						*((u32 *)dst + 6) = v49;
-						*((u32 *)dst + 7) = v50;
-						*((u32 *)dst + 8) = v51;
-						*((u32 *)dst + 9) = v52;
-						*((u32 *)dst + 10) = v53;
-						*((u32 *)dst + 11) = v54;
-						src += 48;
-						dst += 48;
-					}
-					while ( v42 );
-				}
-			}
-		}
-		else
-		{
-			v3 = (int)(n >> 2) / 12;
-			v4 = (int)(n >> 2) % 12;
-			if ( !v4 )
-			{
-				goto LABEL_33;
-			}
-			do
-			{
-				--v4;
-				*(u32 *)dst = *(u32 *)src;
-				src += 4;
-				dst += 4;
-			}
-			while ( v4 );
-			if ( v3 )
-			{
-LABEL_33:
-				do
-				{
-					v5 = *((u32 *)src + 1);
-					v6 = *((u32 *)src + 2);
-					v7 = *((u32 *)src + 3);
-					v8 = *((u32 *)src + 4);
-					v9 = *((u32 *)src + 5);
-					v10 = *((u32 *)src + 6);
-					v11 = *((u32 *)src + 7);
-					v12 = *((u32 *)src + 8);
-					v13 = *((u32 *)src + 9);
-					v14 = *((u32 *)src + 10);
-					v15 = *((u32 *)src + 11);
-					--v3;
-					*(u32 *)dst = *(u32 *)src;
-					*((u32 *)dst + 1) = v5;
-					*((u32 *)dst + 2) = v6;
-					*((u32 *)dst + 3) = v7;
-					*((u32 *)dst + 4) = v8;
-					*((u32 *)dst + 5) = v9;
-					*((u32 *)dst + 6) = v10;
-					*((u32 *)dst + 7) = v11;
-					*((u32 *)dst + 8) = v12;
-					*((u32 *)dst + 9) = v13;
-					*((u32 *)dst + 10) = v14;
-					*((u32 *)dst + 11) = v15;
-					src += 48;
-					dst += 48;
-				}
-				while ( v3 );
-			}
-		}
-	}
-	v55 = n & 3;
-	if ( (n & 3) )
-	{
-		do
-		{
-			--v55;
-			*dst++ = *src++;
-		}
-		while ( v55 );
-	}
-	return n;
-}
+// clang-format off
+__asm__ (
+	"\t" ".set push" "\n"
+	"\t" ".set noat" "\n"
+	"\t" ".set noreorder" "\n"
+	"\t" ".global optimized_memcpy" "\n"
+	"\t" "optimized_memcpy:" "\n"
+	"\t" "    srl         $a3, $a2, 2" "\n"
+	"\t" "    beqz        $a3, .Loptimized_memcpy_12" "\n"
+	"\t" "     or         $a3, $a0, $a1" "\n"
+	"\t" "    andi        $a3, $a3, 0x3" "\n"
+	"\t" "    bnez        $a3, .Loptimized_memcpy_3" "\n"
+	"\t" "     nop" "\n"
+	"\t" "    srl         $a3, $a2, 2" "\n"
+	"\t" "    addiu       $at, $zero, 0xC" "\n"
+	"\t" "    div         $zero, $a3, $at" "\n"
+	"\t" "    mflo        $a3" "\n"
+	"\t" "    mfhi        $v1" "\n"
+	"\t" "    beqz        $v1, .Loptimized_memcpy_2" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_1:" "\n"
+	"\t" "    lw          $v0, 0x0($a1)" "\n"
+	"\t" "    addiu       $v1, $v1, -0x1" "\n"
+	"\t" "    sw          $v0, 0x0($a0)" "\n"
+	"\t" "    addiu       $a1, $a1, 0x4" "\n"
+	"\t" "    bnez        $v1, .Loptimized_memcpy_1" "\n"
+	"\t" "     addiu      $a0, $a0, 0x4" "\n"
+	"\t" "    beqz        $a3, .Loptimized_memcpy_12" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_2:" "\n"
+	"\t" "    lw          $v0, 0x0($a1)" "\n"
+	"\t" "    lw          $v1, 0x4($a1)" "\n"
+	"\t" "    lw          $t0, 0x8($a1)" "\n"
+	"\t" "    lw          $t1, 0xC($a1)" "\n"
+	"\t" "    lw          $t2, 0x10($a1)" "\n"
+	"\t" "    lw          $t3, 0x14($a1)" "\n"
+	"\t" "    lw          $t4, 0x18($a1)" "\n"
+	"\t" "    lw          $t5, 0x1C($a1)" "\n"
+	"\t" "    lw          $t6, 0x20($a1)" "\n"
+	"\t" "    lw          $t7, 0x24($a1)" "\n"
+	"\t" "    lw          $t8, 0x28($a1)" "\n"
+	"\t" "    lw          $t9, 0x2C($a1)" "\n"
+	"\t" "    addiu       $a3, $a3, -0x1" "\n"
+	"\t" "    sw          $v0, 0x0($a0)" "\n"
+	"\t" "    sw          $v1, 0x4($a0)" "\n"
+	"\t" "    sw          $t0, 0x8($a0)" "\n"
+	"\t" "    sw          $t1, 0xC($a0)" "\n"
+	"\t" "    sw          $t2, 0x10($a0)" "\n"
+	"\t" "    sw          $t3, 0x14($a0)" "\n"
+	"\t" "    sw          $t4, 0x18($a0)" "\n"
+	"\t" "    sw          $t5, 0x1C($a0)" "\n"
+	"\t" "    sw          $t6, 0x20($a0)" "\n"
+	"\t" "    sw          $t7, 0x24($a0)" "\n"
+	"\t" "    sw          $t8, 0x28($a0)" "\n"
+	"\t" "    sw          $t9, 0x2C($a0)" "\n"
+	"\t" "    addiu       $a1, $a1, 0x30" "\n"
+	"\t" "    bnez        $a3, .Loptimized_memcpy_2" "\n"
+	"\t" "     addiu      $a0, $a0, 0x30" "\n"
+	"\t" "    j           .Loptimized_memcpy_12" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_3:" "\n"
+	"\t" "    andi        $a3, $a0, 0x3" "\n"
+	"\t" "    beqz        $a3, .Loptimized_memcpy_6" "\n"
+	"\t" "     andi       $a3, $a1, 0x3" "\n"
+	"\t" "    beqz        $a3, .Loptimized_memcpy_6" "\n"
+	"\t" "     nop" "\n"
+	"\t" "    srl         $a3, $a2, 2" "\n"
+	"\t" "    addiu       $at, $zero, 0xC" "\n"
+	"\t" "    div         $zero, $a3, $at" "\n"
+	"\t" "    mflo        $a3" "\n"
+	"\t" "    mfhi        $v1" "\n"
+	"\t" "    beqz        $v1, .Loptimized_memcpy_5" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_4:" "\n"
+	"\t" "    lwl         $v0, 0x3($a1)" "\n"
+	"\t" "    lwr         $v0, 0x0($a1)" "\n"
+	"\t" "    addiu       $v1, $v1, -0x1" "\n"
+	"\t" "    swl         $v0, 0x3($a0)" "\n"
+	"\t" "    swr         $v0, 0x0($a0)" "\n"
+	"\t" "    addiu       $a1, $a1, 0x4" "\n"
+	"\t" "    bnez        $v1, .Loptimized_memcpy_4" "\n"
+	"\t" "     addiu      $a0, $a0, 0x4" "\n"
+	"\t" "    beqz        $a3, .Loptimized_memcpy_12" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_5:" "\n"
+	"\t" "    lwl         $v0, 0x3($a1)" "\n"
+	"\t" "    lwr         $v0, 0x0($a1)" "\n"
+	"\t" "    lwl         $v1, 0x7($a1)" "\n"
+	"\t" "    lwr         $v1, 0x4($a1)" "\n"
+	"\t" "    lwl         $t0, 0xB($a1)" "\n"
+	"\t" "    lwr         $t0, 0x8($a1)" "\n"
+	"\t" "    lwl         $t1, 0xF($a1)" "\n"
+	"\t" "    lwr         $t1, 0xC($a1)" "\n"
+	"\t" "    lwl         $t2, 0x13($a1)" "\n"
+	"\t" "    lwr         $t2, 0x10($a1)" "\n"
+	"\t" "    lwl         $t3, 0x17($a1)" "\n"
+	"\t" "    lwr         $t3, 0x14($a1)" "\n"
+	"\t" "    lwl         $t4, 0x1B($a1)" "\n"
+	"\t" "    lwr         $t4, 0x18($a1)" "\n"
+	"\t" "    lwl         $t5, 0x1F($a1)" "\n"
+	"\t" "    lwr         $t5, 0x1C($a1)" "\n"
+	"\t" "    lwl         $t6, 0x23($a1)" "\n"
+	"\t" "    lwr         $t6, 0x20($a1)" "\n"
+	"\t" "    lwl         $t7, 0x27($a1)" "\n"
+	"\t" "    lwr         $t7, 0x24($a1)" "\n"
+	"\t" "    lwl         $t8, 0x2B($a1)" "\n"
+	"\t" "    lwr         $t8, 0x28($a1)" "\n"
+	"\t" "    lwl         $t9, 0x2F($a1)" "\n"
+	"\t" "    lwr         $t9, 0x2C($a1)" "\n"
+	"\t" "    addiu       $a3, $a3, -0x1" "\n"
+	"\t" "    swl         $v0, 0x3($a0)" "\n"
+	"\t" "    swr         $v0, 0x0($a0)" "\n"
+	"\t" "    swl         $v1, 0x7($a0)" "\n"
+	"\t" "    swr         $v1, 0x4($a0)" "\n"
+	"\t" "    swl         $t0, 0xB($a0)" "\n"
+	"\t" "    swr         $t0, 0x8($a0)" "\n"
+	"\t" "    swl         $t1, 0xF($a0)" "\n"
+	"\t" "    swr         $t1, 0xC($a0)" "\n"
+	"\t" "    swl         $t2, 0x13($a0)" "\n"
+	"\t" "    swr         $t2, 0x10($a0)" "\n"
+	"\t" "    swl         $t3, 0x17($a0)" "\n"
+	"\t" "    swr         $t3, 0x14($a0)" "\n"
+	"\t" "    swl         $t4, 0x1B($a0)" "\n"
+	"\t" "    swr         $t4, 0x18($a0)" "\n"
+	"\t" "    swl         $t5, 0x1F($a0)" "\n"
+	"\t" "    swr         $t5, 0x1C($a0)" "\n"
+	"\t" "    swl         $t6, 0x23($a0)" "\n"
+	"\t" "    swr         $t6, 0x20($a0)" "\n"
+	"\t" "    swl         $t7, 0x27($a0)" "\n"
+	"\t" "    swr         $t7, 0x24($a0)" "\n"
+	"\t" "    swl         $t8, 0x2B($a0)" "\n"
+	"\t" "    swr         $t8, 0x28($a0)" "\n"
+	"\t" "    swl         $t9, 0x2F($a0)" "\n"
+	"\t" "    swr         $t9, 0x2C($a0)" "\n"
+	"\t" "    addiu       $a1, $a1, 0x30" "\n"
+	"\t" "    bnez        $a3, .Loptimized_memcpy_5" "\n"
+	"\t" "     addiu      $a0, $a0, 0x30" "\n"
+	"\t" "    j           .Loptimized_memcpy_12" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_6:" "\n"
+	"\t" "    andi        $a3, $a0, 0x3" "\n"
+	"\t" "    beqz        $a3, .Loptimized_memcpy_9" "\n"
+	"\t" "     nop" "\n"
+	"\t" "    srl         $a3, $a2, 2" "\n"
+	"\t" "    addiu       $at, $zero, 0xC" "\n"
+	"\t" "    div         $zero, $a3, $at" "\n"
+	"\t" "    mflo        $a3" "\n"
+	"\t" "    mfhi        $v1" "\n"
+	"\t" "    beqz        $v1, .Loptimized_memcpy_8" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_7:" "\n"
+	"\t" "    lw          $v0, 0x0($a1)" "\n"
+	"\t" "    addiu       $v1, $v1, -0x1" "\n"
+	"\t" "    swl         $v0, 0x3($a0)" "\n"
+	"\t" "    swr         $v0, 0x0($a0)" "\n"
+	"\t" "    addiu       $a1, $a1, 0x4" "\n"
+	"\t" "    bnez        $v1, .Loptimized_memcpy_7" "\n"
+	"\t" "     addiu      $a0, $a0, 0x4" "\n"
+	"\t" "    beqz        $a3, .Loptimized_memcpy_12" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_8:" "\n"
+	"\t" "    lw          $v0, 0x0($a1)" "\n"
+	"\t" "    lw          $v1, 0x4($a1)" "\n"
+	"\t" "    lw          $t0, 0x8($a1)" "\n"
+	"\t" "    lw          $t1, 0xC($a1)" "\n"
+	"\t" "    lw          $t2, 0x10($a1)" "\n"
+	"\t" "    lw          $t3, 0x14($a1)" "\n"
+	"\t" "    lw          $t4, 0x18($a1)" "\n"
+	"\t" "    lw          $t5, 0x1C($a1)" "\n"
+	"\t" "    lw          $t6, 0x20($a1)" "\n"
+	"\t" "    lw          $t7, 0x24($a1)" "\n"
+	"\t" "    lw          $t8, 0x28($a1)" "\n"
+	"\t" "    lw          $t9, 0x2C($a1)" "\n"
+	"\t" "    addiu       $a3, $a3, -0x1" "\n"
+	"\t" "    swl         $v0, 0x3($a0)" "\n"
+	"\t" "    swr         $v0, 0x0($a0)" "\n"
+	"\t" "    swl         $v1, 0x7($a0)" "\n"
+	"\t" "    swr         $v1, 0x4($a0)" "\n"
+	"\t" "    swl         $t0, 0xB($a0)" "\n"
+	"\t" "    swr         $t0, 0x8($a0)" "\n"
+	"\t" "    swl         $t1, 0xF($a0)" "\n"
+	"\t" "    swr         $t1, 0xC($a0)" "\n"
+	"\t" "    swl         $t2, 0x13($a0)" "\n"
+	"\t" "    swr         $t2, 0x10($a0)" "\n"
+	"\t" "    swl         $t3, 0x17($a0)" "\n"
+	"\t" "    swr         $t3, 0x14($a0)" "\n"
+	"\t" "    swl         $t4, 0x1B($a0)" "\n"
+	"\t" "    swr         $t4, 0x18($a0)" "\n"
+	"\t" "    swl         $t5, 0x1F($a0)" "\n"
+	"\t" "    swr         $t5, 0x1C($a0)" "\n"
+	"\t" "    swl         $t6, 0x23($a0)" "\n"
+	"\t" "    swr         $t6, 0x20($a0)" "\n"
+	"\t" "    swl         $t7, 0x27($a0)" "\n"
+	"\t" "    swr         $t7, 0x24($a0)" "\n"
+	"\t" "    swl         $t8, 0x2B($a0)" "\n"
+	"\t" "    swr         $t8, 0x28($a0)" "\n"
+	"\t" "    swl         $t9, 0x2F($a0)" "\n"
+	"\t" "    swr         $t9, 0x2C($a0)" "\n"
+	"\t" "    addiu       $a1, $a1, 0x30" "\n"
+	"\t" "    bnez        $a3, .Loptimized_memcpy_8" "\n"
+	"\t" "     addiu      $a0, $a0, 0x30" "\n"
+	"\t" "    j           .Loptimized_memcpy_12" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_9:" "\n"
+	"\t" "    srl         $a3, $a2, 2" "\n"
+	"\t" "    addiu       $at, $zero, 0xC" "\n"
+	"\t" "    div         $zero, $a3, $at" "\n"
+	"\t" "    mflo        $a3" "\n"
+	"\t" "    mfhi        $v1" "\n"
+	"\t" "    beqz        $v1, .Loptimized_memcpy_11" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_10:" "\n"
+	"\t" "    lwl         $v0, 0x3($a1)" "\n"
+	"\t" "    lwr         $v0, 0x0($a1)" "\n"
+	"\t" "    addiu       $v1, $v1, -0x1" "\n"
+	"\t" "    sw          $v0, 0x0($a0)" "\n"
+	"\t" "    addiu       $a1, $a1, 0x4" "\n"
+	"\t" "    bnez        $v1, .Loptimized_memcpy_10" "\n"
+	"\t" "     addiu      $a0, $a0, 0x4" "\n"
+	"\t" "    beqz        $a3, .Loptimized_memcpy_12" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_11:" "\n"
+	"\t" "    lwl         $v0, 0x3($a1)" "\n"
+	"\t" "    lwr         $v0, 0x0($a1)" "\n"
+	"\t" "    lwl         $v1, 0x7($a1)" "\n"
+	"\t" "    lwr         $v1, 0x4($a1)" "\n"
+	"\t" "    lwl         $t0, 0xB($a1)" "\n"
+	"\t" "    lwr         $t0, 0x8($a1)" "\n"
+	"\t" "    lwl         $t1, 0xF($a1)" "\n"
+	"\t" "    lwr         $t1, 0xC($a1)" "\n"
+	"\t" "    lwl         $t2, 0x13($a1)" "\n"
+	"\t" "    lwr         $t2, 0x10($a1)" "\n"
+	"\t" "    lwl         $t3, 0x17($a1)" "\n"
+	"\t" "    lwr         $t3, 0x14($a1)" "\n"
+	"\t" "    lwl         $t4, 0x1B($a1)" "\n"
+	"\t" "    lwr         $t4, 0x18($a1)" "\n"
+	"\t" "    lwl         $t5, 0x1F($a1)" "\n"
+	"\t" "    lwr         $t5, 0x1C($a1)" "\n"
+	"\t" "    lwl         $t6, 0x23($a1)" "\n"
+	"\t" "    lwr         $t6, 0x20($a1)" "\n"
+	"\t" "    lwl         $t7, 0x27($a1)" "\n"
+	"\t" "    lwr         $t7, 0x24($a1)" "\n"
+	"\t" "    lwl         $t8, 0x2B($a1)" "\n"
+	"\t" "    lwr         $t8, 0x28($a1)" "\n"
+	"\t" "    lwl         $t9, 0x2F($a1)" "\n"
+	"\t" "    lwr         $t9, 0x2C($a1)" "\n"
+	"\t" "    addiu       $a3, $a3, -0x1" "\n"
+	"\t" "    sw          $v0, 0x0($a0)" "\n"
+	"\t" "    sw          $v1, 0x4($a0)" "\n"
+	"\t" "    sw          $t0, 0x8($a0)" "\n"
+	"\t" "    sw          $t1, 0xC($a0)" "\n"
+	"\t" "    sw          $t2, 0x10($a0)" "\n"
+	"\t" "    sw          $t3, 0x14($a0)" "\n"
+	"\t" "    sw          $t4, 0x18($a0)" "\n"
+	"\t" "    sw          $t5, 0x1C($a0)" "\n"
+	"\t" "    sw          $t6, 0x20($a0)" "\n"
+	"\t" "    sw          $t7, 0x24($a0)" "\n"
+	"\t" "    sw          $t8, 0x28($a0)" "\n"
+	"\t" "    sw          $t9, 0x2C($a0)" "\n"
+	"\t" "    addiu       $a1, $a1, 0x30" "\n"
+	"\t" "    bnez        $a3, .Loptimized_memcpy_11" "\n"
+	"\t" "     addiu      $a0, $a0, 0x30" "\n"
+	"\t" ".Loptimized_memcpy_12:" "\n"
+	"\t" "    andi        $v1, $a2, 0x3" "\n"
+	"\t" "    beqz        $v1, .Loptimized_memcpy_14" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".Loptimized_memcpy_13:" "\n"
+	"\t" "    lb          $v0, 0x0($a1)" "\n"
+	"\t" "    addiu       $v1, $v1, -0x1" "\n"
+	"\t" "    sb          $v0, 0x0($a0)" "\n"
+	"\t" "    addiu       $a1, $a1, 0x1" "\n"
+	"\t" "    bnez        $v1, .Loptimized_memcpy_13" "\n"
+	"\t" "     addiu      $a0, $a0, 0x1" "\n"
+	"\t" ".Loptimized_memcpy_14:" "\n"
+	"\t" "    addu        $v0, $a2, $zero" "\n"
+	"\t" "    jr          $ra" "\n"
+	"\t" "     nop" "\n"
+	"\t" ".set pop" "\n"
+);
+// clang-format on
 
 #ifdef DEAD_CODE
 void hex_dump(u8 *addr_start, int length)
