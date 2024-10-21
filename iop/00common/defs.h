@@ -12,7 +12,7 @@
 #define __noreturn
 #endif
 
-#if 1
+#if 0
 #define __int8 char
 #define __int16 short
 #define __int32 int
@@ -118,7 +118,7 @@
 #define SWORD7(x) SWORDn(x, 7)
 #endif
 
-#if 1
+#if 0
 typedef unsigned char u_char;
 typedef unsigned int u_int;
 typedef unsigned long u_long;
@@ -394,8 +394,8 @@ typedef struct cdvdman_internal_struct_
 	DMA3PARAM m_dma3prm;
 	int m_cdvdman_dma3sec;
 	int m_drive_interupt_request;
-	unsigned __int16 m_dec_mode_set;
-	__int16 m_dec_mode_last_set;
+	u16 m_dec_mode_set;
+	u16 m_dec_mode_last_set;
 	int m_waf_set_test;
 	int m_interupt_read_state;
 	int m_cd_inited;

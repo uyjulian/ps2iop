@@ -14,7 +14,7 @@ int vSetEventFlag();
 int vClearEventFlag();
 int cdvdstm_4();
 int cdvdstm_2();
-BOOL alarm_cb(void *);
+u32 alarm_cb(void *);
 int sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *error_ptr);
 int sceCdStream0(int rdsize_sectors, char *addrarg, int modearg, int *error_ptr);
 unsigned int iop_stream_handler(unsigned int posszarg1, unsigned int posszarg2, void *buffer, int cmdid, const sceCdRMode *rmode, int *error_ptr);
@@ -23,9 +23,9 @@ int cdrom_stm_init();
 int cdrom_stm_deinit();
 int cdrom_stm_devctl(iop_file_t *f, const char *a2, int a3, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
 int cdrom_stm_nulldev();
-__int64 cdrom_stm_nulldev64();
+s64 cdrom_stm_nulldev64();
 int _start(int);
-BOOL stm_alarm_timeout_cb(void *a1);
+u32 stm_alarm_timeout_cb(void *a1);
 void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
 unsigned int ee_stream_intr_cb_normal(void *userdata);
 void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
@@ -159,9 +159,9 @@ int cdvdstm_2()
 	return 0;
 }
 
-BOOL alarm_cb(void *a1)
+u32 alarm_cb(void *a1)
 {
-	KPRINTF("Stm Iop Read Time Out %d(msec)\n", *(_DWORD *)a1 / 0x9000);
+	KPRINTF("Stm Iop Read Time Out %d(msec)\n", *(u32 *)a1 / 0x9000);
 	return sceCdBreak() == 0;
 }
 
@@ -356,7 +356,7 @@ unsigned int iop_stream_handler(
 	{
 		if ( !g_cdvdstm_usedmap_iop[g_cdvdstm_bankcur_iop] )
 		{
-			VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)g_cdvdstm_usedmap_iop[0], (unsigned __int8)g_cdvdstm_usedmap_iop[1], (unsigned __int8)g_cdvdstm_usedmap_iop[2], (unsigned __int8)g_cdvdstm_usedmap_iop[3], (unsigned __int8)g_cdvdstm_usedmap_iop[4], g_cdvdstm_bankgp_iop, g_cdvdstm_bankcur_iop);
+			VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (u8)g_cdvdstm_usedmap_iop[0], (u8)g_cdvdstm_usedmap_iop[1], (u8)g_cdvdstm_usedmap_iop[2], (u8)g_cdvdstm_usedmap_iop[3], (u8)g_cdvdstm_usedmap_iop[4], g_cdvdstm_bankgp_iop, g_cdvdstm_bankcur_iop);
 			bankcur_next_tmp1 = g_cdvdstm_bankcur_iop;
 			g_cdvdstm_bankcur_iop += 1;
 			if ( (unsigned int)g_cdvdstm_bankcur_iop >= (unsigned int)g_cdvdstm_bankmax )
@@ -380,7 +380,7 @@ unsigned int iop_stream_handler(
 			{
 				g_cdvdstm_bankcur_iop = bankcur_next_tmp2;
 				written_chunk_size_tmp = i;
-				VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)g_cdvdstm_usedmap_iop[0], (unsigned __int8)g_cdvdstm_usedmap_iop[1], (unsigned __int8)g_cdvdstm_usedmap_iop[2], (unsigned __int8)g_cdvdstm_usedmap_iop[3], (unsigned __int8)g_cdvdstm_usedmap_iop[4], g_cdvdstm_bankgp_iop, g_cdvdstm_bankcur_iop);
+				VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (u8)g_cdvdstm_usedmap_iop[0], (u8)g_cdvdstm_usedmap_iop[1], (u8)g_cdvdstm_usedmap_iop[2], (u8)g_cdvdstm_usedmap_iop[3], (u8)g_cdvdstm_usedmap_iop[4], g_cdvdstm_bankgp_iop, g_cdvdstm_bankcur_iop);
 				break;
 			}
 		}
@@ -500,7 +500,7 @@ unsigned int iop_stream_intr_cb(void *userdata)
 		{
 			g_cdvdstm_bankgp_iop = gptmp;
 			g_cdvdstm_usedmap_iop[gptmp] = 0;
-			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (unsigned __int8)g_cdvdstm_usedmap_iop[0], (unsigned __int8)g_cdvdstm_usedmap_iop[1], (unsigned __int8)g_cdvdstm_usedmap_iop[2], (unsigned __int8)g_cdvdstm_usedmap_iop[3], (unsigned __int8)g_cdvdstm_usedmap_iop[4], g_cdvdstm_bankgp_iop, g_cdvdstm_bankcur_iop, g_cdvdstm_mode_iop.spindlctrl);
+			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (u8)g_cdvdstm_usedmap_iop[0], (u8)g_cdvdstm_usedmap_iop[1], (u8)g_cdvdstm_usedmap_iop[2], (u8)g_cdvdstm_usedmap_iop[3], (u8)g_cdvdstm_usedmap_iop[4], g_cdvdstm_bankgp_iop, g_cdvdstm_bankcur_iop, g_cdvdstm_mode_iop.spindlctrl);
 			g_cdvdstm_curclk_iop.lo = 0x48000;
 			if ( iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (*)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop) != 0 && sceCdNop() == 0 )
 			{
@@ -622,7 +622,7 @@ int cdrom_stm_nulldev()
 	return -EIO;
 }
 
-__int64 cdrom_stm_nulldev64()
+s64 cdrom_stm_nulldev64()
 {
 	PRINTF("nulldev0 call\n");
 	return -EIO;
@@ -667,11 +667,11 @@ int _start(int a1)
 	return 2;
 }
 
-BOOL stm_alarm_timeout_cb(void *a1)
+u32 stm_alarm_timeout_cb(void *a1)
 {
 	unsigned int read_to;
 
-	read_to = *(_DWORD *)a1 / 0x9000;
+	read_to = *(u32 *)a1 / 0x9000;
 	KPRINTF("Stm EE Read Time Out %d(msec)\n", read_to);
 	sceCdSC(0xFFFFFFEE, (int *)&read_to);
 	return sceCdBreak() == 0;
@@ -854,7 +854,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !g_cdvdstm_usedmap_ee[g_cdvdstm_bankcur_ee] )
 		{
-			VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)g_cdvdstm_usedmap_ee[0], (unsigned __int8)g_cdvdstm_usedmap_ee[1], (unsigned __int8)g_cdvdstm_usedmap_ee[2], (unsigned __int8)g_cdvdstm_usedmap_ee[3], (unsigned __int8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee);
+			VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (u8)g_cdvdstm_usedmap_ee[0], (u8)g_cdvdstm_usedmap_ee[1], (u8)g_cdvdstm_usedmap_ee[2], (u8)g_cdvdstm_usedmap_ee[3], (u8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee);
 			CpuSuspendIntr(&state);
 			bankcur_next_tmp1 = g_cdvdstm_bankcur_ee;
 			g_cdvdstm_bankcur_ee += 1;
@@ -903,7 +903,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 			{
 				g_cdvdstm_bankcur_ee = bankcur_next_tmp2;
 				CpuResumeIntr(state);
-				VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)g_cdvdstm_usedmap_ee[0], (unsigned __int8)g_cdvdstm_usedmap_ee[1], (unsigned __int8)g_cdvdstm_usedmap_ee[2], (unsigned __int8)g_cdvdstm_usedmap_ee[3], (unsigned __int8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee);
+				VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (u8)g_cdvdstm_usedmap_ee[0], (u8)g_cdvdstm_usedmap_ee[1], (u8)g_cdvdstm_usedmap_ee[2], (u8)g_cdvdstm_usedmap_ee[3], (u8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee);
 				posszarg2_bytes_overrun = posszarg2_bytes - (posszarg2_bytes_remain - posszarg2_bytes_clamped);
 				break;
 			}
@@ -918,7 +918,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 			g_cdvdstm_retryerr_ee = 273;
 		if ( g_cdvdstm_retryerr_ee )
 		{
-			outres_tmp2 = (unsigned __int16)outres_tmp2 | (g_cdvdstm_retryerr_ee << 16);
+			outres_tmp2 = (u16)outres_tmp2 | (g_cdvdstm_retryerr_ee << 16);
 			g_cdvdstm_retryerr_ee = 0;
 		}
 	}
@@ -1009,7 +1009,7 @@ unsigned int ee_stream_intr_cb_normal(void *userdata)
 		{
 			g_cdvdstm_bankgp_ee = gptmp;
 			g_cdvdstm_usedmap_ee[gptmp] = 0;
-			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (unsigned __int8)g_cdvdstm_usedmap_ee[0], (unsigned __int8)g_cdvdstm_usedmap_ee[1], (unsigned __int8)g_cdvdstm_usedmap_ee[2], (unsigned __int8)g_cdvdstm_usedmap_ee[3], (unsigned __int8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee, g_cdvdstm_mode_ee.spindlctrl);
+			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (u8)g_cdvdstm_usedmap_ee[0], (u8)g_cdvdstm_usedmap_ee[1], (u8)g_cdvdstm_usedmap_ee[2], (u8)g_cdvdstm_usedmap_ee[3], (u8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee, g_cdvdstm_mode_ee.spindlctrl);
 			g_cdvdstm_curclk_ee.lo = 0x48000;
 			if ( iSetAlarm(
 									&g_cdvdstm_curclk_ee,
@@ -1273,7 +1273,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 		posszarg2_bytes_remain = posszarg2_bytes - i;
 		if ( !g_cdvdstm_usedmap_ee[g_cdvdstm_bankcur_ee] )
 		{
-			VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)g_cdvdstm_usedmap_ee[0], (unsigned __int8)g_cdvdstm_usedmap_ee[1], (unsigned __int8)g_cdvdstm_usedmap_ee[2], (unsigned __int8)g_cdvdstm_usedmap_ee[3], (unsigned __int8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee);
+			VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (u8)g_cdvdstm_usedmap_ee[0], (u8)g_cdvdstm_usedmap_ee[1], (u8)g_cdvdstm_usedmap_ee[2], (u8)g_cdvdstm_usedmap_ee[3], (u8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee);
 			CpuSuspendIntr(&state);
 			bankcur_next_tmp1 = g_cdvdstm_bankcur_ee;
 			g_cdvdstm_bankcur_ee += 1;
@@ -1322,7 +1322,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 			{
 				g_cdvdstm_bankcur_ee = bankcur_next_tmp2;
 				CpuResumeIntr(state);
-				VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (unsigned __int8)g_cdvdstm_usedmap_ee[0], (unsigned __int8)g_cdvdstm_usedmap_ee[1], (unsigned __int8)g_cdvdstm_usedmap_ee[2], (unsigned __int8)g_cdvdstm_usedmap_ee[3], (unsigned __int8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee);
+				VERBOSE_KPRINTF(1, "CD read buffer over run %d %d %d %d %d gp %d pp %d\n", (u8)g_cdvdstm_usedmap_ee[0], (u8)g_cdvdstm_usedmap_ee[1], (u8)g_cdvdstm_usedmap_ee[2], (u8)g_cdvdstm_usedmap_ee[3], (u8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee);
 				posszarg2_bytes_overrun = posszarg2_bytes - (posszarg2_bytes_remain - posszarg2_bytes_clamped);
 				break;
 			}
@@ -1342,7 +1342,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 		g_cdvdstm_retryerr_ee = 273;
 	if ( g_cdvdstm_retryerr_ee )
 	{
-		posszarg2_overrun_chunks2 = (unsigned __int16)posszarg2_overrun_chunks2 | (g_cdvdstm_retryerr_ee << 16);
+		posszarg2_overrun_chunks2 = (u16)posszarg2_overrun_chunks2 | (g_cdvdstm_retryerr_ee << 16);
 		g_cdvdstm_retryerr_ee = 0;
 	}
 	*outres_ptr = posszarg2_overrun_chunks2;
@@ -1439,7 +1439,7 @@ unsigned int ee_stream_intr_cb_cdda(void *userdata)
 		{
 			g_cdvdstm_bankgp_ee = gptmp;
 			g_cdvdstm_usedmap_ee[gptmp] = 0;
-			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (unsigned __int8)g_cdvdstm_usedmap_ee[0], (unsigned __int8)g_cdvdstm_usedmap_ee[1], (unsigned __int8)g_cdvdstm_usedmap_ee[2], (unsigned __int8)g_cdvdstm_usedmap_ee[3], (unsigned __int8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee, g_cdvdstm_mode_ee.spindlctrl);
+			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (u8)g_cdvdstm_usedmap_ee[0], (u8)g_cdvdstm_usedmap_ee[1], (u8)g_cdvdstm_usedmap_ee[2], (u8)g_cdvdstm_usedmap_ee[3], (u8)g_cdvdstm_usedmap_ee[4], g_cdvdstm_bankgp_ee, g_cdvdstm_bankcur_ee, g_cdvdstm_mode_ee.spindlctrl);
 			g_cdvdstm_curclk_ee.lo = 0x48000;
 			if ( iSetAlarm(
 									&g_cdvdstm_curclk_ee,
@@ -1559,7 +1559,7 @@ unsigned int optimized_memcpy(char *dst, const char *src, unsigned int n)
 				do
 				{
 					--v17;
-					*(_DWORD *)dst = *(_DWORD *)src;
+					*(u32 *)dst = *(u32 *)src;
 					src += 4;
 					dst += 4;
 				}
@@ -1569,30 +1569,30 @@ unsigned int optimized_memcpy(char *dst, const char *src, unsigned int n)
 LABEL_30:
 					do
 					{
-						v18 = *((_DWORD *)src + 1);
-						v19 = *((_DWORD *)src + 2);
-						v20 = *((_DWORD *)src + 3);
-						v21 = *((_DWORD *)src + 4);
-						v22 = *((_DWORD *)src + 5);
-						v23 = *((_DWORD *)src + 6);
-						v24 = *((_DWORD *)src + 7);
-						v25 = *((_DWORD *)src + 8);
-						v26 = *((_DWORD *)src + 9);
-						v27 = *((_DWORD *)src + 10);
-						v28 = *((_DWORD *)src + 11);
+						v18 = *((u32 *)src + 1);
+						v19 = *((u32 *)src + 2);
+						v20 = *((u32 *)src + 3);
+						v21 = *((u32 *)src + 4);
+						v22 = *((u32 *)src + 5);
+						v23 = *((u32 *)src + 6);
+						v24 = *((u32 *)src + 7);
+						v25 = *((u32 *)src + 8);
+						v26 = *((u32 *)src + 9);
+						v27 = *((u32 *)src + 10);
+						v28 = *((u32 *)src + 11);
 						--v16;
-						*(_DWORD *)dst = *(_DWORD *)src;
-						*((_DWORD *)dst + 1) = v18;
-						*((_DWORD *)dst + 2) = v19;
-						*((_DWORD *)dst + 3) = v20;
-						*((_DWORD *)dst + 4) = v21;
-						*((_DWORD *)dst + 5) = v22;
-						*((_DWORD *)dst + 6) = v23;
-						*((_DWORD *)dst + 7) = v24;
-						*((_DWORD *)dst + 8) = v25;
-						*((_DWORD *)dst + 9) = v26;
-						*((_DWORD *)dst + 10) = v27;
-						*((_DWORD *)dst + 11) = v28;
+						*(u32 *)dst = *(u32 *)src;
+						*((u32 *)dst + 1) = v18;
+						*((u32 *)dst + 2) = v19;
+						*((u32 *)dst + 3) = v20;
+						*((u32 *)dst + 4) = v21;
+						*((u32 *)dst + 5) = v22;
+						*((u32 *)dst + 6) = v23;
+						*((u32 *)dst + 7) = v24;
+						*((u32 *)dst + 8) = v25;
+						*((u32 *)dst + 9) = v26;
+						*((u32 *)dst + 10) = v27;
+						*((u32 *)dst + 11) = v28;
 						src += 48;
 						dst += 48;
 					}
@@ -1610,7 +1610,7 @@ LABEL_30:
 				do
 				{
 					--v30;
-					*(_DWORD *)dst = *(_DWORD *)src;
+					*(u32 *)dst = *(u32 *)src;
 					src += 4;
 					dst += 4;
 				}
@@ -1620,30 +1620,30 @@ LABEL_30:
 LABEL_31:
 					do
 					{
-						v31 = *((_DWORD *)src + 1);
-						v32 = *((_DWORD *)src + 2);
-						v33 = *((_DWORD *)src + 3);
-						v34 = *((_DWORD *)src + 4);
-						v35 = *((_DWORD *)src + 5);
-						v36 = *((_DWORD *)src + 6);
-						v37 = *((_DWORD *)src + 7);
-						v38 = *((_DWORD *)src + 8);
-						v39 = *((_DWORD *)src + 9);
-						v40 = *((_DWORD *)src + 10);
-						v41 = *((_DWORD *)src + 11);
+						v31 = *((u32 *)src + 1);
+						v32 = *((u32 *)src + 2);
+						v33 = *((u32 *)src + 3);
+						v34 = *((u32 *)src + 4);
+						v35 = *((u32 *)src + 5);
+						v36 = *((u32 *)src + 6);
+						v37 = *((u32 *)src + 7);
+						v38 = *((u32 *)src + 8);
+						v39 = *((u32 *)src + 9);
+						v40 = *((u32 *)src + 10);
+						v41 = *((u32 *)src + 11);
 						--v29;
-						*(_DWORD *)dst = *(_DWORD *)src;
-						*((_DWORD *)dst + 1) = v31;
-						*((_DWORD *)dst + 2) = v32;
-						*((_DWORD *)dst + 3) = v33;
-						*((_DWORD *)dst + 4) = v34;
-						*((_DWORD *)dst + 5) = v35;
-						*((_DWORD *)dst + 6) = v36;
-						*((_DWORD *)dst + 7) = v37;
-						*((_DWORD *)dst + 8) = v38;
-						*((_DWORD *)dst + 9) = v39;
-						*((_DWORD *)dst + 10) = v40;
-						*((_DWORD *)dst + 11) = v41;
+						*(u32 *)dst = *(u32 *)src;
+						*((u32 *)dst + 1) = v31;
+						*((u32 *)dst + 2) = v32;
+						*((u32 *)dst + 3) = v33;
+						*((u32 *)dst + 4) = v34;
+						*((u32 *)dst + 5) = v35;
+						*((u32 *)dst + 6) = v36;
+						*((u32 *)dst + 7) = v37;
+						*((u32 *)dst + 8) = v38;
+						*((u32 *)dst + 9) = v39;
+						*((u32 *)dst + 10) = v40;
+						*((u32 *)dst + 11) = v41;
 						src += 48;
 						dst += 48;
 					}
@@ -1661,7 +1661,7 @@ LABEL_31:
 				do
 				{
 					--v43;
-					*(_DWORD *)dst = *(_DWORD *)src;
+					*(u32 *)dst = *(u32 *)src;
 					src += 4;
 					dst += 4;
 				}
@@ -1671,30 +1671,30 @@ LABEL_31:
 LABEL_32:
 					do
 					{
-						v44 = *((_DWORD *)src + 1);
-						v45 = *((_DWORD *)src + 2);
-						v46 = *((_DWORD *)src + 3);
-						v47 = *((_DWORD *)src + 4);
-						v48 = *((_DWORD *)src + 5);
-						v49 = *((_DWORD *)src + 6);
-						v50 = *((_DWORD *)src + 7);
-						v51 = *((_DWORD *)src + 8);
-						v52 = *((_DWORD *)src + 9);
-						v53 = *((_DWORD *)src + 10);
-						v54 = *((_DWORD *)src + 11);
+						v44 = *((u32 *)src + 1);
+						v45 = *((u32 *)src + 2);
+						v46 = *((u32 *)src + 3);
+						v47 = *((u32 *)src + 4);
+						v48 = *((u32 *)src + 5);
+						v49 = *((u32 *)src + 6);
+						v50 = *((u32 *)src + 7);
+						v51 = *((u32 *)src + 8);
+						v52 = *((u32 *)src + 9);
+						v53 = *((u32 *)src + 10);
+						v54 = *((u32 *)src + 11);
 						--v42;
-						*(_DWORD *)dst = *(_DWORD *)src;
-						*((_DWORD *)dst + 1) = v44;
-						*((_DWORD *)dst + 2) = v45;
-						*((_DWORD *)dst + 3) = v46;
-						*((_DWORD *)dst + 4) = v47;
-						*((_DWORD *)dst + 5) = v48;
-						*((_DWORD *)dst + 6) = v49;
-						*((_DWORD *)dst + 7) = v50;
-						*((_DWORD *)dst + 8) = v51;
-						*((_DWORD *)dst + 9) = v52;
-						*((_DWORD *)dst + 10) = v53;
-						*((_DWORD *)dst + 11) = v54;
+						*(u32 *)dst = *(u32 *)src;
+						*((u32 *)dst + 1) = v44;
+						*((u32 *)dst + 2) = v45;
+						*((u32 *)dst + 3) = v46;
+						*((u32 *)dst + 4) = v47;
+						*((u32 *)dst + 5) = v48;
+						*((u32 *)dst + 6) = v49;
+						*((u32 *)dst + 7) = v50;
+						*((u32 *)dst + 8) = v51;
+						*((u32 *)dst + 9) = v52;
+						*((u32 *)dst + 10) = v53;
+						*((u32 *)dst + 11) = v54;
 						src += 48;
 						dst += 48;
 					}
@@ -1713,7 +1713,7 @@ LABEL_32:
 			do
 			{
 				--v4;
-				*(_DWORD *)dst = *(_DWORD *)src;
+				*(u32 *)dst = *(u32 *)src;
 				src += 4;
 				dst += 4;
 			}
@@ -1723,30 +1723,30 @@ LABEL_32:
 LABEL_33:
 				do
 				{
-					v5 = *((_DWORD *)src + 1);
-					v6 = *((_DWORD *)src + 2);
-					v7 = *((_DWORD *)src + 3);
-					v8 = *((_DWORD *)src + 4);
-					v9 = *((_DWORD *)src + 5);
-					v10 = *((_DWORD *)src + 6);
-					v11 = *((_DWORD *)src + 7);
-					v12 = *((_DWORD *)src + 8);
-					v13 = *((_DWORD *)src + 9);
-					v14 = *((_DWORD *)src + 10);
-					v15 = *((_DWORD *)src + 11);
+					v5 = *((u32 *)src + 1);
+					v6 = *((u32 *)src + 2);
+					v7 = *((u32 *)src + 3);
+					v8 = *((u32 *)src + 4);
+					v9 = *((u32 *)src + 5);
+					v10 = *((u32 *)src + 6);
+					v11 = *((u32 *)src + 7);
+					v12 = *((u32 *)src + 8);
+					v13 = *((u32 *)src + 9);
+					v14 = *((u32 *)src + 10);
+					v15 = *((u32 *)src + 11);
 					--v3;
-					*(_DWORD *)dst = *(_DWORD *)src;
-					*((_DWORD *)dst + 1) = v5;
-					*((_DWORD *)dst + 2) = v6;
-					*((_DWORD *)dst + 3) = v7;
-					*((_DWORD *)dst + 4) = v8;
-					*((_DWORD *)dst + 5) = v9;
-					*((_DWORD *)dst + 6) = v10;
-					*((_DWORD *)dst + 7) = v11;
-					*((_DWORD *)dst + 8) = v12;
-					*((_DWORD *)dst + 9) = v13;
-					*((_DWORD *)dst + 10) = v14;
-					*((_DWORD *)dst + 11) = v15;
+					*(u32 *)dst = *(u32 *)src;
+					*((u32 *)dst + 1) = v5;
+					*((u32 *)dst + 2) = v6;
+					*((u32 *)dst + 3) = v7;
+					*((u32 *)dst + 4) = v8;
+					*((u32 *)dst + 5) = v9;
+					*((u32 *)dst + 6) = v10;
+					*((u32 *)dst + 7) = v11;
+					*((u32 *)dst + 8) = v12;
+					*((u32 *)dst + 9) = v13;
+					*((u32 *)dst + 10) = v14;
+					*((u32 *)dst + 11) = v15;
 					src += 48;
 					dst += 48;
 				}
