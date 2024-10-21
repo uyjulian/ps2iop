@@ -823,7 +823,6 @@ int readproc1(
 				int dec_shift_enable,
 				int dec_shift_value)
 {
-	int error_code;
 	int scres_unused;
 	int state;
 	u32 syncdec_mask;
@@ -838,6 +837,7 @@ int readproc1(
 	while ( 1 )
 	{
 		int cmd_error;
+		int error_code;
 
 		CpuSuspendIntr(&state);
 		if ( dec_shift_enable )
