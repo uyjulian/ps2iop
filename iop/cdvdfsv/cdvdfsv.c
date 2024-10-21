@@ -1707,13 +1707,10 @@ void cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen,
 
 void cdvdfsv_rpc5_11_readdiskid(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
 {
-	u8 diskid_tmp[5];
-
 	(void)inbuf;
 	(void)buflen;
 
-	outbuf->m_retres = sceCdReadDiskID((unsigned int *)diskid_tmp);
-	memcpy(&(outbuf->m_pkt_11.m_diskid), &diskid_tmp, sizeof(diskid_tmp));
+	outbuf->m_retres = sceCdReadDiskID((unsigned int *)&(outbuf->m_pkt_11.m_diskid));
 }
 
 void cdvdfsv_rpc5_17_doesuniquekeyexist(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
@@ -1729,12 +1726,9 @@ void cdvdfsv_rpc3_0B_applyscmd(
 				int buflen,
 				cdvdfsv_rpc3_outpacket_t *outbuf)
 {
-	u8 resbuf[16];
-
 	(void)buflen;
 
-	sceCdApplySCmd(inbuf->m_pkt_0B.m_cmdNum, &inbuf->m_pkt_0B.m_inBuff, inbuf->m_pkt_0B.m_inBuffSize, &resbuf);
-	memcpy(&(outbuf->m_pkt_0B.m_outbuf), &resbuf, sizeof(resbuf));
+	sceCdApplySCmd(inbuf->m_pkt_0B.m_cmdNum, &inbuf->m_pkt_0B.m_inBuff, inbuf->m_pkt_0B.m_inBuffSize, &(outbuf->m_pkt_0B.m_outbuf));
 }
 
 void cdvdfsv_rpc5_0C_applyncmd(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
