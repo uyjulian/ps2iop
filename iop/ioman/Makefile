@@ -1,6 +1,10 @@
-IOP_BIN = ioman.irx
+IOP_BIN = iomanX.irx
 
-IOP_OBJS = _start.o imports.o exports.o main.o
+IOP_WARNFLAGS += -Wall -Wextra
+
+IOP_CFLAGS += -DIOMANX_OLD_NAME_ADDDELDRV=0 -DIOMANX_OLD_NAME_COMPATIBILITY=0 -DIOMANX_ENABLE_LEGACY_IOMAN_HOOK
+
+IOP_OBJS = imports.o exports.o main.o
 
 all: $(IOP_BIN)
 
