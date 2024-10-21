@@ -162,7 +162,7 @@ int cdvdstm_2()
 int stm_iop_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 {
 	KPRINTF("Stm Iop Read Time Out %d(msec)\n", sys_clock->lo / 0x9000);
-	return sceCdBreak() == 0;
+	return !sceCdBreak();
 }
 
 int sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *error_ptr)
@@ -232,7 +232,7 @@ unsigned int iop_stream_handler(
 	{
 		case 8:
 			sceCdSC(1, &g_cdvdstm_last_error_for_iop);
-			if ( sceCdNop() != 0 )
+			if ( sceCdNop() )
 				return 1;
 			sceCdSC(0, &g_cdvdstm_last_error_for_iop);
 			return 0;
@@ -293,7 +293,7 @@ unsigned int iop_stream_handler(
 			vCancelAlarm((unsigned int (*)(void *))stm_iop_read_timeout_alarm_cb, &g_cdvdstm_curclk_iop);
 			return 1;
 		case 9:
-			if ( sceCdSC(0xFFFFFFFF, &g_cdvdstm_last_error_for_iop) != 0 )
+			if ( sceCdSC(0xFFFFFFFF, &g_cdvdstm_last_error_for_iop) )
 			{
 				CpuSuspendIntr(&state);
 				g_cdvdstm_lsn_iop = posszarg1;
@@ -502,7 +502,7 @@ unsigned int iop_stream_intr_cb(void *userdata)
 			g_cdvdstm_usedmap_iop[gptmp] = 0;
 			VERBOSE_KPRINTF(1, "read Full %d %d %d %d %d gp %d pp %d spn %d\n", (u8)g_cdvdstm_usedmap_iop[0], (u8)g_cdvdstm_usedmap_iop[1], (u8)g_cdvdstm_usedmap_iop[2], (u8)g_cdvdstm_usedmap_iop[3], (u8)g_cdvdstm_usedmap_iop[4], g_cdvdstm_bankgp_iop, g_cdvdstm_bankcur_iop, g_cdvdstm_mode_iop.spindlctrl);
 			g_cdvdstm_curclk_iop.lo = 0x48000;
-			if ( iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (*)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop) != 0 && sceCdNop() == 0 )
+			if ( iSetAlarm(&g_cdvdstm_curclk_iop, (unsigned int (*)(void *))iop_stream_intr_cb, &g_cdvdstm_curclk_iop) && !sceCdNop() )
 			{
 				sceCdSC(0, &last_error);
 			}
@@ -638,7 +638,7 @@ int _start(int a1)
 	{
 		int relres;
 
-		if ( sceCdSC(0xFFFFFFFF, &last_error) == 0 )
+		if ( !sceCdSC(0xFFFFFFFF, &last_error) )
 		{
 			return 2;
 		}
@@ -655,7 +655,7 @@ int _start(int a1)
 		}
 		return 1;
 	}
-	if ( RegisterLibraryEntries(&_exp_cdvdstm) != 0 )
+	if ( RegisterLibraryEntries(&_exp_cdvdstm) )
 		return 1;
 	DelDrv("cdrom_stm");
 	if ( AddDrv(&g_cdrom_stm_dev) )
@@ -674,7 +674,7 @@ int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 	read_timeout = sys_clock->lo / 0x9000;
 	KPRINTF("Stm EE Read Time Out %d(msec)\n", read_timeout);
 	sceCdSC(0xFFFFFFEE, &read_timeout);
-	return sceCdBreak() == 0;
+	return !sceCdBreak();
 }
 
 void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
@@ -706,7 +706,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 	{
 		case 8:
 			sceCdSC(2, &g_cdvdstm_last_error_for_ee);
-			if ( sceCdNop() == 0 )
+			if ( !sceCdNop() )
 			{
 				sceCdSC(0, &g_cdvdstm_last_error_for_ee);
 				*outres_ptr = 0;
@@ -1014,7 +1014,7 @@ unsigned int ee_stream_intr_cb_normal(void *userdata)
 			if ( iSetAlarm(
 									&g_cdvdstm_curclk_ee,
 									(unsigned int (*)(void *))ee_stream_intr_cb_normal,
-									&g_cdvdstm_curclk_ee) != 0 && sceCdNop() == 0 )
+									&g_cdvdstm_curclk_ee) && !sceCdNop() )
 			{
 				sceCdSC(0, &g_cdvdstm_last_error_for_ee);
 			}
@@ -1239,7 +1239,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 		CancelAlarm((unsigned int (*)(void *))stm_ee_read_timeout_alarm_cb, &g_cdvdstm_curclk_ee);
 		if ( !g_cdvdstm_chunksz2 )
 			__builtin_trap();
-		posszarg2_chunks = (posszarg2_bytes / g_cdvdstm_chunksz2) + (( posszarg2_bytes % g_cdvdstm_chunksz2 ) ? 1 : 0);
+		posszarg2_chunks = (posszarg2_bytes / g_cdvdstm_chunksz2) + (!!( posszarg2_bytes % g_cdvdstm_chunksz2 ));
 		for ( g_cdvdstm_bankgp_ee = 0; g_cdvdstm_bankgp_ee < posszarg2_chunks; g_cdvdstm_bankgp_ee += 1 )
 		{
 			int outres_tmp2;
@@ -1444,7 +1444,7 @@ unsigned int ee_stream_intr_cb_cdda(void *userdata)
 			if ( iSetAlarm(
 									&g_cdvdstm_curclk_ee,
 									(unsigned int (*)(void *))ee_stream_intr_cb_cdda,
-									&g_cdvdstm_curclk_ee) != 0 && sceCdNop() == 0 )
+									&g_cdvdstm_curclk_ee) && !sceCdNop() )
 			{
 				sceCdSC(0, &g_cdvdstm_last_error_for_ee);
 			}
@@ -1546,9 +1546,9 @@ unsigned int optimized_memcpy(char *dst, const char *src, unsigned int n)
 
 	if ( n >> 2 )
 	{
-		if ( (((uiptr)dst | (uiptr)src) & 3) != 0 )
+		if ( (((uiptr)dst | (uiptr)src) & 3) )
 		{
-			if ( ((uiptr)dst & 3) != 0 && ((uiptr)src & 3) != 0 )
+			if ( ((uiptr)dst & 3) && ((uiptr)src & 3) )
 			{
 				v16 = (int)(n >> 2) / 12;
 				v17 = (int)(n >> 2) % 12;
@@ -1599,7 +1599,7 @@ LABEL_30:
 					while ( v16 );
 				}
 			}
-			else if ( ((uiptr)dst & 3) != 0 )
+			else if ( ((uiptr)dst & 3) )
 			{
 				v29 = (int)(n >> 2) / 12;
 				v30 = (int)(n >> 2) % 12;
@@ -1755,7 +1755,7 @@ LABEL_33:
 		}
 	}
 	v55 = n & 3;
-	if ( (n & 3) != 0 )
+	if ( (n & 3) )
 	{
 		do
 		{

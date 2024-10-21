@@ -161,7 +161,7 @@ int _start(int ac, char **av)
 		int error_code;
 
 		// cppcheck-suppress knownConditionTrueFalse
-		if ( g_cdvdfsv_rpc5flg || g_cdvdfsv_rpc3flg || cdvdfsv_cleanuprpc() == 0 )
+		if ( g_cdvdfsv_rpc5flg || g_cdvdfsv_rpc3flg || !cdvdfsv_cleanuprpc() )
 		{
 			return 2;
 		}
@@ -175,7 +175,7 @@ int _start(int ac, char **av)
 		}
 		return 1;
 	}
-	if ( RegisterLibraryEntries(&_exp_cdvdfsv) != 0 )
+	if ( RegisterLibraryEntries(&_exp_cdvdfsv) )
 	{
 		return 1;
 	}
@@ -202,7 +202,7 @@ int cdvdfsv_init()
 	int scres;
 
 	BootMode = QueryBootMode(3);
-	if ( BootMode && (BootMode[1] & 2) != 0 )
+	if ( BootMode && (BootMode[1] & 2) )
 	{
 		PRINTF(" No cdvd driver \n");
 		return 1;
@@ -392,7 +392,7 @@ int read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 	read_timeout = sys_clock->lo / 0x9000;
 	KPRINTF("Read Time Out %d(msec)\n", read_timeout);
 	sceCdSC(0xFFFFFFEE, &read_timeout);
-	return sceCdBreak() == 0;
+	return !sceCdBreak();
 }
 
 void cdvdfsv_rpc5_0D_iopmread(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
@@ -567,7 +567,7 @@ int readproc2(
 		while ( 1 )
 		{
 			csec = ( nsec <= (sizeof(g_cdvdfsv_multi_dmat)/sizeof(g_cdvdfsv_multi_dmat[0])) ) ? nsec : (sizeof(g_cdvdfsv_multi_dmat)/sizeof(g_cdvdfsv_multi_dmat[0]));
-			nsec_div_cdvdfsv_sectors = (nsec >> 4) + (( (nsec & 0xF) != 0 ) ? 1 : 0);
+			nsec_div_cdvdfsv_sectors = (nsec >> 4) + (!!( (nsec & 0xF) ));
 			retry_flag2 = 0;
 			ee_addr_tmp = ee_addr;
 			dmasize_tmp = dmasize;
@@ -977,7 +977,7 @@ void cdvdfsv_rpc5_01_readee(
 			g_cdvdfsv_rmodeee.spindlctrl = g_cdvdfsv_spinctl;
 		paddr = inbuf->m_pkt_01.m_paddr;
 		saddr = (paddr + all_sec_bytes) & ~0x3F;
-		psize = ( (paddr & 0x3F) != 0 ) ? ((paddr & ~0x3F) - (paddr - 0x40)) : 0;
+		psize = ( (paddr & 0x3F) ) ? ((paddr & ~0x3F) - (paddr - 0x40)) : 0;
 		bsize = saddr - (paddr + psize);
 		ssize = paddr + all_sec_bytes - saddr;
 		VERBOSE_KPRINTF(1, "CD/DVD-ROM lsn= %d sec= %d\n", lsndualchg_res, inbuf->m_pkt_01.m_sectors);
@@ -1035,15 +1035,15 @@ void cdvdfsv_rpc5_01_readee(
 		offs_sector_only = lsndualchg_res + buf_offs_sum / secsize;
 		if ( (unsigned int)(secsize << 6) >= bsize_tmp )
 		{
-			needed_offset = (bsize_tmp / secsize) + (( bsize_tmp % secsize ) ? 1 : 0);
+			needed_offset = (bsize_tmp / secsize) + (!!( bsize_tmp % secsize ));
 			sizestuff = bsize_tmp;
 		}
 		else
 		{
-			needed_offset = ( ((offs_sector_only & 0xF) != 0) && ((secsize & 0xF) == 0) ) ? (0x10 - (offs_sector_only & 0xF)) : 0x40;
+			needed_offset = ( ((offs_sector_only & 0xF)) && (!(secsize & 0xF)) ) ? (0x10 - (offs_sector_only & 0xF)) : 0x40;
 			sizestuff = secsize * needed_offset;
 		}
-		needed_offset += ( (buf_offs_sum + i) % secsize ) ? 1 : 0;
+		needed_offset += !!( (buf_offs_sum + i) % secsize );
 		if ( len2_plus_sec2 < offs_sector_only + needed_offset )
 			needed_offset = len2_plus_sec2 - (lsndualchg_res + (buf_offs_sum + i) / secsize);
 		g_cdvdfsv_readpos = buf_offs_sum + i;
@@ -1201,10 +1201,10 @@ int cdvdfsv_chreadee(
 		readsize_bytes = secsize * bytescount_in_sectors;
 		if ( (unsigned int)readsize_bytes >= bytescount )
 		{
-			bytescount_in_sectors = (bytescount / secsize) + (( bytescount % secsize ) ? 1 : 0);
+			bytescount_in_sectors = (bytescount / secsize) + (!!( bytescount % secsize ));
 			readsize_bytes = bytescount;
 		}
-		else if ( sectors_partial && (secsize & 0xF) == 0 )
+		else if ( sectors_partial && !(secsize & 0xF) )
 		{
 			bytescount_in_sectors -= sectors_partial;
 		}
@@ -1272,7 +1272,7 @@ void cdvdfsv_rpc5_0F_readchain(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen,
 		}
 		if ( chain[i].lbn == 0xFFFFFFFF || chain[i].sectors == 0xFFFFFFFF || chain[i].buffer == 0xFFFFFFFF )
 			return;
-		if ( (chain[i].buffer & 1) != 0 )
+		if ( (chain[i].buffer & 1) )
 		{
 			buf = (void *)(chain[i].buffer & ~1);
 			VERBOSE_PRINTF(1, "ReadChain lsn= %d nsec= %d buf= %08x secsize= %d\n", (int)(chain[i].lbn), (int)(chain[i].sectors), (unsigned int)(uiptr)buf, inbuf->m_pkt_0F.m_mode.datapattern);
@@ -1280,7 +1280,7 @@ void cdvdfsv_rpc5_0F_readchain(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen,
 			if ( re_result == 1 )
 			{
 				sceCdSync(0);
-				re_result = sceCdGetError() == 0;
+				re_result = !sceCdGetError();
 			}
 			else
 			{
@@ -1291,7 +1291,7 @@ void cdvdfsv_rpc5_0F_readchain(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen,
 		{
 			VERBOSE_PRINTF(1, "ReadChain EE  Memory addr= 0x%08x sector= %d\n", (unsigned int)(chain[i].lbn), (int)(chain[i].sectors));
 			// The following call to sceCdGetDiskType was inlined
-			re_result = cdvdfsv_chreadee(chain[i].lbn, chain[i].sectors, (char *)chain[i].buffer, &(inbuf->m_pkt_0F.m_mode), sceCdGetDiskType() == SCECdPS2DVD, sceCdSC(0xFFFFFFFC, &scres_unused) == 0);
+			re_result = cdvdfsv_chreadee(chain[i].lbn, chain[i].sectors, (char *)chain[i].buffer, &(inbuf->m_pkt_0F.m_mode), sceCdGetDiskType() == SCECdPS2DVD, !sceCdSC(0xFFFFFFFC, &scres_unused));
 		}
 		if ( !re_result )
 		{
@@ -1351,7 +1351,7 @@ void cdvdfsv_rpc5_02_readcdda(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, 
 	buf_offs = 0;
 	all_sec_bytes = sector_size * inbuf->m_pkt_02.m_sectors;
 	lbn_1_end = inbuf->m_pkt_02.m_lbn + inbuf->m_pkt_02.m_sectors;
-	buf_toalign = ( (inbuf->m_pkt_02.m_buf & 0x3F) != 0 ) ? ((inbuf->m_pkt_02.m_buf & ~0x3F) - (inbuf->m_pkt_02.m_buf - 0x40)) : 0;
+	buf_toalign = ( (inbuf->m_pkt_02.m_buf & 0x3F) ) ? ((inbuf->m_pkt_02.m_buf & ~0x3F) - (inbuf->m_pkt_02.m_buf - 0x40)) : 0;
 	buf_1_toalign = (inbuf->m_pkt_02.m_buf + all_sec_bytes) & ~0x3F;
 	buf_sec_tmp = all_sec_bytes - (buf_1_toalign - inbuf->m_pkt_02.m_buf);
 	if ( buf_toalign )
@@ -1377,7 +1377,7 @@ void cdvdfsv_rpc5_02_readcdda(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, 
 				buf_toalign = 0;
 			}
 		}
-		if ( error_code_tmp != 0 && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG )
+		if ( error_code_tmp && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG )
 		{
 			for ( i = 0; i < buf_toalign; i += 1 )
 			{
@@ -1386,7 +1386,7 @@ void cdvdfsv_rpc5_02_readcdda(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, 
 			buf_offs += buf_toalign;
 		}
 	}
-	if ( error_code_tmp != 0 && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG )
+	if ( error_code_tmp && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG )
 	{
 		unsigned int sector_count_in_bytes;
 		unsigned int buf_aligned;
@@ -1405,11 +1405,11 @@ void cdvdfsv_rpc5_02_readcdda(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, 
 			if ( sector_count_in_bytes >= buf_align_remain )
 			{
 				sector_count_in_bytes = buf_align_remain;
-				sector_count = (buf_align_remain / sector_size) + (( buf_align_remain % sector_size ) ? 1 : 0) + (buf_offs_mod_sector_size != 0);
+				sector_count = (buf_align_remain / sector_size) + (!!( buf_align_remain % sector_size )) + (!!buf_offs_mod_sector_size);
 			}
 			else
 			{
-				sector_count = 8 + (( buf_offs % sector_size ) ? 1 : 0);
+				sector_count = 8 + (!!( buf_offs % sector_size ));
 			}
 			if ( sector_count > lbn_1_end - lsn_2 )
 				sector_count = lbn_1_end - lsn_2;
@@ -1454,7 +1454,7 @@ void cdvdfsv_rpc5_02_readcdda(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, 
 			buf_offs += sector_count_in_bytes;
 		}
 	}
-	if ( (error_code_tmp != 0 && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG) && buf_sec_tmp )
+	if ( (error_code_tmp && error_code_tmp != SCECdErEOM && error_code_tmp != SCECdErSFRMTNG) && buf_sec_tmp )
 	{
 		u32 sectors_3;
 		u32 lsn_3;
@@ -1645,7 +1645,7 @@ void cdvdfsv_rpc3_26_readmodelid(const cdvdfsv_rpc3_inpacket_t *inbuf, int bufle
 
 void cdvdfsv_rpc3_22_mmode(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
-	if ( buflen == 4 || inbuf->m_pkt_22.m_char4 == 0 )
+	if ( buflen == 4 || !inbuf->m_pkt_22.m_char4 )
 	{
 		outbuf->m_retres = sceCdMmode(inbuf->m_pkt_22.m_media);
 	}
@@ -1823,7 +1823,7 @@ void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 	{
 		case 1:
 			// The following call to sceCdGetDiskType was inlined
-			cdvdfsv_rpc5_01_readee(buffer, length, &g_crr, (sceCdGetDiskType() ^ SCECdPS2DVD) == 0, sceCdSC(0xFFFFFFFC, &scres_unused) == 0, 0);
+			cdvdfsv_rpc5_01_readee(buffer, length, &g_crr, !(sceCdGetDiskType() ^ SCECdPS2DVD), !sceCdSC(0xFFFFFFFC, &scres_unused), 0);
 			break;
 		case 2:
 			cdvdfsv_rpc5_02_readcdda(buffer, length, &g_crr);
@@ -1882,9 +1882,9 @@ void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 				buffer,
 				length,
 				&g_crr,
-				(sceCdGetDiskType() ^ SCECdPS2DVD) == 0,
+				!(sceCdGetDiskType() ^ SCECdPS2DVD),
 				1,
-				g_cdvdman_istruct_ptr->m_no_dec_flag == 0);
+				!g_cdvdman_istruct_ptr->m_no_dec_flag);
 			break;
 		case 23:
 			cdvdfsv_rpc5_17_doesuniquekeyexist(buffer, length, &g_crr);
@@ -2091,9 +2091,9 @@ unsigned int optimized_memcpy(char *dst, const char *src, unsigned int n)
 
 	if ( n >> 2 )
 	{
-		if ( (((uiptr)dst | (uiptr)src) & 3) != 0 )
+		if ( (((uiptr)dst | (uiptr)src) & 3) )
 		{
-			if ( ((uiptr)dst & 3) != 0 && ((uiptr)src & 3) != 0 )
+			if ( ((uiptr)dst & 3) && ((uiptr)src & 3) )
 			{
 				v16 = (int)(n >> 2) / 12;
 				v17 = (int)(n >> 2) % 12;
@@ -2144,7 +2144,7 @@ LABEL_30:
 					while ( v16 );
 				}
 			}
-			else if ( ((uiptr)dst & 3) != 0 )
+			else if ( ((uiptr)dst & 3) )
 			{
 				v29 = (int)(n >> 2) / 12;
 				v30 = (int)(n >> 2) % 12;
@@ -2300,7 +2300,7 @@ LABEL_33:
 		}
 	}
 	v55 = n & 3;
-	if ( (n & 3) != 0 )
+	if ( (n & 3) )
 	{
 		do
 		{
