@@ -2523,7 +2523,7 @@ int CD_cachefile(int dsec, int layer)
 		memcpy(&g_cdvdman_filetbl[i].m_file_struct.lsn, dirent_cur->m_extent, sizeof(g_cdvdman_filetbl[i].m_file_struct.lsn));
 		memcpy(&g_cdvdman_filetbl[i].m_file_struct.size, dirent_cur->m_size, sizeof(g_cdvdman_filetbl[i].m_file_struct.size));
 		file_year = dirent_cur->m_date[0] + 1900;
-		g_cdvdman_filetbl[i].m_file_struct.date[7] = BYTE1(file_year);
+		g_cdvdman_filetbl[i].m_file_struct.date[7] = file_year >> 8;
 		g_cdvdman_filetbl[i].m_file_struct.date[6] = file_year;
 		g_cdvdman_filetbl[i].m_file_struct.date[5] = dirent_cur->m_date[1];
 		g_cdvdman_filetbl[i].m_file_struct.date[4] = dirent_cur->m_date[2];

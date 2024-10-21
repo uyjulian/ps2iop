@@ -29,7 +29,7 @@
 
 #define MEMORY ((volatile unsigned int *)0x10000000)
 
-#if 1
+#if 0
 #define LAST_IND(x, part_type) (sizeof(x) / sizeof(part_type) - 1)
 #define HIGH_IND(x, part_type) LAST_IND(x, part_type)
 #define LOW_IND(x, part_type) 0
@@ -39,7 +39,7 @@
 #define DWORDn(x, n) (*((_DWORD*)&(x) + n))
 #endif
 
-#if 1
+#if 0
 #ifdef LOBYTE
 #undef LOBYTE
 #endif
@@ -82,7 +82,7 @@
 #define WORD7(x) WORDn(x, 7)
 #endif
 
-#if 1
+#if 0
 // now signed macros (the same but with sign extension)
 #define SBYTEn(x, n) (*((int8_t*)&(x) + n))
 #define SWORDn(x, n) (*((int16_t*)&(x) + n))
