@@ -31,9 +31,8 @@ struct ioman_dev_listentry
 	iomanX_iop_device_t *device;
 };
 
-int showdrvflag = 1; // weak
-iomanX_iop_device_ops_t dev_tty_dev_operations =
-{
+int showdrvflag = 1;  // weak
+iomanX_iop_device_ops_t dev_tty_dev_operations = {
 	(void *)&tty_noop,
 	(void *)&tty_noop,
 	(void *)&tty_noop,
@@ -62,16 +61,14 @@ iomanX_iop_device_ops_t dev_tty_dev_operations =
 	NULL,
 	NULL,
 };
-iomanX_iop_device_t dev_tty =
-{
+iomanX_iop_device_t dev_tty = {
 	"tty",
 	IOP_DT_CHAR,
 	1,
 	"CONSOLE",
 	&dev_tty_dev_operations,
 };
-iomanX_iop_device_t dev_dummytty =
-{
+iomanX_iop_device_t dev_dummytty = {
 	"dummytty",
 	IOP_DT_CHAR,
 	1,
@@ -107,17 +104,17 @@ static inline int set_errno(int in_errno)
 
 static inline void handle_result_pre(int in_result, iomanX_iop_file_t *f, int op)
 {
-	if ((op & HANDLE_RESULT_CLEAR_INFO))
+	if ( (op & HANDLE_RESULT_CLEAR_INFO) )
 	{
-		if (f)
+		if ( f )
 		{
 			f->mode = 0;
 			f->device = NULL;
 		}
 	}
-	if ((op & HANDLE_RESULT_CLEAR_INFO_ON_ERROR))
+	if ( (op & HANDLE_RESULT_CLEAR_INFO_ON_ERROR) )
 	{
-		if (f && (in_result < 0))
+		if ( f && (in_result < 0) )
 		{
 			// Unofficial: also clear mode
 			f->mode = 0;
@@ -129,11 +126,11 @@ static inline void handle_result_pre(int in_result, iomanX_iop_file_t *f, int op
 static inline int handle_result(int in_result, iomanX_iop_file_t *f, int op)
 {
 	handle_result_pre(in_result, f, op);
-	if (in_result < 0)
+	if ( in_result < 0 )
 		return set_errno(-in_result);
-	if ((op & HANDLE_RESULT_RETURN_ZERO))
+	if ( (op & HANDLE_RESULT_RETURN_ZERO) )
 		return 0;
-	if ((op & HANDLE_RESULT_RETURN_FD))
+	if ( (op & HANDLE_RESULT_RETURN_FD) )
 		return f - file_table;
 	return in_result;
 }
@@ -141,11 +138,11 @@ static inline int handle_result(int in_result, iomanX_iop_file_t *f, int op)
 static inline s64 handle_result64(s64 in_result, iomanX_iop_file_t *f, int op)
 {
 	handle_result_pre(in_result, f, op);
-	if (in_result < 0)
+	if ( in_result < 0 )
 		return set_errno(-(int)in_result);
-	if ((op & HANDLE_RESULT_RETURN_ZERO))
+	if ( (op & HANDLE_RESULT_RETURN_ZERO) )
 		return 0;
-	if ((op & HANDLE_RESULT_RETURN_FD))
+	if ( (op & HANDLE_RESULT_RETURN_FD) )
 		return f - file_table;
 	return in_result;
 }
@@ -172,7 +169,7 @@ int _start(int ac, char **av)
 	device_entry_used_list_head = NULL;
 	device_entry_empty_list_head = device_entry_list;
 	// Unofficial: link forwards instead of backwards
-	for (i = 0; i < ((sizeof(device_entry_list)/sizeof(device_entry_list[0])) - 1); i += 1)
+	for ( i = 0; i < ((sizeof(device_entry_list) / sizeof(device_entry_list[0])) - 1); i += 1 )
 		device_entry_list[i].next = &device_entry_list[i + 1];
 	// Unofficial: memset instead of bzero
 	memset(file_table, 0, sizeof(file_table));
@@ -205,7 +202,7 @@ void iomanX_StdioInit(int mode)
 		return;
 	ReferThreadStatus(0, &thinfo);
 	ChangeThreadPriority(0, 4);
-	switch (mode)
+	switch ( mode )
 	{
 		case 0:
 		{
@@ -253,7 +250,10 @@ int iomanX_open(const char *name, int flags, ...)
 	if ( !parsefile_res )
 		return handle_result(-ENODEV, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
 	f->mode = flags;
-	return handle_result(f->device->ops->open(f, parsefile_res, flags, mode), f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR | HANDLE_RESULT_RETURN_FD);
+	return handle_result(
+		f->device->ops->open(f, parsefile_res, flags, mode),
+		f,
+		HANDLE_RESULT_CLEAR_INFO_ON_ERROR | HANDLE_RESULT_RETURN_FD);
 }
 
 int iomanX_lseek(int fd, int offset, int mode)
@@ -263,7 +263,7 @@ int iomanX_lseek(int fd, int offset, int mode)
 	f = get_iob(fd);
 	if ( !f )
 		return handle_result(-EBADF, f, 0);
-	switch (mode)
+	switch ( mode )
 	{
 		case FIO_SEEK_SET:
 		case FIO_SEEK_CUR:
@@ -284,7 +284,7 @@ s64 iomanX_lseek64(int fd, s64 offset, int whence)
 		return handle_result(-EBADF, f, 0);
 	if ( (f->device->type & 0xF0000000) != IOP_DT_FSEXT )
 		return handle_result(-EUNSUP, f, 0);
-	switch (whence)
+	switch ( whence )
 	{
 		case FIO_SEEK_SET:
 		case FIO_SEEK_CUR:
@@ -323,7 +323,10 @@ int iomanX_close(int fd)
 	f = get_iob(fd);
 	if ( !f )
 		return handle_result(-EBADF, f, 0);
-	return handle_result((f->mode & FIO_O_DIROPEN) ? f->device->ops->dclose(f) : f->device->ops->close(f), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_FD);
+	return handle_result(
+		(f->mode & FIO_O_DIROPEN) ? f->device->ops->dclose(f) : f->device->ops->close(f),
+		f,
+		HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_FD);
 }
 
 int iomanX_ioctl(int fd, int cmd, void *param)
@@ -361,7 +364,8 @@ int iomanX_dopen(const char *path)
 	if ( !parsefile_res )
 		return handle_result(-ENODEV, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
 	f->mode = FIO_O_DIROPEN;
-	return handle_result(f->device->ops->dopen(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR | HANDLE_RESULT_RETURN_FD);
+	return handle_result(
+		f->device->ops->dopen(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR | HANDLE_RESULT_RETURN_FD);
 }
 
 int iomanX_dread(int fd, iox_dirent_t *buf)
@@ -385,7 +389,8 @@ int iomanX_remove(const char *name)
 	parsefile_res = parsefile(name, &(f->device), &(f->unit));
 	if ( !parsefile_res )
 		return handle_result(-ENODEV, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
-	return handle_result(f->device->ops->remove(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+	return handle_result(
+		f->device->ops->remove(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 }
 
 int iomanX_mkdir(const char *path, int mode)
@@ -409,12 +414,16 @@ static int xx_stat(int op, const char *name, iox_stat_t *stat, unsigned int stat
 	parsefile_res = parsefile(name, &(f->device), &(f->unit));
 	if ( !parsefile_res )
 		return handle_result(-ENODEV, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
-	switch (op)
+	switch ( op )
 	{
 		case 1:
-			return handle_result(f->device->ops->chstat(f, parsefile_res, stat, statmask), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+			return handle_result(
+				f->device->ops->chstat(f, parsefile_res, stat, statmask),
+				f,
+				HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 		case 2:
-			return handle_result(f->device->ops->getstat(f, parsefile_res, stat), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+			return handle_result(
+				f->device->ops->getstat(f, parsefile_res, stat), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 		default:
 			// Unofficial: return negative instead of positive if op not found
 			return handle_result(-ENODEV, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
@@ -442,7 +451,10 @@ int iomanX_format(const char *dev, const char *blockdev, void *arg, int arglen)
 	parsefile_res = parsefile(dev, &(f->device), &(f->unit));
 	if ( !parsefile_res )
 		return handle_result(-ENODEV, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
-	return handle_result(f->device->ops->format(f, parsefile_res, blockdev, arg, arglen), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+	return handle_result(
+		f->device->ops->format(f, parsefile_res, blockdev, arg, arglen),
+		f,
+		HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 }
 
 static int xx_rename(int op, const char *oldname, const char *newname)
@@ -471,12 +483,18 @@ static int xx_rename(int op, const char *oldname, const char *newname)
 	// The filesystem must support these ops.
 	if ( (f->device->type & 0xF0000000) != IOP_DT_FSEXT )
 		return handle_result(-EUNSUP, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
-	switch (op)
+	switch ( op )
 	{
 		case 7:
-			return handle_result(f->device->ops->rename(f, parsefile_res, parsefile_res_new), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+			return handle_result(
+				f->device->ops->rename(f, parsefile_res, parsefile_res_new),
+				f,
+				HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 		case 8:
-			return handle_result(f->device->ops->symlink(f, parsefile_res, parsefile_res_new), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+			return handle_result(
+				f->device->ops->symlink(f, parsefile_res, parsefile_res_new),
+				f,
+				HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 		default:
 			// Unofficial: return negative instead of positive if op not found
 			return handle_result(-ENODEV, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
@@ -501,8 +519,8 @@ int iomanX_chdir(const char *name)
 }
 
 /* Because mkdir, rmdir, chdir, and sync have similiar arguments (each starts
-   with a path followed by an optional integer), we use a common routine to
-   handle all of them.  */
+	 with a path followed by an optional integer), we use a common routine to
+	 handle all of them.  */
 static int xx_dir(int op, const char *name, int mode)
 {
 	iomanX_iop_file_t *f;
@@ -520,13 +538,17 @@ static int xx_dir(int op, const char *name, int mode)
 	switch ( op )
 	{
 		case 4:
-			return handle_result(f->device->ops->mkdir(f, parsefile_res, mode), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+			return handle_result(
+				f->device->ops->mkdir(f, parsefile_res, mode), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 		case 5:
-			return handle_result(f->device->ops->rmdir(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+			return handle_result(
+				f->device->ops->rmdir(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 		case 0x103:
-			return handle_result(f->device->ops->chdir(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+			return handle_result(
+				f->device->ops->chdir(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 		case 0x106:
-			return handle_result(f->device->ops->sync(f, parsefile_res, mode), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+			return handle_result(
+				f->device->ops->sync(f, parsefile_res, mode), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 		default:
 			// Unofficial: return negative instead of positive if op not found
 			return handle_result(-ENODEV, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
@@ -552,7 +574,10 @@ int iomanX_mount(const char *fsname, const char *devname, int flag, void *arg, i
 	// The filesystem must support these ops.
 	if ( (f->device->type & 0xF0000000) != IOP_DT_FSEXT )
 		return handle_result(-EUNSUP, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
-	return handle_result(f->device->ops->mount(f, parsefile_res, devname, flag, arg, arglen), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+	return handle_result(
+		f->device->ops->mount(f, parsefile_res, devname, flag, arg, arglen),
+		f,
+		HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 }
 
 int iomanX_umount(const char *fsname)
@@ -569,7 +594,8 @@ int iomanX_umount(const char *fsname)
 	// The filesystem must support these ops.
 	if ( (f->device->type & 0xF0000000) != IOP_DT_FSEXT )
 		return handle_result(-EUNSUP, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
-	return handle_result(f->device->ops->umount(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
+	return handle_result(
+		f->device->ops->umount(f, parsefile_res), f, HANDLE_RESULT_CLEAR_INFO | HANDLE_RESULT_RETURN_ZERO);
 }
 
 int iomanX_devctl(const char *name, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen)
@@ -586,7 +612,8 @@ int iomanX_devctl(const char *name, int cmd, void *arg, unsigned int arglen, voi
 	// The filesystem must support these ops.
 	if ( (f->device->type & 0xF0000000) != IOP_DT_FSEXT )
 		return handle_result(-EUNSUP, f, HANDLE_RESULT_CLEAR_INFO_ON_ERROR);
-	return handle_result(f->device->ops->devctl(f, parsefile_res, cmd, arg, arglen, buf, buflen), f, HANDLE_RESULT_CLEAR_INFO);
+	return handle_result(
+		f->device->ops->devctl(f, parsefile_res, cmd, arg, arglen, buf, buflen), f, HANDLE_RESULT_CLEAR_INFO);
 }
 
 int iomanX_readlink(const char *path, char *buf, unsigned int buflen)
@@ -618,9 +645,9 @@ static iomanX_iop_file_t *new_iob(void)
 
 	CpuSuspendIntr(&state);
 	file_table_entry = file_table;
-	while ( (file_table_entry < &file_table[sizeof(file_table)/sizeof(file_table[0])]) && file_table_entry->mode )
+	while ( (file_table_entry < &file_table[sizeof(file_table) / sizeof(file_table[0])]) && file_table_entry->mode )
 		file_table_entry += 1;
-	if ( file_table_entry >= &file_table[sizeof(file_table)/sizeof(file_table[0])] )
+	if ( file_table_entry >= &file_table[sizeof(file_table) / sizeof(file_table[0])] )
 		file_table_entry = NULL;
 	// fill in "device" temporarily to mark the fd as allocated.
 	if ( file_table_entry )
@@ -633,7 +660,7 @@ static iomanX_iop_file_t *new_iob(void)
 
 static iomanX_iop_file_t *get_iob(int fd)
 {
-	if ( ((unsigned int)fd >= (sizeof(file_table)/sizeof(file_table[0]))) || (!file_table[fd].device) )
+	if ( ((unsigned int)fd >= (sizeof(file_table) / sizeof(file_table[0]))) || (!file_table[fd].device) )
 		return NULL;
 	return &file_table[fd];
 }
@@ -678,7 +705,7 @@ static const char *parsefile(const char *path, iomanX_iop_device_t **p_device, i
 	}
 	devname_len = colon_index - path_trimmed;
 	// Unofficial: bounds check
-	if (devname_len > (sizeof(canon) - 1))
+	if ( devname_len > (sizeof(canon) - 1) )
 		return NULL;
 	strncpy(canon, path_trimmed, devname_len);
 	canon[devname_len] = 0;
