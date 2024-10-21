@@ -31,7 +31,7 @@ struct ioman_dev_listentry
 	iomanX_iop_device_t *device;
 };
 
-int showdrvflag = 1;  // weak
+int showdrvflag = 1;
 iomanX_iop_device_ops_t dev_tty_dev_operations = {
 	(void *)&tty_noop,
 	(void *)&tty_noop,
