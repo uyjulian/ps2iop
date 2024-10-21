@@ -230,8 +230,11 @@ int _start(int ac, char **av)
 	g_cdvdman_temp_buffer_ptr = g_cdvdman_fsvrbuf;
 	cdvdman_init();
 #if 0
-	// FIXME workaround
 	SetRebootTimeLibraryHandlingMode(&_exp_cdvdman, 2);
+#else
+	// Call termination before disabling interrupts
+	_exp_cdvdman.mode &= ~6;
+	_exp_cdvdman.mode |= 2;
 #endif
 	return 0;
 }
