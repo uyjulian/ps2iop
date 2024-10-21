@@ -24,7 +24,7 @@ int cdrom_stm_deinit();
 int cdrom_stm_devctl(iop_file_t *f, const char *name, int cmd, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
 int cdrom_stm_nulldev();
 s64 cdrom_stm_nulldev64();
-int _start(int ac, char **av);
+int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi);
 int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock);
 void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
 unsigned int ee_stream_intr_cb_normal(void *userdata);
@@ -628,13 +628,14 @@ s64 cdrom_stm_nulldev64()
 	return -EIO;
 }
 
-int _start(int ac, char **av)
+int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 {
 	int last_error;
 	int scres_unused;
 	int state;
 
 	(void)av;
+	(void)startaddr;
 
 	if ( ac < 0 )
 	{
@@ -666,7 +667,13 @@ int _start(int ac, char **av)
 		return MODULE_NO_RESIDENT_END;
 	}
 	g_cdvdman_intr_efid = sceCdSC(0xFFFFFFF5, &scres_unused);
+#if 0
 	return MODULE_REMOVABLE_END;
+#else
+	if ( mi && ((mi->newflags & 2) != 0) )
+		mi->newflags |= 0x10;
+	return MODULE_RESIDENT_END;
+#endif
 }
 
 int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)

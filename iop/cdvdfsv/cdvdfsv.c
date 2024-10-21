@@ -10,7 +10,7 @@ extern struct irx_export_table _exp_cdvdfsv;
 
 int cdvdfsv_checkdmastat(int trid);
 int cdvdfsv_cleanuprpc();
-int _start(int ac, char **av);
+int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi);
 int cdvdfsv_init();
 void cdvdfsv_main_th(void *arg);
 int *cdvdfsv_4(int arg1);
@@ -151,10 +151,14 @@ int cdvdfsv_cleanuprpc()
 	return 1;
 }
 
-int _start(int ac, char **av)
+int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 {
+#if 0
 	const u16 *LibraryEntryTable;
+#endif
 	int state;
+
+	(void)startaddr;
 
 	if ( ac < 0 )
 	{
@@ -184,6 +188,7 @@ int _start(int ac, char **av)
 	g_cdvdfsv_rtocbuf = (char *)cdvdfsv_fsvrbuf;
 	cdvdfsv_parseargs(ac, av);
 	cdvdfsv_init();
+#if 0
 	CpuSuspendIntr(&state);
 	LibraryEntryTable = (u16 *)QueryLibraryEntryTable(&g_modload_libinfo);
 	CpuResumeIntr(state);
@@ -193,6 +198,11 @@ int _start(int ac, char **av)
 		return MODULE_RESIDENT_END;
 	}
 	return MODULE_REMOVABLE_END;
+#else
+	if ( mi && ((mi->newflags & 2) != 0) )
+		mi->newflags |= 0x10;
+	return MODULE_RESIDENT_END;
+#endif
 }
 
 int cdvdfsv_init()
