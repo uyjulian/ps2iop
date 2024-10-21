@@ -649,7 +649,7 @@ static iomanX_iop_file_t *new_iob(void)
 		file_table_entry += 1;
 	if ( file_table_entry >= &file_table[sizeof(file_table) / sizeof(file_table[0])] )
 		file_table_entry = NULL;
-	// fill in "device" temporarily to mark the fd as allocated.
+	// fill in "mode" temporarily to mark the fd as allocated.
 	if ( file_table_entry )
 		file_table_entry->mode = -20;
 	CpuResumeIntr(state);
