@@ -744,7 +744,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 		case 5:
 			sceCdstm1Cb((void (*)(int))ee_stream_intr_cb_normal_thunk);
 			if ( !instruct->m_posszarg2 )
-				_break(7, 0);
+				__builtin_trap();
 			chunks_sectors = instruct->m_posszarg1 / instruct->m_posszarg2;
 			g_cdvdstm_bufsz2 = instruct->m_posszarg1;
 			g_cdvdstm_sectorcount2 = chunks_sectors;
@@ -1125,7 +1125,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 					bankcur_tmp = 0;
 			}
 			if ( !g_cdvdstm_usedchunksize2 )
-				_break(7, 0);
+				__builtin_trap();
 			*outres_ptr = i * (g_cdvdstm_chunksz2 / (unsigned int)g_cdvdstm_usedchunksize2);
 			return;
 		case 5:
@@ -1144,7 +1144,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 					break;
 			}
 			if ( !instruct->m_posszarg2 )
-				_break(7, 0);
+				__builtin_trap();
 			chunks_sectors = instruct->m_posszarg1 / instruct->m_posszarg2;
 			g_cdvdstm_bufsz2 = instruct->m_posszarg1;
 			g_cdvdstm_sectorcount2 = chunks_sectors;
@@ -1238,7 +1238,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 		sceCdSync(0);
 		CancelAlarm((unsigned int (*)(void *))stm_alarm_timeout_cb, &g_cdvdstm_curclk_ee);
 		if ( !g_cdvdstm_chunksz2 )
-			_break(7, 0);
+			__builtin_trap();
 		posszarg2_chunks = (posszarg2_bytes / g_cdvdstm_chunksz2) + (( posszarg2_bytes % g_cdvdstm_chunksz2 ) ? 1 : 0);
 		for ( g_cdvdstm_bankgp_ee = 0; g_cdvdstm_bankgp_ee < posszarg2_chunks; g_cdvdstm_bankgp_ee += 1 )
 		{
@@ -1331,7 +1331,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 	if ( posszarg2_bytes_overrun == 0xFFFFFFFF )
 		posszarg2_bytes_overrun = posszarg2_bytes;
 	if ( !g_cdvdstm_usedchunksize2 )
-		_break(7, 0);
+		__builtin_trap();
 	posszarg2_overrun_chunks2 = posszarg2_bytes_overrun / g_cdvdstm_usedchunksize2;
 	if ( retryflag )
 	{

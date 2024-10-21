@@ -2,7 +2,7 @@
 #ifndef COMMON_DEFS_H_
 #define COMMON_DEFS_H_
 
-#if 1
+#if 0
 #include <stdbool.h>
 #endif
 
@@ -124,7 +124,7 @@ typedef unsigned int u_int;
 typedef unsigned long u_long;
 #endif
 
-#if 1
+#if 0
 #define _break(...) __builtin_trap()
 #endif
 
