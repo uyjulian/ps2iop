@@ -203,15 +203,15 @@ typedef struct cdrom_stm_devctl_
 	u32 m_error;
 } cdrom_stm_devctl_t;
 
-typedef struct _CD_DIR_ENTRY
+typedef struct cdvdman_dirtbl_entry_
 {
 	int m_number;
 	int m_parent;
 	int m_extent;
 	char m_name[32];
-} CD_DIR_ENTRY;
+} cdvdman_dirtbl_entry_t;
 
-typedef struct _CDVDMAN_FILEDATA
+typedef struct cdvdman_fhinfo_
 {
 	u32 m_file_lsn;
 	u32 m_read_pos;
@@ -225,10 +225,9 @@ typedef struct _CDVDMAN_FILEDATA
 	void *m_max_cluster;
 	int m_sector_count_total;
 	int m_cluster_cur;
-} CDVDMAN_FILEDATA;
+} cdvdman_fhinfo_t;
 
-
-typedef struct _DMA3PARAM
+typedef struct cdvdman_dma3_parameter_
 {
 	u16 m_dma3_blkwords;
 	u16 m_dma3_blkcount;
@@ -237,22 +236,22 @@ typedef struct _DMA3PARAM
 	u16 m_dma3_csectors;
 	u16 m_cdvdreg_howto;
 	u32 m_dma3_msectors;
-} DMA3PARAM;
+} cdvdman_dma3_parameter_t;
 
-typedef struct CDVDMAN_PATHTBL_
+typedef struct cdvdman_pathtbl_
 {
 	int m_cache_path_sz;
 	int m_lsn;
 	unsigned int m_nsec;
 	int m_layer;
 	unsigned int m_cache_hit_count;
-} CDVDMAN_PATHTBL_T;
+} cdvdman_pathtbl_t;
 
-typedef struct CDVDMAN_FILETBL_ENTRY_
+typedef struct cdvdman_filetbl_entry_
 {
 	sceCdlFILE m_file_struct;
 	int m_flags;
-} CDVDMAN_FILETBL_ENTRY_T;
+} cdvdman_filetbl_entry_t;
 
 typedef struct iso9660_desc_
 {
@@ -391,7 +390,7 @@ typedef struct cdvdman_internal_struct_
 	int m_dec_shift;
 	int m_dec_state;
 	int m_no_dec_flag;
-	DMA3PARAM m_dma3prm;
+	cdvdman_dma3_parameter_t m_dma3_param;
 	int m_cdvdman_dma3sec;
 	int m_drive_interupt_request;
 	u16 m_dec_mode_set;
@@ -406,25 +405,25 @@ typedef struct cdvdman_internal_struct_
 #endif
 
 #if 1
-typedef struct cdvdfsv_rpc1h_packet_
+typedef struct cdvdfsv_rpc1_inpacket_
 {
 	int m_mode;
-} cdvdfsv_rpc1h_packet;
-typedef struct cdvdfsv_rpc1h_outpacket_
+} cdvdfsv_rpc1_inpacket_t;
+typedef struct cdvdfsv_rpc1_outpacket_
 {
 	int m_retres;
 	int m_cdvdfsv_ver;
 	int m_cdvdman_ver;
 	int m_debug_mode;
-} cdvdfsv_rpc1h_outpacket;
-typedef struct cdvdfsv_rpc2h_packet_
+} cdvdfsv_rpc1_outpacket_t;
+typedef struct cdvdfsv_rpc2_inpacket_
 {
 	int m_mode;
-} cdvdfsv_rpc2h_packet;
-typedef struct cdvdfsv_rpc2h_outpacket_
+} cdvdfsv_rpc2_inpacket_t;
+typedef struct cdvdfsv_rpc2_outpacket_
 {
 	int m_retres;
-} cdvdfsv_rpc2h_outpacket;
+} cdvdfsv_rpc2_outpacket_t;
 typedef struct cdvdfsv_unaligned_data_outpacket_
 {
 	u32 m_b1len;
@@ -433,47 +432,168 @@ typedef struct cdvdfsv_unaligned_data_outpacket_
 	u32 m_b2dst;
 	u8 m_pbuf1[64];
 	u8 m_pbuf2[64];
-} cdvdfsv_unaligned_data_outpacket;
+} cdvdfsv_unaligned_data_outpacket_t;
 
-typedef struct cdvdfsv_rpc4h_sz12c_packet_
+typedef struct cdvdfsv_rpc4_sz12c_inpacket_
 {
 	sceCdlFILE m_fp;
 	int m_file_attributes;
 	char m_path[256];
 	uiptr m_eedest;
 	int m_layer;
-} cdvdfsv_rpc4h_sz12c_packet;
+} cdvdfsv_rpc4_sz12c_inpacket_t;
 
-typedef struct cdvdfsv_rpc4h_sz128_packet_
+typedef struct cdvdfsv_rpc4_sz128_inpacket_
 {
 	sceCdlFILE m_fp;
 	int m_file_attributes;
 	char m_path[256];
 	uiptr m_eedest;
-} cdvdfsv_rpc4h_sz128_packet;
+} cdvdfsv_rpc4_sz128_inpacket_t;
 
-typedef struct cdvdfsv_rpc4h_sz124_packet_
+typedef struct cdvdfsv_rpc4_sz124_inpacket_
 {
 	sceCdlFILE m_fp;
 	char m_path[256];
 	uiptr m_eedest;
-} cdvdfsv_rpc4h_sz124_packet;
+} cdvdfsv_rpc4_sz124_inpacket_t;
 
-typedef union cdvdfsv_rpc4h_packet_
+typedef union cdvdfsv_rpc4_inpacket_
 {
-	cdvdfsv_rpc4h_sz12c_packet m_pkt_sz12c;
-	cdvdfsv_rpc4h_sz128_packet m_pkt_sz128;
-	cdvdfsv_rpc4h_sz124_packet m_pkt_sz124;
-} cdvdfsv_rpc4h_packet;
+	cdvdfsv_rpc4_sz12c_inpacket_t m_pkt_sz12c;
+	cdvdfsv_rpc4_sz128_inpacket_t m_pkt_sz128;
+	cdvdfsv_rpc4_sz124_inpacket_t m_pkt_sz124;
+} cdvdfsv_rpc4_inpacket_t;
 
-typedef struct cdvdfsv_rpc4h_outpacket_
+typedef struct cdvdfsv_rpc4_outpacket_
 {
 	int m_retres;
 	int m_padding[3];
-} cdvdfsv_rpc4h_outpacket;
+} cdvdfsv_rpc4_outpacket_t;
 
+typedef struct cdvdfsv_rpc3_05_inpacket_
+{
+	int m_param;
+} cdvdfsv_rpc3_05_inpacket_t;
 
-typedef struct cdvdfsv_rpc5h_01_packet_
+typedef struct cdvdfsv_rpc3_0B_inpacket_
+{
+	u8 m_cmdNum;
+	u8 m_gap1;
+	u16 m_inBuffSize;
+	u8 m_inBuff[16];
+} cdvdfsv_rpc3_0B_inpacket_t;
+
+typedef struct cdvdfsv_rpc3_15_inpacket_
+{
+	int m_mode;
+} cdvdfsv_rpc3_15_inpacket_t;
+
+typedef struct cdvdfsv_rpc3_22_inpacket_
+{
+	int m_media;
+	char m_char4;
+} cdvdfsv_rpc3_22_inpacket_t;
+
+typedef struct cdvdfsv_rpc3_23_inpacket_
+{
+	int m_priority;
+} cdvdfsv_rpc3_23_inpacket_t;
+
+typedef struct cdvdfsv_rpc3_25_inpacket_
+{
+	int m_param;
+	int m_timeout;
+} cdvdfsv_rpc3_25_inpacket_t;
+
+typedef union cdvdfsv_rpc3_inpacket_
+{
+	cdvdfsv_rpc3_05_inpacket_t m_pkt_05;
+	cdvdfsv_rpc3_0B_inpacket_t m_pkt_0B;
+	cdvdfsv_rpc3_15_inpacket_t m_pkt_15;
+	cdvdfsv_rpc3_22_inpacket_t m_pkt_22;
+	cdvdfsv_rpc3_23_inpacket_t m_pkt_23;
+	cdvdfsv_rpc3_25_inpacket_t m_pkt_25;
+} cdvdfsv_rpc3_inpacket_t;
+
+typedef struct cdvdfsv_rpc3_01_outpacket_
+{
+	int m_retres;
+	sceCdCLOCK m_clock;
+} cdvdfsv_rpc3_01_outpacket_t;
+
+typedef struct cdvdfsv_rpc3_05_outpacket_
+{
+	int m_retres;
+	u32 m_traychk;
+} cdvdfsv_rpc3_05_outpacket_t;
+
+typedef struct cdvdfsv_rpc3_06_outpacket_
+{
+	int m_retres;
+	u32 m_result;
+	u8 m_buffer[8];
+} cdvdfsv_rpc3_06_outpacket_t;
+
+typedef struct cdvdfsv_rpc3_0B_outpacket_
+{
+	u8 m_outbuf[16];
+} cdvdfsv_rpc3_0B_outpacket_t;
+
+typedef struct cdvdfsv_rpc3_15_outpacket_
+{
+	int m_retres;
+	u32 m_status;
+} cdvdfsv_rpc3_15_outpacket_t;
+
+typedef struct cdvdfsv_rpc3_1A_outpacket_
+{
+	int m_retres;
+	u32 m_status;
+	char m_buffer[16];
+} cdvdfsv_rpc3_1A_outpacket_t;
+
+typedef struct cdvdfsv_rpc3_21_outpacket_
+{
+	int m_retres;
+	u32 m_result;
+} cdvdfsv_rpc3_21_outpacket_t;
+
+typedef struct cdvdfsv_rpc3_24_outpacket_
+{
+	int m_retres;
+	u64 m_guid;
+} cdvdfsv_rpc3_24_outpacket_t;
+
+typedef struct cdvdfsv_rpc3_26_outpacket_
+{
+	int m_retres;
+	unsigned int m_id;
+} cdvdfsv_rpc3_26_outpacket_t;
+
+typedef struct cdvdfsv_rpc3_27_outpacket_
+{
+	int m_retres;
+	int m_on_dual;
+	unsigned int m_layer1_start;
+} cdvdfsv_rpc3_27_outpacket_t;
+
+typedef union cdvdfsv_rpc3_outpacket_
+{
+	int m_retres;
+	cdvdfsv_rpc3_01_outpacket_t m_pkt_01;
+	cdvdfsv_rpc3_05_outpacket_t m_pkt_05;
+	cdvdfsv_rpc3_06_outpacket_t m_pkt_06;
+	cdvdfsv_rpc3_0B_outpacket_t m_pkt_0B;
+	cdvdfsv_rpc3_15_outpacket_t m_pkt_15;
+	cdvdfsv_rpc3_1A_outpacket_t m_pkt_1A;
+	cdvdfsv_rpc3_21_outpacket_t m_pkt_21;
+	cdvdfsv_rpc3_24_outpacket_t m_pkt_24;
+	cdvdfsv_rpc3_26_outpacket_t m_pkt_26;
+	cdvdfsv_rpc3_27_outpacket_t m_pkt_27;
+} cdvdfsv_rpc3_outpacket_t;
+
+typedef struct cdvdfsv_rpc5_01_inpacket_
 {
 	u32 m_lbn;
 	u32 m_sectors;
@@ -482,47 +602,9 @@ typedef struct cdvdfsv_rpc5h_01_packet_
 	uiptr m_eeremaindest;
 	uiptr m_eedest;
 	u32 m_decval;
-} cdvdfsv_rpc5h_01_packet;
+} cdvdfsv_rpc5_01_inpacket_t;
 
-typedef struct cdvdfsv_rpc5h_04_packet_
-{
-	uiptr m_eedest;
-} cdvdfsv_rpc5h_04_packet;
-
-typedef struct cdvdfsv_rpc5h_05_packet_
-{
-	u32 m_lbn;
-} cdvdfsv_rpc5h_05_packet;
-
-typedef struct cdvdfsv_rpc5h_0D_packet_
-{
-	u32 m_lbn;
-	u32 m_sectors;
-	void *m_buf;
-	sceCdRMode m_mode;
-	u8 m_unused[4];
-	uiptr m_eedest;
-} cdvdfsv_rpc5h_0D_packet;
-
-typedef struct cdvdfsv_rpc5h_0F_packet_
-{
-	sceCdRChain m_readChain[65];
-	sceCdRMode m_mode;
-	uiptr m_eedest;
-} cdvdfsv_rpc5h_0F_packet;
-
-#if 0
-typedef struct cdvdfsc_rpc5h_03_packet_
-{
-	_DWORD m_lbn;
-	_DWORD m_nsectors;
-	_DWORD m_buf;
-	sceCdRMode m_scecdrmodeC;
-	_DWORD m_eedest;
-} cdvdfsc_rpc5h_03_packet;
-#endif
-
-typedef struct cdvdfsv_rpc5h_02_packet_
+typedef struct cdvdfsv_rpc5_02_inpacket_
 {
 	u32 m_lbn;
 	u32 m_sectors;
@@ -530,474 +612,80 @@ typedef struct cdvdfsv_rpc5h_02_packet_
 	sceCdRMode m_mode;
 	uiptr m_eeremaindest;
 	uiptr m_eedest;
-} cdvdfsv_rpc5h_02_packet;
+} cdvdfsv_rpc5_02_inpacket_t;
 
-typedef struct cdvdfsv_rpc3h_22_packet_
+typedef struct cdvdfsv_rpc5_04_inpacket_
 {
-	int m_media;
-	char m_char4;
-} cdvdfsv_rpc3h_22_packet;
+	uiptr m_eedest;
+} cdvdfsv_rpc5_04_inpacket_t;
 
-#if 0
-typedef struct cdvdfsv_rpc3h_28_packet_
+typedef struct cdvdfsv_rpc5_05_inpacket_
 {
-	const sceCdCLOCK m_clock;
-	_WORD m_arg2;
-	_DWORD m_arg3;
-} cdvdfsv_rpc3h_28_packet;
+	u32 m_lbn;
+} cdvdfsv_rpc5_05_inpacket_t;
 
-typedef struct cdvdfsv_rpc3h_08_packet_
-{
-	_DWORD m_address;
-	u16 m_data;
-	u8 m_result;
-} cdvdfsv_rpc3h_08_packet;
-
-typedef struct cdvdfsv_rpc3h_09_packet_
-{
-	_DWORD m_address;
-	_WORD m_data;
-	u8 m_result;
-} cdvdfsv_rpc3h_09_packet;
-
-typedef struct cdvdfsv_rpc3h_2E_packet_
-{
-	_DWORD m_arg1;
-	_DWORD m_arg2;
-} cdvdfsv_rpc3h_2E_packet;
-
-typedef struct cdvdfsv_rpc3h_3C_packet_
-{
-	_DWORD m_arg1;
-	_DWORD m_arg2;
-} cdvdfsv_rpc3h_3C_packet;
-
-typedef struct cdvdfsv_rpc5h_0B_packet_
-{
-	_DWORD m_arg1;
-	_DWORD m_arg2;
-	_DWORD m_command;
-} cdvdfsv_rpc5h_0B_packet;
-
-typedef struct cdvdfsv_rpc3h_0A_packet_
-{
-	_BYTE m_arg1;
-	_BYTE m_arg2;
-	_BYTE m_shift;
-} cdvdfsv_rpc3h_0A_packet;
-#endif
-
-typedef struct cdvdfsv_rpc3h_05_packet_
-{
-	int m_param;
-} cdvdfsv_rpc3h_05_packet;
-
-typedef struct cdvdfsv_rpc3h_0B_packet_
-{
-	u8 m_cmdNum;
-	u8 m_gap1;
-	u16 m_inBuffSize;
-	u8 m_inBuff[16];
-} cdvdfsv_rpc3h_0B_packet;
-
-typedef struct cdvdfsv_rpc3h_15_packet_
-{
-	int m_mode;
-} cdvdfsv_rpc3h_15_packet;
-
-typedef struct cdvdfsv_rpc5h_0C_packet_
+typedef struct cdvdfsv_rpc5_0C_inpacket_
 {
 	u8 m_cmdNum;
 	u8 m_gap1;
 	u16 m_inBuffSize;
 	// TODO: check the size of the following member
 	u8 m_inBuff[16];
-} cdvdfsv_rpc5h_0C_packet;
+} cdvdfsv_rpc5_0C_inpacket_t;
 
-typedef struct cdvdfsv_rpc3h_23_packet_
+typedef struct cdvdfsv_rpc5_0D_inpacket_
 {
-	int m_priority;
-} cdvdfsv_rpc3h_23_packet;
+	u32 m_lbn;
+	u32 m_sectors;
+	void *m_buf;
+	sceCdRMode m_mode;
+	u8 m_unused[4];
+	uiptr m_eedest;
+} cdvdfsv_rpc5_0D_inpacket_t;
 
-typedef struct cdvdfsv_rpc3h_25_packet_
+typedef struct cdvdfsv_rpc5_0F_inpacket_
 {
-	int m_param;
-	int m_timeout;
-} cdvdfsv_rpc3h_25_packet;
+	sceCdRChain m_readChain[65];
+	sceCdRMode m_mode;
+	uiptr m_eedest;
+} cdvdfsv_rpc5_0F_inpacket_t;
 
-typedef struct cdvdfsv_rpc5h_04_outpacket_
+typedef union cdvdfsv_rpc5_inpacket_
+{
+	cdvdfsv_rpc5_01_inpacket_t m_pkt_01;
+	cdvdfsv_rpc5_02_inpacket_t m_pkt_02;
+	cdvdfsv_rpc5_04_inpacket_t m_pkt_04;
+	cdvdfsv_rpc5_05_inpacket_t m_pkt_05;
+	cdvdfsv_rpc5_0C_inpacket_t m_pkt_0C;
+	cdvdfsv_rpc5_0D_inpacket_t m_pkt_0D;
+	cdvdfsv_rpc5_0F_inpacket_t m_pkt_0F;
+} cdvdfsv_rpc5_inpacket_t;
+
+typedef struct cdvdfsv_rpc5_04_outpacket_
 {
 	int m_retres;
 	int m_isdvd;
-} cdvdfsv_rpc5h_04_outpacket;
+} cdvdfsv_rpc5_04_outpacket_t;
 
-typedef struct cdvdfsv_rpc3h_06_outpacket_
-{
-	int m_retres;
-	u32 m_result;
-	u8 m_buffer[8];
-} cdvdfsv_rpc3h_06_outpacket;
-
-typedef struct cdvdfsv_rpc3h_1A_outpacket_
-{
-	int m_retres;
-	u32 m_status;
-	char m_buffer[16];
-} cdvdfsv_rpc3h_1A_outpacket;
-
-typedef struct cdvdfsv_rpc3h_24_outpacket_
-{
-	int m_retres;
-	u64 m_guid;
-} cdvdfsv_rpc3h_24_outpacket;
-
-typedef struct cdvdfsv_rpc3h_26_outpacket_
-{
-	int m_retres;
-	unsigned int m_id;
-} cdvdfsv_rpc3h_26_outpacket;
-
-#if 0
-typedef struct cdvdfsv_rpc3h_12_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-	u8 m_buffer;
-} cdvdfsv_rpc3h_12_outpacket;
-
-typedef struct cdvdfsv_rpc3h_14_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_status;
-	u8 m_buffer;
-} cdvdfsv_rpc3h_14_outpacket;
-
-typedef struct cdvdfsv_rpc3h_17_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_status;
-	char m_buffer;
-} cdvdfsv_rpc3h_17_outpacket;
-
-typedef struct cdvdfsv_rpc3h_18_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_18_outpacket;
-
-typedef struct cdvdfsv_rpc3h_1C_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_1C_outpacket;
-
-typedef struct cdvdfsv_rpc3h_1F_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_1F_outpacket;
-#endif
-
-typedef struct cdvdfsv_rpc3h_21_outpacket_
-{
-	int m_retres;
-	u32 m_result;
-} cdvdfsv_rpc3h_21_outpacket;
-
-#if 0
-typedef struct cdvdfsv_rpc3h_20_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_20_outpacket;
-#endif
-
-typedef struct cdvdfsv_rpc3h_15_outpacket_
-{
-	int m_retres;
-	u32 m_status;
-} cdvdfsv_rpc3h_15_outpacket;
-
-#if 0
-typedef struct cdvdfsv_rpc3h_19_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_19_outpacket;
-
-typedef struct cdvdfsv_rpc3h_29_inneroutpacket_
-{
-	sceCdCLOCK m_clock;
-	u16 m_arg2;
-	int m_arg4;
-	u32 m_arg3;
-} cdvdfsv_rpc3h_29_inneroutpacket;
-
-typedef struct cdvdfsv_rpc3h_29_outpacket_
-{
-	_DWORD m_dword0;
-	cdvdfsv_rpc3h_29_inneroutpacket m_cdvdfsv_rpc3h_29_inneroutpacket4;
-} cdvdfsv_rpc3h_29_outpacket;
-
-typedef struct cdvdfsv_rpc3h_28_outpacket_
-{
-	_DWORD m_dword0;
-	_DWORD m_dword4;
-	_DWORD m_dword8;
-} cdvdfsv_rpc3h_28_outpacket;
-
-typedef struct cdvdfsv_rpc3h_30_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_status;
-} cdvdfsv_rpc3h_30_outpacket;
-
-typedef struct cdvdfsv_rpc3h_32_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_arg4;
-	u32 m_arg1;
-	u32 m_arg2;
-	u32 m_arg3;
-} cdvdfsv_rpc3h_32_outpacket;
-
-typedef struct cdvdfsv_rpc3h_31_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_arg2;
-} cdvdfsv_rpc3h_31_outpacket;
-
-typedef struct cdvdfsv_rpc3h_38_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_arg2;
-	u32 m_arg1;
-} cdvdfsv_rpc3h_38_outpacket;
-
-typedef struct cdvdfsv_rpc3h_2A_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-	u8 m_out;
-} cdvdfsv_rpc3h_2A_outpacket;
-
-typedef struct cdvdfsv_rpc3h_2B_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_2B_outpacket;
-
-typedef struct cdvdfsv_rpc3h_2C_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_arg2;
-	u32 m_arg1;
-} cdvdfsv_rpc3h_2C_outpacket;
-
-typedef struct cdvdfsv_rpc3h_43_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-	u32 m_arg1;
-} cdvdfsv_rpc3h_43_outpacket;
-
-typedef struct cdvdfsv_rpc3h_2F_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_2F_outpacket;
-
-typedef struct cdvdfsv_rpc3h_35_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_35_outpacket;
-#endif
-
-typedef struct cdvdfsv_rpc3h_01_outpacket_
-{
-	int m_retres;
-	sceCdCLOCK m_clock;
-} cdvdfsv_rpc3h_01_outpacket;
-
-#if 0
-typedef struct cdvdfsv_rpc3h_02_outpacket_
-{
-	_DWORD m_dword0;
-	_DWORD m_dword4;
-	_DWORD m_dword8;
-} cdvdfsv_rpc3h_02_outpacket;
-
-typedef struct cdvdfsv_rpc3h_08_outpacket_
-{
-	_DWORD m_dword0;
-	_DWORD m_dword4;
-	_DWORD m_dword8;
-} cdvdfsv_rpc3h_08_outpacket;
-
-typedef struct cdvdfsv_rpc3h_09_outpacket_
-{
-	_DWORD m_dword0;
-	_DWORD m_dword4;
-	_DWORD m_dword8;
-} cdvdfsv_rpc3h_09_outpacket;
-
-typedef struct cdvdfsv_rpc3h_2E_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result2;
-	u32 m_result1;
-} cdvdfsv_rpc3h_2E_outpacket;
-
-typedef struct cdvdfsv_rpc3h_39_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_39_outpacket;
-
-typedef struct cdvdfsv_rpc3h_3A_outpacket_
-{
-	_DWORD m_dword0;
-	_DWORD m_arg2;
-} cdvdfsv_rpc3h_3A_outpacket;
-
-typedef struct cdvdfsv_rpc3h_3B_outpacket_
-{
-	_DWORD m_dword0;
-	_DWORD m_arg2;
-	_DWORD m_arg1;
-} cdvdfsv_rpc3h_3B_outpacket;
-
-typedef struct cdvdfsv_rpc3h_3C_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result2;
-	u32 m_result1;
-} cdvdfsv_rpc3h_3C_outpacket;
-
-typedef struct cdvdfsv_rpc3h_3D_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_3D_outpacket;
-
-typedef struct cdvdfsv_rpc3h_3E_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result2;
-	u32 m_result1;
-} cdvdfsv_rpc3h_3E_outpacket;
-
-typedef struct cdvdfsv_rpc3h_3F_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_3F_outpacket;
-
-typedef struct cdvdfsv_rpc3h_0F_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_0F_outpacket;
-
-typedef struct cdvdfsv_rpc3h_10_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-	char m_buffer;
-} cdvdfsv_rpc3h_10_outpacket;
-
-typedef struct cdvdfsv_rpc3h_11_outpacket_
-{
-	_DWORD m_dword0;
-	u32 m_result;
-} cdvdfsv_rpc3h_11_outpacket;
-#endif
-
-typedef struct cdvdfsv_rpc5h_11_outpacket_
+typedef struct cdvdfsv_rpc5_11_outpacket_
 {
 	int m_retres;
 	u8 m_diskid[5];
-} cdvdfsv_rpc5h_11_outpacket;
+} cdvdfsv_rpc5_11_outpacket_t;
 
-typedef struct cdvdfsv_rpc5h_17_outpacket_
+typedef struct cdvdfsv_rpc5_17_outpacket_
 {
 	int m_retres;
 	u32 m_status;
-} cdvdfsv_rpc5h_17_outpacket;
+} cdvdfsv_rpc5_17_outpacket_t;
 
-#if 0
-typedef struct cdvdfsv_rpc5h_0B_outpacket_
-{
-	_DWORD m_dword0;
-	_DWORD m_dword4;
-	_DWORD m_dword8;
-	_DWORD m_dwordC;
-	_DWORD m_dword10;
-} cdvdfsv_rpc5h_0B_outpacket;
-#endif
-
-typedef struct cdvdfsv_rpc3h_0B_outpacket_
-{
-	u8 m_outbuf[16];
-} cdvdfsv_rpc3h_0B_outpacket;
-
-typedef struct cdvdfsv_rpc3h_05_outpacket_
+typedef union cdvdfsv_rpc5_outpacket_
 {
 	int m_retres;
-	u32 m_traychk;
-} cdvdfsv_rpc3h_05_outpacket;
-
-typedef struct cdvdfsv_rpc3h_27_outpacket_
-{
-	int m_retres;
-	int m_on_dual;
-	unsigned int m_layer1_start;
-} cdvdfsv_rpc3h_27_outpacket;
-
-typedef union cdvdfsv_rpc3h_packet_
-{
-	cdvdfsv_rpc3h_05_packet m_pkt_05;
-	cdvdfsv_rpc3h_0B_packet m_pkt_0B;
-	cdvdfsv_rpc3h_15_packet m_pkt_15;
-	cdvdfsv_rpc3h_22_packet m_pkt_22;
-	cdvdfsv_rpc3h_23_packet m_pkt_23;
-	cdvdfsv_rpc3h_25_packet m_pkt_25;
-} cdvdfsv_rpc3h_packet;
-
-typedef union cdvdfsv_rpc3h_outpacket_
-{
-	int m_retres;
-	cdvdfsv_rpc3h_01_outpacket m_pkt_01;
-	cdvdfsv_rpc3h_06_outpacket m_pkt_06;
-	cdvdfsv_rpc3h_1A_outpacket m_pkt_1A;
-	cdvdfsv_rpc3h_24_outpacket m_pkt_24;
-	cdvdfsv_rpc3h_26_outpacket m_pkt_26;
-	cdvdfsv_rpc3h_21_outpacket m_pkt_21;
-	cdvdfsv_rpc3h_15_outpacket m_pkt_15;
-	cdvdfsv_rpc3h_0B_outpacket m_pkt_0B;
-	cdvdfsv_rpc3h_05_outpacket m_pkt_05;
-	cdvdfsv_rpc3h_27_outpacket m_pkt_27;
-} cdvdfsv_rpc3h_outpacket;
-
-typedef union cdvdfsv_rpc5h_packet_
-{
-	cdvdfsv_rpc5h_01_packet m_pkt_01;
-	cdvdfsv_rpc5h_04_packet m_pkt_04;
-	cdvdfsv_rpc5h_05_packet m_pkt_05;
-	cdvdfsv_rpc5h_0D_packet m_pkt_0D;
-	cdvdfsv_rpc5h_0F_packet m_pkt_0F;
-	cdvdfsv_rpc5h_02_packet m_pkt_02;
-	cdvdfsv_rpc5h_0C_packet m_pkt_0C;
-} cdvdfsv_rpc5h_packet;
-
-typedef union cdvdfsv_rpc5h_outpacket_
-{
-	int m_retres;
-	cdvdfsv_rpc5h_04_outpacket m_pkt_04;
-	cdvdfsv_rpc5h_11_outpacket m_pkt_11;
-	cdvdfsv_rpc5h_17_outpacket m_pkt_17;
-} cdvdfsv_rpc5h_outpacket;
+	cdvdfsv_rpc5_04_outpacket_t m_pkt_04;
+	cdvdfsv_rpc5_11_outpacket_t m_pkt_11;
+	cdvdfsv_rpc5_17_outpacket_t m_pkt_17;
+} cdvdfsv_rpc5_outpacket_t;
 #endif
 
 #if 1
