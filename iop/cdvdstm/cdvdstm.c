@@ -185,7 +185,7 @@ int sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *err
 	streamres = 0;
 	while ( (!err || streamres) )
 	{
-		WaitEventFlag(g_cdvdman_intr_efid, 8, 0, &efbits);
+		WaitEventFlag(g_cdvdman_intr_efid, 8, WEF_AND, &efbits);
 		streamres = iop_stream_handler(0, rdsize - cur_size, &addrarg[cur_size], 2, &g_rmode_for_stream0, &err);
 		if ( rdsize - cur_size != streamres )
 			vClearEventFlag();
@@ -549,7 +549,7 @@ int cdrom_stm_init()
 {
 	iop_sema_t semaparam;
 
-	semaparam.attr = 1;
+	semaparam.attr = SA_THPRI;
 	semaparam.initial = 1;
 	semaparam.max = 1;
 	semaparam.option = 0;

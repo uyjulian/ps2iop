@@ -209,7 +209,7 @@ int cdvdfsv_init()
 	}
 	sceCdSC(0xFFFFFFF2, (int *)&g_cdvdman_istruct_ptr);
 	g_scmd_evid = sceCdSC(0xFFFFFFE7, &scres);
-	thparam.attr = 0x2000000;
+	thparam.attr = TH_C;
 	thparam.thread = cdvdfsv_main_th;
 	thparam.stacksize = 0x800;
 	thparam.option = 0;
@@ -235,13 +235,13 @@ void cdvdfsv_main_th(void *arg)
 	sceSifInitRpc(0);
 	PRINTF("cdvd driver module version 0.1.1 (C)SCEI\n");
 	thparam2.thread = cdvdfsv_rpc1_th;
-	thparam2.attr = 0x2000000;
+	thparam2.attr = TH_C;
 	thparam2.stacksize = 0x1900;
 	thparam2.option = 0;
 	thparam2.priority = g_cdvdfsv_def_pri;
 	g_cdvdfsv_thids[1] = CreateThread(&thparam2);
 	StartThread(g_cdvdfsv_thids[1], 0);
-	thparam1.attr = 0x2000000;
+	thparam1.attr = TH_C;
 	thparam1.thread = cdvdfsv_rpc2_th;
 	thparam1.stacksize = 0x1900;
 	thparam1.option = 0;
@@ -249,7 +249,7 @@ void cdvdfsv_main_th(void *arg)
 	g_cdvdfsv_thids[2] = CreateThread(&thparam1);
 	StartThread(g_cdvdfsv_thids[2], 0);
 	thparam1.thread = cdvdfsv_rpc3_th;
-	thparam1.attr = 0x2000000;
+	thparam1.attr = TH_C;
 	thparam1.stacksize = 0x800;
 	thparam1.option = 0;
 	thparam1.priority = g_cdvdfsv_def_pri;
@@ -1590,7 +1590,7 @@ void cdvdfsv_rpc3_06_ri(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfs
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
+		WaitEventFlag(g_scmd_evid, 1, WEF_AND, &efbits);
 		outbuf->m_retres = sceCdRI(outbuf->m_pkt_06.m_buffer, &outbuf->m_pkt_06.m_result);
 	}
 }
@@ -1606,7 +1606,7 @@ void cdvdfsv_rpc3_1A_rm(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfs
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
+		WaitEventFlag(g_scmd_evid, 1, WEF_AND, &efbits);
 		outbuf->m_retres = sceCdRM(outbuf->m_pkt_1A.m_buffer, &outbuf->m_pkt_1A.m_status);
 	}
 }
@@ -1622,7 +1622,7 @@ void cdvdfsv_rpc3_24_readguid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, 
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
+		WaitEventFlag(g_scmd_evid, 1, WEF_AND, &efbits);
 		outbuf->m_retres = sceCdReadGUID(&outbuf->m_pkt_24.m_guid);
 	}
 }
@@ -1638,7 +1638,7 @@ void cdvdfsv_rpc3_26_readmodelid(const cdvdfsv_rpc3_inpacket_t *inbuf, int bufle
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
+		WaitEventFlag(g_scmd_evid, 1, WEF_AND, &efbits);
 		outbuf->m_retres = sceCdReadModelID(&outbuf->m_pkt_26.m_id);
 	}
 }
@@ -1669,7 +1669,7 @@ void cdvdfsv_rpc3_21_poweroff(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, 
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
+		WaitEventFlag(g_scmd_evid, 1, WEF_AND, &efbits);
 		outbuf->m_retres = sceCdPowerOff(&outbuf->m_pkt_21.m_result);
 	}
 }
@@ -1684,7 +1684,7 @@ void cdvdfsv_rpc3_15_ctrladout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen,
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
+		WaitEventFlag(g_scmd_evid, 1, WEF_AND, &efbits);
 		outbuf->m_retres = sceCdCtrlADout(inbuf->m_pkt_15.m_mode, &outbuf->m_pkt_15.m_status);
 	}
 }
@@ -1700,7 +1700,7 @@ void cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen,
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
+		WaitEventFlag(g_scmd_evid, 1, WEF_AND, &efbits);
 		outbuf->m_retres = sceCdReadClock(&outbuf->m_pkt_01.m_clock);
 	}
 }
@@ -1757,7 +1757,7 @@ void cdvdfsv_rpc3_05_trayreq(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, c
 	outbuf->m_retres = 0;
 	for ( i = 0; i < 3 && !outbuf->m_retres; i += 1 )
 	{
-		WaitEventFlag(g_scmd_evid, 1, 0, &efbits);
+		WaitEventFlag(g_scmd_evid, 1, WEF_AND, &efbits);
 		outbuf->m_retres = sceCdTrayReq(inbuf->m_pkt_05.m_param, &outbuf->m_pkt_05.m_traychk);
 	}
 }
@@ -1977,7 +1977,7 @@ void cdvdfsv_poffloop()
 	while ( 1 )
 	{
 		ClearEventFlag(g_cdvdman_intr_efid, ~4);
-		WaitEventFlag(g_cdvdman_intr_efid, 4, 0, &efbits);
+		WaitEventFlag(g_cdvdman_intr_efid, 4, WEF_AND, &efbits);
 		if ( g_cdvdfsv_nopocm )
 			break;
 		if ( !g_cdvdfsv_plbreak )
