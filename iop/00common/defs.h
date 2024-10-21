@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #endif
 
-#if 1
+#if 0
 #define __fastcall
 #define __cdecl
 #define __noreturn
@@ -233,7 +233,7 @@ typedef struct _DMA3PARAM
 	u16 m_dma3_blkwords;
 	u16 m_dma3_blkcount;
 	void *m_dma3_maddress;
-	int (__cdecl *m_dma3_callback)(void);
+	int (*m_dma3_callback)(void);
 	u16 m_dma3_csectors;
 	u16 m_cdvdreg_howto;
 	u32 m_dma3_msectors;

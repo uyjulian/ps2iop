@@ -11,98 +11,98 @@ IRX_ID("cdvd_driver", 2, 38);
 
 extern struct irx_export_table _exp_cdvdman;
 
-int __cdecl _start(int argc, char **argv);
-int __cdecl cdrom_init(iop_device_t *dev);
-void __fastcall cdvdman_termcall(int with_stop);
-int __cdecl cdrom_deinit();
-int __cdecl cdvdman_devready();
-int __cdecl cdvdman_l0check(int layer);
-void __cdecl cdvdman_iormode(sceCdRMode *rmode, int fmode, int layer);
-int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname);
-void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTRY_T *fp);
-int __cdecl cdvdman_cdfname(char *filename);
-int __cdecl cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf);
-int __cdecl cdrom_dread(iop_file_t *f, iox_dirent_t *buf);
-int __cdecl cdvd_odcinit(CDVDMAN_FILEDATA *fh, int open_or_close, int id);
-int __cdecl cdvdman_cache_invalidate(CDVDMAN_FILEDATA *filedata, int index);
-int __cdecl cdvdman_invcaches();
-int __fastcall cdrom_internal_cache_read(const iop_file_t *f, int nbytes);
-int __fastcall cdrom_internal_write_cache(const iop_file_t *f, unsigned int nbytes);
-int __cdecl cdvdfile_cache_read(const iop_file_t *f, void *buf, int nbyte);
-int __cdecl cdvdfile_cache_fill_read(const iop_file_t *f, void *buf, int nbytes);
-int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4);
-int __cdecl cdrom_close(iop_file_t *f);
-int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes);
-int __fastcall cdrom_stream_read(const iop_file_t *f, char *bbuf, int nbytes);
-int __cdecl cdrom_read(iop_file_t *f, void *buf, int nbytes);
-int __fastcall cdrom_ioctl(iop_file_t *f, int arg, void *param);
-int __cdecl cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, void *bufp, size_t buflen);
-int __cdecl cdrom_devctl(iop_file_t *f, const char *, int cmd, void *argp, unsigned int arglen, void *bufp, unsigned int buflen);
-int __cdecl cdrom_lseek(iop_file_t *f, int offset, int pos);
-int __cdecl cdrom_nulldev();
-s64 __cdecl cdrom_nulldev64();
-int __cdecl sync_timeout_func(iop_sys_clock_t *timeout_ptr);
-int __cdecl sceCdSpinCtrlIOP(u32 speed);
-int __fastcall read_id_from_rom(int mode, int *buf);
-int __cdecl query_boot_mode_6_nonzero();
-int __cdecl query_boot_mode_6_zero();
-int __cdecl cdvdman_readID(int mode, int *buf);
-int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int layer);
-int __cdecl sceCdSearchDir(char *dirname, int layer);
-int __cdecl sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer);
-int __cdecl cdvdman_cmpname(const char *p, const char *q);
-int __cdecl CD_newmedia(int arg);
-int __fastcall cdvdman_finddir(int target_parent, const char *target_name);
-int __fastcall CD_cachefile(int dsec, int layer);
-int __cdecl disc_read(int size, int loc, void *buffer, int layer);
-int __cdecl path_tbl_init(u32 blocks, char *fname, int action);
-unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n);
-void __fastcall hex_dump(u8 *addr_start, int length);
-int __cdecl cdvdman_initcfg();
-int __fastcall vSetAlarm(iop_sys_clock_t *sys_clock, unsigned int (__cdecl *alarm_cb)(void *), void *arg);
-int __fastcall vCancelAlarm(unsigned int (__cdecl *alarm_cb)(void *), void *arg);
-s32 __cdecl vSignalSema(s32 sema_id);
-int __fastcall vSetEventFlag(int ef, u32 bits);
-int __fastcall vClearEventFlag(int ef, u32 bits);
-int __fastcall vReferEventFlagStatus(int ef, iop_event_info_t *info);
-int __fastcall vDelayThread(int usec);
-BOOL __fastcall alarm_cb_read(iop_sys_clock_t *a1);
-int __fastcall cdvdman_intr_cb(cdvdman_internal_struct_t *s);
-int __fastcall intrh_cdrom(cdvdman_internal_struct_t *s);
-u32 __cdecl cdvdman_l1start(const u8 *toc);
-int __cdecl DvdDual_infochk();
-u32 __cdecl sceCdLsnDualChg(u32 lsn);
-void __cdecl cdvdman_init();
-int __cdecl set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata, int rdlen, int check_sef);
-void __cdecl cdvdman_write_scmd(cdvdman_internal_struct_t *s);
-int __cdecl cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int rdlen, int check_sef);
-int __fastcall cd_ncmd_timeout_callback(iop_sys_clock_t *sys_clock);
-int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s);
-int __cdecl cdvdman_setdma3(DMA3PARAM *b18);
-int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARAM *b18, int check_cb);
-int __cdecl cdvdman_mediactl(int code);
-int __cdecl cdvdman_get_last_command();
-int __cdecl cdvdman_ncmd_sender_01();
-int __cdecl cdvdman_ncmd_sender_06();
-int __cdecl cdvdman_ncmd_sender_0B();
-int __fastcall readtoc_timeout_func(iop_sys_clock_t *s);
-int __cdecl cdvdman_readtoc(u8 *toc, int param, int func);
-int __cdecl cdvdman_gettoc(u8 *toc);
-int __cdecl cdvdman_speedctl(u32 spindlctrl, int dvdflag, u32 maxlsn);
-int __cdecl cdvdman_isdvd();
-int __cdecl sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, const sceCdRMode *mode, int ncmd, int dintrsec, void *func);
-int __cdecl read_cdvd_cb(cdvdman_internal_struct_t *common);
-int __cdecl cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int decflag, int shift, int ef1, int ef2);
-int __cdecl cdvdman_syncdec(int decflag, int decxor, int shift, u32 data);
-void __cdecl Read2intrCDVD(int read2_flag);
-int __cdecl cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *mode, int flag);
-int __cdecl sceCdGetMVersion(u8 *buffer, u32 *status);
-int __fastcall cdvdman_scmd_sender_03_48(u8 *buf, u32 *status);
-int __cdecl sceCdCancelPOffRdy(u32 *result);
-unsigned int __fastcall alarm_cb_poff(cdvdman_internal_struct_t *s);
-int __fastcall cdvdman_scmd_sender_3B(int arg1);
-int __cdecl cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3);
-int __cdecl sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval);
+int _start(int argc, char **argv);
+int cdrom_init(iop_device_t *dev);
+void cdvdman_termcall(int with_stop);
+int cdrom_deinit();
+int cdvdman_devready();
+int cdvdman_l0check(int layer);
+void cdvdman_iormode(sceCdRMode *rmode, int fmode, int layer);
+int cdrom_dopen(iop_file_t *f, const char *dirname);
+void cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTRY_T *fp);
+int cdvdman_cdfname(char *filename);
+int cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf);
+int cdrom_dread(iop_file_t *f, iox_dirent_t *buf);
+int cdvd_odcinit(CDVDMAN_FILEDATA *fh, int open_or_close, int id);
+int cdvdman_cache_invalidate(CDVDMAN_FILEDATA *filedata, int index);
+int cdvdman_invcaches();
+int cdrom_internal_cache_read(const iop_file_t *f, int nbytes);
+int cdrom_internal_write_cache(const iop_file_t *f, unsigned int nbytes);
+int cdvdfile_cache_read(const iop_file_t *f, void *buf, int nbyte);
+int cdvdfile_cache_fill_read(const iop_file_t *f, void *buf, int nbytes);
+int cdrom_open(iop_file_t *f, const char *name, int mode, int arg4);
+int cdrom_close(iop_file_t *f);
+int cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes);
+int cdrom_stream_read(const iop_file_t *f, char *bbuf, int nbytes);
+int cdrom_read(iop_file_t *f, void *buf, int nbytes);
+int cdrom_ioctl(iop_file_t *f, int arg, void *param);
+int cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, void *bufp, size_t buflen);
+int cdrom_devctl(iop_file_t *f, const char *, int cmd, void *argp, unsigned int arglen, void *bufp, unsigned int buflen);
+int cdrom_lseek(iop_file_t *f, int offset, int pos);
+int cdrom_nulldev();
+s64 cdrom_nulldev64();
+int sync_timeout_func(iop_sys_clock_t *timeout_ptr);
+int sceCdSpinCtrlIOP(u32 speed);
+int read_id_from_rom(int mode, int *buf);
+int query_boot_mode_6_nonzero();
+int query_boot_mode_6_zero();
+int cdvdman_readID(int mode, int *buf);
+int CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int layer);
+int sceCdSearchDir(char *dirname, int layer);
+int sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer);
+int cdvdman_cmpname(const char *p, const char *q);
+int CD_newmedia(int arg);
+int cdvdman_finddir(int target_parent, const char *target_name);
+int CD_cachefile(int dsec, int layer);
+int disc_read(int size, int loc, void *buffer, int layer);
+int path_tbl_init(u32 blocks, char *fname, int action);
+unsigned int optimized_memcpy(char *dst, const char *src, unsigned int n);
+void hex_dump(u8 *addr_start, int length);
+int cdvdman_initcfg();
+int vSetAlarm(iop_sys_clock_t *sys_clock, unsigned int (*alarm_cb)(void *), void *arg);
+int vCancelAlarm(unsigned int (*alarm_cb)(void *), void *arg);
+s32 vSignalSema(s32 sema_id);
+int vSetEventFlag(int ef, u32 bits);
+int vClearEventFlag(int ef, u32 bits);
+int vReferEventFlagStatus(int ef, iop_event_info_t *info);
+int vDelayThread(int usec);
+BOOL alarm_cb_read(iop_sys_clock_t *a1);
+int cdvdman_intr_cb(cdvdman_internal_struct_t *s);
+int intrh_cdrom(cdvdman_internal_struct_t *s);
+u32 cdvdman_l1start(const u8 *toc);
+int DvdDual_infochk();
+u32 sceCdLsnDualChg(u32 lsn);
+void cdvdman_init();
+int set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata, int rdlen, int check_sef);
+void cdvdman_write_scmd(cdvdman_internal_struct_t *s);
+int cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int rdlen, int check_sef);
+int cd_ncmd_timeout_callback(iop_sys_clock_t *sys_clock);
+int intrh_dma_3(cdvdman_internal_struct_t *s);
+int cdvdman_setdma3(DMA3PARAM *b18);
+int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARAM *b18, int check_cb);
+int cdvdman_mediactl(int code);
+int cdvdman_get_last_command();
+int cdvdman_ncmd_sender_01();
+int cdvdman_ncmd_sender_06();
+int cdvdman_ncmd_sender_0B();
+int readtoc_timeout_func(iop_sys_clock_t *s);
+int cdvdman_readtoc(u8 *toc, int param, int func);
+int cdvdman_gettoc(u8 *toc);
+int cdvdman_speedctl(u32 spindlctrl, int dvdflag, u32 maxlsn);
+int cdvdman_isdvd();
+int sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, const sceCdRMode *mode, int ncmd, int dintrsec, void *func);
+int read_cdvd_cb(cdvdman_internal_struct_t *common);
+int cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int decflag, int shift, int ef1, int ef2);
+int cdvdman_syncdec(int decflag, int decxor, int shift, u32 data);
+void Read2intrCDVD(int read2_flag);
+int cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *mode, int flag);
+int sceCdGetMVersion(u8 *buffer, u32 *status);
+int cdvdman_scmd_sender_03_48(u8 *buf, u32 *status);
+int sceCdCancelPOffRdy(u32 *result);
+unsigned int alarm_cb_poff(cdvdman_internal_struct_t *s);
+int cdvdman_scmd_sender_3B(int arg1);
+int cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3);
+int sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval);
 
 char g_cdvdman_cache_name[256] = "host0:";
 int g_cdvdman_cache_sector_size_count = 1;
@@ -191,10 +191,10 @@ int g_fio_fsv_evid;
 int g_cdvdman_intr_efid;
 sceCdCBFunc g_cdvdman_user_cb;
 void *g_cdvdman_poffarg;
-void (__cdecl *g_cdvdman_cdstm0cb)(int);
+void (*g_cdvdman_cdstm0cb)(int);
 sceCdCLOCK g_cdvdman_clock;
-void (__cdecl *g_cdvdman_poff_cb)(void *userdata);
-void (__cdecl *g_cdvdman_cdstm1cb)(int);
+void (*g_cdvdman_poff_cb)(void *userdata);
+void (*g_cdvdman_cdstm1cb)(int);
 int g_cdvdman_cmdfunc;
 CDVDMAN_FILEDATA g_cdvdman_handles[16];
 char g_cdvdman_sfname[1024];
@@ -211,7 +211,7 @@ char g_cdvdman_fsvrbuf[42128];
 cdvdman_internal_struct_t g_cdvdman_istruct;
 dev5_regs_t dev5_regs;
 
-int __cdecl _start(int argc, char **argv)
+int _start(int argc, char **argv)
 {
 	(void)argc;
 	(void)argv;
@@ -241,7 +241,7 @@ void *sceGetFsvRbuf(void)
 	return g_cdvdman_fsvrbuf;
 }
 
-int __cdecl cdrom_init(iop_device_t *dev)
+int cdrom_init(iop_device_t *dev)
 {
 	unsigned int i;
 	iop_event_t event;
@@ -295,7 +295,7 @@ int __cdecl cdrom_init(iop_device_t *dev)
 	return 0;
 }
 
-void __fastcall cdvdman_termcall(int with_stop)
+void cdvdman_termcall(int with_stop)
 {
 	int i;
 	int oldstate;
@@ -331,7 +331,7 @@ void __fastcall cdvdman_termcall(int with_stop)
 	ReleaseIntrHandler(IOP_IRQ_CDVD);
 }
 
-int __cdecl cdrom_deinit()
+int cdrom_deinit()
 {
 	unsigned int i;
 
@@ -347,7 +347,7 @@ int __cdecl cdrom_deinit()
 	return 0;
 }
 
-int __cdecl cdvdman_devready()
+int cdvdman_devready()
 {
 	int i;
 
@@ -367,13 +367,13 @@ int __cdecl cdvdman_devready()
 	return -EBUSY;
 }
 
-int __cdecl cdvdman_l0check(int layer)
+int cdvdman_l0check(int layer)
 {
 	return !layer
 			&& (g_cdvdman_istruct.m_dual_layer_emulation || g_cdvdman_istruct.m_opo_or_para == 1 || g_cdvdman_istruct.m_opo_or_para == 2);
 }
 
-void __cdecl cdvdman_iormode(sceCdRMode *rmode, int fmode, int layer)
+void cdvdman_iormode(sceCdRMode *rmode, int fmode, int layer)
 {
 	rmode->datapattern = SCECdSecS2048;
 	rmode->trycount = ( g_cdvdman_trycnt == -1 ) ? 16 : g_cdvdman_trycnt;
@@ -424,7 +424,7 @@ void __cdecl cdvdman_iormode(sceCdRMode *rmode, int fmode, int layer)
 	rmode->spindlctrl = (u8)g_cdvdman_spinnom;
 }
 
-int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname)
+int cdrom_dopen(iop_file_t *f, const char *dirname)
 {
 	unsigned int i;
 	int is_devready;
@@ -485,7 +485,7 @@ int __cdecl cdrom_dopen(iop_file_t *f, const char *dirname)
 	return 0;
 }
 
-void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTRY_T *fp)
+void cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTRY_T *fp)
 {
 	unsigned int i;
 
@@ -509,7 +509,7 @@ void __cdecl cdvdman_fillstat(void *dummy, iox_stat_t *buf, CDVDMAN_FILETBL_ENTR
 	buf->mode = (((fp->m_flags & 2) != 0) ? (FIO_S_IFDIR | FIO_S_IXUSR | FIO_S_IXGRP | FIO_S_IXOTH) : FIO_S_IFREG) | (FIO_S_IRUSR | FIO_S_IRGRP | FIO_S_IROTH);
 }
 
-int __cdecl cdvdman_cdfname(char *filename)
+int cdvdman_cdfname(char *filename)
 {
 	size_t filename_len;
 
@@ -522,7 +522,7 @@ int __cdecl cdvdman_cdfname(char *filename)
 	return 1;
 }
 
-int __cdecl cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf)
+int cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf)
 {
 	int devready_tmp;
 	CDVDMAN_FILETBL_ENTRY_T filetble;
@@ -565,7 +565,7 @@ int __cdecl cdrom_getstat(iop_file_t *f, const char *name, iox_stat_t *buf)
 	return 1;
 }
 
-int __cdecl cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
+int cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
 {
 	int devready_tmp;
 	CDVDMAN_FILEDATA *filedata;
@@ -600,7 +600,7 @@ int __cdecl cdrom_dread(iop_file_t *f, iox_dirent_t *buf)
 	return devready_tmp;
 }
 
-int __cdecl cdvd_odcinit(CDVDMAN_FILEDATA *fh, int open_or_close, int id)
+int cdvd_odcinit(CDVDMAN_FILEDATA *fh, int open_or_close, int id)
 {
 	int cache_remove_result;
 	int cache_result;
@@ -737,7 +737,7 @@ int __cdecl cdvd_odcinit(CDVDMAN_FILEDATA *fh, int open_or_close, int id)
 	return 0;
 }
 
-int __cdecl cdvdman_cache_invalidate(CDVDMAN_FILEDATA *filedata, int index)
+int cdvdman_cache_invalidate(CDVDMAN_FILEDATA *filedata, int index)
 {
 	u32 i;
 	int fileio_res;
@@ -772,7 +772,7 @@ int __cdecl cdvdman_cache_invalidate(CDVDMAN_FILEDATA *filedata, int index)
 	return fileio_res;
 }
 
-int __cdecl cdvdman_invcaches()
+int cdvdman_invcaches()
 {
 	unsigned int i;
 
@@ -786,7 +786,7 @@ int __cdecl cdvdman_invcaches()
 	return 0;
 }
 
-int __fastcall cdrom_internal_cache_read(const iop_file_t *f, int nbytes)
+int cdrom_internal_cache_read(const iop_file_t *f, int nbytes)
 {
 	CDVDMAN_FILEDATA *filedata;
 	s16 readpos_plus_nbytes;
@@ -864,7 +864,7 @@ int __fastcall cdrom_internal_cache_read(const iop_file_t *f, int nbytes)
 	return i <= readpos_plus_nbytes_bsr_14;
 }
 
-int __fastcall cdrom_internal_write_cache(const iop_file_t *f, unsigned int nbytes)
+int cdrom_internal_write_cache(const iop_file_t *f, unsigned int nbytes)
 {
 	int lseek_result;
 	CDVDMAN_FILEDATA *filedata;
@@ -942,7 +942,7 @@ int __fastcall cdrom_internal_write_cache(const iop_file_t *f, unsigned int nbyt
 	return write_ret;
 }
 
-int __cdecl cdvdfile_cache_read(const iop_file_t *f, void *buf, int nbyte)
+int cdvdfile_cache_read(const iop_file_t *f, void *buf, int nbyte)
 {
 	int nbyte_tmp;
 	int fd_result;
@@ -972,7 +972,7 @@ int __cdecl cdvdfile_cache_read(const iop_file_t *f, void *buf, int nbyte)
 	return fd_result;
 }
 
-int __cdecl cdvdfile_cache_fill_read(const iop_file_t *f, void *buf, int nbytes)
+int cdvdfile_cache_fill_read(const iop_file_t *f, void *buf, int nbytes)
 {
 	int op_result;
 
@@ -992,7 +992,7 @@ int __cdecl cdvdfile_cache_fill_read(const iop_file_t *f, void *buf, int nbytes)
 	return op_result;
 }
 
-int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
+int cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 {
 	int fds1;
 	unsigned int i;
@@ -1139,7 +1139,7 @@ int __cdecl cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	return 0;
 }
 
-int __cdecl cdrom_close(iop_file_t *f)
+int cdrom_close(iop_file_t *f)
 {
 	CDVDMAN_FILEDATA *filedata;
 	u32 efbits;
@@ -1173,7 +1173,7 @@ int __cdecl cdrom_close(iop_file_t *f)
 	return 0;
 }
 
-int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
+int cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 {
 	unsigned int sectors;
 	int op_result;
@@ -1376,7 +1376,7 @@ int __fastcall cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 	return i;
 }
 
-int __fastcall cdrom_stream_read(const iop_file_t *f, char *bbuf, int nbytes)
+int cdrom_stream_read(const iop_file_t *f, char *bbuf, int nbytes)
 {
 	CDVDMAN_FILEDATA *filedata;
 	sceCdRMode rmode;
@@ -1393,7 +1393,7 @@ int __fastcall cdrom_stream_read(const iop_file_t *f, char *bbuf, int nbytes)
 	return buf << 11;
 }
 
-int __cdecl cdrom_read(iop_file_t *f, void *buf, int nbytes)
+int cdrom_read(iop_file_t *f, void *buf, int nbytes)
 {
 	CDVDMAN_FILEDATA *filedata;
 	int rc;
@@ -1460,7 +1460,7 @@ int __cdecl cdrom_read(iop_file_t *f, void *buf, int nbytes)
 	return rc;
 }
 
-int __fastcall cdrom_ioctl(iop_file_t *f, int arg, void *param)
+int cdrom_ioctl(iop_file_t *f, int arg, void *param)
 {
 	(void)f;
 
@@ -1475,7 +1475,7 @@ int __fastcall cdrom_ioctl(iop_file_t *f, int arg, void *param)
 	}
 }
 
-int __cdecl cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, void *bufp, size_t buflen)
+int cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, void *bufp, size_t buflen)
 {
 	const CDVDMAN_FILEDATA *filedata;
 	int retval;
@@ -1520,7 +1520,7 @@ int __cdecl cdrom_ioctl2(iop_file_t *f, int request, void *argp, size_t arglen, 
 	return retval;
 }
 
-int __cdecl cdrom_devctl(
+int cdrom_devctl(
 				iop_file_t *f,
 				const char *a2,
 				int cmd,
@@ -1726,7 +1726,7 @@ int __cdecl cdrom_devctl(
 	return retval2;
 }
 
-int __cdecl cdrom_lseek(iop_file_t *f, int offset, int pos)
+int cdrom_lseek(iop_file_t *f, int offset, int pos)
 {
 	int retval;
 	CDVDMAN_FILEDATA *filedata;
@@ -1767,25 +1767,25 @@ int __cdecl cdrom_lseek(iop_file_t *f, int offset, int pos)
 	return retval;
 }
 
-int __cdecl cdrom_nulldev()
+int cdrom_nulldev()
 {
 	PRINTF("nulldev0 call\n");
 	return -EIO;
 }
 
-s64 __cdecl cdrom_nulldev64()
+s64 cdrom_nulldev64()
 {
 	PRINTF("nulldev0 call\n");
 	return -EIO;
 }
 
-int __cdecl sync_timeout_func(iop_sys_clock_t *timeout_ptr)
+int sync_timeout_func(iop_sys_clock_t *timeout_ptr)
 {
 	KPRINTF("Cdvd Time Out %d(msec)\n", timeout_ptr->lo / 0x9000);
 	return sceCdBreak() == 0;
 }
 
-int __cdecl sceCdSetTimeout(int param, int timeout)
+int sceCdSetTimeout(int param, int timeout)
 {
 	if ( sceCdCheckCmd() == 0 || g_cdvdman_istruct.m_read2_flag )
 	{
@@ -1804,7 +1804,7 @@ int __cdecl sceCdSetTimeout(int param, int timeout)
 	}
 }
 
-int __cdecl sceCdSync(int mode)
+int sceCdSync(int mode)
 {
 	iop_sys_clock_t sysclk;
 	iop_event_info_t efinfo;
@@ -1824,22 +1824,22 @@ int __cdecl sceCdSync(int mode)
 		case 3:
 			sysclk.hi = 0;
 			sysclk.lo = 0x9000 * g_cdvdman_sync_to;
-			vSetAlarm(&sysclk, (unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
+			vSetAlarm(&sysclk, (unsigned int (*)(void *))sync_timeout_func, &sysclk);
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag )
 			{
 				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
-			vCancelAlarm((unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
+			vCancelAlarm((unsigned int (*)(void *))sync_timeout_func, &sysclk);
 			break;
 		case 4:
 			sysclk.hi = 0;
 			sysclk.lo = 0x41EB0000;
-			vSetAlarm(&sysclk, (unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
+			vSetAlarm(&sysclk, (unsigned int (*)(void *))sync_timeout_func, &sysclk);
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag )
 			{
 				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
-			vCancelAlarm((unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
+			vCancelAlarm((unsigned int (*)(void *))sync_timeout_func, &sysclk);
 			break;
 		case 5:
 			while ( !sceCdCheckCmd() )
@@ -1850,12 +1850,12 @@ int __cdecl sceCdSync(int mode)
 		case 6:
 			sysclk.hi = 0;
 			sysclk.lo = 0x9000 * g_cdvdman_sync_to;
-			vSetAlarm(&sysclk, (unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
+			vSetAlarm(&sysclk, (unsigned int (*)(void *))sync_timeout_func, &sysclk);
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag )
 			{
 				WaitEventFlag(g_cdvdman_intr_efid, 1, 0, &efbits);
 			}
-			vCancelAlarm((unsigned int (__cdecl *)(void *))sync_timeout_func, &sysclk);
+			vCancelAlarm((unsigned int (*)(void *))sync_timeout_func, &sysclk);
 			break;
 		case 16:
 			while ( !sceCdCheckCmd() || g_cdvdman_istruct.m_read2_flag || g_cdvdman_ee_rpc_fno || g_cdvdman_istruct.m_stream_flag )
@@ -1895,14 +1895,14 @@ int __cdecl sceCdSync(int mode)
 	return 0;
 }
 
-int __cdecl sceCdSpinCtrlIOP(u32 speed)
+int sceCdSpinCtrlIOP(u32 speed)
 {
 	VERBOSE_KPRINTF(1, "sceCdSpinCtrlIOP speed= %d\n", speed);
 	g_cdvdman_spinctl = speed;
 	return 1;
 }
 
-int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
+int sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 {
 	unsigned int i;
 	int search_res;
@@ -1923,17 +1923,17 @@ int __cdecl sceCdLayerSearchFile(sceCdlFILE *fp, const char *path, int layer)
 	return search_res;
 }
 
-int __cdecl sceCdSearchFile(sceCdlFILE *file, const char *name)
+int sceCdSearchFile(sceCdlFILE *file, const char *name)
 {
 	return sceCdLayerSearchFile(file, name, 0);
 }
 
-int __cdecl sceCdGetToc(u8 *toc)
+int sceCdGetToc(u8 *toc)
 {
 	return cdvdman_gettoc(toc);
 }
 
-int __cdecl sceCdDiskReady(int mode)
+int sceCdDiskReady(int mode)
 {
 	u32 efbits;
 
@@ -2018,7 +2018,7 @@ int sceCdStatus(void)
 	return reg_00A_tmp;
 }
 
-sceCdlLOCCD *__cdecl sceCdIntToPos(u32 i, sceCdlLOCCD *p)
+sceCdlLOCCD *sceCdIntToPos(u32 i, sceCdlLOCCD *p)
 {
 	p->sector = 16 * ((i + 150) % 75 / 10) + (i + 150) % 75 % 10;
 	p->second = 16 * ((i + 150) / 75 % 60 / 10) + (i + 150) / 75 % 60 % 10;
@@ -2026,7 +2026,7 @@ sceCdlLOCCD *__cdecl sceCdIntToPos(u32 i, sceCdlLOCCD *p)
 	return p;
 }
 
-u32 __cdecl sceCdPosToInt(sceCdlLOCCD *p)
+u32 sceCdPosToInt(sceCdlLOCCD *p)
 {
 	return 75 * (60 * (10 * (p->minute >> 4) + (p->minute & 0xF)) + 10 * (p->second >> 4) + (p->second & 0xF))
 			 + 10 * (p->sector >> 4)
@@ -2034,7 +2034,7 @@ u32 __cdecl sceCdPosToInt(sceCdlLOCCD *p)
 			 - 150;
 }
 
-int __fastcall read_id_from_rom(int mode, int *buf)
+int read_id_from_rom(int mode, int *buf)
 {
 	int chksumint;
 	unsigned int i;
@@ -2078,7 +2078,7 @@ int __fastcall read_id_from_rom(int mode, int *buf)
 	return 1;
 }
 
-int __cdecl query_boot_mode_6_nonzero()
+int query_boot_mode_6_nonzero()
 {
 	int *BootMode;
 
@@ -2086,12 +2086,12 @@ int __cdecl query_boot_mode_6_nonzero()
 	return !( !BootMode || (*(_WORD *)BootMode & 0xFFFC) != 0x60 );
 }
 
-int __cdecl query_boot_mode_6_zero()
+int query_boot_mode_6_zero()
 {
 	return QueryBootMode(6) == 0;
 }
 
-int __cdecl cdvdman_readID(int mode, int *buf)
+int cdvdman_readID(int mode, int *buf)
 {
 	u8 id_val[8];
 	iop_sys_clock_t sysclk;
@@ -2141,17 +2141,17 @@ int __cdecl cdvdman_readID(int mode, int *buf)
 	}
 }
 
-int __cdecl sceCdReadGUID(u64 *guid)
+int sceCdReadGUID(u64 *guid)
 {
 	return cdvdman_readID(0, (int *)guid);
 }
 
-int __cdecl sceCdReadModelID(unsigned int *id)
+int sceCdReadModelID(unsigned int *id)
 {
 	return cdvdman_readID(1, (int *)id);
 }
 
-int __cdecl sceCdStInit(u32 bufmax, u32 bankmax, void *buffer)
+int sceCdStInit(u32 bufmax, u32 bankmax, void *buffer)
 {
 	cdrom_stm_devctl_t devctl_req;
 	int buf;
@@ -2164,7 +2164,7 @@ int __cdecl sceCdStInit(u32 bufmax, u32 bankmax, void *buffer)
 	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
 }
 
-int __cdecl sceCdStStart(u32 lbn, sceCdRMode *mode)
+int sceCdStStart(u32 lbn, sceCdRMode *mode)
 {
 	cdrom_stm_devctl_t devctl_req;
 	int buf;
@@ -2178,7 +2178,7 @@ int __cdecl sceCdStStart(u32 lbn, sceCdRMode *mode)
 	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
 }
 
-int __cdecl sceCdStSeekF(unsigned int lsn)
+int sceCdStSeekF(unsigned int lsn)
 {
 	cdrom_stm_devctl_t devctl_req;
 	int buf;
@@ -2189,7 +2189,7 @@ int __cdecl sceCdStSeekF(unsigned int lsn)
 	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
 }
 
-int __cdecl sceCdStSeek(u32 lbn)
+int sceCdStSeek(u32 lbn)
 {
 	cdrom_stm_devctl_t devctl_req;
 	int buf;
@@ -2210,7 +2210,7 @@ int sceCdStStop(void)
 	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
 }
 
-int __cdecl sceCdStRead(u32 sectors, u32 *buffer, u32 mode, u32 *error)
+int sceCdStRead(u32 sectors, u32 *buffer, u32 mode, u32 *error)
 {
 	cdrom_stm_devctl_t devctl_req;
 	int buf;
@@ -2259,7 +2259,7 @@ int sceCdStStat(void)
 	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
 }
 
-int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int layer)
+int CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int layer)
 {
 	int parent_level;
 	int i;
@@ -2339,7 +2339,7 @@ int __cdecl CdSearchFileInner(CDVDMAN_FILETBL_ENTRY_T *fp, const char *name, int
 	return 0;
 }
 
-int __cdecl sceCdSearchDir(char *dirname, int layer)
+int sceCdSearchDir(char *dirname, int layer)
 {
 	sceCdlFILE fileinfo;
 
@@ -2347,7 +2347,7 @@ int __cdecl sceCdSearchDir(char *dirname, int layer)
 	return sceCdLayerSearchFile(&fileinfo, dirname, layer) != 0 ? g_cdvdman_fs_cdsec : SCECdErREADCFR;
 }
 
-int __cdecl sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer)
+int sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer)
 {
 	VERBOSE_PRINTF(1, "_sceCdReadDir: current= %d dsec= %d layer= %d\n", g_cdvdman_fs_cdsec, dsec, layer);
 	if ( g_cdvdman_fs_cdsec != dsec || g_cdvdman_fs_layer != layer )
@@ -2378,12 +2378,12 @@ int __cdecl sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer)
 	return 0;
 }
 
-int __cdecl cdvdman_cmpname(const char *p, const char *q)
+int cdvdman_cmpname(const char *p, const char *q)
 {
 	return strncmp(p, q, 12) == 0;
 }
 
-int __cdecl CD_newmedia(int arg)
+int CD_newmedia(int arg)
 {
 	unsigned int DiskType;
 	unsigned int i;
@@ -2482,7 +2482,7 @@ int __cdecl CD_newmedia(int arg)
 	return 1;
 }
 
-int __fastcall cdvdman_finddir(int target_parent, const char *target_name)
+int cdvdman_finddir(int target_parent, const char *target_name)
 {
 	unsigned int i;
 
@@ -2496,7 +2496,7 @@ int __fastcall cdvdman_finddir(int target_parent, const char *target_name)
 	return -1;
 }
 
-int __fastcall CD_cachefile(int dsec, int layer)
+int CD_cachefile(int dsec, int layer)
 {
 	iso9660_dirent_t *dirent_cur;
 	unsigned int i;
@@ -2555,7 +2555,7 @@ int __fastcall CD_cachefile(int dsec, int layer)
 	return 1;
 }
 
-int __cdecl disc_read(int size, int loc, void *buffer, int layer)
+int disc_read(int size, int loc, void *buffer, int layer)
 {
 	int f;
 	int i;
@@ -2707,7 +2707,7 @@ int __cdecl disc_read(int size, int loc, void *buffer, int layer)
 	return 0;
 }
 
-int __cdecl path_tbl_init(u32 blocks, char *fname, int action)
+int path_tbl_init(u32 blocks, char *fname, int action)
 {
 	int num;
 	int v;
@@ -2804,7 +2804,7 @@ int __cdecl path_tbl_init(u32 blocks, char *fname, int action)
 
 // Unofficial: unused obfuscation code was removed
 
-unsigned int __fastcall optimized_memcpy(char *dst, const char *src, unsigned int n)
+unsigned int optimized_memcpy(char *dst, const char *src, unsigned int n)
 {
 	int v3;
 	int v4;
@@ -3084,7 +3084,7 @@ LABEL_33:
 }
 
 #ifdef DEAD_CODE
-void __fastcall hex_dump(u8 *addr_start, int length)
+void hex_dump(u8 *addr_start, int length)
 {
 	int i;
 
@@ -3101,7 +3101,7 @@ void __fastcall hex_dump(u8 *addr_start, int length)
 }
 #endif
 
-int __cdecl cdvdman_initcfg()
+int cdvdman_initcfg()
 {
 	int i;
 	u8 m_version[5];
@@ -3136,39 +3136,39 @@ int __cdecl cdvdman_initcfg()
 	return 0;
 }
 
-int __fastcall vSetAlarm(iop_sys_clock_t *sys_clock, unsigned int (__cdecl *alarm_cb)(void *), void *arg)
+int vSetAlarm(iop_sys_clock_t *sys_clock, unsigned int (*alarm_cb)(void *), void *arg)
 {
 	return (QueryIntrContext() ? iSetAlarm : SetAlarm)(sys_clock, alarm_cb, arg);
 }
 
-int __fastcall vCancelAlarm(unsigned int (__cdecl *alarm_cb)(void *), void *arg)
+int vCancelAlarm(unsigned int (*alarm_cb)(void *), void *arg)
 {
 	return (QueryIntrContext() ? iCancelAlarm : CancelAlarm)(alarm_cb, arg);
 }
 
 #ifdef DEAD_CODE
-s32 __cdecl vSignalSema(s32 sema_id)
+s32 vSignalSema(s32 sema_id)
 {
 	return (QueryIntrContext() ? iSignalSema : SignalSema)(sema_id);
 }
 #endif
 
-int __fastcall vSetEventFlag(int ef, u32 bits)
+int vSetEventFlag(int ef, u32 bits)
 {
 	return (QueryIntrContext() ? iSetEventFlag : SetEventFlag)(ef, bits);
 }
 
-int __fastcall vClearEventFlag(int ef, u32 bits)
+int vClearEventFlag(int ef, u32 bits)
 {
 	return (QueryIntrContext() ? iClearEventFlag : ClearEventFlag)(ef, bits);
 }
 
-int __fastcall vReferEventFlagStatus(int ef, iop_event_info_t *info)
+int vReferEventFlagStatus(int ef, iop_event_info_t *info)
 {
 	return (QueryIntrContext() ? iReferEventFlagStatus : ReferEventFlagStatus)(ef, info);
 }
 
-int __fastcall vDelayThread(int usec)
+int vDelayThread(int usec)
 {
 	int intrval;
 	int state;
@@ -3178,7 +3178,7 @@ int __fastcall vDelayThread(int usec)
 	return ( QueryIntrContext() == 0 && !intrval ) ? DelayThread(usec) : 0;
 }
 
-BOOL __fastcall alarm_cb_read(iop_sys_clock_t *a1)
+BOOL alarm_cb_read(iop_sys_clock_t *a1)
 {
 	int read_to;
 
@@ -3188,9 +3188,9 @@ BOOL __fastcall alarm_cb_read(iop_sys_clock_t *a1)
 	return sceCdBreak() == 0;
 }
 
-sceCdCBFunc __cdecl sceCdCallback(sceCdCBFunc function)
+sceCdCBFunc sceCdCallback(sceCdCBFunc function)
 {
-	void (__cdecl *rc)(int);
+	void (*rc)(int);
 	u32 efbits;
 
 	if ( sceCdSync(1) != 0 || PollEventFlag(g_ncmd_evid, 1, 0x10, &efbits) == KE_EVF_COND )
@@ -3203,9 +3203,9 @@ sceCdCBFunc __cdecl sceCdCallback(sceCdCBFunc function)
 	return rc;
 }
 
-void *__cdecl sceCdPOffCallback(void (__cdecl *func)(void *), void *addr)
+void *sceCdPOffCallback(void (*func)(void *), void *addr)
 {
-	void (__cdecl *old_cb)(void *);
+	void (*old_cb)(void *);
 	int state;
 
 	CpuSuspendIntr(&state);
@@ -3216,19 +3216,19 @@ void *__cdecl sceCdPOffCallback(void (__cdecl *func)(void *), void *addr)
 	return old_cb;
 }
 
-int __cdecl sceCdstm0Cb(void (__cdecl *p)(int))
+int sceCdstm0Cb(void (*p)(int))
 {
 	g_cdvdman_cdstm0cb = p;
 	return 0;
 }
 
-int __cdecl sceCdstm1Cb(void (__cdecl *p)(int))
+int sceCdstm1Cb(void (*p)(int))
 {
 	g_cdvdman_cdstm1cb = p;
 	return 0;
 }
 
-int __fastcall cdvdman_intr_cb(cdvdman_internal_struct_t *s)
+int cdvdman_intr_cb(cdvdman_internal_struct_t *s)
 {
 	sceCdRMode cdrmode;
 	int oldstate;
@@ -3441,7 +3441,7 @@ int __fastcall cdvdman_intr_cb(cdvdman_internal_struct_t *s)
 	return 1;
 }
 
-int __fastcall intrh_cdrom(cdvdman_internal_struct_t *s)
+int intrh_cdrom(cdvdman_internal_struct_t *s)
 {
 	int conds1;
 	iop_event_info_t efinfo;
@@ -3494,12 +3494,12 @@ int __fastcall intrh_cdrom(cdvdman_internal_struct_t *s)
 	return cdvdman_intr_cb(s);
 }
 
-u32 __cdecl cdvdman_l1start(const u8 *toc)
+u32 cdvdman_l1start(const u8 *toc)
 {
 	return toc[23] + (toc[22] << 8) + (toc[21] << 16) - 0x30000 + 1;
 }
 
-int __cdecl DvdDual_infochk()
+int DvdDual_infochk()
 {
 	if ( QueryIntrContext() != 0 || !(cdvdman_mediactl(3) || (unsigned __int8)g_cdvdman_istruct.m_opo_or_para == 0xFF) )
 	{
@@ -3525,7 +3525,7 @@ int __cdecl DvdDual_infochk()
 	return 1;
 }
 
-u32 __cdecl sceCdLsnDualChg(u32 lsn)
+u32 sceCdLsnDualChg(u32 lsn)
 {
 	int layer_disk_needed;
 	u32 change_lsn;
@@ -3641,7 +3641,7 @@ u32 __cdecl sceCdLsnDualChg(u32 lsn)
 	return has_change_lsn ? change_lsn : lsn;
 }
 
-int __cdecl sceCdReadDvdDualInfo(int *on_dual, unsigned int *layer1_start)
+int sceCdReadDvdDualInfo(int *on_dual, unsigned int *layer1_start)
 {
 	int read0_result;
 	int i;
@@ -3714,7 +3714,7 @@ int __cdecl sceCdReadDvdDualInfo(int *on_dual, unsigned int *layer1_start)
 	return 1;
 }
 
-int __cdecl sceCdSC(int code, int *param)
+int sceCdSC(int code, int *param)
 {
 	void *poffarg_tmp;
 	int *BootMode;
@@ -3823,7 +3823,7 @@ int __cdecl sceCdSC(int code, int *param)
 	}
 }
 
-void __cdecl cdvdman_init()
+void cdvdman_init()
 {
 	int *BootMode;
 	unsigned int i;
@@ -3834,8 +3834,8 @@ void __cdecl cdvdman_init()
 	g_cdvdman_poff_cb = 0;
 	g_cdvdman_cmdfunc = 0;
 	g_cdvdman_istruct.m_drive_interupt_request = 0;
-	RegisterIntrHandler(IOP_IRQ_CDVD, 1, (int (__cdecl *)(void *))intrh_cdrom, &g_cdvdman_istruct);
-	RegisterIntrHandler(35, 1, (int (__cdecl *)(void *))intrh_dma_3, &g_cdvdman_istruct);
+	RegisterIntrHandler(IOP_IRQ_CDVD, 1, (int (*)(void *))intrh_cdrom, &g_cdvdman_istruct);
+	RegisterIntrHandler(35, 1, (int (*)(void *))intrh_dma_3, &g_cdvdman_istruct);
 	EnableIntr(IOP_IRQ_CDVD);
 	sceCdSC(0xFFFFFFF3, &scres_unused);
 	dmac_set_dpcr(dmac_get_dpcr() | 0x8000);
@@ -3859,7 +3859,7 @@ void __cdecl cdvdman_init()
 	}
 }
 
-int __cdecl sceCdInit(int mode)
+int sceCdInit(int mode)
 {
 	VERBOSE_PRINTF(1, "sceCdInit called mode= %d\n", mode);
 	if ( mode == SCECdEXIT )
@@ -3920,7 +3920,7 @@ int __cdecl sceCdInit(int mode)
 	return 1;
 }
 
-int __cdecl set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata, int rdlen, int check_sef)
+int set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata, int rdlen, int check_sef)
 {
 	int i;
 	int delaybackoff;
@@ -3985,7 +3985,7 @@ int __cdecl set_prev_command(int cmd, const char *sdata, int sdlen, char *rdata,
 	return 0;
 }
 
-void __cdecl cdvdman_write_scmd(cdvdman_internal_struct_t *s)
+void cdvdman_write_scmd(cdvdman_internal_struct_t *s)
 {
 	int i;
 	unsigned int j;
@@ -4077,7 +4077,7 @@ void __cdecl cdvdman_write_scmd(cdvdman_internal_struct_t *s)
 	}
 }
 
-int __cdecl cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int rdlen, int check_sef)
+int cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int rdlen, int check_sef)
 {
 	int i;
 	int j;
@@ -4154,7 +4154,7 @@ int __cdecl cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdat
 	return 1;
 }
 
-int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff)
+int sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *outBuff)
 {
 	int i;
 
@@ -4171,7 +4171,7 @@ int __cdecl sceCdApplySCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize, void *
 	return 0;
 }
 
-int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff)
+int sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff)
 {
 	int i;
 
@@ -4188,7 +4188,7 @@ int __cdecl sceCdApplySCmd2(u8 cmdNum, const void *inBuff, unsigned long int inB
 }
 
 #ifdef DEAD_CODE
-int __fastcall sceCdApplySCmd3(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff)
+int sceCdApplySCmd3(u8 cmdNum, const void *inBuff, unsigned long int inBuffSize, void *outBuff)
 {
 	int i;
 
@@ -4236,12 +4236,12 @@ int sceCdBreak(void)
 	if ( QueryIntrContext() )
 	{
 		iSetEventFlag(g_cdvdman_intr_efid, 0x29);
-		iCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
+		iCancelAlarm((unsigned int (*)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 	}
 	else
 	{
 		SetEventFlag(g_cdvdman_intr_efid, 0x29);
-		CancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
+		CancelAlarm((unsigned int (*)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 	}
 	if ( !g_cdvdman_istruct.m_wait_flag || g_cdvdman_istruct.m_read_to )
 	{
@@ -4265,14 +4265,14 @@ int sceCdBreak(void)
 	return 1;
 }
 
-int __fastcall cd_ncmd_timeout_callback(iop_sys_clock_t *sys_clock)
+int cd_ncmd_timeout_callback(iop_sys_clock_t *sys_clock)
 {
 	KPRINTF("Cmd Time Out %d(msec)\n", sys_clock->lo / 0x9000);
 	sys_clock->lo = 0;
 	return 0;
 }
 
-int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s)
+int intrh_dma_3(cdvdman_internal_struct_t *s)
 {
 	int dmacbres;
 	int oldstate;
@@ -4307,7 +4307,7 @@ int __fastcall intrh_dma_3(cdvdman_internal_struct_t *s)
 	return 1;
 }
 
-int __cdecl cdvdman_setdma3(DMA3PARAM *b18)
+int cdvdman_setdma3(DMA3PARAM *b18)
 {
 	if ( (dmac_ch_get_chcr(3) & 0x1000000) != 0 )
 	{
@@ -4336,7 +4336,7 @@ int __cdecl cdvdman_setdma3(DMA3PARAM *b18)
 	return dmac_ch_get_chcr(3);
 }
 
-int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARAM *b18, int check_cb)
+int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, DMA3PARAM *b18, int check_cb)
 {
 	int i;
 	u32 efbits;
@@ -4375,7 +4375,7 @@ int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, 
 	{
 		g_cdvdman_ncmd_to.hi = 0;
 		g_cdvdman_ncmd_to.lo = 0x6978000;
-		vSetAlarm(&g_cdvdman_ncmd_to, (unsigned int (__cdecl *)(void *))cd_ncmd_timeout_callback, &g_cdvdman_ncmd_to);
+		vSetAlarm(&g_cdvdman_ncmd_to, (unsigned int (*)(void *))cd_ncmd_timeout_callback, &g_cdvdman_ncmd_to);
 		while ( dev5_regs.m_dev5_reg_00A != 10 )
 		{
 			VERBOSE_KPRINTF(1, "Read Pause 1 chk status 0x%02x\n", dev5_regs.m_dev5_reg_00A);
@@ -4391,7 +4391,7 @@ int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, 
 			}
 			vDelayThread(1000);
 		}
-		vCancelAlarm((unsigned int (__cdecl *)(void *))cd_ncmd_timeout_callback, &g_cdvdman_ncmd_to);
+		vCancelAlarm((unsigned int (*)(void *))cd_ncmd_timeout_callback, &g_cdvdman_ncmd_to);
 	}
 	g_cdvdman_ncmd = ncmd;
 	if ( g_cdvdman_istruct.m_dec_state )
@@ -4423,7 +4423,7 @@ int __cdecl cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, 
 	return 0;
 }
 
-int __cdecl sceCdApplyNCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize)
+int sceCdApplyNCmd(u8 cmdNum, const void *inBuff, u16 inBuffSize)
 {
 	VERBOSE_KPRINTF(1, "Apply NCmd call cmd= 0x%02x\n", cmdNum);
 	while ( cdvdman_send_ncmd(cmdNum, inBuff, inBuffSize, 0, 0, 1) < 0 )
@@ -4439,7 +4439,7 @@ int sceCdCheckCmd(void)
 	return g_cdvdman_istruct.m_wait_flag;
 }
 
-int __cdecl cdvdman_mediactl(int code)
+int cdvdman_mediactl(int code)
 {
 	int reg_00B_tmp_1;
 	int restmp;
@@ -4493,7 +4493,7 @@ int sceCdGetError(void)
 }
 
 #ifdef DEAD_CODE
-int __cdecl cdvdman_get_last_command()
+int cdvdman_get_last_command()
 {
 	return (unsigned __int8)g_cdvdman_istruct.m_cdvdman_command;
 }
@@ -4505,13 +4505,13 @@ int sceCdNop(void)
 }
 
 #ifdef DEAD_CODE
-int __cdecl cdvdman_ncmd_sender_01()
+int cdvdman_ncmd_sender_01()
 {
 	return cdvdman_send_ncmd(1, 0, 0, 0, 0, 1) >= 0;
 }
 #endif
 
-int __cdecl cdvdman_ncmd_sender_06()
+int cdvdman_ncmd_sender_06()
 {
 	int i;
 	DMA3PARAM b18;
@@ -4600,7 +4600,7 @@ int sceCdPause(void)
 }
 
 #ifdef DEAD_CODE
-int __cdecl cdvdman_ncmd_sender_0B()
+int cdvdman_ncmd_sender_0B()
 {
 	char ndata;
 
@@ -4609,7 +4609,7 @@ int __cdecl cdvdman_ncmd_sender_0B()
 }
 #endif
 
-int __fastcall readtoc_timeout_func(iop_sys_clock_t *s)
+int readtoc_timeout_func(iop_sys_clock_t *s)
 {
 	KPRINTF("Cmd Time Out %d(msec)\n", s->lo / 0x9000);
 	dev5_regs.m_dev5_reg_007 = 1;
@@ -4617,7 +4617,7 @@ int __fastcall readtoc_timeout_func(iop_sys_clock_t *s)
 	return 0;
 }
 
-int __cdecl cdvdman_readtoc(u8 *toc, int param, int func)
+int cdvdman_readtoc(u8 *toc, int param, int func)
 {
 	int errcond;
 	DMA3PARAM b18;
@@ -4663,9 +4663,9 @@ int __cdecl cdvdman_readtoc(u8 *toc, int param, int func)
 	}
 	clk.hi = 0;
 	clk.lo = 368640000;
-	vSetAlarm(&clk, (unsigned int (__cdecl *)(void *))readtoc_timeout_func, &clk);
+	vSetAlarm(&clk, (unsigned int (*)(void *))readtoc_timeout_func, &clk);
 	sceCdSync(3);
-	vCancelAlarm((unsigned int (__cdecl *)(void *))readtoc_timeout_func, &clk);
+	vCancelAlarm((unsigned int (*)(void *))readtoc_timeout_func, &clk);
 	errcond = sceCdGetError() == 0;
 	if ( g_cdvdman_minver_10700 && !sceCdPause() )
 	{
@@ -4675,7 +4675,7 @@ int __cdecl cdvdman_readtoc(u8 *toc, int param, int func)
 	return errcond;
 }
 
-int __cdecl cdvdman_gettoc(u8 *toc)
+int cdvdman_gettoc(u8 *toc)
 {
 	return cdvdman_readtoc(toc, 0, 3);
 }
@@ -4706,7 +4706,7 @@ u32 sceCdGetReadPos(void)
 	return 0;
 }
 
-int __cdecl cdvdman_speedctl(u32 spindlctrl, int dvdflag, u32 maxlsn)
+int cdvdman_speedctl(u32 spindlctrl, int dvdflag, u32 maxlsn)
 {
 	u32 maxlsn_chk;
 
@@ -4763,7 +4763,7 @@ int __cdecl cdvdman_speedctl(u32 spindlctrl, int dvdflag, u32 maxlsn)
 	}
 }
 
-int __cdecl cdvdman_isdvd()
+int cdvdman_isdvd()
 {
 	// The following call to sceCdGetDiskType was inlined
 	switch ( sceCdGetDiskType() )
@@ -4789,7 +4789,7 @@ int __cdecl cdvdman_isdvd()
 	}	
 }
 
-int __cdecl sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, const sceCdRMode *mode, int ncmd, int dintrsec, void *func)
+int sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, const sceCdRMode *mode, int ncmd, int dintrsec, void *func)
 {
 	DMA3PARAM b18;
 	char ndata[11];
@@ -4801,7 +4801,7 @@ int __cdecl sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, const sceCdRMode *mode,
 	ndata[8] = mode->trycount;
 	ndata[9] = cdvdman_speedctl(mode->spindlctrl, cdvdman_isdvd(), lsn + nsec);
 	b18.m_dma3_csectors = dintrsec;
-	b18.m_dma3_callback = (int (__cdecl *)(void))func;
+	b18.m_dma3_callback = (int (*)(void))func;
 	b18.m_dma3_msectors = nsec;
 	b18.m_dma3_maddress = buf;
 	b18.m_dma3_blkcount = (!(_WORD)dintrsec) ? nsec : 1;
@@ -4846,7 +4846,7 @@ int __cdecl sceCdRead0_Rty(u32 lsn, u32 nsec, void *buf, const sceCdRMode *mode,
 	return 0;
 }
 
-int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int csec, void *callback)
+int sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int csec, void *callback)
 {
 	DMA3PARAM b18;
 	char ndata[11];
@@ -4859,7 +4859,7 @@ int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int
 	VERBOSE_KPRINTF(1, "DVD/CD sceCdRead0 sec %d num %d spin %d trycnt %d dptn %d adr %08x\n", lsn, sectors, mode->spindlctrl, mode->trycount, mode->datapattern, buffer);
 	g_cdvdman_readbuf = buffer;
 	b18.m_dma3_csectors = ( csec && (sectors < (u32)csec) ) ? sectors : (u32)csec;
-	b18.m_dma3_callback = (int (__cdecl *)(void))callback;
+	b18.m_dma3_callback = (int (*)(void))callback;
 	b18.m_dma3_msectors = sectors;
 	b18.m_dma3_blkcount = (!csec) ? sectors : 1;
 	switch ( mode->datapattern )
@@ -4929,7 +4929,7 @@ int __cdecl sceCdRead0(u32 lsn, u32 sectors, void *buffer, sceCdRMode *mode, int
 	return 1;
 }
 
-int __cdecl read_cdvd_cb(cdvdman_internal_struct_t *common)
+int read_cdvd_cb(cdvdman_internal_struct_t *common)
 {
 	int sblock;
 	int i;
@@ -5037,7 +5037,7 @@ int __cdecl read_cdvd_cb(cdvdman_internal_struct_t *common)
 	return 1;
 }
 
-int __cdecl cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int decflag, int shift, int ef1, int ef2)
+int cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int decflag, int shift, int ef1, int ef2)
 {
 	int read_res;
 	int state;
@@ -5106,7 +5106,7 @@ int __cdecl cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int 
 	g_cdvdman_istruct.m_cdvdman_rsec = ( sectors >= 0x41 ) ? (( (lsn & 0xF) != 0 ) ? (0x10 - (lsn & 0xF)) : 0x40) : sectors;
 	g_cdvdman_racb_to.hi = 0;
 	g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
-	vSetAlarm(&g_cdvdman_racb_to, (unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
+	vSetAlarm(&g_cdvdman_racb_to, (unsigned int (*)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 	read_res = (dvd ? sceCdRV : sceCdRead0)(lsn, g_cdvdman_istruct.m_cdvdman_rsec, g_cdvdman_ptoc, dvd ? mode : &g_cdvdman_istruct.m_cdvdman_cdrmode, 0x10, read_cdvd_cb);
 	if ( !read_res )
 	{
@@ -5120,7 +5120,7 @@ int __cdecl cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int 
 			g_cdvdman_istruct.m_dec_state = 0;
 			sceCdDecSet(0, 0, 0);
 		}
-		vCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
+		vCancelAlarm((unsigned int (*)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 	}
 	if ( ef1 )
 	{
@@ -5130,12 +5130,12 @@ int __cdecl cdvdman_read(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int 
 	return !!read_res;
 }
 
-int __cdecl sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMode *mode)
+int sceCdRE(unsigned int lsn, unsigned int sectors, void *buf, sceCdRMode *mode)
 {
 	return cdvdman_read(lsn, sectors, buf, mode, 0, 0, 0, 0);
 }
 
-int __cdecl sceCdRead(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode)
+int sceCdRead(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode)
 {
 	iop_event_info_t efinfo;
 	int state;
@@ -5154,14 +5154,14 @@ int __cdecl sceCdRead(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode)
 	return cdvdman_read(lbn, sectors, buffer, mode, 0, 0, g_fio_fsv_evid, 1);
 }
 
-int __cdecl cdvdman_syncdec(int decflag, int decxor, int shift, u32 data)
+int cdvdman_syncdec(int decflag, int decxor, int shift, u32 data)
 {
 	return decflag ? ((unsigned __int8)(((unsigned __int8)data << (shift % 8)) | ((unsigned __int8)data >> (8 - shift % 8))) ^ (unsigned __int8)decxor) : (unsigned __int8)data;
 }
 
-void __cdecl Read2intrCDVD(int read2_flag)
+void Read2intrCDVD(int read2_flag)
 {
-	iCancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
+	iCancelAlarm((unsigned int (*)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 	if ( g_cdvdman_istruct.m_last_error || g_cdvdman_retries >= 5 )
 	{
 		if ( !g_cdvdman_istruct.m_last_error )
@@ -5214,7 +5214,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 			{
 				g_cdvdman_racb_to.hi = 0;
 				g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
-				iSetAlarm(&g_cdvdman_racb_to, (unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
+				iSetAlarm(&g_cdvdman_racb_to, (unsigned int (*)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 			}
 			else
 			{
@@ -5266,7 +5266,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 				{
 					g_cdvdman_racb_to.hi = 0;
 					g_cdvdman_racb_to.lo = 0x9000 * sceCdSC(0xFFFFFFF1, &scres_unused);
-					iSetAlarm(&g_cdvdman_racb_to, (unsigned int (__cdecl *)(void *))alarm_cb_read, &g_cdvdman_racb_to);
+					iSetAlarm(&g_cdvdman_racb_to, (unsigned int (*)(void *))alarm_cb_read, &g_cdvdman_racb_to);
 				}
 				else
 				{
@@ -5312,7 +5312,7 @@ void __cdecl Read2intrCDVD(int read2_flag)
 	}
 }
 
-int __cdecl sceCdReadChain(sceCdRChain *tag, sceCdRMode *mode)
+int sceCdReadChain(sceCdRChain *tag, sceCdRMode *mode)
 {
 	(void)tag;
 	(void)mode;
@@ -5320,7 +5320,7 @@ int __cdecl sceCdReadChain(sceCdRChain *tag, sceCdRMode *mode)
 	return 0;
 }
 
-int __cdecl cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *mode, int flag)
+int cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *mode, int flag)
 {
 	DMA3PARAM b18;
 	char ndata[11];
@@ -5373,12 +5373,12 @@ int __cdecl cdvdman_readfull(u32 lsn, u32 sectors, void *buf, const sceCdRMode *
 	return cdvdman_send_ncmd((!flag) ? 7 : 14, ndata, sizeof(ndata), (!flag) ? 2 : 12, &b18, 1) >= 0;
 }
 
-int __cdecl sceCdReadCDDA(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode)
+int sceCdReadCDDA(u32 lbn, u32 sectors, void *buffer, sceCdRMode *mode)
 {
 	return cdvdman_readfull(lbn, sectors, buffer, mode, 0);
 }
 
-int __cdecl sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5, void *cb)
+int sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5, void *cb)
 {
 	DMA3PARAM b18;
 	char ndata[11];
@@ -5408,7 +5408,7 @@ int __cdecl sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5,
 	b18.m_dma3_blkcount = (!arg5) ? sectors : 1;
 	b18.m_dma3_blkcount *= 43;
 	b18.m_dma3_msectors = sectors;
-	b18.m_dma3_callback = (int (__cdecl *)(void))cb;
+	b18.m_dma3_callback = (int (*)(void))cb;
 	g_cdvdman_istruct.m_read_callback = cb;
 	b18.m_dma3_maddress = buf;
 	if ( cdvdman_send_ncmd(8, ndata, sizeof(ndata), 14, &b18, 0) < 0 )
@@ -5420,7 +5420,7 @@ int __cdecl sceCdRV(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode, int arg5,
 	return 1;
 }
 
-int __cdecl sceCdSeek(u32 lbn)
+int sceCdSeek(u32 lbn)
 {
 	u32 ndata;
 
@@ -5436,7 +5436,7 @@ int __cdecl sceCdSeek(u32 lbn)
 	return cdvdman_send_ncmd(5, &ndata, 4, 4, 0, 1) >= 0;
 }
 
-int __cdecl sceCdRI(u8 *buffer, u32 *result)
+int sceCdRI(u8 *buffer, u32 *result)
 {
 	int command;
 	u8 rdata[9];
@@ -5448,7 +5448,7 @@ int __cdecl sceCdRI(u8 *buffer, u32 *result)
 	return command;
 }
 
-int __cdecl sceCdRM(char *buffer, u32 *status)
+int sceCdRM(char *buffer, u32 *status)
 {
 	int command;
 	int cmd_tmp2;
@@ -5484,7 +5484,7 @@ int __cdecl sceCdRM(char *buffer, u32 *status)
 	return command ? (cmd_tmp2 != 0) : 0;
 }
 
-int __cdecl sceCdGetMVersion(u8 *buffer, u32 *status)
+int sceCdGetMVersion(u8 *buffer, u32 *status)
 {
 	int command;
 	char rdata[4];
@@ -5499,7 +5499,7 @@ int __cdecl sceCdGetMVersion(u8 *buffer, u32 *status)
 	return command;
 }
 
-int __fastcall cdvdman_scmd_sender_03_48(u8 *buf, u32 *status)
+int cdvdman_scmd_sender_03_48(u8 *buf, u32 *status)
 {
 	int retval;
 	char rdata[2];
@@ -5517,13 +5517,13 @@ int __fastcall cdvdman_scmd_sender_03_48(u8 *buf, u32 *status)
 	return retval;
 }
 
-int __cdecl sceCdMmode(int media)
+int sceCdMmode(int media)
 {
 	g_cdvdman_mmode = media;
 	return 1;
 }
 
-int __cdecl sceCdCancelPOffRdy(u32 *result)
+int sceCdCancelPOffRdy(u32 *result)
 {
 	char wdata[8];
 
@@ -5533,13 +5533,13 @@ int __cdecl sceCdCancelPOffRdy(u32 *result)
 	
 }
 
-unsigned int __fastcall alarm_cb_poff(cdvdman_internal_struct_t *s)
+unsigned int alarm_cb_poff(cdvdman_internal_struct_t *s)
 {
 	s->m_power_flag = 0;
 	return 0;
 }
 
-int __cdecl sceCdPowerOff(u32 *result)
+int sceCdPowerOff(u32 *result)
 {
 	int command;
 
@@ -5565,11 +5565,11 @@ int __cdecl sceCdPowerOff(u32 *result)
 	g_cdvdman_istruct.m_power_flag = 1;
 	g_cdvdman_poff_to.hi = 0;
 	g_cdvdman_poff_to.lo = 0xAFC8000;
-	vSetAlarm(&g_cdvdman_poff_to, (unsigned int (__cdecl *)(void *))alarm_cb_poff, &g_cdvdman_istruct);
+	vSetAlarm(&g_cdvdman_poff_to, (unsigned int (*)(void *))alarm_cb_poff, &g_cdvdman_istruct);
 	return command;
 }
 
-int __cdecl sceCdCtrlADout(int mode, u32 *status)
+int sceCdCtrlADout(int mode, u32 *status)
 {
 	char wdata;
 
@@ -5580,7 +5580,7 @@ int __cdecl sceCdCtrlADout(int mode, u32 *status)
 	return set_prev_command(20, &wdata, sizeof(wdata), (char *)status, 1, 1);
 }
 
-int __cdecl sceCdReadClock(sceCdCLOCK *clock)
+int sceCdReadClock(sceCdCLOCK *clock)
 {
 	int retval;
 
@@ -5610,12 +5610,12 @@ int __cdecl sceCdReadClock(sceCdCLOCK *clock)
 	return retval;
 }
 
-int __cdecl sceCdRC(sceCdCLOCK *clock)
+int sceCdRC(sceCdCLOCK *clock)
 {
 	return set_prev_command(8, 0, 0, (char *)clock, 8, 1);
 }
 
-int __cdecl sceCdTrayReq(int param, u32 *traychk)
+int sceCdTrayReq(int param, u32 *traychk)
 {
 	char wdata;
 	char rdata;
@@ -5641,7 +5641,7 @@ int __cdecl sceCdTrayReq(int param, u32 *traychk)
 	
 }
 
-int __fastcall cdvdman_scmd_sender_3B(int arg1)
+int cdvdman_scmd_sender_3B(int arg1)
 {
 	char wdata;
 	char rdata;
@@ -5660,7 +5660,7 @@ int __fastcall cdvdman_scmd_sender_3B(int arg1)
 	return 0;
 }
 
-int __cdecl sceCdReadDiskID(unsigned int *id)
+int sceCdReadDiskID(unsigned int *id)
 {
 	sceCdRMode rmode;
 	char sectbuf[2048];
@@ -5709,7 +5709,7 @@ int __cdecl sceCdReadDiskID(unsigned int *id)
 	return 1;
 }
 
-int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
+int sceCdDoesUniqueKeyExist(u32 *status)
 {
 	int disktype_tmp;
 	vu8 dev5_reg_038;
@@ -5812,7 +5812,7 @@ int __cdecl sceCdDoesUniqueKeyExist(u32 *status)
 	return (dev5_reg_038 & 5) == 5;
 }
 
-int __cdecl cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3)
+int cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3)
 {
 	char ndata[7];
 
@@ -5823,7 +5823,7 @@ int __cdecl cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3)
 	return cdvdman_send_ncmd(12, ndata, sizeof(ndata), 0, 0, 1) >= 0;
 }
 
-int __cdecl sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval)
+int sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval)
 {
 	g_cdvdman_cd36key = enable_shift | shiftval;
 	dev5_regs.m_dev5_reg_03A = (16 * (shiftval & 7)) | (enable_xor ? 2 : 0) | (enable_shift ? 1 : 0);
