@@ -213,7 +213,6 @@ void *g_cdvdman_readbuf;
 iop_sys_clock_t g_cdvdman_power_off_timeout;
 char g_cdvdman_fsvrbuf[42128];
 cdvdman_internal_struct_t g_cdvdman_istruct;
-dev5_regs_t dev5_regs;
 
 int _start(int ac, char **av)
 {
@@ -306,6 +305,7 @@ void cdvdman_termcall(int with_stop)
 {
 	int i;
 	int oldstate;
+	USE_DEV5_MMIO_HWPORT();
 
 	VERBOSE_KPRINTF(1, "CDVD:library Terminate Call %d\n", with_stop);
 	if ( with_stop )
@@ -320,7 +320,7 @@ void cdvdman_termcall(int with_stop)
 	}
 	for ( i = 0; i < 50000; i += 1 )
 	{
-		if ( !(dev5_regs.m_dev5_reg_017 & 0x80) )
+		if ( !(dev5_mmio_hwport->m_dev5_reg_017 & 0x80) )
 		{
 			break;
 		}
@@ -329,7 +329,7 @@ void cdvdman_termcall(int with_stop)
 	sceCdDecSet(0, 0, 0);
 	if ( (dmac_ch_get_chcr(3) & 0x1000000) )
 	{
-		dev5_regs.m_dev5_reg_007 = 1;
+		dev5_mmio_hwport->m_dev5_reg_007 = 1;
 	}
 	dmac_ch_set_chcr(3, 0);
 	DisableIntr(IOP_IRQ_DMA_CDVD, &oldstate);
@@ -357,15 +357,16 @@ int cdrom_deinit()
 int cdvdman_devready()
 {
 	int i;
+	USE_DEV5_MMIO_HWPORT();
 
 	for ( i = 0; i < 100; i += 1 )
 	{
-		if ( (dev5_regs.m_dev5_reg_00A & 1) )
+		if ( (dev5_mmio_hwport->m_dev5_reg_00A & 1) )
 		{
 			g_cdvdman_iocache = 0;
 			return -EIO;
 		}
-		if ( (dev5_regs.m_dev5_reg_005 & 0xC0) == 0x40 && !g_cdvdman_istruct.m_read2_flag && !g_cdvdman_ee_rpc_fno )
+		if ( (dev5_mmio_hwport->m_dev5_reg_005 & 0xC0) == 0x40 && !g_cdvdman_istruct.m_read2_flag && !g_cdvdman_ee_rpc_fno )
 		{
 			return 1;
 		}
@@ -1947,13 +1948,14 @@ int sceCdGetToc(u8 *toc)
 int sceCdDiskReady(int mode)
 {
 	u32 efbits;
+	USE_DEV5_MMIO_HWPORT();
 
 	efbits = 0;
 	VERBOSE_KPRINTF(1, "DISK READY call from iop\n");
 	switch ( mode )
 	{
 		case 0:
-			VERBOSE_KPRINTF(1, "Wait Drive Ready %x\n", dev5_regs.m_dev5_reg_005);
+			VERBOSE_KPRINTF(1, "Wait Drive Ready %x\n", dev5_mmio_hwport->m_dev5_reg_005);
 			while ( 1 )
 			{
 				if ( !g_cdvdman_istruct.m_read2_flag )
@@ -1971,7 +1973,7 @@ int sceCdDiskReady(int mode)
 					default:
 						return 2;
 				}
-				while ( (dev5_regs.m_dev5_reg_005 & 0xC0) != 0x40 )
+				while ( (dev5_mmio_hwport->m_dev5_reg_005 & 0xC0) != 0x40 )
 				{
 					vDelayThread(2000);
 					WaitEventFlag(g_cdvdman_intr_efid, 1, WEF_AND, &efbits);
@@ -1979,10 +1981,10 @@ int sceCdDiskReady(int mode)
 			}
 			break;
 		case 8:
-			return (u8)dev5_regs.m_dev5_reg_005;
+			return (u8)dev5_mmio_hwport->m_dev5_reg_005;
 		case 1:
 		default:
-			if ( (dev5_regs.m_dev5_reg_005 & 0xC0) == 0x40 && !g_cdvdman_istruct.m_read2_flag )
+			if ( (dev5_mmio_hwport->m_dev5_reg_005 & 0xC0) == 0x40 && !g_cdvdman_istruct.m_read2_flag )
 			{
 				return 2;
 			}
@@ -1993,15 +1995,18 @@ int sceCdDiskReady(int mode)
 
 int sceCdGetDiskType(void)
 {
-	return (u8)dev5_regs.m_dev5_reg_00F;
+	USE_DEV5_MMIO_HWPORT();
+
+	return (u8)dev5_mmio_hwport->m_dev5_reg_00F;
 }
 
 int sceCdStatus(void)
 {
 	int reg_00A_tmp;
 	u32 status_tmp;
+	USE_DEV5_MMIO_HWPORT();
 
-	reg_00A_tmp = dev5_regs.m_dev5_reg_00A;
+	reg_00A_tmp = dev5_mmio_hwport->m_dev5_reg_00A;
 	// The following call to sceCdGetDiskType was inlined
 	if ( sceCdGetDiskType() == SCECdNODISC )
 	{
@@ -3250,6 +3255,7 @@ int cdvdman_intr_cb(cdvdman_internal_struct_t *s)
 	sceCdRMode cdrmode;
 	int oldstate;
 	int ext_passthrough;
+	USE_DEV5_MMIO_HWPORT();
 
 	ext_passthrough = 0;
 	s->m_wait_flag = s->m_waf_set_test;
@@ -3303,7 +3309,7 @@ int cdvdman_intr_cb(cdvdman_internal_struct_t *s)
 		char dev5_reg_013_masked;
 
 		VERBOSE_KPRINTF(1, "Recover_Stat:%d\n", s->m_recover_status);
-		dev5_reg_013_masked = dev5_regs.m_dev5_reg_013 & 0xF;
+		dev5_reg_013_masked = dev5_mmio_hwport->m_dev5_reg_013 & 0xF;
 		if ( dev5_reg_013_masked )
 		{
 			if ( ((u8)s->m_last_error == 48 || ((u8)s->m_last_error == 1 && s->m_last_read_timeout))
@@ -3462,22 +3468,23 @@ int intrh_cdrom(cdvdman_internal_struct_t *s)
 {
 	int conds1;
 	iop_event_info_t efinfo;
+	USE_DEV5_MMIO_HWPORT();
 
 	conds1 = 0;
 	s->m_waf_set_test = s->m_wait_flag;
 	if ( (u8)s->m_last_error != 1 )
 	{
-		s->m_last_error = dev5_regs.m_dev5_reg_006;
+		s->m_last_error = dev5_mmio_hwport->m_dev5_reg_006;
 	}
-	if ( (dev5_regs.m_dev5_reg_008 & 1) )
+	if ( (dev5_mmio_hwport->m_dev5_reg_008 & 1) )
 	{
-		s->m_waf_set_test = ( !(dev5_regs.m_dev5_reg_005 & 1) ) ? 1 : -1;
-		dev5_regs.m_dev5_reg_008 = 1;
+		s->m_waf_set_test = ( !(dev5_mmio_hwport->m_dev5_reg_005 & 1) ) ? 1 : -1;
+		dev5_mmio_hwport->m_dev5_reg_008 = 1;
 		conds1 = 1;
 	}
-	if ( (dev5_regs.m_dev5_reg_008 & 4) )
+	if ( (dev5_mmio_hwport->m_dev5_reg_008 & 4) )
 	{
-		dev5_regs.m_dev5_reg_008 = 4;
+		dev5_mmio_hwport->m_dev5_reg_008 = 4;
 		iSetEventFlag(g_cdvdman_intr_efid, 4);
 		iSetEventFlag(g_cdvdman_intr_efid, 0x10);
 		if ( g_cdvdman_poff_cb )
@@ -3493,7 +3500,7 @@ int intrh_cdrom(cdvdman_internal_struct_t *s)
 	{
 		s->m_waf_set_test = 1;
 		s->m_ncmd_intr_count += 1;
-		dev5_regs.m_dev5_reg_008 = 2;
+		dev5_mmio_hwport->m_dev5_reg_008 = 2;
 	}
 	iReferEventFlagStatus(g_cdvdman_intr_efid, &efinfo);
 	if ( !(efinfo.currBits & 0x20) )
@@ -3846,6 +3853,7 @@ void cdvdman_init()
 	unsigned int i;
 	int scres_unused;
 	u32 argres;
+	USE_DEV5_MMIO_HWPORT();
 
 	g_cdvdman_user_cb = 0;
 	g_cdvdman_poff_cb = 0;
@@ -3857,16 +3865,16 @@ void cdvdman_init()
 	sceCdSC(0xFFFFFFF3, &scres_unused);
 	dmac_set_dpcr(dmac_get_dpcr() | 0x8000);
 	dmac_ch_set_chcr(3, 0);
-	if ( (dev5_regs.m_dev5_reg_008 & 4) )
+	if ( (dev5_mmio_hwport->m_dev5_reg_008 & 4) )
 	{
-		dev5_regs.m_dev5_reg_008 = 4;
+		dev5_mmio_hwport->m_dev5_reg_008 = 4;
 	}
-	if ( (dev5_regs.m_dev5_reg_008 & 1) )
+	if ( (dev5_mmio_hwport->m_dev5_reg_008 & 1) )
 	{
-		dev5_regs.m_dev5_reg_008 = 1;
+		dev5_mmio_hwport->m_dev5_reg_008 = 1;
 	}
 	g_cdvdman_clk_flg = sceCdReadClock(&g_cdvdman_clock) ? (!g_cdvdman_clock.stat) : 0;
-	g_cdvdman_istruct.m_tray_is_open = (dev5_regs.m_dev5_reg_00A ^ 1) & 1;
+	g_cdvdman_istruct.m_tray_is_open = (dev5_mmio_hwport->m_dev5_reg_00A ^ 1) & 1;
 	cdvdman_initcfg();
 	BootMode = QueryBootMode(6);
 	g_cdvdman_istruct.m_no_dec_flag = BootMode ? ((*(u16 *)BootMode & 0xFFFC) == 0x60) : 0;
@@ -3878,6 +3886,8 @@ void cdvdman_init()
 
 int sceCdInit(int mode)
 {
+	USE_DEV5_MMIO_HWPORT();
+
 	VERBOSE_PRINTF(1, "sceCdInit called mode= %d\n", mode);
 	if ( mode == SCECdEXIT )
 	{
@@ -3915,7 +3925,7 @@ int sceCdInit(int mode)
 		VERBOSE_PRINTF(1, "sceCdInit Ready check start.\n");
 		for ( ready_status_mask_c0h = 0; ready_status_mask_c0h != 0x40; ready_status_mask_c0h = ready_status & 0xC0 )
 		{
-			ready_status = dev5_regs.m_dev5_reg_005;
+			ready_status = dev5_mmio_hwport->m_dev5_reg_005;
 			vDelayThread(10000);
 			if ( ready_status != ready_status_tmp )
 			{
@@ -4008,28 +4018,29 @@ void cdvdman_write_scmd(cdvdman_internal_struct_t *s)
 	unsigned int j;
 	unsigned int rdcnt;
 	char rdptr1[64];
+	USE_DEV5_MMIO_HWPORT();
 
 	for ( i = 0; i <= 0; i += 1 )
 	{
 		int overflowcond;
 
-		if ( (dev5_regs.m_dev5_reg_017 & 0x80) )
+		if ( (dev5_mmio_hwport->m_dev5_reg_017 & 0x80) )
 		{
 			*(u16 *)&s->m_scmd_flag = 1;
 			return;
 		}
-		while ( !(dev5_regs.m_dev5_reg_017 & 0x40) )
+		while ( !(dev5_mmio_hwport->m_dev5_reg_017 & 0x40) )
 		{
 			;
 		}
 		for ( j = 0; j < (u8)s->m_sdlen; j += 1 )
 		{
-			dev5_regs.m_dev5_reg_017 = s->m_scmd_sd[j];
+			dev5_mmio_hwport->m_dev5_reg_017 = s->m_scmd_sd[j];
 		}
-		dev5_regs.m_dev5_reg_016 = s->m_scmd;
+		dev5_mmio_hwport->m_dev5_reg_016 = s->m_scmd;
 		if ( QueryIntrContext() )
 		{
-			for ( j = 0; dev5_regs.m_dev5_reg_017 & 0x80; j += 1 )
+			for ( j = 0; dev5_mmio_hwport->m_dev5_reg_017 & 0x80; j += 1 )
 			{
 				if ( j > 12500000 )
 				{
@@ -4040,7 +4051,7 @@ void cdvdman_write_scmd(cdvdman_internal_struct_t *s)
 		}
 		else
 		{
-			for ( j = 0; dev5_regs.m_dev5_reg_017 & 0x80; j += 1 )
+			for ( j = 0; dev5_mmio_hwport->m_dev5_reg_017 & 0x80; j += 1 )
 			{
 				DelayThread(100);
 				if ( j > 50000 )
@@ -4053,11 +4064,11 @@ void cdvdman_write_scmd(cdvdman_internal_struct_t *s)
 		overflowcond = 0;
 		for ( j = 0; j < (u8)s->m_rdlen; j += 1 )
 		{
-			if ( (dev5_regs.m_dev5_reg_017 & 0x40) )
+			if ( (dev5_mmio_hwport->m_dev5_reg_017 & 0x40) )
 			{
 				break;
 			}
-			rdptr1[j] = dev5_regs.m_dev5_reg_018;
+			rdptr1[j] = dev5_mmio_hwport->m_dev5_reg_018;
 		}
 		if ( j >= (u8)s->m_rdlen )
 		{
@@ -4100,6 +4111,7 @@ int cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int r
 	int j;
 	char rdstart[64];
 	u32 efbits;
+	USE_DEV5_MMIO_HWPORT();
 
 	if ( check_sef == 1 && PollEventFlag(g_scmd_evid, 1, WEF_AND | WEF_CLEAR, &efbits) == KE_EVF_COND )
 	{
@@ -4109,7 +4121,7 @@ int cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int r
 	{
 		int cmdresoverflow;
 
-		if ( (dev5_regs.m_dev5_reg_017 & 0x80) )
+		if ( (dev5_mmio_hwport->m_dev5_reg_017 & 0x80) )
 		{
 			if ( check_sef == 1 )
 			{
@@ -4117,21 +4129,21 @@ int cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int r
 			}
 			return 0;
 		}
-		while ( !(dev5_regs.m_dev5_reg_017 & 0x40) )
+		while ( !(dev5_mmio_hwport->m_dev5_reg_017 & 0x40) )
 		{
 			;
 		}
 		for ( j = 0; j < sdlen; j += 1 )
 		{
-			dev5_regs.m_dev5_reg_017 = ((u8 *)sdata)[j];
+			dev5_mmio_hwport->m_dev5_reg_017 = ((u8 *)sdata)[j];
 		}
-		dev5_regs.m_dev5_reg_016 = cmd;
-		while ( (dev5_regs.m_dev5_reg_017 & 0x80) )
+		dev5_mmio_hwport->m_dev5_reg_016 = cmd;
+		while ( (dev5_mmio_hwport->m_dev5_reg_017 & 0x80) )
 		{
 			DelayThread(100);
 		}
 		cmdresoverflow = 0;
-		for ( j = 0; !(dev5_regs.m_dev5_reg_017 & 0x40); j += 1 )
+		for ( j = 0; !(dev5_mmio_hwport->m_dev5_reg_017 & 0x40); j += 1 )
 		{
 			if ( j >= rdlen )
 			{
@@ -4139,14 +4151,14 @@ int cdvdman_send_scmd2(int cmd, const void *sdata, int sdlen, void *rdata, int r
 				VERBOSE_KPRINTF(1, "Prev Cmd Result Over Flow\n");
 				break;
 			}
-			rdstart[j] = dev5_regs.m_dev5_reg_018;
+			rdstart[j] = dev5_mmio_hwport->m_dev5_reg_018;
 		}
 		if ( (!cmdresoverflow && j >= rdlen) || rdlen == 16 )
 		{
 			break;
 		}
 		VERBOSE_KPRINTF(1, "Prev Cmd Result Illegal Size Try count:%d\n", i);
-		while ( !(dev5_regs.m_dev5_reg_017 & 0x20) )
+		while ( !(dev5_mmio_hwport->m_dev5_reg_017 & 0x20) )
 		{
 			;
 		}
@@ -4228,6 +4240,7 @@ int sceCdBreak(void)
 	u32 efbits;
 	int state;
 	int oldstate;
+	USE_DEV5_MMIO_HWPORT();
 
 	if ( PollEventFlag(g_ncmd_evid, 1, WEF_AND | WEF_CLEAR, &efbits) == KE_EVF_COND )
 	{
@@ -4262,14 +4275,14 @@ int sceCdBreak(void)
 	}
 	if ( !g_cdvdman_istruct.m_wait_flag || g_cdvdman_istruct.m_last_read_timeout )
 	{
-		if ( (dev5_regs.m_dev5_reg_005 & 0xC0) == 0x40 )
+		if ( (dev5_mmio_hwport->m_dev5_reg_005 & 0xC0) == 0x40 )
 		{
 			VERBOSE_KPRINTF(1, "cdvd: NonInter END\n");
 			g_cdvdman_istruct.m_wait_flag = 1;
 		}
 		g_cdvdman_last_cmdfunc = g_cdvdman_cmdfunc;
 		g_cdvdman_cmdfunc = SCECdFuncBreak;
-		dev5_regs.m_dev5_reg_007 = 1;
+		dev5_mmio_hwport->m_dev5_reg_007 = 1;
 		if ( g_cdvdman_istruct.m_last_read_timeout )
 		{
 			DisableIntr(IOP_IRQ_DMA_CDVD, &oldstate);
@@ -4326,9 +4339,11 @@ int intrh_dma_3(cdvdman_internal_struct_t *s)
 
 int cdvdman_setdma3(cdvdman_dma3_parameter_t *dma3_param)
 {
+	USE_DEV5_MMIO_HWPORT();
+
 	if ( (dmac_ch_get_chcr(3) & 0x1000000) )
 	{
-		dev5_regs.m_dev5_reg_007 = 1;
+		dev5_mmio_hwport->m_dev5_reg_007 = 1;
 	}
 	g_cdvdman_istruct.m_drive_interupt_request = 0;
 	g_cdvdman_istruct.m_dma3_param.m_dma3_blkwords = dma3_param->m_dma3_blkwords;
@@ -4346,7 +4361,7 @@ int cdvdman_setdma3(cdvdman_dma3_parameter_t *dma3_param)
 		vClearEventFlag(g_cdvdman_intr_efid, ~0x20);
 		EnableIntr(35);
 	}
-	dev5_regs.m_dev5_reg_006 = dma3_param->m_cdvdreg_howto;
+	dev5_mmio_hwport->m_dev5_reg_006 = dma3_param->m_cdvdreg_howto;
 	dmac_ch_set_madr(3, (u32)dma3_param->m_dma3_maddress);
 	dmac_ch_set_bcr(3, (dma3_param->m_dma3_blkcount * (dma3_param->m_dma3_csectors ? dma3_param->m_dma3_csectors : 1)) << 16 | dma3_param->m_dma3_blkwords);
 	dmac_ch_set_chcr(3, 0x41000200);
@@ -4357,12 +4372,13 @@ int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, cdvdman_
 {
 	int i;
 	u32 efbits;
+	USE_DEV5_MMIO_HWPORT();
 
 	if ( check_cb == 1 && PollEventFlag(g_ncmd_evid, 1, WEF_AND | WEF_CLEAR, &efbits) == KE_EVF_COND )
 	{
 		return -1;
 	}
-	if ( (dev5_regs.m_dev5_reg_005 & 0xC0) != 0x40
+	if ( (dev5_mmio_hwport->m_dev5_reg_005 & 0xC0) != 0x40
 		|| !g_cdvdman_istruct.m_wait_flag
 		|| !(g_cdvdman_istruct.m_read2_flag != 1 || ncmd == 8)
 		|| !(g_cdvdman_istruct.m_read2_flag != 2 || ncmd == 6) )
@@ -4371,7 +4387,7 @@ int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, cdvdman_
 		{
 			vSetEventFlag(g_ncmd_evid, 1);
 		}
-		VERBOSE_KPRINTF(1, "set_cd_commnad Error\tstat %02x\n", (u8)dev5_regs.m_dev5_reg_005);
+		VERBOSE_KPRINTF(1, "set_cd_commnad Error\tstat %02x\n", (u8)dev5_mmio_hwport->m_dev5_reg_005);
 		return -1;
 	}
 	g_cdvdman_iocache = 0;
@@ -4393,9 +4409,9 @@ int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, cdvdman_
 		g_cdvdman_ncmd_timeout.hi = 0;
 		g_cdvdman_ncmd_timeout.lo = 0x6978000;
 		vSetAlarm(&g_cdvdman_ncmd_timeout, (unsigned int (*)(void *))ncmd_timeout_alarm_cb, &g_cdvdman_ncmd_timeout);
-		while ( dev5_regs.m_dev5_reg_00A != 10 )
+		while ( dev5_mmio_hwport->m_dev5_reg_00A != 10 )
 		{
-			VERBOSE_KPRINTF(1, "Read Pause 1 chk status 0x%02x\n", dev5_regs.m_dev5_reg_00A);
+			VERBOSE_KPRINTF(1, "Read Pause 1 chk status 0x%02x\n", dev5_mmio_hwport->m_dev5_reg_00A);
 			if ( !g_cdvdman_ncmd_timeout.lo )
 			{
 				g_cdvdman_ncmd = ncmd;
@@ -4430,9 +4446,9 @@ int cdvdman_send_ncmd(int ncmd, const void *ndata, int ndlen, int func, cdvdman_
 	}
 	for ( i = 0; i < ndlen; i += 1 )
 	{
-		dev5_regs.m_dev5_reg_005 = ((u8 *)ndata)[i];
+		dev5_mmio_hwport->m_dev5_reg_005 = ((u8 *)ndata)[i];
 	}
-	dev5_regs.m_dev5_reg_004 = ncmd;
+	dev5_mmio_hwport->m_dev5_reg_004 = ncmd;
 	if ( check_cb == 1 )
 	{
 		vSetEventFlag(g_ncmd_evid, 1);
@@ -4462,13 +4478,14 @@ int cdvdman_mediactl(int code)
 	int restmp;
 	u32 efbits;
 	int rdata;
+	USE_DEV5_MMIO_HWPORT();
 
 	rdata = 0;
 	if ( PollEventFlag(g_scmd_evid, 1, WEF_AND | WEF_CLEAR, &efbits) == KE_EVF_COND )
 	{
 		return 0;
 	}
-	reg_00B_tmp_1 = dev5_regs.m_dev5_reg_00B & 1;
+	reg_00B_tmp_1 = dev5_mmio_hwport->m_dev5_reg_00B & 1;
 	if ( reg_00B_tmp_1 == g_cdvdman_chmedia )
 	{
 		restmp = 0;
@@ -4488,14 +4505,14 @@ int cdvdman_mediactl(int code)
 		}
 		restmp = 1;
 	}
-	if ( ((dev5_regs.m_dev5_reg_00A) & 1) != reg_00B_tmp_1 )
+	if ( ((dev5_mmio_hwport->m_dev5_reg_00A) & 1) != reg_00B_tmp_1 )
 	{
 		while ( !set_prev_command(5, 0, 0, (char *)&rdata, 1, 0) || rdata )
 		{
 			vDelayThread(4000);
 		}
 	}
-	g_cdvdman_chmedia = dev5_regs.m_dev5_reg_00B & 1;
+	g_cdvdman_chmedia = dev5_mmio_hwport->m_dev5_reg_00B & 1;
 	vSetEventFlag(g_scmd_evid, 1);
 	return restmp;
 }
@@ -4628,8 +4645,10 @@ int cdvdman_ncmd_sender_0B()
 
 int readtoc_timeout_alarm_cb(iop_sys_clock_t *sys_clock)
 {
+	USE_DEV5_MMIO_HWPORT();
+
 	KPRINTF("Cmd Time Out %d(msec)\n", sys_clock->lo / 0x9000);
-	dev5_regs.m_dev5_reg_007 = 1;
+	dev5_mmio_hwport->m_dev5_reg_007 = 1;
 	sys_clock->lo = 0;
 	return 0;
 }
@@ -5678,6 +5697,7 @@ int sceCdReadDiskID(unsigned int *id)
 	sceCdRMode rmode;
 	char sectbuf[2048];
 	u32 efbits;
+	USE_DEV5_MMIO_HWPORT();
 
 	*((u8 *)id + 4) = 0;
 	*((u8 *)id + 3) = 0;
@@ -5708,16 +5728,16 @@ int sceCdReadDiskID(unsigned int *id)
 		return 0;
 	}
 	WaitEventFlag(g_scmd_evid, 1, WEF_AND, &efbits);
-	if ( !(dev5_regs.m_dev5_reg_038 & 4) )
+	if ( !(dev5_mmio_hwport->m_dev5_reg_038 & 4) )
 	{
 		vSetEventFlag(g_scmd_evid, 1);
 		return 0;
 	}
-	*(u8 *)id = dev5_regs.m_dev5_reg_030 ^ dev5_regs.m_dev5_reg_039;
-	*((u8 *)id + 1) = dev5_regs.m_dev5_reg_031 ^ dev5_regs.m_dev5_reg_039;
-	*((u8 *)id + 2) = dev5_regs.m_dev5_reg_032 ^ dev5_regs.m_dev5_reg_039;
-	*((u8 *)id + 3) = dev5_regs.m_dev5_reg_033 ^ dev5_regs.m_dev5_reg_039;
-	*((u8 *)id + 4) = dev5_regs.m_dev5_reg_034 ^ dev5_regs.m_dev5_reg_039;
+	*(u8 *)id = dev5_mmio_hwport->m_dev5_reg_030 ^ dev5_mmio_hwport->m_dev5_reg_039;
+	*((u8 *)id + 1) = dev5_mmio_hwport->m_dev5_reg_031 ^ dev5_mmio_hwport->m_dev5_reg_039;
+	*((u8 *)id + 2) = dev5_mmio_hwport->m_dev5_reg_032 ^ dev5_mmio_hwport->m_dev5_reg_039;
+	*((u8 *)id + 3) = dev5_mmio_hwport->m_dev5_reg_033 ^ dev5_mmio_hwport->m_dev5_reg_039;
+	*((u8 *)id + 4) = dev5_mmio_hwport->m_dev5_reg_034 ^ dev5_mmio_hwport->m_dev5_reg_039;
 	vSetEventFlag(g_scmd_evid, 1);
 	return 1;
 }
@@ -5730,6 +5750,7 @@ int sceCdDoesUniqueKeyExist(u32 *status)
 	char ndata[7];
 	int state;
 	u32 efbits;
+	USE_DEV5_MMIO_HWPORT();
 
 	disktype_tmp = 0;
 	if ( !g_cdvdman_istruct.m_cd_inited )
@@ -5763,7 +5784,7 @@ int sceCdDoesUniqueKeyExist(u32 *status)
 	}
 	else
 	{
-		dev5_regs.m_dev5_reg_007 = 1;
+		dev5_mmio_hwport->m_dev5_reg_007 = 1;
 		CpuResumeIntr(state);
 		sceCdSync(3);
 	}
@@ -5820,7 +5841,7 @@ int sceCdDoesUniqueKeyExist(u32 *status)
 		vSetEventFlag(g_scmd_evid, 1);
 		return 0;
 	}
-	dev5_reg_038 = dev5_regs.m_dev5_reg_038;
+	dev5_reg_038 = dev5_mmio_hwport->m_dev5_reg_038;
 	vSetEventFlag(g_scmd_evid, 1);
 	return (dev5_reg_038 & 5) == 5;
 }
@@ -5840,8 +5861,10 @@ int cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3)
 int sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval)
 {
 #if CDVD_VARIANT_DNAS
+	USE_DEV5_MMIO_HWPORT();
+
 	g_cdvdman_cd36key = enable_shift | shiftval;
-	dev5_regs.m_dev5_reg_03A = (16 * (shiftval & 7)) | ((!!enable_xor) << 1) | (!!enable_shift);
+	dev5_mmio_hwport->m_dev5_reg_03A = (16 * (shiftval & 7)) | ((!!enable_xor) << 1) | (!!enable_shift);
 #endif
 	return 1;
 }

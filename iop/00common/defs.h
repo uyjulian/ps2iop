@@ -130,7 +130,7 @@ typedef unsigned long u_long;
 
 #if 1
 #include <cdvdman.h>
-typedef struct _dev5_regs
+typedef struct dev5_mmio_hwport_
 {
 	vu8 m_dev5_reg_000;
 	vu8 m_dev5_reg_001;
@@ -191,7 +191,15 @@ typedef struct _dev5_regs
 	vu8 m_dev5_reg_038;
 	vu8 m_dev5_reg_039;
 	vu8 m_dev5_reg_03A;
-} dev5_regs_t;
+} dev5_mmio_hwport_t;
+
+#if !defined(USE_DEV5_MMIO_HWPORT) && defined(_IOP)
+// cppcheck-suppress-macro constVariablePointer
+#define USE_DEV5_MMIO_HWPORT() dev5_mmio_hwport_t *const dev5_mmio_hwport = (dev5_mmio_hwport_t *)0xBF402000
+#endif
+#if !defined(USE_DEV5_MMIO_HWPORT)
+#define USE_DEV5_MMIO_HWPORT()
+#endif
 
 typedef struct cdrom_stm_devctl_
 {
