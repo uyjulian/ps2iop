@@ -8,118 +8,74 @@ IRX_ID("cdvd_ee_driver", 2, 38);
 
 extern struct irx_export_table _exp_cdvdfsv;
 
-int cdvdfsv_checkdmastat(int trid);
-int cdvdfsv_cleanuprpc();
-int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi);
-int cdvdfsv_init();
-void cdvdfsv_main_th(void *arg);
+static int cdvdfsv_init();
+static void cdvdfsv_main_th(void *arg);
 int *cdvdfsv_4(int arg1);
-void cdvdfsv_parseargs(int ac, char **av);
-int sceCdChangeThreadPriority(int priority);
-void *cbrpc_rpc1_cdinit(int fno, void *buffer, int length);
-void cdvdfsv_rpc3_16_break(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void *cbrpc_rpc4_fscall(int fno, void *buffer, int length);
-int read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock);
-void cdvdfsv_rpc5_0D_iopmread(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
-u8 cdvdfsv_syncdec(int flag, int xorkey, int arg2, u8 data);
-int cdvdfsv_cb_read();
-int cdvdfsv_checksid(u32 lsn, u32 sectors, u32 ps2dvd, void *buf, int decflag, int decshift, u32 *syncdec_mask);
-int readproc2(u32 lsn, u32 nsec, sceCdRMode *mode, u32 sector_size_selection, int do_multi_retries, int enable_dec_shift, int dec_shift, char *ee_addr, int fssift, int secsize, int dmasize, SifDmaTransfer_t *post_dmat);
-int readproc1(unsigned int lsn, u32 nsec, void *retptr, sceCdRMode *rmode, int ps2dvd, int enable_retries, int dec_shift_enable, int dec_shift_value);
-void cdvdfsv_rpc5_01_readee(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf, u32 ps2dvd, int sync, int decflag);
-int cdvdfsv_chreadee(int secoffs, int seccount, char *ee_addr, const sceCdRMode *in_rmode, u32 disktype_14, int sync);
-void cdvdfsv_rpc5_0F_readchain(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
-void cdvdfsv_rpc5_02_readcdda(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
-void *cbrpc_rpc2_diskready(int fno, void *buffer, int length);
-void cdvdfsv_rpc5_04_gettoc(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
-void cdvdfsv_rpc3_03_disktype(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_0C_cdstatus(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_06_ri(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_1A_rm(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-#if CDVD_VARIANT_DNAS
-void cdvdfsv_rpc3_24_readguid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_26_readmodelid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-#endif
-void cdvdfsv_rpc3_22_mmode(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_23_changethreadpriority(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_21_poweroff(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_15_ctrladout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-#if CDVD_VARIANT_DNAS
-void cdvdfsv_rpc5_11_readdiskid(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
-void cdvdfsv_rpc5_17_doesuniquekeyexist(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
-#endif
-void cdvdfsv_rpc3_0B_applyscmd(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc5_0C_applyncmd(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf);
-void cdvdfsv_rpc3_04_geterror(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_05_trayreq(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_25_settimeout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-void cdvdfsv_rpc3_27_readdvddualinfo(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf);
-int cdvdfsv_rpc5_0E_diskready();
-void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length);
-void *cbrpc_rpc3_cdvdscmds(int fno, void *buffer, int length);
-void cdvdfsv_poffloop();
-void cdvdfsv_rpc1_th(void *arg);
-void cdvdfsv_rpc3_th(void *arg);
-void cdvdfsv_rpc2_th(void *arg);
+static void cdvdfsv_parseargs(int ac, char **av);
+static void cdvdfsv_poffloop();
+static void cdvdfsv_rpc1_th(void *arg);
+static void cdvdfsv_rpc3_th(void *arg);
+static void cdvdfsv_rpc2_th(void *arg);
 unsigned int optimized_memcpy(char *dst, const char *src, unsigned int n);
 
-int g_cdvdfsv_def_pri = 81;
-int g_verbose_level = 0;
-int g_cdvdfsv_spinctl = -1;
-int g_cdvdfsv_plbreak = 0;
-int g_cdvdfsv_nopocm = 0;
-int g_cdvdfsv_rpc5flg = 0;
-int g_cdvdfsv_rpc3flg = 0;
-iop_library_t g_modload_libinfo = { NULL, NULL, 256, 0, "modload", { NULL } };
-int g_cdvdfsv_r2retry = 0;
-int g_cdvdfsv_r2count = 0;
-int g_cdvdfsv_sid_err_recover_cnt = 0;
-int g_cdvdfsv_err_count = 0;
-int g_dword_405750[2];
-void *cdvdfsv_fsvrbuf;
-int g_dword_40575C;
-char *g_cdvdfsv_rtocbuf;
-SifDmaTransfer_t g_cdvdfsv_fssdd;
-SifDmaTransfer_t g_cdvdfsv_iomrsdd;
-SifDmaTransfer_t g_cdvdfsv_rdp2sdd;
-SifDmaTransfer_t g_cdvdfsv_multi_dmat[16];
-sceCdRMode g_cdvdfsv_rmodeee;
-SifDmaTransfer_t g_cdvdfsv_datasdd;
-SifDmaTransfer_t g_cdvdfsv_eerpsdd;
-SifDmaTransfer_t g_cdvdfsv_chrdsdd;
-SifDmaTransfer_t g_cdvdfsv_eereadfull_dma1;
-SifDmaTransfer_t g_cdvdfsv_eereadfull_dma2;
-SifDmaTransfer_t g_cdvdfsv_rtocsdd;
-iop_sys_clock_t g_cdvdfsv_read_timeout;
-int g_cdvdman_intr_efid;
-int g_scmd_evid;
-int g_cdvdfsv_thids[4];
-cdvdman_internal_struct_t *g_cdvdman_istruct_ptr;
-cdvdfsv_rpc1_outpacket_t g_cdvdfsv_initres;
-cdvdfsv_unaligned_data_outpacket_t g_cdvdfsv_eereadx;
-SifRpcDataQueue_t g_rpc_qdata2;
-SifRpcDataQueue_t g_rpc_qdata1;
-SifRpcDataQueue_t g_rpc_qdata3;
-SifRpcServerData_t g_rpc_sdata1;
-SifRpcServerData_t g_rpc_sdata4;
-SifRpcServerData_t g_rpc_sdata5;
-SifRpcServerData_t g_rpc_sdata2;
-SifRpcServerData_t g_rpc_sdata6;
-SifRpcServerData_t g_rpc_sdata3;
-cdvdfsv_rpc4_outpacket_t g_cdvdfsv_srchres;
-int g_cdvdfsv_readpos;
-int g_cdvdfsv_rderror;
-cdvdfsv_rpc2_outpacket_t g_diskready_res;
-cdvdfsv_rpc5_outpacket_t g_crr;
-cdvdfsv_rpc3_outpacket_t g_outbuf;
-int g_rpc_buffer3[260];
-int g_rpc_buffer5[256];
-int g_rpc_buffer1[4];
-int g_rpc_buffer4[76];
-int g_rpc_buffer2[4];
+static int g_cdvdfsv_def_pri = 81;
+static int g_verbose_level = 0;
+static int g_cdvdfsv_spinctl = -1;
+static int g_cdvdfsv_plbreak = 0;
+static int g_cdvdfsv_nopocm = 0;
+static int g_cdvdfsv_rpc5flg = 0;
+static int g_cdvdfsv_rpc3flg = 0;
+#if 0
+static iop_library_t g_modload_libinfo = { NULL, NULL, 256, 0, "modload", { NULL } };
+#endif
+static int g_cdvdfsv_r2retry = 0;
+static int g_cdvdfsv_r2count = 0;
+static int g_cdvdfsv_sid_err_recover_cnt = 0;
+static int g_cdvdfsv_err_count = 0;
+static int g_dword_405750[2];
+static void *cdvdfsv_fsvrbuf;
+static int g_dword_40575C;
+static char *g_cdvdfsv_rtocbuf;
+static SifDmaTransfer_t g_cdvdfsv_fssdd;
+static SifDmaTransfer_t g_cdvdfsv_iomrsdd;
+static SifDmaTransfer_t g_cdvdfsv_rdp2sdd;
+static SifDmaTransfer_t g_cdvdfsv_multi_dmat[16];
+static sceCdRMode g_cdvdfsv_rmodeee;
+static SifDmaTransfer_t g_cdvdfsv_datasdd;
+static SifDmaTransfer_t g_cdvdfsv_eerpsdd;
+static SifDmaTransfer_t g_cdvdfsv_chrdsdd;
+static SifDmaTransfer_t g_cdvdfsv_eereadfull_dma1;
+static SifDmaTransfer_t g_cdvdfsv_eereadfull_dma2;
+static SifDmaTransfer_t g_cdvdfsv_rtocsdd;
+static iop_sys_clock_t g_cdvdfsv_read_timeout;
+static int g_cdvdman_intr_efid;
+static int g_scmd_evid;
+static int g_cdvdfsv_thids[4];
+static cdvdman_internal_struct_t *g_cdvdman_istruct_ptr;
+static cdvdfsv_rpc1_outpacket_t g_cdvdfsv_initres;
+static cdvdfsv_unaligned_data_outpacket_t g_cdvdfsv_eereadx;
+static SifRpcDataQueue_t g_rpc_qdata2;
+static SifRpcDataQueue_t g_rpc_qdata1;
+static SifRpcDataQueue_t g_rpc_qdata3;
+static SifRpcServerData_t g_rpc_sdata1;
+static SifRpcServerData_t g_rpc_sdata4;
+static SifRpcServerData_t g_rpc_sdata5;
+static SifRpcServerData_t g_rpc_sdata2;
+static SifRpcServerData_t g_rpc_sdata6;
+static SifRpcServerData_t g_rpc_sdata3;
+static cdvdfsv_rpc4_outpacket_t g_cdvdfsv_srchres;
+static int g_cdvdfsv_readpos;
+static int g_cdvdfsv_rderror;
+static cdvdfsv_rpc2_outpacket_t g_diskready_res;
+static cdvdfsv_rpc5_outpacket_t g_crr;
+static cdvdfsv_rpc3_outpacket_t g_outbuf;
+static int g_rpc_buffer3[260];
+static int g_rpc_buffer5[256];
+static int g_rpc_buffer1[4];
+static int g_rpc_buffer4[76];
+static int g_rpc_buffer2[4];
 
-int cdvdfsv_checkdmastat(int trid)
+static int cdvdfsv_checkdmastat(int trid)
 {
 	int retval;
 	int state;
@@ -132,7 +88,7 @@ int cdvdfsv_checkdmastat(int trid)
 	return retval;
 }
 
-int cdvdfsv_cleanuprpc()
+static int cdvdfsv_cleanuprpc()
 {
 	unsigned int i;
 
@@ -209,7 +165,7 @@ int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 #endif
 }
 
-int cdvdfsv_init()
+static int cdvdfsv_init()
 {
 	const int *BootMode;
 	iop_thread_t thparam;
@@ -237,7 +193,7 @@ int cdvdfsv_init()
 	return 0;
 }
 
-void cdvdfsv_main_th(void *arg)
+static void cdvdfsv_main_th(void *arg)
 {
 	iop_thread_t thparam1;
 	iop_thread_t thparam2;
@@ -281,7 +237,7 @@ int *cdvdfsv_4(int arg1)
 	return &g_verbose_level;
 }
 
-void cdvdfsv_parseargs(int ac, char **av)
+static void cdvdfsv_parseargs(int ac, char **av)
 {
 	int i;
 
@@ -319,7 +275,7 @@ int sceCdChangeThreadPriority(int priority)
 	return 0;
 }
 
-void *cbrpc_rpc1_cdinit(int fno, void *buffer, int length)
+static void *cbrpc_rpc1_cdinit(int fno, void *buffer, int length)
 {
 	int scres_unused;
 
@@ -337,7 +293,7 @@ void *cbrpc_rpc1_cdinit(int fno, void *buffer, int length)
 	return (void *)&g_cdvdfsv_initres;
 }
 
-void cdvdfsv_rpc3_16_break(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_16_break(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	(void)inbuf;
 	(void)buflen;
@@ -347,7 +303,7 @@ void cdvdfsv_rpc3_16_break(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdv
 	outbuf->m_retres = 1;
 }
 
-void *cbrpc_rpc4_fscall(int fno, void *buffer, int length)
+static void *cbrpc_rpc4_fscall(int fno, void *buffer, int length)
 {
 	int scres;
 	int state;
@@ -399,7 +355,7 @@ void *cbrpc_rpc4_fscall(int fno, void *buffer, int length)
 	return (void *)&g_cdvdfsv_srchres;
 }
 
-int read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
+static int read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 {
 	int read_timeout;
 
@@ -409,7 +365,7 @@ int read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 	return !sceCdBreak();
 }
 
-void cdvdfsv_rpc5_0D_iopmread(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
+static void cdvdfsv_rpc5_0D_iopmread(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
 {
 	int cmd_error;
 	int trid;
@@ -454,18 +410,18 @@ void cdvdfsv_rpc5_0D_iopmread(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, 
 	}
 }
 
-u8 cdvdfsv_syncdec(int flag, int xorkey, int arg2, u8 data)
+static u8 cdvdfsv_syncdec(int flag, int xorkey, int arg2, u8 data)
 {
 	return flag ? (((data << (arg2 % 8)) | (data >> (8 - arg2 % 8))) ^ xorkey) : data;
 }
 
-int cdvdfsv_cb_read()
+static int cdvdfsv_cb_read()
 {
 	iSetEventFlag(g_cdvdman_intr_efid, 0x20);
 	return 0;
 }
 
-int cdvdfsv_checksid(u32 lsn, u32 sectors, u32 ps2dvd, void *buf, int decflag, int decshift, u32 *syncdec_mask)
+static int cdvdfsv_checksid(u32 lsn, u32 sectors, u32 ps2dvd, void *buf, int decflag, int decshift, u32 *syncdec_mask)
 {
 	int scret;
 	u32 i;
@@ -524,7 +480,7 @@ int cdvdfsv_checksid(u32 lsn, u32 sectors, u32 ps2dvd, void *buf, int decflag, i
 	return 1;
 }
 
-int readproc2(
+static int readproc2(
 				u32 lsn,
 				u32 nsec,
 				sceCdRMode *mode,
@@ -827,7 +783,7 @@ int readproc2(
 	return 0;
 }
 
-int readproc1(
+static int readproc1(
 				unsigned int lsn,
 				u32 nsec,
 				void *retptr,
@@ -899,7 +855,7 @@ int readproc1(
 	return 0;
 }
 
-void cdvdfsv_rpc5_01_readee(
+static void cdvdfsv_rpc5_01_readee(
 				const cdvdfsv_rpc5_inpacket_t *inbuf,
 				int buflen,
 				cdvdfsv_rpc5_outpacket_t *outbuf,
@@ -1157,7 +1113,7 @@ void cdvdfsv_rpc5_01_readee(
 	outbuf->m_retres = buf_offs_sum;
 }
 
-int cdvdfsv_chreadee(
+static int cdvdfsv_chreadee(
 				int secoffs,
 				int seccount,
 				char *ee_addr,
@@ -1538,7 +1494,7 @@ void *cbrpc_rpc2_diskready(int fno, void *buffer, int length)
 	return (void *)&g_diskready_res;
 }
 
-void cdvdfsv_rpc5_04_gettoc(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
+static void cdvdfsv_rpc5_04_gettoc(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
 {
 	int trid;
 	int state;
@@ -1577,7 +1533,7 @@ void cdvdfsv_rpc5_04_gettoc(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cd
 	}
 }
 
-void cdvdfsv_rpc3_03_disktype(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_03_disktype(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	(void)inbuf;
 	(void)buflen;
@@ -1585,7 +1541,7 @@ void cdvdfsv_rpc3_03_disktype(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, 
 	outbuf->m_retres = sceCdGetDiskType();
 }
 
-void cdvdfsv_rpc3_0C_cdstatus(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_0C_cdstatus(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	(void)inbuf;
 	(void)buflen;
@@ -1593,7 +1549,7 @@ void cdvdfsv_rpc3_0C_cdstatus(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, 
 	outbuf->m_retres = sceCdStatus();
 }
 
-void cdvdfsv_rpc3_06_ri(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_06_ri(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
 	u32 efbits;
@@ -1609,7 +1565,7 @@ void cdvdfsv_rpc3_06_ri(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfs
 	}
 }
 
-void cdvdfsv_rpc3_1A_rm(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_1A_rm(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
 	u32 efbits;
@@ -1626,7 +1582,7 @@ void cdvdfsv_rpc3_1A_rm(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfs
 }
 
 #if CDVD_VARIANT_DNAS
-void cdvdfsv_rpc3_24_readguid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_24_readguid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
 	u32 efbits;
@@ -1642,7 +1598,7 @@ void cdvdfsv_rpc3_24_readguid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, 
 	}
 }
 
-void cdvdfsv_rpc3_26_readmodelid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_26_readmodelid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
 	u32 efbits;
@@ -1659,7 +1615,7 @@ void cdvdfsv_rpc3_26_readmodelid(const cdvdfsv_rpc3_inpacket_t *inbuf, int bufle
 }
 #endif
 
-void cdvdfsv_rpc3_22_mmode(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_22_mmode(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	if ( buflen == 4 || !inbuf->m_pkt_22.m_char4 )
 	{
@@ -1667,14 +1623,14 @@ void cdvdfsv_rpc3_22_mmode(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdv
 	}
 }
 
-void cdvdfsv_rpc3_23_changethreadpriority(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_23_changethreadpriority(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	(void)buflen;
 
 	outbuf->m_retres = sceCdChangeThreadPriority(inbuf->m_pkt_23.m_priority);
 }
 
-void cdvdfsv_rpc3_21_poweroff(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_21_poweroff(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
 	u32 efbits;
@@ -1690,7 +1646,7 @@ void cdvdfsv_rpc3_21_poweroff(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, 
 	}
 }
 
-void cdvdfsv_rpc3_15_ctrladout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_15_ctrladout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
 	u32 efbits;
@@ -1705,7 +1661,7 @@ void cdvdfsv_rpc3_15_ctrladout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen,
 	}
 }
 
-void cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
 	u32 efbits;
@@ -1722,7 +1678,7 @@ void cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen,
 }
 
 #if CDVD_VARIANT_DNAS
-void cdvdfsv_rpc5_11_readdiskid(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
+static void cdvdfsv_rpc5_11_readdiskid(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
 {
 	(void)inbuf;
 	(void)buflen;
@@ -1730,7 +1686,7 @@ void cdvdfsv_rpc5_11_readdiskid(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen
 	outbuf->m_retres = sceCdReadDiskID((unsigned int *)&(outbuf->m_pkt_11.m_diskid));
 }
 
-void cdvdfsv_rpc5_17_doesuniquekeyexist(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
+static void cdvdfsv_rpc5_17_doesuniquekeyexist(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
 {
 	(void)inbuf;
 	(void)buflen;
@@ -1739,7 +1695,7 @@ void cdvdfsv_rpc5_17_doesuniquekeyexist(const cdvdfsv_rpc5_inpacket_t *inbuf, in
 }
 #endif
 
-void cdvdfsv_rpc3_0B_applyscmd(
+static void cdvdfsv_rpc3_0B_applyscmd(
 				const cdvdfsv_rpc3_inpacket_t *inbuf,
 				int buflen,
 				cdvdfsv_rpc3_outpacket_t *outbuf)
@@ -1749,7 +1705,7 @@ void cdvdfsv_rpc3_0B_applyscmd(
 	sceCdApplySCmd(inbuf->m_pkt_0B.m_cmdNum, &inbuf->m_pkt_0B.m_inBuff, inbuf->m_pkt_0B.m_inBuffSize, &(outbuf->m_pkt_0B.m_outbuf));
 }
 
-void cdvdfsv_rpc5_0C_applyncmd(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
+static void cdvdfsv_rpc5_0C_applyncmd(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
 {
 	(void)buflen;
 
@@ -1757,7 +1713,7 @@ void cdvdfsv_rpc5_0C_applyncmd(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen,
 	sceCdSync(2);
 }
 
-void cdvdfsv_rpc3_04_geterror(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_04_geterror(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	(void)inbuf;
 	(void)buflen;
@@ -1765,7 +1721,7 @@ void cdvdfsv_rpc3_04_geterror(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, 
 	outbuf->m_retres = sceCdGetError();
 }
 
-void cdvdfsv_rpc3_05_trayreq(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_05_trayreq(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
 	u32 efbits;
@@ -1780,14 +1736,14 @@ void cdvdfsv_rpc3_05_trayreq(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, c
 	}
 }
 
-void cdvdfsv_rpc3_25_settimeout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_25_settimeout(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	(void)buflen;
 
 	outbuf->m_retres = sceCdSetTimeout(inbuf->m_pkt_25.m_param, inbuf->m_pkt_25.m_timeout);
 }
 
-void cdvdfsv_rpc3_27_readdvddualinfo(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
+static void cdvdfsv_rpc3_27_readdvddualinfo(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	(void)inbuf;
 	(void)buflen;
@@ -1795,7 +1751,7 @@ void cdvdfsv_rpc3_27_readdvddualinfo(const cdvdfsv_rpc3_inpacket_t *inbuf, int b
 	outbuf->m_retres = sceCdReadDvdDualInfo(&outbuf->m_pkt_27.m_on_dual, &outbuf->m_pkt_27.m_layer1_start);
 }
 
-int cdvdfsv_rpc5_0E_diskready()
+static int cdvdfsv_rpc5_0E_diskready()
 {
 	int is_detecting;
 	int scres_unused;
@@ -1825,7 +1781,7 @@ int cdvdfsv_rpc5_0E_diskready()
 	return 2;
 }
 
-void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
+static void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 {
 	int scres_unused;
 	int fno_1;
@@ -1921,7 +1877,7 @@ void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 }
 
 // cppcheck-suppress constParameterCallback
-void *cbrpc_rpc3_cdvdscmds(int fno, void *buffer, int length)
+static void *cbrpc_rpc3_cdvdscmds(int fno, void *buffer, int length)
 {
 	VERBOSE_PRINTF(1, "sce_cdvd S cmd start %d\n", fno);
 	g_cdvdfsv_rpc3flg = 1;
@@ -1992,7 +1948,7 @@ void *cbrpc_rpc3_cdvdscmds(int fno, void *buffer, int length)
 	return (void *)&g_outbuf;
 }
 
-void cdvdfsv_poffloop()
+static void cdvdfsv_poffloop()
 {
 	int trid;
 	char cmdpkt[16];
@@ -2021,7 +1977,7 @@ void cdvdfsv_poffloop()
 	}
 }
 
-void cdvdfsv_rpc1_th(void *arg)
+static void cdvdfsv_rpc1_th(void *arg)
 {
 	(void)arg;
 
@@ -2033,7 +1989,7 @@ void cdvdfsv_rpc1_th(void *arg)
 	ExitDeleteThread();
 }
 
-void cdvdfsv_rpc3_th(void *arg)
+static void cdvdfsv_rpc3_th(void *arg)
 {
 	(void)arg;
 
@@ -2043,7 +1999,7 @@ void cdvdfsv_rpc3_th(void *arg)
 	ExitDeleteThread();
 }
 
-void cdvdfsv_rpc2_th(void *arg)
+static void cdvdfsv_rpc2_th(void *arg)
 {
 	(void)arg;
 

@@ -9,27 +9,19 @@ IRX_ID("cdvd_st_driver", 2, 2);
 
 extern struct irx_export_table _exp_cdvdstm;
 
-int vCancelAlarm(unsigned int (*alarm_cb)(void *), void *arg);
-int vSetEventFlag();
-int vClearEventFlag();
 int cdvdstm_4();
 int cdvdstm_2();
-int stm_iop_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock);
-int sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *error_ptr);
-int sceCdStream0(int rdsize_sectors, char *addrarg, int modearg, int *error_ptr);
-unsigned int iop_stream_handler(unsigned int posszarg1, unsigned int posszarg2, void *buffer, int cmdid, const sceCdRMode *rmode, int *error_ptr);
-unsigned int iop_stream_intr_cb(void *userdata);
-int cdrom_stm_init();
-int cdrom_stm_deinit();
-int cdrom_stm_devctl(iop_file_t *f, const char *name, int cmd, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
-int cdrom_stm_nulldev();
-s64 cdrom_stm_nulldev64();
-int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi);
-int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock);
-void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
-unsigned int ee_stream_intr_cb_normal(void *userdata);
-void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
-unsigned int ee_stream_intr_cb_cdda(void *userdata);
+static unsigned int iop_stream_handler(unsigned int posszarg1, unsigned int posszarg2, void *buffer, int cmdid, const sceCdRMode *rmode, int *error_ptr);
+static unsigned int iop_stream_intr_cb(void *userdata);
+static int cdrom_stm_init();
+static int cdrom_stm_deinit();
+static int cdrom_stm_devctl(iop_file_t *f, const char *name, int cmd, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len);
+static int cdrom_stm_nulldev();
+static s64 cdrom_stm_nulldev64();
+static void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
+static unsigned int ee_stream_intr_cb_normal(void *userdata);
+static void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr);
+static unsigned int ee_stream_intr_cb_cdda(void *userdata);
 unsigned int optimized_memcpy(char *dst, const char *src, unsigned int n);
 
 static void iop_stream_intr_cb_thunk(int userdata)
@@ -47,16 +39,16 @@ static void ee_stream_intr_cb_cdda_thunk(int userdata)
 	ee_stream_intr_cb_cdda((void *)userdata);
 }
 
-int g_verbose_level = 0;
-int g_cdvdstm_in_deldrv = 0;
-int g_cdvdstm_bufmax = 0;
-int g_cdvdstm_numbytes = 0;
-int g_cdvdstm_bankmax = 0;
-void *g_cdvdstm_buffer = NULL;
-unsigned int g_cdvdstm_sectorcount = 0;
-int g_cdvdstm_last_error_for_iop = 0;
-int g_cdvdstm_retryerr_iop = 0;
-int g_cdvdstm_retrycnt_iop = 0;
+static int g_verbose_level = 0;
+static int g_cdvdstm_in_deldrv = 0;
+static int g_cdvdstm_bufmax = 0;
+static int g_cdvdstm_numbytes = 0;
+static int g_cdvdstm_bankmax = 0;
+static void *g_cdvdstm_buffer = NULL;
+static unsigned int g_cdvdstm_sectorcount = 0;
+static int g_cdvdstm_last_error_for_iop = 0;
+static int g_cdvdstm_retryerr_iop = 0;
+static int g_cdvdstm_retrycnt_iop = 0;
 static iop_device_ops_t g_cdrom_stm_dev_ops =
     {
         &cdrom_stm_init,
@@ -87,53 +79,53 @@ static iop_device_ops_t g_cdrom_stm_dev_ops =
         (void *)&cdrom_stm_nulldev,
         &cdrom_stm_nulldev,
     };
-iop_device_t g_cdrom_stm_dev = { "cdrom_stm", 0x10000010, 1, "CD-ROM_STM ", &g_cdrom_stm_dev_ops };
-int g_cdvdstm_last_error_for_ee = 0;
-int g_cdvdstm_bufsz2 = 0;
-int g_cdvdstm_chunksz2 = 0;
-int g_cdvdstm_bankcnt2 = 0;
-void *g_cdvdstm_buffer2 = NULL;
-u32 g_cdvdstm_sectorcount2 = 0;
-int g_cdvdstm_retryerr_ee = 0;
-int g_cdvdstm_retrycnt_ee_normal = 0;
-int g_cdvdstm_usedchunksize2 = 0x930;
-u32 g_cdvdstm_retrycnt_ee_cdda = 0;
-sceCdRMode g_rmode_for_stream0;
-int g_cdvdstm_tgt;
-int g_cdvdstm_semid;
-int g_cdvdman_intr_efid;
-char g_cdvdstm_usedmap_iop[512];
-unsigned int g_cdvdstm_lsn_iop;
-int g_cdvdstm_bankgp_iop;
-int g_cdvdstm_bankcur_iop;
-int g_cdvdstm_bankoffs_iop;
-sceCdRMode g_cdvdstm_mode_iop;
-int g_cdvdstm_stmstart_iop;
-iop_sys_clock_t g_cdvdstm_curclk_iop;
-SifDmaTransfer_t g_cdvdstm_dmat;
-int g_cdvdstm_readlbn_ee_normal;
-SifDmaTransfer_t g_cdvdstm_dmat2;
-u32 g_cdvdstm_readlbn_ee_cdda;
-char g_cdvdstm_usedmap_ee[512];
-u32 g_cdvdstm_lsn_ee;
-int g_cdvdstm_bankgp_ee;
-int g_cdvdstm_bankcur_ee;
-int g_cdvdstm_bankoffs_ee;
-sceCdRMode g_cdvdstm_mode_ee;
-int g_cdvdstm_stmstart_ee;
-iop_sys_clock_t g_cdvdstm_curclk_ee;
+static iop_device_t g_cdrom_stm_dev = { "cdrom_stm", 0x10000010, 1, "CD-ROM_STM ", &g_cdrom_stm_dev_ops };
+static int g_cdvdstm_last_error_for_ee = 0;
+static int g_cdvdstm_bufsz2 = 0;
+static int g_cdvdstm_chunksz2 = 0;
+static int g_cdvdstm_bankcnt2 = 0;
+static void *g_cdvdstm_buffer2 = NULL;
+static u32 g_cdvdstm_sectorcount2 = 0;
+static int g_cdvdstm_retryerr_ee = 0;
+static int g_cdvdstm_retrycnt_ee_normal = 0;
+static int g_cdvdstm_usedchunksize2 = 0x930;
+static u32 g_cdvdstm_retrycnt_ee_cdda = 0;
+static sceCdRMode g_rmode_for_stream0;
+static int g_cdvdstm_tgt;
+static int g_cdvdstm_semid;
+static int g_cdvdman_intr_efid;
+static char g_cdvdstm_usedmap_iop[512];
+static unsigned int g_cdvdstm_lsn_iop;
+static int g_cdvdstm_bankgp_iop;
+static int g_cdvdstm_bankcur_iop;
+static int g_cdvdstm_bankoffs_iop;
+static sceCdRMode g_cdvdstm_mode_iop;
+static int g_cdvdstm_stmstart_iop;
+static iop_sys_clock_t g_cdvdstm_curclk_iop;
+static SifDmaTransfer_t g_cdvdstm_dmat;
+static int g_cdvdstm_readlbn_ee_normal;
+static SifDmaTransfer_t g_cdvdstm_dmat2;
+static u32 g_cdvdstm_readlbn_ee_cdda;
+static char g_cdvdstm_usedmap_ee[512];
+static u32 g_cdvdstm_lsn_ee;
+static int g_cdvdstm_bankgp_ee;
+static int g_cdvdstm_bankcur_ee;
+static int g_cdvdstm_bankoffs_ee;
+static sceCdRMode g_cdvdstm_mode_ee;
+static int g_cdvdstm_stmstart_ee;
+static iop_sys_clock_t g_cdvdstm_curclk_ee;
 
-int vCancelAlarm(unsigned int (*alarm_cb)(void *), void *arg)
+static int vCancelAlarm(unsigned int (*alarm_cb)(void *), void *arg)
 {
 	return (QueryIntrContext() ? iCancelAlarm : CancelAlarm)(alarm_cb, arg);
 }
 
-int vSetEventFlag()
+static int vSetEventFlag()
 {
 	return (QueryIntrContext() ? iSetEventFlag : SetEventFlag)(g_cdvdman_intr_efid, 8);
 }
 
-int vClearEventFlag()
+static int vClearEventFlag()
 {
 	return (QueryIntrContext() ? iClearEventFlag : ClearEventFlag)(g_cdvdman_intr_efid, ~8);
 }
@@ -159,13 +151,13 @@ int cdvdstm_2()
 	return 0;
 }
 
-int stm_iop_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
+static int stm_iop_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 {
 	KPRINTF("Stm Iop Read Time Out %d(msec)\n", sys_clock->lo / 0x9000);
 	return !sceCdBreak();
 }
 
-int sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *error_ptr)
+static int sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *error_ptr)
 {
 	int cur_size;
 	unsigned int streamres;
@@ -199,12 +191,12 @@ int sceCdStream0_inner(unsigned int rdsize, char *addrarg, int modearg, int *err
 	return cur_size;
 }
 
-int sceCdStream0(int rdsize_sectors, char *addrarg, int modearg, int *error_ptr)
+static int sceCdStream0(int rdsize_sectors, char *addrarg, int modearg, int *error_ptr)
 {
 	return sceCdStream0_inner(rdsize_sectors << 11, addrarg, modearg, error_ptr) / 0x800;
 }
 
-unsigned int iop_stream_handler(
+static unsigned int iop_stream_handler(
 				unsigned int posszarg1,
 				unsigned int posszarg2,
 				void *buffer,
@@ -409,7 +401,7 @@ unsigned int iop_stream_handler(
 	return 1;
 }
 
-unsigned int iop_stream_intr_cb(void *userdata)
+static unsigned int iop_stream_intr_cb(void *userdata)
 {
 	int gptmp;
 	int last_error;
@@ -545,7 +537,7 @@ unsigned int iop_stream_intr_cb(void *userdata)
 	return 0;
 }
 
-int cdrom_stm_init()
+static int cdrom_stm_init()
 {
 	iop_sema_t semaparam;
 
@@ -557,14 +549,14 @@ int cdrom_stm_init()
 	return 0;
 }
 
-int cdrom_stm_deinit()
+static int cdrom_stm_deinit()
 {
 	SignalSema(g_cdvdstm_semid);
 	DeleteSema(g_cdvdstm_semid);
 	return 0;
 }
 
-int cdrom_stm_devctl(iop_file_t *f, const char *name, int cmd, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len)
+static int cdrom_stm_devctl(iop_file_t *f, const char *name, int cmd, void *inbuf, unsigned int inbuf_len, void *outbuf, unsigned int outbuf_len)
 {
 	int retres;
 	cdrom_stm_devctl_t *instruct;
@@ -616,13 +608,13 @@ int cdrom_stm_devctl(iop_file_t *f, const char *name, int cmd, void *inbuf, unsi
 	return retres;
 }
 
-int cdrom_stm_nulldev()
+static int cdrom_stm_nulldev()
 {
 	PRINTF("nulldev0 call\n");
 	return -EIO;
 }
 
-s64 cdrom_stm_nulldev64()
+static s64 cdrom_stm_nulldev64()
 {
 	PRINTF("nulldev0 call\n");
 	return -EIO;
@@ -676,7 +668,7 @@ int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 #endif
 }
 
-int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
+static int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 {
 	int read_timeout;
 
@@ -686,7 +678,7 @@ int stm_ee_read_timeout_alarm_cb(const iop_sys_clock_t *sys_clock)
 	return !sceCdBreak();
 }
 
-void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
+static void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
 {
 	int retryflag;
 	u32 cmdid;
@@ -935,7 +927,7 @@ void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len, int *
 	return;
 }
 
-unsigned int ee_stream_intr_cb_normal(void *userdata)
+static unsigned int ee_stream_intr_cb_normal(void *userdata)
 {
 	int gptmp;
 	int scres_unused;
@@ -1070,7 +1062,7 @@ unsigned int ee_stream_intr_cb_normal(void *userdata)
 	return 0;
 }
 
-void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
+static void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *outres_ptr)
 {
 	u32 cmdid;
 	u32 posszarg2_bytes;
@@ -1357,7 +1349,7 @@ void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, int *ou
 	*outres_ptr = posszarg2_overrun_chunks2;
 }
 
-unsigned int ee_stream_intr_cb_cdda(void *userdata)
+static unsigned int ee_stream_intr_cb_cdda(void *userdata)
 {
 	int gptmp;
 	int scres_unused;
