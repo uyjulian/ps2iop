@@ -906,16 +906,12 @@ static int cdvdfile_cache_read(const iop_file_t *f, void *buf, int nbyte)
 	int fd_result;
 	cdvdman_fhinfo_t *fh;
 
-	nbyte_tmp = nbyte;
 	if ( nbyte < 0 )
 	{
 		return -EINVAL;
 	}
 	fh = &g_cdvdman_fhinfo[(int)f->privdata];
-	if ( (unsigned int)nbyte > fh->m_file_size - fh->m_read_pos )
-	{
-		nbyte_tmp = fh->m_file_size - fh->m_read_pos;
-	}
+	nbyte_tmp = ((unsigned int)nbyte > fh->m_file_size - fh->m_read_pos) ? fh->m_file_size - fh->m_read_pos : (unsigned int)nbyte;
 	VERBOSE_KPRINTF(1, "_cdvdfile_cache_read %d<->%d\n", fh->m_read_pos, fh->m_read_pos + nbyte_tmp);
 	fd_result = 0;
 	if ( nbyte_tmp > 0 )
@@ -2322,9 +2318,6 @@ static int sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer)
 	VERBOSE_PRINTF(1, "_sceCdReadDir: current= %d dsec= %d layer= %d\n", g_cdvdman_fs_cdsec, dsec, layer);
 	if ( g_cdvdman_fs_cdsec != dsec || g_cdvdman_fs_layer != layer )
 	{
-		int dsec_tmp;
-
-		dsec_tmp = dsec;
 		if ( g_cdvdman_fs_layer != layer )
 		{
 			if ( !CD_newmedia(layer) )
@@ -2333,7 +2326,7 @@ static int sceCdReadDir(sceCdlFILE *fp, int dsec, int index, int layer)
 			}
 			g_cdvdman_fs_cache = 1;
 		}
-		if ( !CD_cachefile(dsec_tmp, layer) )
+		if ( !CD_cachefile(dsec, layer) )
 		{
 			return -ENOENT;
 		}
