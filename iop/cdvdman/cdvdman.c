@@ -98,7 +98,7 @@ static iop_device_ops_t g_cdvdman_cddev_ops =
         (void *)&cdrom_nulldev,
         &cdrom_ioctl2,
     };
-static iop_device_t g_cdvdman_cddev = { "cdrom", 0x10000010, 1, "CD-ROM ", &g_cdvdman_cddev_ops };
+static iop_device_t g_cdvdman_cddev = { "cdrom", IOP_DT_FSEXT | IOP_DT_FS, 1, "CD-ROM ", &g_cdvdman_cddev_ops };
 static int g_cdvdman_sync_timeout = 15000;
 static int g_cdvdman_stream_timeout = 5000;
 static iop_sys_clock_t g_readid_systemtime = { 0, 0 };
@@ -3803,7 +3803,7 @@ static void cdvdman_init()
 	g_cdvdman_cmdfunc = 0;
 	g_cdvdman_istruct.m_drive_interupt_request = 0;
 	RegisterIntrHandler(IOP_IRQ_CDVD, 1, (int (*)(void *))intrh_cdrom, &g_cdvdman_istruct);
-	RegisterIntrHandler(35, 1, (int (*)(void *))intrh_dma_3, &g_cdvdman_istruct);
+	RegisterIntrHandler(IOP_IRQ_DMA_CDVD, 1, (int (*)(void *))intrh_dma_3, &g_cdvdman_istruct);
 	EnableIntr(IOP_IRQ_CDVD);
 	sceCdSC(0xFFFFFFF3, &scres_unused);
 	dmac_set_dpcr(dmac_get_dpcr() | 0x8000);
@@ -4302,7 +4302,7 @@ static int cdvdman_setdma3(cdvdman_dma3_parameter_t *dma3_param)
 	if ( dma3_param->m_dma3_csectors )
 	{
 		vClearEventFlag(g_cdvdman_intr_efid, ~0x20);
-		EnableIntr(35);
+		EnableIntr(IOP_IRQ_DMA_CDVD);
 	}
 	dev5_mmio_hwport->m_dev5_reg_006 = dma3_param->m_cdvdreg_howto;
 	dmac_ch_set_madr(3, (u32)dma3_param->m_dma3_maddress);

@@ -79,7 +79,7 @@ static iop_device_ops_t g_cdrom_stm_dev_ops =
         (void *)&cdrom_stm_nulldev,
         &cdrom_stm_nulldev,
     };
-static iop_device_t g_cdrom_stm_dev = { "cdrom_stm", 0x10000010, 1, "CD-ROM_STM ", &g_cdrom_stm_dev_ops };
+static iop_device_t g_cdrom_stm_dev = { "cdrom_stm", IOP_DT_FSEXT | IOP_DT_FS, 1, "CD-ROM_STM ", &g_cdrom_stm_dev_ops };
 static int g_cdvdstm_last_error_for_ee = 0;
 static int g_cdvdstm_bufsz2 = 0;
 static int g_cdvdstm_chunksz2 = 0;
