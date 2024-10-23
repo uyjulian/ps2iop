@@ -5741,7 +5741,7 @@ int sceCdDoesUniqueKeyExist(u32 *status)
 
 		for ( i = 0; i < 20; i += 1 )
 		{
-			sceCdRead0(75 + (0x10 * i), 0x10, g_cdvdman_ptoc, &rmode, 0, 0);
+			sceCdRead0(0x4B + (0x10 * i), 0x10, g_cdvdman_ptoc, &rmode, 0, 0);
 			CpuResumeIntr(state);
 			sceCdSync(3);
 			CpuSuspendIntr(&state);

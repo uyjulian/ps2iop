@@ -32,9 +32,7 @@ static int g_cdvdfsv_r2retry = 0;
 static int g_cdvdfsv_r2count = 0;
 static int g_cdvdfsv_sid_err_recover_cnt = 0;
 static int g_cdvdfsv_err_count = 0;
-static int g_dword_405750[2];
-static void *cdvdfsv_fsvrbuf;
-static int g_dword_40575C;
+static void *g_cdvdfsv_fsvrbuf;
 static char *g_cdvdfsv_rtocbuf;
 static SifDmaTransfer_t g_cdvdfsv_fssdd;
 static SifDmaTransfer_t g_cdvdfsv_iomrsdd;
@@ -143,9 +141,9 @@ int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 	{
 		return MODULE_NO_RESIDENT_END;
 	}
-	cdvdfsv_fsvrbuf = sceGetFsvRbuf();
-	g_dword_40575C = (int)g_dword_405750;
-	g_cdvdfsv_rtocbuf = (char *)cdvdfsv_fsvrbuf;
+	g_cdvdfsv_fsvrbuf = sceGetFsvRbuf();
+	// Unofficial: setting of unused variable removed
+	g_cdvdfsv_rtocbuf = (char *)g_cdvdfsv_fsvrbuf;
 	cdvdfsv_parseargs(ac, av);
 	cdvdfsv_init();
 #if 0
