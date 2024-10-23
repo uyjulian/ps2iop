@@ -4,7 +4,7 @@ DECLARE_EXPORT(_start)
 DECLARE_EXPORT(_retonly)
 DECLARE_EXPORT(_retonly)
 DECLARE_EXPORT(_retonly)
-DECLARE_EXPORT(cdvdfsv_4)
+DECLARE_EXPORT(cdvdfsv_dummyentry)
 DECLARE_EXPORT(sceCdChangeThreadPriority)
 END_EXPORT_TABLE
 

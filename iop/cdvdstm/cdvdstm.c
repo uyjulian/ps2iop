@@ -9,8 +9,8 @@ IRX_ID("cdvd_st_driver", 2, 2);
 
 extern struct irx_export_table _exp_cdvdstm;
 
-int cdvdstm_4();
-int cdvdstm_2();
+int cdvdstm_dummyentry();
+int cdvdstm_termcall();
 static unsigned int iop_stream_handler(unsigned int posszarg1, unsigned int posszarg2, void *buffer, int cmdid, const sceCdRMode *rmode, int *error_ptr);
 static unsigned int iop_stream_intr_cb(void *userdata);
 static int cdrom_stm_init();
@@ -130,13 +130,13 @@ static int vClearEventFlag()
 	return (QueryIntrContext() ? iClearEventFlag : ClearEventFlag)(g_cdvdman_intr_efid, ~8);
 }
 
-int cdvdstm_4()
+int cdvdstm_dummyentry()
 {
 	VERBOSE_PRINTF(1, "Dummy Entry Called\n");
 	return 0;
 }
 
-int cdvdstm_2()
+int cdvdstm_termcall()
 {
 	cdrom_stm_devctl_t instruct;
 	int outres;

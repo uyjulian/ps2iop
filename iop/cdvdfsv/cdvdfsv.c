@@ -10,7 +10,7 @@ extern struct irx_export_table _exp_cdvdfsv;
 
 static int cdvdfsv_init();
 static void cdvdfsv_main_th(void *arg);
-int *cdvdfsv_4(int arg1);
+int *cdvdfsv_dummyentry(int arg1);
 static void cdvdfsv_parseargs(int ac, char **av);
 static void cdvdfsv_poffloop();
 static void cdvdfsv_rpc1_th(void *arg);
@@ -229,7 +229,7 @@ static void cdvdfsv_main_th(void *arg)
 	ExitDeleteThread();
 }
 
-int *cdvdfsv_4(int arg1)
+int *cdvdfsv_dummyentry(int arg1)
 {
 	VERBOSE_PRINTF(1, "Dummy Entry Called\n");
 	if ( arg1 != 128 )
