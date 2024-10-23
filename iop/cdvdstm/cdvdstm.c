@@ -439,7 +439,6 @@ static unsigned int iop_stream_intr_cb(void *userdata)
 	if ( last_error )
 	{
 		VERBOSE_KPRINTF(1, "IOP Stream read Error code= 0x%02x retry= %d\n", last_error, g_cdvdstm_retrycnt_iop);
-		g_cdvdstm_retrycnt_iop = 1;
 		if ( last_error == SCECdErREAD || last_error == SCECdErABRT )
 		{
 			VERBOSE_KPRINTF(1, "On err %08x\n", last_error);
@@ -450,6 +449,7 @@ static unsigned int iop_stream_intr_cb(void *userdata)
 		else
 		{
 			g_cdvdstm_retryerr_iop = last_error;
+			g_cdvdstm_retrycnt_iop = 1;
 		}
 	}
 	if ( g_cdvdstm_retrycnt_iop )
