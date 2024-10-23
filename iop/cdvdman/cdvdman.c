@@ -720,10 +720,10 @@ static int cdvdman_cache_invalidate(cdvdman_fhinfo_t *fh, int index)
 				break;
 			}
 		}
-		if ( fileio_res >= 0 )
-		{
-			return fileio_res;
-		}
+	}
+	if ( fileio_res >= 0 )
+	{
+		return fileio_res;
 	}
 	fh->m_fd_flags &= ~4;
 	cdvd_odcinit(fh, 0, index);
@@ -852,7 +852,7 @@ static int cdrom_internal_write_cache(const iop_file_t *f, unsigned int nbytes)
 	VERBOSE_KPRINTF(1, "_cdvdfile_cache_read %d<->%d\n", fh->m_read_pos, fh->m_read_pos + nbytes);
 	cur = ((fh->m_read_pos + nbytes) >> 14) - ( !((fh->m_read_pos + nbytes) & 0x3FFF) );
 	rst = fh->m_read_pos >> 14;
-	cluster_cur = ( fh->m_cluster_cur < 0 ) ? 0 : fh->m_cluster_cur;
+	cluster_cur = ( fh->m_cluster_cur >= 0 ) ? fh->m_cluster_cur : 0;
 	cdvdman_iormode(&rmode, fh->m_filemode, f->unit);
 	write_ret = 0;
 	VERBOSE_KPRINTF(1, "cache_fill rst:%d<->%d cur:%d cnt:%d\n", rst, cur, fh->m_read_pos, nbytes);
@@ -934,14 +934,14 @@ static int cdvdfile_cache_fill_read(const iop_file_t *f, void *buf, int nbytes)
 	if ( op_result >= 0 )
 	{
 		op_result = cdrom_internal_write_cache(f, nbytes);
-		if ( op_result >= 0 )
-		{
-			op_result = cdvdfile_cache_read(f, buf, nbytes);
-		}
 	}
 	else
 	{
 		g_cdvdman_iocache = 0;
+	}
+	if ( op_result >= 0 )
+	{
+		op_result = cdvdfile_cache_read(f, buf, nbytes);
 	}
 	return op_result;
 }
@@ -987,7 +987,7 @@ static int cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 	fh = &g_cdvdman_fhinfo[fds1];
 	strncpy(filename, name, sizeof(filename));
 	cdvdman_cdfname(filename);
-	g_cdvdman_srchspd = ( (mode & 0x40000000) || cdvdman_l0check(f->unit) ) ? 0 : ((g_cdvdman_spinnom == -1) ? (u16)mode : g_cdvdman_spinnom != SCECdSpinStm);
+	g_cdvdman_srchspd = ( !(mode & 0x40000000) && !cdvdman_l0check(f->unit) ) ? ((g_cdvdman_spinnom == -1) ? (u16)mode : g_cdvdman_spinnom != SCECdSpinStm) : 0;
 	if ( (unsigned int)(f->unit) >= 2u )
 	{
 		devready_tmp = -ENOENT;
@@ -1049,7 +1049,7 @@ static int cdrom_open(iop_file_t *f, const char *name, int mode, int arg4)
 		memset(&rmode, 0, sizeof(rmode));
 		rmode.datapattern = SCECdSecS2048;
 		rmode.spindlctrl = SCECdSpinStm;
-		rmode.trycount = (g_cdvdman_trycnt == -1) ? 0 : g_cdvdman_trycnt;
+		rmode.trycount = (g_cdvdman_trycnt != -1) ? g_cdvdman_trycnt : 0;
 		// The following call to sceCdStStart was inlined
 		if ( !sceCdStStart(fp.lsn, &rmode) )
 		{
@@ -1293,7 +1293,7 @@ static int cdrom_internal_read(const iop_file_t *f, char *addr, int nbytes)
 			g_cdvdman_lcn_offset = lbn_tmp;
 			g_cdvdman_numbytes_offset = sec;
 			g_cdvdman_iocache = 1;
-			optimized_memcpy(&addr[pos_sub_2048 + i], &((const char *)g_cdvdman_temp_buffer_ptr)[pos_sub_2048 ? 0 : pos_extra], nbytes_segment - pos_sub_2048);
+			optimized_memcpy(&addr[pos_sub_2048 + i], &((const char *)g_cdvdman_temp_buffer_ptr)[!pos_sub_2048 ? pos_extra : 0], nbytes_segment - pos_sub_2048);
 		}
 		else
 		{
@@ -1561,7 +1561,7 @@ static int cdrom_devctl(
 #endif
 		case CDIOC_STREAMINIT:
 			// The following call to sceCdStInit was inlined
-			retval2 = ( sceCdStInit(*(u32 *)argp, *((u32 *)argp + 1), (void *)*((u32 *)argp + 2)) ) ? 0 : -EIO;
+			retval2 = ( !sceCdStInit(*(u32 *)argp, *((u32 *)argp + 1), (void *)*((u32 *)argp + 2)) ) ? -EIO : 0;
 			break;
 		case CDIOC_BREAK:
 			retval2 = (!sceCdBreak()) ? -EIO : 0;
@@ -2127,7 +2127,7 @@ int sceCdStInit(u32 bufmax, u32 bankmax, void *buffer)
 	devctl_req.m_posszarg1 = bufmax;
 	devctl_req.m_posszarg2 = bankmax;
 	devctl_req.m_buffer = buffer;
-	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) >= 0) ? buf : 0;
 }
 
 int sceCdStStart(u32 lbn, sceCdRMode *mode)
@@ -2141,7 +2141,7 @@ int sceCdStStart(u32 lbn, sceCdRMode *mode)
 	devctl_req.m_cmdid = 1;
 	devctl_req.m_posszarg1 = lbn;
 	devctl_req.m_rmode.trycount = mode->trycount;
-	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) >= 0) ? buf : 0;
 }
 
 int sceCdStSeekF(unsigned int lsn)
@@ -2152,7 +2152,7 @@ int sceCdStSeekF(unsigned int lsn)
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.m_cmdid = 9;
 	devctl_req.m_posszarg1 = lsn;
-	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) >= 0) ? buf : 0;
 }
 
 int sceCdStSeek(u32 lbn)
@@ -2163,7 +2163,7 @@ int sceCdStSeek(u32 lbn)
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.m_posszarg1 = lbn;
 	devctl_req.m_cmdid = 4;
-	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) >= 0) ? buf : 0;
 }
 
 int sceCdStStop(void)
@@ -2173,7 +2173,7 @@ int sceCdStStop(void)
 
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.m_cmdid = 3;
-	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) >= 0) ? buf : 0;
 }
 
 int sceCdStRead(u32 sectors, u32 *buffer, u32 mode, u32 *error)
@@ -2202,7 +2202,7 @@ int sceCdStPause(void)
 
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.m_cmdid = 7;
-	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) >= 0) ? buf : 0;
 }
 
 int sceCdStResume(void)
@@ -2212,7 +2212,7 @@ int sceCdStResume(void)
 
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.m_cmdid = 8;
-	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) >= 0) ? buf : 0;
 }
 
 int sceCdStStat(void)
@@ -2222,7 +2222,7 @@ int sceCdStStat(void)
 
 	memset(&devctl_req, 0, sizeof(devctl_req));
 	devctl_req.m_cmdid = 6;
-	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) < 0) ? 0 : buf;
+	return (devctl("cdrom_stm0:", 0x4393, &devctl_req, sizeof(devctl_req), &buf, 4) >= 0) ? buf : 0;
 }
 
 static int CdSearchFileInner(cdvdman_filetbl_entry_t *fp, const char *name, int layer)
@@ -5796,7 +5796,7 @@ static int cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3)
 	ndata[1] = !!arg2;
 	ndata[0] = arg1;
 	ndata[2] = !!(arg2 >> 8);
-	*(u32 *)&ndata[3] = arg1 ? 0 : arg3;
+	*(u32 *)&ndata[3] = !arg1 ? arg3 : 0;
 	return cdvdman_send_ncmd(12, ndata, sizeof(ndata), 0, 0, 1) >= 0;
 }
 #endif
