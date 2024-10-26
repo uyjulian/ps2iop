@@ -1,28 +1,97 @@
 
-#include <defs.h>
+#include "irx_imports.h"
+
+#include <tamtypes.h>
+#define __int8 char
+#define __int16 short
+#define __int32 int
+#define BOOL u32
+#define _BYTE u8
+#define _WORD u16
+#define _DWORD u32
+#define __fastcall
+#define MEMORY ((volatile unsigned int *)0x10000000)
+
+#if 1
+#define LAST_IND(x, part_type) (sizeof(x) / sizeof(part_type) - 1)
+#define HIGH_IND(x, part_type) LAST_IND(x, part_type)
+
+#define BYTEn(x, n) (*((_BYTE*)&(x) + n))
+#define WORDn(x, n) (*((_WORD*)&(x) + n))
+#define DWORDn(x, n) (*((_DWORD*)&(x) + n))
+#endif
+
+#if 1
+#ifdef HIBYTE
+#undef HIBYTE
+#endif
+#define HIBYTE(x) BYTEn(x, HIGH_IND(x, _BYTE))
+#ifdef HIWORD
+#undef HIWORD
+#endif
+#define HIWORD(x) WORDn(x, HIGH_IND(x, _WORD))
+#endif
+
+
+struct RomImgData
+{
+  const void *ImageStart;
+  const void *RomdirStart;
+  const void *RomdirEnd;
+};
+
+struct ImageData
+{
+  const char *filename;
+  int fd;
+  int size;
+  struct RomImgData stat;
+};
+
+
+struct RomDirEntry
+{
+  char name[10];
+  unsigned __int16 ExtInfoEntrySize;
+  unsigned int size;
+};
+
+struct RomdirFileStat
+{
+  const struct RomDirEntry *romdirent;
+  const void *data;
+  const struct ExtInfoFieldEntry *extinfo;
+  unsigned int padding;
+};
+
+
+struct ExtInfoFieldEntry
+{
+  u16 value;
+  u8 ExtLength;
+  u8 type;
+  u8 payload[];
+};
+
+
+#define _mfc0(reg)                                                                                                     \
+  ({                                                                                                                   \
+    u32 val;                                                                                                           \
+    __asm__ volatile("mfc0 %0, " #reg : "=r"(val));                                                                    \
+    val;                                                                                                               \
+  })
+
+#define mfc0(reg) _mfc0(reg)
+
 
 
 //-------------------------------------------------------------------------
 // Function declarations
 
-int start();
+int _start();
 struct RomImgData *__fastcall GetIOPRPStat(u32 *start_addr, u32 *end_addr, struct RomImgData *rid);
 struct RomdirFileStat *__fastcall GetFileStatFromImage(struct RomImgData *rid, char *filename, struct RomdirFileStat *rdfs);
 const struct ExtInfoFieldEntry *__fastcall do_find_extinfo_entry(struct RomdirFileStat *rdfs, int extinfo_type);
-int __fastcall unusedsub_4004B0(int);
-int unusednullsub_4004FC();
-int __fastcall unused_flash_reset(_DWORD *);
-BOOL __fastcall unused_checksig(_DWORD *, _DWORD *, int);
-BOOL __fastcall unused_flash_checksig(_DWORD *);
-_DWORD *__fastcall unused_flash_probe(_DWORD *);
-int *__cdecl QueryBootMode(int mode);
-int printf(const char *format, ...);
-int __cdecl CpuDisableIntr();
-int __cdecl CpuEnableIntr();
-int __cdecl write(int fd, void *ptr, int size);
-u32 __cdecl QueryMemSize();
-char *__cdecl rindex(const char *s, int c);
-size_t __cdecl strlen(const char *s);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -33,7 +102,7 @@ char *cach_config_eq_str = ", CACH_CONFIG="; // idb
 
 
 //----- (00400000) --------------------------------------------------------
-int start()
+int _start()
 {
   int *boot_mode_4; // $s0
   int boot_mode_4_val; // $v1
@@ -80,7 +149,7 @@ int start()
   if ( !*(_WORD *)boot_mode_4 )
   {
 LABEL_14:
-    cop0_processor_mode = _mfc0(0xFu, 0);
+    cop0_processor_mode = mfc0($15);
     romgen_eq_str_len = strlen(romgen_eq_str);
     write(1, romgen_eq_str, romgen_eq_str_len);
     printf("%04x-%04x", MEMORY[0xBFC00102], MEMORY[0xBFC00100]);
@@ -239,278 +308,3 @@ const struct ExtInfoFieldEntry *__fastcall do_find_extinfo_entry(struct RomdirFi
   }
   return extinfo;
 }
-
-//----- (004004B0) --------------------------------------------------------
-int __fastcall unusedsub_4004B0(int a1)
-{
-  int result; // $v0
-  int v2; // [sp+0h] [+0h]
-
-  v2 = a1 - 1;
-  result = -1;
-  if ( a1 )
-  {
-    do
-      result = --v2;
-    while ( v2 != -1 );
-  }
-  return result;
-}
-
-//----- (004004FC) --------------------------------------------------------
-int unusednullsub_4004FC()
-{
-  return 0;
-}
-
-//----- (00400504) --------------------------------------------------------
-int __fastcall unused_flash_reset(_DWORD *a1)
-{
-  int v2; // $v1
-
-  CpuDisableIntr();
-  v2 = a1[10];
-  if ( v2 == 8 )
-  {
-    *(_BYTE *)(a1[3] + a1[5]) = -16;
-  }
-  else if ( v2 == 16 )
-  {
-    *(_WORD *)(2 * a1[5] + a1[3]) = 240;
-  }
-  CpuEnableIntr();
-  return 0;
-}
-
-//----- (00400584) --------------------------------------------------------
-BOOL __fastcall unused_checksig(_DWORD *a1, _DWORD *a2, int a3)
-{
-  int v4; // $v1
-  int v6; // $v1
-  int v7; // $v0
-  unsigned __int8 *v8; // $v1
-  int v9; // $v0
-  unsigned __int8 *v10; // $v1
-  int v11; // $v1
-  int v12; // $v0
-  unsigned __int16 *v13; // $v1
-  int v14; // $v0
-  unsigned __int16 *v15; // $v1
-  int v16; // $v1
-  int v17; // $a0
-
-  v4 = a1[10];
-  if ( v4 == 8 )
-  {
-    v6 = a1[3] + a3;
-    *a2 = v6 + a1[5];
-    v7 = a1[6];
-    a2[2] = v6;
-    a2[1] = v6 + v7;
-    a2[3] = v6 + a1[4];
-    *(_BYTE *)*a2 = -86;
-    *(_BYTE *)a2[1] = 85;
-    *(_BYTE *)*a2 = -112;
-    v8 = (unsigned __int8 *)a2[2];
-    MEMORY[0xBF803100] = -145;
-    v9 = *v8;
-    v10 = (unsigned __int8 *)a2[3];
-    a2[4] = v9;
-    a2[5] = *v10;
-  }
-  else if ( v4 == 16 )
-  {
-    v11 = a1[3] + a3;
-    *a2 = v11 + 2 * a1[5];
-    v12 = a1[6];
-    a2[2] = v11;
-    a2[1] = v11 + 2 * v12;
-    a2[3] = v11 + 2 * a1[4];
-    *(_WORD *)*a2 = 170;
-    *(_WORD *)a2[1] = 85;
-    *(_WORD *)*a2 = 144;
-    v13 = (unsigned __int16 *)a2[2];
-    MEMORY[0xBF803100] = -145;
-    v14 = *v13;
-    v15 = (unsigned __int16 *)a2[3];
-    a2[4] = v14;
-    a2[5] = *v15;
-  }
-  unused_flash_reset(a1);
-  if ( a1[8] )
-    goto LABEL_9;
-  v16 = a2[4];
-  if ( v16 == 1 || v16 == 4 )
-  {
-    a1[8] = v16;
-LABEL_9:
-    v16 = a2[4];
-  }
-  v17 = 0;
-  if ( v16 == a1[8] )
-    return a2[5] == a1[9];
-  return v17;
-}
-
-//----- (00400730) --------------------------------------------------------
-BOOL __fastcall unused_flash_checksig(_DWORD *a1)
-{
-  int v2; // $s5
-  int v3; // $s4
-  int *v4; // $v1
-  BOOL v5; // $a0
-  unsigned int v6; // $v1
-  int v7; // $lo
-  unsigned int v8; // $s1
-  int v9; // $s0
-  _DWORD *v10; // $v0
-  int v12[6]; // [sp+10h] [-18h] BYREF
-
-  v2 = 0;
-  v3 = 0;
-  if ( a1[11] )
-  {
-    v2 = MEMORY[0xBF801400];
-    MEMORY[0xBF801400] = a1[11];
-  }
-  v4 = (int *)a1[1];
-  if ( v4 )
-  {
-    v3 = *v4;
-    *v4 = a1[2];
-    MEMORY[0xBF803100] = *(_DWORD *)a1[1];
-  }
-  v5 = unused_checksig(a1, v12, 0);
-  if ( !v5 )
-    goto LABEL_11;
-  v6 = a1[13];
-  if ( v6 )
-  {
-    v8 = 1;
-    v7 = a1[7] / v6;
-    v9 = v7;
-    do
-    {
-      if ( v8 >= a1[13] )
-        break;
-      v5 = unused_checksig(a1, v12, v9);
-      v9 += v7;
-      ++v8;
-    }
-    while ( v5 );
-  }
-  if ( !v5 )
-  {
-LABEL_11:
-    v10 = (_DWORD *)a1[1];
-    if ( v10 )
-    {
-      *v10 = v3;
-      MEMORY[0xBF803100] = *(_DWORD *)a1[1];
-    }
-    if ( a1[11] )
-      MEMORY[0xBF801400] = v2;
-  }
-  return v5;
-}
-// 4007D8: conditional instruction was optimized away because $v1.4!=0
-// 400850: conditional instruction was optimized away because $a0.4==0
-// 400730: using guessed type _DWORD var_18[6];
-
-//----- (00400898) --------------------------------------------------------
-_DWORD *__fastcall unused_flash_probe(_DWORD *a1)
-{
-  CpuDisableIntr();
-  if ( a1[10] )
-  {
-    while ( !unused_flash_checksig(a1) )
-    {
-      a1 += 14;
-      if ( !a1[10] )
-        goto LABEL_5;
-    }
-    CpuEnableIntr();
-    return a1;
-  }
-  else
-  {
-LABEL_5:
-    CpuEnableIntr();
-    return 0;
-  }
-}
-
-//----- (00400924) --------------------------------------------------------
-int *__cdecl QueryBootMode(int mode)
-{
-  int *result; // $v0
-
-  return result;
-}
-// 400924: variable 'result' is possibly undefined
-
-//----- (00400948) --------------------------------------------------------
-int printf(const char *format, ...)
-{
-  int result; // $v0
-
-  return result;
-}
-// 400948: variable 'result' is possibly undefined
-
-//----- (0040096C) --------------------------------------------------------
-int __cdecl CpuDisableIntr()
-{
-  int result; // $v0
-
-  return result;
-}
-// 40096C: variable 'result' is possibly undefined
-
-//----- (00400974) --------------------------------------------------------
-int __cdecl CpuEnableIntr()
-{
-  int result; // $v0
-
-  return result;
-}
-// 400974: variable 'result' is possibly undefined
-
-//----- (00400998) --------------------------------------------------------
-int __cdecl write(int fd, void *ptr, int size)
-{
-  int result; // $v0
-
-  return result;
-}
-// 400998: variable 'result' is possibly undefined
-
-//----- (004009BC) --------------------------------------------------------
-u32 __cdecl QueryMemSize()
-{
-  u32 result; // $v0
-
-  return result;
-}
-// 4009BC: variable 'result' is possibly undefined
-
-//----- (004009E0) --------------------------------------------------------
-char *__cdecl rindex(const char *s, int c)
-{
-  char *result; // $v0
-
-  return result;
-}
-// 4009E0: variable 'result' is possibly undefined
-
-//----- (004009E8) --------------------------------------------------------
-size_t __cdecl strlen(const char *s)
-{
-  size_t result; // $v0
-
-  return result;
-}
-// 4009E8: variable 'result' is possibly undefined
-
-// nfuncs=18 queued=18 decompiled=18 lumina nreq=0 worse=0 better=0
-// ALL OK, 18 function(s) have been successfully decompiled
