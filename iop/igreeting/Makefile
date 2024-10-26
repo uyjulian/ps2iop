@@ -1,6 +1,6 @@
 IOP_BIN = igreeting.irx
 
-IOP_OBJS = _start.o imports.o main.o
+IOP_OBJS = igreeting.o imports.o
 
 all: $(IOP_BIN)
 
