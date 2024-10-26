@@ -105,15 +105,8 @@ char *cach_config_eq_str = ", CACH_CONFIG="; // idb
 int _start()
 {
   int *boot_mode_4; // $s0
-  int boot_mode_4_val; // $v1
-  int result; // $v0
   int cop0_processor_mode; // $s0
-  int romgen_eq_str_len; // $v0
-  int cpuid_eq_str_len; // $v0
-  int cach_config_eq_str_len; // $v0
-  u32 MemSize; // $v0
   char *iop_or_ps_mode_str; // $s0
-  int iop_or_ps_mode_str_len; // $v0
   const struct ExtInfoFieldEntry *extinfo_entry; // $v0
   char *extinfo_id_str; // $s0
   char *comma_index; // $s1
@@ -122,72 +115,56 @@ int _start()
 
   boot_mode_4 = QueryBootMode(4);
   printf("\nPlayStation 2 ======== ");
-  if ( !boot_mode_4 )
-    goto LABEL_14;
-  boot_mode_4_val = *(unsigned __int16 *)boot_mode_4;
-  if ( boot_mode_4_val == 1 )
+  if ( boot_mode_4 )
   {
-    printf("Soft reboot");
-  }
-  else if ( *(unsigned __int16 *)boot_mode_4 >= 2u )
-  {
-    if ( boot_mode_4_val == 2 )
+    switch (*(unsigned __int16 *)boot_mode_4)
     {
-      printf("Update rebooting..");
+      case 0:
+        printf("Hard reset boot");
+        break;
+      case 1:
+        printf("Soft reboot");
+        break;
+      case 2:
+        printf("Update rebooting..");
+        break;
+      case 3:
+        printf("Update reboot complete");
+        break;
+      default:
+        break;
     }
-    else if ( boot_mode_4_val == 3 )
-    {
-      printf("Update reboot complete");
-    }
+    printf("\n");
   }
-  else if ( !*(_WORD *)boot_mode_4 )
+  if ( !boot_mode_4 || !*(_WORD *)boot_mode_4 )
   {
-    printf("Hard reset boot");
-  }
-  printf("\n");
-  result = 1;
-  if ( !*(_WORD *)boot_mode_4 )
-  {
-LABEL_14:
     cop0_processor_mode = mfc0($15);
-    romgen_eq_str_len = strlen(romgen_eq_str);
-    write(1, romgen_eq_str, romgen_eq_str_len);
+    write(1, romgen_eq_str, strlen(romgen_eq_str));
     printf("%04x-%04x", MEMORY[0xBFC00102], MEMORY[0xBFC00100]);
-    cpuid_eq_str_len = strlen(cpuid_eq_str);
-    write(1, cpuid_eq_str, cpuid_eq_str_len);
+    write(1, cpuid_eq_str, strlen(cpuid_eq_str));
     printf("%x", cop0_processor_mode);
-    cach_config_eq_str_len = strlen(cach_config_eq_str);
-    write(1, cach_config_eq_str, cach_config_eq_str_len);
-    MemSize = QueryMemSize();
-    printf("%lx, %ldMB", MEMORY[0xFFFE0130], (MemSize + 256) >> 20);
+    write(1, cach_config_eq_str, strlen(cach_config_eq_str));
+    printf("%lx, %ldMB", MEMORY[0xFFFE0130], ((u32)QueryMemSize() + 256) >> 20);
     if ( cop0_processor_mode >= 16 )
     {
-      iop_or_ps_mode_str = ", IOP mode)\r\n";
-      if ( (MEMORY[0xBF801450] & 8) != 0 )
-        iop_or_ps_mode_str = ", PS mode)\r\n";
-      iop_or_ps_mode_str_len = strlen(iop_or_ps_mode_str);
-      write(1, iop_or_ps_mode_str, iop_or_ps_mode_str_len);
+      iop_or_ps_mode_str = ((MEMORY[0xBF801450] & 8) != 0) ? ", PS mode)\r\n" : ", IOP mode)\r\n";
+      write(1, iop_or_ps_mode_str, strlen(iop_or_ps_mode_str));
     }
-    if ( GetIOPRPStat((u32 *)0xBFC00000, (u32 *)0xBFC10000, &rid) )
+    if ( GetIOPRPStat((u32 *)0xBFC00000, (u32 *)0xBFC10000, &rid) && GetFileStatFromImage(&rid, "ROMDIR", &rdfs) )
     {
-      if ( GetFileStatFromImage(&rid, "ROMDIR", &rdfs) )
+      extinfo_entry = do_find_extinfo_entry(&rdfs, 3);
+      if ( extinfo_entry )
       {
-        extinfo_entry = do_find_extinfo_entry(&rdfs, 3);
         extinfo_id_str = (char *)extinfo_entry->payload;
-        if ( extinfo_entry )
-        {
-          comma_index = rindex((const char *)extinfo_entry->payload, ',');
-          if ( !comma_index )
-            strlen(extinfo_id_str);
-          write(1, " <", 2);
-          write(1, extinfo_id_str, comma_index - extinfo_id_str);
-          printf(":%ld>\n", (unsigned __int16)extinfo_id_str);
-        }
+        comma_index = rindex((const char *)extinfo_entry->payload, ',');
+        write(1, " <", 2);
+        // Unofficial: if commaa not found, just write the whole thing
+        write(1, extinfo_id_str, comma_index ? (comma_index - extinfo_id_str) : strlen(extinfo_id_str));
+        printf(":%ld>\n", (unsigned __int16)(uiptr)extinfo_id_str);
       }
     }
-    return 1;
   }
-  return result;
+  return 1;
 }
 // 400000: using guessed type int rid[4];
 
@@ -196,39 +173,23 @@ struct RomImgData *__fastcall GetIOPRPStat(u32 *start_addr, u32 *end_addr, struc
 {
   u32 *cur_addr; // $a3
   int cur_offset; // $t0
-  u32 *cur_addr_end; // $v1
-  struct RomImgData *result; // $v0
 
   cur_addr = start_addr;
   cur_offset = 0;
-  if ( start_addr >= end_addr )
+  while ( cur_addr < end_addr )
   {
-LABEL_9:
-    rid->ImageStart = 0;
-    return 0;
-  }
-  else
-  {
-    cur_addr_end = start_addr + 7;
-    while ( 1 )
+    if ( *cur_addr == 0x45534552 && *((cur_addr + 7) - 6) == 0x54 && !*((_WORD *)(cur_addr + 7) - 10) && ((*((cur_addr + 7) - 4) + 15) & 0xFFFFFFF0) == cur_offset )
     {
-      if ( *cur_addr == 0x45534552 && *(cur_addr_end - 6) == 0x54 && !*((_WORD *)cur_addr_end - 10) )
-      {
-        result = rid;
-        if ( ((*(cur_addr_end - 4) + 15) & 0xFFFFFFF0) == cur_offset )
-          break;
-      }
-      cur_addr_end += 4;
-      cur_addr += 4;
-      cur_offset += 16;
-      if ( cur_addr >= end_addr )
-        goto LABEL_9;
+      rid->ImageStart = start_addr;
+      rid->RomdirStart = cur_addr;
+      rid->RomdirEnd = (char *)cur_addr + *(cur_addr + 7);
+      return rid;
     }
-    rid->ImageStart = start_addr;
-    rid->RomdirStart = cur_addr;
-    rid->RomdirEnd = (char *)cur_addr + *cur_addr_end;
+    cur_addr += 4;
+    cur_offset += 16;
   }
-  return result;
+  rid->ImageStart = 0;
+  return 0;
 }
 
 //----- (00400338) --------------------------------------------------------
@@ -241,9 +202,7 @@ struct RomdirFileStat *__fastcall GetFileStatFromImage(
   int total_extinfo_size; // $t2
   const struct RomDirEntry *RomdirStart; // $t0
   int romdir_name_i; // $a3
-  struct RomdirFileStat *result; // $v0
-  unsigned __int16 *p_ExtInfoEntrySize; // $a1
-  char *ImageStart; // $v0
+  const unsigned __int16 *p_ExtInfoEntrySize; // $a1
   int cur_romdir_size; // $v0
   int cur_extinfo_size; // $v1
   char cur_romdir_name[12]; // [sp+0h] [-10h] BYREF
@@ -253,58 +212,44 @@ struct RomdirFileStat *__fastcall GetFileStatFromImage(
   RomdirStart = (const struct RomDirEntry *)rid->RomdirStart;
   romdir_name_i = 0;
   memset(cur_romdir_name, 0, sizeof(cur_romdir_name));
-  do
+  while ( romdir_name_i < 12 && *filename < 33 )
   {
-    if ( *filename < 33 )
-      break;
     cur_romdir_name[romdir_name_i++] = *filename++;
   }
-  while ( romdir_name_i < 12 );
-  result = 0;
-  if ( *(_DWORD *)RomdirStart->name )
+  p_ExtInfoEntrySize = &RomdirStart->ExtInfoEntrySize;
+  while ( *(_DWORD *)RomdirStart->name && (*(_DWORD *)RomdirStart->name != *(_DWORD *)cur_romdir_name
+       || *(_DWORD *)(p_ExtInfoEntrySize - 3) != *(_DWORD *)&cur_romdir_name[4]
+       || (__int16)*(p_ExtInfoEntrySize - 1) != *(__int16 *)&cur_romdir_name[8]) )
   {
-    p_ExtInfoEntrySize = &RomdirStart->ExtInfoEntrySize;
-    while ( *(_DWORD *)RomdirStart->name != *(_DWORD *)cur_romdir_name
-         || *(_DWORD *)(p_ExtInfoEntrySize - 3) != *(_DWORD *)&cur_romdir_name[4]
-         || (__int16)*(p_ExtInfoEntrySize - 1) != *(__int16 *)&cur_romdir_name[8] )
-    {
-      cur_romdir_size = *(_DWORD *)(p_ExtInfoEntrySize + 1);
-      cur_extinfo_size = (__int16)*p_ExtInfoEntrySize;
-      p_ExtInfoEntrySize += 8;
-      ++RomdirStart;
-      cur_addr_aligned += (cur_romdir_size + 15) & 0xFFFFFFF0;
-      total_extinfo_size += cur_extinfo_size;
-      if ( !*(_DWORD *)RomdirStart->name )
-        return 0;
-    }
-    rdfs->romdirent = RomdirStart;
-    ImageStart = (char *)rid->ImageStart;
-    rdfs->extinfo = 0;
-    rdfs->data = &ImageStart[cur_addr_aligned];
-    if ( *p_ExtInfoEntrySize )
-      rdfs->extinfo = (const struct ExtInfoFieldEntry *)((char *)rid->RomdirEnd + total_extinfo_size);
-    return rdfs;
+    cur_romdir_size = *(_DWORD *)(p_ExtInfoEntrySize + 1);
+    cur_extinfo_size = (__int16)*p_ExtInfoEntrySize;
+    p_ExtInfoEntrySize += 8;
+    ++RomdirStart;
+    cur_addr_aligned += (cur_romdir_size + 15) & 0xFFFFFFF0;
+    total_extinfo_size += cur_extinfo_size;
+
   }
-  return result;
+  if ( !*(_DWORD *)RomdirStart->name )
+    return 0;
+  rdfs->romdirent = RomdirStart;
+  rdfs->extinfo = 0;
+  rdfs->data = &((char *)rid->ImageStart)[cur_addr_aligned];
+  if ( *p_ExtInfoEntrySize )
+    rdfs->extinfo = (const struct ExtInfoFieldEntry *)((char *)rid->RomdirEnd + total_extinfo_size);
+  return rdfs;
 }
 
 //----- (00400448) --------------------------------------------------------
 const struct ExtInfoFieldEntry *__fastcall do_find_extinfo_entry(struct RomdirFileStat *rdfs, int extinfo_type)
 {
-  unsigned int ExtInfoEntrySize; // $v0
   const struct ExtInfoFieldEntry *extinfo; // $a0
   const struct ExtInfoFieldEntry *extinfo_end; // $a2
 
-  ExtInfoEntrySize = (__int16)rdfs->romdirent->ExtInfoEntrySize;
   extinfo = rdfs->extinfo;
-  extinfo_end = &extinfo[ExtInfoEntrySize >> 2];
-  if ( extinfo >= extinfo_end )
-    return 0;
-  while ( HIBYTE(*(unsigned int *)extinfo) != extinfo_type )
+  extinfo_end = &extinfo[(unsigned int)((__int16)rdfs->romdirent->ExtInfoEntrySize) >> 2];
+  while ( extinfo < extinfo_end && HIBYTE(*(unsigned int *)extinfo) != extinfo_type )
   {
     extinfo = (const struct ExtInfoFieldEntry *)((char *)extinfo + (HIWORD(*(unsigned int *)extinfo) & 0xFC) + 4);
-    if ( extinfo >= extinfo_end )
-      return 0;
   }
-  return extinfo;
+  return ( extinfo < extinfo_end ) ? extinfo : 0;
 }
