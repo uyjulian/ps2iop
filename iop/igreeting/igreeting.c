@@ -10,7 +10,6 @@
 #define _WORD u16
 #define _DWORD u32
 #define __fastcall
-#define MEMORY ((volatile unsigned int *)0x10000000)
 
 #if 1
 #define LAST_IND(x, part_type) (sizeof(x) / sizeof(part_type) - 1)
@@ -140,14 +139,14 @@ int _start()
   {
     cop0_processor_mode = mfc0($15);
     write(1, romgen_eq_str, strlen(romgen_eq_str));
-    printf("%04x-%04x", MEMORY[0xBFC00102], MEMORY[0xBFC00100]);
+    printf("%04x-%04x", *(vu16 *)(0xBFC00102), *(vu16 *)(0xBFC00100));
     write(1, cpuid_eq_str, strlen(cpuid_eq_str));
     printf("%x", cop0_processor_mode);
     write(1, cach_config_eq_str, strlen(cach_config_eq_str));
-    printf("%lx, %ldMB", MEMORY[0xFFFE0130], ((u32)QueryMemSize() + 256) >> 20);
+    printf("%lx, %ldMB", *(vu32 *)(0xFFFE0130), ((u32)QueryMemSize() + 256) >> 20);
     if ( cop0_processor_mode >= 16 )
     {
-      iop_or_ps_mode_str = ((MEMORY[0xBF801450] & 8) != 0) ? ", PS mode)\r\n" : ", IOP mode)\r\n";
+      iop_or_ps_mode_str = ((*(vu8 *)(0xBF801450) & 8) != 0) ? ", PS mode)\r\n" : ", IOP mode)\r\n";
       write(1, iop_or_ps_mode_str, strlen(iop_or_ps_mode_str));
     }
     if ( GetIOPRPStat((u32 *)0xBFC00000, (u32 *)0xBFC10000, &rid) && GetFileStatFromImage(&rid, "ROMDIR", &rdfs) )
