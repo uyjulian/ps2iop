@@ -84,180 +84,142 @@ int g_usbkb_cfg_lmode; // weak
 int _start(int ac, char **av)
 {
 	int cur_ac; // $s2
-	char **cur_av; // $s1
 	int arg_rvalue; // $s0
-	char *av_chrptr_1; // $a0
-	char *av_chrptr_2; // $v1
 	int devloc_i1; // $s2
 	u8 *devloc_buf; // $v0
-	int state_tmp; // $a0
 	int devloc_i2; // $s0
-	u8 *devloc_buf_tmp; // $a0
 	int unit_index; // $s2
 	int lddres; // $v0
 	iop_thread_t thparam; // [sp+10h] [-20h] BYREF
-	int state[2]; // [sp+28h] [-8h] BYREF
+	int state; // [sp+28h] [-8h] BYREF
 
 	if ( ac < 0 )
 		return usbkb_unload();
-	cur_ac = 0;
 	printf("USB Keyboard Driver 1.03\n");
 	g_usbkb_cfg_lmode = 0;
 	g_usbkb_cfg_keybd = 2;
 	g_usbkb_cfg_debug = 0;
-	if ( ac <= 0 )
-		goto LABEL_23;
-	cur_av = av;
-	while ( 1 )
+	for ( cur_ac = 0; cur_ac < ac; cur_ac += 1 )
 	{
-		arg_rvalue = 0;
-		if ( **cur_av )
+		for ( arg_rvalue = 0; av[cur_ac][arg_rvalue] && av[cur_ac][arg_rvalue] != '='; arg_rvalue += 1 )
 		{
-			av_chrptr_1 = *cur_av;
-			av_chrptr_2 = *cur_av;
-			while ( *av_chrptr_2 != '=' )
+		}
+		if ( av[cur_ac][arg_rvalue] )
+		{
+			av[cur_ac][arg_rvalue] = 0;
+			arg_rvalue += 1;
+		}
+		if ( !strcmp(av[cur_ac], "lmode") )
+		{
+			if ( !strcmp(&av[cur_ac][arg_rvalue], "AUTOLOAD") )
 			{
-				av_chrptr_2 = &av_chrptr_1[++arg_rvalue];
-				if ( !av_chrptr_1[arg_rvalue] )
-					goto LABEL_10;
+				g_usbkb_cfg_lmode = 1;
+				break;
 			}
-			*av_chrptr_2 = 0;
-			++arg_rvalue;
+			if ( !strcmp(&av[cur_ac][arg_rvalue], "TESTLOAD") )
+			{
+				g_usbkb_cfg_lmode = 2;
+				break;
+			}
 		}
-LABEL_10:
-		if ( strcmp(*cur_av, "lmode") )
-			goto LABEL_15;
-		if ( !strcmp(&(*cur_av)[arg_rvalue], "AUTOLOAD") )
-			break;
-		if ( !strcmp(&(*cur_av)[arg_rvalue], "TESTLOAD") )
+		if ( !strcmp(av[cur_ac], "keybd") )
 		{
-			g_usbkb_cfg_lmode = 2;
-			goto LABEL_23;
-		}
-LABEL_15:
-		if ( !strcmp(*cur_av, "keybd") )
-		{
-			g_usbkb_cfg_keybd = strtol(&(*cur_av)[arg_rvalue], 0, 10);
+			g_usbkb_cfg_keybd = strtol(&av[cur_ac][arg_rvalue], 0, 10);
 			if ( g_usbkb_cfg_keybd <= 0 )
 				g_usbkb_cfg_keybd = 1;
 			if ( g_usbkb_cfg_keybd >= 128 )
 				g_usbkb_cfg_keybd = 127;
 		}
-		if ( !strcmp(*cur_av, "debug") )
-			g_usbkb_cfg_debug = strtol(&(*cur_av)[arg_rvalue], 0, 10);
-		++cur_ac;
-		++cur_av;
-		if ( cur_ac >= ac )
-			goto LABEL_23;
+		if ( !strcmp(av[cur_ac], "debug") )
+			g_usbkb_cfg_debug = strtol(&av[cur_ac][arg_rvalue], 0, 10);
 	}
-	g_usbkb_cfg_lmode = 1;
-LABEL_23:
 	printf("Max Keyboards : %d\n", g_usbkb_cfg_keybd);
 	printf("Debug level : %d\n", g_usbkb_cfg_debug);
-	CpuSuspendIntr(state);
+	CpuSuspendIntr(&state);
 	g_usbkb_unit_buf = AllocSysMemory(0, 4 * g_usbkb_cfg_keybd, 0);
-	CpuResumeIntr(state[0]);
-	if ( g_usbkb_unit_buf )
+	CpuResumeIntr(state);
+	if ( !g_usbkb_unit_buf )
 	{
-		CpuSuspendIntr(state);
-		g_usbkb_devloc_buf = AllocSysMemory(0, 4 * g_usbkb_cfg_keybd, 0);
-		CpuResumeIntr(state[0]);
-		if ( !g_usbkb_devloc_buf )
+		return 1;
+	}
+	CpuSuspendIntr(&state);
+	g_usbkb_devloc_buf = AllocSysMemory(0, 4 * g_usbkb_cfg_keybd, 0);
+	CpuResumeIntr(state);
+	if ( !g_usbkb_devloc_buf )
+	{
+		CpuSuspendIntr(&state);
+		FreeSysMemory(g_usbkb_unit_buf);
+		CpuResumeIntr(state);
+		return 1;
+	}
+	for ( devloc_i1 = 0; devloc_i1 < g_usbkb_cfg_keybd; devloc_i1 += 1 )
+	{
+		CpuSuspendIntr(&state);
+		devloc_buf = AllocSysMemory(0, 7, 0);
+		g_usbkb_devloc_buf[devloc_i1] = devloc_buf;
+		CpuResumeIntr(state);
+		if ( !g_usbkb_devloc_buf[devloc_i1] )
 		{
-			CpuSuspendIntr(state);
+			CpuSuspendIntr(&state);
 			FreeSysMemory(g_usbkb_unit_buf);
-			CpuResumeIntr(state[0]);
-			return 1;
-		}
-		devloc_i1 = 0;
-		if ( g_usbkb_cfg_keybd > 0 )
-		{
-			while ( 1 )
+			for ( devloc_i2 = 0; devloc_i2 < devloc_i1; devloc_i2 += 1 )
 			{
-				CpuSuspendIntr(state);
-				devloc_buf = AllocSysMemory(0, 7, 0);
-				state_tmp = state[0];
-				g_usbkb_devloc_buf[devloc_i1] = devloc_buf;
-				CpuResumeIntr(state_tmp);
-				if ( !g_usbkb_devloc_buf[devloc_i1] )
-					break;
-				if ( ++devloc_i1 >= g_usbkb_cfg_keybd )
-					goto LABEL_32;
-			}
-			CpuSuspendIntr(state);
-			devloc_i2 = 0;
-			FreeSysMemory(g_usbkb_unit_buf);
-			if ( devloc_i1 > 0 )
-			{
-				do
-				{
-					devloc_buf_tmp = g_usbkb_devloc_buf[devloc_i2++];
-					FreeSysMemory(devloc_buf_tmp);
-				}
-				while ( devloc_i2 < devloc_i1 );
+				FreeSysMemory(g_usbkb_devloc_buf[devloc_i2]);
 			}
 			FreeSysMemory(g_usbkb_devloc_buf);
-			CpuResumeIntr(state[0]);
+			CpuResumeIntr(state);
 			return 1;
 		}
-LABEL_32:
-		unit_index = 0;
-		for ( g_usbkb_used_kb_count = 0; unit_index < g_usbkb_cfg_keybd; ++unit_index )
-		{
-			g_usbkb_unit_buf[unit_index] = 0;
-			*g_usbkb_devloc_buf[unit_index] = 0;
-		}
-		if ( g_usbkb_cfg_lmode == 1 )
-		{
-			printf("usbkeybd : AUTOLOAD MODE\n");
-		}
-		else
-		{
-			if ( g_usbkb_cfg_lmode < 2 )
-			{
-				if ( !g_usbkb_cfg_lmode )
-					g_usbkeybd_resident_flag = 1;
-				goto LABEL_44;
-			}
-			if ( g_usbkb_cfg_lmode != 2 )
-			{
-LABEL_44:
-				lddres = sceUsbdRegisterLdd(&g_kbd_driver);
-				if ( lddres )
-					printf("usbkeybd: sceUsbdRegisterLdd -> 0x%x\n", lddres);
-				if ( g_usbkb_cfg_lmode == 2 )
-				{
-					sceUsbdUnregisterLdd(&g_kbd_driver);
-					usbkb_cleanup();
-					if ( g_usbkeybd_resident_flag != 1 )
-						return 1;
-					return 5;
-				}
-				else if ( g_usbkeybd_resident_flag
-							 && (thparam.attr = 0x2000000,
-									 thparam.thread = usbkb_thread_proc,
-									 thparam.priority = 50,
-									 thparam.stacksize = 4096,
-									 thparam.option = 0,
-									 g_usbkb_thread_id = CreateThread(&thparam),
-									 g_usbkb_thread_id > 0) )
-				{
-					StartThread(g_usbkb_thread_id, 0);
-					return 2;
-				}
-				else
-				{
-					sceUsbdUnregisterLdd(&g_kbd_driver);
-					usbkb_cleanup();
-					return 1;
-				}
-			}
-			printf("usbkeybd : TESTLOAD MODE\n");
-		}
-		g_usbkeybd_resident_flag = 0;
-		goto LABEL_44;
 	}
-	return 1;
+	g_usbkb_used_kb_count = 0;
+	for ( unit_index = 0; unit_index < g_usbkb_cfg_keybd; unit_index += 1 )
+	{
+		g_usbkb_unit_buf[unit_index] = 0;
+		*g_usbkb_devloc_buf[unit_index] = 0;
+	}
+	switch ( g_usbkb_cfg_lmode )
+	{
+		default:
+		case 0:
+			g_usbkeybd_resident_flag = 1;
+			break;
+		case 1:
+			printf("usbkeybd : AUTOLOAD MODE\n");
+			g_usbkeybd_resident_flag = 0;
+			break;
+		case 2:
+			printf("usbkeybd : TESTLOAD MODE\n");
+			g_usbkeybd_resident_flag = 0;
+			break;
+	}
+	lddres = sceUsbdRegisterLdd(&g_kbd_driver);
+	if ( lddres )
+		printf("usbkeybd: sceUsbdRegisterLdd -> 0x%x\n", lddres);
+	if ( g_usbkb_cfg_lmode == 2 )
+	{
+		sceUsbdUnregisterLdd(&g_kbd_driver);
+		usbkb_cleanup();
+		return (g_usbkeybd_resident_flag != 1) ? 1 : 5;
+	}
+	else if ( g_usbkeybd_resident_flag
+				 && (thparam.attr = 0x2000000,
+						 thparam.thread = usbkb_thread_proc,
+						 thparam.priority = 50,
+						 thparam.stacksize = 4096,
+						 thparam.option = 0,
+						 g_usbkb_thread_id = CreateThread(&thparam),
+						 g_usbkb_thread_id > 0) )
+	{
+		StartThread(g_usbkb_thread_id, 0);
+		return 2;
+	}
+	else
+	{
+		sceUsbdUnregisterLdd(&g_kbd_driver);
+		usbkb_cleanup();
+		return 1;
+	}
+	
 }
 // 402080: using guessed type int g_usbkb_used_kb_count;
 // 402084: using guessed type int g_usbkb_cfg_keybd;
@@ -271,27 +233,27 @@ int usbkb_cleanup()
 {
 	int i; // $s1
 	ps2kbd_unit *unit; // $v0
-	int state[2]; // [sp+10h] [-8h] BYREF
+	int state; // [sp+10h] [-8h] BYREF
 
-	for ( i = 0; i < g_usbkb_cfg_keybd; ++i )
+	for ( i = 0; i < g_usbkb_cfg_keybd; i += 1 )
 	{
-		CpuSuspendIntr(state);
+		CpuSuspendIntr(&state);
 		FreeSysMemory(g_usbkb_devloc_buf[i]);
-		CpuResumeIntr(state[0]);
+		CpuResumeIntr(state);
 		unit = g_usbkb_unit_buf[i];
 		if ( unit )
 		{
 			sceUsbdClosePipe(unit->c_pipe);
 			sceUsbdClosePipe(unit->d_pipe);
-			CpuSuspendIntr(state);
+			CpuSuspendIntr(&state);
 			FreeSysMemory(unit);
-			CpuResumeIntr(state[0]);
+			CpuResumeIntr(state);
 		}
 	}
-	CpuSuspendIntr(state);
+	CpuSuspendIntr(&state);
 	FreeSysMemory(g_usbkb_unit_buf);
 	FreeSysMemory(g_usbkb_devloc_buf);
-	return CpuResumeIntr(state[0]);
+	return CpuResumeIntr(state);
 }
 // 402084: using guessed type int g_usbkb_cfg_keybd;
 
@@ -354,16 +316,12 @@ u8 *usbkb_rpc_fno_01_GetInfo(int fno, u8 *buffer)
 	u8 *infobuf; // $a0
 	int i; // $a2
 
-	*buffer = g_usbkb_cfg_keybd;
-	infobuf = buffer + 2;
+	buffer[0] = g_usbkb_cfg_keybd;
 	buffer[1] = g_usbkb_used_kb_count;
-	for ( i = 0; i < g_usbkb_cfg_keybd; ++infobuf )
+	infobuf = buffer + 2;
+	for ( i = 0; i < g_usbkb_cfg_keybd; i += 1 )
 	{
-		if ( g_usbkb_unit_buf[i] )
-			*infobuf = 1;
-		else
-			*infobuf = 0;
-		++i;
+		infobuf[i] = g_usbkb_unit_buf[i] ? 1 : 0;
 	}
 	return buffer;
 }
@@ -376,57 +334,48 @@ u8 *usbkb_rpc_fno_02_Read(int fno, u8 *buffer)
 	int unit_index; // $a1
 	ps2kbd_unit *unit; // $s0
 	u8 *infobuf; // $a0
-	u8 *ringbuf_tmp; // $a1
 	int j; // $v1
 	int i; // $v1
 	int state; // [sp+10h] [-8h] BYREF
 
 	unit_index = *buffer;
-	if ( g_usbkb_cfg_keybd >= unit_index )
+	buffer[1] = -1;
+	if ( g_usbkb_cfg_keybd < unit_index )
 	{
-		unit = g_usbkb_unit_buf[unit_index];
-		if ( unit )
+		printf("Illegal index_no : %d\n", unit_index);
+		return buffer;
+	}
+	unit = g_usbkb_unit_buf[unit_index];
+	if ( !unit )
+	{
+		printf("USB keyboard %d is not connected!\n", unit_index);
+		return buffer;
+	}
+	CpuSuspendIntr(&state);
+	infobuf = buffer + 2;
+	if ( unit->rblen <= 0 )
+	{
+		buffer[0] = unit->ledptn;
+		buffer[1] = 0;
+		for ( i = 0; i < unit->payload; i += 1 )
 		{
-			CpuSuspendIntr(&state);
-			infobuf = buffer + 2;
-			if ( unit->rblen <= 0 )
-			{
-				buffer[1] = 0;
-				*buffer = unit->ledptn;
-				for ( i = 0; i < unit->payload; ++infobuf )
-				{
-					*infobuf = 0;
-					++i;
-				}
-			}
-			else
-			{
-				ringbuf_tmp = unit->ringbuf[unit->rp];
-				*buffer = *ringbuf_tmp;
-				buffer[1] = ringbuf_tmp[1];
-				for ( j = 0; j < unit->payload; ++infobuf )
-				{
-					*infobuf = ringbuf_tmp[j + 2];
-					++j;
-				}
-				unit->rp += 1;
-				if ( unit->rp >= 3 )
-					unit->rp = 0;
-				--unit->rblen;
-			}
-			CpuResumeIntr(state);
-		}
-		else
-		{
-			printf("USB keyboard %d is not connected!\n", unit_index);
-			buffer[1] = -1;
+			infobuf[i] = 0;
 		}
 	}
 	else
 	{
-		printf("Illegal index_no : %d\n", unit_index);
-		buffer[1] = -1;
+		buffer[0] = unit->ringbuf[unit->rp][0];
+		buffer[1] = unit->ringbuf[unit->rp][1];
+		for ( j = 0; j < unit->payload; j += 1 )
+		{
+			infobuf[j] = unit->ringbuf[unit->rp][j + 2];
+		}
+		unit->rp += 1;
+		if ( unit->rp >= 3 )
+			unit->rp = 0;
+		unit->rblen -= 1;
 	}
+	CpuResumeIntr(state);
 	return buffer;
 }
 // 402084: using guessed type int g_usbkb_cfg_keybd;
@@ -436,61 +385,42 @@ u8 *usbkb_rpc_fno_03_GetLocation(int fno, u8 *buffer)
 {
 	int unit_index; // $a1
 	u8 *chrbuf; // $s0
-	int k; // $v1
 	ps2kbd_unit *unit; // $v0
-	int j; // $v1
 	int DeviceLocation; // $a3
 	int tmpchr_i; // $v1
 	int i; // $v1
-	char tmpchr; // $v0
 	u8 devloc_stk[8]; // [sp+10h] [-8h] BYREF
 
 	unit_index = *buffer;
 	chrbuf = buffer;
-	if ( unit_index < g_usbkb_cfg_keybd )
-	{
-		unit = g_usbkb_unit_buf[unit_index];
-		if ( unit )
-		{
-			DeviceLocation = sceUsbdGetDeviceLocation(unit->dev_id, devloc_stk);
-			tmpchr_i = 0;
-			if ( DeviceLocation )
-			{
-				printf(
-					"usbkeybd%d: %s -> 0x%x\n",
-					g_usbkb_unit_buf[*buffer]->number,
-					"sceUsbdGetDeviceLocation",
-					DeviceLocation);
-				for ( i = 7; i >= 0; --i )
-					*chrbuf++ = 0;
-				return buffer;
-			}
-			else
-			{
-				do
-				{
-					tmpchr = devloc_stk[tmpchr_i++];
-					*chrbuf++ = tmpchr;
-				}
-				while ( tmpchr_i < 7 );
-				return buffer;
-			}
-		}
-		else
-		{
-			printf("USB keyboard %d is not connected!\n", unit_index);
-			for ( j = 7; j >= 0; --j )
-				*chrbuf++ = 0;
-			return buffer;
-		}
-	}
-	else
+	for ( i = 7; i >= 0; --i )
+		chrbuf[i] = 0;
+	if ( unit_index >= g_usbkb_cfg_keybd )
 	{
 		printf("Illegal USB keyboard number! : %d\n", unit_index);
-		for ( k = 7; k >= 0; --k )
-			*chrbuf++ = 0;
 		return buffer;
 	}
+	unit = g_usbkb_unit_buf[unit_index];
+	if ( !unit )
+	{
+		printf("USB keyboard %d is not connected!\n", unit_index);
+		return buffer;
+	}
+	DeviceLocation = sceUsbdGetDeviceLocation(unit->dev_id, devloc_stk);
+	if ( DeviceLocation )
+	{
+		printf(
+			"usbkeybd%d: %s -> 0x%x\n",
+			g_usbkb_unit_buf[*buffer]->number,
+			"sceUsbdGetDeviceLocation",
+			DeviceLocation);
+		return buffer;
+	}
+	for ( tmpchr_i = 0; tmpchr_i < 7; tmpchr_i += 1 )
+	{
+		chrbuf[i] = devloc_stk[tmpchr_i];
+	}
+	return buffer;
 }
 // 402084: using guessed type int g_usbkb_cfg_keybd;
 // 400A50: using guessed type u8 devloc_stk[8];
@@ -499,46 +429,36 @@ u8 *usbkb_rpc_fno_03_GetLocation(int fno, u8 *buffer)
 u8 *usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer)
 {
 	int unit_index; // $a1
-	u8 ledptn; // $v1
 	ps2kbd_unit *unit; // $s0
 	int xferret; // $v0
 	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
 	unit_index = *buffer;
-	if ( unit_index < g_usbkb_cfg_keybd )
-	{
-		unit = g_usbkb_unit_buf[unit_index];
-		if ( unit )
-		{
-			unit->ledptn = buffer[1];
-			devreq.requesttype = 33;
-			devreq.request = 9;
-			devreq.value = 512;
-			devreq.length = 1;
-			devreq.index = unit->ifnum;
-			xferret = sceUsbdTransferPipe(unit->c_pipe, &unit->ledptn, 1u, &devreq, (sceUsbdDoneCallback)usbkb_donecb_SetLEDStatus, unit);
-			if ( xferret )
-			{
-				printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "SET_REPORT", xferret);
-				ledptn = ~buffer[1];
-			}
-			else
-			{
-				ledptn = unit->ledptn;
-			}
-		}
-		else
-		{
-			printf("Keyboard %d is not connected.\n", unit_index);
-			ledptn = ~buffer[1];
-		}
-	}
-	else
+	buffer[1] = ~buffer[1];
+	if ( unit_index >= g_usbkb_cfg_keybd )
 	{
 		printf("Illegal USB keyboard number! : %d\n", unit_index);
-		ledptn = ~buffer[1];
+		return buffer;
 	}
-	buffer[1] = ledptn;
+	unit = g_usbkb_unit_buf[unit_index];
+	if ( !unit )
+	{
+		printf("Keyboard %d is not connected.\n", unit_index);
+		return buffer;
+	}
+	unit->ledptn = ~buffer[1];
+	devreq.requesttype = 33;
+	devreq.request = 9;
+	devreq.value = 512;
+	devreq.length = 1;
+	devreq.index = unit->ifnum;
+	xferret = sceUsbdTransferPipe(unit->c_pipe, &unit->ledptn, 1u, &devreq, (sceUsbdDoneCallback)usbkb_donecb_SetLEDStatus, unit);
+	if ( !xferret )
+	{
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "SET_REPORT", xferret);
+		return buffer;
+	}
+	buffer[1] = unit->ledptn;
 	return buffer;
 }
 // 402084: using guessed type int g_usbkb_cfg_keybd;
@@ -556,26 +476,22 @@ u8 *usbkb_rpc_fno_05_SetLEDMode(int fno, u8 *buffer)
 {
 	int unit_index; // $a1
 	ps2kbd_unit *unit; // $a0
-	u8 old_ledbtn_tmp; // $v1
 
 	unit_index = *buffer;
+	buffer[1] = ~buffer[1];
 	if ( unit_index >= g_usbkb_cfg_keybd )
 	{
 		printf("Illegal USB keyboard number! : %d\n");
-LABEL_6:
-		old_ledbtn_tmp = ~buffer[1];
-		goto LABEL_7;
+		return buffer;
 	}
 	unit = g_usbkb_unit_buf[unit_index];
 	if ( !unit )
 	{
 		printf("Keyboard %d is not connected.\n");
-		goto LABEL_6;
+		return buffer;
 	}
-	old_ledbtn_tmp = buffer[1];
-	unit->old_ledbtn2 = old_ledbtn_tmp;
-LABEL_7:
-	buffer[1] = old_ledbtn_tmp;
+	unit->old_ledbtn2 = ~buffer[1];
+	buffer[1] = ~buffer[1];
 	return buffer;
 }
 // 402084: using guessed type int g_usbkb_cfg_keybd;
@@ -588,24 +504,22 @@ u8 *usbkb_rpc_fno_06_ClearRbuf(int fno, u8 *buffer)
 	int state; // [sp+10h] [-8h] BYREF
 
 	unit_index = *buffer;
-	if ( unit_index < g_usbkb_cfg_keybd )
-	{
-		unit = g_usbkb_unit_buf[unit_index];
-		if ( unit )
-		{
-			CpuSuspendIntr(&state);
-			unit->wp = 0;
-			unit->rp = 0;
-			unit->rblen = 0;
-			CpuResumeIntr(state);
-			return buffer;
-		}
-		printf("clear_rbuf() : Keyboard %d is not connected.\n");
-	}
-	else
+	if ( unit_index >= g_usbkb_cfg_keybd )
 	{
 		printf("clear_rbuf() : Illegal USB keyboard number! : %d\n");
+		return buffer;
 	}
+	unit = g_usbkb_unit_buf[unit_index];
+	if ( !unit )
+	{
+		printf("clear_rbuf() : Keyboard %d is not connected.\n");
+		return buffer;
+	}
+	CpuSuspendIntr(&state);
+	unit->wp = 0;
+	unit->rp = 0;
+	unit->rblen = 0;
+	CpuResumeIntr(state);
 	return buffer;
 }
 // 402084: using guessed type int g_usbkb_cfg_keybd;
@@ -619,29 +533,25 @@ int usbkb_drv_probe(int devID)
 	if ( g_usbkb_used_kb_count >= g_usbkb_cfg_keybd )
 		return 0;
 	dev = sceUsbdScanStaticDescriptor(devID, 0, 1u);
-	if ( dev )
-	{
-		if ( !dev->bDeviceClass )
-		{
-			if ( dev->bNumConfigurations == 1 )
-			{
-				intf = sceUsbdScanStaticDescriptor(devID, dev, 4u);
-				if ( !intf )
-					return 0;
-				if ( intf->bInterfaceClass != 3 )
-					return 0;
-				if ( intf->bInterfaceSubClass != 1 )
-					return 0;
-				if ( intf->bInterfaceProtocol != 1 )
-					return 0;
-				if ( g_usbkb_cfg_debug > 0 )
-					printf("usbkeybd : resident_flag is ON\n");
-				g_usbkeybd_resident_flag = intf->bInterfaceProtocol;
-				return g_usbkb_cfg_lmode != 2;
-			}
-		}
-	}
-	return 0;
+	if ( !dev )
+		return 0;
+	if ( dev->bDeviceClass )
+		return 0;
+	if ( dev->bNumConfigurations != 1 )
+		return 0;
+	intf = sceUsbdScanStaticDescriptor(devID, dev, 4u);
+	if ( !intf )
+		return 0;
+	if ( intf->bInterfaceClass != 3 )
+		return 0;
+	if ( intf->bInterfaceSubClass != 1 )
+		return 0;
+	if ( intf->bInterfaceProtocol != 1 )
+		return 0;
+	if ( g_usbkb_cfg_debug > 0 )
+		printf("usbkeybd : resident_flag is ON\n");
+	g_usbkeybd_resident_flag = intf->bInterfaceProtocol;
+	return g_usbkb_cfg_lmode != 2;
 }
 // 402080: using guessed type int g_usbkb_used_kb_count;
 // 402084: using guessed type int g_usbkb_cfg_keybd;
@@ -667,78 +577,68 @@ int usbkb_drv_connect(int devID)
 	intf = sceUsbdScanStaticDescriptor(devID, conf, 4u);
 	if ( !intf )
 		return 0;
-	if ( intf->bInterfaceClass == 3 )
+	if ( intf->bInterfaceClass != 3 )
+		return 0;
+	if ( intf->bInterfaceSubClass != 1 )
+		return 0;
+	if ( intf->bInterfaceProtocol != 1 )
+		return 0;
+	if ( intf->bNumEndpoints != 1 )
+		return -1;
+	endp = sceUsbdScanStaticDescriptor(devID, intf, 5u);
+	if ( !endp )
+		return -1;
+	if ( (endp->bEndpointAddress & 0x80) == 0 )
+		return -1;
+	if ( (endp->bmAttributes & 3) != 3 )
+		return -1;
+	maxPacketSize = endp->wMaxPacketSizeLB | (endp->wMaxPacketSizeHB << 8);
+	if ( maxPacketSize >= 65 )
+		return -1;
+	unit = usbkb_allocate_unit(devID, maxPacketSize, intf->bInterfaceNumber, intf->bAlternateSetting);
+	if ( !unit )
+		return -1;
+	unit->c_pipe = sceUsbdOpenPipe(devID, 0);
+	if ( unit->c_pipe < 0 )
+		return -1;
+	unit->d_pipe = sceUsbdOpenPipe(devID, endp);
+	if ( unit->d_pipe < 0 )
 	{
-		if ( intf->bInterfaceSubClass == 1 )
-		{
-			if ( intf->bInterfaceProtocol != 1 )
-				return 0;
-			if ( intf->bNumEndpoints == 1 )
-			{
-				endp = sceUsbdScanStaticDescriptor(devID, intf, 5u);
-				if ( endp )
-				{
-					if ( (endp->bEndpointAddress & 0x80) != 0 )
-					{
-						if ( (endp->bmAttributes & 3) != 3 )
-							return -1;
-						maxPacketSize = endp->wMaxPacketSizeLB | (endp->wMaxPacketSizeHB << 8);
-						if ( maxPacketSize < 65 )
-						{
-							unit = usbkb_allocate_unit(devID, maxPacketSize, intf->bInterfaceNumber, intf->bAlternateSetting);
-							if ( !unit )
-								return -1;
-							unit->c_pipe = sceUsbdOpenPipe(devID, 0);
-							if ( unit->c_pipe < 0 )
-								return -1;
-							unit->d_pipe = sceUsbdOpenPipe(devID, endp);
-							if ( unit->d_pipe < 0 )
-							{
-								FreeSysMemory(unit);
-								return -1;
-							}
-							sceUsbdSetPrivateData(devID, unit);
-							devreq.requesttype = 0;
-							devreq.request = 9;
-							devreq.index = 0;
-							devreq.length = 0;
-							devreq.value = conf->bConfigurationValue;
-							xferret = sceUsbdTransferPipe(unit->c_pipe, 0, 0, &devreq, (sceUsbdDoneCallback)usbkb_donecb_SetConfiguration, unit);
-							if ( xferret )
-							{
-								printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdSetConfiguration", xferret);
-								return -1;
-							}
-							DeviceLocation = sceUsbdGetDeviceLocation(devID, g_usbkb_devloc_buf[unit->number]);
-							if ( DeviceLocation )
-							{
-								printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdGetDeviceLocation", DeviceLocation);
-								return -1;
-							}
-							if ( g_usbkb_cfg_debug > 0 )
-							{
-								printf("dev_id:%d\n", devID);
-								printf("usbkeybd%d: attached (port=", unit->number);
-								do
-								{
-									if ( !g_usbkb_devloc_buf[unit->number][DeviceLocation] )
-										break;
-									++DeviceLocation;
-									printf("%s%d", DeviceLocation ? "," : "", g_usbkb_devloc_buf[unit->number][DeviceLocation]);
-								}
-								while ( DeviceLocation < 7 );
-								printf(")\n");
-							}
-							++g_usbkb_used_kb_count;
-							g_usbkb_unit_buf[unit->number] = unit;
-							return 0;
-						}
-					}
-				}
-			}
-			return -1;
-		}
+		FreeSysMemory(unit);
+		return -1;
 	}
+	sceUsbdSetPrivateData(devID, unit);
+	devreq.requesttype = 0;
+	devreq.request = 9;
+	devreq.index = 0;
+	devreq.length = 0;
+	devreq.value = conf->bConfigurationValue;
+	xferret = sceUsbdTransferPipe(unit->c_pipe, 0, 0, &devreq, (sceUsbdDoneCallback)usbkb_donecb_SetConfiguration, unit);
+	if ( xferret )
+	{
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdSetConfiguration", xferret);
+		return -1;
+	}
+	DeviceLocation = sceUsbdGetDeviceLocation(devID, g_usbkb_devloc_buf[unit->number]);
+	if ( DeviceLocation )
+	{
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdGetDeviceLocation", DeviceLocation);
+		return -1;
+	}
+	if ( g_usbkb_cfg_debug > 0 )
+	{
+		int i;
+
+		printf("dev_id:%d\n", devID);
+		printf("usbkeybd%d: attached (port=", unit->number);
+		for ( i = 0; i < 7 && g_usbkb_devloc_buf[unit->number][i]; i += 1 )
+		{
+			printf("%s%d", i ? "," : "", g_usbkb_devloc_buf[unit->number][i]);
+		}
+		printf(")\n");
+	}
+	g_usbkb_used_kb_count += 1;
+	g_usbkb_unit_buf[unit->number] = unit;
 	return 0;
 }
 // 401F30: using guessed type int nullstr;
@@ -748,87 +648,61 @@ int usbkb_drv_connect(int devID)
 //----- (00401244) --------------------------------------------------------
 ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumber, int alternateSetting)
 {
-	ps2kbd_unit *unit_tmp1; // $v0
+	ps2kbd_unit *unit; // $v0
 	int DeviceLocation; // $v0
 	int unit_index1; // $a2
-	u8 **devloc_buf_tmp; // $t0
 	int devloc_index; // $a1
-	u8 *devloc_tmp; // $v0
 	int unit_index2; // $a2
-	ps2kbd_unit **unit_buf_cur; // $v1
 	u8 devloc_stk[8]; // [sp+10h] [-8h] BYREF
 
 	if ( g_usbkb_used_kb_count >= g_usbkb_cfg_keybd )
 		return 0;
-	unit_tmp1 = AllocSysMemory(0, maxPacketSize + 0xF8, 0);
-	if ( unit_tmp1 )
+	unit = AllocSysMemory(0, maxPacketSize + 0xF8, 0);
+	if ( !unit )
+		return 0;
+	unit->dev_id = devID;
+	DeviceLocation = sceUsbdGetDeviceLocation(devID, devloc_stk);
+	if ( DeviceLocation )
 	{
-		unit_tmp1->dev_id = devID;
-		DeviceLocation = sceUsbdGetDeviceLocation(devID, devloc_stk);
-		if ( DeviceLocation )
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdGetDeviceLocation", DeviceLocation);
+		return 0;
+	}
+	for ( unit_index1 = 0; unit_index1 < g_usbkb_cfg_keybd; unit_index1 += 1 )
+	{
+		for ( devloc_index = 0; devloc_index < 7; devloc_index += 1 )
 		{
-			printf("usbkeybd%d: %s -> 0x%x\n", unit_tmp1->number, "sceUsbdGetDeviceLocation", DeviceLocation);
+			if ( g_usbkb_devloc_buf[unit_index1][devloc_index] != devloc_stk[devloc_index] )
+				break;
+		}
+		if ( devloc_index == 7 )
+			break;
+	}
+	unit->number = unit_index1;
+	if ( unit_index1 == g_usbkb_cfg_keybd )
+	{
+		for ( unit_index2 = 0; unit_index2 < g_usbkb_cfg_keybd; unit_index2 += 1 )
+		{
+			if ( !g_usbkb_unit_buf[unit_index2] )
+				break;
+		}
+		if ( unit_index2 >= g_usbkb_cfg_keybd )
+		{
+			printf("logical error\n");
 			return 0;
 		}
-		unit_index1 = 0;
-		if ( g_usbkb_cfg_keybd > 0 )
-		{
-			devloc_buf_tmp = g_usbkb_devloc_buf;
-			while ( 1 )
-			{
-				devloc_index = 0;
-				devloc_tmp = *devloc_buf_tmp;
-				do
-				{
-					if ( *devloc_tmp != devloc_stk[devloc_index] )
-						break;
-					devloc_tmp = &(*devloc_buf_tmp)[++devloc_index];
-				}
-				while ( devloc_index < 7 );
-				if ( devloc_index == 7 )
-					break;
-				++unit_index1;
-				++devloc_buf_tmp;
-				if ( unit_index1 >= g_usbkb_cfg_keybd )
-					goto LABEL_14;
-			}
-			unit_tmp1->number = unit_index1;
-		}
-LABEL_14:
-		if ( unit_index1 == g_usbkb_cfg_keybd )
-		{
-			unit_index2 = 0;
-			if ( g_usbkb_cfg_keybd <= 0 )
-				goto LABEL_20;
-			unit_buf_cur = g_usbkb_unit_buf;
-			do
-			{
-				if ( !*unit_buf_cur )
-					break;
-				++unit_index2;
-				++unit_buf_cur;
-			}
-			while ( unit_index2 < g_usbkb_cfg_keybd );
-			if ( unit_index2 >= g_usbkb_cfg_keybd )
-			{
-LABEL_20:
-				printf("logical error\n");
-				return 0;
-			}
-			unit_tmp1->number = unit_index2;
-		}
-		unit_tmp1->payload = maxPacketSize;
-		unit_tmp1->ifnum = interfaceNumber;
-		unit_tmp1->as = alternateSetting;
-		unit_tmp1->count = 0;
-		unit_tmp1->ledptn = 0;
-		unit_tmp1->old_ledbtn = 0;
-		unit_tmp1->old_ledbtn2 = 1;
-		unit_tmp1->rp = 0;
-		unit_tmp1->wp = 0;
-		unit_tmp1->rblen = 0;
+		unit->number = unit_index2;
 	}
-	return unit_tmp1;
+	unit->payload = maxPacketSize;
+	unit->ifnum = interfaceNumber;
+	unit->as = alternateSetting;
+	unit->count = 0;
+	unit->ledptn = 0;
+	unit->old_ledbtn = 0;
+	unit->old_ledbtn2 = 1;
+	unit->rp = 0;
+	unit->wp = 0;
+	unit->rblen = 0;
+	return unit;
 }
 // 402080: using guessed type int g_usbkb_used_kb_count;
 // 402084: using guessed type int g_usbkb_cfg_keybd;
@@ -905,11 +779,8 @@ int usbkb_donecb_data_transfer(int result, int count, ps2kbd_unit *arg)
 	int ledmask; // $s1
 	int data_index1; // $s0
 	int data_index2; // $s0
-	unsigned int data_tmp3; // $v1
 	int xferret; // $v0
 	int ringbuf_i; // $s0
-	u8 *ringbuf_tmp; // $a0
-	u8 *ringbuf_cur_tmp; // $v1
 	UsbDeviceRequest devreq; // [sp+18h] [-10h] BYREF
 	int state; // [sp+20h] [-8h] BYREF
 
@@ -919,68 +790,38 @@ int usbkb_donecb_data_transfer(int result, int count, ps2kbd_unit *arg)
 		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "data_transfer_done:sceUsbdInterruptTransfer", result);
 		return usbkb_data_transfer(arg);
 	}
-	data_index1 = 0;
 	if ( g_usbkb_cfg_debug > 0 )
 	{
 		arg->count += 1;
 		printf("usbkeybd%d: count=%d led=%02X data=(", arg->number, arg->count, arg->ledptn);
-		if ( count > 0 )
+		for ( data_index1 = 0; data_index1 < count; data_index1 += 1 )
 		{
-			do
-			{
-				printf(" %02x", arg->data[data_index1++]);
-			}
-			while ( data_index1 < count );
+			printf(" %02x", arg->data[data_index1]);
 		}
 		printf(" )\n");
 	}
-	data_index2 = 2;
-	if ( count > 2 )
+	for ( data_index2 = 2; data_index2 < count; data_index2 += 1 )
 	{
-		while ( 1 )
+		switch ( arg->data[data_index2] )
 		{
-			data_tmp3 = arg->data[data_index2];
-			if ( data_tmp3 == 0x53 )
+			case 0x39:
+				if ( arg->old_ledbtn2 == 1 || (arg->old_ledbtn2 == 2 && (arg->data[0] & 0x22) != 0))
+					ledmask |= 2u;
 				break;
-			if ( data_tmp3 >= 0x54 )
-			{
-				if ( data_tmp3 == 0x90 )
-				{
-					ledmask |= 0x10u;
-					goto LABEL_25;
-				}
-				if ( data_tmp3 == 0xE3 )
-				{
-					ledmask |= 8u;
-					goto LABEL_25;
-				}
-				++data_index2;
-			}
-			else
-			{
-				if ( data_tmp3 == 0x39 )
-				{
-					if ( arg->old_ledbtn2 == 1 || (arg->old_ledbtn2 == 2 && (arg->data[0] & 0x22) != 0))
-						ledmask |= 2u;
-					goto LABEL_25;
-				}
-				if ( data_tmp3 == 0x47 )
-				{
-					ledmask |= 4u;
-					goto LABEL_25;
-				}
-				++data_index2;
-			}
-LABEL_26:
-			if ( data_index2 >= count )
-				goto LABEL_27;
+			case 0x47:
+				ledmask |= 4u;
+				break;
+			case 0x53:
+				ledmask |= 1u;
+				break;
+			case 0x90:
+				ledmask |= 0x10u;
+				break;
+			case 0xE3:
+				ledmask |= 8u;
+				break;
 		}
-		ledmask |= 1u;
-LABEL_25:
-		++data_index2;
-		goto LABEL_26;
 	}
-LABEL_27:
 	if ( arg->old_ledbtn == ledmask || !arg->old_ledbtn2 )
 	{
 		usbkb_data_transfer(arg);
@@ -999,19 +840,11 @@ LABEL_27:
 			printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "SET_REPORT", xferret);
 	}
 	CpuSuspendIntr(&state);
-	ringbuf_i = 0;
-	ringbuf_tmp = arg->ringbuf[arg->wp];
-	ringbuf_tmp[1] = count;
-	*ringbuf_tmp = arg->ledptn;
-	if ( count > 0 )
+	arg->ringbuf[arg->wp][0] = arg->ledptn;
+	arg->ringbuf[arg->wp][1] = count;
+	for ( ringbuf_i = 0; ringbuf_i < count; ringbuf_i += 1 )
 	{
-		ringbuf_cur_tmp = ringbuf_tmp;
-		do
-		{
-			ringbuf_cur_tmp[2] = arg->data[ringbuf_i++];
-			ringbuf_cur_tmp = &ringbuf_tmp[ringbuf_i];
-		}
-		while ( ringbuf_i < count );
+		arg->ringbuf[ringbuf_i][2] = arg->data[ringbuf_i];
 	}
 	arg->wp += 1;
 	if ( arg->wp >= 3 )
@@ -1046,7 +879,7 @@ int usbkb_drv_disconnect(int devID)
 	unit = sceUsbdGetPrivateData(devID);
 	if ( unit )
 	{
-		--g_usbkb_used_kb_count;
+		g_usbkb_used_kb_count -= 1;
 		g_usbkb_unit_buf[unit->number] = 0;
 		if ( g_usbkb_cfg_debug > 0 )
 			printf("usbkeybd%d: detached\n", unit->number);
