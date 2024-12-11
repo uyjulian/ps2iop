@@ -1,5 +1,6 @@
 
 #include "irx_imports.h"
+#include <usbd_macro.h>
 
 typedef struct _unit
 {
@@ -411,7 +412,6 @@ void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer)
 	int unit_index; // $a1
 	ps2kbd_unit *unit; // $s0
 	int xferret; // $v0
-	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
 	(void)fno;
 
@@ -429,12 +429,7 @@ void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer)
 		return;
 	}
 	unit->ledptn = ~buffer[1];
-	devreq.requesttype = 33;
-	devreq.request = 9;
-	devreq.value = 512;
-	devreq.length = 1;
-	devreq.index = unit->ifnum;
-	xferret = sceUsbdTransferPipe(unit->c_pipe, &unit->ledptn, 1u, &devreq, (sceUsbdDoneCallback)usbkb_donecb_SetLEDStatus, unit);
+	xferret = sceUsbdControlTransfer(unit->c_pipe, 33, 9, 512, unit->ifnum, 1, &unit->ledptn, (sceUsbdDoneCallback)usbkb_donecb_SetLEDStatus, unit);
 	if ( !xferret )
 	{
 		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "SET_REPORT", xferret);
@@ -553,7 +548,6 @@ int usbkb_drv_connect(int devID)
 	ps2kbd_unit *unit; // $s1
 	int xferret; // $s0
 	int DeviceLocation; // $s0
-	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
 	conf = sceUsbdScanStaticDescriptor(devID, 0, 2u);
 	if ( !conf )
@@ -592,12 +586,7 @@ int usbkb_drv_connect(int devID)
 		return -1;
 	}
 	sceUsbdSetPrivateData(devID, unit);
-	devreq.requesttype = 0;
-	devreq.request = 9;
-	devreq.index = 0;
-	devreq.length = 0;
-	devreq.value = conf->bConfigurationValue;
-	xferret = sceUsbdTransferPipe(unit->c_pipe, 0, 0, &devreq, (sceUsbdDoneCallback)usbkb_donecb_SetConfiguration, unit);
+	xferret = sceUsbdControlTransfer(unit->c_pipe, 0, 9, conf->bConfigurationValue, 0, 0, 0, (sceUsbdDoneCallback)usbkb_donecb_SetConfiguration, unit);
 	if ( xferret )
 	{
 		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdSetConfiguration", xferret);
@@ -688,7 +677,6 @@ ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumb
 void usbkb_donecb_SetConfiguration(int result, int count, ps2kbd_unit *arg)
 {
 	int xferret; // $v0
-	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
 	(void)count;
 
@@ -699,12 +687,7 @@ void usbkb_donecb_SetConfiguration(int result, int count, ps2kbd_unit *arg)
 		usbkb_set_idle_request(arg);
 		return;
 	}
-	devreq.requesttype = 1;
-	devreq.request = 11;
-	devreq.value = arg->as;
-	devreq.length = 0;
-	devreq.index = arg->ifnum;
-	xferret = sceUsbdTransferPipe(arg->c_pipe, 0, 0, &devreq, (sceUsbdDoneCallback)usbkb_donecb_SetInterface, arg);
+	xferret = sceUsbdControlTransfer(arg->c_pipe, 1, 11, arg->as, arg->ifnum, 0, 0, (sceUsbdDoneCallback)usbkb_donecb_SetInterface, arg);
 	if ( xferret )
 		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "sceUsbdSetInterface", xferret);
 }
@@ -723,14 +706,8 @@ void usbkb_donecb_SetInterface(int result, int count, ps2kbd_unit *arg)
 void usbkb_set_idle_request(ps2kbd_unit *cbArg)
 {
 	int xferret; // $v0
-	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
-	devreq.requesttype = 33;
-	devreq.request = 10;
-	devreq.value = 0;
-	devreq.length = 0;
-	devreq.index = cbArg->ifnum;
-	xferret = sceUsbdTransferPipe(cbArg->c_pipe, 0, 0, &devreq, (sceUsbdDoneCallback)usbkb_donecb_set_idle_request, cbArg);
+	xferret = sceUsbdControlTransfer(33, 10, 0, cbArg->ifnum, 0, 0, 0, (sceUsbdDoneCallback)usbkb_donecb_set_idle_request, cbArg);
 	if ( xferret )
 		printf("usbkeybd%d: %s -> 0x%x\n", cbArg->number, "set_idle_request", xferret);
 }
@@ -761,7 +738,6 @@ void usbkb_donecb_data_transfer(int result, int count, ps2kbd_unit *arg)
 	int ledmask; // $s1
 	int i; // $s0
 	int xferret; // $v0
-	UsbDeviceRequest devreq; // [sp+18h] [-10h] BYREF
 	int state; // [sp+20h] [-8h] BYREF
 
 	ledmask = 0;
@@ -807,12 +783,7 @@ void usbkb_donecb_data_transfer(int result, int count, ps2kbd_unit *arg)
 	{
 		arg->old_ledbtn = ledmask;
 		arg->ledptn ^= ledmask;
-		devreq.requesttype = 33;
-		devreq.request = 9;
-		devreq.value = 512;
-		devreq.length = 1;
-		devreq.index = arg->ifnum;
-		xferret = sceUsbdTransferPipe(arg->c_pipe, &arg->ledptn, 1u, &devreq, (sceUsbdDoneCallback)usbkb_donecb_led_transfer, arg);
+		xferret = sceUsbdControlTransfer(arg->c_pipe, 33, 9, 512, arg->ifnum, 1, &arg->ledptn, (sceUsbdDoneCallback)usbkb_donecb_led_transfer, arg);
 		if ( xferret )
 			printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "SET_REPORT", xferret);
 	}
