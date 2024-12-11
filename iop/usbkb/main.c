@@ -192,25 +192,19 @@ int _start(int ac, char **av)
 		usbkb_cleanup();
 		return (g_usbkeybd_resident_flag != 1) ? 1 : 5;
 	}
-	else if ( g_usbkeybd_resident_flag
-				 && (thparam.attr = 0x2000000,
-						 thparam.thread = usbkb_thread_proc,
-						 thparam.priority = 50,
-						 thparam.stacksize = 4096,
-						 thparam.option = 0,
-						 g_usbkb_thread_id = CreateThread(&thparam),
-						 g_usbkb_thread_id > 0) )
-	{
-		StartThread(g_usbkb_thread_id, 0);
-		return 2;
-	}
-	else
+	thparam.attr = 0x2000000;
+	thparam.thread = usbkb_thread_proc;
+	thparam.priority = 50;
+	thparam.stacksize = 4096;
+	thparam.option = 0;
+	if ( !g_usbkeybd_resident_flag || ((g_usbkb_thread_id = CreateThread(&thparam)) <= 0) )
 	{
 		sceUsbdUnregisterLdd(&g_kbd_driver);
 		usbkb_cleanup();
 		return 1;
 	}
-	
+	StartThread(g_usbkb_thread_id, 0);
+	return 2;
 }
 // 402080: using guessed type int g_usbkb_used_kb_count;
 // 402084: using guessed type int g_usbkb_cfg_keybd;
