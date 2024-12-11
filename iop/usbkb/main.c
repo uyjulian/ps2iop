@@ -274,6 +274,8 @@ void usbkb_thread_proc()
 //----- (0040076C) --------------------------------------------------------
 void *usbkb_rpc_func(int fno, void *buffer, int length)
 {
+	(void)length;
+
 	switch ( fno )
 	{
 		case 1:
@@ -307,6 +309,8 @@ void usbkb_rpc_fno_01_GetInfo(int fno, u8 *buffer)
 	u8 *infobuf; // $a0
 	int i; // $a2
 
+	(void)fno;
+
 	buffer[0] = g_usbkb_cfg_keybd;
 	buffer[1] = g_usbkb_used_kb_count;
 	infobuf = buffer + 2;
@@ -324,6 +328,8 @@ void usbkb_rpc_fno_02_Read(int fno, u8 *buffer)
 	u8 *infobuf; // $a0
 	int i; // $v1
 	int state; // [sp+10h] [-8h] BYREF
+
+	(void)fno;
 
 	unit_index = *buffer;
 	buffer[1] = -1;
@@ -372,6 +378,8 @@ void usbkb_rpc_fno_03_GetLocation(int fno, u8 *buffer)
 	int i; // $v1
 	u8 devloc_stk[8]; // [sp+10h] [-8h] BYREF
 
+	(void)fno;
+
 	unit_index = *buffer;
 	chrbuf = buffer;
 	for ( i = 0; i < 7; i += 1 )
@@ -411,6 +419,8 @@ void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer)
 	int xferret; // $v0
 	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
+	(void)fno;
+
 	unit_index = *buffer;
 	buffer[1] = ~buffer[1];
 	if ( unit_index >= g_usbkb_cfg_keybd )
@@ -443,6 +453,8 @@ void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer)
 //----- (00400CBC) --------------------------------------------------------
 void usbkb_donecb_SetLEDStatus(int result, int count, ps2kbd_unit *arg)
 {
+	(void)count;
+
 	if ( result )
 		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "set_led_status", result);
 }
@@ -452,6 +464,8 @@ void usbkb_rpc_fno_05_SetLEDMode(int fno, u8 *buffer)
 {
 	int unit_index; // $a1
 	ps2kbd_unit *unit; // $a0
+
+	(void)fno;
 
 	unit_index = *buffer;
 	buffer[1] = ~buffer[1];
@@ -477,6 +491,8 @@ void usbkb_rpc_fno_06_ClearRbuf(int fno, u8 *buffer)
 	int unit_index; // $a1
 	ps2kbd_unit *unit; // $s0
 	int state; // [sp+10h] [-8h] BYREF
+
+	(void)fno;
 
 	unit_index = *buffer;
 	if ( unit_index >= g_usbkb_cfg_keybd )
@@ -680,6 +696,8 @@ void usbkb_donecb_SetConfiguration(int result, int count, ps2kbd_unit *arg)
 	int xferret; // $v0
 	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
+	(void)count;
+
 	if ( result )
 		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "sceUsbdSetConfiguration", result);
 	if ( arg->as <= 0 )
@@ -700,6 +718,8 @@ void usbkb_donecb_SetConfiguration(int result, int count, ps2kbd_unit *arg)
 //----- (0040152C) --------------------------------------------------------
 void usbkb_donecb_SetInterface(int result, int count, ps2kbd_unit *arg)
 {
+	(void)count;
+
 	if ( result )
 		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "sceUsbdSetInterface", result);
 	usbkb_set_idle_request(arg);
@@ -724,6 +744,8 @@ void usbkb_set_idle_request(ps2kbd_unit *cbArg)
 //----- (004015FC) --------------------------------------------------------
 void usbkb_donecb_set_idle_request(int result, int count, ps2kbd_unit *arg)
 {
+	(void)count;
+
 	if ( result )
 		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "set_idle_request_done", result);
 	usbkb_data_transfer(arg);
@@ -823,6 +845,8 @@ void usbkb_donecb_data_transfer(int result, int count, ps2kbd_unit *arg)
 //----- (004019D8) --------------------------------------------------------
 void usbkb_donecb_led_transfer(int result, int count, ps2kbd_unit *arg)
 {
+	(void)count;
+
 	if ( result )
 		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "led_transfer_done", result);
 	usbkb_data_transfer(arg);

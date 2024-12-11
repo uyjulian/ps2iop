@@ -1,5 +1,7 @@
 IOP_BIN = usbkb.irx
 
+IOP_WARNFLAGS ?= -Wall -Wextra
+
 IOP_OBJS = imports.o main.o
 
 all: $(IOP_BIN)
