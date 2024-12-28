@@ -2,6 +2,8 @@ IOP_BIN = igreeting.irx
 
 IOP_OBJS = igreeting.o imports.o
 
+IOP_WARNFLAGS += -Wall -Wextra
+
 all: $(IOP_BIN)
 
 clean:
