@@ -6,3 +6,7 @@ sysmem_IMPORTS_end
 loadcore_IMPORTS_start
 I_QueryBootMode
 loadcore_IMPORTS_end
+
+sysclib_IMPORTS_start
+I_memset
+sysclib_IMPORTS_end

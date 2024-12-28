@@ -1,5 +1,5 @@
 
-DECLARE_EXPORT_TABLE(eeconfig, 1, 1)
+DECLARE_EXPORT_TABLE(eeconfig, 1, 3)
     DECLARE_EXPORT(_start)
     DECLARE_EXPORT(_retonly)
     DECLARE_EXPORT(_retonly)
