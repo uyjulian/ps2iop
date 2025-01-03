@@ -236,7 +236,7 @@ void libsd_1();
 void SetEffectRegister(int core, int spu2_regs_offset, int val);
 void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data);
 int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode);
-int __fastcall CleanHandler(int channel, int unusedarg);
+int CleanHandler(int channel, void *unusedarg);
 int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode);
 void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr);
 int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr);
@@ -1131,7 +1131,8 @@ sceSdSpu2IntrHandler Spu2IntrHandler = NULL;
 void *Spu2IntrHandlerData = NULL; // idb
 sceSdTransIntrHandler TransIntrHandlers[2] = { NULL, NULL };
 CleanEffectIntrData_t BlockHandlerIntrData[2] = { { NULL, NULL }, { NULL, NULL } };
-int CleanHandlers[2] = { 0, 0 };
+typedef int (*SdCleanHandler)(int, void *);
+SdCleanHandler CleanHandlers[2] = { 0, 0 };
 IntrData TransIntrData[2] = { { 0u, NULL }, { 1u, NULL } };
 __int16 VoiceDataInit[8] = { 1792, 0, 0, 0, 0, 0, 0, 0 };
 u32 CleanRegionMax[2];
@@ -1357,11 +1358,12 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
 }
 
 //----- (00400888) --------------------------------------------------------
-int __fastcall CleanHandler(int channel, int unusedarg)
+int CleanHandler(int channel, void *unusedarg)
 {
   int channel_tmp; // $s2
   int channel_offs; // $s0
 
+  (void)unusedarg;
   channel_tmp = channel;
   ++CleanRegionCur[channel];
   if ( (int)CleanRegionCur[channel] >= (int)(CleanRegionMax[channel] - 1) )
@@ -1442,7 +1444,7 @@ LABEL_15:
   v12->m_elements[0].m_size = v14;
   v16 = channel;
   CleanRegionMax[v16] = CleanRegionMax[channel] + 1;
-  CleanHandlers[v16] = (int)CleanHandler;
+  CleanHandlers[v16] = CleanHandler;
   CleanRegionCur[v16] = 0;
   v11 = sceSdVoiceTrans(channel & 0xFFFF, 0, (u8 *)ClearEffectData, v10, 0x400u);
   if ( v11 >= 0 )
@@ -1644,7 +1646,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
 //----- (00401380) --------------------------------------------------------
 int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
 {
-  unsigned int mode_low; // $v1
+  int mode_low; // $v1
   int mode; // $a0
   __int16 mode_data_0; // $v1
   int core_tmp1; // $a1
@@ -1654,7 +1656,7 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
   struct mode_data_struct mode_data; // [sp+10h] [-48h] BYREF
 
   mode_low = attr->mode & 0xFF;
-  if ( mode_low >= 0xA )
+  if ( (unsigned int)mode_low >= 0xA )
     return -100;
   mode = EffectAttr[core].mode;
   if ( mode != mode_low )
@@ -2065,6 +2067,7 @@ LABEL_31:
 //----- (00402024) --------------------------------------------------------
 u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag)
 {
+  (void)flag;
   return thunk_sceSdBlockTransStatus(channel);
 }
 
@@ -2427,14 +2430,14 @@ int __fastcall TransInterrupt(IntrData *intr)
       FlushDcache();
     if ( CleanHandlers[mode_1_tmp1] )
     {
-      ((void (__fastcall *)(int, _DWORD))CleanHandlers[mode_1_tmp1])(mode_1, 0);
+      CleanHandlers[mode_1_tmp1](mode_1, 0);
       return 1;
     }
     iSetEventFlag(VoiceTransCompleteEf[mode_1_tmp1], 1u);
     if ( TransIntrHandlers[mode_1_tmp1] )
     {
       VoiceTransIoMode[mode_1_tmp1] = 1;
-      ((void (__fastcall *)(int, void *))TransIntrHandlers[mode_1_tmp1])(mode_1, intr->data);
+      TransIntrHandlers[mode_1_tmp1](mode_1, intr->data);
       return 1;
     }
     if ( !TransIntrCallbacks[mode_1_tmp1] )
@@ -2443,7 +2446,7 @@ int __fastcall TransInterrupt(IntrData *intr)
       return 1;
     }
     VoiceTransIoMode[mode_1_tmp1] = 1;
-    ((void (__fastcall *)(int))TransIntrCallbacks[mode_1_tmp1])(0);
+    TransIntrCallbacks[mode_1_tmp1](0);
     return 1;
   }
   if ( mode_300 != 0x200 )
@@ -2508,7 +2511,7 @@ int __fastcall TransInterrupt(IntrData *intr)
     }
     if ( TransIntrHandlers[mode_1_tmp4] )
     {
-      ((void (__fastcall *)(int, void *))TransIntrHandlers[mode_1_tmp4])(mode_1, intr->data);
+      TransIntrHandlers[mode_1_tmp4](mode_1, intr->data);
       return 1;
     }
     if ( TransIntrCallbacks[mode_1_tmp4] )
@@ -3262,6 +3265,7 @@ int __fastcall Spu2Interrupt(void *data)
   bool condtmp1; // dc
   int condtmp3; // $v0
 
+  (void)data;
   if ( Spu2IntrHandler || Spu2IrqCallback )
   {
     val = (unsigned __int8)(spu2_regs.u.extra_regs.spdif_irqinfo & 0xC) >> 2;
