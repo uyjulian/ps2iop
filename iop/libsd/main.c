@@ -1389,7 +1389,6 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
     v11 = sceSdVoiceTrans(channel, 8u, (u8 *)ClearEffectData, v10, 0x40u);
     if ( v11 < 0 )
     {
-LABEL_15:
       return v11;
     }
     v10 = (u32 *)(GetEEA(core) - (v9 - 1));
@@ -1420,7 +1419,7 @@ LABEL_15:
   v11 = sceSdVoiceTrans(channel & 0xFFFF, 0, (u8 *)ClearEffectData, v10, 0x400u);
   if ( v11 >= 0 )
     v11 = 0;
-  goto LABEL_15;
+  return v11;
 }
 
 //----- (00400BBC) --------------------------------------------------------
@@ -1822,43 +1821,35 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
 //----- (00401B10) --------------------------------------------------------
 u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag)
 {
-  int channel_tmp; // $s2
   int status_offset; // $s0
-  int channel_hi; // $v0
-  bool condtmp; // dc
   int efres[2]; // [sp+10h] [-8h] BYREF
 
-  channel_tmp = channel;
   status_offset = channel << 16 >> 14;
   if ( *(int *)((char *)VoiceTransStatus + status_offset) == 1
     || *(int *)((char *)VoiceTransIoMode + status_offset) == 1 )
   {
     return 1;
   }
-  if ( flag )
+  switch ( flag )
   {
-    channel_hi = channel << 16;
-    if ( flag == 1 )
-    {
-      condtmp = QueryIntrContext() != 0;
-      if ( condtmp )
+    case 0:
+      if ( *(int *)((char *)VoiceTransCompleteBool + status_offset) )
+      {
+        *(int *)((char *)VoiceTransCompleteBool + status_offset) = 0;
+        *(int *)((char *)VoiceTransIoMode + status_offset) = 1;
+      }
+      break;
+    case 1:
+      if ( QueryIntrContext() != 0 )
         return -202;
       WaitEventFlag(*(int *)((char *)VoiceTransCompleteEf + status_offset), 1u, 0, (u32 *)efres);
-      goto LABEL_9;
-    }
-  }
-  else
-  {
-    channel_hi = channel << 16;
-    if ( *(int *)((char *)VoiceTransCompleteBool + status_offset) )
-    {
-LABEL_9:
       *(int *)((char *)VoiceTransCompleteBool + status_offset) = 0;
       *(int *)((char *)VoiceTransIoMode + status_offset) = 1;
-      channel_hi = channel_tmp << 16;
-    }
+      break;
+    default:
+      break;
   }
-  return *(int *)((char *)VoiceTransIoMode + (channel_hi >> 14));
+  return *(int *)((char *)VoiceTransIoMode + status_offset);
 }
 // 401B10: using guessed type u32 efres[2];
 
@@ -1943,7 +1934,6 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
       iopaddr_tmp1 = iopaddr;
     }
     retres_1 = BlockTransRead((u32)iopaddr_tmp1, size, core, mode);
-    goto LABEL_31;
   }
   else
   {
@@ -2002,16 +1992,15 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
       retres_2 = BlockTransWriteFrom((u32)iopaddr, size, chan_tmp2, mode, startaddr);
     }
     retres_1 = retres_2;
-LABEL_31:
-    if ( retres_1 < 0 )
-    {
-      core_tmp4 = core;
-      BlockHandlerIntrData[core_tmp4].cb = 0;
-      BlockHandlerIntrData[core_tmp4].userdata = 0;
-      TransIntrData[core_tmp4].mode = core;
-    }
-    return retres_1;
   }
+  if ( retres_1 < 0 )
+  {
+    core_tmp4 = core;
+    BlockHandlerIntrData[core_tmp4].cb = 0;
+    BlockHandlerIntrData[core_tmp4].userdata = 0;
+    TransIntrData[core_tmp4].mode = core;
+  }
+  return retres_1;
 }
 
 //----- (00402024) --------------------------------------------------------
@@ -2166,14 +2155,18 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       CpuResumeIntr(state);
       SetDmaRead(core_tmp1);
       dmarw_rval = SD_DMA_START|SD_DMA_CS;
-      goto LABEL_9;
+      vararg3_cal = (vararg3 >> 6) + ((vararg3 & 0x3F) != 0);
+      *(_DWORD *)&iop_mmio_hwport.unv_10f8[4 * dma_coreoffs1 - 56] = (u16)(uiptr)vararg2;
+      *(_WORD *)&iop_mmio_hwport.unv_10f8[2 * dma_coreoffs2 - 52] = 16;
+      *(_WORD *)&iop_mmio_hwport.unv_10f8[2 * dma_coreoffs2 - 50] = vararg3_cal;
+      *(_DWORD *)p_dmac_chcr = dmarw_rval;
+      return vararg3_cal << 6;
     case 6:
       CpuSuspendIntr(&state);
       spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr = (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & ~SD_CORE_DMA) | SD_DMA_WRITE;
       CpuResumeIntr(state);
       SetDmaWrite(core_tmp1);
       dmarw_rval = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
-LABEL_9:
       vararg3_cal = (vararg3 >> 6) + ((vararg3 & 0x3F) != 0);
       *(_DWORD *)&iop_mmio_hwport.unv_10f8[4 * dma_coreoffs1 - 56] = (u16)(uiptr)vararg2;
       *(_WORD *)&iop_mmio_hwport.unv_10f8[2 * dma_coreoffs2 - 52] = 16;
@@ -2611,9 +2604,6 @@ int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num)
   u32 *rets_cr; // $s3
   int loop; // $s4
   u32 Param; // $s1
-  u32 *batchdat_tmp; // $a1
-  void *value; // $a0
-  int entry; // $a2
 
   retres = 0;
   if ( num )
@@ -2627,56 +2617,49 @@ int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num)
       {
         case SD_BATCH_SETPARAM:
           sceSdSetParam(batch->entry, batch->value);
-          goto LABEL_17;
+          break;
         case SD_BATCH_SETSWITCH:
           sceSdSetSwitch(batch->entry, batch->value);
-          goto LABEL_17;
+          break;
         case SD_BATCH_SETADDR:
           sceSdSetAddr(batch->entry, batch->value);
-          goto LABEL_17;
+          break;
         case SD_BATCH_SETCORE:
           sceSdSetCoreAttr(batch->entry, batch->value);
-          goto LABEL_17;
+          break;
         case SD_BATCH_WRITEIOP:
           *(_DWORD *)batch->value = batch->entry;
-          goto LABEL_17;
+          break;
         case SD_BATCH_WRITEEE:
-          batchdat_tmp = &BatchData;
-          value = (void *)batch->value;
           BatchData = batch->entry;
-          entry = 4;
-          goto LABEL_15;
+          Param = SifDmaBatch((void *)batch->value, &BatchData, 4);
+          break;
         case SD_BATCH_EERETURN:
-          value = (void *)batch->value;
-          entry = batch->entry;
-          batchdat_tmp = rets;
-LABEL_15:
-          Param = SifDmaBatch(value, batchdat_tmp, entry);
-          goto LABEL_17;
+          Param = SifDmaBatch((void *)batch->value, rets, batch->entry);
+          break;
         case SD_BATCH_GETPARAM|SD_BATCH_SETPARAM:
           Param = sceSdGetParam(batch->entry);
-          goto LABEL_17;
+          break;
         case SD_BATCH_GETSWITCH:
           Param = sceSdGetSwitch(batch->entry);
-          goto LABEL_17;
+          break;
         case SD_BATCH_GETADDR:
           Param = sceSdGetAddr(batch->entry);
-          goto LABEL_17;
+          break;
         case SD_BATCH_GETCORE:
           Param = sceSdGetCoreAttr(batch->entry);
-LABEL_17:
-          if ( rets )
-            *rets_cr = Param;
-          ++rets_cr;
-          --loop;
-          ++retres;
-          ++batch;
-          if ( retres >= num )
-            return retres;
-          continue;
+          break;
         default:
           return loop;
       }
+      if ( rets )
+        *rets_cr = Param;
+      ++rets_cr;
+      --loop;
+      ++retres;
+      ++batch;
+      if ( retres >= num )
+        return retres;
     }
   }
   return retres;
@@ -2695,9 +2678,6 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
   int voicei4; // $s0
   u32 *retsptrtmp2; // $s1
   u32 Addr; // $v0
-  u32 *batchdat_tmp; // $a1
-  void *value; // $a0
-  int entry; // $a2
 
   retres_flip = 0;
   loop = 0;
@@ -2728,10 +2708,10 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           {
             sceSdSetParam(batch->entry, batch->value);
           }
-          goto LABEL_42;
+          break;
         case SD_BATCH_SETSWITCH:
           sceSdSetSwitch(batch->entry, batch->value);
-          goto LABEL_42;
+          break;
         case SD_BATCH_SETADDR:
           voicei2 = 0;
           if ( (batch->entry & 0x7E) == 0x7E )
@@ -2752,26 +2732,20 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           {
             sceSdSetAddr(batch->entry, batch->value);
           }
-          goto LABEL_42;
+          break;
         case SD_BATCH_SETCORE:
           sceSdSetCoreAttr(batch->entry, batch->value);
-          goto LABEL_42;
+          break;
         case SD_BATCH_WRITEIOP:
           *(_DWORD *)batch->value = batch->entry;
-          goto LABEL_42;
+          break;
         case SD_BATCH_WRITEEE:
-          batchdat_tmp = &BatchData;
-          value = (void *)batch->value;
           BatchData = batch->entry;
-          entry = 4;
-          goto LABEL_40;
+          Param = SifDmaBatch((void *)batch->value, &BatchData, 4);
+          break;
         case SD_BATCH_EERETURN:
-          value = (void *)batch->value;
-          entry = batch->entry;
-          batchdat_tmp = rets;
-LABEL_40:
-          Param = SifDmaBatch(value, batchdat_tmp, entry);
-          goto LABEL_42;
+          Param = SifDmaBatch((void *)batch->value, rets, batch->entry);
+          break;
         case SD_BATCH_GETPARAM|SD_BATCH_SETPARAM:
           voicei3 = 0;
           if ( (batch->entry & 0x3E) == 0x3E )
@@ -2794,10 +2768,10 @@ LABEL_40:
           {
             Param = sceSdGetParam(batch->entry);
           }
-          goto LABEL_42;
+          break;
         case SD_BATCH_GETSWITCH:
           Param = sceSdGetSwitch(batch->entry);
-          goto LABEL_42;
+          break;
         case SD_BATCH_GETADDR:
           voicei4 = 0;
           if ( (batch->entry & 0x7E) == 0x7E )
@@ -2823,21 +2797,21 @@ LABEL_40:
           {
             Param = sceSdGetAddr(batch->entry);
           }
-          goto LABEL_42;
+          break;
         case SD_BATCH_GETCORE:
           Param = sceSdGetCoreAttr(batch->entry);
-LABEL_42:
-          if ( rets )
-            rets[loop] = Param;
-          ++batch;
-          ++retres_flip;
-          ++loop;
-          if ( retres_flip >= num )
-            return loop;
-          continue;
+          break;
         default:
           return ~retres_flip;
       }
+      if ( rets )
+        rets[loop] = Param;
+      ++batch;
+      ++retres_flip;
+      ++loop;
+      if ( retres_flip >= num )
+        return loop;
+      continue;
     }
   }
   return loop;
@@ -2924,7 +2898,6 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
   __int16 offset2; // $t0
   int fine_x9; // $a1
   int offset1; // $a0
-  int fine_x10_hi; // $v0
   int retval; // $a1
 
   fine_x1 = fine + center_fine;
@@ -2937,25 +2910,18 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
   offset2 = fine_x7 - 2;
   fine_x9 = fine_x3 - 12 * fine_x7;
   offset1 = fine_x9;
-  if ( (fine_x9 & 0x8000u) == 0 )
+  if ( (offset1 & 0x8000u) != 0 || (!(_WORD)offset1 && fine_x6 < 0) )
   {
-    if ( (_WORD)fine_x9 )
-      goto LABEL_5;
-    fine_x10_hi = fine_x9 << 16;
-    if ( fine_x6 >= 0 )
-      goto LABEL_7;
+    offset1 += 12;
+    offset2 -= 1;
   }
-  offset1 = fine_x9 + 12;
-  offset2 = fine_x7 - 3;
-LABEL_5:
-  fine_x10_hi = offset1 << 16;
   if ( fine_x6 < 0 )
   {
     fine_x6 += (fine_x5 + 1) << 7;
-    fine_x10_hi = (offset1 - 1 + fine_x5) << 16;
+    offset1 -= 1;
+    offset1 += fine_x5;
   }
-LABEL_7:
-  retval = (*(unsigned __int16 *)((char *)NotePitchTable + (fine_x10_hi >> 15))
+  retval = (*(unsigned __int16 *)((char *)NotePitchTable + ((offset1 << 16) >> 15))
           * (unsigned __int16)NotePitchTable[fine_x6 + 12]) >> 16;
   if ( offset2 < 0 )
     return (unsigned int)(retval + (1 << (-offset2 - 1))) >> -offset2;
@@ -2994,12 +2960,15 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
   i3 = 11;
   while ( (unsigned __int16)val < (unsigned int)(unsigned __int16)NotePitchTable[i3] )
   {
-    i3 = --i2;
+    i2 -= 1;
+    i3 = i2;
     if ( i2 < 0 )
-      goto LABEL_11;
+    {
+      i2 = 0;
+      break;
+    }
   }
   i4 = i2;
-LABEL_11:
   if ( !NotePitchTable[i4] )
     __builtin_trap();
   i5 = 127;
