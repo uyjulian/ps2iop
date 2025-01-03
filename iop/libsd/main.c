@@ -259,7 +259,7 @@ void libsd_do_busyloop_2();
 void libsd_do_busyloop_1(int);
 u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vararg3);
 int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int chan);
-int __fastcall do_finish_block_clean_xfer(int a1, int attr_offs_2);
+void do_finish_block_clean_xfer(int core);
 int __fastcall TransInterrupt(IntrData *intr);
 u32 __fastcall thunk_sceSdBlockTransStatus(int channel);
 unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr);
@@ -1468,7 +1468,6 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   int clearram; // $s7
   int condtmp; // $s6
   int mode; // $s2
-  vu16 *p_attr; // $s4
   int core_tmp; // $s1
   int core_tmp2; // $v0
   BOOL modecondtmp1; // $v0
@@ -1479,19 +1478,15 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   int feedback; // $v1
   int condtmpeff; // $s5
   int retval; // $s0
-  int core_offs; // $v1
-  _WORD *effectptr; // $v1
   struct mode_data_struct mode_data; // [sp+10h] [-60h] BYREF
   int state; // [sp+5Ch] [-14h] BYREF
   int effect_mode; // [sp+60h] [-10h]
-  int core_hi; // [sp+64h] [-Ch]
 
   clearram = 0;
   condtmp = 0;
   effect_mode = 0;
   mode_data.mode_flags = 0;
   mode = attr->mode;
-  p_attr = &spu2_regs.u.main_regs.core_regs[core].cregs.attr;
   if ( (mode & SD_EFFECT_MODE_CLEAR) != 0 )
   {
     clearram = 1;
@@ -1503,7 +1498,6 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     return -100;
   core_tmp = core;
   EffectAttr[core].mode = mode;
-  core_hi = core << 9;
   EffectAddr[core] = GetEEA(core) - (8 * EffectSizes[mode] - 1);
   // Unoffical: use memcpy from sysclib
   memcpy(&mode_data, &EffectParams[EffectAttr[core].mode], sizeof(mode_data));
@@ -1554,21 +1548,18 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
       mode_data.mode_data[7] = 258 * feedback;
     }
   }
-  condtmpeff = (*p_attr >> 7) & 1;
+  condtmpeff = (spu2_regs.u.main_regs.core_regs[core].cregs.attr >> 7) & 1;
   if ( !condtmpeff
     || (CpuSuspendIntr(&state),
-        *p_attr &= 0xFF7F,
+        spu2_regs.u.main_regs.core_regs[core].cregs.attr &= 0xFF7F,
         CpuResumeIntr(state),
         !clearram || (retval = sceSdClearEffectWorkArea(core, condtmp, effect_mode), retval >= 0)) )
   {
     spu2_regs.u.extra_regs.different_regs[core].evoll = attr->depth_L;
     spu2_regs.u.extra_regs.different_regs[core].evolr = attr->depth_R;
     SetEffectData(core, &mode_data);
-    core_offs = 2 * core_hi;
-    spu2_regs.u.main_regs.core_regs[0].cregs.esa.pair[core_hi] = EffectAddr[core] >> 17;
-    effectptr = (_WORD *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.esa + core_offs + 2);
-    *effectptr = EffectAddr[core] >> 1;
-    (void)(unsigned __int16)*effectptr;
+    spu2_regs.u.main_regs.core_regs[core].cregs.esa.pair[0] = EffectAddr[core] >> 17;
+    spu2_regs.u.main_regs.core_regs[core].cregs.esa.pair[1] = EffectAddr[core] >> 1;
     retval = 0;
     if ( clearram )
       retval = sceSdClearEffectWorkArea(core, condtmp, mode);
@@ -1576,8 +1567,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   if ( condtmpeff )
   {
     CpuSuspendIntr(&state);
-    *p_attr |= SD_ENABLE_EFFECTS;
-    (void)*p_attr;
+    spu2_regs.u.main_regs.core_regs[core].cregs.attr |= SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
   some_stkclr();
@@ -1597,7 +1587,6 @@ int __fastcall GetEEA(int core)
 int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
 {
   int clearram; // $s6
-  vu16 *p_attr; // $s2
   int condtmp; // $s5
   unsigned int mode; // $s1
   int core_tmp1; // $s0
@@ -1609,7 +1598,6 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
 
   clearram = 0;
   mode_data.mode_flags = 0;
-  p_attr = &spu2_regs.u.main_regs.core_regs[core].cregs.attr;
   condtmp = 0;
   if ( (param->mode & 0x100) != 0 )
   {
@@ -1628,11 +1616,11 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   EffectAddr[core_tmp1] = EEA - (8 * EffectSizes[mode] - 1);
   // Unoffical: don't use inlined memcpy
   memcpy(&mode_data, &EffectParams[mode], sizeof(mode_data));
-  attr_effectsrel = (*p_attr >> 7) & 1;
+  attr_effectsrel = (spu2_regs.u.main_regs.core_regs[core].cregs.attr >> 7) & 1;
   if ( attr_effectsrel )
   {
     CpuSuspendIntr(&state);
-    *p_attr &= ~0x80u;
+    spu2_regs.u.main_regs.core_regs[core].cregs.attr &= ~0x80u;
     CpuResumeIntr(state);
   }
   spu2_regs.u.extra_regs.different_regs[core].evoll = 0;
@@ -1643,9 +1631,8 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   if ( attr_effectsrel )
   {
     CpuSuspendIntr(&state);
-    *p_attr |= 0x80u;
+    spu2_regs.u.main_regs.core_regs[core].cregs.attr |= 0x80u;
     CpuResumeIntr(state);
-    (void)*p_attr;
   }
   if ( clearram )
     return sceSdCleanEffectWorkArea(core, condtmp, mode);
@@ -1729,7 +1716,8 @@ void InitSpu2_Inner()
 void InitSpu2()
 {
   InitSpu2_Inner();
-  *(_DWORD *)&spu2_regs.u.extra_regs.spdif_mode = 0x2000900;
+  spu2_regs.u.extra_regs.spdif_mode = 0x0900;
+  spu2_regs.u.extra_regs.spdif_media = 0x200;
   spu2_regs.u.extra_regs.unknown7ca = 8;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -1737,41 +1725,56 @@ void InitSpu2()
 //----- (00401638) --------------------------------------------------------
 void InitCoreVolume(int flag)
 {
-  vu16 attrsetflg; // $v0
-
   spu2_regs.u.extra_regs.spdif_out = 0xC032;
   if ( flag )
   {
     spu2_regs.u.main_regs.core_regs[0].cregs.attr = SD_ENABLE_EFFECTS|SD_MUTE|SD_SPU2_ON;
-    attrsetflg = SD_ENABLE_EX_INPUT|SD_ENABLE_EFFECTS|SD_MUTE|SD_SPU2_ON;
+    spu2_regs.u.main_regs.core_regs[1].cregs.attr = SD_ENABLE_EX_INPUT|SD_ENABLE_EFFECTS|SD_MUTE|SD_SPU2_ON;
   }
   else
   {
     spu2_regs.u.main_regs.core_regs[0].cregs.attr = SD_MUTE|SD_SPU2_ON;
-    attrsetflg = SD_ENABLE_EX_INPUT|SD_MUTE|SD_SPU2_ON;
+    spu2_regs.u.main_regs.core_regs[1].cregs.attr = SD_ENABLE_EX_INPUT|SD_MUTE|SD_SPU2_ON;
   }
-  spu2_regs.u.main_regs.core_regs[1].cregs.attr = attrsetflg;
-  spu2_regs.u.extra_regs.core0_regs.vmixl.pair[0] = 0xFFFF;
-  spu2_regs.u.extra_regs.core0_regs.vmixl.pair[1] = 0xFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.vmixel.pair[0] = -1;
-  *(_QWORD *)&spu2_regs.u.extra_regs.core0_regs.vmixel.pair[1] = 0xFFFF00FFFFFF00FFLL;
-  (*(spu2_u16pair_t *)((char *)&spu2_regs.u.extra_regs.core0_regs.vmixer + 2)).pair[0] = 0x00FF;
-  (*(spu2_u16pair_t *)((char *)&spu2_regs.u.extra_regs.core0_regs.vmixer + 2)).pair[1] = 0xFF0;
-  spu2_regs.u.extra_regs.core1_regs.vmixl.pair[0] = 0xFFFF;
-  spu2_regs.u.extra_regs.core1_regs.vmixl.pair[1] = 0xFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.vmixel.pair[0] = -1;
-  *(_QWORD *)&spu2_regs.u.extra_regs.core1_regs.vmixel.pair[1] = 0xFFFF00FFFFFF00FFLL;
-  (*(spu2_u16pair_t *)((char *)&spu2_regs.u.extra_regs.core1_regs.vmixer + 2)).pair[0] = 0x00FF;
-  (*(spu2_u16pair_t *)((char *)&spu2_regs.u.extra_regs.core1_regs.vmixer + 2)).pair[1] = 0xFFC;
+  spu2_regs.u.main_regs.core_regs[0].cregs.vmixl.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.vmixl.pair[1] = 0xFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.vmixel.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.vmixel.pair[1] = 0x00FF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.vmixr.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.vmixr.pair[1] = 0x00FF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.vmixer.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.vmixer.pair[1] = 0x00FF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.mmix = 0xFF0;
+  spu2_regs.u.main_regs.core_regs[1].cregs.vmixl.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.vmixl.pair[1] = 0xFF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.vmixel.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.vmixel.pair[1] = 0x00FF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.vmixr.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.vmixr.pair[1] = 0x00FF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.vmixer.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.vmixer.pair[1] = 0x00FF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.mmix = 0xFFC;
   if ( !flag )
   {
-    *(_QWORD *)&spu2_regs.u.extra_regs.different_regs[0].mvoll = 0LL;
-    *(_QWORD *)&spu2_regs.u.extra_regs.different_regs[1].mvoll = 0LL;
+    spu2_regs.u.extra_regs.different_regs[0].mvoll = 0;
+    spu2_regs.u.extra_regs.different_regs[0].mvolr = 0;
+    spu2_regs.u.extra_regs.different_regs[0].evoll = 0;
+    spu2_regs.u.extra_regs.different_regs[0].evolr = 0;
+    spu2_regs.u.extra_regs.different_regs[1].mvoll = 0;
+    spu2_regs.u.extra_regs.different_regs[1].mvolr = 0;
+    spu2_regs.u.extra_regs.different_regs[1].evoll = 0;
+    spu2_regs.u.extra_regs.different_regs[1].evolr = 0;
     spu2_regs.u.main_regs.core_regs[0].cregs.eea = 14;
     spu2_regs.u.main_regs.core_regs[1].cregs.eea = 15;
   }
-  *(_QWORD *)&spu2_regs.u.extra_regs.different_regs[0].avoll = 0LL;
-  *(_QWORD *)&spu2_regs.u.extra_regs.different_regs[1].avoll = 0x7FFF7FFFLL;
+  spu2_regs.u.extra_regs.different_regs[0].avoll = 0;
+  spu2_regs.u.extra_regs.different_regs[0].avolr = 0;
+  spu2_regs.u.extra_regs.different_regs[0].bvoll = 0;
+  spu2_regs.u.extra_regs.different_regs[0].bvolr = 0;
+  spu2_regs.u.extra_regs.different_regs[1].avoll = 0x7FFF;
+  spu2_regs.u.extra_regs.different_regs[1].avolr = 0x7FFF;
+  spu2_regs.u.extra_regs.different_regs[1].bvoll = 0;
+  spu2_regs.u.extra_regs.different_regs[1].bvolr = 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
@@ -2076,16 +2079,16 @@ void some_stkclr()
 //----- (0040206C) --------------------------------------------------------
 int InitSpdif()
 {
-  vu16 statx; // $v0
   unsigned int loopi; // $s0
-  vu16 statxtmp; // $v0
 
   spu2_regs.u.extra_regs.spdif_out = 0;
   libsd_do_busyloop_1(2);
   spu2_regs.u.extra_regs.spdif_out = 0x8000;
   libsd_do_busyloop_1(1);
-  *(_DWORD *)&spu2_regs.u.extra_regs.different_regs[0].mvoll = 0;
-  *(_DWORD *)&spu2_regs.u.extra_regs.different_regs[1].mvoll = 0;
+  spu2_regs.u.extra_regs.different_regs[0].mvoll = 0;
+  spu2_regs.u.extra_regs.different_regs[0].mvolr = 0;
+  spu2_regs.u.extra_regs.different_regs[1].mvoll = 0;
+  spu2_regs.u.extra_regs.different_regs[1].mvolr = 0;
   spu2_regs.u.main_regs.core_regs[0].cregs.admas = 0;
   spu2_regs.u.main_regs.core_regs[1].cregs.admas = 0;
   spu2_regs.u.main_regs.core_regs[0].cregs.attr = 0;
@@ -2093,30 +2096,35 @@ int InitSpdif()
   libsd_do_busyloop_1(1);
   spu2_regs.u.main_regs.core_regs[0].cregs.attr = 0x8000;
   spu2_regs.u.main_regs.core_regs[1].cregs.attr = 0x8000;
-  *(_DWORD *)&spu2_regs.u.extra_regs.different_regs[0].mvoll = 0;
-  *(_DWORD *)&spu2_regs.u.extra_regs.different_regs[1].mvoll = 0;
-  statx = spu2_regs.u.main_regs.core_regs[0].cregs.statx;
+  spu2_regs.u.extra_regs.different_regs[0].mvoll = 0;
+  spu2_regs.u.extra_regs.different_regs[0].mvolr = 0;
+  spu2_regs.u.extra_regs.different_regs[1].mvoll = 0;
+  spu2_regs.u.extra_regs.different_regs[1].mvolr = 0;
   loopi = 0;
   while ( 1 )
   {
     ++loopi;
-    if ( (statx & 0x7FF) == 0 )
+    if ( (spu2_regs.u.main_regs.core_regs[0].cregs.statx & 0x7FF) == 0 )
     {
-      statxtmp = spu2_regs.u.main_regs.core_regs[1].cregs.statx;
-      if ( (statxtmp & 0x7FF) == 0 )
+      if ( (spu2_regs.u.main_regs.core_regs[1].cregs.statx & 0x7FF) == 0 )
         break;
     }
     if ( loopi >= 0xF01 )
       break;
     libsd_do_busyloop_1(1);
-    statx = spu2_regs.u.main_regs.core_regs[0].cregs.statx;
   }
-  spu2_regs.u.extra_regs.core0_regs.koff.pair[0] = 0xFFFF;
-  spu2_regs.u.extra_regs.core0_regs.koff.pair[1] = 0xFF;
-  spu2_regs.u.extra_regs.core1_regs.koff.pair[0] = 0xFFFF;
-  spu2_regs.u.extra_regs.core1_regs.koff.pair[1] = 0xFF;
-  *(_QWORD *)spu2_regs.u.extra_regs.core0_regs.pmon.pair = 0LL;
-  *(_QWORD *)spu2_regs.u.extra_regs.core1_regs.pmon.pair = 0LL;
+  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[1] = 0xFF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[1] = 0xFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.pmon.pair[0] = 0;
+  spu2_regs.u.main_regs.core_regs[0].cregs.pmon.pair[1] = 0;
+  spu2_regs.u.main_regs.core_regs[0].cregs.non.pair[0] = 0;
+  spu2_regs.u.main_regs.core_regs[0].cregs.non.pair[1] = 0;
+  spu2_regs.u.main_regs.core_regs[1].cregs.pmon.pair[0] = 0;
+  spu2_regs.u.main_regs.core_regs[1].cregs.pmon.pair[1] = 0;
+  spu2_regs.u.main_regs.core_regs[1].cregs.non.pair[0] = 0;
+  spu2_regs.u.main_regs.core_regs[1].cregs.non.pair[1] = 0;
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -2172,7 +2180,6 @@ void libsd_do_busyloop_1(int a1)
 u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vararg3)
 {
   int core_tmp1; // $s1
-  int attroffs; // $s2
   int dma_coreoffs1; // $s6
   int dma_coreoffs2; // $s5
   u8 *p_dmac_chcr; // $s3
@@ -2181,12 +2188,8 @@ u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vara
   unsigned int vararg3_cal; // $a0
   u32 blocktransbufitem; // $s7
   int dmamagictmp; // $s5
-  int statxoffs; // $a0
-  _WORD *statxptr; // $v1
   unsigned int waittmp2; // $a0
-  vu16 *attrptr; // $s0
   unsigned int waittmp1; // $a0
-  vu16 *admasptr; // $v1
   int hichk; // $s0
   bool condtmp; // dc
   int core_tmp2; // $v0
@@ -2194,7 +2197,6 @@ u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vara
   int state; // [sp+14h] [-4h] BYREF
 
   core_tmp1 = mainarg >> 4;
-  attroffs = mainarg >> 4 << 9;
   dma_coreoffs1 = 272 * (mainarg >> 4);
   dma_coreoffs2 = 544 * (mainarg >> 4);
   p_dmac_chcr = &iop_mmio_hwport.unv_10f8[1088 * (mainarg >> 4) - 48];
@@ -2202,28 +2204,27 @@ u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vara
   {
     case 2:
       tsa_tmp = (vararg2 >> 1) & ~7u;
-      spu2_regs.u.main_regs.core_regs[mainarg >> 4].cregs.tsa.pair[1] = tsa_tmp;
-      spu2_regs.u.main_regs.core_regs[mainarg >> 4].cregs.tsa.pair[0] = (tsa_tmp >> 16) & 0xFFFF;
+      spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.tsa.pair[1] = tsa_tmp;
+      spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.tsa.pair[0] = (tsa_tmp >> 16) & 0xFFFF;
       return 0;
     case 4:
-      if ( (spu2_regs.u.main_regs.core_regs[mainarg >> 4].cregs.attr & SD_DMA_IN_PROCESS) != 0 )
+      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_DMA_IN_PROCESS) != 0 )
         return -1;
       if ( (*(_DWORD *)p_dmac_chcr & SD_DMA_START) != 0 )
         return -1;
-      if ( spu2_regs.u.main_regs.core_regs[mainarg >> 4].cregs.admas )
+      if ( spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas )
         return -1;
       return 0;
     case 5:
       CpuSuspendIntr(&state);
-      *(&spu2_regs.u.main_regs.core_regs[0].cregs.attr + attroffs) |= SD_DMA_READ;
+      spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr |= SD_DMA_READ;
       CpuResumeIntr(state);
       SetDmaRead(core_tmp1);
       dmarw_rval = SD_DMA_START|SD_DMA_CS;
       goto LABEL_9;
     case 6:
       CpuSuspendIntr(&state);
-      *(&spu2_regs.u.main_regs.core_regs[0].cregs.attr + attroffs) = (*(&spu2_regs.u.main_regs.core_regs[0].cregs.attr
-                                                                     + attroffs) & ~SD_CORE_DMA) | SD_DMA_WRITE;
+      spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr = (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & ~SD_CORE_DMA) | SD_DMA_WRITE;
       CpuResumeIntr(state);
       SetDmaWrite(core_tmp1);
       dmarw_rval = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
@@ -2241,12 +2242,10 @@ LABEL_9:
       {
         blocktransbufitem = BlockTransBuff[core_tmp1];
         dmamagictmp = *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * (mainarg >> 4) - 56];
-        statxoffs = mainarg >> 4 << 10;
         *(_DWORD *)p_dmac_chcr &= ~SD_DMA_START;
-        if ( (*(&spu2_regs.u.main_regs.core_regs[0].cregs.attr + attroffs) & 0x30) != 0 )
+        if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 )
         {
-          statxptr = (vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.statx + statxoffs);
-          if ( (*(vu16 *)((_BYTE *)&spu2_regs.u.main_regs.core_regs[0].cregs.statx + statxoffs) & 0x80) == 0 )
+          if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.statx & 0x80) == 0 )
           {
             waittmp2 = 1;
             do
@@ -2255,17 +2254,16 @@ LABEL_9:
                 break;
               ++waittmp2;
             }
-            while ( (*statxptr & 0x80) == 0 );
+            while ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.statx & 0x80) == 0 );
           }
         }
       }
-      attrptr = &spu2_regs.u.main_regs.core_regs[0].cregs.attr + attroffs;
-      if ( (*attrptr & 0x30) != 0 )
+      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 )
       {
         CpuSuspendIntr(&state);
-        *attrptr &= 0xFFCFu;
+        spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr &= 0xFFCFu;
         CpuResumeIntr(state);
-        if ( (*attrptr & 0x30) != 0 )
+        if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 )
         {
           waittmp1 = 1;
           do
@@ -2274,15 +2272,14 @@ LABEL_9:
               break;
             ++waittmp1;
           }
-          while ( (*attrptr & 0x30) != 0 );
+          while ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 );
         }
       }
-      admasptr = &spu2_regs.u.main_regs.core_regs[0].cregs.admas + attroffs;
       hichk = 0;
-      if ( (*admasptr & 7) != 0 )
+      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas & 7) != 0 )
       {
         hichk = 1;
-        *admasptr = 0;
+        spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas = 0;
       }
       condtmp = QueryIntrContext() == 0;
       core_tmp2 = core_tmp1;
@@ -2311,10 +2308,6 @@ LABEL_9:
 int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int chan)
 {
   unsigned int size_tmp; // $s3
-  int chan_hi_9; // $fp
-  int chan_hi_10; // $s6
-  vu16 *p_xferdata_1ac; // $s7
-  vu16 *p_attr; // $s5
   BOOL condtmp; // $v0
   int count; // $s2
   int i; // $v1
@@ -2323,27 +2316,23 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
   int state; // [sp+14h] [-4h] BYREF
 
   size_tmp = size;
-  chan_hi_9 = chan << 9;
   if ( size )
   {
-    chan_hi_10 = chan << 10;
-    p_xferdata_1ac = &spu2_regs.u.main_regs.core_regs[chan].cregs.xferdata_1ac;
-    p_attr = &spu2_regs.u.main_regs.core_regs[chan].cregs.attr;
     condtmp = size < 0x41;
     do
     {
       count = 64;
       if ( condtmp )
         count = size_tmp;
-      for ( i = 0; i < count; *p_xferdata_1ac = iopaddr_tmp )
+      for ( i = 0; i < count; spu2_regs.u.main_regs.core_regs[chan].cregs.xferdata_1ac = iopaddr_tmp )
       {
         iopaddr_tmp = *iopaddr++;
         i += 2;
       }
       CpuSuspendIntr(&state);
-      *p_attr = (*p_attr & ~SD_CORE_DMA) | SD_DMA_IO;
+      spu2_regs.u.main_regs.core_regs[chan].cregs.attr = (spu2_regs.u.main_regs.core_regs[chan].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
       CpuResumeIntr(state);
-      if ( (*(vu16 *)((_BYTE *)&spu2_regs.u.main_regs.core_regs[0].cregs.statx + chan_hi_10) & SD_IO_IN_PROCESS) != 0 )
+      if ( (spu2_regs.u.main_regs.core_regs[chan].cregs.statx & SD_IO_IN_PROCESS) != 0 )
       {
         waittmp1 = 1;
         do
@@ -2353,7 +2342,7 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
           libsd_do_busyloop_1(1);
           ++waittmp1;
         }
-        while ( (*(&spu2_regs.u.main_regs.core_regs[0].cregs.statx + chan_hi_9) & SD_IO_IN_PROCESS) != 0 );
+        while ( (spu2_regs.u.main_regs.core_regs[chan].cregs.statx & SD_IO_IN_PROCESS) != 0 );
       }
       size_tmp -= count;
       condtmp = size_tmp < 0x41;
@@ -2361,7 +2350,7 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
     while ( size_tmp );
   }
   CpuSuspendIntr(&state);
-  *(&spu2_regs.u.main_regs.core_regs[0].cregs.attr + chan_hi_9) &= ~SD_CORE_DMA;
+  spu2_regs.u.main_regs.core_regs[chan].cregs.attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
   VoiceTransIoMode[chan] = 1;
   return 0;
@@ -2369,20 +2358,10 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (004029A8) --------------------------------------------------------
-int __fastcall do_finish_block_clean_xfer(int a1, int attr_offs_2)
+void do_finish_block_clean_xfer(int core)
 {
-  int attr_offs; // $a1
-  _WORD *attr_ptr; // $v1
-  __int16 attr_ptr_deref; // $v0
-  unsigned __int16 *admas_ptr; // $a1
-
-  attr_offs = 2 * attr_offs_2;
-  attr_ptr = (vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.attr + attr_offs);
-  attr_ptr_deref = *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.attr + attr_offs);
-  admas_ptr = (vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.admas + attr_offs);
-  *attr_ptr = attr_ptr_deref & ~SD_CORE_DMA;
-  *admas_ptr = 0;
-  return *admas_ptr;
+  spu2_regs.u.main_regs.core_regs[core].cregs.attr &= ~SD_CORE_DMA;
+  spu2_regs.u.main_regs.core_regs[core].cregs.admas = 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
@@ -2394,9 +2373,7 @@ int __fastcall TransInterrupt(IntrData *intr)
   u32 mode; // $v1
   int mode_1; // $s1
   u32 mode_300; // $a0
-  vu16 *p_statx; // $a0
   int waittmp1; // $v1
-  vu16 *p_attr; // $a0
   unsigned int waittmp2; // $v1
   int mode_1_tmp1; // $s0
   int mode_1_tmp2; // $s0
@@ -2424,8 +2401,7 @@ int __fastcall TransInterrupt(IntrData *intr)
   mode_300 = intr->mode & 0x300;
   if ( mode_300 == 0x100 )
   {
-    p_statx = &spu2_regs.u.main_regs.core_regs[mode_1].cregs.statx;
-    if ( (*p_statx & 0x80) == 0 )
+    if ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.statx & 0x80) == 0 )
     {
       waittmp1 = 1;
       do
@@ -2434,11 +2410,10 @@ int __fastcall TransInterrupt(IntrData *intr)
           break;
         ++waittmp1;
       }
-      while ( (*p_statx & 0x80) == 0 );
+      while ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.statx & 0x80) == 0 );
     }
-    p_attr = &spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr;
-    *p_attr &= ~SD_CORE_DMA;
-    if ( (*p_attr & SD_CORE_DMA) != 0 )
+    spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr &= ~SD_CORE_DMA;
+    if ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr & SD_CORE_DMA) != 0 )
     {
       waittmp2 = 1;
       do
@@ -2447,7 +2422,7 @@ int __fastcall TransInterrupt(IntrData *intr)
           break;
         ++waittmp2;
       }
-      while ( (*p_attr & SD_CORE_DMA) != 0 );
+      while ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr & SD_CORE_DMA) != 0 );
     }
     mode_1_tmp1 = mode_1;
     if ( !no_flush_cache )
@@ -2494,14 +2469,14 @@ int __fastcall TransInterrupt(IntrData *intr)
       }
       else
       {
-        do_finish_block_clean_xfer(mode_1, mode_1 << 9);
+        do_finish_block_clean_xfer(mode_1);
         BlockHandlerIntrData[mode_1_tmp2].cb = 0;
         BlockHandlerIntrData[mode_1_tmp2].userdata = 0;
       }
     }
     else
     {
-      do_finish_block_clean_xfer(mode_1, mode_1 << 9);
+      do_finish_block_clean_xfer(mode_1);
     }
     if ( !no_flush_cache )
     {
@@ -2525,7 +2500,7 @@ int __fastcall TransInterrupt(IntrData *intr)
     }
     else
     {
-      do_finish_block_clean_xfer(mode_1, mode_1 << 9);
+      do_finish_block_clean_xfer(mode_1);
     }
     mode_1_tmp4 = mode_1;
     if ( !no_flush_cache )
@@ -2570,7 +2545,6 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
   u32 startaddr_tmp; // $s3
   signed int size_align; // $s1
   unsigned int other_align; // $v1
-  int chan_hi_offs; // $s0
   int size_align_r6; // $v1
   int state; // [sp+14h] [-4h] BYREF
 
@@ -2603,12 +2577,11 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
     size_align = size;
   }
   CpuSuspendIntr(&state);
-  chan_hi_offs = chan_tmp0 << 10;
-  *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.attr + chan_hi_offs) &= ~SD_CORE_DMA;
+  spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
-  *(vu16 *)((char *)spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair + chan_hi_offs) = 0;
-  *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[1] + chan_hi_offs) = 0;
-  *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.admas + chan_hi_offs) = 1 << chan_tmp0;
+  spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.tsa.pair[0] = 0;
+  spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.tsa.pair[1] = 0;
+  spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.admas = 1 << chan_tmp0;
   SetDmaWrite(chan_tmp0);
   *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * chan_tmp0 - 56] = startaddr_tmp;
   *(_WORD *)&iop_mmio_hwport.unv_10f8[1088 * chan_tmp0 - 52] = 16;
@@ -2627,7 +2600,6 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
 {
   int chan_tmp1; // $s3
   int chan_tmp2; // $s5
-  int chan_tmp_offs; // $s0
   int chan_dma_offs_tmp; // $a2
   int state; // [sp+14h] [-4h] BYREF
 
@@ -2637,14 +2609,13 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
   BlockTransBuff[chan_tmp2] = 0;
   BlockTransSize[chan_tmp2] = size;
   CpuSuspendIntr(&state);
-  chan_tmp_offs = chan_tmp1 << 10;
   spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.attr &= 0xFFCFu;
   CpuResumeIntr(state);
-  *(vu16 *)((char *)spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair + chan_tmp_offs) = 0;
-  *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[1] + chan_tmp_offs) = 2 * (mode & ~0xF0FF) + 1024;
-  *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.unk1ae + chan_tmp_offs) = (unsigned __int16)(mode & ~0xFFF) >> 11;
+  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.tsa.pair[0] = 0;
+  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.tsa.pair[1] = 2 * (mode & ~0xF0FF) + 1024;
+  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.unk1ae = (unsigned __int16)(mode & ~0xFFF) >> 11;
   libsd_do_busyloop_1(3);
-  *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.admas + chan_tmp_offs) = 4;
+  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.admas = 4;
   SetDmaRead(chan_tmp1);
   chan_dma_offs_tmp = 1088 * chan_tmp1;
   *(_DWORD *)&iop_mmio_hwport.unv_10f8[chan_dma_offs_tmp - 56] = iopaddr;
@@ -2966,13 +2937,11 @@ u32 __cdecl sceSdGetSwitch(u16 entry)
 void __cdecl sceSdSetAddr(u16 entry, u32 value)
 {
   vu16 *reg1; // $a1
-  _WORD *reg1_hi; // $a1
 
   reg1 = &(*(vu16 **)((char *)ParamRegList + ((entry >> 6) & 0x3FC)))[512 * (entry & 1) + 3 * (entry & 0x3E)];
-  *reg1 = value >> 17;
-  reg1_hi = reg1 + 1;
+  reg1[0] = value >> 17;
   if ( (entry & 0xFF00) != 0x1D00 )
-    *reg1_hi = (value >> 1) & ~7;
+    reg1[1] = (value >> 1) & ~7;
 }
 
 //----- (00403B30) --------------------------------------------------------
@@ -3105,26 +3074,20 @@ LABEL_11:
 //----- (00403E20) --------------------------------------------------------
 int __fastcall SetSpdifMode(int val)
 {
-  vu16 spdif_out; // $t0
   int val_mask; // $v1
-  vu16 spdif_mode; // $a1
-  __int16 out_mask_fe57_1; // $a2
   vu16 out_mask_fe57_2; // $t0
   __int16 mode_mask_fff9_1; // $a3
   __int16 mode_mask_fff9_2; // $a1
   __int16 out_mask_apply_8000; // $a1
   vu16 out_mask_hoge_c0ff; // $a1
 
-  spdif_out = spu2_regs.u.extra_regs.spdif_out;
   val_mask = val & 0xF;
-  spdif_mode = spu2_regs.u.extra_regs.spdif_mode;
-  out_mask_fe57_1 = spdif_out & ~0x1A8;
-  out_mask_fe57_2 = spdif_out & ~0x1A8;
-  mode_mask_fff9_1 = spdif_mode & ~6;
-  mode_mask_fff9_2 = spdif_mode & ~6;
+  out_mask_fe57_2 = spu2_regs.u.extra_regs.spdif_out & ~0x1A8;
+  mode_mask_fff9_1 = spu2_regs.u.extra_regs.spdif_mode & ~6;
+  mode_mask_fff9_2 = mode_mask_fff9_1;
   if ( val_mask == 1 )
   {
-    out_mask_fe57_2 = out_mask_fe57_1 | 0x100;
+    out_mask_fe57_2 |= 0x100;
     mode_mask_fff9_2 = mode_mask_fff9_1 | 2;
   }
   else if ( (val & 0xFu) >= 2 )
@@ -3133,14 +3096,14 @@ int __fastcall SetSpdifMode(int val)
     {
       if ( val_mask != 3 )
         return -100;
-      out_mask_fe57_2 = out_mask_fe57_1 | 0x100;
+      out_mask_fe57_2 |= 0x100;
     }
   }
   else
   {
     if ( (val & 0xF) != 0 )
       return -100;
-    out_mask_fe57_2 = out_mask_fe57_1 | 0x20;
+    out_mask_fe57_2 |= 0x20;
   }
   if ( (val & 0x80) != 0 )
     out_mask_apply_8000 = mode_mask_fff9_2 | 0x8000;
@@ -3218,32 +3181,21 @@ void __cdecl sceSdSetCoreAttr(u16 entry, u16 value)
 //----- (004040A0) --------------------------------------------------------
 u16 __cdecl sceSdGetCoreAttr(u16 entry)
 {
-  unsigned int attr; // $v1
-  int retval_tmp; // $v0
-
-  attr = spu2_regs.u.main_regs.core_regs[entry & 1].cregs.attr;
   switch ( entry & 0xE )
   {
     case SD_CORE_EFFECT_ENABLE:
-      retval_tmp = (attr >> 7) & 1;
-      break;
+      return (spu2_regs.u.main_regs.core_regs[entry & 1].cregs.attr >> 7) & 1;
     case SD_CORE_IRQ_ENABLE:
-      retval_tmp = (attr >> 6) & 1;
-      break;
+      return (spu2_regs.u.main_regs.core_regs[entry & 1].cregs.attr >> 6) & 1;
     case SD_CORE_MUTE_ENABLE:
-      retval_tmp = (attr >> 14) & 1;
-      break;
+      return (spu2_regs.u.main_regs.core_regs[entry & 1].cregs.attr >> 14) & 1;
     case SD_CORE_NOISE_CLK:
-      retval_tmp = (attr >> 8) & 0x3F;
-      break;
+      return (spu2_regs.u.main_regs.core_regs[entry & 1].cregs.attr >> 8) & 0x3F;
     case SD_CORE_SPDIF_MODE:
-      retval_tmp = SpdifSettings & 0xFFFF;
-      break;
+      return SpdifSettings & 0xFFFF;
     default:
-      retval_tmp = 0;
-      break;
+      return 0;
   }
-  return retval_tmp;
 }
 // 4055E0: using guessed type int SpdifSettings;
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -3307,7 +3259,6 @@ void *__cdecl sceSdGetSpu2IntrHandlerArgument()
 //----- (00404220) --------------------------------------------------------
 int __fastcall Spu2Interrupt(void *data)
 {
-  vu8 irqinfo_val; // $v0
   int val; // $a0
   int condtmp2; // $v0
   bool condtmp1; // dc
@@ -3315,11 +3266,10 @@ int __fastcall Spu2Interrupt(void *data)
 
   if ( Spu2IntrHandler || Spu2IrqCallback )
   {
-    irqinfo_val = spu2_regs.u.main_regs.core_regs[1].padding[98];
-    val = (unsigned __int8)(irqinfo_val & 0xC) >> 2;
+    val = (unsigned __int8)(spu2_regs.u.extra_regs.spdif_irqinfo & 0xC) >> 2;
     if ( val )
     {
-      condtmp2 = (irqinfo_val & 4) != 0;
+      condtmp2 = (val & 1) != 0;
       do
       {
         condtmp1 = condtmp2 == 0;
@@ -3339,7 +3289,7 @@ int __fastcall Spu2Interrupt(void *data)
         {
           Spu2IrqCallback(0);
         }
-        val = (unsigned __int8)(spu2_regs.u.main_regs.core_regs[1].padding[98] & 0xC) >> 2;
+        val = (unsigned __int8)(spu2_regs.u.extra_regs.spdif_irqinfo & 0xC) >> 2;
         condtmp2 = val & 1;
       }
       while ( val );
@@ -3352,56 +3302,23 @@ int __fastcall Spu2Interrupt(void *data)
 //----- (00404344) --------------------------------------------------------
 int InitVoices()
 {
-  __int16 *initdata_tmp; // $a2
-  _WORD *regs_0; // $s1
-  __int16 *regs_1024; // $s0
-  _WORD *regs_448; // $s3
-  vu16 attr; // $v0
-  __int16 *regs_1472; // $s2
-  vu16 attr_reg1; // $v0
-  vu16 statx; // $v0
-  vu16 attr_reg2; // $v0
-  __int16 tmpreg1; // $v0
-  __int16 *tmpreg2; // $s0
-  _WORD *tmpreg3; // $s1
-  __int16 tmpreg4; // $v0
-  __int16 tmpreg5; // $v0
-  __int16 tmpreg6; // $v0
-  __int16 tempreg7; // $v0
-  __int16 tmpreg8; // $v0
-  _WORD *tmpreg9; // $s2
-  _WORD *tmprega; // $s3
-  vu16 kon_1; // $v0
-  vu16 kon_2; // $v0
-  vu16 koff_1; // $v0
-  vu16 koff_2; // $v0
-  vu16 endx_1; // $v0
   int i2; // [sp+10h] [-8h]
   int i1; // [sp+10h] [-8h]
   int i1a; // [sp+10h] [-8h]
 
-  initdata_tmp = VoiceDataInit;
-  regs_0 = (_WORD *)&spu2_regs;
-  regs_1024 = (_WORD *)(&spu2_regs + 1024);
-  regs_448 = (_WORD *)(&spu2_regs + 448);
-  attr = spu2_regs.u.main_regs.core_regs[0].cregs.attr;
-  spu2_regs.u.main_regs.core_regs[0].cregs.attr = attr & ~SD_CORE_DMA;
-  spu2_regs.u.extra_regs.core0_regs.tsa.pair[0] = 0x0000;
-  spu2_regs.u.extra_regs.core0_regs.tsa.pair[1] = 0x2800;
+  spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~SD_CORE_DMA;
+  spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[0] = 0x0000;
+  spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[1] = 0x2800;
   i2 = 0;
-  regs_1472 = (_WORD *)(&spu2_regs + 1472);
   do
   {
-    spu2_regs.u.main_regs.core_regs[0].cregs.xferdata_1ac = *initdata_tmp;
+    spu2_regs.u.main_regs.core_regs[0].cregs.xferdata_1ac = VoiceDataInit[i2];
     ++i2;
-    ++initdata_tmp;
   }
   while ( i2 < 8 );
-  attr_reg1 = spu2_regs.u.main_regs.core_regs[0].cregs.attr;
-  spu2_regs.u.main_regs.core_regs[0].cregs.attr = (attr_reg1 & ~SD_CORE_DMA) | SD_DMA_IO;
+  spu2_regs.u.main_regs.core_regs[0].cregs.attr = (spu2_regs.u.main_regs.core_regs[0].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
   i1 = 0;
-  statx = spu2_regs.u.main_regs.core_regs[0].cregs.statx;
-  if ( (statx & SD_IO_IN_PROCESS) != 0 )
+  if ( (spu2_regs.u.main_regs.core_regs[0].cregs.statx & SD_IO_IN_PROCESS) != 0 )
   {
     do
     {
@@ -3410,58 +3327,38 @@ int InitVoices()
     }
     while ( i1 <= 0x1000000 && (spu2_regs.u.main_regs.core_regs[0].cregs.statx & SD_IO_IN_PROCESS) != 0 );
   }
-  attr_reg2 = spu2_regs.u.main_regs.core_regs[0].cregs.attr;
-  spu2_regs.u.main_regs.core_regs[0].cregs.attr = attr_reg2 & ~SD_CORE_DMA;
+  spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~SD_CORE_DMA;
   for ( i1a = 0; i1a < 24; ++i1a )
   {
-    *regs_1024 = 0;
-    tmpreg1 = *regs_1024;
-    tmpreg2 = regs_1024 + 1;
-    *regs_0 = tmpreg1;
-    tmpreg3 = regs_0 + 1;
-    *tmpreg2 = 0;
-    tmpreg4 = *tmpreg2++;
-    *tmpreg3++ = tmpreg4;
-    *tmpreg2 = 0x3FFF;
-    tmpreg5 = *tmpreg2++;
-    *tmpreg3++ = tmpreg5;
-    *tmpreg2 = 0;
-    tmpreg6 = *tmpreg2++;
-    *tmpreg3++ = tmpreg6;
-    *tmpreg2 = 0;
-    tempreg7 = *tmpreg2;
-    regs_1024 = tmpreg2 + 4;
-    *tmpreg3 = tempreg7;
-    regs_0 = tmpreg3 + 4;
-    *regs_1472 = 0;
-    tmpreg8 = *regs_1472;
-    tmpreg9 = regs_1472 + 1;
-    *regs_448 = tmpreg8;
-    *tmpreg9 = 10240;
-    tmprega = regs_448 + 1;
-    *tmprega = *tmpreg9;
-    regs_1472 = tmpreg9 + 5;
-    regs_448 = tmprega + 5;
+    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i1a].voll = 0;
+    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i1a].voll = 0;
+    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i1a].volr = 0;
+    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i1a].volr = 0;
+    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i1a].pitch = 0x3FFF;
+    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i1a].pitch = 0x3FFF;
+    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i1a].adsr1 = 0;
+    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i1a].adsr1 = 0;
+    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i1a].adsr2 = 0;
+    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i1a].adsr2 = 0;
+    spu2_regs.u.main_regs.core_regs[1].cregs.voice_address[i1a].ssa.pair[0] = 0;
+    spu2_regs.u.main_regs.core_regs[0].cregs.voice_address[i1a].ssa.pair[0] = 0;
+    spu2_regs.u.main_regs.core_regs[1].cregs.voice_address[i1a].ssa.pair[1] = 0x2800;
+    spu2_regs.u.main_regs.core_regs[0].cregs.voice_address[i1a].ssa.pair[1] = 0x2800;
   }
-  spu2_regs.u.extra_regs.core1_regs.kon.pair[0] = 0xFFFF;
-  spu2_regs.u.extra_regs.core1_regs.kon.pair[1] = 0xFF;
-  kon_1 = spu2_regs.u.main_regs.core_regs[1].cregs.kon.pair[0];
-  spu2_regs.u.main_regs.core_regs[0].cregs.kon.pair[0] = kon_1;
-  kon_2 = spu2_regs.u.main_regs.core_regs[1].cregs.kon.pair[1];
-  spu2_regs.u.main_regs.core_regs[0].cregs.kon.pair[1] = kon_2;
+  spu2_regs.u.main_regs.core_regs[1].cregs.kon.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.kon.pair[1] = 0xFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.kon.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.kon.pair[1] = 0xFF;
   libsd_do_busyloop_1(3);
-  spu2_regs.u.extra_regs.core1_regs.koff.pair[0] = 0xFFFF;
-  spu2_regs.u.extra_regs.core1_regs.koff.pair[1] = 0xFF;
-  koff_1 = spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[0];
-  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[0] = koff_1;
-  koff_2 = spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[1];
-  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[1] = koff_2;
+  spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[1] = 0xFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[0] = 0xFFFF;
+  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[1] = 0xFF;
   libsd_do_busyloop_1(3);
   spu2_regs.u.main_regs.core_regs[0].cregs.endx.pair[1] = 0;
-  endx_1 = spu2_regs.u.main_regs.core_regs[0].cregs.endx.pair[1];
-  spu2_regs.u.main_regs.core_regs[0].cregs.endx.pair[0] = endx_1;
+  spu2_regs.u.main_regs.core_regs[0].cregs.endx.pair[0] = 0;
   spu2_regs.u.main_regs.core_regs[1].cregs.endx.pair[1] = 0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.endx.pair[0] = spu2_regs.u.main_regs.core_regs[1].cregs.endx.pair[1];
+  spu2_regs.u.main_regs.core_regs[1].cregs.endx.pair[0] = 0;
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -3508,10 +3405,10 @@ int __fastcall Reset(char flag)
     bzero(EffectAttr, 40);
     EffectAddr[0] = 0x1DFFF0;
     EffectAddr[1] = 0x1FFFF0;
-    spu2_regs.u.extra_regs.core0_regs.esa.pair[0] = 0x000E;
-    spu2_regs.u.extra_regs.core0_regs.esa.pair[1] = 0xFFF8;
-    spu2_regs.u.extra_regs.core1_regs.esa.pair[0] = 0x000F;
-    spu2_regs.u.extra_regs.core1_regs.esa.pair[1] = 0xFFF8;
+    spu2_regs.u.main_regs.core_regs[0].cregs.esa.pair[0] = 0x000E;
+    spu2_regs.u.main_regs.core_regs[0].cregs.esa.pair[1] = 0xFFF8;
+    spu2_regs.u.main_regs.core_regs[1].cregs.esa.pair[0] = 0x000F;
+    spu2_regs.u.main_regs.core_regs[1].cregs.esa.pair[1] = 0xFFF8;
   }
   efparam.attr = 2;
   efparam.bits = 1;
