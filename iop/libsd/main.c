@@ -1189,91 +1189,73 @@ void SetEffectRegister(int core, int spu2_regs_offset, int val)
 void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
 {
   int deref_mode_data; // $s0
-  BOOL condtmp; // $s1
-  int regoffs1; // $v0
-  int regoffs2; // $v0
-  int regoffs3; // $v0
-  int regoffs4; // $v0
-  int regoffs5; // $v0
-  int regoffs6; // $v0
-  int regoffs7; // $v0
-  int regoffs8; // $v0
-  int regoffs9; // $v0
 
   deref_mode_data = mode_data->mode_flags;
-  condtmp = mode_data->mode_flags == 0;
-  if ( !mode_data->mode_flags || (deref_mode_data & 1) != 0 )
+  if ( deref_mode_data == 0 )
+    deref_mode_data = 0xFFFFFFFF;
+  if ( (deref_mode_data & 1) != 0 )
     SetEffectRegister(core, 370, (unsigned __int16)mode_data->mode_data[0]);
-  if ( condtmp || (deref_mode_data & 2) != 0 )
+  if ( (deref_mode_data & 2) != 0 )
     SetEffectRegister(core, 372, (unsigned __int16)mode_data->mode_data[1]);
-  regoffs1 = 4 * core;
-  if ( condtmp || (regoffs1 = 4 * core, (deref_mode_data & 4) != 0) )
-    *(&ptr_to_bf900000->u.extra_regs.different_regs[0].iir_vol + 4 * regoffs1 + 4 * core) = mode_data->mode_data[2];
-  regoffs2 = 4 * core;
-  if ( condtmp || (regoffs2 = 4 * core, (deref_mode_data & 8) != 0) )
-    *(&ptr_to_bf900000->u.extra_regs.different_regs[0].comb1_vol + 4 * regoffs2 + 4 * core) = mode_data->mode_data[3];
-  regoffs3 = 4 * core;
-  if ( condtmp || (regoffs3 = 4 * core, (deref_mode_data & 0x10) != 0) )
-    *(&ptr_to_bf900000->u.extra_regs.different_regs[0].comb2_vol + 4 * regoffs3 + 4 * core) = mode_data->mode_data[4];
-  regoffs4 = 4 * core;
-  if ( condtmp || (regoffs4 = 4 * core, (deref_mode_data & 0x20) != 0) )
-    *(&ptr_to_bf900000->u.extra_regs.different_regs[0].comb3_vol + 4 * regoffs4 + 4 * core) = mode_data->mode_data[5];
-  regoffs5 = 4 * core;
-  if ( condtmp || (regoffs5 = 4 * core, (deref_mode_data & 0x40) != 0) )
-    *(&ptr_to_bf900000->u.extra_regs.different_regs[0].comb4_vol + 4 * regoffs5 + 4 * core) = mode_data->mode_data[6];
-  regoffs6 = 4 * core;
-  if ( condtmp || (regoffs6 = 4 * core, (deref_mode_data & 0x80) != 0) )
-    *(&ptr_to_bf900000->u.extra_regs.different_regs[0].wall_vol + 4 * regoffs6 + 4 * core) = mode_data->mode_data[7];
-  regoffs7 = 4 * core;
-  if ( condtmp || (regoffs7 = 4 * core, (deref_mode_data & 0x100) != 0) )
-    *(&ptr_to_bf900000->u.extra_regs.different_regs[0].apf1_vol + 4 * regoffs7 + 4 * core) = mode_data->mode_data[8];
-  regoffs8 = 4 * core;
-  if ( condtmp || (regoffs8 = 4 * core, (deref_mode_data & 0x200) != 0) )
-    *(&ptr_to_bf900000->u.extra_regs.different_regs[0].apf2_vol + 4 * regoffs8 + 4 * core) = mode_data->mode_data[9];
-  if ( condtmp || (deref_mode_data & 0x400) != 0 )
+  if ( ((deref_mode_data & 4) != 0) )
+    ptr_to_bf900000->u.extra_regs.different_regs[core].iir_vol = mode_data->mode_data[2];
+  if ( ((deref_mode_data & 8) != 0) )
+    ptr_to_bf900000->u.extra_regs.different_regs[core].comb1_vol = mode_data->mode_data[3];
+  if ( ((deref_mode_data & 0x10) != 0) )
+    ptr_to_bf900000->u.extra_regs.different_regs[core].comb2_vol = mode_data->mode_data[4];
+  if ( ((deref_mode_data & 0x20) != 0) )
+    ptr_to_bf900000->u.extra_regs.different_regs[core].comb3_vol = mode_data->mode_data[5];
+  if ( ((deref_mode_data & 0x40) != 0) )
+    ptr_to_bf900000->u.extra_regs.different_regs[core].comb4_vol = mode_data->mode_data[6];
+  if ( ((deref_mode_data & 0x80) != 0) )
+    ptr_to_bf900000->u.extra_regs.different_regs[core].wall_vol = mode_data->mode_data[7];
+  if ( ((deref_mode_data & 0x100) != 0) )
+    ptr_to_bf900000->u.extra_regs.different_regs[core].apf1_vol = mode_data->mode_data[8];
+  if ( ((deref_mode_data & 0x200) != 0) )
+    ptr_to_bf900000->u.extra_regs.different_regs[core].apf2_vol = mode_data->mode_data[9];
+  if ( (deref_mode_data & 0x400) != 0 )
     SetEffectRegister(core, 374, (unsigned __int16)mode_data->mode_data[10]);
-  if ( condtmp || (deref_mode_data & 0x800) != 0 )
+  if ( (deref_mode_data & 0x800) != 0 )
     SetEffectRegister(core, 376, (unsigned __int16)mode_data->mode_data[11]);
-  if ( condtmp || (deref_mode_data & 0x1000) != 0 )
+  if ( (deref_mode_data & 0x1000) != 0 )
     SetEffectRegister(core, 378, (unsigned __int16)mode_data->mode_data[12]);
-  if ( condtmp || (deref_mode_data & 0x2000) != 0 )
+  if ( (deref_mode_data & 0x2000) != 0 )
     SetEffectRegister(core, 380, (unsigned __int16)mode_data->mode_data[13]);
-  if ( condtmp || (deref_mode_data & 0x4000) != 0 )
+  if ( (deref_mode_data & 0x4000) != 0 )
     SetEffectRegister(core, 382, (unsigned __int16)mode_data->mode_data[14]);
-  if ( condtmp || (deref_mode_data & 0x8000) != 0 )
+  if ( (deref_mode_data & 0x8000) != 0 )
     SetEffectRegister(core, 384, (unsigned __int16)mode_data->mode_data[15]);
-  if ( condtmp || (deref_mode_data & 0x10000) != 0 )
+  if ( (deref_mode_data & 0x10000) != 0 )
     SetEffectRegister(core, 386, (unsigned __int16)mode_data->mode_data[16]);
-  if ( condtmp || (deref_mode_data & 0x20000) != 0 )
+  if ( (deref_mode_data & 0x20000) != 0 )
     SetEffectRegister(core, 388, (unsigned __int16)mode_data->mode_data[17]);
-  if ( condtmp || (deref_mode_data & 0x40000) != 0 )
+  if ( (deref_mode_data & 0x40000) != 0 )
     SetEffectRegister(core, 390, (unsigned __int16)mode_data->mode_data[18]);
-  if ( condtmp || (deref_mode_data & 0x80000) != 0 )
+  if ( (deref_mode_data & 0x80000) != 0 )
     SetEffectRegister(core, 392, (unsigned __int16)mode_data->mode_data[19]);
-  if ( condtmp || (deref_mode_data & 0x100000) != 0 )
+  if ( (deref_mode_data & 0x100000) != 0 )
     SetEffectRegister(core, 394, (unsigned __int16)mode_data->mode_data[20]);
-  if ( condtmp || (deref_mode_data & 0x200000) != 0 )
+  if ( (deref_mode_data & 0x200000) != 0 )
     SetEffectRegister(core, 396, (unsigned __int16)mode_data->mode_data[21]);
-  if ( condtmp || (deref_mode_data & 0x400000) != 0 )
+  if ( (deref_mode_data & 0x400000) != 0 )
     SetEffectRegister(core, 398, (unsigned __int16)mode_data->mode_data[22]);
-  if ( condtmp || (deref_mode_data & 0x800000) != 0 )
+  if ( (deref_mode_data & 0x800000) != 0 )
     SetEffectRegister(core, 400, (unsigned __int16)mode_data->mode_data[23]);
-  if ( condtmp || (deref_mode_data & 0x1000000) != 0 )
+  if ( (deref_mode_data & 0x1000000) != 0 )
     SetEffectRegister(core, 402, (unsigned __int16)mode_data->mode_data[24]);
-  if ( condtmp || (deref_mode_data & 0x2000000) != 0 )
+  if ( (deref_mode_data & 0x2000000) != 0 )
     SetEffectRegister(core, 404, (unsigned __int16)mode_data->mode_data[25]);
-  if ( condtmp || (deref_mode_data & 0x4000000) != 0 )
+  if ( (deref_mode_data & 0x4000000) != 0 )
     SetEffectRegister(core, 406, (unsigned __int16)mode_data->mode_data[26]);
-  if ( condtmp || (deref_mode_data & 0x8000000) != 0 )
+  if ( (deref_mode_data & 0x8000000) != 0 )
     SetEffectRegister(core, 408, (unsigned __int16)mode_data->mode_data[27]);
-  if ( condtmp || (deref_mode_data & 0x10000000) != 0 )
+  if ( (deref_mode_data & 0x10000000) != 0 )
     SetEffectRegister(core, 410, (unsigned __int16)mode_data->mode_data[28]);
-  if ( condtmp || (deref_mode_data & 0x20000000) != 0 )
+  if ( (deref_mode_data & 0x20000000) != 0 )
     SetEffectRegister(core, 412, (unsigned __int16)mode_data->mode_data[29]);
-  regoffs9 = 4 * core;
-  if ( condtmp || (regoffs9 = 4 * core, (deref_mode_data & 0x40000000) != 0) )
-    *(&ptr_to_bf900000->u.extra_regs.different_regs[0].in_coef_l + 4 * regoffs9 + 4 * core) = mode_data->mode_data[30];
-  if ( condtmp || deref_mode_data < 0 )
+  if ( ((deref_mode_data & 0x40000000) != 0) )
+    ptr_to_bf900000->u.extra_regs.different_regs[core].in_coef_l = mode_data->mode_data[30];
+  if ( ((deref_mode_data & 0x80000000) != 0) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].in_coef_r = mode_data->mode_data[31];
 }
 
