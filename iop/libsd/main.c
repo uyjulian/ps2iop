@@ -2789,7 +2789,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           goto LABEL_42;
         case SD_BATCH_SETADDR:
           voicei2 = 0;
-          if ( (*(_DWORD *)&batch->func & 0x7E0000) == 0x7E0000 )
+          if ( (batch->entry & 0x7E) == 0x7E )
           {
             do
             {
@@ -2855,7 +2855,7 @@ LABEL_40:
           goto LABEL_42;
         case SD_BATCH_GETADDR:
           voicei4 = 0;
-          if ( (*(_DWORD *)&batch->func & 0x7E0000) == 0x7E0000 )
+          if ( (batch->entry & 0x7E) == 0x7E )
           {
             retsptrtmp2 = &rets[loop];
             do
