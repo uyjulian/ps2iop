@@ -2798,7 +2798,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
               if ( ((1 << voicei2) & voice) != 0 )
               {
                 ++loop;
-                sceSdSetAddr((batch->entry & ~0x3E | (2 * voicei2)), batch->value);
+                sceSdSetAddr((batch->entry & ~0x3E) | (2 * voicei2), batch->value);
               }
               ++voicei2;
             }
