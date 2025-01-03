@@ -218,7 +218,7 @@ typedef struct CleanEffectIntrData_
 
 typedef struct CleanRegionBufferElement_
 {
-  u32 m_spuaddr;
+  u32 *m_spuaddr;
   u32 m_size;
 } CleanRegionBufferElement_t;
 
@@ -257,7 +257,7 @@ void SetDmaWrite(int chan);
 void SetDmaRead(int chan);
 void libsd_do_busyloop_2();
 void libsd_do_busyloop_1(int);
-u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vararg3);
+u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3);
 int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int chan);
 void do_finish_block_clean_xfer(int core);
 int __fastcall TransInterrupt(IntrData *intr);
@@ -1375,7 +1375,7 @@ int __fastcall CleanHandler(int channel, int unusedarg)
     0);
   DmaStartStop(
     (channel << 4) | 6,
-    (unsigned int)ClearEffectData,
+    ClearEffectData,
     CleanRegionBuffer[0].m_elements[CleanRegionCur[channel_tmp] + channel_offs].m_size);
   return 0;
 }
@@ -1429,7 +1429,7 @@ LABEL_15:
   {
     do
     {
-      v12->m_elements[0].m_spuaddr = (u32)v13;
+      v12->m_elements[0].m_spuaddr = v13;
       v12->m_elements[0].m_size = 1024;
       v12 = (CleanRegionBuffer_t *)((char *)v12 + 8);
       v13 += 256;
@@ -1438,7 +1438,7 @@ LABEL_15:
     }
     while ( v14 >= 1025 );
   }
-  v12->m_elements[0].m_spuaddr = (u32)v13;
+  v12->m_elements[0].m_spuaddr = v13;
   v12->m_elements[0].m_size = v14;
   v16 = channel;
   CleanRegionMax[v16] = CleanRegionMax[channel] + 1;
@@ -1782,7 +1782,6 @@ void InitCoreVolume(int flag)
 int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 size)
 {
   char mode_tmp1; // $s4
-  __int16 spuaddr_tmp; // $s5
   char mode_tmp2; // $s6
   int core; // $s2
   int chan_tmp2; // $s3
@@ -1793,7 +1792,6 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
   int chan_tmp3; // $v0
 
   mode_tmp1 = mode;
-  spuaddr_tmp = (__int16)spuaddr;
   mode_tmp2 = mode;
   core = chan & 1;
   if ( !size )
@@ -1816,7 +1814,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
     BlockHandlerIntrData[chan_tmp3].cb = 0;
     BlockHandlerIntrData[chan_tmp3].userdata = 0;
     VoiceTransStatus[chan_tmp2] = 0;
-    DmaStartStop((core << 4) | 2, spuaddr_tmp, 0);
+    DmaStartStop((core << 4) | 2, spuaddr, 0);
     if ( QueryIntrContext() )
       iClearEventFlag(VoiceTransCompleteEf[chan_tmp2], 0xFFFFFFFE);
     else
@@ -1825,13 +1823,13 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
     dmasize1 = size >> 6 << 6;
     if ( (size & 0x3F) != 0 )
       dmasize1 += 64;
-    return DmaStartStop((core << 4) | 5, (unsigned __int16)iopaddr, dmasize1);
+    return DmaStartStop((core << 4) | 5, iopaddr, dmasize1);
   }
   chan_tmp4 = core;
   TransIntrData[chan_tmp4].mode = core | 0x500;
   BlockHandlerIntrData[chan_tmp4].cb = 0;
   BlockHandlerIntrData[chan_tmp4].userdata = 0;
-  DmaStartStop((core << 4) | 2, spuaddr_tmp, 0);
+  DmaStartStop((core << 4) | 2, spuaddr, 0);
   if ( QueryIntrContext() )
     iClearEventFlag(VoiceTransCompleteEf[chan_tmp2], 0xFFFFFFFE);
   else
@@ -1844,7 +1842,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
     dmasize1 = size >> 6 << 6;
     if ( (size & 0x3F) != 0 )
       dmasize1 += 64;
-    return DmaStartStop((core << 4) | 6, (unsigned __int16)iopaddr, dmasize1);
+    return DmaStartStop((core << 4) | 6, iopaddr, dmasize1);
   }
   VoiceTransStatus[chan_tmp5] = 1;
   dmasize2 = size >> 6 << 6;
@@ -2177,7 +2175,7 @@ void libsd_do_busyloop_1(int a1)
 }
 
 //----- (00402358) --------------------------------------------------------
-u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vararg3)
+u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
 {
   int core_tmp1; // $s1
   int dma_coreoffs1; // $s6
@@ -2203,7 +2201,7 @@ u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vara
   switch ( mainarg & 0xF )
   {
     case 2:
-      tsa_tmp = (vararg2 >> 1) & ~7u;
+      tsa_tmp = ((u16)(uiptr)vararg2 >> 1) & ~7u;
       spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.tsa.pair[1] = tsa_tmp;
       spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.tsa.pair[0] = (tsa_tmp >> 16) & 0xFFFF;
       return 0;
@@ -2230,7 +2228,7 @@ u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vara
       dmarw_rval = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
 LABEL_9:
       vararg3_cal = (vararg3 >> 6) + ((vararg3 & 0x3F) != 0);
-      *(_DWORD *)&iop_mmio_hwport.unv_10f8[4 * dma_coreoffs1 - 56] = vararg2;
+      *(_DWORD *)&iop_mmio_hwport.unv_10f8[4 * dma_coreoffs1 - 56] = (u16)(uiptr)vararg2;
       *(_WORD *)&iop_mmio_hwport.unv_10f8[2 * dma_coreoffs2 - 52] = 16;
       *(_WORD *)&iop_mmio_hwport.unv_10f8[2 * dma_coreoffs2 - 50] = vararg3_cal;
       *(_DWORD *)p_dmac_chcr = dmarw_rval;
