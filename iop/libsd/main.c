@@ -236,7 +236,7 @@ void libsd_1();
 void SetEffectRegister(int core, int spu2_regs_offset, int val);
 void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data);
 int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode);
-int __fastcall CleanHandler(int channel, int unusedarg, unsigned int notneededarg);
+int __fastcall CleanHandler(int channel, int unusedarg);
 int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode);
 void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr);
 int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr);
@@ -1296,7 +1296,7 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
     return -100;
   if ( !(_BYTE)effect_mode )
     return 0;
-  if ( DmaStartStop((16 * channel) | 4, channel, (unsigned __int8)effect_mode) != 0 )
+  if ( DmaStartStop((channel << 4) | 4, 0, 0) != 0 )
   {
     return -210;
   }
@@ -1357,27 +1357,24 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
 }
 
 //----- (00400888) --------------------------------------------------------
-int __fastcall CleanHandler(int channel, int unusedarg, unsigned int notneededarg)
+int __fastcall CleanHandler(int channel, int unusedarg)
 {
   int channel_tmp; // $s2
-  int channel_hi; // $s1
   int channel_offs; // $s0
 
   channel_tmp = channel;
   ++CleanRegionCur[channel];
-  channel_hi = 16 * channel;
   if ( (int)CleanRegionCur[channel] >= (int)(CleanRegionMax[channel] - 1) )
   {
     CleanHandlers[channel_tmp] = 0;
-    channel_hi = 16 * channel;
   }
   channel_offs = 97 * channel;
   DmaStartStop(
-    channel_hi | 2,
+    (channel << 4) | 2,
     CleanRegionBuffer[channel].m_elements[CleanRegionCur[channel_tmp]].m_spuaddr,
-    notneededarg);
+    0);
   DmaStartStop(
-    channel_hi | 6,
+    (channel << 4) | 6,
     (unsigned int)ClearEffectData,
     CleanRegionBuffer[0].m_elements[CleanRegionCur[channel_tmp] + channel_offs].m_size);
   return 0;
@@ -1401,7 +1398,7 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
     return -100;
   if ( !(_BYTE)effect_mode )
     return 0;
-  if ( DmaStartStop((16 * channel) | 4, channel, (unsigned __int8)effect_mode) != 0 )
+  if ( DmaStartStop((channel << 4) | 4, 0, 0) != 0 )
   {
     return -210;
   }
@@ -1784,30 +1781,26 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
   char mode_tmp1; // $s4
   __int16 spuaddr_tmp; // $s5
   char mode_tmp2; // $s6
-  int chan_tmp1; // $s2
-  int chan_hi; // $s0
-  unsigned int unused13; // $a2
+  int core; // $s2
   int chan_tmp2; // $s3
   int chan_tmp4; // $v0
   int chan_tmp5; // $v1
   unsigned int dmasize1; // $a2
-  int dmaarg; // $a0
   u32 dmasize2; // $s1
   int chan_tmp3; // $v0
 
   mode_tmp1 = mode;
   spuaddr_tmp = (__int16)spuaddr;
   mode_tmp2 = mode;
-  chan_tmp1 = chan & 1;
+  core = chan & 1;
   if ( !size )
     return -100;
-  chan_hi = 16 * chan_tmp1;
-  chan_tmp2 = chan_tmp1;
-  if ( DmaStartStop((16 * chan_tmp1) | 4, mode, (unsigned int)iopaddr) != 0 )
+  chan_tmp2 = core;
+  if ( DmaStartStop((core << 4) | 4, 0, 0) != 0 )
   {
     return -210;
   }
-  if ( VoiceTransIoMode[chan_tmp1] != 1 )
+  if ( VoiceTransIoMode[core] != 1 )
   {
     return -201;
   }
@@ -1815,51 +1808,48 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
   {
     if ( (mode_tmp1 & 3) != SD_TRANS_READ )
       return -100;
-    chan_tmp3 = chan_tmp1;
-    TransIntrData[chan_tmp3].mode = chan_tmp1 | 0x900;
+    chan_tmp3 = core;
+    TransIntrData[chan_tmp3].mode = core | 0x900;
     BlockHandlerIntrData[chan_tmp3].cb = 0;
     BlockHandlerIntrData[chan_tmp3].userdata = 0;
     VoiceTransStatus[chan_tmp2] = 0;
-    DmaStartStop(chan_hi | 2, spuaddr_tmp, unused13);
+    DmaStartStop((core << 4) | 2, spuaddr_tmp, 0);
     if ( QueryIntrContext() )
       iClearEventFlag(VoiceTransCompleteEf[chan_tmp2], 0xFFFFFFFE);
     else
       ClearEventFlag(VoiceTransCompleteEf[chan_tmp2], 0xFFFFFFFE);
-    VoiceTransIoMode[chan_tmp1] = 0;
+    VoiceTransIoMode[core] = 0;
     dmasize1 = size >> 6 << 6;
     if ( (size & 0x3F) != 0 )
       dmasize1 += 64;
-    dmaarg = (16 * chan_tmp1) | 5;
-    return DmaStartStop(dmaarg, (unsigned __int16)iopaddr, dmasize1);
+    return DmaStartStop((core << 4) | 5, (unsigned __int16)iopaddr, dmasize1);
   }
-  chan_tmp4 = chan_tmp1;
-  TransIntrData[chan_tmp4].mode = chan_tmp1 | 0x500;
+  chan_tmp4 = core;
+  TransIntrData[chan_tmp4].mode = core | 0x500;
   BlockHandlerIntrData[chan_tmp4].cb = 0;
   BlockHandlerIntrData[chan_tmp4].userdata = 0;
-  DmaStartStop(chan_hi | 2, spuaddr_tmp, unused13);
+  DmaStartStop((core << 4) | 2, spuaddr_tmp, 0);
   if ( QueryIntrContext() )
     iClearEventFlag(VoiceTransCompleteEf[chan_tmp2], 0xFFFFFFFE);
   else
     ClearEventFlag(VoiceTransCompleteEf[chan_tmp2], 0xFFFFFFFE);
-  chan_tmp5 = chan_tmp1;
-  VoiceTransIoMode[chan_tmp1] = 0;
+  chan_tmp5 = core;
+  VoiceTransIoMode[core] = 0;
   if ( (mode_tmp2 & SD_TRANS_MODE_IO) == 0 )
   {
     VoiceTransStatus[chan_tmp5] = 0;
     dmasize1 = size >> 6 << 6;
     if ( (size & 0x3F) != 0 )
       dmasize1 += 64;
-    dmaarg = (16 * chan_tmp1) | 6;
-    return DmaStartStop(dmaarg, (unsigned __int16)iopaddr, dmasize1);
+    return DmaStartStop((core << 4) | 6, (unsigned __int16)iopaddr, dmasize1);
   }
   VoiceTransStatus[chan_tmp5] = 1;
   dmasize2 = size >> 6 << 6;
   if ( (size & 0x3F) != 0 )
     dmasize2 = (size >> 6 << 6) + 64;
-  VoiceTrans_Write_IOMode((__int16 *)iopaddr, dmasize2, chan_tmp1);
+  VoiceTrans_Write_IOMode((__int16 *)iopaddr, dmasize2, core);
   return dmasize2;
 }
-// 401958: variable 'unused13' is possibly undefined
 
 //----- (00401B10) --------------------------------------------------------
 u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag)
@@ -1907,20 +1897,16 @@ LABEL_9:
 //----- (00401C08) --------------------------------------------------------
 int __cdecl sceSdStopTrans(int channel)
 {
-  unsigned int unused1; // $a1
-  unsigned int unused2; // $a2
-  int chan_tmp1; // $a0
+  int core; // $a0
   int chan_tmp2; // $v0
 
-  chan_tmp1 = channel & 1;
-  chan_tmp2 = chan_tmp1;
-  TransIntrData[chan_tmp2].mode = chan_tmp1;
+  core = channel & 1;
+  chan_tmp2 = core;
+  TransIntrData[chan_tmp2].mode = core;
   BlockHandlerIntrData[chan_tmp2].cb = 0;
   BlockHandlerIntrData[chan_tmp2].userdata = 0;
-  return DmaStartStop((16 * chan_tmp1) | 0xA, unused1, unused2);
+  return DmaStartStop((core << 4) | 0xA, 0, 0);
 }
-// 401C54: variable 'unused1' is possibly undefined
-// 401C54: variable 'unused2' is possibly undefined
 
 //----- (00401C70) --------------------------------------------------------
 int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
@@ -1928,8 +1914,6 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
   int core; // $s0
   char chan_tmp2; // $s6
   u32 started; // $v1
-  __int16 unused10; // $a1
-  unsigned int unused11; // $a2
   int transfer_dir; // $a0
   int core_tmp3; // $a2
   int startaddr; // $a3
@@ -1958,7 +1942,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
   cleanuserdata_1 = va_arg(va2, void *);
   core = chan & 1;
   chan_tmp2 = chan;
-  started = DmaStartStop((16 * core) | 4, mode, (unsigned int)iopaddr);
+  started = DmaStartStop((core << 4) | 4, 0, 0);
   transfer_dir = mode & 3;
   if ( transfer_dir == SD_TRANS_READ )
   {
@@ -2009,7 +1993,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
         BlockHandlerIntrData[core_tmp2].cb = 0;
         BlockHandlerIntrData[core_tmp2].userdata = 0;
         TransIntrData[core_tmp2].mode = core;
-        return DmaStartStop((16 * core) | 0xA, unused10, unused11);
+        return DmaStartStop((core << 4) | 0xA, 0, 0);
       }
       if ( transfer_dir != SD_TRANS_WRITE_FROM )
         return -100;
@@ -2076,8 +2060,6 @@ LABEL_31:
     return retres_1;
   }
 }
-// 401FE8: variable 'unused10' is possibly undefined
-// 401FE8: variable 'unused11' is possibly undefined
 
 //----- (00402024) --------------------------------------------------------
 u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag)
@@ -2417,7 +2399,6 @@ int __fastcall TransInterrupt(IntrData *intr)
   vu16 *p_attr; // $a0
   unsigned int waittmp2; // $v1
   int mode_1_tmp1; // $s0
-  int unused13; // $a0
   int mode_1_tmp2; // $s0
   int mode_1_tmp3; // $a2
   u32 one_minus_buff; // $a3
@@ -2489,7 +2470,7 @@ int __fastcall TransInterrupt(IntrData *intr)
       return 1;
     }
     VoiceTransIoMode[mode_1_tmp1] = 1;
-    ((void (__fastcall *)(int))TransIntrCallbacks[mode_1_tmp1])(unused13);
+    ((void (__fastcall *)(int))TransIntrCallbacks[mode_1_tmp1])(0);
     return 1;
   }
   if ( mode_300 != 0x200 )
@@ -2559,14 +2540,12 @@ int __fastcall TransInterrupt(IntrData *intr)
     }
     if ( TransIntrCallbacks[mode_1_tmp4] )
     {
-      ((void (__fastcall *)(u8 *))TransIntrCallbacks[mode_1_tmp4])(dmamagictmp3);
+      TransIntrCallbacks[mode_1_tmp4](0);
       return 1;
     }
   }
   return 1;
 }
-// 402BE4: variable 'unused13' is possibly undefined
-// 402E84: variable 'dmamagictmp3' is possibly undefined
 // BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
@@ -3602,14 +3581,10 @@ int __cdecl sceSdInit(int flag)
 //----- (004049C4) --------------------------------------------------------
 int __cdecl sceSdQuit()
 {
-  unsigned int unused0; // $a1
-  unsigned int unused1; // $a2
-  unsigned int unused2; // $a1
-  unsigned int unused3; // $a2
   int intrstate[2]; // [sp+10h] [-8h] BYREF
 
-  DmaStartStop(10, unused0, unused1);
-  DmaStartStop(26, unused2, unused3);
+  DmaStartStop((0 << 4) | 0xA, 0, 0);
+  DmaStartStop((1 << 4) | 0xA, 0, 0);
   if ( VoiceTransCompleteEf[0] > 0 )
     DeleteEventFlag(VoiceTransCompleteEf[0]);
   if ( VoiceTransCompleteEf[1] > 0 )
@@ -3623,7 +3598,3 @@ int __cdecl sceSdQuit()
   some_stkclr();
   return 0;
 }
-// 4049D0: variable 'unused0' is possibly undefined
-// 4049D0: variable 'unused1' is possibly undefined
-// 4049D8: variable 'unused2' is possibly undefined
-// 4049D8: variable 'unused3' is possibly undefined
