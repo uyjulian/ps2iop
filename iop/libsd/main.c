@@ -232,7 +232,6 @@ typedef struct CleanRegionBuffer_
 //-------------------------------------------------------------------------
 // Function declarations
 
-void libsd_1();
 void SetEffectRegister(int core, int spu2_regs_offset, int val);
 void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data);
 int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode);
@@ -251,7 +250,6 @@ u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag);
 int __cdecl sceSdStopTrans(int channel);
 int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...);
 u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag);
-void some_stkclr();
 int InitSpdif();
 void SetDmaWrite(int chan);
 void SetDmaRead(int chan);
@@ -1148,13 +1146,6 @@ iop_mmio_hwport_t iop_mmio_hwport; // weak
 spu2_regs_t spu2_regs; // weak
 char byte_BF900800[63488]; // weak
 
-
-//----- (004000A0) --------------------------------------------------------
-void libsd_1()
-{
-  ;
-}
-
 //----- (004000B0) --------------------------------------------------------
 int _start()
 {
@@ -1335,7 +1326,6 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   channel_tmp2 = channel;
   TransIntrHandlers[channel_tmp2] = handler_tmp;
   TransIntrCallbacks[channel_tmp2] = callback_tmp;
-  some_stkclr();
   return xferres;
 }
 
@@ -1400,7 +1390,6 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
     if ( v11 < 0 )
     {
 LABEL_15:
-      some_stkclr();
       return v11;
     }
     v10 = (u32 *)(GetEEA(core) - (v9 - 1));
@@ -1554,7 +1543,6 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     spu2_regs.u.main_regs.core_regs[core].cregs.attr |= SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
-  some_stkclr();
   return retval;
 }
 // 400FA4: conditional instruction was optimized away because $s5.4==1
@@ -1671,7 +1659,6 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
   }
   spu2_regs.u.extra_regs.different_regs[core].evoll = attr->depth_L;
   spu2_regs.u.extra_regs.different_regs[core].evolr = attr->depth_R;
-  some_stkclr();
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -1679,17 +1666,13 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
 //----- (00401550) --------------------------------------------------------
 void InitSpu2_Inner()
 {
-  vu32 dpcr1; // $v0
-  vu32 dpcr2; // $v0
   int state; // [sp+10h] [-8h] BYREF
 
   iop_mmio_hwport.ssbus2.ind_4_address = 0xBF900000;
-  iop_mmio_hwport.ssbus2.ind_9_address = (vu32)byte_BF900800;
+  iop_mmio_hwport.ssbus2.ind_9_address = 0xBF900800;
   CpuSuspendIntr(&state);
-  dpcr1 = iop_mmio_hwport.dmac1.dpcr1;
-  iop_mmio_hwport.dmac1.dpcr1 = dpcr1 | 0x80000;
-  dpcr2 = iop_mmio_hwport.dmac2.dpcr2;
-  iop_mmio_hwport.dmac2.dpcr2 = dpcr2 | 8;
+  iop_mmio_hwport.dmac1.dpcr1 |= 0x80000;
+  iop_mmio_hwport.dmac2.dpcr2 |= 8;
   CpuResumeIntr(state);
   iop_mmio_hwport.ssbus1.ind_4_delay = 0x200B31E1;
   iop_mmio_hwport.ssbus2.ind_9_delay = 0x200B31E1;
@@ -2038,12 +2021,6 @@ u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag)
   return thunk_sceSdBlockTransStatus(channel);
 }
 
-//----- (00402050) --------------------------------------------------------
-void some_stkclr()
-{
-  ;
-}
-
 //----- (0040206C) --------------------------------------------------------
 int InitSpdif()
 {
@@ -2279,7 +2256,6 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
   BOOL condtmp; // $v0
   int count; // $s2
   int i; // $v1
-  vu16 iopaddr_tmp; // $v0
   unsigned int waittmp1; // $s0
   int state; // [sp+14h] [-4h] BYREF
 
@@ -2292,10 +2268,9 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
       count = 64;
       if ( condtmp )
         count = size_tmp;
-      for ( i = 0; i < count; spu2_regs.u.main_regs.core_regs[chan].cregs.xferdata_1ac = iopaddr_tmp )
+      for ( i = 0; i < (count / 2); i += 1 )
       {
-        iopaddr_tmp = *iopaddr++;
-        i += 2;
+        spu2_regs.u.main_regs.core_regs[chan].cregs.xferdata_1ac = iopaddr[i];
       }
       CpuSuspendIntr(&state);
       spu2_regs.u.main_regs.core_regs[chan].cregs.attr = (spu2_regs.u.main_regs.core_regs[chan].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
@@ -3043,20 +3018,18 @@ LABEL_11:
 int __fastcall SetSpdifMode(int val)
 {
   int val_mask; // $v1
-  vu16 out_mask_fe57_2; // $t0
+  __int16 out_mask_fe57_2; // $t0
   __int16 mode_mask_fff9_1; // $a3
-  __int16 mode_mask_fff9_2; // $a1
   __int16 out_mask_apply_8000; // $a1
-  vu16 out_mask_hoge_c0ff; // $a1
 
   val_mask = val & 0xF;
   out_mask_fe57_2 = spu2_regs.u.extra_regs.spdif_out & ~0x1A8;
   mode_mask_fff9_1 = spu2_regs.u.extra_regs.spdif_mode & ~6;
-  mode_mask_fff9_2 = mode_mask_fff9_1;
+  out_mask_apply_8000 = mode_mask_fff9_1;
   if ( val_mask == 1 )
   {
     out_mask_fe57_2 |= 0x100;
-    mode_mask_fff9_2 = mode_mask_fff9_1 | 2;
+    out_mask_apply_8000 |= 2;
   }
   else if ( (val & 0xFu) >= 2 )
   {
@@ -3074,26 +3047,29 @@ int __fastcall SetSpdifMode(int val)
     out_mask_fe57_2 |= 0x20;
   }
   if ( (val & 0x80) != 0 )
-    out_mask_apply_8000 = mode_mask_fff9_2 | 0x8000;
+    out_mask_apply_8000 |= 0x8000;
   else
-    out_mask_apply_8000 = mode_mask_fff9_2 & ~0x8000;
-  if ( (val & 0xF00) == 2048 )
+    out_mask_apply_8000 &= ~0x8000;
+  if ( (val & 0xF00) == 0x800 )
   {
     spu2_regs.u.extra_regs.spdif_media = 512;
-    out_mask_hoge_c0ff = (out_mask_apply_8000 & ~0x3F00) | 0x1900;
+    out_mask_apply_8000 &= ~0x3F00;
+    out_mask_apply_8000 |= 0x1900;
   }
-  else if ( (val & 0xF00) == 1024 )
+  else if ( (val & 0xF00) == 0x400 )
   {
     spu2_regs.u.extra_regs.spdif_media = 0;
-    out_mask_hoge_c0ff = (out_mask_apply_8000 & ~0x3F00) | 0x100;
+    out_mask_apply_8000 &= ~0x3F00;
+    out_mask_apply_8000 |= 0x100;
   }
   else
   {
     spu2_regs.u.extra_regs.spdif_media = 512;
-    out_mask_hoge_c0ff = (out_mask_apply_8000 & ~0x3F00) | 0x900;
+    out_mask_apply_8000 &= ~0x3F00;
+    out_mask_apply_8000 |= 0x900;
   }
   spu2_regs.u.extra_regs.spdif_out = out_mask_fe57_2;
-  spu2_regs.u.extra_regs.spdif_mode = out_mask_hoge_c0ff;
+  spu2_regs.u.extra_regs.spdif_mode = out_mask_apply_8000;
   SpdifSettings = val;
   return 0;
 }
@@ -3439,7 +3415,6 @@ int __cdecl sceSdInit(int flag)
   RegisterIntrHandler(40, 1, (int (__cdecl *)(void *))TransInterrupt, &TransIntrData[1]);
   RegisterIntrHandler(9, 1, (int (__cdecl *)(void *))Spu2Interrupt, Spu2IntrHandlerData);
   vars_inited = 1;
-  some_stkclr();
   return resetres;
 }
 // 405628: using guessed type int vars_inited;
@@ -3461,6 +3436,5 @@ int __cdecl sceSdQuit()
   ReleaseIntrHandler(40);
   ReleaseIntrHandler(36);
   ReleaseIntrHandler(9);
-  some_stkclr();
   return 0;
 }
