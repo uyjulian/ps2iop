@@ -2189,7 +2189,6 @@ void libsd_do_busyloop_1(int a1)
 //----- (00402358) --------------------------------------------------------
 u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vararg3)
 {
-  int retres; // $s4
   int core_tmp1; // $s1
   int attroffs; // $s2
   int dma_coreoffs1; // $s6
@@ -2212,7 +2211,6 @@ u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vara
   int core_tmp3; // $v0
   int state; // [sp+14h] [-4h] BYREF
 
-  retres = 0;
   core_tmp1 = mainarg >> 4;
   attroffs = mainarg >> 4 << 9;
   dma_coreoffs1 = 272 * (mainarg >> 4);
@@ -2255,7 +2253,6 @@ LABEL_9:
       *(_DWORD *)p_dmac_chcr = dmarw_rval;
       return vararg3_cal << 6;
     case 0xA:
-      retres = 0;
       blocktransbufitem = 0;
       dmamagictmp = 0;
       if ( (*(_DWORD *)p_dmac_chcr & SD_DMA_START) != 0 )
@@ -2317,13 +2314,12 @@ LABEL_9:
       CleanHandlers[core_tmp3] = 0;
       if ( dmamagictmp )
       {
-        retres = dmamagictmp & ~0xFF000000;
         if ( hichk )
-          return retres | (blocktransbufitem << 24);
+          return (dmamagictmp & ~0xFF000000) | (blocktransbufitem << 24);
       }
-      return retres;
+      return 0;
     default:
-      return retres;
+      return 0;
   }
 }
 // BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
@@ -2685,14 +2681,12 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
 //----- (00403340) --------------------------------------------------------
 int __fastcall SifDmaBatch(void *ee_addr, void *iop_addr, int size)
 {
-  int retres; // $s3
   int dmat; // $s2
   int waitcnt; // $s1
   int dma_status; // $s0
   SifDmaTransfer_t xferparam; // [sp+10h] [-18h] BYREF
   int state; // [sp+20h] [-8h] BYREF
 
-  retres = 0;
   xferparam.dest = ee_addr;
   xferparam.src = iop_addr;
   xferparam.size = size;
@@ -2714,7 +2708,7 @@ int __fastcall SifDmaBatch(void *ee_addr, void *iop_addr, int size)
     if ( waitcnt < 0 )
       return -1;
   }
-  return retres;
+  return 0;
 }
 
 //----- (004033FC) --------------------------------------------------------
@@ -3497,7 +3491,6 @@ int InitVoices()
 int __fastcall Reset(char flag)
 {
   bool condtmp; // dc
-  int retres; // $s1
   iop_event_t efparam; // [sp+10h] [-18h] BYREF
   int intrstate[2]; // [sp+20h] [-8h] BYREF
 
@@ -3531,7 +3524,6 @@ int __fastcall Reset(char flag)
   TransIntrCallbacks[0] = 0;
   TransIntrCallbacks[1] = 0;
   condtmp = (flag & 0xF) != 0;
-  retres = 0;
   if ( !condtmp )
   {
     bzero(EffectAttr, 40);
@@ -3548,22 +3540,17 @@ int __fastcall Reset(char flag)
   if ( VoiceTransCompleteEf[0] <= 0 )
   {
     VoiceTransCompleteEf[0] = CreateEventFlag(&efparam);
-    if ( VoiceTransCompleteEf[0] <= 0 )
-      retres = -301;
-  }
-  else if ( QueryIntrContext() )
-  {
-    iSetEventFlag(VoiceTransCompleteEf[0], 1u);
   }
   else
   {
-    SetEventFlag(VoiceTransCompleteEf[0], 1u);
+    if ( QueryIntrContext() )
+      iSetEventFlag(VoiceTransCompleteEf[0], 1u);
+    else
+      SetEventFlag(VoiceTransCompleteEf[0], 1u);
   }
   if ( VoiceTransCompleteEf[1] <= 0 )
   {
     VoiceTransCompleteEf[1] = CreateEventFlag(&efparam);
-    if ( VoiceTransCompleteEf[1] <= 0 )
-      return -301;
   }
   else
   {
@@ -3571,9 +3558,10 @@ int __fastcall Reset(char flag)
       iSetEventFlag(VoiceTransCompleteEf[1], 1u);
     else
       SetEventFlag(VoiceTransCompleteEf[1], 1u);
-    return retres;
   }
-  return retres;
+  if ( VoiceTransCompleteEf[0] <= 0 || VoiceTransCompleteEf[1] <= 0 )
+    return -301;
+  return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
