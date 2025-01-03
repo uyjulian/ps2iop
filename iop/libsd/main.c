@@ -276,7 +276,7 @@ u32 __cdecl sceSdGetAddr(u16 entry);
 u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine);
 u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch);
 int __fastcall SetSpdifMode(int val);
-int __fastcall sceSdSetCoreAttr_default(char entry, char val);
+void sceSdSetCoreAttr_default(char entry, char val);
 void __cdecl sceSdSetCoreAttr(u16 entry, u16 value);
 u16 __cdecl sceSdGetCoreAttr(u16 entry);
 SdIntrCallback __cdecl sceSdSetTransCallback(s32 core, SdIntrCallback cb);
@@ -2196,9 +2196,7 @@ u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vara
   int dma_coreoffs2; // $s5
   u8 *p_dmac_chcr; // $s3
   unsigned int tsa_tmp; // $t1
-  int state_tmp2; // $a0
   int dmarw_rval; // $t0
-  int state_tmp3; // $a0
   unsigned int vararg3_cal; // $a0
   u32 blocktransbufitem; // $s7
   int dmamagictmp; // $s5
@@ -2206,7 +2204,6 @@ u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vara
   _WORD *statxptr; // $v1
   unsigned int waittmp2; // $a0
   vu16 *attrptr; // $s0
-  int state_tmp1; // $a0
   unsigned int waittmp1; // $a0
   vu16 *admasptr; // $v1
   int hichk; // $s0
@@ -2238,18 +2235,16 @@ u32 __fastcall DmaStartStop(int mainarg, unsigned int vararg2, unsigned int vara
       return 0;
     case 5:
       CpuSuspendIntr(&state);
-      state_tmp3 = state;
       *(&spu2_regs.u.main_regs.core_regs[0].cregs.attr + attroffs) |= SD_DMA_READ;
-      CpuResumeIntr(state_tmp3);
+      CpuResumeIntr(state);
       SetDmaRead(core_tmp1);
       dmarw_rval = SD_DMA_START|SD_DMA_CS;
       goto LABEL_9;
     case 6:
       CpuSuspendIntr(&state);
-      state_tmp2 = state;
       *(&spu2_regs.u.main_regs.core_regs[0].cregs.attr + attroffs) = (*(&spu2_regs.u.main_regs.core_regs[0].cregs.attr
                                                                      + attroffs) & ~SD_CORE_DMA) | SD_DMA_WRITE;
-      CpuResumeIntr(state_tmp2);
+      CpuResumeIntr(state);
       SetDmaWrite(core_tmp1);
       dmarw_rval = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
 LABEL_9:
@@ -2289,9 +2284,8 @@ LABEL_9:
       if ( (*attrptr & 0x30) != 0 )
       {
         CpuSuspendIntr(&state);
-        state_tmp1 = state;
         *attrptr &= 0xFFCFu;
-        CpuResumeIntr(state_tmp1);
+        CpuResumeIntr(state);
         if ( (*attrptr & 0x30) != 0 )
         {
           waittmp1 = 1;
@@ -2347,9 +2341,7 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
   int count; // $s2
   int i; // $v1
   vu16 iopaddr_tmp; // $v0
-  int state_tmp1; // $a0
   unsigned int waittmp1; // $s0
-  int state_tmp2; // $a0
   int state; // [sp+14h] [-4h] BYREF
 
   size_tmp = size;
@@ -2371,9 +2363,8 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
         i += 2;
       }
       CpuSuspendIntr(&state);
-      state_tmp1 = state;
       *p_attr = (*p_attr & ~SD_CORE_DMA) | SD_DMA_IO;
-      CpuResumeIntr(state_tmp1);
+      CpuResumeIntr(state);
       if ( (*(vu16 *)((_BYTE *)&spu2_regs.u.main_regs.core_regs[0].cregs.statx + chan_hi_10) & SD_IO_IN_PROCESS) != 0 )
       {
         waittmp1 = 1;
@@ -2392,9 +2383,8 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
     while ( size_tmp );
   }
   CpuSuspendIntr(&state);
-  state_tmp2 = state;
   *(&spu2_regs.u.main_regs.core_regs[0].cregs.attr + chan_hi_9) &= ~SD_CORE_DMA;
-  CpuResumeIntr(state_tmp2);
+  CpuResumeIntr(state);
   VoiceTransIoMode[chan] = 1;
   return 0;
 }
@@ -2606,7 +2596,6 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
   signed int size_align; // $s1
   unsigned int other_align; // $v1
   int chan_hi_offs; // $s0
-  int state_tmp; // $a0
   int size_align_r6; // $v1
   int state; // [sp+14h] [-4h] BYREF
 
@@ -2640,9 +2629,8 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
   }
   CpuSuspendIntr(&state);
   chan_hi_offs = chan_tmp0 << 10;
-  state_tmp = state;
   *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.attr + chan_hi_offs) &= ~SD_CORE_DMA;
-  CpuResumeIntr(state_tmp);
+  CpuResumeIntr(state);
   *(vu16 *)((char *)spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair + chan_hi_offs) = 0;
   *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[1] + chan_hi_offs) = 0;
   *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.admas + chan_hi_offs) = 1 << chan_tmp0;
@@ -2665,7 +2653,6 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
   int chan_tmp1; // $s3
   int chan_tmp2; // $s5
   int chan_tmp_offs; // $s0
-  int state_tmp; // $a0
   int chan_dma_offs_tmp; // $a2
   int state; // [sp+14h] [-4h] BYREF
 
@@ -2676,9 +2663,8 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
   BlockTransSize[chan_tmp2] = size;
   CpuSuspendIntr(&state);
   chan_tmp_offs = chan_tmp1 << 10;
-  state_tmp = state;
   spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.attr &= 0xFFCFu;
-  CpuResumeIntr(state_tmp);
+  CpuResumeIntr(state);
   *(vu16 *)((char *)spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair + chan_tmp_offs) = 0;
   *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[1] + chan_tmp_offs) = 2 * (mode & ~0xF0FF) + 1024;
   *(vu16 *)((char *)&spu2_regs.u.main_regs.core_regs[0].cregs.unk1ae + chan_tmp_offs) = (unsigned __int16)(mode & ~0xFFF) >> 11;
@@ -2704,24 +2690,24 @@ int __fastcall SifDmaBatch(void *ee_addr, void *iop_addr, int size)
   int waitcnt; // $s1
   int dma_status; // $s0
   SifDmaTransfer_t xferparam; // [sp+10h] [-18h] BYREF
-  int state[2]; // [sp+20h] [-8h] BYREF
+  int state; // [sp+20h] [-8h] BYREF
 
   retres = 0;
   xferparam.dest = ee_addr;
   xferparam.src = iop_addr;
   xferparam.size = size;
   xferparam.attr = 0;
-  CpuSuspendIntr(state);
+  CpuSuspendIntr(&state);
   dmat = sceSifSetDma(&xferparam, 1);
-  CpuResumeIntr(state[0]);
+  CpuResumeIntr(state);
   waitcnt = 0;
   if ( !dmat )
     return -1;
   while ( 1 )
   {
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     dma_status = sceSifDmaStat(dmat);
-    CpuResumeIntr(state[0]);
+    CpuResumeIntr(state);
     ++waitcnt;
     if ( dma_status < 0 )
       break;
@@ -3211,7 +3197,7 @@ int __fastcall SetSpdifMode(int val)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00403F50) --------------------------------------------------------
-int __fastcall sceSdSetCoreAttr_default(char entry, char val)
+void sceSdSetCoreAttr_default(char entry, char val)
 {
   __int16 setting_tmp; // $s1
   u16 param_tmp; // $s0
@@ -3223,7 +3209,7 @@ int __fastcall sceSdSetCoreAttr_default(char entry, char val)
   param_tmp = (entry & 1) | 0x2300;
   Param = sceSdGetParam(param_tmp);
   sceSdSetParam(param_tmp, (Param & ~(1 << setting_tmp)) | ((val & 1) << setting_tmp));
-  return CpuResumeIntr(state);
+  CpuResumeIntr(state);
 }
 // 4055E0: using guessed type int SpdifSettings;
 
