@@ -238,7 +238,6 @@ void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data);
 int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode);
 int __fastcall CleanHandler(int channel, int unusedarg, unsigned int notneededarg);
 int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode);
-int __fastcall libsd_memcpy(_BYTE *dst, unsigned __int8 *src, int len);
 void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr);
 int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr);
 int __fastcall GetEEA(int core);
@@ -1468,26 +1467,6 @@ LABEL_15:
   return result;
 }
 
-//----- (00400B90) --------------------------------------------------------
-int __fastcall libsd_memcpy(_BYTE *dst, unsigned __int8 *src, int len)
-{
-  int len_minus_one; // $v1
-  int result; // $v0
-
-  len_minus_one = len - 1;
-  if ( len )
-  {
-    do
-    {
-      result = *src++;
-      --len_minus_one;
-      *dst++ = result;
-    }
-    while ( len_minus_one != -1 );
-  }
-  return result;
-}
-
 //----- (00400BBC) --------------------------------------------------------
 void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr)
 {
@@ -1543,7 +1522,8 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   EffectAttr[core].mode = mode;
   core_hi = core << 9;
   EffectAddr[core] = GetEEA(core) - (8 * EffectSizes[mode] - 1);
-  libsd_memcpy((_BYTE *)&mode_data, (unsigned __int8 *)&EffectParams[EffectAttr[core].mode], 68);
+  // Unoffical: use memcpy from sysclib
+  memcpy(&mode_data, &EffectParams[EffectAttr[core].mode], sizeof(mode_data));
   if ( mode == SD_EFFECT_MODE_ECHO )
   {
     EffectAttr[core_tmp].feedback = 128;
@@ -1641,12 +1621,6 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   int result; // $v0
   int core_tmp2; // $v0
   int EEA; // $v0
-  struct mode_data_struct *p_dst; // $a1
-  struct mode_data_struct *p_src; // $a0
-  struct mode_data_struct *p_dst_end; // $a2
-  int tmpval1; // $t0
-  int tmpval2; // $t1
-  int tmpval3; // $t2
   int attr_effectsrel; // $s4
   struct mode_data_struct mode_data; // [sp+10h] [-50h] BYREF
   int state; // [sp+5Ch] [-4h] BYREF
@@ -1669,24 +1643,9 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   EffectAttr[core_tmp2].delay = 0;
   EffectAttr[core_tmp2].feedback = 0;
   EEA = GetEEA(core);
-  p_dst = &mode_data;
-  p_src = &EffectParams[mode];
-  p_dst_end = (struct mode_data_struct *)&p_src->mode_data[30];
   EffectAddr[core_tmp1] = EEA - (8 * EffectSizes[mode] - 1);
-  do
-  {
-    tmpval1 = *(_DWORD *)p_src->mode_data;
-    tmpval2 = *(_DWORD *)&p_src->mode_data[2];
-    tmpval3 = *(_DWORD *)&p_src->mode_data[4];
-    p_dst->mode_flags = p_src->mode_flags;
-    *(_DWORD *)p_dst->mode_data = tmpval1;
-    *(_DWORD *)&p_dst->mode_data[2] = tmpval2;
-    *(_DWORD *)&p_dst->mode_data[4] = tmpval3;
-    p_src = (struct mode_data_struct *)((char *)p_src + 16);
-    p_dst = (struct mode_data_struct *)((char *)p_dst + 16);
-  }
-  while ( p_src != p_dst_end );
-  p_dst->mode_flags = p_src->mode_flags;
+  // Unoffical: don't use inlined memcpy
+  memcpy(&mode_data, &EffectParams[mode], sizeof(mode_data));
   attr_effectsrel = (*p_attr >> 7) & 1;
   if ( attr_effectsrel )
   {
@@ -1719,12 +1678,6 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
 {
   unsigned int mode_low; // $v1
   int mode; // $a0
-  struct mode_data_struct *p_dst; // $a1
-  struct mode_data_struct *p_src; // $v1
-  struct mode_data_struct *p_dst_end; // $v0
-  int tmpval1; // $a3
-  int tmpval2; // $t0
-  int tmpval3; // $t1
   __int16 mode_data_0; // $v1
   int core_tmp1; // $a1
   int delay_plus_one; // $a0
@@ -1740,25 +1693,10 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
     return -100;
   if ( mode < 9 )
   {
-    p_dst = &mode_data;
     if ( mode >= 7 )
     {
-      p_src = &EffectParams[mode];
-      p_dst_end = (struct mode_data_struct *)&p_src->mode_data[30];
-      do
-      {
-        tmpval1 = *(_DWORD *)p_src->mode_data;
-        tmpval2 = *(_DWORD *)&p_src->mode_data[2];
-        tmpval3 = *(_DWORD *)&p_src->mode_data[4];
-        p_dst->mode_flags = p_src->mode_flags;
-        *(_DWORD *)p_dst->mode_data = tmpval1;
-        *(_DWORD *)&p_dst->mode_data[2] = tmpval2;
-        *(_DWORD *)&p_dst->mode_data[4] = tmpval3;
-        p_src = (struct mode_data_struct *)((char *)p_src + 16);
-        p_dst = (struct mode_data_struct *)((char *)p_dst + 16);
-      }
-      while ( p_src != p_dst_end );
-      p_dst->mode_flags = p_src->mode_flags;
+      // Unoffical: don't use inlined memcpy
+      memcpy(&mode_data, &EffectParams[mode], sizeof(mode_data));
       mode_data.mode_flags = 0xC011C80;
       mode_data_0 = mode_data.mode_data[0];
       core_tmp1 = core;

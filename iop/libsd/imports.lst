@@ -22,6 +22,7 @@ sifman_IMPORTS_end
 sysclib_IMPORTS_start
 I_bzero
 I_memset
+I_memcpy
 sysclib_IMPORTS_end
 
 thevent_IMPORTS_start
