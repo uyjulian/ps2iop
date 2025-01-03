@@ -1920,10 +1920,6 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
   int transfer_dir; // $a0
   int core_tmp3; // $a2
   int startaddr; // $a3
-  va_list ramva; // $v0
-  void **ramva_usrdat; // $v0
-  void *blockhandlercb_1; // $a1
-  void *blockhandleruserdata_1; // $v0
   unsigned int retres_2; // $v0
   int retres_1; // $s2
   int core_tmp1; // $a0
@@ -1931,18 +1927,16 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
   u8 *iopaddr_tmp1; // $a0
   int core_tmp4; // $v0
   int core_tmp2; // $v0
-  void *cleancb; // [sp+58h] [+38h] BYREF
-  void *cleanuserdata_1; // [sp+5Ch] [+3Ch] BYREF
+  uiptr vararg_elm1;
+  uiptr vararg_elm2;
+  uiptr vararg_elm3;
   va_list va2; // [sp+60h] [+40h] BYREF
-  va_list cleancba; // [sp+58h] [+38h]
-  va_list cleanuserdata_1a; // [sp+5Ch] [+3Ch]
 
   va_start(va2, size);
-  va_start(cleanuserdata_1a, size);
-  va_start(cleancba, size);
-  cleancb = va_arg(cleanuserdata_1a, void *);
-  va_copy(va2, cleanuserdata_1a);
-  cleanuserdata_1 = va_arg(va2, void *);
+  vararg_elm1 = va_arg(va2, uiptr);
+  vararg_elm2 = va_arg(va2, uiptr);
+  vararg_elm3 = va_arg(va2, uiptr);
+  va_end(va2);
   core = chan & 1;
   chan_tmp2 = chan;
   started = DmaStartStop((core << 4) | 4, 0, 0);
@@ -1963,13 +1957,13 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
     BlockHandlerIntrData[core_tmp1].userdata = 0;
     if ( (mode & 0x80) != 0 )
     {
-      cleanuserdata = cleanuserdata_1;
-      if ( !cleancb )
+      cleanuserdata = (void *)vararg_elm2;
+      if ( !vararg_elm1 )
       {
         TransIntrData[core_tmp1].mode = core;
         return -100;
       }
-      BlockHandlerIntrData[core_tmp1].cb = cleancb;
+      BlockHandlerIntrData[core_tmp1].cb = (void *)vararg_elm1;
       BlockHandlerIntrData[core_tmp1].userdata = cleanuserdata;
       TransIntrData[core_tmp1].mode |= 0x8000u;
       iopaddr_tmp1 = iopaddr;
@@ -2018,27 +2012,18 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
     TransIntrData[core].mode = core | 0x600;
     startaddr = 0;
     if ( transfer_dir == SD_TRANS_WRITE_FROM )
-      startaddr = (int)cleancb;
+      startaddr = (int)vararg_elm1;
     BlockHandlerIntrData[core_tmp3].cb = 0;
     BlockHandlerIntrData[core_tmp3].userdata = 0;
     if ( (mode & 0x80) != 0 )
     {
-      va_copy(ramva, cleancba);
-      if ( transfer_dir == SD_TRANS_WRITE_FROM )
-      {
-        va_copy(ramva, cleanuserdata_1a);
-        startaddr = (int)cleancb;
-      }
-      ramva_usrdat = (void **)(((unsigned int)ramva + 3) & ~3u);
-      blockhandlercb_1 = *ramva_usrdat;
-      blockhandleruserdata_1 = *(void **)(((unsigned int)ramva_usrdat + 7) & ~3u);
-      if ( !blockhandlercb_1 )
+      if ( !vararg_elm2 )
       {
         TransIntrData[core_tmp3].mode = core;
         return -100;
       }
-      BlockHandlerIntrData[core_tmp3].cb = blockhandlercb_1;
-      BlockHandlerIntrData[core_tmp3].userdata = blockhandleruserdata_1;
+      BlockHandlerIntrData[core_tmp3].cb = (void *)vararg_elm2;
+      BlockHandlerIntrData[core_tmp3].userdata = (void *)vararg_elm3;
       TransIntrData[core_tmp3].mode |= 0x8000u;
       retres_2 = BlockTransWriteFrom((u32)iopaddr, size, chan_tmp2, mode, startaddr);
     }
