@@ -157,20 +157,20 @@ typedef struct spu2_regs_ /* base => 0xBF900000 */
 
 struct mode_data_struct
 {
-  int mode_flags;
-  __int16 mode_data[32];
+  int m_mode_flags;
+  __int16 m_mode_data[32];
 };
 
 typedef struct
 {
-  u32 mode;
-  void *data;
+  u32 m_mode;
+  void *m_data;
 } IntrData;
 
 typedef struct CleanEffectIntrData_
 {
-  void *cb;
-  void *userdata;
+  void *m_cb;
+  void *m_userdata;
 } CleanEffectIntrData_t;
 
 typedef struct CleanRegionBufferElement_
@@ -1134,73 +1134,73 @@ void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
 {
   int deref_mode_data; // $s0
 
-  deref_mode_data = mode_data->mode_flags;
+  deref_mode_data = mode_data->m_mode_flags;
   if ( !deref_mode_data )
     deref_mode_data = 0xFFFFFFFF;
   if ( (deref_mode_data & 1) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, (unsigned __int16)mode_data->mode_data[0]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, (unsigned __int16)mode_data->m_mode_data[0]);
   if ( (deref_mode_data & 2) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, (unsigned __int16)mode_data->mode_data[1]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, (unsigned __int16)mode_data->m_mode_data[1]);
   if ( ((deref_mode_data & 4)) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_iir_vol = mode_data->mode_data[2];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_iir_vol = mode_data->m_mode_data[2];
   if ( (deref_mode_data & 8) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb1_vol = mode_data->mode_data[3];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb1_vol = mode_data->m_mode_data[3];
   if ( (deref_mode_data & 0x10) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb2_vol = mode_data->mode_data[4];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb2_vol = mode_data->m_mode_data[4];
   if ( (deref_mode_data & 0x20) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb3_vol = mode_data->mode_data[5];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb3_vol = mode_data->m_mode_data[5];
   if ( (deref_mode_data & 0x40) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb4_vol = mode_data->mode_data[6];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb4_vol = mode_data->m_mode_data[6];
   if ( (deref_mode_data & 0x80) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_wall_vol = mode_data->mode_data[7];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_wall_vol = mode_data->m_mode_data[7];
   if ( (deref_mode_data & 0x100) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf1_vol = mode_data->mode_data[8];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf1_vol = mode_data->m_mode_data[8];
   if ( (deref_mode_data & 0x200) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf2_vol = mode_data->mode_data[9];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf2_vol = mode_data->m_mode_data[9];
   if ( (deref_mode_data & 0x400) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, (unsigned __int16)mode_data->mode_data[10]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, (unsigned __int16)mode_data->m_mode_data[10]);
   if ( (deref_mode_data & 0x800) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, (unsigned __int16)mode_data->mode_data[11]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, (unsigned __int16)mode_data->m_mode_data[11]);
   if ( (deref_mode_data & 0x1000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, (unsigned __int16)mode_data->mode_data[12]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, (unsigned __int16)mode_data->m_mode_data[12]);
   if ( (deref_mode_data & 0x2000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, (unsigned __int16)mode_data->mode_data[13]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, (unsigned __int16)mode_data->m_mode_data[13]);
   if ( (deref_mode_data & 0x4000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, (unsigned __int16)mode_data->mode_data[14]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, (unsigned __int16)mode_data->m_mode_data[14]);
   if ( (deref_mode_data & 0x8000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, (unsigned __int16)mode_data->mode_data[15]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, (unsigned __int16)mode_data->m_mode_data[15]);
   if ( (deref_mode_data & 0x10000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, (unsigned __int16)mode_data->mode_data[16]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, (unsigned __int16)mode_data->m_mode_data[16]);
   if ( (deref_mode_data & 0x20000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, (unsigned __int16)mode_data->mode_data[17]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, (unsigned __int16)mode_data->m_mode_data[17]);
   if ( (deref_mode_data & 0x40000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, (unsigned __int16)mode_data->mode_data[18]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, (unsigned __int16)mode_data->m_mode_data[18]);
   if ( (deref_mode_data & 0x80000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, (unsigned __int16)mode_data->mode_data[19]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, (unsigned __int16)mode_data->m_mode_data[19]);
   if ( (deref_mode_data & 0x100000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, (unsigned __int16)mode_data->mode_data[20]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, (unsigned __int16)mode_data->m_mode_data[20]);
   if ( (deref_mode_data & 0x200000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, (unsigned __int16)mode_data->mode_data[21]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, (unsigned __int16)mode_data->m_mode_data[21]);
   if ( (deref_mode_data & 0x400000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, (unsigned __int16)mode_data->mode_data[22]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, (unsigned __int16)mode_data->m_mode_data[22]);
   if ( (deref_mode_data & 0x800000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, (unsigned __int16)mode_data->mode_data[23]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, (unsigned __int16)mode_data->m_mode_data[23]);
   if ( (deref_mode_data & 0x1000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, (unsigned __int16)mode_data->mode_data[24]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, (unsigned __int16)mode_data->m_mode_data[24]);
   if ( (deref_mode_data & 0x2000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, (unsigned __int16)mode_data->mode_data[25]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, (unsigned __int16)mode_data->m_mode_data[25]);
   if ( (deref_mode_data & 0x4000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, (unsigned __int16)mode_data->mode_data[26]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, (unsigned __int16)mode_data->m_mode_data[26]);
   if ( (deref_mode_data & 0x8000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, (unsigned __int16)mode_data->mode_data[27]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, (unsigned __int16)mode_data->m_mode_data[27]);
   if ( (deref_mode_data & 0x10000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, (unsigned __int16)mode_data->mode_data[28]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, (unsigned __int16)mode_data->m_mode_data[28]);
   if ( (deref_mode_data & 0x20000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, (unsigned __int16)mode_data->mode_data[29]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, (unsigned __int16)mode_data->m_mode_data[29]);
   if ( (deref_mode_data & 0x40000000) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_l = mode_data->mode_data[30];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_l = mode_data->m_mode_data[30];
   if ( (deref_mode_data & 0x80000000) )
-    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_r = mode_data->mode_data[31];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_r = mode_data->m_mode_data[31];
 }
 
 //----- (00400660) --------------------------------------------------------
@@ -1364,7 +1364,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   clearram = 0;
   channel = 0;
   effect_mode = 0;
-  mode_data.mode_flags = 0;
+  mode_data.m_mode_flags = 0;
   mode = attr->mode;
   if ( (mode & SD_EFFECT_MODE_CLEAR) )
   {
@@ -1399,18 +1399,18 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     EffectAttr[core].delay = delay;
     delay += 1;
     delay &= 0xFFFF;
-    feedback_tmp = ((unsigned __int16)delay << 6) - (__int16)mode_data.mode_data[0];
+    feedback_tmp = ((unsigned __int16)delay << 6) - (__int16)mode_data.m_mode_data[0];
     delay <<= 5;
     delay &= 0xFFFF;
-    mode_data.mode_data[10] = feedback_tmp;
-    mode_data.mode_data[11] = delay - mode_data.mode_data[1];
-    mode_data.mode_data[16] = mode_data.mode_data[17] + delay;
-    mode_data.mode_data[12] = mode_data.mode_data[13] + delay;
-    mode_data.mode_data[27] = mode_data.mode_data[29] + delay;
-    mode_data.mode_data[26] = mode_data.mode_data[28] + delay;
+    mode_data.m_mode_data[10] = feedback_tmp;
+    mode_data.m_mode_data[11] = delay - mode_data.m_mode_data[1];
+    mode_data.m_mode_data[16] = mode_data.m_mode_data[17] + delay;
+    mode_data.m_mode_data[12] = mode_data.m_mode_data[13] + delay;
+    mode_data.m_mode_data[27] = mode_data.m_mode_data[29] + delay;
+    mode_data.m_mode_data[26] = mode_data.m_mode_data[28] + delay;
     feedback = attr->feedback;
     EffectAttr[core].feedback = feedback;
-    mode_data.mode_data[7] = 258 * feedback;
+    mode_data.m_mode_data[7] = 258 * feedback;
   }
   effects_enabled = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
   if ( effects_enabled )
@@ -1460,7 +1460,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   int state; // [sp+5Ch] [-4h] BYREF
 
   clearram = 0;
-  mode_data.mode_flags = 0;
+  mode_data.m_mode_flags = 0;
   channel = 0;
   if ( (param->mode & 0x100) )
   {
@@ -1517,19 +1517,19 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
   {
     // Unoffical: don't use inlined memcpy
     memcpy(&mode_data, &EffectParams[mode], sizeof(mode_data));
-    mode_data.mode_flags = 0xC011C80;
+    mode_data.m_mode_flags = 0xC011C80;
     EffectAttr[core].delay = attr->delay;
     EffectAttr[core].feedback = attr->feedback;
     delay_plus_one = EffectAttr[core].delay + 1;
-    mode_data.mode_data[10] = (__int16)(((unsigned __int16)delay_plus_one << 6) - (__int16)mode_data.mode_data[0]);
+    mode_data.m_mode_data[10] = (__int16)(((unsigned __int16)delay_plus_one << 6) - (__int16)mode_data.m_mode_data[0]);
     delay_plus_one <<= 5;
     delay_plus_one &= 0xFFFF;
-    mode_data.mode_data[11] = delay_plus_one - mode_data.mode_data[1];
-    mode_data.mode_data[12] = mode_data.mode_data[13] + delay_plus_one;
-    mode_data.mode_data[16] = mode_data.mode_data[17] + delay_plus_one;
-    mode_data.mode_data[26] = mode_data.mode_data[28] + delay_plus_one;
-    mode_data.mode_data[27] = mode_data.mode_data[29] + delay_plus_one;
-    mode_data.mode_data[7] = 258 * EffectAttr[core].feedback;
+    mode_data.m_mode_data[11] = delay_plus_one - mode_data.m_mode_data[1];
+    mode_data.m_mode_data[12] = mode_data.m_mode_data[13] + delay_plus_one;
+    mode_data.m_mode_data[16] = mode_data.m_mode_data[17] + delay_plus_one;
+    mode_data.m_mode_data[26] = mode_data.m_mode_data[28] + delay_plus_one;
+    mode_data.m_mode_data[27] = mode_data.m_mode_data[29] + delay_plus_one;
+    mode_data.m_mode_data[7] = 258 * EffectAttr[core].feedback;
     SetEffectData(core, &mode_data);
   }
   spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
@@ -1629,9 +1629,9 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
   switch ( mode & 3 )
   {
     case SD_TRANS_READ:
-      TransIntrData[core].mode = core | 0x900;
-      BlockHandlerIntrData[core].cb = 0;
-      BlockHandlerIntrData[core].userdata = 0;
+      TransIntrData[core].m_mode = core | 0x900;
+      BlockHandlerIntrData[core].m_cb = 0;
+      BlockHandlerIntrData[core].m_userdata = 0;
       VoiceTransStatus[core] = 0;
       DmaStartStop((core << 4) | 2, spuaddr, 0);
       if ( QueryIntrContext() )
@@ -1644,9 +1644,9 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
         dmasize1 += 64;
       return DmaStartStop((core << 4) | 5, iopaddr, dmasize1);
     case SD_TRANS_WRITE:
-      TransIntrData[core].mode = core | 0x500;
-      BlockHandlerIntrData[core].cb = 0;
-      BlockHandlerIntrData[core].userdata = 0;
+      TransIntrData[core].m_mode = core | 0x500;
+      BlockHandlerIntrData[core].m_cb = 0;
+      BlockHandlerIntrData[core].m_userdata = 0;
       DmaStartStop((core << 4) | 2, spuaddr, 0);
       if ( QueryIntrContext() )
         iClearEventFlag(VoiceTransCompleteEf[core], ~1);
@@ -1711,9 +1711,9 @@ int __cdecl sceSdStopTrans(int channel)
   int core; // $a0
 
   core = channel & 1;
-  TransIntrData[core].mode = core;
-  BlockHandlerIntrData[core].cb = 0;
-  BlockHandlerIntrData[core].userdata = 0;
+  TransIntrData[core].m_mode = core;
+  BlockHandlerIntrData[core].m_cb = 0;
+  BlockHandlerIntrData[core].m_userdata = 0;
   return DmaStartStop((core << 4) | 0xA, 0, 0);
 }
 
@@ -1744,34 +1744,34 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
         return -100;
       if ( started )
         return -210;
-      TransIntrData[core].mode = core | 0xA00;
-      BlockHandlerIntrData[core].cb = 0;
-      BlockHandlerIntrData[core].userdata = 0;
+      TransIntrData[core].m_mode = core | 0xA00;
+      BlockHandlerIntrData[core].m_cb = 0;
+      BlockHandlerIntrData[core].m_userdata = 0;
       if ( (mode & 0x80) )
       {
         if ( !vararg_elm1 )
         {
-          TransIntrData[core].mode = core;
+          TransIntrData[core].m_mode = core;
           return -100;
         }
-        BlockHandlerIntrData[core].cb = (void *)vararg_elm1;
-        BlockHandlerIntrData[core].userdata = (void *)vararg_elm2;
-        TransIntrData[core].mode |= 0x8000u;
+        BlockHandlerIntrData[core].m_cb = (void *)vararg_elm1;
+        BlockHandlerIntrData[core].m_userdata = (void *)vararg_elm2;
+        TransIntrData[core].m_mode |= 0x8000u;
       }
       else
       {
         if ( (mode & SD_TRANS_LOOP) )
         {
           size >>= 1;
-          TransIntrData[core].mode |= 0x1000u;
+          TransIntrData[core].m_mode |= 0x1000u;
         }
       }
       retres_1 = BlockTransRead((u32)iopaddr, size, core, mode);
       break;
     case SD_TRANS_STOP:
-      BlockHandlerIntrData[core].cb = 0;
-      BlockHandlerIntrData[core].userdata = 0;
-      TransIntrData[core].mode = core;
+      BlockHandlerIntrData[core].m_cb = 0;
+      BlockHandlerIntrData[core].m_userdata = 0;
+      TransIntrData[core].m_mode = core;
       return DmaStartStop((core << 4) | 0xA, 0, 0);
     case SD_TRANS_WRITE:
     case SD_TRANS_WRITE_FROM:
@@ -1779,26 +1779,26 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
         return -100;
       if ( started )
         return -210;
-      TransIntrData[core].mode = core | 0x600;
-      BlockHandlerIntrData[core].cb = 0;
-      BlockHandlerIntrData[core].userdata = 0;
+      TransIntrData[core].m_mode = core | 0x600;
+      BlockHandlerIntrData[core].m_cb = 0;
+      BlockHandlerIntrData[core].m_userdata = 0;
       if ( (mode & 0x80) )
       {
         if ( !vararg_elm2 )
         {
-          TransIntrData[core].mode = core;
+          TransIntrData[core].m_mode = core;
           return -100;
         }
-        BlockHandlerIntrData[core].cb = (void *)vararg_elm2;
-        BlockHandlerIntrData[core].userdata = (void *)vararg_elm3;
-        TransIntrData[core].mode |= 0x8000u;
+        BlockHandlerIntrData[core].m_cb = (void *)vararg_elm2;
+        BlockHandlerIntrData[core].m_userdata = (void *)vararg_elm3;
+        TransIntrData[core].m_mode |= 0x8000u;
       }
       else
       {
         if ( (mode & SD_TRANS_LOOP) )
         {
           size >>= 1;
-          TransIntrData[core].mode |= 0x1000u;
+          TransIntrData[core].m_mode |= 0x1000u;
         }
       }
       retres_1 = BlockTransWriteFrom((u32)iopaddr, size, chan & 0xFF, mode, ( transfer_dir == SD_TRANS_WRITE_FROM ) ? (int)vararg_elm1 : 0);
@@ -1808,9 +1808,9 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
   }
   if ( retres_1 < 0 )
   {
-    BlockHandlerIntrData[core].cb = 0;
-    BlockHandlerIntrData[core].userdata = 0;
-    TransIntrData[core].mode = core;
+    BlockHandlerIntrData[core].m_cb = 0;
+    BlockHandlerIntrData[core].m_userdata = 0;
+    TransIntrData[core].m_mode = core;
   }
   return retres_1;
 }
@@ -2047,8 +2047,8 @@ int __fastcall TransInterrupt(IntrData *intr)
   int dmamagictmp2; // [sp+18h] [-8h] BYREF
   USE_IOP_MMIO_HWPORT();
 
-  mode = intr->mode;
-  switch ( intr->mode & 0xC00 )
+  mode = intr->m_mode;
+  switch ( intr->m_mode & 0xC00 )
   {
     case 0x400:
       no_flush_cache = 1;
@@ -2059,8 +2059,8 @@ int __fastcall TransInterrupt(IntrData *intr)
     default:
       return 1;
   }
-  mode_1 = intr->mode & 1;
-  switch ( intr->mode & 0x300 )
+  mode_1 = intr->m_mode & 1;
+  switch ( intr->m_mode & 0x300 )
   {
     case 0x100:
       for ( i = 0; !(spu2_regs.m_u.m_m.m_core_regs[mode_1].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
@@ -2080,7 +2080,7 @@ int __fastcall TransInterrupt(IntrData *intr)
         if ( TransIntrHandlers[mode_1] )
         {
           VoiceTransIoMode[mode_1] = 1;
-          TransIntrHandlers[mode_1](mode_1, intr->data);
+          TransIntrHandlers[mode_1](mode_1, intr->m_data);
         }
         else if ( !TransIntrCallbacks[mode_1] )
           VoiceTransCompleteBool[mode_1] = 1;
@@ -2094,11 +2094,11 @@ int __fastcall TransInterrupt(IntrData *intr)
     case 0x200:
       if ( (mode & 0x8000) )
       {
-        if ( BlockHandlerIntrData[mode_1].cb )
+        if ( BlockHandlerIntrData[mode_1].m_cb )
         {
-          ((void (__fastcall *)(int, void *, int *, int *))BlockHandlerIntrData[mode_1].cb)(
+          ((void (__fastcall *)(int, void *, int *, int *))BlockHandlerIntrData[mode_1].m_cb)(
             mode_1,
-            BlockHandlerIntrData[mode_1].userdata,
+            BlockHandlerIntrData[mode_1].m_userdata,
             &dmamagictmp1,
             &dmamagictmp2);
           if ( dmamagictmp2 > 0 )
@@ -2111,8 +2111,8 @@ int __fastcall TransInterrupt(IntrData *intr)
           else
           {
             do_finish_block_clean_xfer(mode_1);
-            BlockHandlerIntrData[mode_1].cb = 0;
-            BlockHandlerIntrData[mode_1].userdata = 0;
+            BlockHandlerIntrData[mode_1].m_cb = 0;
+            BlockHandlerIntrData[mode_1].m_userdata = 0;
           }
         }
         else
@@ -2135,7 +2135,7 @@ int __fastcall TransInterrupt(IntrData *intr)
         if ( !no_flush_cache )
           FlushDcache();
         if ( TransIntrHandlers[mode_1] )
-          TransIntrHandlers[mode_1](mode_1, intr->data);
+          TransIntrHandlers[mode_1](mode_1, intr->m_data);
         else if ( TransIntrCallbacks[mode_1] )
           TransIntrCallbacks[mode_1](0);
       }
@@ -2721,14 +2721,14 @@ sceSdTransIntrHandler __cdecl sceSdSetTransIntrHandler(int channel, sceSdTransIn
 
   oldtmp = TransIntrHandlers[channel];
   TransIntrHandlers[channel] = func;
-  TransIntrData[channel].data = arg;
+  TransIntrData[channel].m_data = arg;
   return oldtmp;
 }
 
 //----- (004041A8) --------------------------------------------------------
 void *__cdecl sceSdGetTransIntrHandlerArgument(int arg)
 {
-  return TransIntrData[arg].data;
+  return TransIntrData[arg].m_data;
 }
 
 //----- (004041C0) --------------------------------------------------------
@@ -2853,14 +2853,14 @@ int __fastcall Reset(char flag)
   TransIntrHandlers[1] = 0;
   CleanHandlers[0] = 0;
   CleanHandlers[1] = 0;
-  TransIntrData[0].mode = 0;
-  TransIntrData[1].mode = 1;
-  TransIntrData[0].data = 0;
-  TransIntrData[1].data = 0;
-  BlockHandlerIntrData[0].cb = 0;
-  BlockHandlerIntrData[1].cb = 0;
-  BlockHandlerIntrData[0].userdata = 0;
-  BlockHandlerIntrData[1].userdata = 0;
+  TransIntrData[0].m_mode = 0;
+  TransIntrData[1].m_mode = 1;
+  TransIntrData[0].m_data = 0;
+  TransIntrData[1].m_data = 0;
+  BlockHandlerIntrData[0].m_cb = 0;
+  BlockHandlerIntrData[1].m_cb = 0;
+  BlockHandlerIntrData[0].m_userdata = 0;
+  BlockHandlerIntrData[1].m_userdata = 0;
   Spu2IntrHandlerData = 0;
   Spu2IrqCallback = 0;
   TransIntrCallbacks[0] = 0;
