@@ -1260,7 +1260,7 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   int (__cdecl *callback_tmp)(void *); // [sp+18h] [-8h]
   int (__cdecl *handler_tmp)(int, void *); // [sp+1Ch] [-4h]
 
-  if ( (unsigned __int8)effect_mode >= 0xAu )
+  if ( (unsigned __int8)effect_mode > SD_EFFECT_MODE_PIPE )
     return -100;
   if ( !(_BYTE)effect_mode )
     return 0;
