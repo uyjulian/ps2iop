@@ -234,7 +234,7 @@ typedef struct CleanRegionBuffer_
 void SetEffectRegister(int core, int spu2_regs_offset, int val);
 void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data);
 int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode);
-int CleanHandler(int channel, void *unusedarg);
+int CleanHandler(int channel);
 int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode);
 void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr);
 int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr);
@@ -255,7 +255,7 @@ void SetDmaRead(int chan);
 void libsd_do_busyloop_2();
 void libsd_do_busyloop_1(int);
 u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3);
-int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int chan);
+int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size, int chan);
 void do_finish_block_clean_xfer(int core);
 int __fastcall TransInterrupt(IntrData *intr);
 u32 __fastcall thunk_sceSdBlockTransStatus(int channel);
@@ -1128,7 +1128,7 @@ sceSdSpu2IntrHandler Spu2IntrHandler = NULL;
 void *Spu2IntrHandlerData = NULL; // idb
 sceSdTransIntrHandler TransIntrHandlers[2] = { NULL, NULL };
 CleanEffectIntrData_t BlockHandlerIntrData[2] = { { NULL, NULL }, { NULL, NULL } };
-typedef int (*SdCleanHandler)(int, void *);
+typedef int (*SdCleanHandler)(int);
 SdCleanHandler CleanHandlers[2] = { 0, 0 };
 IntrData TransIntrData[2] = { { 0u, NULL }, { 1u, NULL } };
 __int16 VoiceDataInit[8] = { 1792, 0, 0, 0, 0, 0, 0, 0 };
@@ -1329,12 +1329,11 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
 }
 
 //----- (00400888) --------------------------------------------------------
-int CleanHandler(int channel, void *unusedarg)
+int CleanHandler(int channel)
 {
   int channel_tmp; // $s2
   int channel_offs; // $s0
 
-  (void)unusedarg;
   channel_tmp = channel;
   ++CleanRegionCur[channel];
   if ( (int)CleanRegionCur[channel] >= (int)(CleanRegionMax[channel] - 1) )
@@ -2218,7 +2217,7 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (0040280C) --------------------------------------------------------
-int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int chan)
+int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size, int chan)
 {
   unsigned int size_tmp; // $s3
   int count; // $s2
@@ -2320,7 +2319,7 @@ int __fastcall TransInterrupt(IntrData *intr)
       FlushDcache();
     if ( CleanHandlers[mode_1_tmp1] )
     {
-      CleanHandlers[mode_1_tmp1](mode_1, 0);
+      CleanHandlers[mode_1_tmp1](mode_1);
       return 1;
     }
     iSetEventFlag(VoiceTransCompleteEf[mode_1_tmp1], 1u);
@@ -2759,7 +2758,6 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
       ++loop;
       if ( retres_flip >= num )
         return loop;
-      continue;
     }
   }
   return loop;
@@ -2792,7 +2790,7 @@ void __cdecl sceSdSetSwitch(u16 entry, u32 value)
 //----- (00403A94) --------------------------------------------------------
 u32 __cdecl sceSdGetSwitch(u16 entry)
 {
-  vu16 *regptr; // $a0
+  const vu16 *regptr; // $a0
 
   regptr = &(*(vu16 **)((char *)ParamRegList + ((entry >> 6) & 0x3FC)))[512 * (entry & 1)];
   return *regptr | (regptr[1] << 16);
@@ -2813,7 +2811,7 @@ void __cdecl sceSdSetAddr(u16 entry, u32 value)
 u32 __cdecl sceSdGetAddr(u16 entry)
 {
   int retlo; // $a3
-  vu16 *reg1; // $a1
+  const vu16 *reg1; // $a1
   int regmask; // $a0
   int rethi; // $a2
 
