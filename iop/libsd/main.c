@@ -2506,17 +2506,13 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
 //----- (00403CE4) --------------------------------------------------------
 u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
 {
-  __int16 bit; // $t1
-  unsigned __int16 i4; // $t2
-  __int16 offset2; // $t0
+  int bit; // $t1
   int i1; // $a3
   int val; // $a2
   int i2; // $a3
   int i5; // $a3
 
   bit = 0;
-  i4 = 0;
-  offset2 = 0;
   pitch = ( pitch > 0x3FFF ) ? 0x3FFF : pitch;
   for ( i1 = 0; i1 < 14; i1 += 1 )
   {
@@ -2532,20 +2528,18 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
       break;
     }
   }
-  i4 = i2;
-  if ( !g_NotePitchTable[i4] )
+  if ( !g_NotePitchTable[i2] )
     __builtin_trap();
-  for ( i5 = 127; (unsigned __int16)(((unsigned __int16)val << 15) / g_NotePitchTable[i4]) < g_NotePitchTable[i5 + 12]; i5 -= 1 )
+  for ( i5 = 127; (unsigned __int16)(((unsigned __int16)val << 15) / g_NotePitchTable[i2]) < g_NotePitchTable[i5 + 12]; i5 -= 1 )
   {
     if ( i5 <= 0 )
     {
-      i5 = offset2;
+      i5 = 0;
       break;
     }
   }
-  offset2 = i5;
-  return (((center_fine + offset2 + 1) & 0x7E)
-        + ((i4 + center_note + 12 * (bit - 12) + ((unsigned __int16)(center_fine + offset2 + 1) >> 7)) << 8)) & ~1;
+  return (((center_fine + i5 + 1) & 0x7E)
+        + ((i2 + center_note + 12 * (bit - 12) + ((unsigned __int16)(center_fine + i5 + 1) >> 7)) << 8)) & ~1;
 }
 
 //----- (00403E20) --------------------------------------------------------
