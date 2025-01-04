@@ -1542,7 +1542,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.u.main_regs.core_regs[core].cregs.attr &= ~0x80u;
+    spu2_regs.u.main_regs.core_regs[core].cregs.attr &= ~SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
   spu2_regs.u.extra_regs.different_regs[core].evoll = 0;
@@ -1553,7 +1553,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.u.main_regs.core_regs[core].cregs.attr |= 0x80u;
+    spu2_regs.u.main_regs.core_regs[core].cregs.attr |= SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
   if ( clearram )
