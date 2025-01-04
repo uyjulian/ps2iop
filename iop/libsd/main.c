@@ -1414,7 +1414,6 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   int clearram; // $s7
   int channel; // $s6
   int mode; // $s2
-  __int16 mode_data_0; // $v1
   int delay; // $a0
   __int16 feedback_tmp; // $v0
   int feedback; // $v1
@@ -1435,7 +1434,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     effect_mode = EffectAttr[core].mode;
     channel = (mode & 0x200) != 0;
   }
-  if ( (unsigned __int8)mode >= (unsigned int)(SD_EFFECT_MODE_DELAY|SD_EFFECT_MODE_STUDIO_1) )
+  if ( (unsigned __int8)mode > SD_EFFECT_MODE_PIPE )
     return -100;
   EffectAttr[core].mode = (unsigned __int8)mode;
   EffectAddr[core] = GetEEA(core) - (8 * EffectSizes[(unsigned __int8)mode] - 1);
@@ -1456,31 +1455,24 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     EffectAttr[core].feedback = 0;
     EffectAttr[core].delay = 0;
   }
-  if ( (unsigned __int8)mode < SD_EFFECT_MODE_PIPE )
+  if ( (unsigned __int8)mode >= SD_EFFECT_MODE_ECHO && (unsigned __int8)mode <= SD_EFFECT_MODE_DELAY )
   {
-    if ( (unsigned __int8)mode >= SD_EFFECT_MODE_ECHO )
-    {
-      mode_data_0 = mode_data.mode_data[0];
-      delay = attr->delay;
-      EffectAttr[core].delay = delay;
-      delay += 1;
-      delay &= 0xFFFF;
-      feedback_tmp = ((_WORD)delay << 6) - mode_data_0;
-      delay <<= 5;
-      delay &= 0xFFFF;
-      mode_data.mode_data[10] = feedback_tmp;
-      mode_data.mode_data[11] = delay - mode_data.mode_data[1];
-      mode_data.mode_data[16] = mode_data.mode_data[17] + delay;
-      mode_data.mode_data[12] = mode_data.mode_data[13] + delay;
-      mode_data.mode_data[27] = mode_data.mode_data[29] + delay;
-      mode_data.mode_data[26] = mode_data.mode_data[28] + delay;
-    }
-    if ( (unsigned __int8)mode < SD_EFFECT_MODE_PIPE && (unsigned __int8)mode >= SD_EFFECT_MODE_ECHO )
-    {
-      feedback = attr->feedback;
-      EffectAttr[core].feedback = feedback;
-      mode_data.mode_data[7] = 258 * feedback;
-    }
+    delay = attr->delay;
+    EffectAttr[core].delay = delay;
+    delay += 1;
+    delay &= 0xFFFF;
+    feedback_tmp = ((_WORD)delay << 6) - (__int16)mode_data.mode_data[0];
+    delay <<= 5;
+    delay &= 0xFFFF;
+    mode_data.mode_data[10] = feedback_tmp;
+    mode_data.mode_data[11] = delay - mode_data.mode_data[1];
+    mode_data.mode_data[16] = mode_data.mode_data[17] + delay;
+    mode_data.mode_data[12] = mode_data.mode_data[13] + delay;
+    mode_data.mode_data[27] = mode_data.mode_data[29] + delay;
+    mode_data.mode_data[26] = mode_data.mode_data[28] + delay;
+    feedback = attr->feedback;
+    EffectAttr[core].feedback = feedback;
+    mode_data.mode_data[7] = 258 * feedback;
   }
   effects_enabled = (spu2_regs.u.main_regs.core_regs[core].cregs.attr >> 7) & 1;
   if ( effects_enabled )
@@ -1525,7 +1517,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   int clearram; // $s6
   int channel; // $s5
   unsigned int mode; // $s1
-  int attr_effectsrel; // $s4
+  int effects_enabled; // $s4
   struct mode_data_struct mode_data; // [sp+10h] [-50h] BYREF
   int state; // [sp+5Ch] [-4h] BYREF
 
@@ -1538,7 +1530,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
     channel = (param->mode & 0x200) != 0;
   }
   mode = (unsigned __int8)param->mode;
-  if ( mode >= 0xA )
+  if ( mode > SD_EFFECT_MODE_PIPE )
     return -100;
   EffectAttr[core].mode = mode;
   EffectAttr[core].delay = 0;
@@ -1546,8 +1538,8 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   EffectAddr[core] = GetEEA(core) - (8 * EffectSizes[mode] - 1);
   // Unoffical: don't use inlined memcpy
   memcpy(&mode_data, &EffectParams[mode], sizeof(mode_data));
-  attr_effectsrel = (spu2_regs.u.main_regs.core_regs[core].cregs.attr >> 7) & 1;
-  if ( attr_effectsrel )
+  effects_enabled = (spu2_regs.u.main_regs.core_regs[core].cregs.attr >> 7) & 1;
+  if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
     spu2_regs.u.main_regs.core_regs[core].cregs.attr &= ~0x80u;
@@ -1558,7 +1550,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   SetEffectData(core, &mode_data);
   spu2_regs.u.main_regs.core_regs[core].cregs.esa.pair[0] = EffectAddr[core] >> 17;
   spu2_regs.u.main_regs.core_regs[core].cregs.esa.pair[1] = EffectAddr[core] >> 1;
-  if ( attr_effectsrel )
+  if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
     spu2_regs.u.main_regs.core_regs[core].cregs.attr |= 0x80u;
@@ -1574,38 +1566,33 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
 //----- (00401380) --------------------------------------------------------
 int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
 {
-  int mode_low; // $v1
   int mode; // $a0
   int delay_plus_one; // $a0
   struct mode_data_struct mode_data; // [sp+10h] [-48h] BYREF
 
-  mode_low = attr->mode & 0xFF;
-  if ( (unsigned int)mode_low >= 0xA )
+  if ( (unsigned __int8)attr->mode > SD_EFFECT_MODE_PIPE )
     return -100;
   mode = EffectAttr[core].mode;
-  if ( mode != mode_low )
+  if ( mode != (unsigned __int8)attr->mode )
     return -100;
-  if ( mode < 9 )
+  if ( mode >= SD_EFFECT_MODE_ECHO && mode <= SD_EFFECT_MODE_DELAY )
   {
-    if ( mode >= 7 )
-    {
-      // Unoffical: don't use inlined memcpy
-      memcpy(&mode_data, &EffectParams[mode], sizeof(mode_data));
-      mode_data.mode_flags = 0xC011C80;
-      EffectAttr[core].delay = attr->delay;
-      EffectAttr[core].feedback = attr->feedback;
-      delay_plus_one = EffectAttr[core].delay + 1;
-      mode_data.mode_data[10] = (__int16)(((_WORD)delay_plus_one << 6) - (__int16)mode_data.mode_data[0]);
-      delay_plus_one <<= 5;
-      delay_plus_one &= 0xFFFF;
-      mode_data.mode_data[11] = delay_plus_one - mode_data.mode_data[1];
-      mode_data.mode_data[12] = mode_data.mode_data[13] + delay_plus_one;
-      mode_data.mode_data[16] = mode_data.mode_data[17] + delay_plus_one;
-      mode_data.mode_data[26] = mode_data.mode_data[28] + delay_plus_one;
-      mode_data.mode_data[27] = mode_data.mode_data[29] + delay_plus_one;
-      mode_data.mode_data[7] = 258 * EffectAttr[core].feedback;
-      SetEffectData(core, &mode_data);
-    }
+    // Unoffical: don't use inlined memcpy
+    memcpy(&mode_data, &EffectParams[mode], sizeof(mode_data));
+    mode_data.mode_flags = 0xC011C80;
+    EffectAttr[core].delay = attr->delay;
+    EffectAttr[core].feedback = attr->feedback;
+    delay_plus_one = EffectAttr[core].delay + 1;
+    mode_data.mode_data[10] = (__int16)(((_WORD)delay_plus_one << 6) - (__int16)mode_data.mode_data[0]);
+    delay_plus_one <<= 5;
+    delay_plus_one &= 0xFFFF;
+    mode_data.mode_data[11] = delay_plus_one - mode_data.mode_data[1];
+    mode_data.mode_data[12] = mode_data.mode_data[13] + delay_plus_one;
+    mode_data.mode_data[16] = mode_data.mode_data[17] + delay_plus_one;
+    mode_data.mode_data[26] = mode_data.mode_data[28] + delay_plus_one;
+    mode_data.mode_data[27] = mode_data.mode_data[29] + delay_plus_one;
+    mode_data.mode_data[7] = 258 * EffectAttr[core].feedback;
+    SetEffectData(core, &mode_data);
   }
   spu2_regs.u.extra_regs.different_regs[core].evoll = attr->depth_L;
   spu2_regs.u.extra_regs.different_regs[core].evolr = attr->depth_R;
