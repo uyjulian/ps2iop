@@ -13,9 +13,6 @@ IRX_ID("Sound_Device_Library", 3, 3);
 
 #define __int8 char
 #define __int16 short
-#define __int64 long long
-#define _WORD u16
-#define _DWORD u32
 #define SD_DMA_CS           (1 << 9) // Continuous stream
 #define SD_DMA_START          (1 << 24)
 #define SD_DMA_DIR_SPU2IOP        0
@@ -936,7 +933,7 @@ u32 ClearEffectData[256] =
 spu2_regs_t *ptr_to_bf900000 = (spu2_regs_t *)0xBF900000;
 int VoiceTransStatus[2] = { 0, 0 };
 int VoiceTransIoMode[2] = { 1, 1 };
-__int16 NotePitchTable[140] =
+unsigned __int16 NotePitchTable[140] =
 {
   32768,
   -30820,
@@ -1080,6 +1077,7 @@ __int16 NotePitchTable[140] =
   -30836
 };
 int SpdifSettings = 0; // weak
+__int16 CoreAttrShifts[4] = { 7, 6, 14, 8 };
 sceSdEffectAttr EffectAttr[2] = { { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 } };
 int VoiceTransCompleteBool[2] = { 0, 0 };
 int VoiceTransCompleteEf[2] = { 0, 0 };
@@ -1397,7 +1395,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   EffectAttr[core].mode = (unsigned __int8)mode;
   EffectAddr[core] = GetEEA(core) - (8 * EffectSizes[(unsigned __int8)mode] - 1);
   // Unoffical: use memcpy from sysclib
-  memcpy(&mode_data, &EffectParams[EffectAttr[core].mode], sizeof(mode_data));
+  memcpy(&mode_data, &EffectParams[(unsigned __int8)mode], sizeof(mode_data));
   if ( (unsigned __int8)mode == SD_EFFECT_MODE_ECHO )
   {
     EffectAttr[core].feedback = 128;
@@ -1668,9 +1666,9 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
     VoiceTransStatus[core] = 0;
     DmaStartStop((core << 4) | 2, spuaddr, 0);
     if ( QueryIntrContext() )
-      iClearEventFlag(VoiceTransCompleteEf[core], 0xFFFFFFFE);
+      iClearEventFlag(VoiceTransCompleteEf[core], ~1);
     else
-      ClearEventFlag(VoiceTransCompleteEf[core], 0xFFFFFFFE);
+      ClearEventFlag(VoiceTransCompleteEf[core], ~1);
     VoiceTransIoMode[core] = 0;
     dmasize1 = size >> 6 << 6;
     if ( (size & 0x3F) != 0 )
@@ -1682,9 +1680,9 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
   BlockHandlerIntrData[core].userdata = 0;
   DmaStartStop((core << 4) | 2, spuaddr, 0);
   if ( QueryIntrContext() )
-    iClearEventFlag(VoiceTransCompleteEf[core], 0xFFFFFFFE);
+    iClearEventFlag(VoiceTransCompleteEf[core], ~1);
   else
-    ClearEventFlag(VoiceTransCompleteEf[core], 0xFFFFFFFE);
+    ClearEventFlag(VoiceTransCompleteEf[core], ~1);
   VoiceTransIoMode[core] = 0;
   if ( (mode & SD_TRANS_MODE_IO) == 0 )
   {
@@ -1705,35 +1703,35 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
 //----- (00401B10) --------------------------------------------------------
 u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag)
 {
-  int status_offset; // $s0
   u32 efres; // [sp+10h] [-8h] BYREF
+  int core;
 
-  status_offset = channel << 16 >> 14;
-  if ( *(int *)((char *)VoiceTransStatus + status_offset) == 1
-    || *(int *)((char *)VoiceTransIoMode + status_offset) == 1 )
+  core = channel & 1;
+  if ( VoiceTransStatus[core] == 1
+    || VoiceTransIoMode[core] == 1 )
   {
     return 1;
   }
   switch ( flag )
   {
     case 0:
-      if ( *(int *)((char *)VoiceTransCompleteBool + status_offset) )
+      if ( VoiceTransCompleteBool[core] )
       {
-        *(int *)((char *)VoiceTransCompleteBool + status_offset) = 0;
-        *(int *)((char *)VoiceTransIoMode + status_offset) = 1;
+        VoiceTransCompleteBool[core] = 0;
+        VoiceTransIoMode[core] = 1;
       }
       break;
     case 1:
       if ( QueryIntrContext() != 0 )
         return -202;
-      WaitEventFlag(*(int *)((char *)VoiceTransCompleteEf + status_offset), 1u, 0, &efres);
-      *(int *)((char *)VoiceTransCompleteBool + status_offset) = 0;
-      *(int *)((char *)VoiceTransIoMode + status_offset) = 1;
+      WaitEventFlag(VoiceTransCompleteEf[core], 1, 0, &efres);
+      VoiceTransCompleteBool[core] = 0;
+      VoiceTransIoMode[core] = 1;
       break;
     default:
       break;
   }
-  return *(int *)((char *)VoiceTransIoMode + status_offset);
+  return VoiceTransIoMode[core];
 }
 // 401B10: using guessed type u32 efres[2];
 
@@ -2043,9 +2041,9 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
         spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas = 0;
       }
       if ( QueryIntrContext() == 0 )
-        SetEventFlag(VoiceTransCompleteEf[core_tmp1], 1u);
+        SetEventFlag(VoiceTransCompleteEf[core_tmp1], 1);
       else
-        iSetEventFlag(VoiceTransCompleteEf[core_tmp1], 1u);
+        iSetEventFlag(VoiceTransCompleteEf[core_tmp1], 1);
       VoiceTransCompleteBool[core_tmp1] = 0;
       VoiceTransIoMode[core_tmp1] = 1;
       CleanHandlers[core_tmp1] = 0;
@@ -2145,7 +2143,7 @@ int __fastcall TransInterrupt(IntrData *intr)
         CleanHandlers[mode_1](mode_1);
         return 1;
       }
-      iSetEventFlag(VoiceTransCompleteEf[mode_1], 1u);
+      iSetEventFlag(VoiceTransCompleteEf[mode_1], 1);
       if ( TransIntrHandlers[mode_1] )
       {
         VoiceTransIoMode[mode_1] = 1;
@@ -2553,15 +2551,13 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
 //----- (004039A0) --------------------------------------------------------
 void __cdecl sceSdSetParam(u16 entry, u16 value)
 {
-  *(vu16 *)((char *)&(*(vu16 **)((char *)ParamRegList + ((entry >> 6) & 0x3FC)))[4 * (entry & 0x3E)]
-          + (entry & 1) * (1024 - 984 * ((entry & 0x80) != 0))) = value;
+  ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (1024 - 984 * ((entry & 0x80) != 0))) >> 1)] = value;
 }
 
 //----- (004039FC) --------------------------------------------------------
 u16 __cdecl sceSdGetParam(u16 entry)
 {
-  return *(vu16 *)((char *)&(*(vu16 **)((char *)ParamRegList + ((entry >> 6) & 0x3FC)))[4 * (entry & 0x3E)]
-                 + (entry & 1) * (1024 - 984 * ((entry & 0x80) != 0)));
+  return ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (1024 - 984 * ((entry & 0x80) != 0))) >> 1)];
 }
 
 //----- (00403A5C) --------------------------------------------------------
@@ -2569,8 +2565,8 @@ void __cdecl sceSdSetSwitch(u16 entry, u32 value)
 {
   vu16 *regptr; // $v0
 
-  regptr = &(*(vu16 **)((char *)ParamRegList + ((entry >> 6) & 0x3FC)))[512 * (entry & 1)];
-  *regptr = value;
+  regptr = &ParamRegList[((entry >> 8) & 0xFF)][(entry & 1) << 9];
+  regptr[0] = value;
   regptr[1] = (value >> 16) & 0xFF;
 }
 
@@ -2579,8 +2575,8 @@ u32 __cdecl sceSdGetSwitch(u16 entry)
 {
   const vu16 *regptr; // $a0
 
-  regptr = &(*(vu16 **)((char *)ParamRegList + ((entry >> 6) & 0x3FC)))[512 * (entry & 1)];
-  return *regptr | (regptr[1] << 16);
+  regptr = &ParamRegList[((entry >> 8) & 0xFF)][(entry & 1) << 9];
+  return regptr[0] | (regptr[1] << 16);
 }
 
 //----- (00403ACC) --------------------------------------------------------
@@ -2588,7 +2584,7 @@ void __cdecl sceSdSetAddr(u16 entry, u32 value)
 {
   vu16 *reg1; // $a1
 
-  reg1 = &(*(vu16 **)((char *)ParamRegList + ((entry >> 6) & 0x3FC)))[512 * (entry & 1) + 3 * (entry & 0x3E)];
+  reg1 = &ParamRegList[((entry >> 8) & 0xFF)][((entry & 1) << 9) + 3 * (entry & 0x3E)];
   reg1[0] = value >> 17;
   if ( (entry & 0xFF00) != 0x1D00 )
     reg1[1] = (value >> 1) & ~7;
@@ -2603,15 +2599,15 @@ u32 __cdecl sceSdGetAddr(u16 entry)
   int rethi; // $a2
 
   retlo = 0x1FFFF;
-  reg1 = &(*(vu16 **)((char *)ParamRegList + ((entry >> 6) & 0x3FC)))[512 * (entry & 1) + 3 * (entry & 0x3E)];
+  reg1 = &ParamRegList[((entry >> 8) & 0xFF)][((entry & 1) << 9) + 3 * (entry & 0x3E)];
   regmask = entry & 0xFF00;
-  rethi = *reg1 << 17;
+  rethi = reg1[0] << 17;
   if ( regmask != 0x1D00 )
   {
     retlo = 2 * reg1[1];
     if ( regmask == 0x2100 || regmask == 0x2200 )
     {
-      rethi = *reg1 << 17;
+      rethi = reg1[0] << 17;
       retlo = 2 * reg1[1];
     }
   }
@@ -2621,43 +2617,38 @@ u32 __cdecl sceSdGetAddr(u16 entry)
 //----- (00403BD0) --------------------------------------------------------
 u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine)
 {
-  int fine_x1; // $a3
-  int fine_x2; // $v0
-  int fine_x3; // $a1
-  __int64 fine_x4; // kr00_8
-  int fine_x5; // $a2
-  int fine_x6; // $a3
-  int fine_x7; // $v1
-  __int16 offset2; // $t0
-  int fine_x9; // $a1
-  int offset1; // $a0
+  int _fine; // $a3
+  int val3; // $v0
+  int _note; // $a1
+  int _fine2; // $a2
+  int offset2; // $a3
+  int val2; // $v1
+  __int16 val; // $t0
+  __int16 offset1; // $a0
   int retval; // $a1
 
-  fine_x1 = fine + center_fine;
-  fine_x2 = (note + fine_x1 / 128 - center_note) << 16;
-  fine_x3 = (__int16)(note + fine_x1 / 128 - center_note);
-  fine_x4 = 0x2AAAAAABLL * (__int16)(note + fine_x1 / 128 - center_note);
-  fine_x5 = fine_x1 / 128;
-  fine_x6 = fine_x1 % 128;
-  fine_x7 = ((fine_x4 >> 32) >> 1) - (fine_x2 >> 31);
-  offset2 = fine_x7 - 2;
-  fine_x9 = fine_x3 - 12 * fine_x7;
-  offset1 = fine_x9;
-  if ( (offset1 & 0x8000u) != 0 || (!(__int16)offset1 && fine_x6 < 0) )
+  _fine = fine + center_fine;
+  val3 = (note + _fine / 128 - center_note);
+  _note = val3 & 0xFFFF;
+  _fine2 = _fine / 128;
+  offset2 = _fine % 128;
+  val2 = ((_note / 6) >> 1) - ((unsigned int)val3 << 16 >> 31);
+  offset1 = _note - 12 * val2;
+  val = val2 - 2;
+  if ( (offset1 < 0) || (!offset1 && offset2 < 0) )
   {
     offset1 += 12;
-    offset2 -= 1;
+    val -= 1;
   }
-  if ( fine_x6 < 0 )
-  {
-    fine_x6 += (fine_x5 + 1) << 7;
-    offset1 -= 1;
-    offset1 += fine_x5;
-  }
-  retval = (*(unsigned __int16 *)((char *)NotePitchTable + ((offset1 << 16) >> 15))
-          * (unsigned __int16)NotePitchTable[fine_x6 + 12]) >> 16;
   if ( offset2 < 0 )
-    return (unsigned int)(retval + (1 << (-offset2 - 1))) >> -offset2;
+  {
+    offset2 += (_fine2 + 1) << 7;
+    offset1 -= 1;
+    offset1 += _fine2;
+  }
+  retval = (NotePitchTable[offset1] * NotePitchTable[offset2 + 12]) >> 16;
+  if ( val < 0 )
+    return (unsigned int)(retval + (1 << (-val - 1))) >> -val;
   return retval;
 }
 
@@ -2683,7 +2674,7 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
       bit = i1;
   }
   val = pitch << (15 - bit);
-  for ( i2 = 11; (unsigned __int16)val < (unsigned int)(unsigned __int16)NotePitchTable[i2]; i2 -= 1 )
+  for ( i2 = 11; (unsigned __int16)val < NotePitchTable[i2]; i2 -= 1 )
   {
     if ( i2 <= 0 )
     {
@@ -2694,7 +2685,7 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
   i4 = i2;
   if ( !NotePitchTable[i4] )
     __builtin_trap();
-  for ( i5 = 127; (unsigned __int16)(((unsigned __int16)val << 15) / (unsigned int)(unsigned __int16)NotePitchTable[i4]) < (unsigned int)(unsigned __int16)NotePitchTable[i5 + 12]; i5 -= 1 )
+  for ( i5 = 127; (unsigned __int16)(((unsigned __int16)val << 15) / NotePitchTable[i4]) < NotePitchTable[i5 + 12]; i5 -= 1 )
   {
     if ( i5 <= 0 )
     {
@@ -2769,7 +2760,7 @@ void sceSdSetCoreAttr_default(char entry, char val)
   u16 param_tmp; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
-  setting_tmp = *(_WORD *)((char *)&SpdifSettings + (entry & 0xE) + 2);// should point to CoreAttrShifts
+  setting_tmp = CoreAttrShifts[((entry & 0xE) >> 1) - 1];
   CpuSuspendIntr(&state);
   param_tmp = (entry & 1) | 0x2300;
   sceSdSetParam(param_tmp, (sceSdGetParam(param_tmp) & ~(1 << setting_tmp)) | ((val & 1) << setting_tmp));
@@ -3011,9 +3002,9 @@ int __fastcall Reset(char flag)
   else
   {
     if ( QueryIntrContext() )
-      iSetEventFlag(VoiceTransCompleteEf[0], 1u);
+      iSetEventFlag(VoiceTransCompleteEf[0], 1);
     else
-      SetEventFlag(VoiceTransCompleteEf[0], 1u);
+      SetEventFlag(VoiceTransCompleteEf[0], 1);
   }
   if ( VoiceTransCompleteEf[1] <= 0 )
   {
@@ -3022,9 +3013,9 @@ int __fastcall Reset(char flag)
   else
   {
     if ( QueryIntrContext() )
-      iSetEventFlag(VoiceTransCompleteEf[1], 1u);
+      iSetEventFlag(VoiceTransCompleteEf[1], 1);
     else
-      SetEventFlag(VoiceTransCompleteEf[1], 1u);
+      SetEventFlag(VoiceTransCompleteEf[1], 1);
   }
   if ( VoiceTransCompleteEf[0] <= 0 || VoiceTransCompleteEf[1] <= 0 )
     return -301;
