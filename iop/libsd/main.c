@@ -1397,18 +1397,14 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
   v13 = v10 + 256;
   v14 = v9 - 1024;
   CleanRegionMax[v8] = 0;
-  if ( (int)(v9 - 1024) >= 1025 )
+  while ( v14 >= 1025 )
   {
-    do
-    {
-      v12->m_elements[0].m_spuaddr = v13;
-      v12->m_elements[0].m_size = 1024;
-      v12 = (CleanRegionBuffer_t *)((char *)v12 + 8);
-      v13 += 256;
-      v14 -= 1024;
-      ++CleanRegionMax[v8];
-    }
-    while ( v14 >= 1025 );
+    v12->m_elements[0].m_spuaddr = v13;
+    v12->m_elements[0].m_size = 1024;
+    v12 = (CleanRegionBuffer_t *)((char *)v12 + 8);
+    v13 += 256;
+    v14 -= 1024;
+    ++CleanRegionMax[v8];
   }
   v12->m_elements[0].m_spuaddr = v13;
   v12->m_elements[0].m_size = v14;
@@ -2183,16 +2179,12 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
         *(_DWORD *)p_dmac_chcr &= ~SD_DMA_START;
         if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 )
         {
-          if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.statx & 0x80) == 0 )
+          waittmp2 = 1;
+          while ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.statx & 0x80) == 0 )
           {
-            waittmp2 = 1;
-            do
-            {
-              if ( waittmp2 > 0x1000000 )
-                break;
-              ++waittmp2;
-            }
-            while ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.statx & 0x80) == 0 );
+            if ( waittmp2 > 0x1000000 )
+              break;
+            ++waittmp2;
           }
         }
       }
@@ -2201,16 +2193,12 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
         CpuSuspendIntr(&state);
         spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr &= 0xFFCFu;
         CpuResumeIntr(state);
-        if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 )
+        waittmp1 = 1;
+        while ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 )
         {
-          waittmp1 = 1;
-          do
-          {
-            if ( waittmp1 >= 0xF01 )
-              break;
-            ++waittmp1;
-          }
-          while ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 );
+          if ( waittmp1 >= 0xF01 )
+            break;
+          ++waittmp1;
         }
       }
       hichk = 0;
@@ -2253,37 +2241,28 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
   int state; // [sp+14h] [-4h] BYREF
 
   size_tmp = size;
-  if ( size )
+  while ( size_tmp )
   {
-    condtmp = size < 0x41;
-    do
+    condtmp = size_tmp < 0x41;
+    count = 64;
+    if ( condtmp )
+      count = size_tmp;
+    for ( i = 0; i < (count / 2); i += 1 )
     {
-      count = 64;
-      if ( condtmp )
-        count = size_tmp;
-      for ( i = 0; i < (count / 2); i += 1 )
-      {
-        spu2_regs.u.main_regs.core_regs[chan].cregs.xferdata_1ac = iopaddr[i];
-      }
-      CpuSuspendIntr(&state);
-      spu2_regs.u.main_regs.core_regs[chan].cregs.attr = (spu2_regs.u.main_regs.core_regs[chan].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
-      CpuResumeIntr(state);
-      if ( (spu2_regs.u.main_regs.core_regs[chan].cregs.statx & SD_IO_IN_PROCESS) != 0 )
-      {
-        waittmp1 = 1;
-        do
-        {
-          if ( waittmp1 >= 0xF01 )
-            break;
-          libsd_do_busyloop_1(1);
-          ++waittmp1;
-        }
-        while ( (spu2_regs.u.main_regs.core_regs[chan].cregs.statx & SD_IO_IN_PROCESS) != 0 );
-      }
-      size_tmp -= count;
-      condtmp = size_tmp < 0x41;
+      spu2_regs.u.main_regs.core_regs[chan].cregs.xferdata_1ac = iopaddr[i];
     }
-    while ( size_tmp );
+    CpuSuspendIntr(&state);
+    spu2_regs.u.main_regs.core_regs[chan].cregs.attr = (spu2_regs.u.main_regs.core_regs[chan].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
+    CpuResumeIntr(state);
+    waittmp1 = 1;
+    while ( (spu2_regs.u.main_regs.core_regs[chan].cregs.statx & SD_IO_IN_PROCESS) != 0 )
+    {
+      if ( waittmp1 >= 0xF01 )
+        break;
+      libsd_do_busyloop_1(1);
+      ++waittmp1;
+    }
+    size_tmp -= count;
   }
   CpuSuspendIntr(&state);
   spu2_regs.u.main_regs.core_regs[chan].cregs.attr &= ~SD_CORE_DMA;
@@ -2337,28 +2316,20 @@ int __fastcall TransInterrupt(IntrData *intr)
   mode_300 = intr->mode & 0x300;
   if ( mode_300 == 0x100 )
   {
-    if ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.statx & 0x80) == 0 )
+    waittmp1 = 1;
+    while ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.statx & 0x80) == 0 )
     {
-      waittmp1 = 1;
-      do
-      {
-        if ( waittmp1 > 0x1000000 )
-          break;
-        ++waittmp1;
-      }
-      while ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.statx & 0x80) == 0 );
+      if ( waittmp1 > 0x1000000 )
+        break;
+      ++waittmp1;
     }
     spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr &= ~SD_CORE_DMA;
-    if ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr & SD_CORE_DMA) != 0 )
+    waittmp2 = 1;
+    while ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr & SD_CORE_DMA) != 0 )
     {
-      waittmp2 = 1;
-      do
-      {
-        if ( waittmp2 >= 0xF01 )
-          break;
-        ++waittmp2;
-      }
-      while ( (spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr & SD_CORE_DMA) != 0 );
+      if ( waittmp2 >= 0xF01 )
+        break;
+      ++waittmp2;
     }
     mode_1_tmp1 = mode_1;
     if ( !no_flush_cache )
@@ -2692,7 +2663,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           voicei1 = 0;
           if ( (batch->entry & 0x3E) == 0x3E )
           {
-            do
+            while ( voicei1 < 24 )
             {
               if ( ((1 << voicei1) & voice) != 0 )
               {
@@ -2701,7 +2672,6 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
               }
               ++voicei1;
             }
-            while ( voicei1 < 24 );
             --loop;
           }
           else
@@ -2716,7 +2686,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           voicei2 = 0;
           if ( (batch->entry & 0x7E) == 0x7E )
           {
-            do
+            while ( voicei2 < 24 )
             {
               if ( ((1 << voicei2) & voice) != 0 )
               {
@@ -2725,7 +2695,6 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
               }
               ++voicei2;
             }
-            while ( voicei2 < 24 );
             --loop;
           }
           else
@@ -2751,7 +2720,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           if ( (batch->entry & 0x3E) == 0x3E )
           {
             retsptrtmp1 = &rets[loop];
-            do
+            while ( voicei3 < 24 )
             {
               if ( ((1 << voicei3) & voice) != 0 )
                 Param = sceSdGetParam((batch->entry & ~0x3E) | (2 * voicei3));
@@ -2761,7 +2730,6 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
               ++voicei3;
               ++loop;
             }
-            while ( voicei3 < 24 );
             --loop;
           }
           else
@@ -2777,7 +2745,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           if ( (batch->entry & 0x7E) == 0x7E )
           {
             retsptrtmp2 = &rets[loop];
-            do
+            while ( voicei4 < 24 )
             {
               if ( ((1 << voicei4) & voice) != 0 )
               {
@@ -2790,7 +2758,6 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
               }
               ++voicei4;
             }
-            while ( voicei4 < 24 );
             --loop;
           }
           else
@@ -2935,7 +2902,6 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
   unsigned __int16 i4; // $t2
   __int16 offset2; // $t0
   int i1; // $a3
-  int pitch_tmp; // $v0
   int val; // $a2
   int i2; // $a3
   int i3; // $v0
@@ -2947,14 +2913,12 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
   if ( pitch >= 0x4000u )
     pitch = 0x3FFF;
   i1 = 0;
-  pitch_tmp = pitch & 0xFF;
-  do
+  while ( i1 < 14 )
   {
-    if ( (pitch_tmp & 1) != 0 )
+    if ( (((int)pitch >> i1) & 1) != 0 )
       bit = i1;
-    pitch_tmp = (int)pitch >> ++i1;
+    i1 += 1;
   }
-  while ( i1 < 14 );
   val = pitch << (15 - bit);
   i2 = 11;
   i3 = 11;
@@ -3181,32 +3145,27 @@ int __fastcall Spu2Interrupt(void *data)
   if ( Spu2IntrHandler || Spu2IrqCallback )
   {
     val = (unsigned __int8)(spu2_regs.u.extra_regs.spdif_irqinfo & 0xC) >> 2;
-    if ( val )
+    while ( val )
     {
-      condtmp2 = (val & 1) != 0;
-      do
+      condtmp2 = val & 1;
+      condtmp1 = condtmp2 == 0;
+      condtmp3 = val & 2;
+      if ( !condtmp1 )
       {
-        condtmp1 = condtmp2 == 0;
+        spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~0x40u;
         condtmp3 = val & 2;
-        if ( !condtmp1 )
-        {
-          spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~0x40u;
-          condtmp3 = val & 2;
-        }
-        if ( condtmp3 )
-          spu2_regs.u.main_regs.core_regs[1].cregs.attr &= ~0x40u;
-        if ( Spu2IntrHandler )
-        {
-          Spu2IntrHandler(val, Spu2IntrHandlerData);
-        }
-        else if ( Spu2IrqCallback )
-        {
-          Spu2IrqCallback(0);
-        }
-        val = (unsigned __int8)(spu2_regs.u.extra_regs.spdif_irqinfo & 0xC) >> 2;
-        condtmp2 = val & 1;
       }
-      while ( val );
+      if ( condtmp3 )
+        spu2_regs.u.main_regs.core_regs[1].cregs.attr &= ~0x40u;
+      if ( Spu2IntrHandler )
+      {
+        Spu2IntrHandler(val, Spu2IntrHandlerData);
+      }
+      else if ( Spu2IrqCallback )
+      {
+        Spu2IrqCallback(0);
+      }
+      val = (unsigned __int8)(spu2_regs.u.extra_regs.spdif_irqinfo & 0xC) >> 2;
     }
   }
   return 1;
@@ -3224,22 +3183,17 @@ int InitVoices()
   spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[0] = 0x0000;
   spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[1] = 0x2800;
   i2 = 0;
-  do
+  while ( i2 < 8 )
   {
     spu2_regs.u.main_regs.core_regs[0].cregs.xferdata_1ac = VoiceDataInit[i2];
     ++i2;
   }
-  while ( i2 < 8 );
   spu2_regs.u.main_regs.core_regs[0].cregs.attr = (spu2_regs.u.main_regs.core_regs[0].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
   i1 = 0;
-  if ( (spu2_regs.u.main_regs.core_regs[0].cregs.statx & SD_IO_IN_PROCESS) != 0 )
+  while ( (spu2_regs.u.main_regs.core_regs[0].cregs.statx & SD_IO_IN_PROCESS) != 0 && i1 <= 0x1000000 )
   {
-    do
-    {
-      libsd_do_busyloop_1(1);
-      ++i1;
-    }
-    while ( i1 <= 0x1000000 && (spu2_regs.u.main_regs.core_regs[0].cregs.statx & SD_IO_IN_PROCESS) != 0 );
+    libsd_do_busyloop_1(1);
+    ++i1;
   }
   spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~SD_CORE_DMA;
   for ( i1a = 0; i1a < 24; ++i1a )
