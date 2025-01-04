@@ -231,7 +231,7 @@ typedef struct CleanRegionBuffer_
 //-------------------------------------------------------------------------
 // Function declarations
 
-void SetEffectRegister(int core, int spu2_regs_offset, int val);
+void SetEffectRegisterPair(spu2_u16pair_t *pair, int val);
 void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data);
 int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode);
 int CleanHandler(int channel);
@@ -1164,15 +1164,14 @@ int _start()
 }
 
 //----- (00400110) --------------------------------------------------------
-void SetEffectRegister(int core, int spu2_regs_offset, int val)
+void SetEffectRegisterPair(spu2_u16pair_t *pair, int val)
 {
   unsigned int rval; // $a2
-  _WORD *regptr; // $a0
 
   rval = 4 * val;
-  regptr = (_WORD *)&ptr_to_bf900000->u.main_regs.core_regs[core] + spu2_regs_offset;
-  *regptr = (rval >> 16) & 0xFFFF;
-  regptr[1] = rval;
+  // Unofficial: receive register pair instead of base+offset
+  pair->pair[0] = (rval >> 16) & 0xFFFF;
+  pair->pair[1] = rval;
 }
 
 //----- (0040013C) --------------------------------------------------------
@@ -1184,9 +1183,9 @@ void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
   if ( deref_mode_data == 0 )
     deref_mode_data = 0xFFFFFFFF;
   if ( (deref_mode_data & 1) != 0 )
-    SetEffectRegister(core, 370, (unsigned __int16)mode_data->mode_data[0]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf1_size, (unsigned __int16)mode_data->mode_data[0]);
   if ( (deref_mode_data & 2) != 0 )
-    SetEffectRegister(core, 372, (unsigned __int16)mode_data->mode_data[1]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf2_size, (unsigned __int16)mode_data->mode_data[1]);
   if ( ((deref_mode_data & 4) != 0) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].iir_vol = mode_data->mode_data[2];
   if ( ((deref_mode_data & 8) != 0) )
@@ -1204,45 +1203,45 @@ void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
   if ( ((deref_mode_data & 0x200) != 0) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].apf2_vol = mode_data->mode_data[9];
   if ( (deref_mode_data & 0x400) != 0 )
-    SetEffectRegister(core, 374, (unsigned __int16)mode_data->mode_data[10]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_l_dst, (unsigned __int16)mode_data->mode_data[10]);
   if ( (deref_mode_data & 0x800) != 0 )
-    SetEffectRegister(core, 376, (unsigned __int16)mode_data->mode_data[11]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_r_dst, (unsigned __int16)mode_data->mode_data[11]);
   if ( (deref_mode_data & 0x1000) != 0 )
-    SetEffectRegister(core, 378, (unsigned __int16)mode_data->mode_data[12]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb1_l_src, (unsigned __int16)mode_data->mode_data[12]);
   if ( (deref_mode_data & 0x2000) != 0 )
-    SetEffectRegister(core, 380, (unsigned __int16)mode_data->mode_data[13]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb1_r_src, (unsigned __int16)mode_data->mode_data[13]);
   if ( (deref_mode_data & 0x4000) != 0 )
-    SetEffectRegister(core, 382, (unsigned __int16)mode_data->mode_data[14]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb2_l_src, (unsigned __int16)mode_data->mode_data[14]);
   if ( (deref_mode_data & 0x8000) != 0 )
-    SetEffectRegister(core, 384, (unsigned __int16)mode_data->mode_data[15]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb2_r_src, (unsigned __int16)mode_data->mode_data[15]);
   if ( (deref_mode_data & 0x10000) != 0 )
-    SetEffectRegister(core, 386, (unsigned __int16)mode_data->mode_data[16]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_l_src, (unsigned __int16)mode_data->mode_data[16]);
   if ( (deref_mode_data & 0x20000) != 0 )
-    SetEffectRegister(core, 388, (unsigned __int16)mode_data->mode_data[17]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_r_src, (unsigned __int16)mode_data->mode_data[17]);
   if ( (deref_mode_data & 0x40000) != 0 )
-    SetEffectRegister(core, 390, (unsigned __int16)mode_data->mode_data[18]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_l_dst, (unsigned __int16)mode_data->mode_data[18]);
   if ( (deref_mode_data & 0x80000) != 0 )
-    SetEffectRegister(core, 392, (unsigned __int16)mode_data->mode_data[19]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_r_dst, (unsigned __int16)mode_data->mode_data[19]);
   if ( (deref_mode_data & 0x100000) != 0 )
-    SetEffectRegister(core, 394, (unsigned __int16)mode_data->mode_data[20]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb3_l_src, (unsigned __int16)mode_data->mode_data[20]);
   if ( (deref_mode_data & 0x200000) != 0 )
-    SetEffectRegister(core, 396, (unsigned __int16)mode_data->mode_data[21]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb3_r_src, (unsigned __int16)mode_data->mode_data[21]);
   if ( (deref_mode_data & 0x400000) != 0 )
-    SetEffectRegister(core, 398, (unsigned __int16)mode_data->mode_data[22]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb4_l_src, (unsigned __int16)mode_data->mode_data[22]);
   if ( (deref_mode_data & 0x800000) != 0 )
-    SetEffectRegister(core, 400, (unsigned __int16)mode_data->mode_data[23]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb4_r_src, (unsigned __int16)mode_data->mode_data[23]);
   if ( (deref_mode_data & 0x1000000) != 0 )
-    SetEffectRegister(core, 402, (unsigned __int16)mode_data->mode_data[24]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_l_src, (unsigned __int16)mode_data->mode_data[24]);
   if ( (deref_mode_data & 0x2000000) != 0 )
-    SetEffectRegister(core, 404, (unsigned __int16)mode_data->mode_data[25]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_r_src, (unsigned __int16)mode_data->mode_data[25]);
   if ( (deref_mode_data & 0x4000000) != 0 )
-    SetEffectRegister(core, 406, (unsigned __int16)mode_data->mode_data[26]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf1_l_dst, (unsigned __int16)mode_data->mode_data[26]);
   if ( (deref_mode_data & 0x8000000) != 0 )
-    SetEffectRegister(core, 408, (unsigned __int16)mode_data->mode_data[27]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf1_r_dst, (unsigned __int16)mode_data->mode_data[27]);
   if ( (deref_mode_data & 0x10000000) != 0 )
-    SetEffectRegister(core, 410, (unsigned __int16)mode_data->mode_data[28]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf2_l_dst, (unsigned __int16)mode_data->mode_data[28]);
   if ( (deref_mode_data & 0x20000000) != 0 )
-    SetEffectRegister(core, 412, (unsigned __int16)mode_data->mode_data[29]);
+    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf2_r_dst, (unsigned __int16)mode_data->mode_data[29]);
   if ( ((deref_mode_data & 0x40000000) != 0) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].in_coef_l = mode_data->mode_data[30];
   if ( ((deref_mode_data & 0x80000000) != 0) )
