@@ -1361,17 +1361,11 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   int state; // [sp+5Ch] [-14h] BYREF
   int effect_mode; // [sp+60h] [-10h]
 
-  clearram = 0;
-  channel = 0;
-  effect_mode = 0;
   mode_data.m_mode_flags = 0;
   mode = attr->mode;
-  if ( (mode & SD_EFFECT_MODE_CLEAR) )
-  {
-    clearram = 1;
-    effect_mode = g_EffectAttr[core].mode;
-    channel = !!(mode & 0x200);
-  }
+  clearram = !!(mode & SD_EFFECT_MODE_CLEAR);
+  effect_mode = clearram ? g_EffectAttr[core].mode : 0;
+  channel = clearram && !!(mode & 0x200);
   if ( (unsigned __int8)mode > SD_EFFECT_MODE_PIPE )
     return -100;
   g_EffectAttr[core].mode = (unsigned __int8)mode;
@@ -1427,9 +1421,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     SetEffectData(core, &mode_data);
     spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.pair[0] = g_EffectAddr[core] >> 17;
     spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.pair[1] = g_EffectAddr[core] >> 1;
-    retval = 0;
-    if ( clearram )
-      retval = sceSdClearEffectWorkArea(core, channel, (unsigned __int8)mode);
+    retval = clearram ? sceSdClearEffectWorkArea(core, channel, (unsigned __int8)mode) : 0;
   }
   if ( effects_enabled )
   {
@@ -1459,14 +1451,9 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   struct mode_data_struct mode_data; // [sp+10h] [-50h] BYREF
   int state; // [sp+5Ch] [-4h] BYREF
 
-  clearram = 0;
   mode_data.m_mode_flags = 0;
-  channel = 0;
-  if ( (param->mode & 0x100) )
-  {
-    clearram = 1;
-    channel = !!(param->mode & 0x200);
-  }
+  clearram = !!(param->mode & 0x100);
+  channel = clearram && !!(param->mode & 0x200);
   mode = (unsigned __int8)param->mode;
   if ( mode > SD_EFFECT_MODE_PIPE )
     return -100;
@@ -1494,9 +1481,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
     spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
-  if ( clearram )
-    return sceSdCleanEffectWorkArea(core, channel, mode);
-  return 0;
+  return clearram ? sceSdCleanEffectWorkArea(core, channel, mode) : 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 // 401128: using guessed type struct mode_data_struct mode_data;
@@ -1616,7 +1601,6 @@ void InitCoreVolume(int flag)
 int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 size)
 {
   int core; // $s2
-  unsigned int dmasize1; // $a2
   u32 dmasize2; // $s1
 
   core = chan & 1;
@@ -1639,10 +1623,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
       else
         ClearEventFlag(g_VoiceTransCompleteEf[core], ~1);
       g_VoiceTransIoMode[core] = 0;
-      dmasize1 = size >> 6 << 6;
-      if ( (size & 0x3F) )
-        dmasize1 += 64;
-      return DmaStartStop((core << 4) | 5, iopaddr, dmasize1);
+      return DmaStartStop((core << 4) | 5, iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 64 : 0));
     case SD_TRANS_WRITE:
       g_TransIntrData[core].m_mode = core | 0x500;
       g_BlockHandlerIntrData[core].m_cb = 0;
@@ -1656,15 +1637,10 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
       if ( !(mode & SD_TRANS_MODE_IO) )
       {
         g_VoiceTransStatus[core] = 0;
-        dmasize1 = size >> 6 << 6;
-        if ( (size & 0x3F) )
-          dmasize1 += 64;
-        return DmaStartStop((core << 4) | 6, iopaddr, dmasize1);
+        return DmaStartStop((core << 4) | 6, iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 64 : 0));
       }
       g_VoiceTransStatus[core] = 1;
-      dmasize2 = size >> 6 << 6;
-      if ( (size & 0x3F) )
-        dmasize2 = (size >> 6 << 6) + 64;
+      dmasize2 = (size >> 6 << 6) + ((size & 0x3F) ? 64 : 0);
       VoiceTrans_Write_IOMode((__int16 *)iopaddr, dmasize2, core);
       return dmasize2;
     default:
@@ -1679,8 +1655,7 @@ u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag)
   int core;
 
   core = channel & 1;
-  if ( g_VoiceTransStatus[core] == 1
-    || g_VoiceTransIoMode[core] == 1 )
+  if ( g_VoiceTransStatus[core] == 1 || g_VoiceTransIoMode[core] == 1 )
     return 1;
   switch ( flag )
   {
@@ -1758,13 +1733,10 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
         g_BlockHandlerIntrData[core].m_userdata = (void *)vararg_elm2;
         g_TransIntrData[core].m_mode |= 0x8000u;
       }
-      else
+      else if ( (mode & SD_TRANS_LOOP) )
       {
-        if ( (mode & SD_TRANS_LOOP) )
-        {
-          size >>= 1;
-          g_TransIntrData[core].m_mode |= 0x1000u;
-        }
+        size >>= 1;
+        g_TransIntrData[core].m_mode |= 0x1000u;
       }
       retres_1 = BlockTransRead((u32)iopaddr, size, core, mode);
       break;
@@ -1793,13 +1765,10 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
         g_BlockHandlerIntrData[core].m_userdata = (void *)vararg_elm3;
         g_TransIntrData[core].m_mode |= 0x8000u;
       }
-      else
+      else if ( (mode & SD_TRANS_LOOP) )
       {
-        if ( (mode & SD_TRANS_LOOP) )
-        {
-          size >>= 1;
-          g_TransIntrData[core].m_mode |= 0x1000u;
-        }
+        size >>= 1;
+        g_TransIntrData[core].m_mode |= 0x1000u;
       }
       retres_1 = BlockTransWriteFrom((u32)iopaddr, size, chan & 0xFF, mode, ( transfer_dir == SD_TRANS_WRITE_FROM ) ? (int)vararg_elm1 : 0);
       break;
@@ -2009,9 +1978,7 @@ int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size
 
   for ( size_tmp = size; size_tmp; size_tmp -= count )
   {
-    count = 64;
-    if ( size_tmp < 0x41 )
-      count = size_tmp;
+    count = ( size_tmp <= 64 ) ? size_tmp : 64;
     for ( i = 0; i < (count / 2); i += 1 )
       spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_xferdata = iopaddr[i];
     CpuSuspendIntr(&state);
@@ -2153,9 +2120,7 @@ u32 __fastcall thunk_sceSdBlockTransStatus(int channel)
   int dmamagictmp1; // $a2
   USE_IOP_MMIO_HWPORT();
 
-  dmamagictmp1 = *(channel ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr);
-  if ( !(spu2_regs.m_u.m_m.m_core_regs[channel].m_cregs.m_admas & 7) )
-    dmamagictmp1 = 0;
+  dmamagictmp1 = (spu2_regs.m_u.m_m.m_core_regs[channel].m_cregs.m_admas & 7) ? *(channel ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) : 0;
   return (g_BlockTransBuff[channel] << 24) | (dmamagictmp1 & ~0xFF000000);
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -2207,9 +2172,7 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
   SetDmaWrite(chan_tmp0);
   *(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = startaddr_tmp;
   *(vu16 *)(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr) = 16;
-  size_align_r6 = size_align >> 6;
-  if ( size_align < 0 )
-    size_align_r6 = (size_align + 63) >> 6;
+  size_align_r6 = (( size_align < 0 ) ? (size_align + 63) : size_align) >> 6;
   *(((vu16 *)(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = size_align_r6 + (size_align - (size_align_r6 << 6) > 0);
   *(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
   return size;
@@ -2354,9 +2317,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           --loop;
         }
         else
-        {
           sceSdSetParam(batch[cnt].entry, batch[cnt].value);
-        }
         break;
       case SD_BATCH_SETSWITCH:
         sceSdSetSwitch(batch[cnt].entry, batch[cnt].value);
@@ -2375,9 +2336,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           --loop;
         }
         else
-        {
           sceSdSetAddr(batch[cnt].entry, batch[cnt].value);
-        }
         break;
       case SD_BATCH_SETCORE:
         sceSdSetCoreAttr(batch[cnt].entry, batch[cnt].value);
@@ -2406,9 +2365,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           --loop;
         }
         else
-        {
           Param = sceSdGetParam(batch[cnt].entry);
-        }
         break;
       case SD_BATCH_GETSWITCH:
         Param = sceSdGetSwitch(batch[cnt].entry);
@@ -2429,9 +2386,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           --loop;
         }
         else
-        {
           Param = sceSdGetAddr(batch[cnt].entry);
-        }
         break;
       case SD_BATCH_GETCORE:
         Param = sceSdGetCoreAttr(batch[cnt].entry);
@@ -2562,8 +2517,7 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
   bit = 0;
   i4 = 0;
   offset2 = 0;
-  if ( pitch >= 0x4000u )
-    pitch = 0x3FFF;
+  pitch = ( pitch > 0x3FFF ) ? 0x3FFF : pitch;
   for ( i1 = 0; i1 < 14; i1 += 1 )
   {
     if ( (((int)pitch >> i1) & 1) )
@@ -2619,8 +2573,7 @@ int __fastcall SetSpdifMode(int val)
     default:
       return -100;
   }
-  if ( (val & 0x80) )
-    spdif_mode_new |= 0x8000;
+  spdif_mode_new |= (val & 0x80) ? 0x8000 : 0;
   switch ( val & 0xF00 )
   {
     case 0x400:
