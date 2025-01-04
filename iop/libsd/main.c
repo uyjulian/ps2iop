@@ -13,12 +13,9 @@ IRX_ID("Sound_Device_Library", 3, 3);
 
 #define __int8 char
 #define __int16 short
-#define __int32 int
 #define __int64 long long
-#define _BYTE u8
 #define _WORD u16
 #define _DWORD u32
-#define _QWORD u64
 #define SD_DMA_CS           (1 << 9) // Continuous stream
 #define SD_DMA_START          (1 << 24)
 #define SD_DMA_DIR_SPU2IOP        0
@@ -68,7 +65,7 @@ typedef struct spu2_core_regs_
   vu16 xferdata_1ac; /* 0x1ac */
   vu16 unk1ae; /* 0x1ae */
   vu16 admas; /* 0x1b0 */
-  vu8 unknown1b2[14]; /* 0x1b2 */
+  vu16 unk1b2[7]; /* 0x1b2 */
   spu2_voice_address_t voice_address[24]; /* 0x1c0 */
   spu2_u16pair_t esa; /* 0x2e0 */
   spu2_u16pair_t apf1_size; /* 0x2e4 */
@@ -97,19 +94,7 @@ typedef struct spu2_core_regs_
   vu16 unk33e; /* 0x33E */
   spu2_u16pair_t endx; /* 0x340 */
   vu16 statx; /* 0x344 */
-  vu16 unk346; /* 0x346 */
-  vu16 unk348; /* 0x348 */
-  vu16 unk34A; /* 0x34A */
-  vu16 unk34C; /* 0x34C */
-  vu16 unk34E; /* 0x34E */
-  vu16 unk350; /* 0x350 */
-  vu16 unk352; /* 0x352 */
-  vu16 unk354; /* 0x354 */
-  vu16 unk356; /* 0x356 */
-  vu16 unk358; /* 0x358 */
-  vu16 unk35A; /* 0x35A */
-  vu16 unk35C; /* 0x35C */
-  vu16 unk35E; /* 0x35E */
+  vu16 unk346[13]; /* 0x346 */
 } spu2_core_regs_t;
 
 typedef struct spu2_different_regs_
@@ -139,7 +124,7 @@ typedef struct spu2_different_regs_
 typedef struct spu2_core_regs_padded_
 {
   spu2_core_regs_t cregs;
-  vu8 padding[160];
+  vu16 padding[80];
 } spu2_core_regs_padded_t;
 
 typedef struct spu2_regs_main_
@@ -150,42 +135,18 @@ typedef struct spu2_regs_main_
 typedef struct spu2_regs_extra_
 {
   spu2_core_regs_t core0_regs;
-  vu8 padding346[160];
+  vu16 padding346[80];
   spu2_core_regs_t core1_regs; /* 0x400 */
   spu2_different_regs_t different_regs[2];
-  vu8 unknown7b0[0x10];
+  vu16 unk7b0[8];
   vu16 spdif_out; /* 0x7c0 */
   vu16 spdif_irqinfo; /* 0x7c2 */
-  vu16 unknown7c4; /* 0x7c4 */
+  vu16 unk7c4; /* 0x7c4 */
   vu16 spdif_mode; /* 0x7c6 */
   vu16 spdif_media; /* 0x7c8 */
   vu16 unknown7ca; /* 0x7ca */
   vu16 spdif_protect; /* 0x7cc */
-  vu16 unknown7ce;
-  vu16 unknown7d0;
-  vu16 unknown7d2;
-  vu16 unknown7d4;
-  vu16 unknown7d6;
-  vu16 unknown7d8;
-  vu16 unknown7da;
-  vu16 unknown7dc;
-  vu16 unknown7de;
-  vu16 unknown7e0;
-  vu16 unknown7e2;
-  vu16 unknown7e4;
-  vu16 unknown7e6;
-  vu16 unknown7e8;
-  vu16 unknown7ea;
-  vu16 unknown7ec;
-  vu16 unknown7ee;
-  vu16 unknown7f0;
-  vu16 unknown7f2;
-  vu16 unknown7f4;
-  vu16 unknown7f6;
-  vu16 unknown7f8;
-  vu16 unknown7fa;
-  vu16 unknown7fc;
-  vu16 unknown7fe;
+  vu16 unk7ce[25];
 } spu2_regs_extra_t;
 
 typedef struct spu2_regs_ /* base => 0xBF900000 */
@@ -1262,7 +1223,7 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
 
   if ( (unsigned __int8)effect_mode > SD_EFFECT_MODE_PIPE )
     return -100;
-  if ( !(_BYTE)effect_mode )
+  if ( !(unsigned __int8)effect_mode )
     return 0;
   if ( DmaStartStop((channel << 4) | 4, 0, 0) != 0 )
   {
@@ -1351,7 +1312,7 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
 
   if ( (unsigned __int8)effect_mode >= 0xAu )
     return -100;
-  if ( !(_BYTE)effect_mode )
+  if ( !(unsigned __int8)effect_mode )
     return 0;
   if ( DmaStartStop((channel << 4) | 4, 0, 0) != 0 )
   {
@@ -1460,7 +1421,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     EffectAttr[core].delay = delay;
     delay += 1;
     delay &= 0xFFFF;
-    feedback_tmp = ((_WORD)delay << 6) - (__int16)mode_data.mode_data[0];
+    feedback_tmp = ((unsigned __int16)delay << 6) - (__int16)mode_data.mode_data[0];
     delay <<= 5;
     delay &= 0xFFFF;
     mode_data.mode_data[10] = feedback_tmp;
@@ -1582,7 +1543,7 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
     EffectAttr[core].delay = attr->delay;
     EffectAttr[core].feedback = attr->feedback;
     delay_plus_one = EffectAttr[core].delay + 1;
-    mode_data.mode_data[10] = (__int16)(((_WORD)delay_plus_one << 6) - (__int16)mode_data.mode_data[0]);
+    mode_data.mode_data[10] = (__int16)(((unsigned __int16)delay_plus_one << 6) - (__int16)mode_data.mode_data[0]);
     delay_plus_one <<= 5;
     delay_plus_one &= 0xFFFF;
     mode_data.mode_data[11] = delay_plus_one - mode_data.mode_data[1];
@@ -1958,20 +1919,20 @@ int InitSpdif()
 //----- (0040225C) --------------------------------------------------------
 void SetDmaWrite(int chan)
 {
-  u8 *dmachanptr; // $a0
+  vu32 *dmachanptr; // $a0
 
-  dmachanptr = &iop_mmio_hwport.unv_1024[1024 * chan - 16];
-  *(_DWORD *)dmachanptr = *(_DWORD *)dmachanptr & ~0xF000000u;
+  dmachanptr = chan ? &iop_mmio_hwport.ssbus2.ind_9_delay : &iop_mmio_hwport.ssbus1.ind_4_delay;
+  *dmachanptr &= ~0xF000000;
 }
 // BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 
 //----- (00402284) --------------------------------------------------------
 void SetDmaRead(int chan)
 {
-  u8 *dmachanptr; // $a0
+  vu32 *dmachanptr; // $a0
 
-  dmachanptr = &iop_mmio_hwport.unv_1024[1024 * chan - 16];
-  *(_DWORD *)dmachanptr = (*(_DWORD *)dmachanptr & ~0xF000000u) | 0x2000000;
+  dmachanptr = chan ? &iop_mmio_hwport.ssbus2.ind_9_delay : &iop_mmio_hwport.ssbus1.ind_4_delay;
+  *dmachanptr = (*dmachanptr & ~0xF000000) | 0x2000000;
 }
 // BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 
@@ -2426,7 +2387,7 @@ int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num)
         sceSdSetCoreAttr(batch->entry, batch->value);
         break;
       case SD_BATCH_WRITEIOP:
-        *(_DWORD *)batch->value = batch->entry;
+        *(u32 *)batch->value = batch->entry;
         break;
       case SD_BATCH_WRITEEE:
         BatchData = batch->entry;
@@ -2522,7 +2483,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
         sceSdSetCoreAttr(batch->entry, batch->value);
         break;
       case SD_BATCH_WRITEIOP:
-        *(_DWORD *)batch->value = batch->entry;
+        *(u32 *)batch->value = batch->entry;
         break;
       case SD_BATCH_WRITEEE:
         BatchData = batch->entry;
@@ -2684,7 +2645,7 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
   offset2 = fine_x7 - 2;
   fine_x9 = fine_x3 - 12 * fine_x7;
   offset1 = fine_x9;
-  if ( (offset1 & 0x8000u) != 0 || (!(_WORD)offset1 && fine_x6 < 0) )
+  if ( (offset1 & 0x8000u) != 0 || (!(__int16)offset1 && fine_x6 < 0) )
   {
     offset1 += 12;
     offset2 -= 1;
