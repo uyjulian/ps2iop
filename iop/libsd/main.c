@@ -1102,9 +1102,7 @@ u32 BlockTransSize[2];
 u32 BatchData;
 SdIntrCallback TransIntrCallbacks[2];
 u32 EffectAddr[2];
-iop_mmio_hwport_t iop_mmio_hwport; // weak
 spu2_regs_t spu2_regs; // weak
-char byte_BF900800[63488]; // weak
 
 //----- (004000B0) --------------------------------------------------------
 int _start()
@@ -1564,17 +1562,17 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
 void InitSpu2_Inner()
 {
   int state; // [sp+10h] [-8h] BYREF
+  USE_IOP_MMIO_HWPORT();
 
-  iop_mmio_hwport.ssbus2.ind_4_address = 0xBF900000;
-  iop_mmio_hwport.ssbus2.ind_9_address = 0xBF900800;
+  iop_mmio_hwport->ssbus2.ind_4_address = 0xBF900000;
+  iop_mmio_hwport->ssbus2.ind_9_address = 0xBF900800;
   CpuSuspendIntr(&state);
-  iop_mmio_hwport.dmac1.dpcr1 |= 0x80000;
-  iop_mmio_hwport.dmac2.dpcr2 |= 8;
+  iop_mmio_hwport->dmac1.dpcr1 |= 0x80000;
+  iop_mmio_hwport->dmac2.dpcr2 |= 8;
   CpuResumeIntr(state);
-  iop_mmio_hwport.ssbus1.ind_4_delay = 0x200B31E1;
-  iop_mmio_hwport.ssbus2.ind_9_delay = 0x200B31E1;
+  iop_mmio_hwport->ssbus1.ind_4_delay = 0x200B31E1;
+  iop_mmio_hwport->ssbus2.ind_9_delay = 0x200B31E1;
 }
-// BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 
 //----- (004015E8) --------------------------------------------------------
 void InitSpu2()
@@ -1920,21 +1918,21 @@ int InitSpdif()
 void SetDmaWrite(int chan)
 {
   vu32 *dmachanptr; // $a0
+  USE_IOP_MMIO_HWPORT();
 
-  dmachanptr = chan ? &iop_mmio_hwport.ssbus2.ind_9_delay : &iop_mmio_hwport.ssbus1.ind_4_delay;
+  dmachanptr = chan ? &iop_mmio_hwport->ssbus2.ind_9_delay : &iop_mmio_hwport->ssbus1.ind_4_delay;
   *dmachanptr &= ~0xF000000;
 }
-// BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 
 //----- (00402284) --------------------------------------------------------
 void SetDmaRead(int chan)
 {
   vu32 *dmachanptr; // $a0
+  USE_IOP_MMIO_HWPORT();
 
-  dmachanptr = chan ? &iop_mmio_hwport.ssbus2.ind_9_delay : &iop_mmio_hwport.ssbus1.ind_4_delay;
+  dmachanptr = chan ? &iop_mmio_hwport->ssbus2.ind_9_delay : &iop_mmio_hwport->ssbus1.ind_4_delay;
   *dmachanptr = (*dmachanptr & ~0xF000000) | 0x2000000;
 }
-// BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 
 //----- (004022B4) --------------------------------------------------------
 void libsd_do_busyloop_2()
@@ -1974,6 +1972,7 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
   unsigned int waittmp1; // $a0
   int hichk; // $s0
   int state; // [sp+14h] [-4h] BYREF
+  USE_IOP_MMIO_HWPORT();
 
   core_tmp1 = mainarg >> 4;
   switch ( mainarg & 0xF )
@@ -1986,7 +1985,7 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
     case 4:
       if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_DMA_IN_PROCESS) != 0 )
         return -1;
-      if ( (*(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) & SD_DMA_START) != 0 )
+      if ( (*(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) & SD_DMA_START) != 0 )
         return -1;
       if ( spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas )
         return -1;
@@ -1997,10 +1996,10 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       CpuResumeIntr(state);
       SetDmaRead(core_tmp1);
       vararg3_cal = (vararg3 >> 6) + ((vararg3 & 0x3F) != 0);
-      *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = (u16)(uiptr)vararg2;
-      *(vu16 *)(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr) = 16;
-      *(((vu16 *)(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = vararg3_cal;
-      *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS;
+      *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = (u16)(uiptr)vararg2;
+      *(vu16 *)(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr) = 16;
+      *(((vu16 *)(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = vararg3_cal;
+      *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS;
       return vararg3_cal << 6;
     case 6:
       CpuSuspendIntr(&state);
@@ -2008,19 +2007,19 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       CpuResumeIntr(state);
       SetDmaWrite(core_tmp1);
       vararg3_cal = (vararg3 >> 6) + ((vararg3 & 0x3F) != 0);
-      *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = (u16)(uiptr)vararg2;
-      *(vu16 *)(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr) = 16;
-      *(((vu16 *)(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = vararg3_cal;
-      *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
+      *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = (u16)(uiptr)vararg2;
+      *(vu16 *)(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr) = 16;
+      *(((vu16 *)(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = vararg3_cal;
+      *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
       return vararg3_cal << 6;
     case 0xA:
       blocktransbufitem = 0;
       dmamagictmp = 0;
-      if ( (*(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) & SD_DMA_START) != 0 )
+      if ( (*(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) & SD_DMA_START) != 0 )
       {
         blocktransbufitem = BlockTransBuff[core_tmp1];
-        dmamagictmp = *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr);
-        *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) &= ~SD_DMA_START;
+        dmamagictmp = *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr);
+        *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) &= ~SD_DMA_START;
         if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) != 0 )
         {
           for ( waittmp2 = 0; !(spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.statx & 0x80) && waittmp2 < 0x1000000; ++waittmp2 )
@@ -2060,7 +2059,6 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       return 0;
   }
 }
-// BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (0040280C) --------------------------------------------------------
@@ -2115,6 +2113,7 @@ int __fastcall TransInterrupt(IntrData *intr)
   unsigned int waittmp2; // $v1
   int dmamagictmp1; // [sp+14h] [-Ch] BYREF
   int dmamagictmp2; // [sp+18h] [-8h] BYREF
+  USE_IOP_MMIO_HWPORT();
 
   mode = intr->mode;
   switch ( intr->mode & 0xC00 )
@@ -2173,10 +2172,10 @@ int __fastcall TransInterrupt(IntrData *intr)
             &dmamagictmp2);
           if ( dmamagictmp2 > 0 )
           {
-            *(((vu16 *)(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = (dmamagictmp2 >> 6)
+            *(((vu16 *)(mode_1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = (dmamagictmp2 >> 6)
                                                                     + (dmamagictmp2 - (dmamagictmp2 >> 6 << 6) > 0);
-            *(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = dmamagictmp1;
-            *(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = no_flush_cache | SD_DMA_START|SD_DMA_CS;
+            *(mode_1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = dmamagictmp1;
+            *(mode_1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) = no_flush_cache | SD_DMA_START|SD_DMA_CS;
           }
           else
           {
@@ -2200,10 +2199,10 @@ int __fastcall TransInterrupt(IntrData *intr)
         if ( (mode & 0x1000) != 0 )
         {
           BlockTransBuff[mode_1] = 1 - BlockTransBuff[mode_1];
-          *(((vu16 *)(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = (int)BlockTransSize[mode_1] / 64
+          *(((vu16 *)(mode_1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = (int)BlockTransSize[mode_1] / 64
                                                                   + ((int)BlockTransSize[mode_1] % 64 > 0);
-          *(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = BlockTransAddr[mode_1] + BlockTransBuff[mode_1] * BlockTransSize[mode_1];
-          *(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = no_flush_cache | SD_DMA_START|SD_DMA_CS;
+          *(mode_1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = BlockTransAddr[mode_1] + BlockTransBuff[mode_1] * BlockTransSize[mode_1];
+          *(mode_1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) = no_flush_cache | SD_DMA_START|SD_DMA_CS;
         }
         else
         {
@@ -2229,20 +2228,19 @@ int __fastcall TransInterrupt(IntrData *intr)
       return 1;
   }
 }
-// BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00402EB8) --------------------------------------------------------
 u32 __fastcall thunk_sceSdBlockTransStatus(int channel)
 {
   int dmamagictmp1; // $a2
+  USE_IOP_MMIO_HWPORT();
 
-  dmamagictmp1 = *(channel ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr);
+  dmamagictmp1 = *(channel ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr);
   if ( (spu2_regs.u.main_regs.core_regs[channel].cregs.admas & 7) == 0 )
     dmamagictmp1 = 0;
   return (BlockTransBuff[channel] << 24) | (dmamagictmp1 & ~0xFF000000);
 }
-// BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00402F4C) --------------------------------------------------------
@@ -2254,6 +2252,7 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
   unsigned int other_align; // $v1
   int size_align_r6; // $v1
   int state; // [sp+14h] [-4h] BYREF
+  USE_IOP_MMIO_HWPORT();
 
   chan_tmp0 = chan & 1;
   startaddr_tmp = startaddr;
@@ -2289,16 +2288,15 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
   spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.tsa.pair[1] = 0;
   spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.admas = 1 << chan_tmp0;
   SetDmaWrite(chan_tmp0);
-  *(chan_tmp0 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = startaddr_tmp;
-  *(vu16 *)(chan_tmp0 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr) = 16;
+  *(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = startaddr_tmp;
+  *(vu16 *)(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr) = 16;
   size_align_r6 = size_align >> 6;
   if ( size_align < 0 )
     size_align_r6 = (size_align + 63) >> 6;
-  *(((vu16 *)(chan_tmp0 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = size_align_r6 + (size_align - (size_align_r6 << 6) > 0);
-  *(chan_tmp0 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
+  *(((vu16 *)(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = size_align_r6 + (size_align - (size_align_r6 << 6) > 0);
+  *(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
   return size;
 }
-// BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00403174) --------------------------------------------------------
@@ -2306,6 +2304,7 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
 {
   int chan_tmp1; // $s3
   int state; // [sp+14h] [-4h] BYREF
+  USE_IOP_MMIO_HWPORT();
 
   chan_tmp1 = chan & 1;
   BlockTransAddr[chan_tmp1] = iopaddr;
@@ -2320,14 +2319,13 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
   libsd_do_busyloop_1(3);
   spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.admas = 4;
   SetDmaRead(chan_tmp1);
-  *(chan_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = iopaddr;
-  *(vu16 *)(chan_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr) = 16;
-  *(((vu16 *)(chan_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = (int)BlockTransSize[chan_tmp1] / 64
+  *(chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = iopaddr;
+  *(vu16 *)(chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr) = 16;
+  *(((vu16 *)(chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = (int)BlockTransSize[chan_tmp1] / 64
                                                               + ((int)BlockTransSize[chan_tmp1] % 64 > 0);
-  *(chan_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS;
+  *(chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS;
   return size;
 }
-// BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00403340) --------------------------------------------------------
