@@ -2105,9 +2105,6 @@ void libsd_do_busyloop_1(int a1)
 u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
 {
   int core_tmp1; // $s1
-  int dma_coreoffs1; // $s6
-  int dma_coreoffs2; // $s5
-  u8 *p_dmac_chcr; // $s3
   unsigned int tsa_tmp; // $t1
   int dmarw_rval; // $t0
   unsigned int vararg3_cal; // $a0
@@ -2121,9 +2118,6 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
   int state; // [sp+14h] [-4h] BYREF
 
   core_tmp1 = mainarg >> 4;
-  dma_coreoffs1 = 272 * (mainarg >> 4);
-  dma_coreoffs2 = 544 * (mainarg >> 4);
-  p_dmac_chcr = &iop_mmio_hwport.unv_10f8[1088 * (mainarg >> 4) - 48];
   switch ( mainarg & 0xF )
   {
     case 2:
@@ -2134,7 +2128,7 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
     case 4:
       if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_DMA_IN_PROCESS) != 0 )
         return -1;
-      if ( (*(_DWORD *)p_dmac_chcr & SD_DMA_START) != 0 )
+      if ( (*(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) & SD_DMA_START) != 0 )
         return -1;
       if ( spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas )
         return -1;
@@ -2146,10 +2140,10 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       SetDmaRead(core_tmp1);
       dmarw_rval = SD_DMA_START|SD_DMA_CS;
       vararg3_cal = (vararg3 >> 6) + ((vararg3 & 0x3F) != 0);
-      *(_DWORD *)&iop_mmio_hwport.unv_10f8[4 * dma_coreoffs1 - 56] = (u16)(uiptr)vararg2;
-      *(_WORD *)&iop_mmio_hwport.unv_10f8[2 * dma_coreoffs2 - 52] = 16;
-      *(_WORD *)&iop_mmio_hwport.unv_10f8[2 * dma_coreoffs2 - 50] = vararg3_cal;
-      *(_DWORD *)p_dmac_chcr = dmarw_rval;
+      *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = (u16)(uiptr)vararg2;
+      *(vu16 *)(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr) = 16;
+      *(((vu16 *)(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = vararg3_cal;
+      *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = dmarw_rval;
       return vararg3_cal << 6;
     case 6:
       CpuSuspendIntr(&state);
@@ -2158,19 +2152,19 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       SetDmaWrite(core_tmp1);
       dmarw_rval = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
       vararg3_cal = (vararg3 >> 6) + ((vararg3 & 0x3F) != 0);
-      *(_DWORD *)&iop_mmio_hwport.unv_10f8[4 * dma_coreoffs1 - 56] = (u16)(uiptr)vararg2;
-      *(_WORD *)&iop_mmio_hwport.unv_10f8[2 * dma_coreoffs2 - 52] = 16;
-      *(_WORD *)&iop_mmio_hwport.unv_10f8[2 * dma_coreoffs2 - 50] = vararg3_cal;
-      *(_DWORD *)p_dmac_chcr = dmarw_rval;
+      *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = (u16)(uiptr)vararg2;
+      *(vu16 *)(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr) = 16;
+      *(((vu16 *)(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = vararg3_cal;
+      *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = dmarw_rval;
       return vararg3_cal << 6;
     case 0xA:
       blocktransbufitem = 0;
       dmamagictmp = 0;
-      if ( (*(_DWORD *)p_dmac_chcr & SD_DMA_START) != 0 )
+      if ( (*(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) & SD_DMA_START) != 0 )
       {
         blocktransbufitem = BlockTransBuff[core_tmp1];
-        dmamagictmp = *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * (mainarg >> 4) - 56];
-        *(_DWORD *)p_dmac_chcr &= ~SD_DMA_START;
+        dmamagictmp = *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr);
+        *(core_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) &= ~SD_DMA_START;
         if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) != 0 )
         {
           waittmp2 = 1;
@@ -2286,7 +2280,6 @@ int __fastcall TransInterrupt(IntrData *intr)
   int mode_1_tmp3; // $a2
   u32 one_minus_buff; // $a3
   u32 addr_size_tmp; // $t1
-  u8 *dmamagictmp3; // $a0
   int mode_1_tmp4; // $v1
   int dmamagictmp1; // [sp+14h] [-Ch] BYREF
   int dmamagictmp2; // [sp+18h] [-8h] BYREF
@@ -2360,10 +2353,10 @@ int __fastcall TransInterrupt(IntrData *intr)
         &dmamagictmp2);
       if ( dmamagictmp2 > 0 )
       {
-        *(_WORD *)&iop_mmio_hwport.unv_10f8[1088 * mode_1 - 50] = (dmamagictmp2 >> 6)
+        *(((vu16 *)(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = (dmamagictmp2 >> 6)
                                                                 + (dmamagictmp2 - (dmamagictmp2 >> 6 << 6) > 0);
-        *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * mode_1 - 56] = dmamagictmp1;
-        *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * mode_1 - 48] = no_flush_cache | SD_DMA_START|SD_DMA_CS;
+        *(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = dmamagictmp1;
+        *(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = no_flush_cache | SD_DMA_START|SD_DMA_CS;
       }
       else
       {
@@ -2389,12 +2382,11 @@ int __fastcall TransInterrupt(IntrData *intr)
     {
       one_minus_buff = 1 - BlockTransBuff[mode_1_tmp3];
       addr_size_tmp = BlockTransAddr[mode_1_tmp3] + one_minus_buff * BlockTransSize[mode_1_tmp3];
-      *(_WORD *)&iop_mmio_hwport.unv_10f8[1088 * mode_1 - 50] = (int)BlockTransSize[mode_1_tmp3] / 64
+      *(((vu16 *)(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = (int)BlockTransSize[mode_1_tmp3] / 64
                                                               + ((int)BlockTransSize[mode_1_tmp3] % 64 > 0);
-      dmamagictmp3 = &iop_mmio_hwport.unv_10f8[1088 * mode_1 - 56];
       BlockTransBuff[mode_1_tmp3] = one_minus_buff;
-      *(_DWORD *)dmamagictmp3 = addr_size_tmp;
-      *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * mode_1 - 48] = no_flush_cache | SD_DMA_START|SD_DMA_CS;
+      *(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = addr_size_tmp;
+      *(mode_1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = no_flush_cache | SD_DMA_START|SD_DMA_CS;
     }
     else
     {
@@ -2427,7 +2419,7 @@ u32 __fastcall thunk_sceSdBlockTransStatus(int channel)
 {
   int dmamagictmp1; // $a2
 
-  dmamagictmp1 = *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * channel - 56];
+  dmamagictmp1 = *(channel ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr);
   if ( (spu2_regs.u.main_regs.core_regs[channel].cregs.admas & 7) == 0 )
     dmamagictmp1 = 0;
   return (BlockTransBuff[channel] << 24) | (dmamagictmp1 & ~0xFF000000);
@@ -2481,13 +2473,13 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
   spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.tsa.pair[1] = 0;
   spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.admas = 1 << chan_tmp0;
   SetDmaWrite(chan_tmp0);
-  *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * chan_tmp0 - 56] = startaddr_tmp;
-  *(_WORD *)&iop_mmio_hwport.unv_10f8[1088 * chan_tmp0 - 52] = 16;
+  *(chan_tmp0 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = startaddr_tmp;
+  *(vu16 *)(chan_tmp0 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr) = 16;
   size_align_r6 = size_align >> 6;
   if ( size_align < 0 )
     size_align_r6 = (size_align + 63) >> 6;
-  *(_WORD *)&iop_mmio_hwport.unv_10f8[1088 * chan_tmp0 - 50] = size_align_r6 + (size_align - (size_align_r6 << 6) > 0);
-  *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * chan_tmp0 - 48] = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
+  *(((vu16 *)(chan_tmp0 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = size_align_r6 + (size_align - (size_align_r6 << 6) > 0);
+  *(chan_tmp0 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
   return size;
 }
 // BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
@@ -2498,7 +2490,6 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
 {
   int chan_tmp1; // $s3
   int chan_tmp2; // $s5
-  int chan_dma_offs_tmp; // $a2
   int state; // [sp+14h] [-4h] BYREF
 
   chan_tmp1 = chan & 1;
@@ -2515,12 +2506,11 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
   libsd_do_busyloop_1(3);
   spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.admas = 4;
   SetDmaRead(chan_tmp1);
-  chan_dma_offs_tmp = 1088 * chan_tmp1;
-  *(_DWORD *)&iop_mmio_hwport.unv_10f8[chan_dma_offs_tmp - 56] = iopaddr;
-  *(_WORD *)&iop_mmio_hwport.unv_10f8[chan_dma_offs_tmp - 52] = 16;
-  *(_WORD *)&iop_mmio_hwport.unv_10f8[chan_dma_offs_tmp - 50] = (int)BlockTransSize[chan_tmp1] / 64
+  *(chan_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].madr : &iop_mmio_hwport.dmac1.oldch[4].madr) = iopaddr;
+  *(vu16 *)(chan_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr) = 16;
+  *(((vu16 *)(chan_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].bcr : &iop_mmio_hwport.dmac1.oldch[4].bcr)) + 1) = (int)BlockTransSize[chan_tmp1] / 64
                                                               + ((int)BlockTransSize[chan_tmp1] % 64 > 0);
-  *(_DWORD *)&iop_mmio_hwport.unv_10f8[chan_dma_offs_tmp - 48] = SD_DMA_START|SD_DMA_CS;
+  *(chan_tmp1 ? &iop_mmio_hwport.dmac2.newch[0].chcr : &iop_mmio_hwport.dmac1.oldch[4].chcr) = SD_DMA_START|SD_DMA_CS;
   return size;
 }
 // BF800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport;
