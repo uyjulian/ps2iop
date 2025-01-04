@@ -15,7 +15,6 @@ IRX_ID("Sound_Device_Library", 3, 3);
 #define __int16 short
 #define __int32 int
 #define __int64 long long
-#define BOOL int
 #define _BYTE u8
 #define _WORD u16
 #define _DWORD u32
@@ -1149,13 +1148,13 @@ char byte_BF900800[63488]; // weak
 //----- (004000B0) --------------------------------------------------------
 int _start()
 {
-  int condtmp; // $s0
+  int regres; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
-  condtmp = RegisterLibraryEntries(&_exp_libsd);
+  regres = RegisterLibraryEntries(&_exp_libsd);
   CpuResumeIntr(state);
-  if ( condtmp )
+  if ( regres )
   {
     return 1;
   }
@@ -1434,12 +1433,10 @@ void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr)
 int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
 {
   int clearram; // $s7
-  int condtmp; // $s6
+  int channel; // $s6
   int mode; // $s2
   int core_tmp; // $s1
   int core_tmp2; // $v0
-  BOOL modecondtmp1; // $v0
-  BOOL modecndtmp2; // $v0
   __int16 mode_data_0; // $v1
   int delay; // $a0
   __int16 feedback_tmp; // $v0
@@ -1451,7 +1448,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   int effect_mode; // [sp+60h] [-10h]
 
   clearram = 0;
-  condtmp = 0;
+  channel = 0;
   effect_mode = 0;
   mode_data.mode_flags = 0;
   mode = attr->mode;
@@ -1459,7 +1456,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   {
     clearram = 1;
     effect_mode = EffectAttr[core].mode;
-    condtmp = (mode & 0x200) != 0;
+    channel = (mode & 0x200) != 0;
   }
   mode = (unsigned __int8)mode;
   if ( (unsigned __int8)mode >= (unsigned int)(SD_EFFECT_MODE_DELAY|SD_EFFECT_MODE_STUDIO_1) )
@@ -1473,24 +1470,20 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   {
     EffectAttr[core_tmp].feedback = 128;
     EffectAttr[core_tmp].delay = 128;
-    modecondtmp1 = 1;
   }
   else if ( mode == SD_EFFECT_MODE_DELAY )
   {
     EffectAttr[core_tmp].feedback = 0;
     EffectAttr[core_tmp].delay = 128;
-    modecondtmp1 = 1;
   }
   else
   {
     core_tmp2 = core;
     EffectAttr[core_tmp2].feedback = 0;
     EffectAttr[core_tmp2].delay = 0;
-    modecondtmp1 = mode < SD_EFFECT_MODE_PIPE;
   }
-  if ( modecondtmp1 )
+  if ( mode < SD_EFFECT_MODE_PIPE )
   {
-    modecndtmp2 = mode < SD_EFFECT_MODE_PIPE;
     if ( mode >= SD_EFFECT_MODE_ECHO )
     {
       mode_data_0 = mode_data.mode_data[0];
@@ -1507,9 +1500,8 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
       mode_data.mode_data[12] = mode_data.mode_data[13] + delay;
       mode_data.mode_data[27] = mode_data.mode_data[29] + delay;
       mode_data.mode_data[26] = mode_data.mode_data[28] + delay;
-      modecndtmp2 = mode < SD_EFFECT_MODE_PIPE;
     }
-    if ( modecndtmp2 && mode >= SD_EFFECT_MODE_ECHO )
+    if ( mode < SD_EFFECT_MODE_PIPE && mode >= SD_EFFECT_MODE_ECHO )
     {
       feedback = attr->feedback;
       EffectAttr[core].feedback = feedback;
@@ -1521,7 +1513,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     || (CpuSuspendIntr(&state),
         spu2_regs.u.main_regs.core_regs[core].cregs.attr &= 0xFF7F,
         CpuResumeIntr(state),
-        !clearram || (retval = sceSdClearEffectWorkArea(core, condtmp, effect_mode), retval >= 0)) )
+        !clearram || (retval = sceSdClearEffectWorkArea(core, channel, effect_mode), retval >= 0)) )
   {
     spu2_regs.u.extra_regs.different_regs[core].evoll = attr->depth_L;
     spu2_regs.u.extra_regs.different_regs[core].evolr = attr->depth_R;
@@ -1530,7 +1522,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     spu2_regs.u.main_regs.core_regs[core].cregs.esa.pair[1] = EffectAddr[core] >> 1;
     retval = 0;
     if ( clearram )
-      retval = sceSdClearEffectWorkArea(core, condtmp, mode);
+      retval = sceSdClearEffectWorkArea(core, channel, mode);
   }
   if ( condtmpeff )
   {
@@ -1554,7 +1546,7 @@ int __fastcall GetEEA(int core)
 int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
 {
   int clearram; // $s6
-  int condtmp; // $s5
+  int channel; // $s5
   unsigned int mode; // $s1
   int core_tmp1; // $s0
   int core_tmp2; // $v0
@@ -1565,11 +1557,11 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
 
   clearram = 0;
   mode_data.mode_flags = 0;
-  condtmp = 0;
+  channel = 0;
   if ( (param->mode & 0x100) != 0 )
   {
     clearram = 1;
-    condtmp = (param->mode & 0x200) != 0;
+    channel = (param->mode & 0x200) != 0;
   }
   mode = (unsigned __int8)param->mode;
   core_tmp1 = core;
@@ -1602,7 +1594,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
     CpuResumeIntr(state);
   }
   if ( clearram )
-    return sceSdCleanEffectWorkArea(core, condtmp, mode);
+    return sceSdCleanEffectWorkArea(core, channel, mode);
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -2121,7 +2113,6 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
   unsigned int waittmp2; // $a0
   unsigned int waittmp1; // $a0
   int hichk; // $s0
-  bool condtmp; // dc
   int core_tmp2; // $v0
   int core_tmp3; // $v0
   int state; // [sp+14h] [-4h] BYREF
@@ -2207,9 +2198,8 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
         hichk = 1;
         spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas = 0;
       }
-      condtmp = QueryIntrContext() == 0;
       core_tmp2 = core_tmp1;
-      if ( condtmp )
+      if ( QueryIntrContext() == 0 )
         SetEventFlag(VoiceTransCompleteEf[core_tmp2], 1u);
       else
         iSetEventFlag(VoiceTransCompleteEf[core_tmp2], 1u);
@@ -2234,7 +2224,6 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
 int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int chan)
 {
   unsigned int size_tmp; // $s3
-  BOOL condtmp; // $v0
   int count; // $s2
   int i; // $v1
   unsigned int waittmp1; // $s0
@@ -2243,9 +2232,8 @@ int __fastcall VoiceTrans_Write_IOMode(__int16 *iopaddr, unsigned int size, int 
   size_tmp = size;
   while ( size_tmp )
   {
-    condtmp = size_tmp < 0x41;
     count = 64;
-    if ( condtmp )
+    if ( size_tmp < 0x41 )
       count = size_tmp;
     for ( i = 0; i < (count / 2); i += 1 )
     {
@@ -3137,9 +3125,6 @@ void *__cdecl sceSdGetSpu2IntrHandlerArgument()
 int __fastcall Spu2Interrupt(void *data)
 {
   int val; // $a0
-  int condtmp2; // $v0
-  bool condtmp1; // dc
-  int condtmp3; // $v0
 
   (void)data;
   if ( Spu2IntrHandler || Spu2IrqCallback )
@@ -3147,15 +3132,11 @@ int __fastcall Spu2Interrupt(void *data)
     val = (unsigned __int8)(spu2_regs.u.extra_regs.spdif_irqinfo & 0xC) >> 2;
     while ( val )
     {
-      condtmp2 = val & 1;
-      condtmp1 = condtmp2 == 0;
-      condtmp3 = val & 2;
-      if ( !condtmp1 )
+      if ( val & 1 )
       {
         spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~0x40u;
-        condtmp3 = val & 2;
       }
-      if ( condtmp3 )
+      if ( val & 2 )
         spu2_regs.u.main_regs.core_regs[1].cregs.attr &= ~0x40u;
       if ( Spu2IntrHandler )
       {
@@ -3234,7 +3215,6 @@ int InitVoices()
 //----- (00404644) --------------------------------------------------------
 int __fastcall Reset(char flag)
 {
-  bool condtmp; // dc
   iop_event_t efparam; // [sp+10h] [-18h] BYREF
   int intrstate[2]; // [sp+20h] [-8h] BYREF
 
@@ -3267,8 +3247,7 @@ int __fastcall Reset(char flag)
   Spu2IrqCallback = 0;
   TransIntrCallbacks[0] = 0;
   TransIntrCallbacks[1] = 0;
-  condtmp = (flag & 0xF) != 0;
-  if ( !condtmp )
+  if ( (flag & 0xF) == 0 )
   {
     bzero(EffectAttr, 40);
     EffectAddr[0] = 0x1DFFF0;
