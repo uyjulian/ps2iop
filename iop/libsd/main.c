@@ -1135,71 +1135,71 @@ void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
   int deref_mode_data; // $s0
 
   deref_mode_data = mode_data->mode_flags;
-  if ( deref_mode_data == 0 )
+  if ( !deref_mode_data )
     deref_mode_data = 0xFFFFFFFF;
-  if ( (deref_mode_data & 1) != 0 )
+  if ( (deref_mode_data & 1) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf1_size, (unsigned __int16)mode_data->mode_data[0]);
-  if ( (deref_mode_data & 2) != 0 )
+  if ( (deref_mode_data & 2) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf2_size, (unsigned __int16)mode_data->mode_data[1]);
-  if ( ((deref_mode_data & 4) != 0) )
+  if ( ((deref_mode_data & 4)) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].iir_vol = mode_data->mode_data[2];
-  if ( ((deref_mode_data & 8) != 0) )
+  if ( (deref_mode_data & 8) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].comb1_vol = mode_data->mode_data[3];
-  if ( ((deref_mode_data & 0x10) != 0) )
+  if ( (deref_mode_data & 0x10) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].comb2_vol = mode_data->mode_data[4];
-  if ( ((deref_mode_data & 0x20) != 0) )
+  if ( (deref_mode_data & 0x20) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].comb3_vol = mode_data->mode_data[5];
-  if ( ((deref_mode_data & 0x40) != 0) )
+  if ( (deref_mode_data & 0x40) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].comb4_vol = mode_data->mode_data[6];
-  if ( ((deref_mode_data & 0x80) != 0) )
+  if ( (deref_mode_data & 0x80) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].wall_vol = mode_data->mode_data[7];
-  if ( ((deref_mode_data & 0x100) != 0) )
+  if ( (deref_mode_data & 0x100) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].apf1_vol = mode_data->mode_data[8];
-  if ( ((deref_mode_data & 0x200) != 0) )
+  if ( (deref_mode_data & 0x200) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].apf2_vol = mode_data->mode_data[9];
-  if ( (deref_mode_data & 0x400) != 0 )
+  if ( (deref_mode_data & 0x400) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_l_dst, (unsigned __int16)mode_data->mode_data[10]);
-  if ( (deref_mode_data & 0x800) != 0 )
+  if ( (deref_mode_data & 0x800) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_r_dst, (unsigned __int16)mode_data->mode_data[11]);
-  if ( (deref_mode_data & 0x1000) != 0 )
+  if ( (deref_mode_data & 0x1000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb1_l_src, (unsigned __int16)mode_data->mode_data[12]);
-  if ( (deref_mode_data & 0x2000) != 0 )
+  if ( (deref_mode_data & 0x2000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb1_r_src, (unsigned __int16)mode_data->mode_data[13]);
-  if ( (deref_mode_data & 0x4000) != 0 )
+  if ( (deref_mode_data & 0x4000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb2_l_src, (unsigned __int16)mode_data->mode_data[14]);
-  if ( (deref_mode_data & 0x8000) != 0 )
+  if ( (deref_mode_data & 0x8000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb2_r_src, (unsigned __int16)mode_data->mode_data[15]);
-  if ( (deref_mode_data & 0x10000) != 0 )
+  if ( (deref_mode_data & 0x10000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_l_src, (unsigned __int16)mode_data->mode_data[16]);
-  if ( (deref_mode_data & 0x20000) != 0 )
+  if ( (deref_mode_data & 0x20000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_r_src, (unsigned __int16)mode_data->mode_data[17]);
-  if ( (deref_mode_data & 0x40000) != 0 )
+  if ( (deref_mode_data & 0x40000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_l_dst, (unsigned __int16)mode_data->mode_data[18]);
-  if ( (deref_mode_data & 0x80000) != 0 )
+  if ( (deref_mode_data & 0x80000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_r_dst, (unsigned __int16)mode_data->mode_data[19]);
-  if ( (deref_mode_data & 0x100000) != 0 )
+  if ( (deref_mode_data & 0x100000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb3_l_src, (unsigned __int16)mode_data->mode_data[20]);
-  if ( (deref_mode_data & 0x200000) != 0 )
+  if ( (deref_mode_data & 0x200000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb3_r_src, (unsigned __int16)mode_data->mode_data[21]);
-  if ( (deref_mode_data & 0x400000) != 0 )
+  if ( (deref_mode_data & 0x400000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb4_l_src, (unsigned __int16)mode_data->mode_data[22]);
-  if ( (deref_mode_data & 0x800000) != 0 )
+  if ( (deref_mode_data & 0x800000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb4_r_src, (unsigned __int16)mode_data->mode_data[23]);
-  if ( (deref_mode_data & 0x1000000) != 0 )
+  if ( (deref_mode_data & 0x1000000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_l_src, (unsigned __int16)mode_data->mode_data[24]);
-  if ( (deref_mode_data & 0x2000000) != 0 )
+  if ( (deref_mode_data & 0x2000000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_r_src, (unsigned __int16)mode_data->mode_data[25]);
-  if ( (deref_mode_data & 0x4000000) != 0 )
+  if ( (deref_mode_data & 0x4000000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf1_l_dst, (unsigned __int16)mode_data->mode_data[26]);
-  if ( (deref_mode_data & 0x8000000) != 0 )
+  if ( (deref_mode_data & 0x8000000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf1_r_dst, (unsigned __int16)mode_data->mode_data[27]);
-  if ( (deref_mode_data & 0x10000000) != 0 )
+  if ( (deref_mode_data & 0x10000000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf2_l_dst, (unsigned __int16)mode_data->mode_data[28]);
-  if ( (deref_mode_data & 0x20000000) != 0 )
+  if ( (deref_mode_data & 0x20000000) )
     SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf2_r_dst, (unsigned __int16)mode_data->mode_data[29]);
-  if ( ((deref_mode_data & 0x40000000) != 0) )
+  if ( (deref_mode_data & 0x40000000) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].in_coef_l = mode_data->mode_data[30];
-  if ( ((deref_mode_data & 0x80000000) != 0) )
+  if ( (deref_mode_data & 0x80000000) )
     ptr_to_bf900000->u.extra_regs.different_regs[core].in_coef_r = mode_data->mode_data[31];
 }
 
@@ -1219,16 +1219,16 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
     return -100;
   if ( !(unsigned __int8)effect_mode )
     return 0;
-  if ( DmaStartStop((channel << 4) | 4, 0, 0) != 0 )
+  if ( DmaStartStop((channel << 4) | 4, 0, 0) )
     return -210;
   if ( VoiceTransIoMode[channel] != 1 )
     return -201;
-  if ( QueryIntrContext() != 0 )
+  if ( QueryIntrContext() )
     return -202;
   aligned_addr = 0;
   effect_size = 8 * EffectSizes[(unsigned __int8)effect_mode];
   effect_addr = (GetEEA(core) - (effect_size - 1)) >> 1;
-  if ( (effect_size & 0x3F) != 0 )
+  if ( (effect_size & 0x3F) )
   {
     effect_size = effect_size >> 6 << 6;
     aligned_addr = (GetEEA(core) - (effect_size - 1)) >> 1;
@@ -1298,13 +1298,13 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
     return -100;
   if ( !(unsigned __int8)effect_mode )
     return 0;
-  if ( DmaStartStop((channel << 4) | 4, 0, 0) != 0 )
+  if ( DmaStartStop((channel << 4) | 4, 0, 0) )
     return -210;
   if ( VoiceTransIoMode[channel] != 1 )
     return -201;
   v9 = 8 * EffectSizes[(unsigned __int8)effect_mode];
   v10 = (u32 *)(GetEEA(core) - (v9 - 1));
-  if ( (v9 & 0x3F) != 0 )
+  if ( (v9 & 0x3F) )
   {
     v9 = v9 >> 6 << 6;
     v11 = sceSdVoiceTrans(channel, 8u, (u8 *)ClearEffectData, v10, 0x40u);
@@ -1366,11 +1366,11 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   effect_mode = 0;
   mode_data.mode_flags = 0;
   mode = attr->mode;
-  if ( (mode & SD_EFFECT_MODE_CLEAR) != 0 )
+  if ( (mode & SD_EFFECT_MODE_CLEAR) )
   {
     clearram = 1;
     effect_mode = EffectAttr[core].mode;
-    channel = (mode & 0x200) != 0;
+    channel = !!(mode & 0x200);
   }
   if ( (unsigned __int8)mode > SD_EFFECT_MODE_PIPE )
     return -100;
@@ -1462,10 +1462,10 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   clearram = 0;
   mode_data.mode_flags = 0;
   channel = 0;
-  if ( (param->mode & 0x100) != 0 )
+  if ( (param->mode & 0x100) )
   {
     clearram = 1;
-    channel = (param->mode & 0x200) != 0;
+    channel = !!(param->mode & 0x200);
   }
   mode = (unsigned __int8)param->mode;
   if ( mode > SD_EFFECT_MODE_PIPE )
@@ -1622,7 +1622,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
   core = chan & 1;
   if ( !size )
     return -100;
-  if ( DmaStartStop((core << 4) | 4, 0, 0) != 0 )
+  if ( DmaStartStop((core << 4) | 4, 0, 0) )
     return -210;
   if ( VoiceTransIoMode[core] != 1 )
     return -201;
@@ -1640,7 +1640,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
         ClearEventFlag(VoiceTransCompleteEf[core], ~1);
       VoiceTransIoMode[core] = 0;
       dmasize1 = size >> 6 << 6;
-      if ( (size & 0x3F) != 0 )
+      if ( (size & 0x3F) )
         dmasize1 += 64;
       return DmaStartStop((core << 4) | 5, iopaddr, dmasize1);
     case SD_TRANS_WRITE:
@@ -1653,17 +1653,17 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
       else
         ClearEventFlag(VoiceTransCompleteEf[core], ~1);
       VoiceTransIoMode[core] = 0;
-      if ( (mode & SD_TRANS_MODE_IO) == 0 )
+      if ( !(mode & SD_TRANS_MODE_IO) )
       {
         VoiceTransStatus[core] = 0;
         dmasize1 = size >> 6 << 6;
-        if ( (size & 0x3F) != 0 )
+        if ( (size & 0x3F) )
           dmasize1 += 64;
         return DmaStartStop((core << 4) | 6, iopaddr, dmasize1);
       }
       VoiceTransStatus[core] = 1;
       dmasize2 = size >> 6 << 6;
-      if ( (size & 0x3F) != 0 )
+      if ( (size & 0x3F) )
         dmasize2 = (size >> 6 << 6) + 64;
       VoiceTrans_Write_IOMode((__int16 *)iopaddr, dmasize2, core);
       return dmasize2;
@@ -1692,7 +1692,7 @@ u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag)
       }
       break;
     case 1:
-      if ( QueryIntrContext() != 0 )
+      if ( QueryIntrContext() )
         return -202;
       WaitEventFlag(VoiceTransCompleteEf[core], 1, 0, &efres);
       VoiceTransCompleteBool[core] = 0;
@@ -1747,7 +1747,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
       TransIntrData[core].mode = core | 0xA00;
       BlockHandlerIntrData[core].cb = 0;
       BlockHandlerIntrData[core].userdata = 0;
-      if ( (mode & 0x80) != 0 )
+      if ( (mode & 0x80) )
       {
         if ( !vararg_elm1 )
         {
@@ -1760,7 +1760,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
       }
       else
       {
-        if ( (mode & SD_TRANS_LOOP) != 0 )
+        if ( (mode & SD_TRANS_LOOP) )
         {
           size >>= 1;
           TransIntrData[core].mode |= 0x1000u;
@@ -1782,7 +1782,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
       TransIntrData[core].mode = core | 0x600;
       BlockHandlerIntrData[core].cb = 0;
       BlockHandlerIntrData[core].userdata = 0;
-      if ( (mode & 0x80) != 0 )
+      if ( (mode & 0x80) )
       {
         if ( !vararg_elm2 )
         {
@@ -1795,7 +1795,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
       }
       else
       {
-        if ( (mode & SD_TRANS_LOOP) != 0 )
+        if ( (mode & SD_TRANS_LOOP) )
         {
           size >>= 1;
           TransIntrData[core].mode |= 0x1000u;
@@ -1926,9 +1926,9 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.tsa.pair[0] = (tsa_tmp >> 16) & 0xFFFF;
       return 0;
     case 4:
-      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_DMA_IN_PROCESS) != 0 )
+      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_DMA_IN_PROCESS) )
         return -1;
-      if ( (*(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) & SD_DMA_START) != 0 )
+      if ( (*(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) & SD_DMA_START) )
         return -1;
       if ( spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas )
         return -1;
@@ -1938,7 +1938,7 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr |= SD_DMA_READ;
       CpuResumeIntr(state);
       SetDmaRead(core_tmp1);
-      vararg3_cal = (vararg3 >> 6) + ((vararg3 & 0x3F) != 0);
+      vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
       *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = (u16)(uiptr)vararg2;
       *(vu16 *)(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr) = 16;
       *(((vu16 *)(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = vararg3_cal;
@@ -1949,7 +1949,7 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr = (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & ~SD_CORE_DMA) | SD_DMA_WRITE;
       CpuResumeIntr(state);
       SetDmaWrite(core_tmp1);
-      vararg3_cal = (vararg3 >> 6) + ((vararg3 & 0x3F) != 0);
+      vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
       *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = (u16)(uiptr)vararg2;
       *(vu16 *)(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr) = 16;
       *(((vu16 *)(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = vararg3_cal;
@@ -1958,37 +1958,37 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
     case 0xA:
       blocktransbufitem = 0;
       dmamagictmp = 0;
-      if ( (*(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) & SD_DMA_START) != 0 )
+      if ( (*(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) & SD_DMA_START) )
       {
         blocktransbufitem = BlockTransBuff[core_tmp1];
         dmamagictmp = *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr);
         *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) &= ~SD_DMA_START;
-        if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) != 0 )
+        if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) )
         {
           for ( i = 0; !(spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.statx & 0x80) && i < 0x1000000; i += 1 )
           {
           }
         }
       }
-      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) != 0 )
+      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) )
       {
         CpuSuspendIntr(&state);
         spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr &= ~SD_CORE_DMA;
         CpuResumeIntr(state);
-        for ( i = 0; (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) != 0 && i < 0xF00; i += 1 )
+        for ( i = 0; (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
         {
         }
       }
       hichk = 0;
-      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas & 7) != 0 )
+      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas & 7) )
       {
         hichk = 1;
         spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas = 0;
       }
-      if ( QueryIntrContext() == 0 )
-        SetEventFlag(VoiceTransCompleteEf[core_tmp1], 1);
-      else
+      if ( QueryIntrContext() )
         iSetEventFlag(VoiceTransCompleteEf[core_tmp1], 1);
+      else
+        SetEventFlag(VoiceTransCompleteEf[core_tmp1], 1);
       VoiceTransCompleteBool[core_tmp1] = 0;
       VoiceTransIoMode[core_tmp1] = 1;
       CleanHandlers[core_tmp1] = 0;
@@ -2017,7 +2017,7 @@ int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size
     CpuSuspendIntr(&state);
     spu2_regs.u.main_regs.core_regs[chan].cregs.attr = (spu2_regs.u.main_regs.core_regs[chan].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
     CpuResumeIntr(state);
-    for ( i = 0; (spu2_regs.u.main_regs.core_regs[chan].cregs.statx & SD_IO_IN_PROCESS) != 0 && i < 0xF00; i += 1 )
+    for ( i = 0; (spu2_regs.u.main_regs.core_regs[chan].cregs.statx & SD_IO_IN_PROCESS) && i < 0xF00; i += 1 )
       libsd_do_busyloop_1(1);
   }
   CpuSuspendIntr(&state);
@@ -2063,11 +2063,11 @@ int __fastcall TransInterrupt(IntrData *intr)
   switch ( intr->mode & 0x300 )
   {
     case 0x100:
-      for ( i = 0; (spu2_regs.u.main_regs.core_regs[mode_1].cregs.statx & 0x80) == 0 && i < 0x1000000; i += 1 )
+      for ( i = 0; !(spu2_regs.u.main_regs.core_regs[mode_1].cregs.statx & 0x80) && i < 0x1000000; i += 1 )
       {
       }
       spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr &= ~SD_CORE_DMA;
-      for ( i = 0; (spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr & SD_CORE_DMA) != 0 && i < 0xF00; i += 1 )
+      for ( i = 0; (spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
       {
       }
       if ( !no_flush_cache )
@@ -2092,7 +2092,7 @@ int __fastcall TransInterrupt(IntrData *intr)
       }
       break;
     case 0x200:
-      if ( (mode & 0x8000) != 0 )
+      if ( (mode & 0x8000) )
       {
         if ( BlockHandlerIntrData[mode_1].cb )
         {
@@ -2122,7 +2122,7 @@ int __fastcall TransInterrupt(IntrData *intr)
       }
       else
       {
-        if ( (mode & 0x1000) != 0 )
+        if ( (mode & 0x1000) )
         {
           BlockTransBuff[mode_1] = 1 - BlockTransBuff[mode_1];
           *(((vu16 *)(mode_1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr)) + 1) = (int)BlockTransSize[mode_1] / 64
@@ -2154,7 +2154,7 @@ u32 __fastcall thunk_sceSdBlockTransStatus(int channel)
   USE_IOP_MMIO_HWPORT();
 
   dmamagictmp1 = *(channel ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr);
-  if ( (spu2_regs.u.main_regs.core_regs[channel].cregs.admas & 7) == 0 )
+  if ( !(spu2_regs.u.main_regs.core_regs[channel].cregs.admas & 7) )
     dmamagictmp1 = 0;
   return (BlockTransBuff[channel] << 24) | (dmamagictmp1 & ~0xFF000000);
 }
@@ -2182,7 +2182,7 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
     if ( startaddr - iopaddr >= size )
     {
       other_align = startaddr - iopaddr - size;
-      if ( (mode & SD_TRANS_LOOP) == 0 || other_align >= size )
+      if ( !(mode & SD_TRANS_LOOP) || other_align >= size )
         return -100;
       BlockTransBuff[chan_tmp0] += 1;
       size_align = size - other_align;
@@ -2345,7 +2345,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
         {
           for ( i = 0; i < 24; i += 1 )
           {
-            if ( ((1 << i) & voice) != 0 )
+            if ( ((1 << i) & voice) )
             {
               loop += 1;
               sceSdSetParam((batch[cnt].entry & ~0x3E) | (2 * i), batch[cnt].value);
@@ -2366,7 +2366,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
         {
           for ( i = 0; i < 24; i += 1 )
           {
-            if ( ((1 << i) & voice) != 0 )
+            if ( ((1 << i) & voice) )
             {
               loop += 1;
               sceSdSetAddr((batch[cnt].entry & ~0x3E) | (2 * i), batch[cnt].value);
@@ -2397,7 +2397,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
         {
           for ( i = 0; i < 24; i += 1 )
           {
-            if ( ((1 << i) & voice) != 0 )
+            if ( ((1 << i) & voice) )
               Param = sceSdGetParam((batch[cnt].entry & ~0x3E) | (2 * i));
             if ( rets )
               rets[loop] = Param;
@@ -2418,7 +2418,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
         {
           for ( i = 0; i < 24; i += 1 )
           {
-            if ( ((1 << i) & voice) != 0 )
+            if ( ((1 << i) & voice) )
             {
               Param = sceSdGetAddr((batch[cnt].entry & ~0x3E) | (2 * i));
               if ( rets )
@@ -2449,13 +2449,13 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
 //----- (004039A0) --------------------------------------------------------
 void __cdecl sceSdSetParam(u16 entry, u16 value)
 {
-  ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (1024 - 984 * ((entry & 0x80) != 0))) >> 1)] = value;
+  ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (1024 - 984 * (!!(entry & 0x80)))) >> 1)] = value;
 }
 
 //----- (004039FC) --------------------------------------------------------
 u16 __cdecl sceSdGetParam(u16 entry)
 {
-  return ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (1024 - 984 * ((entry & 0x80) != 0))) >> 1)];
+  return ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (1024 - 984 * (!!(entry & 0x80)))) >> 1)];
 }
 
 //----- (00403A5C) --------------------------------------------------------
@@ -2566,7 +2566,7 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
     pitch = 0x3FFF;
   for ( i1 = 0; i1 < 14; i1 += 1 )
   {
-    if ( (((int)pitch >> i1) & 1) != 0 )
+    if ( (((int)pitch >> i1) & 1) )
       bit = i1;
   }
   val = pitch << (15 - bit);
@@ -2597,52 +2597,47 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
 //----- (00403E20) --------------------------------------------------------
 int __fastcall SetSpdifMode(int val)
 {
-  __int16 out_mask_fe57_2; // $t0
-  __int16 out_mask_apply_8000; // $a1
+  __int16 spdif_out_new; // $t0
+  __int16 spdif_mode_new; // $a1
 
-  out_mask_fe57_2 = spu2_regs.u.extra_regs.spdif_out & ~0x1A8;
-  out_mask_apply_8000 = spu2_regs.u.extra_regs.spdif_mode & ~6;
+  spdif_out_new = spu2_regs.u.extra_regs.spdif_out & ~0x1A8;
+  spdif_mode_new = spu2_regs.u.extra_regs.spdif_mode & ~0xBF06;
   switch ( val & 0xF )
   {
     case 0:
-      out_mask_fe57_2 |= 0x20;
+      spdif_out_new |= 0x20;
       break;
     case 1:
-      out_mask_fe57_2 |= 0x100;
-      out_mask_apply_8000 |= 2;
+      spdif_out_new |= 0x100;
+      spdif_mode_new |= 2;
       break;
     case 2:
       break;
     case 3:
-      out_mask_fe57_2 |= 0x100;
+      spdif_out_new |= 0x100;
       break;
     default:
       return -100;
   }
-  if ( (val & 0x80) != 0 )
-    out_mask_apply_8000 |= 0x8000;
-  else
-    out_mask_apply_8000 &= ~0x8000;
+  if ( (val & 0x80) )
+    spdif_mode_new |= 0x8000;
   switch ( val & 0xF00 )
   {
     case 0x400:
       spu2_regs.u.extra_regs.spdif_media = 0;
-      out_mask_apply_8000 &= ~0x3F00;
-      out_mask_apply_8000 |= 0x100;
+      spdif_mode_new |= 0x100;
       break;
     case 0x800:
       spu2_regs.u.extra_regs.spdif_media = 512;
-      out_mask_apply_8000 &= ~0x3F00;
-      out_mask_apply_8000 |= 0x1900;
+      spdif_mode_new |= 0x1900;
       break;
     default:
       spu2_regs.u.extra_regs.spdif_media = 512;
-      out_mask_apply_8000 &= ~0x3F00;
-      out_mask_apply_8000 |= 0x900;
+      spdif_mode_new |= 0x900;
       break;
   }
-  spu2_regs.u.extra_regs.spdif_out = out_mask_fe57_2;
-  spu2_regs.u.extra_regs.spdif_mode = out_mask_apply_8000;
+  spu2_regs.u.extra_regs.spdif_out = spdif_out_new;
+  spu2_regs.u.extra_regs.spdif_mode = spdif_mode_new;
   SpdifSettings = val;
   return 0;
 }
@@ -2797,7 +2792,7 @@ int InitVoices()
   for ( i = 0; i < 8; i += 1 )
     spu2_regs.u.main_regs.core_regs[0].cregs.xferdata_1ac = VoiceDataInit[i];
   spu2_regs.u.main_regs.core_regs[0].cregs.attr = (spu2_regs.u.main_regs.core_regs[0].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
-  for ( i = 0; (spu2_regs.u.main_regs.core_regs[0].cregs.statx & SD_IO_IN_PROCESS) != 0 && i <= 0x1000000; i += 1 )
+  for ( i = 0; (spu2_regs.u.main_regs.core_regs[0].cregs.statx & SD_IO_IN_PROCESS) && i <= 0x1000000; i += 1 )
     libsd_do_busyloop_1(1);
   spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~SD_CORE_DMA;
   for ( i = 0; i < 24; i += 1 )
@@ -2870,7 +2865,7 @@ int __fastcall Reset(char flag)
   Spu2IrqCallback = 0;
   TransIntrCallbacks[0] = 0;
   TransIntrCallbacks[1] = 0;
-  if ( (flag & 0xF) == 0 )
+  if ( !(flag & 0xF) )
   {
     bzero(EffectAttr, 40);
     EffectAddr[0] = 0x1DFFF0;
@@ -2920,7 +2915,7 @@ int __cdecl sceSdInit(int flag)
   int resetres; // $s2
 
   InitSpu2();
-  if ( (flag & 0xF) == 0 )
+  if ( !(flag & 0xF) )
     InitSpdif();
   resetres = Reset(flag & 0xFF);
   InitVoices();
