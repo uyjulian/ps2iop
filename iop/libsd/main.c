@@ -1441,7 +1441,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   int delay; // $a0
   __int16 feedback_tmp; // $v0
   int feedback; // $v1
-  int condtmpeff; // $s5
+  int effects_enabled; // $s5
   int retval; // $s0
   struct mode_data_struct mode_data; // [sp+10h] [-60h] BYREF
   int state; // [sp+5Ch] [-14h] BYREF
@@ -1508,12 +1508,15 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
       mode_data.mode_data[7] = 258 * feedback;
     }
   }
-  condtmpeff = (spu2_regs.u.main_regs.core_regs[core].cregs.attr >> 7) & 1;
-  if ( !condtmpeff
-    || (CpuSuspendIntr(&state),
-        spu2_regs.u.main_regs.core_regs[core].cregs.attr &= 0xFF7F,
-        CpuResumeIntr(state),
-        !clearram || (retval = sceSdClearEffectWorkArea(core, channel, effect_mode), retval >= 0)) )
+  effects_enabled = (spu2_regs.u.main_regs.core_regs[core].cregs.attr >> 7) & 1;
+  if ( effects_enabled )
+  {
+    CpuSuspendIntr(&state);
+    spu2_regs.u.main_regs.core_regs[core].cregs.attr &= ~SD_ENABLE_EFFECTS;
+    CpuResumeIntr(state);
+  }
+  if ( !effects_enabled
+    || (!clearram || (retval = sceSdClearEffectWorkArea(core, channel, effect_mode), retval >= 0)) )
   {
     spu2_regs.u.extra_regs.different_regs[core].evoll = attr->depth_L;
     spu2_regs.u.extra_regs.different_regs[core].evolr = attr->depth_R;
@@ -1524,7 +1527,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     if ( clearram )
       retval = sceSdClearEffectWorkArea(core, channel, mode);
   }
-  if ( condtmpeff )
+  if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
     spu2_regs.u.main_regs.core_regs[core].cregs.attr |= SD_ENABLE_EFFECTS;
@@ -2168,7 +2171,7 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
         blocktransbufitem = BlockTransBuff[core_tmp1];
         dmamagictmp = *(_DWORD *)&iop_mmio_hwport.unv_10f8[1088 * (mainarg >> 4) - 56];
         *(_DWORD *)p_dmac_chcr &= ~SD_DMA_START;
-        if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 )
+        if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) != 0 )
         {
           waittmp2 = 1;
           while ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.statx & 0x80) == 0 )
@@ -2179,13 +2182,13 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
           }
         }
       }
-      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 )
+      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) != 0 )
       {
         CpuSuspendIntr(&state);
-        spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr &= 0xFFCFu;
+        spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr &= ~SD_CORE_DMA;
         CpuResumeIntr(state);
         waittmp1 = 1;
-        while ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & 0x30) != 0 )
+        while ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) != 0 )
         {
           if ( waittmp1 >= 0xF01 )
             break;
@@ -2504,7 +2507,7 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
   BlockTransBuff[chan_tmp2] = 0;
   BlockTransSize[chan_tmp2] = size;
   CpuSuspendIntr(&state);
-  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.attr &= 0xFFCFu;
+  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
   spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.tsa.pair[0] = 0;
   spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.tsa.pair[1] = 2 * (mode & ~0xF0FF) + 1024;
