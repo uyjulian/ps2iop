@@ -27,106 +27,106 @@ typedef struct spu2_u16pair_
 
 typedef struct spu2_voice_params_
 {
-  vu16 voll;
-  vu16 volr;
-  vu16 pitch;
-  vu16 adsr1;
-  vu16 adsr2;
-  vu16 envx;
-  vu16 volxl;
-  vu16 volxr;
+  vu16 m_voll;
+  vu16 m_volr;
+  vu16 m_pitch;
+  vu16 m_adsr1;
+  vu16 m_adsr2;
+  vu16 m_envx;
+  vu16 m_volxl;
+  vu16 m_volxr;
 } spu2_voice_params_t;
 
 typedef struct spu2_voice_address_
 {
-  spu2_u16pair_t ssa;
-  spu2_u16pair_t lsax;
-  spu2_u16pair_t nax;
+  spu2_u16pair_t m_ssa;
+  spu2_u16pair_t m_lsax;
+  spu2_u16pair_t m_nax;
 } spu2_voice_address_t;
 
 typedef struct spu2_core_regs_
 {
-  spu2_voice_params_t voice_params[24]; /* 0x000 */
-  spu2_u16pair_t pmon; /* 0x180 */
-  spu2_u16pair_t non; /* 0x184 */
-  spu2_u16pair_t vmixl; /* 0x188 */
-  spu2_u16pair_t vmixel; /* 0x18c */
-  spu2_u16pair_t vmixr; /* 0x190 */
-  spu2_u16pair_t vmixer; /* 0x194 */
-  vu16 mmix; /* 0x198 */
-  vu16 attr; /* 0x19a */
-  spu2_u16pair_t irqa; /* 0x19c */
-  spu2_u16pair_t kon; /* 0x1a0 */
-  spu2_u16pair_t koff; /* 0x1a4 */
-  spu2_u16pair_t tsa; /* 0x1a8 */
-  vu16 xferdata_1ac; /* 0x1ac */
-  vu16 unk1ae; /* 0x1ae */
-  vu16 admas; /* 0x1b0 */
+  spu2_voice_params_t m_voice_params[24]; /* 0x000 */
+  spu2_u16pair_t m_pmon; /* 0x180 */
+  spu2_u16pair_t m_non; /* 0x184 */
+  spu2_u16pair_t m_vmixl; /* 0x188 */
+  spu2_u16pair_t m_vmixel; /* 0x18c */
+  spu2_u16pair_t m_vmixr; /* 0x190 */
+  spu2_u16pair_t m_vmixer; /* 0x194 */
+  vu16 m_mmix; /* 0x198 */
+  vu16 m_attr; /* 0x19a */
+  spu2_u16pair_t m_irqa; /* 0x19c */
+  spu2_u16pair_t m_kon; /* 0x1a0 */
+  spu2_u16pair_t m_koff; /* 0x1a4 */
+  spu2_u16pair_t m_tsa; /* 0x1a8 */
+  vu16 m_xferdata; /* 0x1ac */
+  vu16 m_unk1ae; /* 0x1ae */
+  vu16 m_admas; /* 0x1b0 */
   vu16 unk1b2[7]; /* 0x1b2 */
-  spu2_voice_address_t voice_address[24]; /* 0x1c0 */
-  spu2_u16pair_t esa; /* 0x2e0 */
-  spu2_u16pair_t apf1_size; /* 0x2e4 */
-  spu2_u16pair_t apf2_size; /* 0x2e8 */
-  spu2_u16pair_t same_l_dst; /* 0x2EC */
-  spu2_u16pair_t same_r_dst; /* 0x2F0 */
-  spu2_u16pair_t comb1_l_src; /* 0x2F4 */
-  spu2_u16pair_t comb1_r_src; /* 0x2F8 */
-  spu2_u16pair_t comb2_l_src; /* 0x2FC */
-  spu2_u16pair_t comb2_r_src; /* 0x300 */
-  spu2_u16pair_t same_l_src; /* 0x304 */
-  spu2_u16pair_t same_r_src; /* 0x308 */
-  spu2_u16pair_t diff_l_dst; /* 0x30C */
-  spu2_u16pair_t diff_r_dst; /* 0x310 */
-  spu2_u16pair_t comb3_l_src; /* 0x314 */
-  spu2_u16pair_t comb3_r_src; /* 0x318 */
-  spu2_u16pair_t comb4_l_src; /* 0x31C */
-  spu2_u16pair_t comb4_r_src; /* 0x320 */
-  spu2_u16pair_t diff_l_src; /* 0x324 */
-  spu2_u16pair_t diff_r_src; /* 0x328 */
-  spu2_u16pair_t apf1_l_dst; /* 0x32C */
-  spu2_u16pair_t apf1_r_dst; /* 0x330 */
-  spu2_u16pair_t apf2_l_dst; /* 0x334 */
-  spu2_u16pair_t apf2_r_dst; /* 0x338 */
-  vu16 eea; /* 0x33C */
+  spu2_voice_address_t m_voice_address[24]; /* 0x1c0 */
+  spu2_u16pair_t m_esa; /* 0x2e0 */
+  spu2_u16pair_t m_apf1_size; /* 0x2e4 */
+  spu2_u16pair_t m_apf2_size; /* 0x2e8 */
+  spu2_u16pair_t m_same_l_dst; /* 0x2EC */
+  spu2_u16pair_t m_same_r_dst; /* 0x2F0 */
+  spu2_u16pair_t m_comb1_l_src; /* 0x2F4 */
+  spu2_u16pair_t m_comb1_r_src; /* 0x2F8 */
+  spu2_u16pair_t m_comb2_l_src; /* 0x2FC */
+  spu2_u16pair_t m_comb2_r_src; /* 0x300 */
+  spu2_u16pair_t m_same_l_src; /* 0x304 */
+  spu2_u16pair_t m_same_r_src; /* 0x308 */
+  spu2_u16pair_t m_diff_l_dst; /* 0x30C */
+  spu2_u16pair_t m_diff_r_dst; /* 0x310 */
+  spu2_u16pair_t m_comb3_l_src; /* 0x314 */
+  spu2_u16pair_t m_comb3_r_src; /* 0x318 */
+  spu2_u16pair_t m_comb4_l_src; /* 0x31C */
+  spu2_u16pair_t m_comb4_r_src; /* 0x320 */
+  spu2_u16pair_t m_diff_l_src; /* 0x324 */
+  spu2_u16pair_t m_diff_r_src; /* 0x328 */
+  spu2_u16pair_t m_apf1_l_dst; /* 0x32C */
+  spu2_u16pair_t m_apf1_r_dst; /* 0x330 */
+  spu2_u16pair_t m_apf2_l_dst; /* 0x334 */
+  spu2_u16pair_t m_apf2_r_dst; /* 0x338 */
+  vu16 m_eea; /* 0x33C */
   vu16 unk33e; /* 0x33E */
-  spu2_u16pair_t endx; /* 0x340 */
-  vu16 statx; /* 0x344 */
+  spu2_u16pair_t m_endx; /* 0x340 */
+  vu16 m_statx; /* 0x344 */
   vu16 unk346[13]; /* 0x346 */
 } spu2_core_regs_t;
 
 typedef struct spu2_different_regs_
 {
-  vu16 mvoll; /* 0x760 */
-  vu16 mvolr; /* 0x762 */
-  vu16 evoll; /* 0x764 */
-  vu16 evolr; /* 0x766 */
-  vu16 avoll; /* 0x768 */
-  vu16 avolr; /* 0x76A */
-  vu16 bvoll; /* 0x76C */
-  vu16 bvolr; /* 0x76E */
-  vu16 mvolxl; /* 0x770 */
-  vu16 mvolxr; /* 0x772 */
-  vu16 iir_vol; /* 0x774 */
-  vu16 comb1_vol; /* 0x776 */
-  vu16 comb2_vol; /* 0x778 */
-  vu16 comb3_vol; /* 0x77A */
-  vu16 comb4_vol; /* 0x77C */
-  vu16 wall_vol; /* 0x77E */
-  vu16 apf1_vol; /* 0x780 */
-  vu16 apf2_vol; /* 0x782 */
-  vu16 in_coef_l; /* 0x784 */
-  vu16 in_coef_r; /* 0x786 */
+  vu16 m_mvoll; /* 0x760 */
+  vu16 m_mvolr; /* 0x762 */
+  vu16 m_evoll; /* 0x764 */
+  vu16 m_evolr; /* 0x766 */
+  vu16 m_avoll; /* 0x768 */
+  vu16 m_avolr; /* 0x76A */
+  vu16 m_bvoll; /* 0x76C */
+  vu16 m_bvolr; /* 0x76E */
+  vu16 m_mvolxl; /* 0x770 */
+  vu16 m_mvolxr; /* 0x772 */
+  vu16 m_iir_vol; /* 0x774 */
+  vu16 m_comb1_vol; /* 0x776 */
+  vu16 m_comb2_vol; /* 0x778 */
+  vu16 m_comb3_vol; /* 0x77A */
+  vu16 m_comb4_vol; /* 0x77C */
+  vu16 m_wall_vol; /* 0x77E */
+  vu16 m_apf1_vol; /* 0x780 */
+  vu16 m_apf2_vol; /* 0x782 */
+  vu16 m_in_coef_l; /* 0x784 */
+  vu16 m_in_coef_r; /* 0x786 */
 } spu2_different_regs_t;
 
 typedef struct spu2_core_regs_padded_
 {
-  spu2_core_regs_t cregs;
+  spu2_core_regs_t m_cregs;
   vu16 padding[80];
 } spu2_core_regs_padded_t;
 
 typedef struct spu2_regs_main_
 {
-  spu2_core_regs_padded_t core_regs[2];
+  spu2_core_regs_padded_t m_core_regs[2];
 } spu2_regs_main_t;
 
 typedef struct spu2_regs_extra_
@@ -134,15 +134,15 @@ typedef struct spu2_regs_extra_
   spu2_core_regs_t core0_regs;
   vu16 padding346[80];
   spu2_core_regs_t core1_regs; /* 0x400 */
-  spu2_different_regs_t different_regs[2];
+  spu2_different_regs_t m_different_regs[2];
   vu16 unk7b0[8];
-  vu16 spdif_out; /* 0x7c0 */
-  vu16 spdif_irqinfo; /* 0x7c2 */
+  vu16 m_spdif_out; /* 0x7c0 */
+  vu16 m_spdif_irqinfo; /* 0x7c2 */
   vu16 unk7c4; /* 0x7c4 */
-  vu16 spdif_mode; /* 0x7c6 */
-  vu16 spdif_media; /* 0x7c8 */
-  vu16 unknown7ca; /* 0x7ca */
-  vu16 spdif_protect; /* 0x7cc */
+  vu16 m_spdif_mode; /* 0x7c6 */
+  vu16 m_spdif_media; /* 0x7c8 */
+  vu16 m_unknown7ca; /* 0x7ca */
+  vu16 m_spdif_protect; /* 0x7cc */
   vu16 unk7ce[25];
 } spu2_regs_extra_t;
 
@@ -150,9 +150,9 @@ typedef struct spu2_regs_ /* base => 0xBF900000 */
 {
   union spu2_regs_union_
   {
-    spu2_regs_main_t main_regs;
-    spu2_regs_extra_t extra_regs;
-  } u;
+    spu2_regs_main_t m_m;
+    spu2_regs_extra_t m_e;
+  } m_u;
 } spu2_regs_t;
 
 struct mode_data_struct
@@ -936,145 +936,145 @@ int VoiceTransIoMode[2] = { 1, 1 };
 unsigned __int16 NotePitchTable[140] =
 {
   32768,
-  -30820,
-  -28756,
-  -26569,
-  -24251,
-  -21796,
-  -19196,
-  -16440,
-  -13521,
-  -10428,
-  -7151,
-  -3679,
+  34716,
+  36780,
+  38967,
+  41285,
+  43740,
+  46340,
+  49096,
+  52015,
+  55108,
+  58385,
+  61857,
   32768,
-  -32754,
-  -32739,
-  -32724,
-  -32709,
-  -32694,
-  -32680,
-  -32665,
-  -32650,
-  -32635,
-  -32620,
-  -32605,
-  -32591,
-  -32576,
-  -32561,
-  -32546,
-  -32531,
-  -32516,
-  -32501,
-  -32486,
-  -32471,
-  -32456,
-  -32442,
-  -32427,
-  -32412,
-  -32397,
-  -32382,
-  -32367,
-  -32352,
-  -32337,
-  -32322,
-  -32307,
-  -32292,
-  -32277,
-  -32262,
-  -32247,
-  -32232,
-  -32217,
-  -32202,
-  -32187,
-  -32172,
-  -32157,
-  -32142,
-  -32126,
-  -32111,
-  -32096,
-  -32081,
-  -32066,
-  -32051,
-  -32036,
-  -32021,
-  -32006,
-  -31990,
-  -31975,
-  -31960,
-  -31945,
-  -31930,
-  -31915,
-  -31900,
-  -31884,
-  -31869,
-  -31854,
-  -31839,
-  -31824,
-  -31808,
-  -31793,
-  -31778,
-  -31763,
-  -31747,
-  -31732,
-  -31717,
-  -31702,
-  -31686,
-  -31671,
-  -31656,
-  -31640,
-  -31625,
-  -31610,
-  -31595,
-  -31579,
-  -31564,
-  -31549,
-  -31533,
-  -31518,
-  -31503,
-  -31487,
-  -31472,
-  -31456,
-  -31441,
-  -31426,
-  -31410,
-  -31395,
-  -31379,
-  -31364,
-  -31349,
-  -31333,
-  -31318,
-  -31302,
-  -31287,
-  -31271,
-  -31256,
-  -31240,
-  -31225,
-  -31209,
-  -31194,
-  -31178,
-  -31163,
-  -31147,
-  -31132,
-  -31116,
-  -31101,
-  -31085,
-  -31070,
-  -31054,
-  -31039,
-  -31023,
-  -31008,
-  -30992,
-  -30976,
-  -30961,
-  -30945,
-  -30930,
-  -30914,
-  -30898,
-  -30883,
-  -30867,
-  -30851,
-  -30836
+  32782,
+  32797,
+  32812,
+  32827,
+  32842,
+  32856,
+  32871,
+  32886,
+  32901,
+  32916,
+  32931,
+  32945,
+  32960,
+  32975,
+  32990,
+  33005,
+  33020,
+  33035,
+  33050,
+  33065,
+  33080,
+  33094,
+  33109,
+  33124,
+  33139,
+  33154,
+  33169,
+  33184,
+  33199,
+  33214,
+  33229,
+  33244,
+  33259,
+  33274,
+  33289,
+  33304,
+  33319,
+  33334,
+  33349,
+  33364,
+  33379,
+  33394,
+  33410,
+  33425,
+  33440,
+  33455,
+  33470,
+  33485,
+  33500,
+  33515,
+  33530,
+  33546,
+  33561,
+  33576,
+  33591,
+  33606,
+  33621,
+  33636,
+  33652,
+  33667,
+  33682,
+  33697,
+  33712,
+  33728,
+  33743,
+  33758,
+  33773,
+  33789,
+  33804,
+  33819,
+  33834,
+  33850,
+  33865,
+  33880,
+  33896,
+  33911,
+  33926,
+  33941,
+  33957,
+  33972,
+  33987,
+  34003,
+  34018,
+  34033,
+  34049,
+  34064,
+  34080,
+  34095,
+  34110,
+  34126,
+  34141,
+  34157,
+  34172,
+  34187,
+  34203,
+  34218,
+  34234,
+  34249,
+  34265,
+  34280,
+  34296,
+  34311,
+  34327,
+  34342,
+  34358,
+  34373,
+  34389,
+  34404,
+  34420,
+  34435,
+  34451,
+  34466,
+  34482,
+  34497,
+  34513,
+  34528,
+  34544,
+  34560,
+  34575,
+  34591,
+  34606,
+  34622,
+  34638,
+  34653,
+  34669,
+  34685,
+  34700,
 };
 int SpdifSettings = 0; // weak
 __int16 CoreAttrShifts[4] = { 7, 6, 14, 8 };
@@ -1138,69 +1138,69 @@ void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
   if ( !deref_mode_data )
     deref_mode_data = 0xFFFFFFFF;
   if ( (deref_mode_data & 1) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf1_size, (unsigned __int16)mode_data->mode_data[0]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, (unsigned __int16)mode_data->mode_data[0]);
   if ( (deref_mode_data & 2) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf2_size, (unsigned __int16)mode_data->mode_data[1]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, (unsigned __int16)mode_data->mode_data[1]);
   if ( ((deref_mode_data & 4)) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].iir_vol = mode_data->mode_data[2];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_iir_vol = mode_data->mode_data[2];
   if ( (deref_mode_data & 8) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].comb1_vol = mode_data->mode_data[3];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb1_vol = mode_data->mode_data[3];
   if ( (deref_mode_data & 0x10) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].comb2_vol = mode_data->mode_data[4];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb2_vol = mode_data->mode_data[4];
   if ( (deref_mode_data & 0x20) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].comb3_vol = mode_data->mode_data[5];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb3_vol = mode_data->mode_data[5];
   if ( (deref_mode_data & 0x40) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].comb4_vol = mode_data->mode_data[6];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb4_vol = mode_data->mode_data[6];
   if ( (deref_mode_data & 0x80) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].wall_vol = mode_data->mode_data[7];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_wall_vol = mode_data->mode_data[7];
   if ( (deref_mode_data & 0x100) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].apf1_vol = mode_data->mode_data[8];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf1_vol = mode_data->mode_data[8];
   if ( (deref_mode_data & 0x200) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].apf2_vol = mode_data->mode_data[9];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf2_vol = mode_data->mode_data[9];
   if ( (deref_mode_data & 0x400) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_l_dst, (unsigned __int16)mode_data->mode_data[10]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, (unsigned __int16)mode_data->mode_data[10]);
   if ( (deref_mode_data & 0x800) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_r_dst, (unsigned __int16)mode_data->mode_data[11]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, (unsigned __int16)mode_data->mode_data[11]);
   if ( (deref_mode_data & 0x1000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb1_l_src, (unsigned __int16)mode_data->mode_data[12]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, (unsigned __int16)mode_data->mode_data[12]);
   if ( (deref_mode_data & 0x2000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb1_r_src, (unsigned __int16)mode_data->mode_data[13]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, (unsigned __int16)mode_data->mode_data[13]);
   if ( (deref_mode_data & 0x4000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb2_l_src, (unsigned __int16)mode_data->mode_data[14]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, (unsigned __int16)mode_data->mode_data[14]);
   if ( (deref_mode_data & 0x8000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb2_r_src, (unsigned __int16)mode_data->mode_data[15]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, (unsigned __int16)mode_data->mode_data[15]);
   if ( (deref_mode_data & 0x10000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_l_src, (unsigned __int16)mode_data->mode_data[16]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, (unsigned __int16)mode_data->mode_data[16]);
   if ( (deref_mode_data & 0x20000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.same_r_src, (unsigned __int16)mode_data->mode_data[17]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, (unsigned __int16)mode_data->mode_data[17]);
   if ( (deref_mode_data & 0x40000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_l_dst, (unsigned __int16)mode_data->mode_data[18]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, (unsigned __int16)mode_data->mode_data[18]);
   if ( (deref_mode_data & 0x80000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_r_dst, (unsigned __int16)mode_data->mode_data[19]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, (unsigned __int16)mode_data->mode_data[19]);
   if ( (deref_mode_data & 0x100000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb3_l_src, (unsigned __int16)mode_data->mode_data[20]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, (unsigned __int16)mode_data->mode_data[20]);
   if ( (deref_mode_data & 0x200000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb3_r_src, (unsigned __int16)mode_data->mode_data[21]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, (unsigned __int16)mode_data->mode_data[21]);
   if ( (deref_mode_data & 0x400000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb4_l_src, (unsigned __int16)mode_data->mode_data[22]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, (unsigned __int16)mode_data->mode_data[22]);
   if ( (deref_mode_data & 0x800000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.comb4_r_src, (unsigned __int16)mode_data->mode_data[23]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, (unsigned __int16)mode_data->mode_data[23]);
   if ( (deref_mode_data & 0x1000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_l_src, (unsigned __int16)mode_data->mode_data[24]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, (unsigned __int16)mode_data->mode_data[24]);
   if ( (deref_mode_data & 0x2000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.diff_r_src, (unsigned __int16)mode_data->mode_data[25]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, (unsigned __int16)mode_data->mode_data[25]);
   if ( (deref_mode_data & 0x4000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf1_l_dst, (unsigned __int16)mode_data->mode_data[26]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, (unsigned __int16)mode_data->mode_data[26]);
   if ( (deref_mode_data & 0x8000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf1_r_dst, (unsigned __int16)mode_data->mode_data[27]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, (unsigned __int16)mode_data->mode_data[27]);
   if ( (deref_mode_data & 0x10000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf2_l_dst, (unsigned __int16)mode_data->mode_data[28]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, (unsigned __int16)mode_data->mode_data[28]);
   if ( (deref_mode_data & 0x20000000) )
-    SetEffectRegisterPair(&ptr_to_bf900000->u.main_regs.core_regs[core].cregs.apf2_r_dst, (unsigned __int16)mode_data->mode_data[29]);
+    SetEffectRegisterPair(&ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, (unsigned __int16)mode_data->mode_data[29]);
   if ( (deref_mode_data & 0x40000000) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].in_coef_l = mode_data->mode_data[30];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_l = mode_data->mode_data[30];
   if ( (deref_mode_data & 0x80000000) )
-    ptr_to_bf900000->u.extra_regs.different_regs[core].in_coef_r = mode_data->mode_data[31];
+    ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_r = mode_data->mode_data[31];
 }
 
 //----- (00400660) --------------------------------------------------------
@@ -1341,8 +1341,8 @@ void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr)
   attr->mode = EffectAttr[core].mode;
   attr->delay = EffectAttr[core].delay;
   attr->feedback = EffectAttr[core].feedback;
-  attr->depth_L = spu2_regs.u.extra_regs.different_regs[core].evoll;
-  attr->depth_R = spu2_regs.u.extra_regs.different_regs[core].evolr;
+  attr->depth_L = spu2_regs.m_u.m_e.m_different_regs[core].m_evoll;
+  attr->depth_R = spu2_regs.m_u.m_e.m_different_regs[core].m_evolr;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
@@ -1412,21 +1412,21 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     EffectAttr[core].feedback = feedback;
     mode_data.mode_data[7] = 258 * feedback;
   }
-  effects_enabled = (spu2_regs.u.main_regs.core_regs[core].cregs.attr >> 7) & 1;
+  effects_enabled = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.u.main_regs.core_regs[core].cregs.attr &= ~SD_ENABLE_EFFECTS;
+    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
   if ( !effects_enabled
     || (!clearram || (retval = sceSdClearEffectWorkArea(core, channel, effect_mode), retval >= 0)) )
   {
-    spu2_regs.u.extra_regs.different_regs[core].evoll = attr->depth_L;
-    spu2_regs.u.extra_regs.different_regs[core].evolr = attr->depth_R;
+    spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
+    spu2_regs.m_u.m_e.m_different_regs[core].m_evolr = attr->depth_R;
     SetEffectData(core, &mode_data);
-    spu2_regs.u.main_regs.core_regs[core].cregs.esa.pair[0] = EffectAddr[core] >> 17;
-    spu2_regs.u.main_regs.core_regs[core].cregs.esa.pair[1] = EffectAddr[core] >> 1;
+    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.pair[0] = EffectAddr[core] >> 17;
+    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.pair[1] = EffectAddr[core] >> 1;
     retval = 0;
     if ( clearram )
       retval = sceSdClearEffectWorkArea(core, channel, (unsigned __int8)mode);
@@ -1434,7 +1434,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.u.main_regs.core_regs[core].cregs.attr |= SD_ENABLE_EFFECTS;
+    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
   return retval;
@@ -1445,7 +1445,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
 //----- (00401100) --------------------------------------------------------
 int __fastcall GetEEA(int core)
 {
-  return (spu2_regs.u.main_regs.core_regs[core].cregs.eea << 17) | 0x1FFFF;
+  return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_eea << 17) | 0x1FFFF;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
@@ -1476,22 +1476,22 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   EffectAddr[core] = GetEEA(core) - (8 * EffectSizes[mode] - 1);
   // Unoffical: don't use inlined memcpy
   memcpy(&mode_data, &EffectParams[mode], sizeof(mode_data));
-  effects_enabled = (spu2_regs.u.main_regs.core_regs[core].cregs.attr >> 7) & 1;
+  effects_enabled = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.u.main_regs.core_regs[core].cregs.attr &= ~SD_ENABLE_EFFECTS;
+    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
-  spu2_regs.u.extra_regs.different_regs[core].evoll = 0;
-  spu2_regs.u.extra_regs.different_regs[core].evolr = 0;
+  spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = 0;
+  spu2_regs.m_u.m_e.m_different_regs[core].m_evolr = 0;
   SetEffectData(core, &mode_data);
-  spu2_regs.u.main_regs.core_regs[core].cregs.esa.pair[0] = EffectAddr[core] >> 17;
-  spu2_regs.u.main_regs.core_regs[core].cregs.esa.pair[1] = EffectAddr[core] >> 1;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.pair[0] = EffectAddr[core] >> 17;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.pair[1] = EffectAddr[core] >> 1;
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.u.main_regs.core_regs[core].cregs.attr |= SD_ENABLE_EFFECTS;
+    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
   if ( clearram )
@@ -1532,8 +1532,8 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
     mode_data.mode_data[7] = 258 * EffectAttr[core].feedback;
     SetEffectData(core, &mode_data);
   }
-  spu2_regs.u.extra_regs.different_regs[core].evoll = attr->depth_L;
-  spu2_regs.u.extra_regs.different_regs[core].evolr = attr->depth_R;
+  spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
+  spu2_regs.m_u.m_e.m_different_regs[core].m_evolr = attr->depth_R;
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -1558,57 +1558,57 @@ void InitSpu2_Inner()
 void InitSpu2()
 {
   InitSpu2_Inner();
-  spu2_regs.u.extra_regs.spdif_mode = 0x0900;
-  spu2_regs.u.extra_regs.spdif_media = 0x200;
-  spu2_regs.u.extra_regs.unknown7ca = 8;
+  spu2_regs.m_u.m_e.m_spdif_mode = 0x0900;
+  spu2_regs.m_u.m_e.m_spdif_media = 0x200;
+  spu2_regs.m_u.m_e.m_unknown7ca = 8;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00401638) --------------------------------------------------------
 void InitCoreVolume(int flag)
 {
-  spu2_regs.u.extra_regs.spdif_out = 0xC032;
-  spu2_regs.u.main_regs.core_regs[0].cregs.attr = (flag ? SD_ENABLE_EFFECTS : 0) | SD_MUTE|SD_SPU2_ON;
-  spu2_regs.u.main_regs.core_regs[1].cregs.attr = (flag ? SD_ENABLE_EFFECTS : 0) | SD_ENABLE_EX_INPUT|SD_MUTE|SD_SPU2_ON;
-  spu2_regs.u.main_regs.core_regs[0].cregs.vmixl.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.vmixl.pair[1] = 0xFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.vmixel.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.vmixel.pair[1] = 0x00FF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.vmixr.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.vmixr.pair[1] = 0x00FF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.vmixer.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.vmixer.pair[1] = 0x00FF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.mmix = 0xFF0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.vmixl.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.vmixl.pair[1] = 0xFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.vmixel.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.vmixel.pair[1] = 0x00FF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.vmixr.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.vmixr.pair[1] = 0x00FF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.vmixer.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.vmixer.pair[1] = 0x00FF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.mmix = 0xFFC;
+  spu2_regs.m_u.m_e.m_spdif_out = 0xC032;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = (flag ? SD_ENABLE_EFFECTS : 0) | SD_MUTE|SD_SPU2_ON;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_attr = (flag ? SD_ENABLE_EFFECTS : 0) | SD_ENABLE_EX_INPUT|SD_MUTE|SD_SPU2_ON;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixl.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixl.pair[1] = 0xFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixel.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixel.pair[1] = 0x00FF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixr.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixr.pair[1] = 0x00FF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixer.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixer.pair[1] = 0x00FF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_mmix = 0xFF0;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixl.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixl.pair[1] = 0xFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixel.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixel.pair[1] = 0x00FF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixr.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixr.pair[1] = 0x00FF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixer.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixer.pair[1] = 0x00FF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_mmix = 0xFFC;
   if ( !flag )
   {
-    spu2_regs.u.extra_regs.different_regs[0].mvoll = 0;
-    spu2_regs.u.extra_regs.different_regs[0].mvolr = 0;
-    spu2_regs.u.extra_regs.different_regs[0].evoll = 0;
-    spu2_regs.u.extra_regs.different_regs[0].evolr = 0;
-    spu2_regs.u.extra_regs.different_regs[1].mvoll = 0;
-    spu2_regs.u.extra_regs.different_regs[1].mvolr = 0;
-    spu2_regs.u.extra_regs.different_regs[1].evoll = 0;
-    spu2_regs.u.extra_regs.different_regs[1].evolr = 0;
-    spu2_regs.u.main_regs.core_regs[0].cregs.eea = 14;
-    spu2_regs.u.main_regs.core_regs[1].cregs.eea = 15;
+    spu2_regs.m_u.m_e.m_different_regs[0].m_mvoll = 0;
+    spu2_regs.m_u.m_e.m_different_regs[0].m_mvolr = 0;
+    spu2_regs.m_u.m_e.m_different_regs[0].m_evoll = 0;
+    spu2_regs.m_u.m_e.m_different_regs[0].m_evolr = 0;
+    spu2_regs.m_u.m_e.m_different_regs[1].m_mvoll = 0;
+    spu2_regs.m_u.m_e.m_different_regs[1].m_mvolr = 0;
+    spu2_regs.m_u.m_e.m_different_regs[1].m_evoll = 0;
+    spu2_regs.m_u.m_e.m_different_regs[1].m_evolr = 0;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_eea = 14;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_eea = 15;
   }
-  spu2_regs.u.extra_regs.different_regs[0].avoll = 0;
-  spu2_regs.u.extra_regs.different_regs[0].avolr = 0;
-  spu2_regs.u.extra_regs.different_regs[0].bvoll = 0;
-  spu2_regs.u.extra_regs.different_regs[0].bvolr = 0;
-  spu2_regs.u.extra_regs.different_regs[1].avoll = 0x7FFF;
-  spu2_regs.u.extra_regs.different_regs[1].avolr = 0x7FFF;
-  spu2_regs.u.extra_regs.different_regs[1].bvoll = 0;
-  spu2_regs.u.extra_regs.different_regs[1].bvolr = 0;
+  spu2_regs.m_u.m_e.m_different_regs[0].m_avoll = 0;
+  spu2_regs.m_u.m_e.m_different_regs[0].m_avolr = 0;
+  spu2_regs.m_u.m_e.m_different_regs[0].m_bvoll = 0;
+  spu2_regs.m_u.m_e.m_different_regs[0].m_bvolr = 0;
+  spu2_regs.m_u.m_e.m_different_regs[1].m_avoll = 0x7FFF;
+  spu2_regs.m_u.m_e.m_different_regs[1].m_avolr = 0x7FFF;
+  spu2_regs.m_u.m_e.m_different_regs[1].m_bvoll = 0;
+  spu2_regs.m_u.m_e.m_different_regs[1].m_bvolr = 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
@@ -1827,39 +1827,39 @@ int InitSpdif()
 {
   int i; // $s0
 
-  spu2_regs.u.extra_regs.spdif_out = 0;
+  spu2_regs.m_u.m_e.m_spdif_out = 0;
   libsd_do_busyloop_1(2);
-  spu2_regs.u.extra_regs.spdif_out = 0x8000;
+  spu2_regs.m_u.m_e.m_spdif_out = 0x8000;
   libsd_do_busyloop_1(1);
-  spu2_regs.u.extra_regs.different_regs[0].mvoll = 0;
-  spu2_regs.u.extra_regs.different_regs[0].mvolr = 0;
-  spu2_regs.u.extra_regs.different_regs[1].mvoll = 0;
-  spu2_regs.u.extra_regs.different_regs[1].mvolr = 0;
-  spu2_regs.u.main_regs.core_regs[0].cregs.admas = 0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.admas = 0;
-  spu2_regs.u.main_regs.core_regs[0].cregs.attr = 0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.attr = 0;
+  spu2_regs.m_u.m_e.m_different_regs[0].m_mvoll = 0;
+  spu2_regs.m_u.m_e.m_different_regs[0].m_mvolr = 0;
+  spu2_regs.m_u.m_e.m_different_regs[1].m_mvoll = 0;
+  spu2_regs.m_u.m_e.m_different_regs[1].m_mvolr = 0;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_admas = 0;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_admas = 0;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = 0;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_attr = 0;
   libsd_do_busyloop_1(1);
-  spu2_regs.u.main_regs.core_regs[0].cregs.attr = 0x8000;
-  spu2_regs.u.main_regs.core_regs[1].cregs.attr = 0x8000;
-  spu2_regs.u.extra_regs.different_regs[0].mvoll = 0;
-  spu2_regs.u.extra_regs.different_regs[0].mvolr = 0;
-  spu2_regs.u.extra_regs.different_regs[1].mvoll = 0;
-  spu2_regs.u.extra_regs.different_regs[1].mvolr = 0;
-  for ( i = 0; (spu2_regs.u.main_regs.core_regs[0].cregs.statx & 0x7FF) && (spu2_regs.u.main_regs.core_regs[1].cregs.statx & 0x7FF) && i < 0xF00; i += 1 )
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = 0x8000;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_attr = 0x8000;
+  spu2_regs.m_u.m_e.m_different_regs[0].m_mvoll = 0;
+  spu2_regs.m_u.m_e.m_different_regs[0].m_mvolr = 0;
+  spu2_regs.m_u.m_e.m_different_regs[1].m_mvoll = 0;
+  spu2_regs.m_u.m_e.m_different_regs[1].m_mvolr = 0;
+  for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_statx & 0x7FF) && (spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_statx & 0x7FF) && i < 0xF00; i += 1 )
     libsd_do_busyloop_1(1);
-  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[1] = 0xFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[1] = 0xFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.pmon.pair[0] = 0;
-  spu2_regs.u.main_regs.core_regs[0].cregs.pmon.pair[1] = 0;
-  spu2_regs.u.main_regs.core_regs[0].cregs.non.pair[0] = 0;
-  spu2_regs.u.main_regs.core_regs[0].cregs.non.pair[1] = 0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.pmon.pair[0] = 0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.pmon.pair[1] = 0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.non.pair[0] = 0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.non.pair[1] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_koff.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_koff.pair[1] = 0xFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_koff.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_koff.pair[1] = 0xFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_pmon.pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_pmon.pair[1] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_non.pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_non.pair[1] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_pmon.pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_pmon.pair[1] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_non.pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_non.pair[1] = 0;
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -1922,20 +1922,20 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
   {
     case 2:
       tsa_tmp = ((u16)(uiptr)vararg2 >> 1) & ~7u;
-      spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.tsa.pair[1] = tsa_tmp;
-      spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.tsa.pair[0] = (tsa_tmp >> 16) & 0xFFFF;
+      spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_tsa.pair[1] = tsa_tmp;
+      spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_tsa.pair[0] = (tsa_tmp >> 16) & 0xFFFF;
       return 0;
     case 4:
-      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_DMA_IN_PROCESS) )
+      if ( (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & SD_DMA_IN_PROCESS) )
         return -1;
       if ( (*(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) & SD_DMA_START) )
         return -1;
-      if ( spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas )
+      if ( spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_admas )
         return -1;
       return 0;
     case 5:
       CpuSuspendIntr(&state);
-      spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr |= SD_DMA_READ;
+      spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr |= SD_DMA_READ;
       CpuResumeIntr(state);
       SetDmaRead(core_tmp1);
       vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
@@ -1946,7 +1946,7 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
       return vararg3_cal << 6;
     case 6:
       CpuSuspendIntr(&state);
-      spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr = (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & ~SD_CORE_DMA) | SD_DMA_WRITE;
+      spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_WRITE;
       CpuResumeIntr(state);
       SetDmaWrite(core_tmp1);
       vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
@@ -1963,27 +1963,27 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
         blocktransbufitem = BlockTransBuff[core_tmp1];
         dmamagictmp = *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr);
         *(core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].chcr : &iop_mmio_hwport->dmac1.oldch[4].chcr) &= ~SD_DMA_START;
-        if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) )
+        if ( (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & SD_CORE_DMA) )
         {
-          for ( i = 0; !(spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.statx & 0x80) && i < 0x1000000; i += 1 )
+          for ( i = 0; !(spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
           {
           }
         }
       }
-      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) )
+      if ( (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & SD_CORE_DMA) )
       {
         CpuSuspendIntr(&state);
-        spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr &= ~SD_CORE_DMA;
+        spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr &= ~SD_CORE_DMA;
         CpuResumeIntr(state);
-        for ( i = 0; (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
+        for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
         {
         }
       }
       hichk = 0;
-      if ( (spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas & 7) )
+      if ( (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_admas & 7) )
       {
         hichk = 1;
-        spu2_regs.u.main_regs.core_regs[core_tmp1].cregs.admas = 0;
+        spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_admas = 0;
       }
       if ( QueryIntrContext() )
         iSetEventFlag(VoiceTransCompleteEf[core_tmp1], 1);
@@ -2013,15 +2013,15 @@ int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size
     if ( size_tmp < 0x41 )
       count = size_tmp;
     for ( i = 0; i < (count / 2); i += 1 )
-      spu2_regs.u.main_regs.core_regs[chan].cregs.xferdata_1ac = iopaddr[i];
+      spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_xferdata = iopaddr[i];
     CpuSuspendIntr(&state);
-    spu2_regs.u.main_regs.core_regs[chan].cregs.attr = (spu2_regs.u.main_regs.core_regs[chan].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
+    spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
     CpuResumeIntr(state);
-    for ( i = 0; (spu2_regs.u.main_regs.core_regs[chan].cregs.statx & SD_IO_IN_PROCESS) && i < 0xF00; i += 1 )
+    for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_statx & SD_IO_IN_PROCESS) && i < 0xF00; i += 1 )
       libsd_do_busyloop_1(1);
   }
   CpuSuspendIntr(&state);
-  spu2_regs.u.main_regs.core_regs[chan].cregs.attr &= ~SD_CORE_DMA;
+  spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
   VoiceTransIoMode[chan] = 1;
   return 0;
@@ -2031,8 +2031,8 @@ int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size
 //----- (004029A8) --------------------------------------------------------
 void do_finish_block_clean_xfer(int core)
 {
-  spu2_regs.u.main_regs.core_regs[core].cregs.attr &= ~SD_CORE_DMA;
-  spu2_regs.u.main_regs.core_regs[core].cregs.admas = 0;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
@@ -2063,11 +2063,11 @@ int __fastcall TransInterrupt(IntrData *intr)
   switch ( intr->mode & 0x300 )
   {
     case 0x100:
-      for ( i = 0; !(spu2_regs.u.main_regs.core_regs[mode_1].cregs.statx & 0x80) && i < 0x1000000; i += 1 )
+      for ( i = 0; !(spu2_regs.m_u.m_m.m_core_regs[mode_1].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
       {
       }
-      spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr &= ~SD_CORE_DMA;
-      for ( i = 0; (spu2_regs.u.main_regs.core_regs[mode_1].cregs.attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[mode_1].m_cregs.m_attr &= ~SD_CORE_DMA;
+      for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[mode_1].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
       {
       }
       if ( !no_flush_cache )
@@ -2154,7 +2154,7 @@ u32 __fastcall thunk_sceSdBlockTransStatus(int channel)
   USE_IOP_MMIO_HWPORT();
 
   dmamagictmp1 = *(channel ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr);
-  if ( !(spu2_regs.u.main_regs.core_regs[channel].cregs.admas & 7) )
+  if ( !(spu2_regs.m_u.m_m.m_core_regs[channel].m_cregs.m_admas & 7) )
     dmamagictmp1 = 0;
   return (BlockTransBuff[channel] << 24) | (dmamagictmp1 & ~0xFF000000);
 }
@@ -2199,11 +2199,11 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
     size_align = size;
   }
   CpuSuspendIntr(&state);
-  spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.attr &= ~SD_CORE_DMA;
+  spu2_regs.m_u.m_m.m_core_regs[chan_tmp0].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
-  spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.tsa.pair[0] = 0;
-  spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.tsa.pair[1] = 0;
-  spu2_regs.u.main_regs.core_regs[chan_tmp0].cregs.admas = 1 << chan_tmp0;
+  spu2_regs.m_u.m_m.m_core_regs[chan_tmp0].m_cregs.m_tsa.pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[chan_tmp0].m_cregs.m_tsa.pair[1] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[chan_tmp0].m_cregs.m_admas = 1 << chan_tmp0;
   SetDmaWrite(chan_tmp0);
   *(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = startaddr_tmp;
   *(vu16 *)(chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr) = 16;
@@ -2228,13 +2228,13 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
   BlockTransBuff[chan_tmp1] = 0;
   BlockTransSize[chan_tmp1] = size;
   CpuSuspendIntr(&state);
-  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.attr &= ~SD_CORE_DMA;
+  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
-  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.tsa.pair[0] = 0;
-  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.tsa.pair[1] = 2 * (mode & ~0xF0FF) + 1024;
-  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.unk1ae = (unsigned __int16)(mode & ~0xFFF) >> 11;
+  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_tsa.pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_tsa.pair[1] = 2 * (mode & ~0xF0FF) + 1024;
+  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_unk1ae = (unsigned __int16)(mode & ~0xFFF) >> 11;
   libsd_do_busyloop_1(3);
-  spu2_regs.u.main_regs.core_regs[chan_tmp1].cregs.admas = 4;
+  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_admas = 4;
   SetDmaRead(chan_tmp1);
   *(chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) = iopaddr;
   *(vu16 *)(chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0].bcr : &iop_mmio_hwport->dmac1.oldch[4].bcr) = 16;
@@ -2600,8 +2600,8 @@ int __fastcall SetSpdifMode(int val)
   __int16 spdif_out_new; // $t0
   __int16 spdif_mode_new; // $a1
 
-  spdif_out_new = spu2_regs.u.extra_regs.spdif_out & ~0x1A8;
-  spdif_mode_new = spu2_regs.u.extra_regs.spdif_mode & ~0xBF06;
+  spdif_out_new = spu2_regs.m_u.m_e.m_spdif_out & ~0x1A8;
+  spdif_mode_new = spu2_regs.m_u.m_e.m_spdif_mode & ~0xBF06;
   switch ( val & 0xF )
   {
     case 0:
@@ -2624,20 +2624,20 @@ int __fastcall SetSpdifMode(int val)
   switch ( val & 0xF00 )
   {
     case 0x400:
-      spu2_regs.u.extra_regs.spdif_media = 0;
+      spu2_regs.m_u.m_e.m_spdif_media = 0;
       spdif_mode_new |= 0x100;
       break;
     case 0x800:
-      spu2_regs.u.extra_regs.spdif_media = 512;
+      spu2_regs.m_u.m_e.m_spdif_media = 512;
       spdif_mode_new |= 0x1900;
       break;
     default:
-      spu2_regs.u.extra_regs.spdif_media = 512;
+      spu2_regs.m_u.m_e.m_spdif_media = 512;
       spdif_mode_new |= 0x900;
       break;
   }
-  spu2_regs.u.extra_regs.spdif_out = spdif_out_new;
-  spu2_regs.u.extra_regs.spdif_mode = spdif_mode_new;
+  spu2_regs.m_u.m_e.m_spdif_out = spdif_out_new;
+  spu2_regs.m_u.m_e.m_spdif_mode = spdif_mode_new;
   SpdifSettings = val;
   return 0;
 }
@@ -2688,13 +2688,13 @@ u16 __cdecl sceSdGetCoreAttr(u16 entry)
   switch ( entry & 0xE )
   {
     case SD_CORE_EFFECT_ENABLE:
-      return (spu2_regs.u.main_regs.core_regs[entry & 1].cregs.attr >> 7) & 1;
+      return (spu2_regs.m_u.m_m.m_core_regs[entry & 1].m_cregs.m_attr >> 7) & 1;
     case SD_CORE_IRQ_ENABLE:
-      return (spu2_regs.u.main_regs.core_regs[entry & 1].cregs.attr >> 6) & 1;
+      return (spu2_regs.m_u.m_m.m_core_regs[entry & 1].m_cregs.m_attr >> 6) & 1;
     case SD_CORE_MUTE_ENABLE:
-      return (spu2_regs.u.main_regs.core_regs[entry & 1].cregs.attr >> 14) & 1;
+      return (spu2_regs.m_u.m_m.m_core_regs[entry & 1].m_cregs.m_attr >> 14) & 1;
     case SD_CORE_NOISE_CLK:
-      return (spu2_regs.u.main_regs.core_regs[entry & 1].cregs.attr >> 8) & 0x3F;
+      return (spu2_regs.m_u.m_m.m_core_regs[entry & 1].m_cregs.m_attr >> 8) & 0x3F;
     case SD_CORE_SPDIF_MODE:
       return SpdifSettings & 0xFFFF;
     default:
@@ -2766,12 +2766,12 @@ int __fastcall Spu2Interrupt(void *data)
   (void)data;
   if ( !Spu2IntrHandler && !Spu2IrqCallback )
     return 1;
-  while ( ( val = (unsigned __int8)(spu2_regs.u.extra_regs.spdif_irqinfo & 0xC) >> 2 ) )
+  while ( ( val = (unsigned __int8)(spu2_regs.m_u.m_e.m_spdif_irqinfo & 0xC) >> 2 ) )
   {
     if ( val & 1 )
-      spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~0x40u;
+      spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~0x40u;
     if ( val & 2 )
-      spu2_regs.u.main_regs.core_regs[1].cregs.attr &= ~0x40u;
+      spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_attr &= ~0x40u;
     if ( Spu2IntrHandler )
       Spu2IntrHandler(val, Spu2IntrHandlerData);
     else if ( Spu2IrqCallback )
@@ -2786,46 +2786,46 @@ int InitVoices()
 {
   int i; // [sp+10h] [-8h]
 
-  spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~SD_CORE_DMA;
-  spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[0] = 0x0000;
-  spu2_regs.u.main_regs.core_regs[0].cregs.tsa.pair[1] = 0x2800;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_tsa.pair[0] = 0x0000;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_tsa.pair[1] = 0x2800;
   for ( i = 0; i < 8; i += 1 )
-    spu2_regs.u.main_regs.core_regs[0].cregs.xferdata_1ac = VoiceDataInit[i];
-  spu2_regs.u.main_regs.core_regs[0].cregs.attr = (spu2_regs.u.main_regs.core_regs[0].cregs.attr & ~SD_CORE_DMA) | SD_DMA_IO;
-  for ( i = 0; (spu2_regs.u.main_regs.core_regs[0].cregs.statx & SD_IO_IN_PROCESS) && i <= 0x1000000; i += 1 )
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_xferdata = VoiceDataInit[i];
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
+  for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_statx & SD_IO_IN_PROCESS) && i <= 0x1000000; i += 1 )
     libsd_do_busyloop_1(1);
-  spu2_regs.u.main_regs.core_regs[0].cregs.attr &= ~SD_CORE_DMA;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
   for ( i = 0; i < 24; i += 1 )
   {
-    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i].voll = 0;
-    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i].voll = 0;
-    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i].volr = 0;
-    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i].volr = 0;
-    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i].pitch = 0x3FFF;
-    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i].pitch = 0x3FFF;
-    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i].adsr1 = 0;
-    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i].adsr1 = 0;
-    spu2_regs.u.main_regs.core_regs[1].cregs.voice_params[i].adsr2 = 0;
-    spu2_regs.u.main_regs.core_regs[0].cregs.voice_params[i].adsr2 = 0;
-    spu2_regs.u.main_regs.core_regs[1].cregs.voice_address[i].ssa.pair[0] = 0;
-    spu2_regs.u.main_regs.core_regs[0].cregs.voice_address[i].ssa.pair[0] = 0;
-    spu2_regs.u.main_regs.core_regs[1].cregs.voice_address[i].ssa.pair[1] = 0x2800;
-    spu2_regs.u.main_regs.core_regs[0].cregs.voice_address[i].ssa.pair[1] = 0x2800;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_voll = 0;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_voll = 0;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_volr = 0;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_volr = 0;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_pitch = 0x3FFF;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_pitch = 0x3FFF;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_adsr1 = 0;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_adsr1 = 0;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_adsr2 = 0;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_adsr2 = 0;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_address[i].m_ssa.pair[0] = 0;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_address[i].m_ssa.pair[0] = 0;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_address[i].m_ssa.pair[1] = 0x2800;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_address[i].m_ssa.pair[1] = 0x2800;
   }
-  spu2_regs.u.main_regs.core_regs[1].cregs.kon.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.kon.pair[1] = 0xFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.kon.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.kon.pair[1] = 0xFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_kon.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_kon.pair[1] = 0xFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_kon.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_kon.pair[1] = 0xFF;
   libsd_do_busyloop_1(3);
-  spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[1].cregs.koff.pair[1] = 0xFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[0] = 0xFFFF;
-  spu2_regs.u.main_regs.core_regs[0].cregs.koff.pair[1] = 0xFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_koff.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_koff.pair[1] = 0xFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_koff.pair[0] = 0xFFFF;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_koff.pair[1] = 0xFF;
   libsd_do_busyloop_1(3);
-  spu2_regs.u.main_regs.core_regs[0].cregs.endx.pair[1] = 0;
-  spu2_regs.u.main_regs.core_regs[0].cregs.endx.pair[0] = 0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.endx.pair[1] = 0;
-  spu2_regs.u.main_regs.core_regs[1].cregs.endx.pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_endx.pair[1] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_endx.pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_endx.pair[1] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_endx.pair[0] = 0;
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -2870,10 +2870,10 @@ int __fastcall Reset(char flag)
     bzero(EffectAttr, 40);
     EffectAddr[0] = 0x1DFFF0;
     EffectAddr[1] = 0x1FFFF0;
-    spu2_regs.u.main_regs.core_regs[0].cregs.esa.pair[0] = 0x000E;
-    spu2_regs.u.main_regs.core_regs[0].cregs.esa.pair[1] = 0xFFF8;
-    spu2_regs.u.main_regs.core_regs[1].cregs.esa.pair[0] = 0x000F;
-    spu2_regs.u.main_regs.core_regs[1].cregs.esa.pair[1] = 0xFFF8;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_esa.pair[0] = 0x000E;
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_esa.pair[1] = 0xFFF8;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_esa.pair[0] = 0x000F;
+    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_esa.pair[1] = 0xFFF8;
   }
   efparam.attr = 2;
   efparam.bits = 1;
