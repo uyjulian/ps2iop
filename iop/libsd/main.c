@@ -925,7 +925,7 @@ static const u32 g_ClearEffectData[] =
   0u,
   0u
 };
-static spu2_regs_t *g_ptr_to_bf900000 = (spu2_regs_t *)0xBF900000;
+static spu2_regs_t *const g_ptr_to_bf900000 = (spu2_regs_t *)0xBF900000;
 // Unofficial: move to bss
 static int g_VoiceTransStatus[2];
 static int g_VoiceTransIoMode[] = { 1, 1 };
