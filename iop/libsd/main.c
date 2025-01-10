@@ -157,8 +157,39 @@ typedef struct spu2_regs_ /* base => 0xBF900000 */
 
 struct mode_data_struct
 {
-  int m_mode_flags;
-  __int16 m_mode_data[32];
+  u32 m_mode_flags;
+  u16 m_d_apf1_size;
+  u16 m_d_apf2_size;
+  u16 m_d_iir_vol;
+  u16 m_d_comb1_vol;
+  u16 m_d_comb2_vol;
+  u16 m_d_comb3_vol;
+  u16 m_d_comb4_vol;
+  u16 m_d_wall_vol;
+  u16 m_d_apf1_vol;
+  u16 m_d_apf2_vol;
+  u16 m_d_same_l_dst;
+  u16 m_d_same_r_dst;
+  u16 m_d_comb1_l_src;
+  u16 m_d_comb1_r_src;
+  u16 m_d_comb2_l_src;
+  u16 m_d_comb2_r_src;
+  u16 m_d_same_l_src;
+  u16 m_d_same_r_src;
+  u16 m_d_diff_l_dst;
+  u16 m_d_diff_r_dst;
+  u16 m_d_comb3_l_src;
+  u16 m_d_comb3_r_src;
+  u16 m_d_comb4_l_src;
+  u16 m_d_comb4_r_src;
+  u16 m_d_diff_l_src;
+  u16 m_d_diff_r_src;
+  u16 m_d_apf1_l_dst;
+  u16 m_d_apf1_r_dst;
+  u16 m_d_apf2_l_dst;
+  u16 m_d_apf2_r_dst;
+  u16 m_d_in_coef_l;
+  u16 m_d_in_coef_r;
 };
 
 typedef struct
@@ -285,374 +316,354 @@ static const int g_EffectSizes[] = { 2, 1240, 1000, 2312, 3580, 5564, 7896, 1229
 static const struct mode_data_struct g_EffectParams[] =
 {
   {
-    0,
-    {
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
-    }
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    1u,
+    1u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    1u,
+    1u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u
   },
   {
-    0,
-    {
-      125,
-      91,
-      28032,
-      21688,
-      -16688,
-      0,
-      0,
-      -17792,
-      22528,
-      21248,
-      1238,
-      819,
-      1008,
-      551,
-      884,
-      495,
-      822,
-      439,
-      821,
-      438,
-      820,
-      437,
-      820,
-      437,
-      820,
-      437,
-      436,
-      310,
-      184,
-      92,
-      32768,
-      32768
-    }
+    0u,
+    125u,
+    91u,
+    28032u,
+    21688u,
+    48848u,
+    0u,
+    0u,
+    47744u,
+    22528u,
+    21248u,
+    1238u,
+    819u,
+    1008u,
+    551u,
+    884u,
+    495u,
+    822u,
+    439u,
+    821u,
+    438u,
+    820u,
+    437u,
+    820u,
+    437u,
+    820u,
+    437u,
+    436u,
+    310u,
+    184u,
+    92u,
+    32768u,
+    32768u
   },
   {
-    0,
-    {
-      51,
-      37,
-      28912,
-      20392,
-      -17184,
-      17424,
-      -16144,
-      -25600,
-      21120,
-      20160,
-      996,
-      795,
-      932,
-      687,
-      882,
-      614,
-      796,
-      605,
-      604,
-      398,
-      559,
-      309,
-      466,
-      183,
-      399,
-      181,
-      180,
-      128,
-      76,
-      38,
-      32768,
-      32768
-    }
+    0u,
+    51u,
+    37u,
+    28912u,
+    20392u,
+    48352u,
+    17424u,
+    49392u,
+    39936u,
+    21120u,
+    20160u,
+    996u,
+    795u,
+    932u,
+    687u,
+    882u,
+    614u,
+    796u,
+    605u,
+    604u,
+    398u,
+    559u,
+    309u,
+    466u,
+    183u,
+    399u,
+    181u,
+    180u,
+    128u,
+    76u,
+    38u,
+    32768u,
+    32768u
   },
   {
-    0,
-    {
-      177,
-      127,
-      28912,
-      20392,
-      -17184,
-      17680,
-      -16656,
-      -19264,
-      21120,
-      20160,
-      2308,
-      1899,
-      2084,
-      1631,
-      1954,
-      1558,
-      1900,
-      1517,
-      1516,
-      1070,
-      1295,
-      773,
-      1122,
-      695,
-      1071,
-      613,
-      612,
-      434,
-      256,
-      128,
-      32768,
-      32768
-    }
+    0u,
+    177u,
+    127u,
+    28912u,
+    20392u,
+    48352u,
+    17680u,
+    48880u,
+    46272u,
+    21120u,
+    20160u,
+    2308u,
+    1899u,
+    2084u,
+    1631u,
+    1954u,
+    1558u,
+    1900u,
+    1517u,
+    1516u,
+    1070u,
+    1295u,
+    773u,
+    1122u,
+    695u,
+    1071u,
+    613u,
+    612u,
+    434u,
+    256u,
+    128u,
+    32768u,
+    32768u
   },
   {
-    0,
-    {
-      227,
-      169,
-      28512,
-      20392,
-      -17184,
-      17680,
-      -16656,
-      -22912,
-      22144,
-      21184,
-      3579,
-      2904,
-      3337,
-      2620,
-      3033,
-      2419,
-      2905,
-      2266,
-      2265,
-      1513,
-      2028,
-      1200,
-      1775,
-      978,
-      1514,
-      797,
-      796,
-      568,
-      340,
-      170,
-      32768,
-      32768
-    }
+    0u,
+    227u,
+    169u,
+    28512u,
+    20392u,
+    48352u,
+    17680u,
+    48880u,
+    42624u,
+    22144u,
+    21184u,
+    3579u,
+    2904u,
+    3337u,
+    2620u,
+    3033u,
+    2419u,
+    2905u,
+    2266u,
+    2265u,
+    1513u,
+    2028u,
+    1200u,
+    1775u,
+    978u,
+    1514u,
+    797u,
+    796u,
+    568u,
+    340u,
+    170u,
+    32768u,
+    32768u
   },
   {
-    0,
-    {
-      421,
-      313,
-      24576,
-      20480,
-      19456,
-      -18432,
-      -17408,
-      -16384,
-      24576,
-      23552,
-      5562,
-      4539,
-      5314,
-      4285,
-      4540,
-      3521,
-      4544,
-      3523,
-      3520,
-      2497,
-      3012,
-      1985,
-      2560,
-      1741,
-      2498,
-      1473,
-      1472,
-      1050,
-      628,
-      314,
-      32768,
-      32768
-    }
+    0u,
+    421u,
+    313u,
+    24576u,
+    20480u,
+    19456u,
+    47104u,
+    48128u,
+    49152u,
+    24576u,
+    23552u,
+    5562u,
+    4539u,
+    5314u,
+    4285u,
+    4540u,
+    3521u,
+    4544u,
+    3523u,
+    3520u,
+    2497u,
+    3012u,
+    1985u,
+    2560u,
+    1741u,
+    2498u,
+    1473u,
+    1472u,
+    1050u,
+    628u,
+    314u,
+    32768u,
+    32768u
   },
   {
-    0,
-    {
-      829,
-      561,
-      32256,
-      20480,
-      -19456,
-      -20480,
-      19456,
-      -20480,
-      24576,
-      21504,
-      7894,
-      6705,
-      7444,
-      6203,
-      7106,
-      5810,
-      6706,
-      5615,
-      5614,
-      4181,
-      4916,
-      3885,
-      4598,
-      3165,
-      4182,
-      2785,
-      2784,
-      1954,
-      1124,
-      562,
-      32768,
-      32768
-    }
+    0u,
+    829u,
+    561u,
+    32256u,
+    20480u,
+    46080u,
+    45056u,
+    19456u,
+    45056u,
+    24576u,
+    21504u,
+    7894u,
+    6705u,
+    7444u,
+    6203u,
+    7106u,
+    5810u,
+    6706u,
+    5615u,
+    5614u,
+    4181u,
+    4916u,
+    3885u,
+    4598u,
+    3165u,
+    4182u,
+    2785u,
+    2784u,
+    1954u,
+    1124u,
+    562u,
+    32768u,
+    32768u
   },
   {
-    0,
-    {
-      3,
-      3,
-      32767,
-      32767,
-      0,
-      0,
-      0,
-      -32512,
-      0,
-      0,
-      8189,
-      4093,
-      4105,
-      9,
-      0,
-      0,
-      4105,
-      9,
-      8191,
-      8191,
-      8190,
-      8190,
-      8190,
-      8190,
-      8190,
-      8190,
-      4104,
-      4100,
-      8,
-      4,
-      32768,
-      32768
-    }
+    0u,
+    3u,
+    3u,
+    32767u,
+    32767u,
+    0u,
+    0u,
+    0u,
+    33024u,
+    0u,
+    0u,
+    8189u,
+    4093u,
+    4105u,
+    9u,
+    0u,
+    0u,
+    4105u,
+    9u,
+    8191u,
+    8191u,
+    8190u,
+    8190u,
+    8190u,
+    8190u,
+    8190u,
+    8190u,
+    4104u,
+    4100u,
+    8u,
+    4u,
+    32768u,
+    32768u
   },
   {
-    0,
-    {
-      3,
-      3,
-      32767,
-      32767,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      8189,
-      4093,
-      4105,
-      9,
-      0,
-      0,
-      4105,
-      9,
-      8191,
-      8191,
-      8190,
-      8190,
-      8190,
-      8190,
-      8190,
-      8190,
-      4104,
-      4100,
-      8,
-      4,
-      32768,
-      32768
-    }
+    0u,
+    3u,
+    3u,
+    32767u,
+    32767u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    0u,
+    8189u,
+    4093u,
+    4105u,
+    9u,
+    0u,
+    0u,
+    4105u,
+    9u,
+    8191u,
+    8191u,
+    8190u,
+    8190u,
+    8190u,
+    8190u,
+    8190u,
+    8190u,
+    4104u,
+    4100u,
+    8u,
+    4u,
+    32768u,
+    32768u
   },
   {
-    0,
-    {
-      23,
-      19,
-      28912,
-      20392,
-      -17184,
-      17680,
-      -16656,
-      -31488,
-      24448,
-      21696,
-      881,
-      687,
-      741,
-      479,
-      688,
-      471,
-      856,
-      618,
-      470,
-      286,
-      301,
-      177,
-      287,
-      89,
-      416,
-      227,
-      88,
-      64,
-      40,
-      20,
-      32768,
-      32768
-    }
+    0u,
+    23u,
+    19u,
+    28912u,
+    20392u,
+    48352u,
+    17680u,
+    48880u,
+    34048u,
+    24448u,
+    21696u,
+    881u,
+    687u,
+    741u,
+    479u,
+    688u,
+    471u,
+    856u,
+    618u,
+    470u,
+    286u,
+    301u,
+    177u,
+    287u,
+    89u,
+    416u,
+    227u,
+    88u,
+    64u,
+    40u,
+    20u,
+    32768u,
+    32768u
   }
 };
 static const u32 g_ClearEffectData[] =
@@ -1133,69 +1144,69 @@ static void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
   if ( !deref_mode_data )
     deref_mode_data = 0xFFFFFFFF;
   if ( (deref_mode_data & 1) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, (unsigned __int16)mode_data->m_mode_data[0]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, (unsigned __int16)mode_data->m_d_apf1_size);
   if ( (deref_mode_data & 2) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, (unsigned __int16)mode_data->m_mode_data[1]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, (unsigned __int16)mode_data->m_d_apf2_size);
   if ( ((deref_mode_data & 4)) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_iir_vol = mode_data->m_mode_data[2];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_iir_vol = mode_data->m_d_iir_vol;
   if ( (deref_mode_data & 8) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb1_vol = mode_data->m_mode_data[3];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb1_vol = mode_data->m_d_comb1_vol;
   if ( (deref_mode_data & 0x10) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb2_vol = mode_data->m_mode_data[4];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb2_vol = mode_data->m_d_comb2_vol;
   if ( (deref_mode_data & 0x20) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb3_vol = mode_data->m_mode_data[5];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb3_vol = mode_data->m_d_comb3_vol;
   if ( (deref_mode_data & 0x40) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb4_vol = mode_data->m_mode_data[6];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb4_vol = mode_data->m_d_comb4_vol;
   if ( (deref_mode_data & 0x80) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_wall_vol = mode_data->m_mode_data[7];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_wall_vol = mode_data->m_d_wall_vol;
   if ( (deref_mode_data & 0x100) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf1_vol = mode_data->m_mode_data[8];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf1_vol = mode_data->m_d_apf1_vol;
   if ( (deref_mode_data & 0x200) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf2_vol = mode_data->m_mode_data[9];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf2_vol = mode_data->m_d_apf2_vol;
   if ( (deref_mode_data & 0x400) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, (unsigned __int16)mode_data->m_mode_data[10]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, (unsigned __int16)mode_data->m_d_same_l_dst);
   if ( (deref_mode_data & 0x800) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, (unsigned __int16)mode_data->m_mode_data[11]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, (unsigned __int16)mode_data->m_d_same_r_dst);
   if ( (deref_mode_data & 0x1000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, (unsigned __int16)mode_data->m_mode_data[12]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, (unsigned __int16)mode_data->m_d_comb1_l_src);
   if ( (deref_mode_data & 0x2000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, (unsigned __int16)mode_data->m_mode_data[13]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, (unsigned __int16)mode_data->m_d_comb1_r_src);
   if ( (deref_mode_data & 0x4000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, (unsigned __int16)mode_data->m_mode_data[14]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, (unsigned __int16)mode_data->m_d_comb2_l_src);
   if ( (deref_mode_data & 0x8000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, (unsigned __int16)mode_data->m_mode_data[15]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, (unsigned __int16)mode_data->m_d_comb2_r_src);
   if ( (deref_mode_data & 0x10000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, (unsigned __int16)mode_data->m_mode_data[16]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, (unsigned __int16)mode_data->m_d_same_l_src);
   if ( (deref_mode_data & 0x20000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, (unsigned __int16)mode_data->m_mode_data[17]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, (unsigned __int16)mode_data->m_d_same_r_src);
   if ( (deref_mode_data & 0x40000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, (unsigned __int16)mode_data->m_mode_data[18]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, (unsigned __int16)mode_data->m_d_diff_l_dst);
   if ( (deref_mode_data & 0x80000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, (unsigned __int16)mode_data->m_mode_data[19]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, (unsigned __int16)mode_data->m_d_diff_r_dst);
   if ( (deref_mode_data & 0x100000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, (unsigned __int16)mode_data->m_mode_data[20]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, (unsigned __int16)mode_data->m_d_comb3_l_src);
   if ( (deref_mode_data & 0x200000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, (unsigned __int16)mode_data->m_mode_data[21]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, (unsigned __int16)mode_data->m_d_comb3_r_src);
   if ( (deref_mode_data & 0x400000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, (unsigned __int16)mode_data->m_mode_data[22]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, (unsigned __int16)mode_data->m_d_comb4_l_src);
   if ( (deref_mode_data & 0x800000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, (unsigned __int16)mode_data->m_mode_data[23]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, (unsigned __int16)mode_data->m_d_comb4_r_src);
   if ( (deref_mode_data & 0x1000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, (unsigned __int16)mode_data->m_mode_data[24]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, (unsigned __int16)mode_data->m_d_diff_l_src);
   if ( (deref_mode_data & 0x2000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, (unsigned __int16)mode_data->m_mode_data[25]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, (unsigned __int16)mode_data->m_d_diff_r_src);
   if ( (deref_mode_data & 0x4000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, (unsigned __int16)mode_data->m_mode_data[26]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, (unsigned __int16)mode_data->m_d_apf1_l_dst);
   if ( (deref_mode_data & 0x8000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, (unsigned __int16)mode_data->m_mode_data[27]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, (unsigned __int16)mode_data->m_d_apf1_r_dst);
   if ( (deref_mode_data & 0x10000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, (unsigned __int16)mode_data->m_mode_data[28]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, (unsigned __int16)mode_data->m_d_apf2_l_dst);
   if ( (deref_mode_data & 0x20000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, (unsigned __int16)mode_data->m_mode_data[29]);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, (unsigned __int16)mode_data->m_d_apf2_r_dst);
   if ( (deref_mode_data & 0x40000000) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_l = mode_data->m_mode_data[30];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_l = mode_data->m_d_in_coef_l;
   if ( (deref_mode_data & 0x80000000) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_r = mode_data->m_mode_data[31];
+    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_r = mode_data->m_d_in_coef_r;
 }
 
 //----- (00400660) --------------------------------------------------------
@@ -1388,18 +1399,18 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     g_EffectAttr[core].delay = delay;
     delay += 1;
     delay &= 0xFFFF;
-    feedback_tmp = ((unsigned __int16)delay << 6) - (__int16)mode_data.m_mode_data[0];
+    feedback_tmp = ((unsigned __int16)delay << 6) - (__int16)mode_data.m_d_apf1_size;
     delay <<= 5;
     delay &= 0xFFFF;
-    mode_data.m_mode_data[10] = feedback_tmp;
-    mode_data.m_mode_data[11] = delay - mode_data.m_mode_data[1];
-    mode_data.m_mode_data[16] = mode_data.m_mode_data[17] + delay;
-    mode_data.m_mode_data[12] = mode_data.m_mode_data[13] + delay;
-    mode_data.m_mode_data[27] = mode_data.m_mode_data[29] + delay;
-    mode_data.m_mode_data[26] = mode_data.m_mode_data[28] + delay;
+    mode_data.m_d_same_l_dst = feedback_tmp;
+    mode_data.m_d_same_r_dst = delay - mode_data.m_d_apf2_size;
+    mode_data.m_d_same_l_src = mode_data.m_d_same_r_src + delay;
+    mode_data.m_d_comb1_l_src = mode_data.m_d_comb1_r_src + delay;
+    mode_data.m_d_apf1_r_dst = mode_data.m_d_apf2_r_dst + delay;
+    mode_data.m_d_apf1_l_dst = mode_data.m_d_apf2_l_dst + delay;
     feedback = attr->feedback;
     g_EffectAttr[core].feedback = feedback;
-    mode_data.m_mode_data[7] = 258 * feedback;
+    mode_data.m_d_wall_vol = 258 * feedback;
   }
   effects_enabled = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
   if ( effects_enabled )
@@ -1501,15 +1512,15 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
     g_EffectAttr[core].delay = attr->delay;
     g_EffectAttr[core].feedback = attr->feedback;
     delay_plus_one = g_EffectAttr[core].delay + 1;
-    mode_data.m_mode_data[10] = (__int16)(((unsigned __int16)delay_plus_one << 6) - (__int16)mode_data.m_mode_data[0]);
+    mode_data.m_d_same_l_dst = (__int16)(((unsigned __int16)delay_plus_one << 6) - (__int16)mode_data.m_d_apf1_size);
     delay_plus_one <<= 5;
     delay_plus_one &= 0xFFFF;
-    mode_data.m_mode_data[11] = delay_plus_one - mode_data.m_mode_data[1];
-    mode_data.m_mode_data[12] = mode_data.m_mode_data[13] + delay_plus_one;
-    mode_data.m_mode_data[16] = mode_data.m_mode_data[17] + delay_plus_one;
-    mode_data.m_mode_data[26] = mode_data.m_mode_data[28] + delay_plus_one;
-    mode_data.m_mode_data[27] = mode_data.m_mode_data[29] + delay_plus_one;
-    mode_data.m_mode_data[7] = 258 * g_EffectAttr[core].feedback;
+    mode_data.m_d_same_r_dst = delay_plus_one - mode_data.m_d_apf2_size;
+    mode_data.m_d_comb1_l_src = mode_data.m_d_comb1_r_src + delay_plus_one;
+    mode_data.m_d_same_l_src = mode_data.m_d_same_r_src + delay_plus_one;
+    mode_data.m_d_apf1_l_dst = mode_data.m_d_apf2_l_dst + delay_plus_one;
+    mode_data.m_d_apf1_r_dst = mode_data.m_d_apf2_r_dst + delay_plus_one;
+    mode_data.m_d_wall_vol = 258 * g_EffectAttr[core].feedback;
     SetEffectData(core, &mode_data);
   }
   spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
