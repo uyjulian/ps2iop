@@ -1136,7 +1136,7 @@ static void SetEffectRegisterPair(spu2_u16pair_t *pair, int val)
 }
 
 //----- (0040013C) --------------------------------------------------------
-static void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
+static void __cdecl SetEffectData(int core, const struct mode_data_struct *mode_data)
 {
   int deref_mode_data; // $s0
 
