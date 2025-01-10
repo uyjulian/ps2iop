@@ -1138,74 +1138,74 @@ static void SetEffectRegisterPair(spu2_u16pair_t *pair, int val)
 //----- (0040013C) --------------------------------------------------------
 static void __cdecl SetEffectData(int core, const struct mode_data_struct *mode_data)
 {
-  int deref_mode_data; // $s0
+  int mode_flags; // $s0
 
-  deref_mode_data = mode_data->m_mode_flags;
-  if ( !deref_mode_data )
-    deref_mode_data = 0xFFFFFFFF;
-  if ( (deref_mode_data & 1) )
+  mode_flags = mode_data->m_mode_flags;
+  if ( !mode_flags )
+    mode_flags = 0xFFFFFFFF;
+  if ( (mode_flags & 1) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, (unsigned __int16)mode_data->m_d_apf1_size);
-  if ( (deref_mode_data & 2) )
+  if ( (mode_flags & 2) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, (unsigned __int16)mode_data->m_d_apf2_size);
-  if ( ((deref_mode_data & 4)) )
+  if ( ((mode_flags & 4)) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_iir_vol = mode_data->m_d_iir_vol;
-  if ( (deref_mode_data & 8) )
+  if ( (mode_flags & 8) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb1_vol = mode_data->m_d_comb1_vol;
-  if ( (deref_mode_data & 0x10) )
+  if ( (mode_flags & 0x10) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb2_vol = mode_data->m_d_comb2_vol;
-  if ( (deref_mode_data & 0x20) )
+  if ( (mode_flags & 0x20) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb3_vol = mode_data->m_d_comb3_vol;
-  if ( (deref_mode_data & 0x40) )
+  if ( (mode_flags & 0x40) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb4_vol = mode_data->m_d_comb4_vol;
-  if ( (deref_mode_data & 0x80) )
+  if ( (mode_flags & 0x80) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_wall_vol = mode_data->m_d_wall_vol;
-  if ( (deref_mode_data & 0x100) )
+  if ( (mode_flags & 0x100) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf1_vol = mode_data->m_d_apf1_vol;
-  if ( (deref_mode_data & 0x200) )
+  if ( (mode_flags & 0x200) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf2_vol = mode_data->m_d_apf2_vol;
-  if ( (deref_mode_data & 0x400) )
+  if ( (mode_flags & 0x400) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, (unsigned __int16)mode_data->m_d_same_l_dst);
-  if ( (deref_mode_data & 0x800) )
+  if ( (mode_flags & 0x800) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, (unsigned __int16)mode_data->m_d_same_r_dst);
-  if ( (deref_mode_data & 0x1000) )
+  if ( (mode_flags & 0x1000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, (unsigned __int16)mode_data->m_d_comb1_l_src);
-  if ( (deref_mode_data & 0x2000) )
+  if ( (mode_flags & 0x2000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, (unsigned __int16)mode_data->m_d_comb1_r_src);
-  if ( (deref_mode_data & 0x4000) )
+  if ( (mode_flags & 0x4000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, (unsigned __int16)mode_data->m_d_comb2_l_src);
-  if ( (deref_mode_data & 0x8000) )
+  if ( (mode_flags & 0x8000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, (unsigned __int16)mode_data->m_d_comb2_r_src);
-  if ( (deref_mode_data & 0x10000) )
+  if ( (mode_flags & 0x10000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, (unsigned __int16)mode_data->m_d_same_l_src);
-  if ( (deref_mode_data & 0x20000) )
+  if ( (mode_flags & 0x20000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, (unsigned __int16)mode_data->m_d_same_r_src);
-  if ( (deref_mode_data & 0x40000) )
+  if ( (mode_flags & 0x40000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, (unsigned __int16)mode_data->m_d_diff_l_dst);
-  if ( (deref_mode_data & 0x80000) )
+  if ( (mode_flags & 0x80000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, (unsigned __int16)mode_data->m_d_diff_r_dst);
-  if ( (deref_mode_data & 0x100000) )
+  if ( (mode_flags & 0x100000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, (unsigned __int16)mode_data->m_d_comb3_l_src);
-  if ( (deref_mode_data & 0x200000) )
+  if ( (mode_flags & 0x200000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, (unsigned __int16)mode_data->m_d_comb3_r_src);
-  if ( (deref_mode_data & 0x400000) )
+  if ( (mode_flags & 0x400000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, (unsigned __int16)mode_data->m_d_comb4_l_src);
-  if ( (deref_mode_data & 0x800000) )
+  if ( (mode_flags & 0x800000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, (unsigned __int16)mode_data->m_d_comb4_r_src);
-  if ( (deref_mode_data & 0x1000000) )
+  if ( (mode_flags & 0x1000000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, (unsigned __int16)mode_data->m_d_diff_l_src);
-  if ( (deref_mode_data & 0x2000000) )
+  if ( (mode_flags & 0x2000000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, (unsigned __int16)mode_data->m_d_diff_r_src);
-  if ( (deref_mode_data & 0x4000000) )
+  if ( (mode_flags & 0x4000000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, (unsigned __int16)mode_data->m_d_apf1_l_dst);
-  if ( (deref_mode_data & 0x8000000) )
+  if ( (mode_flags & 0x8000000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, (unsigned __int16)mode_data->m_d_apf1_r_dst);
-  if ( (deref_mode_data & 0x10000000) )
+  if ( (mode_flags & 0x10000000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, (unsigned __int16)mode_data->m_d_apf2_l_dst);
-  if ( (deref_mode_data & 0x20000000) )
+  if ( (mode_flags & 0x20000000) )
     SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, (unsigned __int16)mode_data->m_d_apf2_r_dst);
-  if ( (deref_mode_data & 0x40000000) )
+  if ( (mode_flags & 0x40000000) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_l = mode_data->m_d_in_coef_l;
-  if ( (deref_mode_data & 0x80000000) )
+  if ( (mode_flags & 0x80000000) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_r = mode_data->m_d_in_coef_r;
 }
 
@@ -1225,6 +1225,8 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
     return -100;
   if ( !(unsigned __int8)effect_mode )
     return 0;
+  // Unofficial: restrict channel
+  channel &= 1;
   if ( DmaStartStop((channel << 4) | 4, 0, 0) )
     return -210;
   if ( g_VoiceTransIoMode[channel] != 1 )
@@ -1600,10 +1602,10 @@ static void InitCoreVolume(int flag)
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
-    spu2_regs.m_u.m_e.m_different_regs[0].m_avoll = i ? 0x7FFF : 0;
-    spu2_regs.m_u.m_e.m_different_regs[0].m_avolr = i ? 0x7FFF : 0;
-    spu2_regs.m_u.m_e.m_different_regs[0].m_bvoll = 0;
-    spu2_regs.m_u.m_e.m_different_regs[0].m_bvolr = 0;
+    spu2_regs.m_u.m_e.m_different_regs[i].m_avoll = i ? 0x7FFF : 0;
+    spu2_regs.m_u.m_e.m_different_regs[i].m_avolr = i ? 0x7FFF : 0;
+    spu2_regs.m_u.m_e.m_different_regs[i].m_bvoll = 0;
+    spu2_regs.m_u.m_e.m_different_regs[i].m_bvolr = 0;
   }
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -1798,15 +1800,14 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
 //----- (00402024) --------------------------------------------------------
 u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag)
 {
+  int core;
   // Unofficial: inline thunk
-  int dmamagictmp1; // $a2
   USE_IOP_MMIO_HWPORT();
 
   (void)flag;
-  channel &= 1;
+  core = channel & 1;
 
-  dmamagictmp1 = (spu2_regs.m_u.m_m.m_core_regs[channel].m_cregs.m_admas & 7) ? (channel ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr : 0;
-  return (g_BlockTransBuff[channel] << 24) | (dmamagictmp1 & ~0xFF000000);
+  return (g_BlockTransBuff[core] << 24) | (((spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas & 7) ? (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr : 0) & ~0xFF000000);
 }
 
 //----- (0040206C) --------------------------------------------------------
@@ -1903,7 +1904,7 @@ static void libsd_do_busyloop_1(int a1)
 //----- (00402358) --------------------------------------------------------
 static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
 {
-  int core_tmp1; // $s1
+  int core; // $s1
   unsigned int tsa_tmp; // $t1
   unsigned int vararg3_cal; // $a0
   u32 blocktransbufitem; // $s7
@@ -1913,87 +1914,88 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vara
   int state; // [sp+14h] [-4h] BYREF
   USE_IOP_MMIO_HWPORT();
 
-  core_tmp1 = mainarg >> 4;
+  // Unofficial: restrict core
+  core = (mainarg >> 4) & 1;
   switch ( mainarg & 0xF )
   {
     case 2:
       tsa_tmp = ((u16)(uiptr)vararg2 >> 1) & ~7u;
-      spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_tsa.m_pair[1] = tsa_tmp;
-      spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_tsa.m_pair[0] = (tsa_tmp >> 16) & 0xFFFF;
+      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = tsa_tmp;
+      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = (tsa_tmp >> 16) & 0xFFFF;
       return 0;
     case 4:
-      if ( (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & SD_DMA_IN_PROCESS) )
+      if ( (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_DMA_IN_PROCESS) )
         return -1;
-      if ( ((core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr & SD_DMA_START) )
+      if ( ((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr & SD_DMA_START) )
         return -1;
-      if ( spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_admas )
+      if ( spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas )
         return -1;
       return 0;
     case 5:
       CpuSuspendIntr(&state);
-      spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr |= SD_DMA_READ;
+      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_DMA_READ;
       CpuResumeIntr(state);
-      SetDmaRead(core_tmp1);
+      SetDmaRead(core);
       vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
-      (core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (u16)(uiptr)vararg2;
+      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (u16)(uiptr)vararg2;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
-      ((vu16 *)&((core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
+      ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
 #pragma GCC diagnostic pop
-      ((vu16 *)&((core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = vararg3_cal;
-      (core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS;
+      ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = vararg3_cal;
+      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS;
       return vararg3_cal << 6;
     case 6:
       CpuSuspendIntr(&state);
-      spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_WRITE;
+      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_WRITE;
       CpuResumeIntr(state);
-      SetDmaWrite(core_tmp1);
+      SetDmaWrite(core);
       vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
-      (core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (u16)(uiptr)vararg2;
+      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (u16)(uiptr)vararg2;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
-      ((vu16 *)&((core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
+      ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
 #pragma GCC diagnostic pop
-      ((vu16 *)&((core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = vararg3_cal;
-      (core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
+      ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = vararg3_cal;
+      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
       return vararg3_cal << 6;
     case 0xA:
       blocktransbufitem = 0;
       dmamagictmp = 0;
-      if ( ((core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr & SD_DMA_START) )
+      if ( ((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr & SD_DMA_START) )
       {
-        blocktransbufitem = g_BlockTransBuff[core_tmp1];
-        dmamagictmp = (core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr;
-        (core_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr &= ~SD_DMA_START;
-        if ( (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & SD_CORE_DMA) )
+        blocktransbufitem = g_BlockTransBuff[core];
+        dmamagictmp = (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr;
+        (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr &= ~SD_DMA_START;
+        if ( (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) )
         {
-          for ( i = 0; !(spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
+          for ( i = 0; !(spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
           {
           }
         }
       }
-      if ( (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & SD_CORE_DMA) )
+      if ( (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) )
       {
         CpuSuspendIntr(&state);
-        spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr &= ~SD_CORE_DMA;
+        spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
         CpuResumeIntr(state);
-        for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
+        for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
         {
         }
       }
       hichk = 0;
-      if ( (spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_admas & 7) )
+      if ( (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas & 7) )
       {
         hichk = 1;
-        spu2_regs.m_u.m_m.m_core_regs[core_tmp1].m_cregs.m_admas = 0;
+        spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 0;
       }
       if ( QueryIntrContext() )
-        iSetEventFlag(g_VoiceTransCompleteEf[core_tmp1], 1);
+        iSetEventFlag(g_VoiceTransCompleteEf[core], 1);
       else
-        SetEventFlag(g_VoiceTransCompleteEf[core_tmp1], 1);
-      g_VoiceTransCompleteBool[core_tmp1] = 0;
-      g_VoiceTransIoMode[core_tmp1] = 1;
-      g_CleanHandlers[core_tmp1] = 0;
+        SetEventFlag(g_VoiceTransCompleteEf[core], 1);
+      g_VoiceTransCompleteBool[core] = 0;
+      g_VoiceTransIoMode[core] = 1;
+      g_CleanHandlers[core] = 0;
       return ( dmamagictmp && hichk ) ? ((dmamagictmp & ~0xFF000000) | (blocktransbufitem << 24)) : 0;
     default:
       return 0;
@@ -2008,22 +2010,25 @@ static int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned i
   int count; // $s2
   int i; // $v1
   int state; // [sp+14h] [-4h] BYREF
+  int core;
 
+  // Unofficial: restrict core
+  core = chan & 1;
   for ( size_tmp = size; size_tmp; size_tmp -= count )
   {
     count = ( size_tmp <= 64 ) ? size_tmp : 64;
     for ( i = 0; i < (count / 2); i += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_xferdata = iopaddr[i];
+      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_xferdata = iopaddr[i];
     CpuSuspendIntr(&state);
-    spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
+    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
     CpuResumeIntr(state);
-    for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_statx & SD_IO_IN_PROCESS) && i < 0xF00; i += 1 )
+    for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_statx & SD_IO_IN_PROCESS) && i < 0xF00; i += 1 )
       libsd_do_busyloop_1(1);
   }
   CpuSuspendIntr(&state);
-  spu2_regs.m_u.m_m.m_core_regs[chan].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
-  g_VoiceTransIoMode[chan] = 1;
+  g_VoiceTransIoMode[core] = 1;
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -2041,14 +2046,14 @@ static int __fastcall TransInterrupt(IntrData *intr)
 {
   int no_flush_cache; // $s5
   u32 mode; // $v1
-  int mode_1; // $s1
+  int core; // $s1
   int i; // $v1
   int dmamagictmp1; // [sp+14h] [-Ch] BYREF
   int dmamagictmp2; // [sp+18h] [-8h] BYREF
   USE_IOP_MMIO_HWPORT();
 
   mode = intr->m_mode;
-  switch ( intr->m_mode & 0xC00 )
+  switch ( mode & 0xC00 )
   {
     case 0x400:
       no_flush_cache = 1;
@@ -2059,64 +2064,64 @@ static int __fastcall TransInterrupt(IntrData *intr)
     default:
       return 1;
   }
-  mode_1 = intr->m_mode & 1;
-  switch ( intr->m_mode & 0x300 )
+  core = mode & 1;
+  switch ( mode & 0x300 )
   {
     case 0x100:
-      for ( i = 0; !(spu2_regs.m_u.m_m.m_core_regs[mode_1].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
+      for ( i = 0; !(spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
       {
       }
-      spu2_regs.m_u.m_m.m_core_regs[mode_1].m_cregs.m_attr &= ~SD_CORE_DMA;
-      for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[mode_1].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
+      for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
       {
       }
       if ( !no_flush_cache )
         FlushDcache();
-      if ( g_CleanHandlers[mode_1] )
-        g_CleanHandlers[mode_1](mode_1);
+      if ( g_CleanHandlers[core] )
+        g_CleanHandlers[core](core);
       else
       {
-        iSetEventFlag(g_VoiceTransCompleteEf[mode_1], 1);
-        if ( g_TransIntrHandlers[mode_1] )
+        iSetEventFlag(g_VoiceTransCompleteEf[core], 1);
+        if ( g_TransIntrHandlers[core] )
         {
-          g_VoiceTransIoMode[mode_1] = 1;
-          g_TransIntrHandlers[mode_1](mode_1, intr->m_data);
+          g_VoiceTransIoMode[core] = 1;
+          g_TransIntrHandlers[core](core, intr->m_data);
         }
-        else if ( !g_TransIntrCallbacks[mode_1] )
-          g_VoiceTransCompleteBool[mode_1] = 1;
+        else if ( !g_TransIntrCallbacks[core] )
+          g_VoiceTransCompleteBool[core] = 1;
         else
         {
-          g_VoiceTransIoMode[mode_1] = 1;
-          g_TransIntrCallbacks[mode_1](0);
+          g_VoiceTransIoMode[core] = 1;
+          g_TransIntrCallbacks[core](0);
         }
       }
       break;
     case 0x200:
       if ( (mode & 0x8000) )
       {
-        if ( g_BlockHandlerIntrData[mode_1].m_cb )
+        if ( g_BlockHandlerIntrData[core].m_cb )
         {
-          ((void (__fastcall *)(int, void *, int *, int *))g_BlockHandlerIntrData[mode_1].m_cb)(
-            mode_1,
-            g_BlockHandlerIntrData[mode_1].m_userdata,
+          ((void (__fastcall *)(int, void *, int *, int *))g_BlockHandlerIntrData[core].m_cb)(
+            core,
+            g_BlockHandlerIntrData[core].m_userdata,
             &dmamagictmp1,
             &dmamagictmp2);
           if ( dmamagictmp2 > 0 )
           {
-            ((vu16 *)&((mode_1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (dmamagictmp2 >> 6)
+            ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (dmamagictmp2 >> 6)
                                                                     + (dmamagictmp2 - (dmamagictmp2 >> 6 << 6) > 0);
-            (mode_1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = dmamagictmp1;
-            (mode_1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
+            (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = dmamagictmp1;
+            (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
           }
           else
           {
-            do_finish_block_clean_xfer(mode_1);
-            g_BlockHandlerIntrData[mode_1].m_cb = 0;
-            g_BlockHandlerIntrData[mode_1].m_userdata = 0;
+            do_finish_block_clean_xfer(core);
+            g_BlockHandlerIntrData[core].m_cb = 0;
+            g_BlockHandlerIntrData[core].m_userdata = 0;
           }
         }
         else
-          do_finish_block_clean_xfer(mode_1);
+          do_finish_block_clean_xfer(core);
         if ( !no_flush_cache )
           FlushDcache();
       }
@@ -2124,20 +2129,20 @@ static int __fastcall TransInterrupt(IntrData *intr)
       {
         if ( (mode & 0x1000) )
         {
-          g_BlockTransBuff[mode_1] = 1 - g_BlockTransBuff[mode_1];
-          ((vu16 *)&((mode_1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[mode_1] / 64
-                                                                  + ((int)g_BlockTransSize[mode_1] % 64 > 0);
-          (mode_1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = g_BlockTransAddr[mode_1] + g_BlockTransBuff[mode_1] * g_BlockTransSize[mode_1];
-          (mode_1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
+          g_BlockTransBuff[core] = 1 - g_BlockTransBuff[core];
+          ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[core] / 64
+                                                                  + ((int)g_BlockTransSize[core] % 64 > 0);
+          (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = g_BlockTransAddr[core] + g_BlockTransBuff[core] * g_BlockTransSize[core];
+          (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
         }
         else
-          do_finish_block_clean_xfer(mode_1);
+          do_finish_block_clean_xfer(core);
         if ( !no_flush_cache )
           FlushDcache();
-        if ( g_TransIntrHandlers[mode_1] )
-          g_TransIntrHandlers[mode_1](mode_1, intr->m_data);
-        else if ( g_TransIntrCallbacks[mode_1] )
-          g_TransIntrCallbacks[mode_1](0);
+        if ( g_TransIntrHandlers[core] )
+          g_TransIntrHandlers[core](core, intr->m_data);
+        else if ( g_TransIntrCallbacks[core] )
+          g_TransIntrCallbacks[core](0);
       }
       break;
     default:
@@ -2150,7 +2155,7 @@ static int __fastcall TransInterrupt(IntrData *intr)
 //----- (00402F4C) --------------------------------------------------------
 static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr)
 {
-  int chan_tmp0; // $s2
+  int core; // $s2
   u32 startaddr_tmp; // $s3
   signed int size_align; // $s1
   unsigned int other_align; // $v1
@@ -2158,11 +2163,11 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
   int state; // [sp+14h] [-4h] BYREF
   USE_IOP_MMIO_HWPORT();
 
-  chan_tmp0 = chan & 1;
+  core = chan & 1;
   startaddr_tmp = startaddr;
-  g_BlockTransAddr[chan_tmp0] = iopaddr;
-  g_BlockTransBuff[chan_tmp0] = 0;
-  g_BlockTransSize[chan_tmp0] = size;
+  g_BlockTransAddr[core] = iopaddr;
+  g_BlockTransBuff[core] = 0;
+  g_BlockTransSize[core] = size;
   if ( startaddr )
   {
     size_align = size - (startaddr - iopaddr);
@@ -2171,13 +2176,13 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
       other_align = startaddr - iopaddr - size;
       if ( !(mode & SD_TRANS_LOOP) || other_align >= size )
         return -100;
-      g_BlockTransBuff[chan_tmp0] += 1;
+      g_BlockTransBuff[core] += 1;
       size_align = size - other_align;
     }
     if ( size_align % 1024 > 0 )
     {
       size_align = (size_align / 1024 + 1) << 10;
-      startaddr_tmp = iopaddr + g_BlockTransBuff[chan_tmp0] * size + size - size_align;
+      startaddr_tmp = iopaddr + g_BlockTransBuff[core] * size + size - size_align;
     }
   }
   else
@@ -2186,20 +2191,20 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
     size_align = size;
   }
   CpuSuspendIntr(&state);
-  spu2_regs.m_u.m_m.m_core_regs[chan_tmp0].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
-  spu2_regs.m_u.m_m.m_core_regs[chan_tmp0].m_cregs.m_tsa.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[chan_tmp0].m_cregs.m_tsa.m_pair[1] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[chan_tmp0].m_cregs.m_admas = 1 << chan_tmp0;
-  SetDmaWrite(chan_tmp0);
-  (chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = startaddr_tmp;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 1 << core;
+  SetDmaWrite(core);
+  (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = startaddr_tmp;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
-  ((vu16 *)&((chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
+  ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
 #pragma GCC diagnostic pop
   size_align_r6 = (( size_align < 0 ) ? (size_align + 63) : size_align) >> 6;
-  ((vu16 *)&((chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = size_align_r6 + (size_align - (size_align_r6 << 6) > 0);
-  (chan_tmp0 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
+  ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = size_align_r6 + (size_align - (size_align_r6 << 6) > 0);
+  (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_IOP2SPU;
   return size;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -2207,31 +2212,31 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
 //----- (00403174) --------------------------------------------------------
 static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
 {
-  int chan_tmp1; // $s3
+  int core; // $s3
   int state; // [sp+14h] [-4h] BYREF
   USE_IOP_MMIO_HWPORT();
 
-  chan_tmp1 = chan & 1;
-  g_BlockTransAddr[chan_tmp1] = iopaddr;
-  g_BlockTransBuff[chan_tmp1] = 0;
-  g_BlockTransSize[chan_tmp1] = size;
+  core = chan & 1;
+  g_BlockTransAddr[core] = iopaddr;
+  g_BlockTransBuff[core] = 0;
+  g_BlockTransSize[core] = size;
   CpuSuspendIntr(&state);
-  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
-  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_tsa.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_tsa.m_pair[1] = 2 * (mode & ~0xF0FF) + 1024;
-  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_unk1ae = (unsigned __int16)(mode & ~0xFFF) >> 11;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = 2 * (mode & ~0xF0FF) + 1024;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_unk1ae = (unsigned __int16)(mode & ~0xFFF) >> 11;
   libsd_do_busyloop_1(3);
-  spu2_regs.m_u.m_m.m_core_regs[chan_tmp1].m_cregs.m_admas = 4;
-  SetDmaRead(chan_tmp1);
-  (chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = iopaddr;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 4;
+  SetDmaRead(core);
+  (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = iopaddr;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
-  ((vu16 *)&((chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
+  ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
 #pragma GCC diagnostic pop
-  ((vu16 *)&((chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[chan_tmp1] / 64
-                                                              + ((int)g_BlockTransSize[chan_tmp1] % 64 > 0);
-  (chan_tmp1 ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS;
+  ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[core] / 64
+                                                              + ((int)g_BlockTransSize[core] % 64 > 0);
+  (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS;
   return size;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -2641,16 +2646,19 @@ void __cdecl sceSdSetCoreAttr(u16 entry, u16 value)
 //----- (004040A0) --------------------------------------------------------
 u16 __cdecl sceSdGetCoreAttr(u16 entry)
 {
+  int core;
+
+  core = entry & 1;
   switch ( entry & 0xE )
   {
     case SD_CORE_EFFECT_ENABLE:
-      return (spu2_regs.m_u.m_m.m_core_regs[entry & 1].m_cregs.m_attr >> 7) & 1;
+      return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
     case SD_CORE_IRQ_ENABLE:
-      return (spu2_regs.m_u.m_m.m_core_regs[entry & 1].m_cregs.m_attr >> 6) & 1;
+      return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 6) & 1;
     case SD_CORE_MUTE_ENABLE:
-      return (spu2_regs.m_u.m_m.m_core_regs[entry & 1].m_cregs.m_attr >> 14) & 1;
+      return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 14) & 1;
     case SD_CORE_NOISE_CLK:
-      return (spu2_regs.m_u.m_m.m_core_regs[entry & 1].m_cregs.m_attr >> 8) & 0x3F;
+      return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 8) & 0x3F;
     case SD_CORE_SPDIF_MODE:
       return g_SpdifSettings & 0xFFFF;
     default:
@@ -2665,8 +2673,10 @@ SdIntrCallback __cdecl sceSdSetTransCallback(s32 core, SdIntrCallback cb)
 {
   SdIntrCallback oldtmp; // $v0
 
-  oldtmp = g_TransIntrCallbacks[(unsigned __int16)core];
-  g_TransIntrCallbacks[(unsigned __int16)core] = cb;
+  // Unofficial: restrict core
+  core &= 1;
+  oldtmp = g_TransIntrCallbacks[core];
+  g_TransIntrCallbacks[core] = cb;
   return oldtmp;
 }
 
@@ -2674,10 +2684,13 @@ SdIntrCallback __cdecl sceSdSetTransCallback(s32 core, SdIntrCallback cb)
 sceSdTransIntrHandler __cdecl sceSdSetTransIntrHandler(int channel, sceSdTransIntrHandler func, void *arg)
 {
   sceSdTransIntrHandler oldtmp; // $v0
+  int core;
 
-  oldtmp = g_TransIntrHandlers[channel];
-  g_TransIntrHandlers[channel] = func;
-  g_TransIntrData[channel].m_data = arg;
+  // Unofficial: restrict core
+  core = channel & 1;
+  oldtmp = g_TransIntrHandlers[core];
+  g_TransIntrHandlers[core] = func;
+  g_TransIntrData[core].m_data = arg;
   return oldtmp;
 }
 
