@@ -1216,8 +1216,6 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   unsigned int effect_size; // $s1
   unsigned int effect_addr; // $s2
   int xferres; // $s0
-  int flag_tmp; // $s4
-  u32 size; // $v1
   int (__cdecl *callback_tmp)(void *); // [sp+18h] [-8h]
   int (__cdecl *handler_tmp)(int, void *); // [sp+1Ch] [-4h]
 
@@ -1255,9 +1253,13 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   }
   if ( xferres >= 0 )
   {
+    int flag_tmp; // $s4
+
     flag_tmp = 1;
     while ( flag_tmp )
     {
+      u32 size; // $v1
+
       size = 0x400;
       if ( effect_size <= 0x400 )
       {
@@ -1366,9 +1368,6 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   int clearram; // $s7
   int channel; // $s6
   int mode; // $s2
-  int delay; // $a0
-  __int16 feedback_tmp; // $v0
-  int feedback; // $v1
   int effects_enabled; // $s5
   int retval; // $s0
   struct mode_data_struct mode_data; // [sp+10h] [-60h] BYREF
@@ -1403,14 +1402,16 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   }
   if ( (unsigned __int8)mode >= SD_EFFECT_MODE_ECHO && (unsigned __int8)mode <= SD_EFFECT_MODE_DELAY )
   {
+    int delay; // $a0
+    int feedback; // $v1
+
     delay = attr->delay;
     g_EffectAttr[core].delay = delay;
     delay += 1;
     delay &= 0xFFFF;
-    feedback_tmp = ((unsigned __int16)delay << 6) - (__int16)mode_data.m_d_apf1_size;
+    mode_data.m_d_same_l_dst = ((unsigned __int16)delay << 6) - (__int16)mode_data.m_d_apf1_size;
     delay <<= 5;
     delay &= 0xFFFF;
-    mode_data.m_d_same_l_dst = feedback_tmp;
     mode_data.m_d_same_r_dst = delay - mode_data.m_d_apf2_size;
     mode_data.m_d_same_l_src = mode_data.m_d_same_r_src + delay;
     mode_data.m_d_comb1_l_src = mode_data.m_d_comb1_r_src + delay;
@@ -1504,7 +1505,6 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
 int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
 {
   int mode; // $a0
-  int delay_plus_one; // $a0
   struct mode_data_struct mode_data; // [sp+10h] [-48h] BYREF
 
   if ( (unsigned __int8)attr->mode > SD_EFFECT_MODE_PIPE )
@@ -1514,6 +1514,8 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
     return -100;
   if ( mode >= SD_EFFECT_MODE_ECHO && mode <= SD_EFFECT_MODE_DELAY )
   {
+    int delay_plus_one; // $a0
+
     // Unoffical: don't use inlined memcpy
     memcpy(&mode_data, &g_EffectParams[mode], sizeof(mode_data));
     mode_data.m_mode_flags = 0xC011C80;
@@ -2158,7 +2160,6 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
   int core; // $s2
   u32 startaddr_tmp; // $s3
   signed int size_align; // $s1
-  unsigned int other_align; // $v1
   int size_align_r6; // $v1
   int state; // [sp+14h] [-4h] BYREF
   USE_IOP_MMIO_HWPORT();
@@ -2173,6 +2174,8 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
     size_align = size - (startaddr - iopaddr);
     if ( startaddr - iopaddr >= size )
     {
+      unsigned int other_align; // $v1
+
       other_align = startaddr - iopaddr - size;
       if ( !(mode & SD_TRANS_LOOP) || other_align >= size )
         return -100;
@@ -2272,10 +2275,11 @@ static int __fastcall SifDmaBatch(void *ee_addr, void *iop_addr, int size)
 int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num)
 {
   u32 cnt; // $s4
-  u32 Param; // $s1
 
   for ( cnt = 0; cnt < num; cnt += 1 )
   {
+    u32 Param; // $s1
+
     Param = 0;
     switch ( batch[cnt].func )
     {
@@ -2327,12 +2331,13 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
 {
   u32 cnt; // $s7
   int loop; // $s3
-  u32 Param; // $s4
   int i; // $s0
 
   loop = 0;
   for ( cnt = 0; cnt < num; cnt += 1 )
   {
+    u32 Param; // $s4
+
     Param = 0;
     switch ( batch[cnt].func )
     {
