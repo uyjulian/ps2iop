@@ -1558,48 +1558,47 @@ static void InitSpu2()
 //----- (00401638) --------------------------------------------------------
 static void InitCoreVolume(int flag)
 {
+  int i;
+
   spu2_regs.m_u.m_e.m_spdif_out = 0xC032;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = (flag ? SD_ENABLE_EFFECTS : 0) | SD_MUTE|SD_SPU2_ON;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_attr = (flag ? SD_ENABLE_EFFECTS : 0) | SD_ENABLE_EX_INPUT|SD_MUTE|SD_SPU2_ON;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixl.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixl.m_pair[1] = 0xFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixel.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixel.m_pair[1] = 0x00FF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixr.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixr.m_pair[1] = 0x00FF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixer.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_vmixer.m_pair[1] = 0x00FF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_mmix = 0xFF0;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixl.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixl.m_pair[1] = 0xFF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixel.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixel.m_pair[1] = 0x00FF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixr.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixr.m_pair[1] = 0x00FF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixer.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_vmixer.m_pair[1] = 0x00FF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_mmix = 0xFFC;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = (flag ? SD_ENABLE_EFFECTS : 0) | (i ? SD_ENABLE_EX_INPUT : 0) | SD_MUTE|SD_SPU2_ON;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixl.m_pair[0] = 0xFFFF;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixl.m_pair[1] = 0xFF;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixel.m_pair[0] = 0xFFFF;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixel.m_pair[1] = 0x00FF;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixr.m_pair[0] = 0xFFFF;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixr.m_pair[1] = 0x00FF;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixer.m_pair[0] = 0xFFFF;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixer.m_pair[1] = 0x00FF;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_mmix = 0xFF0 + (i * 0xC);
+  }
   if ( !flag )
   {
-    spu2_regs.m_u.m_e.m_different_regs[0].m_mvoll = 0;
-    spu2_regs.m_u.m_e.m_different_regs[0].m_mvolr = 0;
-    spu2_regs.m_u.m_e.m_different_regs[0].m_evoll = 0;
-    spu2_regs.m_u.m_e.m_different_regs[0].m_evolr = 0;
-    spu2_regs.m_u.m_e.m_different_regs[1].m_mvoll = 0;
-    spu2_regs.m_u.m_e.m_different_regs[1].m_mvolr = 0;
-    spu2_regs.m_u.m_e.m_different_regs[1].m_evoll = 0;
-    spu2_regs.m_u.m_e.m_different_regs[1].m_evolr = 0;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_eea = 14;
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_eea = 15;
+    // Unofficial: rerolled
+    for ( i = 0; i < 2; i += 1 )
+    {
+      spu2_regs.m_u.m_e.m_different_regs[i].m_mvoll = 0;
+      spu2_regs.m_u.m_e.m_different_regs[i].m_mvolr = 0;
+      spu2_regs.m_u.m_e.m_different_regs[i].m_evoll = 0;
+      spu2_regs.m_u.m_e.m_different_regs[i].m_evolr = 0;
+    }
+    // Unofficial: rerolled
+    for ( i = 0; i < 2; i += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_eea = 14 + i;
   }
-  spu2_regs.m_u.m_e.m_different_regs[0].m_avoll = 0;
-  spu2_regs.m_u.m_e.m_different_regs[0].m_avolr = 0;
-  spu2_regs.m_u.m_e.m_different_regs[0].m_bvoll = 0;
-  spu2_regs.m_u.m_e.m_different_regs[0].m_bvolr = 0;
-  spu2_regs.m_u.m_e.m_different_regs[1].m_avoll = 0x7FFF;
-  spu2_regs.m_u.m_e.m_different_regs[1].m_avolr = 0x7FFF;
-  spu2_regs.m_u.m_e.m_different_regs[1].m_bvoll = 0;
-  spu2_regs.m_u.m_e.m_different_regs[1].m_bvolr = 0;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_regs.m_u.m_e.m_different_regs[0].m_avoll = i ? 0x7FFF : 0;
+    spu2_regs.m_u.m_e.m_different_regs[0].m_avolr = i ? 0x7FFF : 0;
+    spu2_regs.m_u.m_e.m_different_regs[0].m_bvoll = 0;
+    spu2_regs.m_u.m_e.m_different_regs[0].m_bvolr = 0;
+  }
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
@@ -1813,35 +1812,44 @@ static int InitSpdif()
   libsd_do_busyloop_1(2);
   spu2_regs.m_u.m_e.m_spdif_out = 0x8000;
   libsd_do_busyloop_1(1);
-  spu2_regs.m_u.m_e.m_different_regs[0].m_mvoll = 0;
-  spu2_regs.m_u.m_e.m_different_regs[0].m_mvolr = 0;
-  spu2_regs.m_u.m_e.m_different_regs[1].m_mvoll = 0;
-  spu2_regs.m_u.m_e.m_different_regs[1].m_mvolr = 0;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_admas = 0;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_admas = 0;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = 0;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_attr = 0;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_regs.m_u.m_e.m_different_regs[i].m_mvoll = 0;
+    spu2_regs.m_u.m_e.m_different_regs[i].m_mvolr = 0;
+  }
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_admas = 0;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_attr = 0;
   libsd_do_busyloop_1(1);
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = 0x8000;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_attr = 0x8000;
-  spu2_regs.m_u.m_e.m_different_regs[0].m_mvoll = 0;
-  spu2_regs.m_u.m_e.m_different_regs[0].m_mvolr = 0;
-  spu2_regs.m_u.m_e.m_different_regs[1].m_mvoll = 0;
-  spu2_regs.m_u.m_e.m_different_regs[1].m_mvolr = 0;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_attr = 0x8000;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_regs.m_u.m_e.m_different_regs[i].m_mvoll = 0;
+    spu2_regs.m_u.m_e.m_different_regs[i].m_mvolr = 0;
+  }
   for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_statx & 0x7FF) && (spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_statx & 0x7FF) && i < 0xF00; i += 1 )
     libsd_do_busyloop_1(1);
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_koff.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_koff.m_pair[1] = 0xFF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_koff.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_koff.m_pair[1] = 0xFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_pmon.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_pmon.m_pair[1] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_non.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_non.m_pair[1] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_pmon.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_pmon.m_pair[1] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_non.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_non.m_pair[1] = 0;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_koff.m_pair[0] = 0xFFFF;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_koff.m_pair[1] = 0xFF;
+  }
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_pmon.m_pair[0] = 0;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_pmon.m_pair[1] = 0;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_non.m_pair[0] = 0;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_non.m_pair[1] = 0;
+  }
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -2708,10 +2716,11 @@ static int __fastcall Spu2Interrupt(void *data)
     return 1;
   while ( ( val = (unsigned __int8)(spu2_regs.m_u.m_e.m_spdif_irqinfo & 0xC) >> 2 ) )
   {
-    if ( val & 1 )
-      spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~0x40u;
-    if ( val & 2 )
-      spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_attr &= ~0x40u;
+    int i;
+
+    for ( i = 0; i < 2; i += 1 )
+      if ( val & (1 << i) )
+        spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_attr &= ~0x40u;
     if ( g_Spu2IntrHandler )
       g_Spu2IntrHandler(val, g_Spu2IntrHandlerData);
     else if ( g_Spu2IrqCallback )
@@ -2724,7 +2733,8 @@ static int __fastcall Spu2Interrupt(void *data)
 //----- (00404344) --------------------------------------------------------
 static int InitVoices()
 {
-  int i; // [sp+10h] [-8h]
+  int i;
+  int j;
 
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[0] = 0x0000;
@@ -2735,37 +2745,44 @@ static int InitVoices()
   for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_statx & SD_IO_IN_PROCESS) && i <= 0x1000000; i += 1 )
     libsd_do_busyloop_1(1);
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
+  // Unofficial: rerolled
   for ( i = 0; i < 24; i += 1 )
   {
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_voll = 0;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_voll = 0;
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_volr = 0;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_volr = 0;
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_pitch = 0x3FFF;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_pitch = 0x3FFF;
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_adsr1 = 0;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_adsr1 = 0;
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_params[i].m_adsr2 = 0;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_params[i].m_adsr2 = 0;
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_address[i].m_ssa.m_pair[0] = 0;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_address[i].m_ssa.m_pair[0] = 0;
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_voice_address[i].m_ssa.m_pair[1] = 0x2800;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_voice_address[i].m_ssa.m_pair[1] = 0x2800;
+    for ( j = 0; j < 2; j += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_voll = 0;
+    for ( j = 0; j < 2; j += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_volr = 0;
+    for ( j = 0; j < 2; j += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_pitch = 0x3FFF;
+    for ( j = 0; j < 2; j += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_adsr1 = 0;
+    for ( j = 0; j < 2; j += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_adsr2 = 0;
+    for ( j = 0; j < 2; j += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_address[i].m_ssa.m_pair[0] = 0;
+    for ( j = 0; j < 2; j += 1 )
+      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_address[i].m_ssa.m_pair[1] = 0x2800;
   }
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_kon.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_kon.m_pair[1] = 0xFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_kon.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_kon.m_pair[1] = 0xFF;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[0] = 0xFFFF;
+    spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[1] = 0xFF;
+  }
   libsd_do_busyloop_1(3);
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_koff.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_koff.m_pair[1] = 0xFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_koff.m_pair[0] = 0xFFFF;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_koff.m_pair[1] = 0xFF;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[0] = 0xFFFF;
+    spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[1] = 0xFF;
+  }
   libsd_do_busyloop_1(3);
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_endx.m_pair[1] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_endx.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_endx.m_pair[1] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_endx.m_pair[0] = 0;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_endx.m_pair[1] = 0;
+    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_endx.m_pair[0] = 0;
+  }
   return 0;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
@@ -2775,6 +2792,7 @@ static int __fastcall Reset(char flag)
 {
   iop_event_t efparam; // [sp+10h] [-18h] BYREF
   int intrstate; // [sp+20h] [-8h] BYREF
+  int i;
 
   DisableIntr(36, &intrstate);
   DisableIntr(40, &intrstate);
@@ -2782,59 +2800,51 @@ static int __fastcall Reset(char flag)
   ReleaseIntrHandler(36);
   ReleaseIntrHandler(40);
   ReleaseIntrHandler(9);
-  g_VoiceTransStatus[0] = 0;
-  g_VoiceTransStatus[1] = 0;
-  g_VoiceTransIoMode[0] = 1;
-  g_VoiceTransIoMode[1] = 1;
-  g_VoiceTransCompleteBool[0] = 0;
-  g_VoiceTransCompleteBool[1] = 0;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    g_VoiceTransStatus[i] = 0;
+    g_VoiceTransIoMode[i] = 1;
+    g_VoiceTransCompleteBool[i] = 0;
+    g_TransIntrHandlers[i] = 0;
+    g_CleanHandlers[i] = 0;
+    g_TransIntrData[i].m_mode = i;
+    g_TransIntrData[i].m_data = 0;
+    g_BlockHandlerIntrData[i].m_cb = 0;
+    g_BlockHandlerIntrData[i].m_userdata = 0;
+    g_TransIntrCallbacks[i] = 0;
+  }
   g_Spu2IntrHandler = 0;
-  g_TransIntrHandlers[0] = 0;
-  g_TransIntrHandlers[1] = 0;
-  g_CleanHandlers[0] = 0;
-  g_CleanHandlers[1] = 0;
-  g_TransIntrData[0].m_mode = 0;
-  g_TransIntrData[1].m_mode = 1;
-  g_TransIntrData[0].m_data = 0;
-  g_TransIntrData[1].m_data = 0;
-  g_BlockHandlerIntrData[0].m_cb = 0;
-  g_BlockHandlerIntrData[1].m_cb = 0;
-  g_BlockHandlerIntrData[0].m_userdata = 0;
-  g_BlockHandlerIntrData[1].m_userdata = 0;
   g_Spu2IntrHandlerData = 0;
   g_Spu2IrqCallback = 0;
-  g_TransIntrCallbacks[0] = 0;
-  g_TransIntrCallbacks[1] = 0;
   if ( !(flag & 0xF) )
   {
-    bzero(g_EffectAttr, 40);
-    g_EffectAddr[0] = 0x1DFFF0;
-    g_EffectAddr[1] = 0x1FFFF0;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_esa.m_pair[0] = 0x000E;
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_esa.m_pair[1] = 0xFFF8;
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_esa.m_pair[0] = 0x000F;
-    spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_esa.m_pair[1] = 0xFFF8;
+    bzero(g_EffectAttr, sizeof(g_EffectAttr));
+    // Unofficial: rerolled
+    for ( i = 0; i < 2; i += 1 )
+      g_EffectAddr[i] = 0x1DFFF0 + (0x20000 * i);    
+    // Unofficial: rerolled
+    for ( i = 0; i < 2; i += 1 )
+    {
+      spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_esa.m_pair[0] = 0x000E + i;
+      spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_esa.m_pair[1] = 0xFFF8;
+    }
   }
   efparam.attr = 2;
   efparam.bits = 1;
   efparam.option = 0;
-  if ( g_VoiceTransCompleteEf[0] <= 0 )
-    g_VoiceTransCompleteEf[0] = CreateEventFlag(&efparam);
-  else
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
   {
-    if ( QueryIntrContext() )
-      iSetEventFlag(g_VoiceTransCompleteEf[0], 1);
+    if ( g_VoiceTransCompleteEf[i] <= 0 )
+      g_VoiceTransCompleteEf[i] = CreateEventFlag(&efparam);
     else
-      SetEventFlag(g_VoiceTransCompleteEf[0], 1);
-  }
-  if ( g_VoiceTransCompleteEf[1] <= 0 )
-    g_VoiceTransCompleteEf[1] = CreateEventFlag(&efparam);
-  else
-  {
-    if ( QueryIntrContext() )
-      iSetEventFlag(g_VoiceTransCompleteEf[1], 1);
-    else
-      SetEventFlag(g_VoiceTransCompleteEf[1], 1);
+    {
+      if ( QueryIntrContext() )
+        iSetEventFlag(g_VoiceTransCompleteEf[i], 1);
+      else
+        SetEventFlag(g_VoiceTransCompleteEf[i], 1);
+    }
   }
   return ( g_VoiceTransCompleteEf[0] <= 0 || g_VoiceTransCompleteEf[1] <= 0 ) ? -301 : 0;
 }
