@@ -185,6 +185,8 @@ typedef struct CleanRegionBuffer_
   CleanRegionBufferElement_t m_elements[97];
 } CleanRegionBuffer_t;
 
+typedef int (*SdCleanHandler)(int);
+
 
 //-------------------------------------------------------------------------
 // Function declarations
@@ -250,7 +252,7 @@ int __cdecl sceSdQuit();
 //-------------------------------------------------------------------------
 // Data declarations
 
-vu16 *g_ParamRegList[44] =
+static vu16 *const g_ParamRegList[] =
 {
   (vu16 *)0xBF900000,
   (vu16 *)0xBF900002,
@@ -297,8 +299,8 @@ vu16 *g_ParamRegList[44] =
   NULL,
   NULL
 };
-int g_EffectSizes[10] = { 2, 1240, 1000, 2312, 3580, 5564, 7896, 12296, 12296, 1920 };
-struct mode_data_struct g_EffectParams[10] =
+static const int g_EffectSizes[] = { 2, 1240, 1000, 2312, 3580, 5564, 7896, 12296, 12296, 1920 };
+static const struct mode_data_struct g_EffectParams[] =
 {
   {
     0,
@@ -671,7 +673,7 @@ struct mode_data_struct g_EffectParams[10] =
     }
   }
 };
-u32 g_ClearEffectData[256] =
+static const u32 g_ClearEffectData[] =
 {
   0u,
   0u,
@@ -930,10 +932,11 @@ u32 g_ClearEffectData[256] =
   0u,
   0u
 };
-spu2_regs_t *g_ptr_to_bf900000 = (spu2_regs_t *)0xBF900000;
-int g_VoiceTransStatus[2] = { 0, 0 };
-int g_VoiceTransIoMode[2] = { 1, 1 };
-unsigned __int16 g_NotePitchTable[140] =
+static spu2_regs_t *g_ptr_to_bf900000 = (spu2_regs_t *)0xBF900000;
+// Unofficial: move to bss
+static int g_VoiceTransStatus[2];
+static int g_VoiceTransIoMode[] = { 1, 1 };
+static const u16 g_NotePitchTable[] =
 {
   32768,
   34716,
@@ -1076,30 +1079,40 @@ unsigned __int16 g_NotePitchTable[140] =
   34685,
   34700,
 };
-int g_SpdifSettings = 0; // weak
-__int16 g_CoreAttrShifts[4] = { 7, 6, 14, 8 };
-sceSdEffectAttr g_EffectAttr[2] = { { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0 } };
-int g_VoiceTransCompleteBool[2] = { 0, 0 };
-int g_VoiceTransCompleteEf[2] = { 0, 0 };
-int g_vars_inited = 0; // weak
-SdIntrCallback g_Spu2IrqCallback = NULL;
-sceSdSpu2IntrHandler g_Spu2IntrHandler = NULL;
-void *g_Spu2IntrHandlerData = NULL; // idb
-sceSdTransIntrHandler g_TransIntrHandlers[2] = { NULL, NULL };
-CleanEffectIntrData_t g_BlockHandlerIntrData[2] = { { NULL, NULL }, { NULL, NULL } };
-typedef int (*SdCleanHandler)(int);
-SdCleanHandler g_CleanHandlers[2] = { 0, 0 };
-IntrData g_TransIntrData[2] = { { 0u, NULL }, { 1u, NULL } };
-__int16 g_VoiceDataInit[8] = { 1792, 0, 0, 0, 0, 0, 0, 0 };
-u32 g_CleanRegionMax[2];
-u32 g_CleanRegionCur[2];
-CleanRegionBuffer_t g_CleanRegionBuffer[2];
-u32 g_BlockTransBuff[2];
-u32 g_BlockTransAddr[2];
-u32 g_BlockTransSize[2];
-u32 g_BatchData;
-SdIntrCallback g_TransIntrCallbacks[2];
-u32 g_EffectAddr[2];
+// Unofficial: move to bss
+static int g_SpdifSettings;
+static const u16 g_CoreAttrShifts[] = { 7, 6, 14, 8 };
+// Unofficial: move to bss
+static sceSdEffectAttr g_EffectAttr[2];
+// Unofficial: move to bss
+static int g_VoiceTransCompleteBool[2];
+// Unofficial: move to bss
+static int g_VoiceTransCompleteEf[2];
+// Unofficial: move to bss
+static int g_vars_inited;
+// Unofficial: move to bss
+static SdIntrCallback g_Spu2IrqCallback;
+// Unofficial: move to bss
+static sceSdSpu2IntrHandler g_Spu2IntrHandler;
+// Unofficial: move to bss
+static void *g_Spu2IntrHandlerData;
+// Unofficial: move to bss
+static sceSdTransIntrHandler g_TransIntrHandlers[2];
+// Unofficial: move to bss
+static CleanEffectIntrData_t g_BlockHandlerIntrData[2];
+// Unofficial: move to bss
+static SdCleanHandler g_CleanHandlers[2];
+static IntrData g_TransIntrData[2] = { { 0u, NULL }, { 1u, NULL } };
+static const u16 g_VoiceDataInit[] = { 1792, 0, 0, 0, 0, 0, 0, 0 };
+static u32 g_CleanRegionMax[2];
+static u32 g_CleanRegionCur[2];
+static CleanRegionBuffer_t g_CleanRegionBuffer[2];
+static u32 g_BlockTransBuff[2];
+static u32 g_BlockTransAddr[2];
+static u32 g_BlockTransSize[2];
+static u32 g_BatchData;
+static SdIntrCallback g_TransIntrCallbacks[2];
+static u32 g_EffectAddr[2];
 spu2_regs_t spu2_regs; // weak
 
 //----- (004000B0) --------------------------------------------------------
@@ -1279,7 +1292,7 @@ int CleanHandler(int channel)
     0);
   DmaStartStop(
     (channel << 4) | 6,
-    g_ClearEffectData,
+    (u8 *)g_ClearEffectData,
     g_CleanRegionBuffer[channel].m_elements[g_CleanRegionCur[channel]].m_size);
   return 0;
 }
@@ -2736,7 +2749,7 @@ int InitVoices()
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[0] = 0x0000;
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[1] = 0x2800;
-  for ( i = 0; i < 8; i += 1 )
+  for ( i = 0; i < (int)(sizeof(g_VoiceDataInit)/sizeof(g_VoiceDataInit[0])); i += 1 )
     spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_xferdata = g_VoiceDataInit[i];
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
   for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_statx & SD_IO_IN_PROCESS) && i <= 0x1000000; i += 1 )
