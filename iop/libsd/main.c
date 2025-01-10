@@ -1243,9 +1243,15 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   callback_tmp = g_TransIntrCallbacks[channel];
   g_TransIntrHandlers[channel] = 0;
   g_TransIntrCallbacks[channel] = 0;
-  if ( !aligned_addr
-    || ((xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)(2 * effect_addr), 0x40u), xferres >= 0)
-    && (xferres = sceSdVoiceTransStatus(channel, 1), effect_addr = aligned_addr, xferres >= 0)) )
+  xferres = 0;
+  if ( aligned_addr )
+  {
+    xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)(2 * effect_addr), 0x40u);
+    if ( xferres >= 0 )
+      xferres = sceSdVoiceTransStatus(channel, 1);
+    effect_addr = aligned_addr;
+  }
+  if ( xferres >= 0 )
   {
     flag_tmp = 1;
     while ( flag_tmp )
@@ -1419,8 +1425,8 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
-  if ( !effects_enabled
-    || (!clearram || (retval = sceSdClearEffectWorkArea(core, channel, effect_mode), retval >= 0)) )
+  retval = ( effects_enabled && clearram ) ? sceSdClearEffectWorkArea(core, channel, effect_mode) : 0;
+  if ( retval >= 0 )
   {
     spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
     spu2_regs.m_u.m_e.m_different_regs[core].m_evolr = attr->depth_R;
@@ -2530,23 +2536,13 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
       bit = i1;
   }
   val = pitch << (15 - bit);
-  for ( i2 = 11; (unsigned __int16)val < g_NotePitchTable[i2]; i2 -= 1 )
+  for ( i2 = 11; (unsigned __int16)val < g_NotePitchTable[i2] && i2 > 0; i2 -= 1 )
   {
-    if ( i2 <= 0 )
-    {
-      i2 = 0;
-      break;
-    }
   }
   if ( !g_NotePitchTable[i2] )
     __builtin_trap();
-  for ( i5 = 127; (unsigned __int16)(((unsigned __int16)val << 15) / g_NotePitchTable[i2]) < g_NotePitchTable[i5 + 12]; i5 -= 1 )
+  for ( i5 = 127; (unsigned __int16)(((unsigned __int16)val << 15) / g_NotePitchTable[i2]) < g_NotePitchTable[i5 + 12] && i5 > 0; i5 -= 1 )
   {
-    if ( i5 <= 0 )
-    {
-      i5 = 0;
-      break;
-    }
   }
   return (((center_fine + i5 + 1) & 0x7E)
         + ((i2 + center_note + 12 * (bit - 12) + ((unsigned __int16)(center_fine + i5 + 1) >> 7)) << 8)) & ~1;
@@ -2885,13 +2881,15 @@ int __cdecl sceSdInit(int flag)
 int __cdecl sceSdQuit()
 {
   int intrstate; // [sp+10h] [-8h] BYREF
+  int i;
 
-  DmaStartStop((0 << 4) | 0xA, 0, 0);
-  DmaStartStop((1 << 4) | 0xA, 0, 0);
-  if ( g_VoiceTransCompleteEf[0] > 0 )
-    DeleteEventFlag(g_VoiceTransCompleteEf[0]);
-  if ( g_VoiceTransCompleteEf[1] > 0 )
-    DeleteEventFlag(g_VoiceTransCompleteEf[1]);
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+    DmaStartStop((i << 4) | 0xA, 0, 0);
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+    if ( g_VoiceTransCompleteEf[i] > 0 )
+      DeleteEventFlag(g_VoiceTransCompleteEf[i]);
   DisableIntr(40, &intrstate);
   DisableIntr(36, &intrstate);
   DisableIntr(9, &intrstate);
