@@ -191,37 +191,24 @@ typedef int (*SdCleanHandler)(int);
 //-------------------------------------------------------------------------
 // Function declarations
 
-void SetEffectRegisterPair(spu2_u16pair_t *pair, int val);
-void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data);
 int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode);
-int CleanHandler(int channel);
 int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode);
 void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr);
 int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr);
-int __fastcall GetEEA(int core);
+static int __fastcall GetEEA(int core);
 int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param);
 int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr);
-void InitSpu2_Inner();
-void InitSpu2();
-void InitCoreVolume(int flag);
+static void InitSpu2_Inner();
 int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 size);
 u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag);
 int __cdecl sceSdStopTrans(int channel);
 int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...);
 u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag);
-int InitSpdif();
-void SetDmaWrite(int chan);
-void SetDmaRead(int chan);
-void libsd_do_busyloop_2();
-void libsd_do_busyloop_1(int);
-u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3);
-int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size, int chan);
-void do_finish_block_clean_xfer(int core);
-int __fastcall TransInterrupt(IntrData *intr);
-u32 __fastcall thunk_sceSdBlockTransStatus(int channel);
-unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr);
-u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode);
-int __fastcall SifDmaBatch(void *ee_addr, void *iop_addr, int size);
+static void libsd_do_busyloop_1(int);
+static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3);
+static int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size, int chan);
+static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr);
+static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode);
 int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num);
 int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice);
 void __cdecl sceSdSetParam(u16 entry, u16 value);
@@ -232,8 +219,6 @@ void __cdecl sceSdSetAddr(u16 entry, u32 value);
 u32 __cdecl sceSdGetAddr(u16 entry);
 u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine);
 u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch);
-int __fastcall SetSpdifMode(int val);
-void sceSdSetCoreAttr_default(char entry, char val);
 void __cdecl sceSdSetCoreAttr(u16 entry, u16 value);
 u16 __cdecl sceSdGetCoreAttr(u16 entry);
 SdIntrCallback __cdecl sceSdSetTransCallback(s32 core, SdIntrCallback cb);
@@ -242,10 +227,7 @@ void *__cdecl sceSdGetTransIntrHandlerArgument(int arg);
 SdIntrCallback __cdecl sceSdSetIRQCallback(SdIntrCallback cb);
 sceSdSpu2IntrHandler __cdecl sceSdSetSpu2IntrHandler(sceSdSpu2IntrHandler func, void *arg);
 void *__cdecl sceSdGetSpu2IntrHandlerArgument();
-int __fastcall Spu2Interrupt(void *data);
-int InitVoices();
-int __fastcall Reset(char flag);
-void reset_vars();
+static void reset_vars();
 int __cdecl sceSdInit(int flag);
 int __cdecl sceSdQuit();
 
@@ -1132,7 +1114,7 @@ int _start()
 }
 
 //----- (00400110) --------------------------------------------------------
-void SetEffectRegisterPair(spu2_u16pair_t *pair, int val)
+static void SetEffectRegisterPair(spu2_u16pair_t *pair, int val)
 {
   unsigned int rval; // $a2
 
@@ -1143,7 +1125,7 @@ void SetEffectRegisterPair(spu2_u16pair_t *pair, int val)
 }
 
 //----- (0040013C) --------------------------------------------------------
-void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
+static void __cdecl SetEffectData(int core, struct mode_data_struct *mode_data)
 {
   int deref_mode_data; // $s0
 
@@ -1281,7 +1263,7 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
 }
 
 //----- (00400888) --------------------------------------------------------
-int CleanHandler(int channel)
+static int CleanHandler(int channel)
 {
   g_CleanRegionCur[channel] += 1;
   if ( (int)g_CleanRegionCur[channel] >= (int)(g_CleanRegionMax[channel] - 1) )
@@ -1448,7 +1430,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00401100) --------------------------------------------------------
-int __fastcall GetEEA(int core)
+static int __fastcall GetEEA(int core)
 {
   return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_eea << 17) | 0x1FFFF;
 }
@@ -1537,7 +1519,7 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00401550) --------------------------------------------------------
-void InitSpu2_Inner()
+static void InitSpu2_Inner()
 {
   int state; // [sp+10h] [-8h] BYREF
   USE_IOP_MMIO_HWPORT();
@@ -1553,7 +1535,7 @@ void InitSpu2_Inner()
 }
 
 //----- (004015E8) --------------------------------------------------------
-void InitSpu2()
+static void InitSpu2()
 {
   InitSpu2_Inner();
   spu2_regs.m_u.m_e.m_spdif_mode = 0x0900;
@@ -1563,7 +1545,7 @@ void InitSpu2()
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00401638) --------------------------------------------------------
-void InitCoreVolume(int flag)
+static void InitCoreVolume(int flag)
 {
   spu2_regs.m_u.m_e.m_spdif_out = 0xC032;
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = (flag ? SD_ENABLE_EFFECTS : 0) | SD_MUTE|SD_SPU2_ON;
@@ -1800,12 +1782,19 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
 //----- (00402024) --------------------------------------------------------
 u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag)
 {
+  // Unofficial: inline thunk
+  int dmamagictmp1; // $a2
+  USE_IOP_MMIO_HWPORT();
+
   (void)flag;
-  return thunk_sceSdBlockTransStatus(channel);
+  channel &= 1;
+
+  dmamagictmp1 = (spu2_regs.m_u.m_m.m_core_regs[channel].m_cregs.m_admas & 7) ? *(channel ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) : 0;
+  return (g_BlockTransBuff[channel] << 24) | (dmamagictmp1 & ~0xFF000000);
 }
 
 //----- (0040206C) --------------------------------------------------------
-int InitSpdif()
+static int InitSpdif()
 {
   int i; // $s0
 
@@ -1847,7 +1836,7 @@ int InitSpdif()
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (0040225C) --------------------------------------------------------
-void SetDmaWrite(int chan)
+static void SetDmaWrite(int chan)
 {
   vu32 *dmachanptr; // $a0
   USE_IOP_MMIO_HWPORT();
@@ -1857,7 +1846,7 @@ void SetDmaWrite(int chan)
 }
 
 //----- (00402284) --------------------------------------------------------
-void SetDmaRead(int chan)
+static void SetDmaRead(int chan)
 {
   vu32 *dmachanptr; // $a0
   USE_IOP_MMIO_HWPORT();
@@ -1867,7 +1856,7 @@ void SetDmaRead(int chan)
 }
 
 //----- (004022B4) --------------------------------------------------------
-void libsd_do_busyloop_2()
+static void libsd_do_busyloop_2()
 {
   int i; // [sp+0h] [-8h]
   int loopmul; // [sp+4h] [-4h]
@@ -1878,7 +1867,7 @@ void libsd_do_busyloop_2()
 }
 
 //----- (00402310) --------------------------------------------------------
-void libsd_do_busyloop_1(int a1)
+static void libsd_do_busyloop_1(int a1)
 {
   int i; // $s0
 
@@ -1887,7 +1876,7 @@ void libsd_do_busyloop_1(int a1)
 }
 
 //----- (00402358) --------------------------------------------------------
-u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
+static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
 {
   int core_tmp1; // $s1
   unsigned int tsa_tmp; // $t1
@@ -1982,7 +1971,7 @@ u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (0040280C) --------------------------------------------------------
-int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size, int chan)
+static int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size, int chan)
 {
   unsigned int size_tmp; // $s3
   int count; // $s2
@@ -2009,7 +1998,7 @@ int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (004029A8) --------------------------------------------------------
-void do_finish_block_clean_xfer(int core)
+static void do_finish_block_clean_xfer(int core)
 {
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 0;
@@ -2017,7 +2006,7 @@ void do_finish_block_clean_xfer(int core)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (004029EC) --------------------------------------------------------
-int __fastcall TransInterrupt(IntrData *intr)
+static int __fastcall TransInterrupt(IntrData *intr)
 {
   int no_flush_cache; // $s5
   u32 mode; // $v1
@@ -2127,19 +2116,8 @@ int __fastcall TransInterrupt(IntrData *intr)
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
-//----- (00402EB8) --------------------------------------------------------
-u32 __fastcall thunk_sceSdBlockTransStatus(int channel)
-{
-  int dmamagictmp1; // $a2
-  USE_IOP_MMIO_HWPORT();
-
-  dmamagictmp1 = (spu2_regs.m_u.m_m.m_core_regs[channel].m_cregs.m_admas & 7) ? *(channel ? &iop_mmio_hwport->dmac2.newch[0].madr : &iop_mmio_hwport->dmac1.oldch[4].madr) : 0;
-  return (g_BlockTransBuff[channel] << 24) | (dmamagictmp1 & ~0xFF000000);
-}
-// BF900000: using guessed type spu2_regs_t spu2_regs;
-
 //----- (00402F4C) --------------------------------------------------------
-unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr)
+static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr)
 {
   int chan_tmp0; // $s2
   u32 startaddr_tmp; // $s3
@@ -2193,7 +2171,7 @@ unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00403174) --------------------------------------------------------
-u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
+static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
 {
   int chan_tmp1; // $s3
   int state; // [sp+14h] [-4h] BYREF
@@ -2222,7 +2200,7 @@ u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00403340) --------------------------------------------------------
-int __fastcall SifDmaBatch(void *ee_addr, void *iop_addr, int size)
+static int __fastcall SifDmaBatch(void *ee_addr, void *iop_addr, int size)
 {
   int dmat; // $s2
   int i; // $s1
@@ -2556,7 +2534,7 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
 }
 
 //----- (00403E20) --------------------------------------------------------
-int __fastcall SetSpdifMode(int val)
+static int __fastcall SetSpdifMode(int val)
 {
   __int16 spdif_out_new; // $t0
   __int16 spdif_mode_new; // $a1
@@ -2604,24 +2582,10 @@ int __fastcall SetSpdifMode(int val)
 // 4055E0: using guessed type int g_SpdifSettings;
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
-//----- (00403F50) --------------------------------------------------------
-void sceSdSetCoreAttr_default(char entry, char val)
-{
-  __int16 setting_tmp; // $s1
-  u16 param_tmp; // $s0
-  int state; // [sp+10h] [-8h] BYREF
-
-  setting_tmp = g_CoreAttrShifts[((entry & 0xE) >> 1) - 1];
-  CpuSuspendIntr(&state);
-  param_tmp = (entry & 1) | 0x2300;
-  sceSdSetParam(param_tmp, (sceSdGetParam(param_tmp) & ~(1 << setting_tmp)) | ((val & 1) << setting_tmp));
-  CpuResumeIntr(state);
-}
-// 4055E0: using guessed type int g_SpdifSettings;
-
 //----- (00403FEC) --------------------------------------------------------
 void __cdecl sceSdSetCoreAttr(u16 entry, u16 value)
 {
+  __int16 setting_tmp; // $s1
   u16 param_tmp; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2637,7 +2601,12 @@ void __cdecl sceSdSetCoreAttr(u16 entry, u16 value)
       CpuResumeIntr(state);
       break;
     default:
-      sceSdSetCoreAttr_default(entry, value);
+      // Unofficial: inline the following
+      setting_tmp = g_CoreAttrShifts[((entry & 0xE) >> 1) - 1];
+      CpuSuspendIntr(&state);
+      param_tmp = (entry & 1) | 0x2300;
+      sceSdSetParam(param_tmp, (sceSdGetParam(param_tmp) & ~(1 << setting_tmp)) | ((value & 1) << setting_tmp));
+      CpuResumeIntr(state);
       break;
   }
 }
@@ -2719,7 +2688,7 @@ void *__cdecl sceSdGetSpu2IntrHandlerArgument()
 }
 
 //----- (00404220) --------------------------------------------------------
-int __fastcall Spu2Interrupt(void *data)
+static int __fastcall Spu2Interrupt(void *data)
 {
   int val; // $a0
 
@@ -2742,7 +2711,7 @@ int __fastcall Spu2Interrupt(void *data)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00404344) --------------------------------------------------------
-int InitVoices()
+static int InitVoices()
 {
   int i; // [sp+10h] [-8h]
 
@@ -2791,7 +2760,7 @@ int InitVoices()
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00404644) --------------------------------------------------------
-int __fastcall Reset(char flag)
+static int __fastcall Reset(char flag)
 {
   iop_event_t efparam; // [sp+10h] [-18h] BYREF
   int intrstate; // [sp+20h] [-8h] BYREF
@@ -2861,7 +2830,7 @@ int __fastcall Reset(char flag)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (004048C8) --------------------------------------------------------
-void reset_vars()
+static void reset_vars()
 {
   g_vars_inited = 0;
   g_VoiceTransCompleteEf[0] = 0;
