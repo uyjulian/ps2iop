@@ -8,9 +8,6 @@
 
 IRX_ID("Sound_Device_Library", 3, 3);
 
-#define __cdecl
-#define __fastcall
-
 #define SD_DMA_CS           (1 << 9) // Continuous stream
 #define SD_DMA_START          (1 << 24)
 #define SD_DMA_DIR_SPU2IOP        0
@@ -218,13 +215,13 @@ typedef struct CleanRegionBuffer_
 
 typedef int (*SdCleanHandler)(int);
 
-static int __fastcall GetEEA(int core);
+static int GetEEA(int core);
 static void InitSpu2_Inner();
 static void libsd_do_busyloop_1(int);
-static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, u32 vararg3);
-static u32 __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan);
-static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr);
-static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode);
+static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3);
+static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan);
+static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr);
+static u32 BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode);
 static void reset_vars();
 
 static vu16 *const g_ParamRegList[] =
@@ -838,7 +835,7 @@ static void SetEffectRegisterPair(spu2_u16pair_t *pair, u32 val)
   pair->m_pair[1] = val;
 }
 
-static void __cdecl SetEffectData(int core, const struct mode_data_struct *mode_data)
+static void SetEffectData(int core, const struct mode_data_struct *mode_data)
 {
   int mode_flags;
 
@@ -911,7 +908,7 @@ static void __cdecl SetEffectData(int core, const struct mode_data_struct *mode_
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_r = mode_data->m_d_in_coef_r;
 }
 
-int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
+int sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
 {
   u32 aligned_addr;
   u32 effect_size;
@@ -1001,7 +998,7 @@ static int CleanHandler(int channel)
   return 0;
 }
 
-int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
+int sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
 {
   u32 effect_size;
   u32 effect_addr;
@@ -1049,7 +1046,7 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
   return xferres;
 }
 
-void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr)
+void sceSdGetEffectAttr(int core, sceSdEffectAttr *attr)
 {
   attr->core = core;
   attr->mode = g_EffectAttr[core].mode;
@@ -1059,7 +1056,7 @@ void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr)
   attr->depth_R = spu2_regs.m_u.m_e.m_different_regs[core].m_evolr;
 }
 
-int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
+int sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
 {
   int clearram;
   int channel;
@@ -1142,12 +1139,12 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   return retval;
 }
 
-static int __fastcall GetEEA(int core)
+static int GetEEA(int core)
 {
   return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_eea << 17) | 0x1FFFF;
 }
 
-int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
+int sceSdSetEffectMode(int core, sceSdEffectAttr *param)
 {
   int clearram;
   int channel;
@@ -1190,7 +1187,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   return clearram ? sceSdCleanEffectWorkArea(core, channel, mode) : 0;
 }
 
-int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
+int sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
 {
   int mode;
   struct mode_data_struct mode_data;
@@ -1297,7 +1294,7 @@ static void InitCoreVolume(int flag)
   }
 }
 
-int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 size)
+int sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 size)
 {
   int core;
 
@@ -1344,7 +1341,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
   }
 }
 
-u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag)
+u32 sceSdVoiceTransStatus(s16 channel, s16 flag)
 {
   u32 efres;
   int core;
@@ -1374,7 +1371,7 @@ u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag)
   return g_VoiceTransIoMode[core];
 }
 
-int __cdecl sceSdStopTrans(int channel)
+int sceSdStopTrans(int channel)
 {
   int core;
 
@@ -1476,7 +1473,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
   return retres_1;
 }
 
-u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag)
+u32 sceSdBlockTransStatus(s16 channel, s16 flag)
 {
   int core;
   // Unofficial: inline thunk
@@ -1572,7 +1569,7 @@ static void libsd_do_busyloop_1(int a1)
     libsd_do_busyloop_2();
 }
 
-static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
+static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
 {
   int core;
   u32 tsa_tmp;
@@ -1672,7 +1669,7 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
   }
 }
 
-static u32 __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan)
+static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan)
 {
   u32 size_tmp;
   int count;
@@ -1707,7 +1704,7 @@ static void do_finish_block_clean_xfer(int core)
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 0;
 }
 
-static int __fastcall TransInterrupt(IntrData *intr)
+static int TransInterrupt(IntrData *intr)
 {
   int no_flush_cache;
   u32 mode;
@@ -1816,7 +1813,7 @@ static int __fastcall TransInterrupt(IntrData *intr)
   return 1;
 }
 
-static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr)
+static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr)
 {
   int core;
   u8 *startaddr_tmp;
@@ -1872,7 +1869,7 @@ static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int m
   return size;
 }
 
-static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode)
+static u32 BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode)
 {
   int core;
   int state;
@@ -1902,7 +1899,7 @@ static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode)
   return size;
 }
 
-static int __fastcall SifDmaBatch(void *ee_addr, void *iop_addr, int size)
+static int SifDmaBatch(void *ee_addr, void *iop_addr, int size)
 {
   int dmat;
   int i;
@@ -1928,7 +1925,7 @@ static int __fastcall SifDmaBatch(void *ee_addr, void *iop_addr, int size)
   return ( i < 0 ) ? -1 : 0;
 }
 
-int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num)
+int sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num)
 {
   u32 cnt;
 
@@ -1982,7 +1979,7 @@ int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num)
   return cnt;
 }
 
-int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
+int sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
 {
   u32 cnt;
   int loop;
@@ -2094,17 +2091,17 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
   return loop;
 }
 
-void __cdecl sceSdSetParam(u16 entry, u16 value)
+void sceSdSetParam(u16 entry, u16 value)
 {
   g_ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (0x400 - 984 * (!!(entry & 0x80)))) >> 1)] = value;
 }
 
-u16 __cdecl sceSdGetParam(u16 entry)
+u16 sceSdGetParam(u16 entry)
 {
   return g_ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (0x400 - 984 * (!!(entry & 0x80)))) >> 1)];
 }
 
-void __cdecl sceSdSetSwitch(u16 entry, u32 value)
+void sceSdSetSwitch(u16 entry, u32 value)
 {
   vu16 *regptr;
 
@@ -2113,7 +2110,7 @@ void __cdecl sceSdSetSwitch(u16 entry, u32 value)
   regptr[1] = (value >> 16) & 0xFF;
 }
 
-u32 __cdecl sceSdGetSwitch(u16 entry)
+u32 sceSdGetSwitch(u16 entry)
 {
   const vu16 *regptr;
 
@@ -2121,7 +2118,7 @@ u32 __cdecl sceSdGetSwitch(u16 entry)
   return regptr[0] | (regptr[1] << 16);
 }
 
-void __cdecl sceSdSetAddr(u16 entry, u32 value)
+void sceSdSetAddr(u16 entry, u32 value)
 {
   vu16 *reg1;
 
@@ -2131,7 +2128,7 @@ void __cdecl sceSdSetAddr(u16 entry, u32 value)
     reg1[1] = (value >> 1) & ~7;
 }
 
-u32 __cdecl sceSdGetAddr(u16 entry)
+u32 sceSdGetAddr(u16 entry)
 {
   int retlo;
   const vu16 *reg1;
@@ -2154,7 +2151,7 @@ u32 __cdecl sceSdGetAddr(u16 entry)
   return rethi | retlo;
 }
 
-u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine)
+u16 sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine)
 {
   int _fine;
   s16 _note;
@@ -2187,7 +2184,7 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
   return ( val < 0 ) ? (u32)(retval + (1 << (-val - 1))) >> -val : (u32)retval;
 }
 
-u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
+u16 sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
 {
   int bit;
   int i1;
@@ -2217,7 +2214,7 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
         + ((i2 + center_note + 12 * (bit - 12) + ((u16)(center_fine + i5 + 1) >> 7)) << 8)) & ~1;
 }
 
-static int __fastcall SetSpdifMode(int val)
+static int SetSpdifMode(int val)
 {
   u16 spdif_out_new;
   u16 spdif_mode_new;
@@ -2263,7 +2260,7 @@ static int __fastcall SetSpdifMode(int val)
   return 0;
 }
 
-void __cdecl sceSdSetCoreAttr(u16 entry, u16 value)
+void sceSdSetCoreAttr(u16 entry, u16 value)
 {
   u16 setting_tmp;
   u16 param_tmp;
@@ -2291,7 +2288,7 @@ void __cdecl sceSdSetCoreAttr(u16 entry, u16 value)
   }
 }
 
-u16 __cdecl sceSdGetCoreAttr(u16 entry)
+u16 sceSdGetCoreAttr(u16 entry)
 {
   int core;
 
@@ -2313,7 +2310,7 @@ u16 __cdecl sceSdGetCoreAttr(u16 entry)
   }
 }
 
-SdIntrCallback __cdecl sceSdSetTransCallback(s32 core, SdIntrCallback cb)
+SdIntrCallback sceSdSetTransCallback(s32 core, SdIntrCallback cb)
 {
   SdIntrCallback oldtmp;
 
@@ -2324,7 +2321,7 @@ SdIntrCallback __cdecl sceSdSetTransCallback(s32 core, SdIntrCallback cb)
   return oldtmp;
 }
 
-sceSdTransIntrHandler __cdecl sceSdSetTransIntrHandler(int channel, sceSdTransIntrHandler func, void *arg)
+sceSdTransIntrHandler sceSdSetTransIntrHandler(int channel, sceSdTransIntrHandler func, void *arg)
 {
   sceSdTransIntrHandler oldtmp;
   int core;
@@ -2337,12 +2334,12 @@ sceSdTransIntrHandler __cdecl sceSdSetTransIntrHandler(int channel, sceSdTransIn
   return oldtmp;
 }
 
-void *__cdecl sceSdGetTransIntrHandlerArgument(int arg)
+void *sceSdGetTransIntrHandlerArgument(int arg)
 {
   return g_TransIntrData[arg].m_data;
 }
 
-SdIntrCallback __cdecl sceSdSetIRQCallback(SdIntrCallback cb)
+SdIntrCallback sceSdSetIRQCallback(SdIntrCallback cb)
 {
   SdIntrCallback oldtmp;
 
@@ -2351,7 +2348,7 @@ SdIntrCallback __cdecl sceSdSetIRQCallback(SdIntrCallback cb)
   return oldtmp;
 }
 
-sceSdSpu2IntrHandler __cdecl sceSdSetSpu2IntrHandler(sceSdSpu2IntrHandler func, void *arg)
+sceSdSpu2IntrHandler sceSdSetSpu2IntrHandler(sceSdSpu2IntrHandler func, void *arg)
 {
   sceSdSpu2IntrHandler oldtmp;
 
@@ -2361,12 +2358,12 @@ sceSdSpu2IntrHandler __cdecl sceSdSetSpu2IntrHandler(sceSdSpu2IntrHandler func, 
   return oldtmp;
 }
 
-void *__cdecl sceSdGetSpu2IntrHandlerArgument()
+void *sceSdGetSpu2IntrHandlerArgument()
 {
   return g_Spu2IntrHandlerData;
 }
 
-static int __fastcall Spu2Interrupt(void *data)
+static int Spu2Interrupt(void *data)
 {
   int val;
 
@@ -2443,7 +2440,7 @@ static int InitVoices()
   return 0;
 }
 
-static int __fastcall Reset(int flag)
+static int Reset(int flag)
 {
   iop_event_t efparam;
   int intrstate;
@@ -2514,7 +2511,7 @@ static void reset_vars()
     g_VoiceTransCompleteEf[i] = 0;
 }
 
-int __cdecl sceSdInit(int flag)
+int sceSdInit(int flag)
 {
   int resetres;
 
@@ -2527,14 +2524,14 @@ int __cdecl sceSdInit(int flag)
   EnableIntr(IOP_IRQ_DMA_SPU);
   EnableIntr(IOP_IRQ_DMA_SPU2);
   EnableIntr(IOP_IRQ_SPU);
-  RegisterIntrHandler(IOP_IRQ_DMA_SPU, 1, (int (__cdecl *)(void *))TransInterrupt, &g_TransIntrData[0]);
-  RegisterIntrHandler(IOP_IRQ_DMA_SPU2, 1, (int (__cdecl *)(void *))TransInterrupt, &g_TransIntrData[1]);
-  RegisterIntrHandler(IOP_IRQ_SPU, 1, (int (__cdecl *)(void *))Spu2Interrupt, g_Spu2IntrHandlerData);
+  RegisterIntrHandler(IOP_IRQ_DMA_SPU, 1, (int (*)(void *))TransInterrupt, &g_TransIntrData[0]);
+  RegisterIntrHandler(IOP_IRQ_DMA_SPU2, 1, (int (*)(void *))TransInterrupt, &g_TransIntrData[1]);
+  RegisterIntrHandler(IOP_IRQ_SPU, 1, (int (*)(void *))Spu2Interrupt, g_Spu2IntrHandlerData);
   g_vars_inited = 1;
   return resetres;
 }
 
-int __cdecl sceSdQuit()
+int sceSdQuit()
 {
   int intrstate;
   int i;
