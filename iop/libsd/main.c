@@ -639,7 +639,6 @@ static const struct mode_data_struct g_EffectParams[] =
 };
 // Unofficial: move to bss
 static const u32 g_ClearEffectData[256] __attribute__((__aligned__(16)));
-static spu2_regs_t *const g_ptr_to_bf900000 = (spu2_regs_t *)0xBF900000;
 // Unofficial: move to bss
 static int g_VoiceTransStatus[2];
 // Unofficial: move to bss
@@ -838,7 +837,15 @@ static u32 g_BlockTransSize[2];
 static u32 g_BatchData __attribute__((__aligned__(16)));
 static SdIntrCallback g_TransIntrCallbacks[2];
 static u32 g_EffectAddr[2];
-spu2_regs_t spu2_regs; // weak
+
+#if !defined(USE_SPU2_MMIO_HWPORT) && defined(_IOP)
+// cppcheck-suppress-macro constVariablePointer
+#define USE_SPU2_MMIO_HWPORT() spu2_regs_t *const spu2_mmio_hwport = (spu2_regs_t *)0xBF900000
+#endif
+#if !defined(USE_SPU2_MMIO_HWPORT)
+#define USE_SPU2_MMIO_HWPORT()
+#endif
+
 
 int _start()
 {
@@ -866,74 +873,76 @@ static void SetEffectRegisterPair(spu2_u16pair_t *pair, u32 val)
 static void SetEffectData(int core, const struct mode_data_struct *mode_data)
 {
   int mode_flags;
+  // Unofficial: use local instead of global variable for SPU2 MMIO
+  USE_SPU2_MMIO_HWPORT();
 
   mode_flags = mode_data->m_mode_flags;
   if ( !mode_flags )
     mode_flags = 0xFFFFFFFF;
   if ( (mode_flags & 1) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, mode_data->m_d_apf1_size);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, mode_data->m_d_apf1_size);
   if ( (mode_flags & 2) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, mode_data->m_d_apf2_size);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, mode_data->m_d_apf2_size);
   if ( (mode_flags & 4) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_iir_vol = mode_data->m_d_iir_vol;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_iir_vol = mode_data->m_d_iir_vol;
   if ( (mode_flags & 8) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb1_vol = mode_data->m_d_comb1_vol;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_comb1_vol = mode_data->m_d_comb1_vol;
   if ( (mode_flags & 0x10) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb2_vol = mode_data->m_d_comb2_vol;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_comb2_vol = mode_data->m_d_comb2_vol;
   if ( (mode_flags & 0x20) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb3_vol = mode_data->m_d_comb3_vol;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_comb3_vol = mode_data->m_d_comb3_vol;
   if ( (mode_flags & 0x40) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_comb4_vol = mode_data->m_d_comb4_vol;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_comb4_vol = mode_data->m_d_comb4_vol;
   if ( (mode_flags & 0x80) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_wall_vol = mode_data->m_d_wall_vol;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_wall_vol = mode_data->m_d_wall_vol;
   if ( (mode_flags & 0x100) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf1_vol = mode_data->m_d_apf1_vol;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_apf1_vol = mode_data->m_d_apf1_vol;
   if ( (mode_flags & 0x200) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf2_vol = mode_data->m_d_apf2_vol;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_apf2_vol = mode_data->m_d_apf2_vol;
   if ( (mode_flags & 0x400) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, mode_data->m_d_same_l_dst);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, mode_data->m_d_same_l_dst);
   if ( (mode_flags & 0x800) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, mode_data->m_d_same_r_dst);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, mode_data->m_d_same_r_dst);
   if ( (mode_flags & 0x1000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, mode_data->m_d_comb1_l_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, mode_data->m_d_comb1_l_src);
   if ( (mode_flags & 0x2000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, mode_data->m_d_comb1_r_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, mode_data->m_d_comb1_r_src);
   if ( (mode_flags & 0x4000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, mode_data->m_d_comb2_l_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, mode_data->m_d_comb2_l_src);
   if ( (mode_flags & 0x8000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, mode_data->m_d_comb2_r_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, mode_data->m_d_comb2_r_src);
   if ( (mode_flags & 0x10000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, mode_data->m_d_same_l_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, mode_data->m_d_same_l_src);
   if ( (mode_flags & 0x20000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, mode_data->m_d_same_r_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, mode_data->m_d_same_r_src);
   if ( (mode_flags & 0x40000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, mode_data->m_d_diff_l_dst);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, mode_data->m_d_diff_l_dst);
   if ( (mode_flags & 0x80000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, mode_data->m_d_diff_r_dst);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, mode_data->m_d_diff_r_dst);
   if ( (mode_flags & 0x100000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, mode_data->m_d_comb3_l_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, mode_data->m_d_comb3_l_src);
   if ( (mode_flags & 0x200000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, mode_data->m_d_comb3_r_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, mode_data->m_d_comb3_r_src);
   if ( (mode_flags & 0x400000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, mode_data->m_d_comb4_l_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, mode_data->m_d_comb4_l_src);
   if ( (mode_flags & 0x800000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, mode_data->m_d_comb4_r_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, mode_data->m_d_comb4_r_src);
   if ( (mode_flags & 0x1000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, mode_data->m_d_diff_l_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, mode_data->m_d_diff_l_src);
   if ( (mode_flags & 0x2000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, mode_data->m_d_diff_r_src);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, mode_data->m_d_diff_r_src);
   if ( (mode_flags & 0x4000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, mode_data->m_d_apf1_l_dst);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, mode_data->m_d_apf1_l_dst);
   if ( (mode_flags & 0x8000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, mode_data->m_d_apf1_r_dst);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, mode_data->m_d_apf1_r_dst);
   if ( (mode_flags & 0x10000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, mode_data->m_d_apf2_l_dst);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, mode_data->m_d_apf2_l_dst);
   if ( (mode_flags & 0x20000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, mode_data->m_d_apf2_r_dst);
+    SetEffectRegisterPair(&spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, mode_data->m_d_apf2_r_dst);
   if ( (mode_flags & 0x40000000) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_l = mode_data->m_d_in_coef_l;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_in_coef_l = mode_data->m_d_in_coef_l;
   if ( (mode_flags & 0x80000000) )
-    g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_r = mode_data->m_d_in_coef_r;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_in_coef_r = mode_data->m_d_in_coef_r;
 }
 
 int sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
@@ -1076,12 +1085,14 @@ int sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
 
 void sceSdGetEffectAttr(int core, sceSdEffectAttr *attr)
 {
+  USE_SPU2_MMIO_HWPORT();
+
   attr->core = core;
   attr->mode = g_EffectAttr[core].mode;
   attr->delay = g_EffectAttr[core].delay;
   attr->feedback = g_EffectAttr[core].feedback;
-  attr->depth_L = spu2_regs.m_u.m_e.m_different_regs[core].m_evoll;
-  attr->depth_R = spu2_regs.m_u.m_e.m_different_regs[core].m_evolr;
+  attr->depth_L = spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evoll;
+  attr->depth_R = spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evolr;
 }
 
 int sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
@@ -1094,6 +1105,7 @@ int sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   struct mode_data_struct mode_data;
   int state;
   int effect_mode;
+  USE_SPU2_MMIO_HWPORT();
 
   mode_data.m_mode_flags = 0;
   mode = attr->mode;
@@ -1141,27 +1153,27 @@ int sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     mode_data.m_d_apf1_r_dst = delay + mode_data.m_d_apf2_r_dst;
     mode_data.m_d_wall_vol = 0x102 * g_EffectAttr[core].feedback;
   }
-  effects_enabled = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
+  effects_enabled = (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_ENABLE_EFFECTS;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
   retval = ( effects_enabled && clearram ) ? sceSdClearEffectWorkArea(core, channel, effect_mode) : 0;
   if ( retval >= 0 )
   {
-    spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
-    spu2_regs.m_u.m_e.m_different_regs[core].m_evolr = attr->depth_R;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evolr = attr->depth_R;
     SetEffectData(core, &mode_data);
-    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[0] = g_EffectAddr[core] >> 17;
-    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[1] = g_EffectAddr[core] >> 1;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[0] = g_EffectAddr[core] >> 17;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[1] = g_EffectAddr[core] >> 1;
     retval = clearram ? sceSdClearEffectWorkArea(core, channel, mode) : 0;
   }
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_ENABLE_EFFECTS;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
   return retval;
@@ -1169,7 +1181,9 @@ int sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
 
 static int GetEEA(int core)
 {
-  return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_eea << 17) | 0x1FFFF;
+  USE_SPU2_MMIO_HWPORT();
+
+  return (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_eea << 17) | 0x1FFFF;
 }
 
 int sceSdSetEffectMode(int core, sceSdEffectAttr *param)
@@ -1180,6 +1194,7 @@ int sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   int effects_enabled;
   struct mode_data_struct mode_data;
   int state;
+  USE_SPU2_MMIO_HWPORT();
 
   mode_data.m_mode_flags = 0;
   mode = param->mode;
@@ -1194,22 +1209,22 @@ int sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   g_EffectAddr[core] = GetEEA(core) - ((g_EffectSizes[mode] << 3) - 1);
   // Unoffical: don't use inlined memcpy
   memcpy(&mode_data, &g_EffectParams[mode], sizeof(mode_data));
-  effects_enabled = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
+  effects_enabled = (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_ENABLE_EFFECTS;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
-  spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = 0;
-  spu2_regs.m_u.m_e.m_different_regs[core].m_evolr = 0;
+  spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evoll = 0;
+  spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evolr = 0;
   SetEffectData(core, &mode_data);
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[0] = g_EffectAddr[core] >> 17;
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[1] = g_EffectAddr[core] >> 1;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[0] = g_EffectAddr[core] >> 17;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[1] = g_EffectAddr[core] >> 1;
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
-    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_ENABLE_EFFECTS;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
   return clearram ? sceSdCleanEffectWorkArea(core, channel, mode) : 0;
@@ -1219,6 +1234,7 @@ int sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
 {
   int mode;
   struct mode_data_struct mode_data;
+  USE_SPU2_MMIO_HWPORT();
 
   mode = attr->mode;
   mode &= 0xFF;
@@ -1249,8 +1265,8 @@ int sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
     mode_data.m_d_wall_vol = 0x102 * g_EffectAttr[core].feedback;
     SetEffectData(core, &mode_data);
   }
-  spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
-  spu2_regs.m_u.m_e.m_different_regs[core].m_evolr = attr->depth_R;
+  spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
+  spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evolr = attr->depth_R;
   return 0;
 }
 
@@ -1271,54 +1287,57 @@ static void InitSpu2_Inner()
 
 static void InitSpu2()
 {
+  USE_SPU2_MMIO_HWPORT();
+
   InitSpu2_Inner();
-  spu2_regs.m_u.m_e.m_spdif_mode = 0x0900;
-  spu2_regs.m_u.m_e.m_spdif_media = 0x200;
-  spu2_regs.m_u.m_e.m_unknown7ca = 8;
+  spu2_mmio_hwport->m_u.m_e.m_spdif_mode = 0x0900;
+  spu2_mmio_hwport->m_u.m_e.m_spdif_media = 0x200;
+  spu2_mmio_hwport->m_u.m_e.m_unknown7ca = 8;
 }
 
 static void InitCoreVolume(int flag)
 {
   int i;
+  USE_SPU2_MMIO_HWPORT();
 
-  spu2_regs.m_u.m_e.m_spdif_out = 0xC032;
+  spu2_mmio_hwport->m_u.m_e.m_spdif_out = 0xC032;
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = (flag ? SD_ENABLE_EFFECTS : 0) | (i ? SD_ENABLE_EX_INPUT : 0) | SD_MUTE|SD_SPU2_ON;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr = (flag ? SD_ENABLE_EFFECTS : 0) | (i ? SD_ENABLE_EX_INPUT : 0) | SD_MUTE|SD_SPU2_ON;
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixl.m_pair[0] = 0xFFFF;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixl.m_pair[1] = 0xFF;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixel.m_pair[0] = 0xFFFF;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixel.m_pair[1] = 0x00FF;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixr.m_pair[0] = 0xFFFF;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixr.m_pair[1] = 0x00FF;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixer.m_pair[0] = 0xFFFF;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_vmixer.m_pair[1] = 0x00FF;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_mmix = 0xFF0 + (i * 0xC);
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_vmixl.m_pair[0] = 0xFFFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_vmixl.m_pair[1] = 0xFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_vmixel.m_pair[0] = 0xFFFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_vmixel.m_pair[1] = 0x00FF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_vmixr.m_pair[0] = 0xFFFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_vmixr.m_pair[1] = 0x00FF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_vmixer.m_pair[0] = 0xFFFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_vmixer.m_pair[1] = 0x00FF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_mmix = 0xFF0 + (i * 0xC);
   }
   if ( !flag )
   {
     // Unofficial: rerolled
     for ( i = 0; i < 2; i += 1 )
     {
-      spu2_regs.m_u.m_e.m_different_regs[i].m_mvoll = 0;
-      spu2_regs.m_u.m_e.m_different_regs[i].m_mvolr = 0;
-      spu2_regs.m_u.m_e.m_different_regs[i].m_evoll = 0;
-      spu2_regs.m_u.m_e.m_different_regs[i].m_evolr = 0;
+      spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_mvoll = 0;
+      spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_mvolr = 0;
+      spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_evoll = 0;
+      spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_evolr = 0;
     }
     // Unofficial: rerolled
     for ( i = 0; i < 2; i += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_eea = 14 + i;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_eea = 14 + i;
   }
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
-    spu2_regs.m_u.m_e.m_different_regs[i].m_avoll = i ? 0x7FFF : 0;
-    spu2_regs.m_u.m_e.m_different_regs[i].m_avolr = i ? 0x7FFF : 0;
-    spu2_regs.m_u.m_e.m_different_regs[i].m_bvoll = 0;
-    spu2_regs.m_u.m_e.m_different_regs[i].m_bvolr = 0;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_avoll = i ? 0x7FFF : 0;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_avolr = i ? 0x7FFF : 0;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_bvoll = 0;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_bvolr = 0;
   }
 }
 
@@ -1506,57 +1525,59 @@ u32 sceSdBlockTransStatus(s16 channel, s16 flag)
   int core;
   // Unofficial: inline thunk
   USE_IOP_MMIO_HWPORT();
+  USE_SPU2_MMIO_HWPORT();
 
   (void)flag;
   core = channel & 1;
-  return (g_BlockTransBuff[core] << 24) | (((spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas & 7) ? (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr : 0) & ~0xFF000000);
+  return (g_BlockTransBuff[core] << 24) | (((spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_admas & 7) ? (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr : 0) & ~0xFF000000);
 }
 
 static int InitSpdif()
 {
   int i;
+  USE_SPU2_MMIO_HWPORT();
 
-  spu2_regs.m_u.m_e.m_spdif_out = 0;
+  spu2_mmio_hwport->m_u.m_e.m_spdif_out = 0;
   libsd_do_busyloop(2);
-  spu2_regs.m_u.m_e.m_spdif_out = 0x8000;
+  spu2_mmio_hwport->m_u.m_e.m_spdif_out = 0x8000;
   libsd_do_busyloop(1);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
-    spu2_regs.m_u.m_e.m_different_regs[i].m_mvoll = 0;
-    spu2_regs.m_u.m_e.m_different_regs[i].m_mvolr = 0;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_mvoll = 0;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_mvolr = 0;
   }
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_admas = 0;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_admas = 0;
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_attr = 0;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_attr = 0;
   libsd_do_busyloop(1);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_attr = 0x8000;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_attr = 0x8000;
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
-    spu2_regs.m_u.m_e.m_different_regs[i].m_mvoll = 0;
-    spu2_regs.m_u.m_e.m_different_regs[i].m_mvolr = 0;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_mvoll = 0;
+    spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_mvolr = 0;
   }
-  for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_statx & 0x7FF) && (spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_statx & 0x7FF) && i < 0xF00; i += 1 )
+  for ( i = 0; (spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_statx & 0x7FF) && (spu2_mmio_hwport->m_u.m_m.m_core_regs[1].m_cregs.m_statx & 0x7FF) && i < 0xF00; i += 1 )
     libsd_do_busyloop(1);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_koff.m_pair[0] = 0xFFFF;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_koff.m_pair[1] = 0xFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_koff.m_pair[0] = 0xFFFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_koff.m_pair[1] = 0xFF;
   }
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_pmon.m_pair[0] = 0;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_pmon.m_pair[1] = 0;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_non.m_pair[0] = 0;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_non.m_pair[1] = 0;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_pmon.m_pair[0] = 0;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_pmon.m_pair[1] = 0;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_non.m_pair[0] = 0;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_non.m_pair[1] = 0;
   }
   return 0;
 }
@@ -1611,6 +1632,7 @@ static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
   int hichk;
   int state;
   USE_IOP_MMIO_HWPORT();
+  USE_SPU2_MMIO_HWPORT();
 
   // Unofficial: restrict core
   core = (mainarg >> 4) & 1;
@@ -1618,20 +1640,20 @@ static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
   {
     case 2:
       tsa_tmp = ((u16)(uiptr)vararg2 >> 1) & ~7;
-      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = tsa_tmp;
-      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = (tsa_tmp >> 16) & 0xFFFF;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = tsa_tmp;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = (tsa_tmp >> 16) & 0xFFFF;
       return 0;
     case 4:
-      if ( (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_DMA_IN_PROCESS) )
+      if ( (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_DMA_IN_PROCESS) )
         return -1;
       if ( ((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr & SD_DMA_START) )
         return -1;
-      if ( spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas )
+      if ( spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_admas )
         return -1;
       return 0;
     case 5:
       CpuSuspendIntr(&state);
-      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_DMA_READ;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr |= SD_DMA_READ;
       CpuResumeIntr(state);
       SetDmaRead(core);
       vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
@@ -1645,7 +1667,7 @@ static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
       return vararg3_cal << 6;
     case 6:
       CpuSuspendIntr(&state);
-      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_WRITE;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr = (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_WRITE;
       CpuResumeIntr(state);
       SetDmaWrite(core);
       vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
@@ -1665,27 +1687,27 @@ static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
         blocktransbufitem = g_BlockTransBuff[core];
         dma_addr = (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr;
         (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr &= ~SD_DMA_START;
-        if ( (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) )
+        if ( (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) )
         {
-          for ( i = 0; !(spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
+          for ( i = 0; !(spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
           {
           }
         }
       }
-      if ( (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) )
+      if ( (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) )
       {
         CpuSuspendIntr(&state);
-        spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
+        spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
         CpuResumeIntr(state);
-        for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
+        for ( i = 0; (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
         {
         }
       }
       hichk = 0;
-      if ( (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas & 7) )
+      if ( (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_admas & 7) )
       {
         hichk = 1;
-        spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 0;
+        spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_admas = 0;
       }
       if ( QueryIntrContext() )
         iSetEventFlag(g_VoiceTransCompleteEf[core], 1);
@@ -1707,6 +1729,7 @@ static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan)
   int i;
   int state;
   int core;
+  USE_SPU2_MMIO_HWPORT();
 
   // Unofficial: restrict core
   core = chan & 1;
@@ -1714,15 +1737,15 @@ static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan)
   {
     count = ( size_tmp <= 0x40 ) ? size_tmp : 0x40;
     for ( i = 0; i < (count / 2); i += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_xferdata = iopaddr[i];
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_xferdata = iopaddr[i];
     CpuSuspendIntr(&state);
-    spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr = (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
     CpuResumeIntr(state);
-    for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_statx & SD_IO_IN_PROCESS) && i < 0xF00; i += 1 )
+    for ( i = 0; (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_statx & SD_IO_IN_PROCESS) && i < 0xF00; i += 1 )
       libsd_do_busyloop(1);
   }
   CpuSuspendIntr(&state);
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
   g_VoiceTransIoMode[core] = 1;
   // Unofficial: return size
@@ -1731,8 +1754,10 @@ static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan)
 
 static void do_finish_block_clean_xfer(int core)
 {
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 0;
+  USE_SPU2_MMIO_HWPORT();
+
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_admas = 0;
 }
 
 static int TransInterrupt(IntrData *intr)
@@ -1744,6 +1769,7 @@ static int TransInterrupt(IntrData *intr)
   void *dma_addr;
   int dma_size;
   USE_IOP_MMIO_HWPORT();
+  USE_SPU2_MMIO_HWPORT();
 
   mode = intr->m_mode;
   switch ( mode & 0xC00 )
@@ -1761,11 +1787,11 @@ static int TransInterrupt(IntrData *intr)
   switch ( mode & 0x300 )
   {
     case 0x100:
-      for ( i = 0; !(spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
+      for ( i = 0; !(spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
       {
       }
-      spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
-      for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
+      for ( i = 0; (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
       {
       }
       if ( !no_flush_cache )
@@ -1852,6 +1878,7 @@ static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *st
   int size_align_r6;
   int state;
   USE_IOP_MMIO_HWPORT();
+  USE_SPU2_MMIO_HWPORT();
 
   core = chan & 1;
   startaddr_tmp = startaddr;
@@ -1883,11 +1910,11 @@ static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *st
     size_align = size;
   }
   CpuSuspendIntr(&state);
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 1 << core;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = 0;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_admas = 1 << core;
   SetDmaWrite(core);
   (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)startaddr_tmp;
 #pragma GCC diagnostic push
@@ -1905,19 +1932,20 @@ static u32 BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode)
   int core;
   int state;
   USE_IOP_MMIO_HWPORT();
+  USE_SPU2_MMIO_HWPORT();
 
   core = chan & 1;
   g_BlockTransAddr[core] = iopaddr;
   g_BlockTransBuff[core] = 0;
   g_BlockTransSize[core] = size;
   CpuSuspendIntr(&state);
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = ((mode & ~0xF0FF) << 1) + 0x400;
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_unk1ae = (mode & ~0xFFF) >> 11;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = ((mode & ~0xF0FF) << 1) + 0x400;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_unk1ae = (mode & ~0xFFF) >> 11;
   libsd_do_busyloop(3);
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 4;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_admas = 4;
   SetDmaRead(core);
   (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)iopaddr;
 #pragma GCC diagnostic push
@@ -2249,9 +2277,10 @@ static int SetSpdifMode(int val)
 {
   u16 spdif_out_new;
   u16 spdif_mode_new;
+  USE_SPU2_MMIO_HWPORT();
 
-  spdif_out_new = spu2_regs.m_u.m_e.m_spdif_out & ~0x1A8;
-  spdif_mode_new = spu2_regs.m_u.m_e.m_spdif_mode & ~0xBF06;
+  spdif_out_new = spu2_mmio_hwport->m_u.m_e.m_spdif_out & ~0x1A8;
+  spdif_mode_new = spu2_mmio_hwport->m_u.m_e.m_spdif_mode & ~0xBF06;
   switch ( val & 0xF )
   {
     case 0:
@@ -2273,20 +2302,20 @@ static int SetSpdifMode(int val)
   switch ( val & 0xF00 )
   {
     case 0x400:
-      spu2_regs.m_u.m_e.m_spdif_media = 0;
+      spu2_mmio_hwport->m_u.m_e.m_spdif_media = 0;
       spdif_mode_new |= 0x100;
       break;
     case 0x800:
-      spu2_regs.m_u.m_e.m_spdif_media = 0x200;
+      spu2_mmio_hwport->m_u.m_e.m_spdif_media = 0x200;
       spdif_mode_new |= 0x1900;
       break;
     default:
-      spu2_regs.m_u.m_e.m_spdif_media = 0x200;
+      spu2_mmio_hwport->m_u.m_e.m_spdif_media = 0x200;
       spdif_mode_new |= 0x900;
       break;
   }
-  spu2_regs.m_u.m_e.m_spdif_out = spdif_out_new;
-  spu2_regs.m_u.m_e.m_spdif_mode = spdif_mode_new;
+  spu2_mmio_hwport->m_u.m_e.m_spdif_out = spdif_out_new;
+  spu2_mmio_hwport->m_u.m_e.m_spdif_mode = spdif_mode_new;
   g_SpdifSettings = val;
   return 0;
 }
@@ -2322,18 +2351,19 @@ void sceSdSetCoreAttr(u16 entry, u16 value)
 u16 sceSdGetCoreAttr(u16 entry)
 {
   int core;
+  USE_SPU2_MMIO_HWPORT();
 
   core = entry & 1;
   switch ( entry & 0xE )
   {
     case SD_CORE_EFFECT_ENABLE:
-      return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
+      return (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
     case SD_CORE_IRQ_ENABLE:
-      return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 6) & 1;
+      return (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 6) & 1;
     case SD_CORE_MUTE_ENABLE:
-      return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 14) & 1;
+      return (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 14) & 1;
     case SD_CORE_NOISE_CLK:
-      return (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 8) & 0x3F;
+      return (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 8) & 0x3F;
     case SD_CORE_SPDIF_MODE:
       return g_SpdifSettings & 0xFFFF;
     default:
@@ -2397,17 +2427,18 @@ void *sceSdGetSpu2IntrHandlerArgument()
 static int Spu2Interrupt(void *data)
 {
   int val;
+  USE_SPU2_MMIO_HWPORT();
 
   (void)data;
   if ( !g_Spu2IntrHandler && !g_Spu2IrqCallback )
     return 1;
-  while ( ( val = (spu2_regs.m_u.m_e.m_spdif_irqinfo & 0xC) >> 2 ) )
+  while ( ( val = (spu2_mmio_hwport->m_u.m_e.m_spdif_irqinfo & 0xC) >> 2 ) )
   {
     int i;
 
     for ( i = 0; i < 2; i += 1 )
       if ( val & (1 << i) )
-        spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_attr &= ~0x40;
+        spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_attr &= ~0x40;
     if ( g_Spu2IntrHandler )
       g_Spu2IntrHandler(val, g_Spu2IntrHandlerData);
     else if ( g_Spu2IrqCallback )
@@ -2420,53 +2451,54 @@ static int InitVoices()
 {
   int i;
   int j;
+  USE_SPU2_MMIO_HWPORT();
 
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[0] = 0x0000;
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[1] = 0x2800;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[0] = 0x0000;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[1] = 0x2800;
   for ( i = 0; i < (int)(sizeof(g_VoiceDataInit)/sizeof(g_VoiceDataInit[0])); i += 1 )
-    spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_xferdata = g_VoiceDataInit[i];
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
-  for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_statx & SD_IO_IN_PROCESS) && i <= 0x1000000; i += 1 )
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_xferdata = g_VoiceDataInit[i];
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr = (spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
+  for ( i = 0; (spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_statx & SD_IO_IN_PROCESS) && i <= 0x1000000; i += 1 )
     libsd_do_busyloop(1);
-  spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
   // Unofficial: rerolled
   for ( i = 0; i < 24; i += 1 )
   {
     for ( j = 0; j < 2; j += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_voll = 0;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_voll = 0;
     for ( j = 0; j < 2; j += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_volr = 0;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_volr = 0;
     for ( j = 0; j < 2; j += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_pitch = 0x3FFF;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_pitch = 0x3FFF;
     for ( j = 0; j < 2; j += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_adsr1 = 0;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_adsr1 = 0;
     for ( j = 0; j < 2; j += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_adsr2 = 0;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_adsr2 = 0;
     for ( j = 0; j < 2; j += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_address[i].m_ssa.m_pair[0] = 0;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_address[i].m_ssa.m_pair[0] = 0;
     for ( j = 0; j < 2; j += 1 )
-      spu2_regs.m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_address[i].m_ssa.m_pair[1] = 0x2800;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_address[i].m_ssa.m_pair[1] = 0x2800;
   }
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
-    spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[0] = 0xFFFF;
-    spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[1] = 0xFF;
-  }
-  libsd_do_busyloop(3);
-  // Unofficial: rerolled
-  for ( i = 0; i < 2; i += 1 )
-  {
-    spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[0] = 0xFFFF;
-    spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[1] = 0xFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[0] = 0xFFFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[1] = 0xFF;
   }
   libsd_do_busyloop(3);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_endx.m_pair[1] = 0;
-    spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_endx.m_pair[0] = 0;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[0] = 0xFFFF;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[1] = 0xFF;
+  }
+  libsd_do_busyloop(3);
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+  {
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_endx.m_pair[1] = 0;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_endx.m_pair[0] = 0;
   }
   return 0;
 }
@@ -2476,6 +2508,7 @@ static int Reset(int flag)
   iop_event_t efparam;
   int intrstate;
   int i;
+  USE_SPU2_MMIO_HWPORT();
 
   DisableIntr(IOP_IRQ_DMA_SPU, &intrstate);
   DisableIntr(IOP_IRQ_DMA_SPU2, &intrstate);
@@ -2509,8 +2542,8 @@ static int Reset(int flag)
     // Unofficial: rerolled
     for ( i = 0; i < 2; i += 1 )
     {
-      spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_esa.m_pair[0] = 0x000E + i;
-      spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_esa.m_pair[1] = 0xFFF8;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_esa.m_pair[0] = 0x000E + i;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_esa.m_pair[1] = 0xFFF8;
     }
   }
   efparam.attr = 2;
