@@ -11,8 +11,6 @@ IRX_ID("Sound_Device_Library", 3, 3);
 #define __cdecl
 #define __fastcall
 
-#define __int8 char
-#define __int16 short
 #define SD_DMA_CS           (1 << 9) // Continuous stream
 #define SD_DMA_START          (1 << 24)
 #define SD_DMA_DIR_SPU2IOP        0
@@ -200,7 +198,7 @@ typedef struct
 
 typedef struct CleanEffectIntrData_
 {
-  void *m_cb;
+  void (__fastcall *m_cb)(int core, void *userdaa, int *out_dma_addr, int *out_dma_size);
   void *m_userdata;
 } CleanEffectIntrData_t;
 
@@ -237,9 +235,9 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...);
 u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag);
 static void libsd_do_busyloop_1(int);
 static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3);
-static int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size, int chan);
+static int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int size, int chan);
 static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr);
-static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode);
+static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, u16 mode);
 int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num);
 int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice);
 void __cdecl sceSdSetParam(u16 entry, u16 value);
@@ -889,9 +887,9 @@ static void __cdecl SetEffectData(int core, const struct mode_data_struct *mode_
   if ( !mode_flags )
     mode_flags = 0xFFFFFFFF;
   if ( (mode_flags & 1) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, (unsigned __int16)mode_data->m_d_apf1_size);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_size, mode_data->m_d_apf1_size);
   if ( (mode_flags & 2) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, (unsigned __int16)mode_data->m_d_apf2_size);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_size, mode_data->m_d_apf2_size);
   if ( ((mode_flags & 4)) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_iir_vol = mode_data->m_d_iir_vol;
   if ( (mode_flags & 8) )
@@ -909,45 +907,45 @@ static void __cdecl SetEffectData(int core, const struct mode_data_struct *mode_
   if ( (mode_flags & 0x200) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_apf2_vol = mode_data->m_d_apf2_vol;
   if ( (mode_flags & 0x400) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, (unsigned __int16)mode_data->m_d_same_l_dst);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_dst, mode_data->m_d_same_l_dst);
   if ( (mode_flags & 0x800) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, (unsigned __int16)mode_data->m_d_same_r_dst);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_dst, mode_data->m_d_same_r_dst);
   if ( (mode_flags & 0x1000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, (unsigned __int16)mode_data->m_d_comb1_l_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_l_src, mode_data->m_d_comb1_l_src);
   if ( (mode_flags & 0x2000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, (unsigned __int16)mode_data->m_d_comb1_r_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb1_r_src, mode_data->m_d_comb1_r_src);
   if ( (mode_flags & 0x4000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, (unsigned __int16)mode_data->m_d_comb2_l_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_l_src, mode_data->m_d_comb2_l_src);
   if ( (mode_flags & 0x8000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, (unsigned __int16)mode_data->m_d_comb2_r_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb2_r_src, mode_data->m_d_comb2_r_src);
   if ( (mode_flags & 0x10000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, (unsigned __int16)mode_data->m_d_same_l_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_l_src, mode_data->m_d_same_l_src);
   if ( (mode_flags & 0x20000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, (unsigned __int16)mode_data->m_d_same_r_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_same_r_src, mode_data->m_d_same_r_src);
   if ( (mode_flags & 0x40000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, (unsigned __int16)mode_data->m_d_diff_l_dst);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_dst, mode_data->m_d_diff_l_dst);
   if ( (mode_flags & 0x80000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, (unsigned __int16)mode_data->m_d_diff_r_dst);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_dst, mode_data->m_d_diff_r_dst);
   if ( (mode_flags & 0x100000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, (unsigned __int16)mode_data->m_d_comb3_l_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_l_src, mode_data->m_d_comb3_l_src);
   if ( (mode_flags & 0x200000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, (unsigned __int16)mode_data->m_d_comb3_r_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb3_r_src, mode_data->m_d_comb3_r_src);
   if ( (mode_flags & 0x400000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, (unsigned __int16)mode_data->m_d_comb4_l_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_l_src, mode_data->m_d_comb4_l_src);
   if ( (mode_flags & 0x800000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, (unsigned __int16)mode_data->m_d_comb4_r_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_comb4_r_src, mode_data->m_d_comb4_r_src);
   if ( (mode_flags & 0x1000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, (unsigned __int16)mode_data->m_d_diff_l_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_l_src, mode_data->m_d_diff_l_src);
   if ( (mode_flags & 0x2000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, (unsigned __int16)mode_data->m_d_diff_r_src);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_diff_r_src, mode_data->m_d_diff_r_src);
   if ( (mode_flags & 0x4000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, (unsigned __int16)mode_data->m_d_apf1_l_dst);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_l_dst, mode_data->m_d_apf1_l_dst);
   if ( (mode_flags & 0x8000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, (unsigned __int16)mode_data->m_d_apf1_r_dst);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf1_r_dst, mode_data->m_d_apf1_r_dst);
   if ( (mode_flags & 0x10000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, (unsigned __int16)mode_data->m_d_apf2_l_dst);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_l_dst, mode_data->m_d_apf2_l_dst);
   if ( (mode_flags & 0x20000000) )
-    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, (unsigned __int16)mode_data->m_d_apf2_r_dst);
+    SetEffectRegisterPair(&g_ptr_to_bf900000->m_u.m_m.m_core_regs[core].m_cregs.m_apf2_r_dst, mode_data->m_d_apf2_r_dst);
   if ( (mode_flags & 0x40000000) )
     g_ptr_to_bf900000->m_u.m_e.m_different_regs[core].m_in_coef_l = mode_data->m_d_in_coef_l;
   if ( (mode_flags & 0x80000000) )
@@ -964,9 +962,10 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   int (__cdecl *callback_tmp)(void *); // [sp+18h] [-8h]
   int (__cdecl *handler_tmp)(int, void *); // [sp+1Ch] [-4h]
 
-  if ( (unsigned __int8)effect_mode > SD_EFFECT_MODE_PIPE )
+  effect_mode &= 0xFF;
+  if ( effect_mode > SD_EFFECT_MODE_PIPE )
     return -100;
-  if ( !(unsigned __int8)effect_mode )
+  if ( !effect_mode )
     return 0;
   // Unofficial: restrict channel
   channel &= 1;
@@ -977,7 +976,7 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   if ( QueryIntrContext() )
     return -202;
   aligned_addr = 0;
-  effect_size = 8 * g_EffectSizes[(unsigned __int8)effect_mode];
+  effect_size = 8 * g_EffectSizes[effect_mode];
   effect_addr = (GetEEA(core) - (effect_size - 1)) >> 1;
   if ( (effect_size & 0x3F) )
   {
@@ -1055,15 +1054,16 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
   u32 *v13; // $t1
   int v14; // $v1
 
-  if ( (unsigned __int8)effect_mode >= 0xAu )
+  effect_mode &= 0xFF;
+  if ( effect_mode >= 0xA )
     return -100;
-  if ( !(unsigned __int8)effect_mode )
+  if ( !effect_mode )
     return 0;
   if ( DmaStartStop((channel << 4) | 4, 0, 0) )
     return -210;
   if ( g_VoiceTransIoMode[channel] != 1 )
     return -201;
-  v9 = 8 * g_EffectSizes[(unsigned __int8)effect_mode];
+  v9 = 8 * g_EffectSizes[effect_mode];
   v10 = (u32 *)(GetEEA(core) - (v9 - 1));
   if ( (v9 & 0x3F) )
   {
@@ -1124,47 +1124,46 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   clearram = !!(mode & SD_EFFECT_MODE_CLEAR);
   effect_mode = clearram ? g_EffectAttr[core].mode : 0;
   channel = clearram && !!(mode & 0x200);
-  if ( (unsigned __int8)mode > SD_EFFECT_MODE_PIPE )
+  mode &= 0xFF;
+  if ( mode > SD_EFFECT_MODE_PIPE )
     return -100;
-  g_EffectAttr[core].mode = (unsigned __int8)mode;
-  g_EffectAddr[core] = GetEEA(core) - (8 * g_EffectSizes[(unsigned __int8)mode] - 1);
+  g_EffectAttr[core].mode = mode;
+  g_EffectAddr[core] = GetEEA(core) - (8 * g_EffectSizes[mode] - 1);
   // Unoffical: use memcpy from sysclib
-  memcpy(&mode_data, &g_EffectParams[(unsigned __int8)mode], sizeof(mode_data));
-  if ( (unsigned __int8)mode == SD_EFFECT_MODE_ECHO )
+  memcpy(&mode_data, &g_EffectParams[mode], sizeof(mode_data));
+  switch ( mode )
   {
-    g_EffectAttr[core].feedback = 128;
-    g_EffectAttr[core].delay = 128;
+    case SD_EFFECT_MODE_ECHO:
+      g_EffectAttr[core].feedback = 128;
+      g_EffectAttr[core].delay = 128;
+      break;
+    case SD_EFFECT_MODE_DELAY:
+      g_EffectAttr[core].feedback = 0;
+      g_EffectAttr[core].delay = 128;
+      break;
+    default:
+      g_EffectAttr[core].feedback = 0;
+      g_EffectAttr[core].delay = 0;
+      break;
   }
-  else if ( (unsigned __int8)mode == SD_EFFECT_MODE_DELAY )
-  {
-    g_EffectAttr[core].feedback = 0;
-    g_EffectAttr[core].delay = 128;
-  }
-  else
-  {
-    g_EffectAttr[core].feedback = 0;
-    g_EffectAttr[core].delay = 0;
-  }
-  if ( (unsigned __int8)mode >= SD_EFFECT_MODE_ECHO && (unsigned __int8)mode <= SD_EFFECT_MODE_DELAY )
+  if ( mode >= SD_EFFECT_MODE_ECHO && mode <= SD_EFFECT_MODE_DELAY )
   {
     int delay; // $a0
-    int feedback; // $v1
 
     delay = attr->delay;
     g_EffectAttr[core].delay = delay;
+    g_EffectAttr[core].feedback = attr->feedback;
     delay += 1;
     delay &= 0xFFFF;
-    mode_data.m_d_same_l_dst = ((unsigned __int16)delay << 6) - (__int16)mode_data.m_d_apf1_size;
+    mode_data.m_d_same_l_dst = (s16)((u16)delay << 6) - (s16)mode_data.m_d_apf1_size;
     delay <<= 5;
     delay &= 0xFFFF;
+    mode_data.m_d_same_l_src = delay + mode_data.m_d_same_r_src;
     mode_data.m_d_same_r_dst = delay - mode_data.m_d_apf2_size;
-    mode_data.m_d_same_l_src = mode_data.m_d_same_r_src + delay;
-    mode_data.m_d_comb1_l_src = mode_data.m_d_comb1_r_src + delay;
-    mode_data.m_d_apf1_r_dst = mode_data.m_d_apf2_r_dst + delay;
-    mode_data.m_d_apf1_l_dst = mode_data.m_d_apf2_l_dst + delay;
-    feedback = attr->feedback;
-    g_EffectAttr[core].feedback = feedback;
-    mode_data.m_d_wall_vol = 258 * feedback;
+    mode_data.m_d_comb1_l_src = delay + mode_data.m_d_comb1_r_src;
+    mode_data.m_d_apf1_l_dst = delay + mode_data.m_d_apf2_l_dst;
+    mode_data.m_d_apf1_r_dst = delay + mode_data.m_d_apf2_r_dst;
+    mode_data.m_d_wall_vol = 258 * g_EffectAttr[core].feedback;
   }
   effects_enabled = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
   if ( effects_enabled )
@@ -1181,7 +1180,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     SetEffectData(core, &mode_data);
     spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[0] = g_EffectAddr[core] >> 17;
     spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[1] = g_EffectAddr[core] >> 1;
-    retval = clearram ? sceSdClearEffectWorkArea(core, channel, (unsigned __int8)mode) : 0;
+    retval = clearram ? sceSdClearEffectWorkArea(core, channel, mode) : 0;
   }
   if ( effects_enabled )
   {
@@ -1212,9 +1211,10 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   int state; // [sp+5Ch] [-4h] BYREF
 
   mode_data.m_mode_flags = 0;
-  clearram = !!(param->mode & 0x100);
-  channel = clearram && !!(param->mode & 0x200);
-  mode = (unsigned __int8)param->mode;
+  mode = param->mode;
+  clearram = !!(mode & 0x100);
+  channel = clearram && !!(mode & 0x200);
+  mode &= 0xFF;
   if ( mode > SD_EFFECT_MODE_PIPE )
     return -100;
   g_EffectAttr[core].mode = mode;
@@ -1252,29 +1252,32 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
   int mode; // $a0
   struct mode_data_struct mode_data; // [sp+10h] [-48h] BYREF
 
-  if ( (unsigned __int8)attr->mode > SD_EFFECT_MODE_PIPE )
+  mode = attr->mode;
+  mode &= 0xFF;
+  if ( mode > SD_EFFECT_MODE_PIPE )
     return -100;
-  mode = g_EffectAttr[core].mode;
-  if ( mode != (unsigned __int8)attr->mode )
+  if ( g_EffectAttr[core].mode != mode )
     return -100;
   if ( mode >= SD_EFFECT_MODE_ECHO && mode <= SD_EFFECT_MODE_DELAY )
   {
-    int delay_plus_one; // $a0
+    int delay; // $a0
 
     // Unoffical: don't use inlined memcpy
     memcpy(&mode_data, &g_EffectParams[mode], sizeof(mode_data));
     mode_data.m_mode_flags = 0xC011C80;
-    g_EffectAttr[core].delay = attr->delay;
+    delay = attr->delay;
+    g_EffectAttr[core].delay = delay;
     g_EffectAttr[core].feedback = attr->feedback;
-    delay_plus_one = g_EffectAttr[core].delay + 1;
-    mode_data.m_d_same_l_dst = (__int16)(((unsigned __int16)delay_plus_one << 6) - (__int16)mode_data.m_d_apf1_size);
-    delay_plus_one <<= 5;
-    delay_plus_one &= 0xFFFF;
-    mode_data.m_d_same_r_dst = delay_plus_one - mode_data.m_d_apf2_size;
-    mode_data.m_d_comb1_l_src = mode_data.m_d_comb1_r_src + delay_plus_one;
-    mode_data.m_d_same_l_src = mode_data.m_d_same_r_src + delay_plus_one;
-    mode_data.m_d_apf1_l_dst = mode_data.m_d_apf2_l_dst + delay_plus_one;
-    mode_data.m_d_apf1_r_dst = mode_data.m_d_apf2_r_dst + delay_plus_one;
+    delay += 1;
+    delay &= 0xFFFF;
+    mode_data.m_d_same_l_dst = (s16)(((u16)delay << 6) - (s16)mode_data.m_d_apf1_size);
+    delay <<= 5;
+    delay &= 0xFFFF;
+    mode_data.m_d_same_l_src = delay + mode_data.m_d_same_r_src;
+    mode_data.m_d_same_r_dst = delay - mode_data.m_d_apf2_size;
+    mode_data.m_d_comb1_l_src = delay + mode_data.m_d_comb1_r_src;
+    mode_data.m_d_apf1_l_dst = delay + mode_data.m_d_apf2_l_dst;
+    mode_data.m_d_apf1_r_dst = delay + mode_data.m_d_apf2_r_dst;
     mode_data.m_d_wall_vol = 258 * g_EffectAttr[core].feedback;
     SetEffectData(core, &mode_data);
   }
@@ -1401,7 +1404,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
       }
       g_VoiceTransStatus[core] = 1;
       dmasize2 = (size >> 6 << 6) + ((size & 0x3F) ? 64 : 0);
-      VoiceTrans_Write_IOMode((__int16 *)iopaddr, dmasize2, core);
+      VoiceTrans_Write_IOMode((u16 *)iopaddr, dmasize2, core);
       return dmasize2;
     default:
       return -100;
@@ -1553,7 +1556,6 @@ u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag)
 
   (void)flag;
   core = channel & 1;
-
   return (g_BlockTransBuff[core] << 24) | (((spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas & 7) ? (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr : 0) & ~0xFF000000);
 }
 
@@ -1751,7 +1753,7 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vara
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (0040280C) --------------------------------------------------------
-static int __fastcall VoiceTrans_Write_IOMode(const __int16 *iopaddr, unsigned int size, int chan)
+static int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int size, int chan)
 {
   unsigned int size_tmp; // $s3
   int count; // $s2
@@ -1848,7 +1850,7 @@ static int __fastcall TransInterrupt(IntrData *intr)
       {
         if ( g_BlockHandlerIntrData[core].m_cb )
         {
-          ((void (__fastcall *)(int, void *, int *, int *))g_BlockHandlerIntrData[core].m_cb)(
+          g_BlockHandlerIntrData[core].m_cb(
             core,
             g_BlockHandlerIntrData[core].m_userdata,
             &dmamagictmp1,
@@ -1958,7 +1960,7 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00403174) --------------------------------------------------------
-static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 mode)
+static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, u16 mode)
 {
   int core; // $s3
   int state; // [sp+14h] [-4h] BYREF
@@ -1973,7 +1975,7 @@ static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, __int16 m
   CpuResumeIntr(state);
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = 2 * (mode & ~0xF0FF) + 1024;
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_unk1ae = (unsigned __int16)(mode & ~0xFFF) >> 11;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_unk1ae = (mode & ~0xFFF) >> 11;
   libsd_do_busyloop_1(3);
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 4;
   SetDmaRead(core);
@@ -2259,8 +2261,8 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
   int _fine2; // $a2
   int offset2; // $a3
   int val2; // $v1
-  __int16 val; // $t0
-  __int16 offset1; // $a0
+  s16 val; // $t0
+  s16 offset1; // $a0
   int retval; // $a1
 
   _fine = fine + center_fine;
@@ -2299,27 +2301,31 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
   pitch = ( pitch > 0x3FFF ) ? 0x3FFF : pitch;
   for ( i1 = 0; i1 < 14; i1 += 1 )
   {
-    if ( (((int)pitch >> i1) & 1) )
+    if ( ((pitch >> i1) & 1) )
       bit = i1;
   }
   val = pitch << (15 - bit);
-  for ( i2 = 11; (unsigned __int16)val < g_NotePitchTable[i2] && i2 > 0; i2 -= 1 )
+  val &= 0xFFFF;
+  for ( i2 = 11; val < g_NotePitchTable[i2] && i2 > 0; i2 -= 1 )
   {
   }
   if ( !g_NotePitchTable[i2] )
     __builtin_trap();
-  for ( i5 = 127; (unsigned __int16)(((unsigned __int16)val << 15) / g_NotePitchTable[i2]) < g_NotePitchTable[i5 + 12] && i5 > 0; i5 -= 1 )
+  val <<= 15;
+  val &= 0xFFFF;
+  val /= g_NotePitchTable[i2];
+  for ( i5 = 127; val < g_NotePitchTable[i5 + 12] && i5 > 0; i5 -= 1 )
   {
   }
   return (((center_fine + i5 + 1) & 0x7E)
-        + ((i2 + center_note + 12 * (bit - 12) + ((unsigned __int16)(center_fine + i5 + 1) >> 7)) << 8)) & ~1;
+        + ((i2 + center_note + 12 * (bit - 12) + ((u16)(center_fine + i5 + 1) >> 7)) << 8)) & ~1;
 }
 
 //----- (00403E20) --------------------------------------------------------
 static int __fastcall SetSpdifMode(int val)
 {
-  __int16 spdif_out_new; // $t0
-  __int16 spdif_mode_new; // $a1
+  u16 spdif_out_new; // $t0
+  u16 spdif_mode_new; // $a1
 
   spdif_out_new = spu2_regs.m_u.m_e.m_spdif_out & ~0x1A8;
   spdif_mode_new = spu2_regs.m_u.m_e.m_spdif_mode & ~0xBF06;
@@ -2367,7 +2373,7 @@ static int __fastcall SetSpdifMode(int val)
 //----- (00403FEC) --------------------------------------------------------
 void __cdecl sceSdSetCoreAttr(u16 entry, u16 value)
 {
-  __int16 setting_tmp; // $s1
+  u16 setting_tmp; // $s1
   u16 param_tmp; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2485,7 +2491,7 @@ static int __fastcall Spu2Interrupt(void *data)
   (void)data;
   if ( !g_Spu2IntrHandler && !g_Spu2IrqCallback )
     return 1;
-  while ( ( val = (unsigned __int8)(spu2_regs.m_u.m_e.m_spdif_irqinfo & 0xC) >> 2 ) )
+  while ( ( val = (spu2_regs.m_u.m_e.m_spdif_irqinfo & 0xC) >> 2 ) )
   {
     int i;
 
