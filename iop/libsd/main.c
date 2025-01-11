@@ -238,8 +238,8 @@ u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag);
 static void libsd_do_busyloop_1(int);
 static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, u32 vararg3);
 static u32 __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan);
-static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, char chan, char mode, u8 *startaddr);
-static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, char chan, u16 mode);
+static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr);
+static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode);
 int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num);
 int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice);
 void __cdecl sceSdSetParam(u16 entry, u16 value);
@@ -312,7 +312,7 @@ static vu16 *const g_ParamRegList[] =
   NULL,
   NULL
 };
-static const int g_EffectSizes[] = { 2, 1240, 1000, 2312, 3580, 5564, 7896, 12296, 12296, 1920 };
+static const u32 g_EffectSizes[] = { 2, 1240, 1000, 2312, 3580, 5564, 7896, 12296, 12296, 1920 };
 static const struct mode_data_struct g_EffectParams[] =
 {
   {
@@ -870,14 +870,12 @@ int _start()
 }
 
 //----- (00400110) --------------------------------------------------------
-static void SetEffectRegisterPair(spu2_u16pair_t *pair, int val)
+static void SetEffectRegisterPair(spu2_u16pair_t *pair, u32 val)
 {
-  u32 rval; // $a2
-
-  rval = val << 2;
+  val <<= 2;
   // Unofficial: receive register pair instead of base+offset
-  pair->m_pair[0] = (rval >> 16) & 0xFFFF;
-  pair->m_pair[1] = rval;
+  pair->m_pair[0] = (val >> 16) & 0xFFFF;
+  pair->m_pair[1] = val;
 }
 
 //----- (0040013C) --------------------------------------------------------
@@ -1530,7 +1528,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
         size >>= 1;
         g_TransIntrData[core].m_mode |= 0x1000u;
       }
-      retres_1 = BlockTransWriteFrom(iopaddr, size, chan & 0xFF, mode, ( transfer_dir == SD_TRANS_WRITE_FROM ) ? (void *)vararg_elm1 : 0);
+      retres_1 = BlockTransWriteFrom(iopaddr, size, chan, mode, ( transfer_dir == SD_TRANS_WRITE_FROM ) ? (void *)vararg_elm1 : 0);
       break;
     default:
       return -100;
@@ -1900,11 +1898,11 @@ static int __fastcall TransInterrupt(IntrData *intr)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00402F4C) --------------------------------------------------------
-static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, char chan, char mode, u8 *startaddr)
+static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr)
 {
   int core; // $s2
   u8 *startaddr_tmp; // $s3
-  signed int size_align; // $s1
+  int size_align; // $s1
   int size_align_r6; // $v1
   int state; // [sp+14h] [-4h] BYREF
   USE_IOP_MMIO_HWPORT();
@@ -1958,7 +1956,7 @@ static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, char chan, char
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00403174) --------------------------------------------------------
-static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, char chan, u16 mode)
+static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode)
 {
   int core; // $s3
   int state; // [sp+14h] [-4h] BYREF
@@ -2563,7 +2561,7 @@ static int InitVoices()
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00404644) --------------------------------------------------------
-static int __fastcall Reset(char flag)
+static int __fastcall Reset(int flag)
 {
   iop_event_t efparam; // [sp+10h] [-18h] BYREF
   int intrstate; // [sp+20h] [-8h] BYREF
@@ -2645,7 +2643,7 @@ int __cdecl sceSdInit(int flag)
   InitSpu2();
   if ( !(flag & 0xF) )
     InitSpdif();
-  resetres = Reset(flag & 0xFF);
+  resetres = Reset(flag);
   InitVoices();
   InitCoreVolume(flag & 0xF);
   EnableIntr(36);
