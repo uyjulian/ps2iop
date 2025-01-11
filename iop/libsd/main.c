@@ -149,6 +149,14 @@ typedef struct spu2_mmio_hwport_ /* base => 0xBF900000 */
   } m_u;
 } spu2_mmio_hwport_t;
 
+#if !defined(USE_SPU2_MMIO_HWPORT) && defined(_IOP)
+// cppcheck-suppress-macro constVariablePointer
+#define USE_SPU2_MMIO_HWPORT() spu2_mmio_hwport_t *const spu2_mmio_hwport = (spu2_mmio_hwport_t *)0xBF900000
+#endif
+#if !defined(USE_SPU2_MMIO_HWPORT)
+#define USE_SPU2_MMIO_HWPORT()
+#endif
+
 struct mode_data_struct
 {
   u32 m_mode_flags;
@@ -222,6 +230,7 @@ static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int core, int mode, u8 *st
 static u32 BlockTransRead(u8 *iopaddr, u32 size, int core, u16 mode);
 static void reset_vars(void);
 
+// clang-format off
 static vu16 *const g_ParamRegList[] =
 {
   (vu16 *)0xBF900000,
@@ -647,12 +656,6 @@ static const struct mode_data_struct g_EffectParams[] =
     0x8000,
   }
 };
-// Unofficial: move to bss
-static const u32 g_ClearEffectData[256] __attribute__((__aligned__(16)));
-// Unofficial: move to bss
-static int g_VoiceTransStatus[2];
-// Unofficial: move to bss
-static int g_VoiceTransIoMode[2];
 static const u16 g_NotePitchTable[] =
 {
   0x8000,
@@ -796,8 +799,6 @@ static const u16 g_NotePitchTable[] =
   0x877d,
   0x878c,
 };
-// Unofficial: move to bss
-static int g_SpdifSettings;
 // Enable/disable bits in SD_CORE_ATTR
 static const u16 g_CoreAttrShifts[] =
 {
@@ -806,6 +807,27 @@ static const u16 g_CoreAttrShifts[] =
   0xe,
   0x8,
 };
+static const u16 g_VoiceDataInit[] =
+{
+  0x700,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+  0x0,
+};
+// clang-format on
+
+// Unofficial: move to bss
+static const u32 g_ClearEffectData[256] __attribute__((__aligned__(16)));
+// Unofficial: move to bss
+static int g_VoiceTransStatus[2];
+// Unofficial: move to bss
+static int g_VoiceTransIoMode[2];
+// Unofficial: move to bss
+static int g_SpdifSettings;
 // Unofficial: move to bss
 static sceSdEffectAttr g_EffectAttr[2];
 // Unofficial: move to bss
@@ -828,17 +850,6 @@ static BlockHandlerIntrData_t g_BlockHandlerIntrData[2];
 static SdCleanHandler g_CleanHandlers[2];
 // Unofficial: move to bss
 static IntrData g_TransIntrData[2];
-static const u16 g_VoiceDataInit[] =
-{
-  0x700,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-  0x0,
-};
 static u32 g_CleanRegionMax[2];
 static u32 g_CleanRegionCur[2];
 static CleanRegionBuffer_t g_CleanRegionBuffer[2];
@@ -848,15 +859,6 @@ static u32 g_BlockTransSize[2];
 static u32 g_BatchData __attribute__((__aligned__(16)));
 static SdIntrCallback g_TransIntrCallbacks[2];
 static u32 g_EffectAddr[2];
-
-#if !defined(USE_SPU2_MMIO_HWPORT) && defined(_IOP)
-// cppcheck-suppress-macro constVariablePointer
-#define USE_SPU2_MMIO_HWPORT() spu2_mmio_hwport_t *const spu2_mmio_hwport = (spu2_mmio_hwport_t *)0xBF900000
-#endif
-#if !defined(USE_SPU2_MMIO_HWPORT)
-#define USE_SPU2_MMIO_HWPORT()
-#endif
-
 
 int _start(int ac, char **av)
 {
