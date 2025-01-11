@@ -235,7 +235,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...);
 u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag);
 static void libsd_do_busyloop_1(int);
 static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3);
-static int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int size, int chan);
+static unsigned int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int size, int chan);
 static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr);
 static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, u16 mode);
 int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num);
@@ -1049,7 +1049,7 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
   int i; // $t0
 
   effect_mode &= 0xFF;
-  if ( effect_mode >= 0xA )
+  if ( effect_mode > SD_EFFECT_MODE_PIPE )
     return -100;
   if ( !effect_mode )
     return 0;
@@ -1358,7 +1358,6 @@ static void InitCoreVolume(int flag)
 int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 size)
 {
   int core; // $s2
-  u32 dmasize2; // $s1
 
   core = chan & 1;
   if ( !size )
@@ -1397,9 +1396,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
         return DmaStartStop((core << 4) | 6, iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 0x40 : 0));
       }
       g_VoiceTransStatus[core] = 1;
-      dmasize2 = (size >> 6 << 6) + ((size & 0x3F) ? 0x40 : 0);
-      VoiceTrans_Write_IOMode((u16 *)iopaddr, dmasize2, core);
-      return dmasize2;
+      return VoiceTrans_Write_IOMode((u16 *)iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 0x40 : 0), core);
     default:
       return -100;
   }
@@ -1747,7 +1744,7 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vara
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (0040280C) --------------------------------------------------------
-static int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int size, int chan)
+static unsigned int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int size, int chan)
 {
   unsigned int size_tmp; // $s3
   int count; // $s2
@@ -1772,7 +1769,8 @@ static int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int s
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
   g_VoiceTransIoMode[core] = 1;
-  return 0;
+  // Unofficial: return size
+  return size;
 }
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
