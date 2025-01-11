@@ -2,7 +2,6 @@
 #include <irx_imports.h>
 
 #include <stdarg.h>
-#include <stdbool.h>
 #include <libsd.h>
 #include <iop_mmio_hwport.h>
 
