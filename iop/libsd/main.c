@@ -1026,17 +1026,21 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
 //----- (00400888) --------------------------------------------------------
 static int CleanHandler(int channel)
 {
-  g_CleanRegionCur[channel] += 1;
-  if ( (int)g_CleanRegionCur[channel] >= (int)(g_CleanRegionMax[channel] - 1) )
-    g_CleanHandlers[channel] = 0;
+  int core;
+
+  // Unofficial: restrict core
+  core = channel & 1;
+  g_CleanRegionCur[core] += 1;
+  if ( (int)g_CleanRegionCur[core] >= (int)(g_CleanRegionMax[core] - 1) )
+    g_CleanHandlers[core] = 0;
   DmaStartStop(
-    (channel << 4) | 2,
-    g_CleanRegionBuffer[channel].m_elements[g_CleanRegionCur[channel]].m_spuaddr,
+    (core << 4) | 2,
+    g_CleanRegionBuffer[core].m_elements[g_CleanRegionCur[core]].m_spuaddr,
     0);
   DmaStartStop(
-    (channel << 4) | 6,
+    (core << 4) | 6,
     (u8 *)g_ClearEffectData,
-    g_CleanRegionBuffer[channel].m_elements[g_CleanRegionCur[channel]].m_size);
+    g_CleanRegionBuffer[core].m_elements[g_CleanRegionCur[core]].m_size);
   return 0;
 }
 
