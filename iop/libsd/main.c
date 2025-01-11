@@ -2287,7 +2287,7 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
 {
   int bit; // $t1
   int i1; // $a3
-  int val; // $a2
+  s16 val; // $a2
   int i2; // $a3
   int i5; // $a3
 
@@ -2299,14 +2299,12 @@ u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch)
       bit = i1;
   }
   val = pitch << (15 - bit);
-  val &= 0xFFFF;
   for ( i2 = 11; val < g_NotePitchTable[i2] && i2 > 0; i2 -= 1 )
   {
   }
   if ( !g_NotePitchTable[i2] )
     __builtin_trap();
   val <<= 15;
-  val &= 0xFFFF;
   val /= g_NotePitchTable[i2];
   for ( i5 = 127; val < g_NotePitchTable[i5 + 12] && i5 > 0; i5 -= 1 )
   {
