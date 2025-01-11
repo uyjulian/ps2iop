@@ -213,11 +213,11 @@ typedef struct CleanRegionBuffer_
   CleanRegionBufferElement_t m_elements[97];
 } CleanRegionBuffer_t;
 
-typedef int (*SdCleanHandler)(int);
+typedef int (*SdCleanHandler)(int core);
 
 static int GetEEA(int core);
 static void InitSpu2_Inner();
-static void libsd_do_busyloop_1(int);
+static void libsd_do_busyloop(int count);
 static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3);
 static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan);
 static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr);
@@ -1489,9 +1489,9 @@ static int InitSpdif()
   int i;
 
   spu2_regs.m_u.m_e.m_spdif_out = 0;
-  libsd_do_busyloop_1(2);
+  libsd_do_busyloop(2);
   spu2_regs.m_u.m_e.m_spdif_out = 0x8000;
-  libsd_do_busyloop_1(1);
+  libsd_do_busyloop(1);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
@@ -1504,7 +1504,7 @@ static int InitSpdif()
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
     spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_attr = 0;
-  libsd_do_busyloop_1(1);
+  libsd_do_busyloop(1);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
     spu2_regs.m_u.m_m.m_core_regs[i].m_cregs.m_attr = 0x8000;
@@ -1515,7 +1515,7 @@ static int InitSpdif()
     spu2_regs.m_u.m_e.m_different_regs[i].m_mvolr = 0;
   }
   for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_statx & 0x7FF) && (spu2_regs.m_u.m_m.m_core_regs[1].m_cregs.m_statx & 0x7FF) && i < 0xF00; i += 1 )
-    libsd_do_busyloop_1(1);
+    libsd_do_busyloop(1);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
@@ -1551,22 +1551,25 @@ static void SetDmaRead(int chan)
   *dmachanptr = (*dmachanptr & ~0xF000000) | 0x2000000;
 }
 
-static void libsd_do_busyloop_2()
+static void __attribute__((optimize("no-unroll-loops"))) libsd_do_busyloop_inner()
 {
   int i;
   int loopmul;
 
   loopmul = 13;
   for ( i = 0; i < 120; i += 1 )
+  {
     loopmul *= 13;
+    __asm__ __volatile__("" : "+g"(loopmul) : :);
+  }
 }
 
-static void libsd_do_busyloop_1(int a1)
+static void libsd_do_busyloop(int count)
 {
   int i;
 
-  for ( i = 0; i < a1; i += 1 )
-    libsd_do_busyloop_2();
+  for ( i = 0; i < count; i += 1 )
+    libsd_do_busyloop_inner();
 }
 
 static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
@@ -1688,7 +1691,7 @@ static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan)
     spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
     CpuResumeIntr(state);
     for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_statx & SD_IO_IN_PROCESS) && i < 0xF00; i += 1 )
-      libsd_do_busyloop_1(1);
+      libsd_do_busyloop(1);
   }
   CpuSuspendIntr(&state);
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
@@ -1885,7 +1888,7 @@ static u32 BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode)
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = ((mode & ~0xF0FF) << 1) + 0x400;
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_unk1ae = (mode & ~0xFFF) >> 11;
-  libsd_do_busyloop_1(3);
+  libsd_do_busyloop(3);
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 4;
   SetDmaRead(core);
   (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)iopaddr;
@@ -2397,7 +2400,7 @@ static int InitVoices()
     spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_xferdata = g_VoiceDataInit[i];
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr = (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
   for ( i = 0; (spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_statx & SD_IO_IN_PROCESS) && i <= 0x1000000; i += 1 )
-    libsd_do_busyloop_1(1);
+    libsd_do_busyloop(1);
   spu2_regs.m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
   // Unofficial: rerolled
   for ( i = 0; i < 24; i += 1 )
@@ -2423,14 +2426,14 @@ static int InitVoices()
     spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[0] = 0xFFFF;
     spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[1] = 0xFF;
   }
-  libsd_do_busyloop_1(3);
+  libsd_do_busyloop(3);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
     spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[0] = 0xFFFF;
     spu2_regs.m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[1] = 0xFF;
   }
-  libsd_do_busyloop_1(3);
+  libsd_do_busyloop(3);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
