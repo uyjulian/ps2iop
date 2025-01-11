@@ -196,11 +196,13 @@ typedef struct
   void *m_data;
 } IntrData;
 
-typedef struct CleanEffectIntrData_
+typedef int (*sceSdBlockTransHandler)(int channel, void *userdata, void **addr, int *size);
+
+typedef struct BlockHandlerIntrData_
 {
-  void (__fastcall *m_cb)(int core, void *userdaa, int *out_dma_addr, int *out_dma_size);
+  sceSdBlockTransHandler m_cb;
   void *m_userdata;
-} CleanEffectIntrData_t;
+} BlockHandlerIntrData_t;
 
 typedef struct CleanRegionBufferElement_
 {
@@ -236,8 +238,8 @@ u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag);
 static void libsd_do_busyloop_1(int);
 static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3);
 static unsigned int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int size, int chan);
-static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr);
-static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, u16 mode);
+static unsigned int __fastcall BlockTransWriteFrom(u8 *iopaddr, unsigned int size, char chan, char mode, u8 *startaddr);
+static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, char chan, u16 mode);
 int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num);
 int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice);
 void __cdecl sceSdSetParam(u16 entry, u16 value);
@@ -834,7 +836,7 @@ static void *g_Spu2IntrHandlerData;
 // Unofficial: move to bss
 static sceSdTransIntrHandler g_TransIntrHandlers[2];
 // Unofficial: move to bss
-static CleanEffectIntrData_t g_BlockHandlerIntrData[2];
+static BlockHandlerIntrData_t g_BlockHandlerIntrData[2];
 // Unofficial: move to bss
 static SdCleanHandler g_CleanHandlers[2];
 // Unofficial: move to bss
@@ -844,7 +846,7 @@ static u32 g_CleanRegionMax[2];
 static u32 g_CleanRegionCur[2];
 static CleanRegionBuffer_t g_CleanRegionBuffer[2];
 static u32 g_BlockTransBuff[2];
-static u32 g_BlockTransAddr[2];
+static u8 *g_BlockTransAddr[2];
 static u32 g_BlockTransSize[2];
 static u32 g_BatchData;
 static SdIntrCallback g_TransIntrCallbacks[2];
@@ -1496,7 +1498,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
         size >>= 1;
         g_TransIntrData[core].m_mode |= 0x1000u;
       }
-      retres_1 = BlockTransRead((u32)iopaddr, size, core, mode);
+      retres_1 = BlockTransRead(iopaddr, size, core, mode);
       break;
     case SD_TRANS_STOP:
       g_BlockHandlerIntrData[core].m_cb = 0;
@@ -1528,7 +1530,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
         size >>= 1;
         g_TransIntrData[core].m_mode |= 0x1000u;
       }
-      retres_1 = BlockTransWriteFrom((u32)iopaddr, size, chan & 0xFF, mode, ( transfer_dir == SD_TRANS_WRITE_FROM ) ? (int)vararg_elm1 : 0);
+      retres_1 = BlockTransWriteFrom(iopaddr, size, chan & 0xFF, mode, ( transfer_dir == SD_TRANS_WRITE_FROM ) ? (void *)vararg_elm1 : 0);
       break;
     default:
       return -100;
@@ -1652,7 +1654,7 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vara
   unsigned int tsa_tmp; // $t1
   unsigned int vararg3_cal; // $a0
   u32 blocktransbufitem; // $s7
-  int dmamagictmp; // $s5
+  int dma_addr; // $s5
   int i; // $a0
   int hichk; // $s0
   int state; // [sp+14h] [-4h] BYREF
@@ -1681,7 +1683,7 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vara
       CpuResumeIntr(state);
       SetDmaRead(core);
       vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
-      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (u16)(uiptr)vararg2;
+      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)vararg2;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
       ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
@@ -1695,7 +1697,7 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vara
       CpuResumeIntr(state);
       SetDmaWrite(core);
       vararg3_cal = (vararg3 >> 6) + (!!(vararg3 & 0x3F));
-      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (u16)(uiptr)vararg2;
+      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)vararg2;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
       ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
@@ -1705,11 +1707,11 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vara
       return vararg3_cal << 6;
     case 0xA:
       blocktransbufitem = 0;
-      dmamagictmp = 0;
+      dma_addr = 0;
       if ( ((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr & SD_DMA_START) )
       {
         blocktransbufitem = g_BlockTransBuff[core];
-        dmamagictmp = (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr;
+        dma_addr = (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr;
         (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr &= ~SD_DMA_START;
         if ( (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) )
         {
@@ -1740,7 +1742,7 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vara
       g_VoiceTransCompleteBool[core] = 0;
       g_VoiceTransIoMode[core] = 1;
       g_CleanHandlers[core] = 0;
-      return ( dmamagictmp && hichk ) ? ((dmamagictmp & ~0xFF000000) | (blocktransbufitem << 24)) : 0;
+      return ( dma_addr && hichk ) ? ((dma_addr & ~0xFF000000) | (blocktransbufitem << 24)) : 0;
     default:
       return 0;
   }
@@ -1793,8 +1795,8 @@ static int __fastcall TransInterrupt(IntrData *intr)
   u32 mode; // $v1
   int core; // $s1
   int i; // $v1
-  int dmamagictmp1; // [sp+14h] [-Ch] BYREF
-  int dmamagictmp2; // [sp+18h] [-8h] BYREF
+  void *dma_addr; // [sp+14h] [-Ch] BYREF
+  int dma_size; // [sp+18h] [-8h] BYREF
   USE_IOP_MMIO_HWPORT();
 
   mode = intr->m_mode;
@@ -1849,13 +1851,13 @@ static int __fastcall TransInterrupt(IntrData *intr)
           g_BlockHandlerIntrData[core].m_cb(
             core,
             g_BlockHandlerIntrData[core].m_userdata,
-            &dmamagictmp1,
-            &dmamagictmp2);
-          if ( dmamagictmp2 > 0 )
+            &dma_addr,
+            &dma_size);
+          if ( dma_size > 0 )
           {
-            ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (dmamagictmp2 >> 6)
-                                                                    + (dmamagictmp2 - (dmamagictmp2 >> 6 << 6) > 0);
-            (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = dmamagictmp1;
+            ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (dma_size >> 6)
+                                                                    + (dma_size - (dma_size >> 6 << 6) > 0);
+            (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)dma_addr;
             (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
           }
           else
@@ -1877,7 +1879,7 @@ static int __fastcall TransInterrupt(IntrData *intr)
           g_BlockTransBuff[core] = 1 - g_BlockTransBuff[core];
           ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[core] / 0x40
                                                                   + ((int)g_BlockTransSize[core] % 0x40 > 0);
-          (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = g_BlockTransAddr[core] + g_BlockTransBuff[core] * g_BlockTransSize[core];
+          (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)(g_BlockTransAddr[core] + g_BlockTransBuff[core] * g_BlockTransSize[core]);
           (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
         }
         else
@@ -1898,10 +1900,10 @@ static int __fastcall TransInterrupt(IntrData *intr)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00402F4C) --------------------------------------------------------
-static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int size, char chan, char mode, int startaddr)
+static unsigned int __fastcall BlockTransWriteFrom(u8 *iopaddr, unsigned int size, char chan, char mode, u8 *startaddr)
 {
   int core; // $s2
-  u32 startaddr_tmp; // $s3
+  u8 *startaddr_tmp; // $s3
   signed int size_align; // $s1
   int size_align_r6; // $v1
   int state; // [sp+14h] [-4h] BYREF
@@ -1915,7 +1917,7 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
   if ( startaddr )
   {
     size_align = size - (startaddr - iopaddr);
-    if ( startaddr - iopaddr >= size )
+    if ( (u32)(startaddr - iopaddr) >= size )
     {
       unsigned int other_align; // $v1
 
@@ -1943,7 +1945,7 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = 0;
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 1 << core;
   SetDmaWrite(core);
-  (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = startaddr_tmp;
+  (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)startaddr_tmp;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
   ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
@@ -1956,7 +1958,7 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00403174) --------------------------------------------------------
-static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, u16 mode)
+static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, char chan, u16 mode)
 {
   int core; // $s3
   int state; // [sp+14h] [-4h] BYREF
@@ -1975,7 +1977,7 @@ static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, u16 mode)
   libsd_do_busyloop_1(3);
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 4;
   SetDmaRead(core);
-  (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = iopaddr;
+  (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)iopaddr;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
   ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
