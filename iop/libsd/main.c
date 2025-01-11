@@ -872,7 +872,7 @@ static void SetEffectRegisterPair(spu2_u16pair_t *pair, int val)
 {
   unsigned int rval; // $a2
 
-  rval = 4 * val;
+  rval = val << 2;
   // Unofficial: receive register pair instead of base+offset
   pair->m_pair[0] = (rval >> 16) & 0xFFFF;
   pair->m_pair[1] = rval;
@@ -976,7 +976,7 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   if ( QueryIntrContext() )
     return -202;
   aligned_addr = 0;
-  effect_size = 8 * g_EffectSizes[effect_mode];
+  effect_size = g_EffectSizes[effect_mode] << 3;
   effect_addr = (GetEEA(core) - (effect_size - 1)) >> 1;
   if ( (effect_size & 0x3F) )
   {
@@ -990,7 +990,7 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   xferres = 0;
   if ( aligned_addr )
   {
-    xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)(2 * effect_addr), 0x40u);
+    xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)(effect_addr << 1), 0x40u);
     if ( xferres >= 0 )
       xferres = sceSdVoiceTransStatus(channel, 1);
     effect_addr = aligned_addr;
@@ -1004,7 +1004,7 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
       u32 size; // $v1
 
       size = ( effect_size <= 0x400 ) ? effect_size : 0x400;
-      xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)(2 * (effect_addr + (i * 0x200))), size);
+      xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)((effect_addr + (i << 9)) << 1), size);
       if ( xferres < 0 )
         break;
       xferres = sceSdVoiceTransStatus(channel, 1);
@@ -1059,7 +1059,7 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
     return -210;
   if ( g_VoiceTransIoMode[channel] != 1 )
     return -201;
-  effect_size = 8 * g_EffectSizes[effect_mode];
+  effect_size = g_EffectSizes[effect_mode] << 3;
   effect_addr = GetEEA(core) - (effect_size - 1);
   if ( (effect_size & 0x3F) )
   {
@@ -1122,7 +1122,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   if ( mode > SD_EFFECT_MODE_PIPE )
     return -100;
   g_EffectAttr[core].mode = mode;
-  g_EffectAddr[core] = GetEEA(core) - (8 * g_EffectSizes[mode] - 1);
+  g_EffectAddr[core] = GetEEA(core) - ((g_EffectSizes[mode] << 3) - 1);
   // Unoffical: use memcpy from sysclib
   memcpy(&mode_data, &g_EffectParams[mode], sizeof(mode_data));
   switch ( mode )
@@ -1157,7 +1157,7 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     mode_data.m_d_comb1_l_src = delay + mode_data.m_d_comb1_r_src;
     mode_data.m_d_apf1_l_dst = delay + mode_data.m_d_apf2_l_dst;
     mode_data.m_d_apf1_r_dst = delay + mode_data.m_d_apf2_r_dst;
-    mode_data.m_d_wall_vol = 258 * g_EffectAttr[core].feedback;
+    mode_data.m_d_wall_vol = 0x102 * g_EffectAttr[core].feedback;
   }
   effects_enabled = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
   if ( effects_enabled )
@@ -1214,7 +1214,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
   g_EffectAttr[core].mode = mode;
   g_EffectAttr[core].delay = 0;
   g_EffectAttr[core].feedback = 0;
-  g_EffectAddr[core] = GetEEA(core) - (8 * g_EffectSizes[mode] - 1);
+  g_EffectAddr[core] = GetEEA(core) - ((g_EffectSizes[mode] << 3) - 1);
   // Unoffical: don't use inlined memcpy
   memcpy(&mode_data, &g_EffectParams[mode], sizeof(mode_data));
   effects_enabled = (spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
@@ -1272,7 +1272,7 @@ int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
     mode_data.m_d_comb1_l_src = delay + mode_data.m_d_comb1_r_src;
     mode_data.m_d_apf1_l_dst = delay + mode_data.m_d_apf2_l_dst;
     mode_data.m_d_apf1_r_dst = delay + mode_data.m_d_apf2_r_dst;
-    mode_data.m_d_wall_vol = 258 * g_EffectAttr[core].feedback;
+    mode_data.m_d_wall_vol = 0x102 * g_EffectAttr[core].feedback;
     SetEffectData(core, &mode_data);
   }
   spu2_regs.m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
@@ -1968,7 +1968,7 @@ static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, u16 mode)
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = 2 * (mode & ~0xF0FF) + 0x400;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = ((mode & ~0xF0FF) << 1) + 0x400;
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_unk1ae = (mode & ~0xFFF) >> 11;
   libsd_do_busyloop_1(3);
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 4;
@@ -2090,7 +2090,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
             if ( ((1 << i) & voice) )
             {
               loop += 1;
-              sceSdSetParam((batch[cnt].entry & ~0x3E) | (2 * i), batch[cnt].value);
+              sceSdSetParam((batch[cnt].entry & ~0x3E) | (i << 1), batch[cnt].value);
             }
           }
           --loop;
@@ -2109,7 +2109,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
             if ( ((1 << i) & voice) )
             {
               loop += 1;
-              sceSdSetAddr((batch[cnt].entry & ~0x3E) | (2 * i), batch[cnt].value);
+              sceSdSetAddr((batch[cnt].entry & ~0x3E) | (i << 1), batch[cnt].value);
             }
           }
           --loop;
@@ -2136,7 +2136,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           for ( i = 0; i < 24; i += 1 )
           {
             if ( ((1 << i) & voice) )
-              Param = sceSdGetParam((batch[cnt].entry & ~0x3E) | (2 * i));
+              Param = sceSdGetParam((batch[cnt].entry & ~0x3E) | (i << 1));
             if ( rets )
               rets[loop] = Param;
             loop += 1;
@@ -2156,7 +2156,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
           {
             if ( ((1 << i) & voice) )
             {
-              Param = sceSdGetAddr((batch[cnt].entry & ~0x3E) | (2 * i));
+              Param = sceSdGetAddr((batch[cnt].entry & ~0x3E) | (i << 1));
               if ( rets )
                 rets[loop] = Param;
               loop += 1;
@@ -2236,11 +2236,11 @@ u32 __cdecl sceSdGetAddr(u16 entry)
   rethi = reg1[0] << 17;
   if ( regmask != 0x1D00 )
   {
-    retlo = 2 * reg1[1];
+    retlo = reg1[1] << 1;
     if ( regmask == 0x2100 || regmask == 0x2200 )
     {
       rethi = reg1[0] << 17;
-      retlo = 2 * reg1[1];
+      retlo = reg1[1] << 1;
     }
   }
   return rethi | retlo;
