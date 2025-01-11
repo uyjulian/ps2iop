@@ -1943,7 +1943,7 @@ static int SifDmaBatch(void *ee_addr, void *iop_addr, int size)
   xferparam.size = size;
   xferparam.attr = 0;
   CpuSuspendIntr(&state);
-  dmat = sceSifSetDma(&xferparam, 1);
+  dmat = sceSifSetDma(&xferparam, SIF_DMA_TO_EE);
   CpuResumeIntr(state);
   if ( !dmat )
     return -1;
