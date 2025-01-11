@@ -1128,12 +1128,12 @@ int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   switch ( mode )
   {
     case SD_EFFECT_MODE_ECHO:
-      g_EffectAttr[core].feedback = 128;
-      g_EffectAttr[core].delay = 128;
+      g_EffectAttr[core].feedback = 0x80;
+      g_EffectAttr[core].delay = 0x80;
       break;
     case SD_EFFECT_MODE_DELAY:
       g_EffectAttr[core].feedback = 0;
-      g_EffectAttr[core].delay = 128;
+      g_EffectAttr[core].delay = 0x80;
       break;
     default:
       g_EffectAttr[core].feedback = 0;
@@ -1380,7 +1380,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
       else
         ClearEventFlag(g_VoiceTransCompleteEf[core], ~1);
       g_VoiceTransIoMode[core] = 0;
-      return DmaStartStop((core << 4) | 5, iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 64 : 0));
+      return DmaStartStop((core << 4) | 5, iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 0x40 : 0));
     case SD_TRANS_WRITE:
       g_TransIntrData[core].m_mode = core | 0x500;
       g_BlockHandlerIntrData[core].m_cb = 0;
@@ -1394,10 +1394,10 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
       if ( !(mode & SD_TRANS_MODE_IO) )
       {
         g_VoiceTransStatus[core] = 0;
-        return DmaStartStop((core << 4) | 6, iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 64 : 0));
+        return DmaStartStop((core << 4) | 6, iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 0x40 : 0));
       }
       g_VoiceTransStatus[core] = 1;
-      dmasize2 = (size >> 6 << 6) + ((size & 0x3F) ? 64 : 0);
+      dmasize2 = (size >> 6 << 6) + ((size & 0x3F) ? 0x40 : 0);
       VoiceTrans_Write_IOMode((u16 *)iopaddr, dmasize2, core);
       return dmasize2;
     default:
@@ -1759,7 +1759,7 @@ static int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int s
   core = chan & 1;
   for ( size_tmp = size; size_tmp; size_tmp -= count )
   {
-    count = ( size_tmp <= 64 ) ? size_tmp : 64;
+    count = ( size_tmp <= 0x40 ) ? size_tmp : 0x40;
     for ( i = 0; i < (count / 2); i += 1 )
       spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_xferdata = iopaddr[i];
     CpuSuspendIntr(&state);
@@ -1873,8 +1873,8 @@ static int __fastcall TransInterrupt(IntrData *intr)
         if ( (mode & 0x1000) )
         {
           g_BlockTransBuff[core] = 1 - g_BlockTransBuff[core];
-          ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[core] / 64
-                                                                  + ((int)g_BlockTransSize[core] % 64 > 0);
+          ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[core] / 0x40
+                                                                  + ((int)g_BlockTransSize[core] % 0x40 > 0);
           (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = g_BlockTransAddr[core] + g_BlockTransBuff[core] * g_BlockTransSize[core];
           (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
         }
@@ -1923,9 +1923,9 @@ static unsigned int __fastcall BlockTransWriteFrom(u32 iopaddr, unsigned int siz
       g_BlockTransBuff[core] += 1;
       size_align = size - other_align;
     }
-    if ( size_align % 1024 > 0 )
+    if ( size_align % 0x400 > 0 )
     {
-      size_align = (size_align / 1024 + 1) << 10;
+      size_align = (size_align / 0x400 + 1) << 10;
       startaddr_tmp = iopaddr + g_BlockTransBuff[core] * size + size - size_align;
     }
   }
@@ -1968,7 +1968,7 @@ static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, u16 mode)
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[0] = 0;
-  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = 2 * (mode & ~0xF0FF) + 1024;
+  spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_tsa.m_pair[1] = 2 * (mode & ~0xF0FF) + 0x400;
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_unk1ae = (mode & ~0xFFF) >> 11;
   libsd_do_busyloop_1(3);
   spu2_regs.m_u.m_m.m_core_regs[core].m_cregs.m_admas = 4;
@@ -1978,8 +1978,8 @@ static u32 __fastcall BlockTransRead(u32 iopaddr, u32 size, char chan, u16 mode)
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
   ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
 #pragma GCC diagnostic pop
-  ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[core] / 64
-                                                              + ((int)g_BlockTransSize[core] % 64 > 0);
+  ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[core] / 0x40
+                                                              + ((int)g_BlockTransSize[core] % 0x40 > 0);
   (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS;
   return size;
 }
@@ -2041,7 +2041,7 @@ int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num)
         break;
       case SD_BATCH_WRITEEE:
         g_BatchData = batch[cnt].entry;
-        Param = SifDmaBatch((void *)batch[cnt].value, &g_BatchData, 4);
+        Param = SifDmaBatch((void *)batch[cnt].value, &g_BatchData, sizeof(g_BatchData));
         break;
       case SD_BATCH_EERETURN:
         Param = SifDmaBatch((void *)batch[cnt].value, rets, batch[cnt].entry);
@@ -2125,7 +2125,7 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
         break;
       case SD_BATCH_WRITEEE:
         g_BatchData = batch[cnt].entry;
-        Param = SifDmaBatch((void *)batch[cnt].value, &g_BatchData, 4);
+        Param = SifDmaBatch((void *)batch[cnt].value, &g_BatchData, sizeof(g_BatchData));
         break;
       case SD_BATCH_EERETURN:
         Param = SifDmaBatch((void *)batch[cnt].value, rets, batch[cnt].entry);
@@ -2183,13 +2183,13 @@ int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
 //----- (004039A0) --------------------------------------------------------
 void __cdecl sceSdSetParam(u16 entry, u16 value)
 {
-  g_ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (1024 - 984 * (!!(entry & 0x80)))) >> 1)] = value;
+  g_ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (0x400 - 984 * (!!(entry & 0x80)))) >> 1)] = value;
 }
 
 //----- (004039FC) --------------------------------------------------------
 u16 __cdecl sceSdGetParam(u16 entry)
 {
-  return g_ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (1024 - 984 * (!!(entry & 0x80)))) >> 1)];
+  return g_ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (0x400 - 984 * (!!(entry & 0x80)))) >> 1)];
 }
 
 //----- (00403A5C) --------------------------------------------------------
@@ -2260,10 +2260,10 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
   int retval; // $a1
 
   _fine = fine + center_fine;
-  val3 = (note + _fine / 128 - center_note);
+  _fine2 = _fine / 0x80;
+  val3 = (note + _fine2 - center_note);
   _note = val3 & 0xFFFF;
-  _fine2 = _fine / 128;
-  offset2 = _fine % 128;
+  offset2 = _fine % 0x80;
   val2 = ((_note / 6) >> 1) - ((unsigned int)val3 << 16 >> 31);
   offset1 = _note - 12 * val2;
   val = val2 - 2;
@@ -2348,11 +2348,11 @@ static int __fastcall SetSpdifMode(int val)
       spdif_mode_new |= 0x100;
       break;
     case 0x800:
-      spu2_regs.m_u.m_e.m_spdif_media = 512;
+      spu2_regs.m_u.m_e.m_spdif_media = 0x200;
       spdif_mode_new |= 0x1900;
       break;
     default:
-      spu2_regs.m_u.m_e.m_spdif_media = 512;
+      spu2_regs.m_u.m_e.m_spdif_media = 0x200;
       spdif_mode_new |= 0x900;
       break;
   }
