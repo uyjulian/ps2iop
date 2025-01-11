@@ -849,10 +849,10 @@ int _start()
   regres = RegisterLibraryEntries(&_exp_libsd);
   CpuResumeIntr(state);
   if ( regres )
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   InitSpu2_Inner();
   reset_vars();
-  return 0;
+  return MODULE_RESIDENT_END;
 }
 
 static void SetEffectRegisterPair(spu2_u16pair_t *pair, u32 val)
