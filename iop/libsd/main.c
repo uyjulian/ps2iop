@@ -264,6 +264,7 @@ static vu16 *const g_ParamRegList[] =
   (vu16 *)0xBF90019A,
   (vu16 *)0xBF9001A8,
   (vu16 *)0xBF9001AC,
+  // 1AE & 1B0 are both related to core attr & dma somehow
   (vu16 *)0xBF9001AE,
   (vu16 *)0xBF9001B0,
   (vu16 *)0xBF900344,
@@ -271,6 +272,7 @@ static vu16 *const g_ParamRegList[] =
   NULL,
   NULL,
 };
+// The values are more or less the same as on PSX (SPU)
 static const u32 g_EffectSizes[] =
 {
   0x2,
@@ -286,6 +288,7 @@ static const u32 g_EffectSizes[] =
 };
 static const struct mode_data_struct g_EffectParams[] =
 {
+  // SD_EFFECT_MODE_OFF
   {
     0x0,
     0x0,
@@ -321,6 +324,7 @@ static const struct mode_data_struct g_EffectParams[] =
     0x0,
     0x0,
   },
+  // SD_EFFECT_MODE_ROOM
   {
     0x0,
     0x7d,
@@ -356,6 +360,7 @@ static const struct mode_data_struct g_EffectParams[] =
     0x8000,
     0x8000,
   },
+  // SD_EFFECT_MODE_STUDIO_1
   {
     0x0,
     0x33,
@@ -391,6 +396,7 @@ static const struct mode_data_struct g_EffectParams[] =
     0x8000,
     0x8000,
   },
+  // SD_EFFECT_MODE_STUDIO_2
   {
     0x0,
     0xb1,
@@ -426,6 +432,7 @@ static const struct mode_data_struct g_EffectParams[] =
     0x8000,
     0x8000,
   },
+  // SD_EFFECT_MODE_STUDIO_3
   {
     0x0,
     0xe3,
@@ -461,6 +468,7 @@ static const struct mode_data_struct g_EffectParams[] =
     0x8000,
     0x8000,
   },
+  // SD_EFFECT_MODE_HALL
   {
     0x0,
     0x1a5,
@@ -496,6 +504,7 @@ static const struct mode_data_struct g_EffectParams[] =
     0x8000,
     0x8000,
   },
+  // SD_EFFECT_MODE_SPACE
   {
     0x0,
     0x33d,
@@ -531,6 +540,7 @@ static const struct mode_data_struct g_EffectParams[] =
     0x8000,
     0x8000,
   },
+  // SD_EFFECT_MODE_ECHO
   {
     0x0,
     0x3,
@@ -566,6 +576,7 @@ static const struct mode_data_struct g_EffectParams[] =
     0x8000,
     0x8000,
   },
+  // SD_EFFECT_MODE_DELAY
   {
     0x0,
     0x3,
@@ -601,6 +612,7 @@ static const struct mode_data_struct g_EffectParams[] =
     0x8000,
     0x8000,
   },
+  // SD_EFFECT_MODE_CLEAR
   {
     0x0,
     0x17,
@@ -788,6 +800,7 @@ static const u16 g_NotePitchTable[] =
 };
 // Unofficial: move to bss
 static int g_SpdifSettings;
+// Enable/disable bits in SD_CORE_ATTR
 static const u16 g_CoreAttrShifts[] =
 {
   0x7,
@@ -975,6 +988,7 @@ int sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
     effect_size &= 0x3FFFFFF;
     aligned_addr = (GetEEA(core) - (effect_size - 1)) >> 1;
   }
+  // Disable intr_handlers by removing them
   handler_tmp = g_TransIntrHandlers[channel];
   callback_tmp = g_TransIntrCallbacks[channel];
   g_TransIntrHandlers[channel] = 0;
@@ -999,6 +1013,7 @@ int sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
       xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)((effect_addr + (i << 9)) << 1), size);
       if ( xferres < 0 )
         break;
+      // Wait for completion
       xferres = sceSdVoiceTransStatus(channel, 1);
       if ( xferres < 0 )
         break;
@@ -1010,6 +1025,7 @@ int sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
       effect_size -= 0x400;
     }
   }
+  // Enable intr_handlers by adding them again
   g_TransIntrHandlers[channel] = handler_tmp;
   g_TransIntrCallbacks[channel] = callback_tmp;
   return xferres;
@@ -1113,6 +1129,7 @@ int sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
   effect_mode = clearram ? g_EffectAttr[core].mode : 0;
   channel = clearram && !!(mode & 0x200);
   mode &= 0xFF;
+  // Check if valid mode
   if ( mode > SD_EFFECT_MODE_PIPE )
     return -100;
   g_EffectAttr[core].mode = mode;
@@ -1153,6 +1170,7 @@ int sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     mode_data.m_d_apf1_r_dst = delay + mode_data.m_d_apf2_r_dst;
     mode_data.m_d_wall_vol = 0x102 * g_EffectAttr[core].feedback;
   }
+  // Disable effects
   effects_enabled = (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr >> 7) & 1;
   if ( effects_enabled )
   {
@@ -1160,16 +1178,20 @@ int sceSdSetEffectAttr(int core, sceSdEffectAttr *attr)
     spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_ENABLE_EFFECTS;
     CpuResumeIntr(state);
   }
+  // Clean up after last mode
   retval = ( effects_enabled && clearram ) ? sceSdClearEffectWorkArea(core, channel, effect_mode) : 0;
   if ( retval >= 0 )
   {
+    // Depth / Volume
     spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evoll = attr->depth_L;
     spu2_mmio_hwport->m_u.m_e.m_different_regs[core].m_evolr = attr->depth_R;
     SetEffectData(core, &mode_data);
+    // Set effect start addr (ESA)
     spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[0] = g_EffectAddr[core] >> 17;
     spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_esa.m_pair[1] = g_EffectAddr[core] >> 1;
     retval = clearram ? sceSdClearEffectWorkArea(core, channel, mode) : 0;
   }
+  // Enable effects
   if ( effects_enabled )
   {
     CpuSuspendIntr(&state);
@@ -1295,6 +1317,7 @@ static void InitSpu2()
   spu2_mmio_hwport->m_u.m_e.m_unknown7ca = 8;
 }
 
+// Core / Volume Registers
 static void InitCoreVolume(int flag)
 {
   int i;
@@ -1305,6 +1328,7 @@ static void InitCoreVolume(int flag)
   for ( i = 0; i < 2; i += 1 )
     spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr = (flag ? SD_ENABLE_EFFECTS : 0) | (i ? SD_ENABLE_EX_INPUT : 0) | SD_MUTE|SD_SPU2_ON;
   // Unofficial: rerolled
+  // HIgh is voices 0-15, Low is 16-23, representing voices 0..23 (24)
   for ( i = 0; i < 2; i += 1 )
   {
     spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_vmixl.m_pair[0] = 0xFFFF;
@@ -1328,12 +1352,15 @@ static void InitCoreVolume(int flag)
       spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_evolr = 0;
     }
     // Unofficial: rerolled
+    // Effect End Address, Upper part
     for ( i = 0; i < 2; i += 1 )
       spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_eea = 14 + i;
   }
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
+    // Core 1 External Input Volume.
+    // The external Input is Core 0's output.
     spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_avoll = i ? 0x7FFF : 0;
     spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_avolr = i ? 0x7FFF : 0;
     spu2_mmio_hwport->m_u.m_e.m_different_regs[i].m_bvoll = 0;
@@ -1472,7 +1499,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
       else if ( (mode & SD_TRANS_LOOP) )
       {
         size >>= 1;
-        g_TransIntrData[core].m_mode |= 0x1000;
+        g_TransIntrData[core].m_mode |= SD_TRANS_LOOP << 8;
       }
       retres_1 = BlockTransRead(iopaddr, size, core, mode);
       break;
@@ -1504,7 +1531,7 @@ int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...)
       else if ( (mode & SD_TRANS_LOOP) )
       {
         size >>= 1;
-        g_TransIntrData[core].m_mode |= 0x1000;
+        g_TransIntrData[core].m_mode |= SD_TRANS_LOOP << 8;
       }
       retres_1 = BlockTransWriteFrom(iopaddr, size, chan, mode, ( transfer_dir == SD_TRANS_WRITE_FROM ) ? (void *)vararg_elm1 : 0);
       break;
@@ -1556,7 +1583,7 @@ static int InitSpdif()
   libsd_do_busyloop(1);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
-    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_attr = 0x8000;
+    spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_attr = SD_SPU2_ON;
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
@@ -1663,7 +1690,7 @@ static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
       ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[0] = 16;
 #pragma GCC diagnostic pop
       ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = vararg3_cal;
-      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS;
+      (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = SD_DMA_START|SD_DMA_CS|SD_DMA_DIR_SPU2IOP;
       return vararg3_cal << 6;
     case 6:
       CpuSuspendIntr(&state);
@@ -1739,12 +1766,15 @@ static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan)
     for ( i = 0; i < (count / 2); i += 1 )
       spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_xferdata = iopaddr[i];
     CpuSuspendIntr(&state);
+    // Set Transfer mode to IO
     spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr = (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
     CpuResumeIntr(state);
+    // Wait for transfer to complete;
     for ( i = 0; (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_statx & SD_IO_IN_PROCESS) && i < 0xF00; i += 1 )
       libsd_do_busyloop(1);
   }
   CpuSuspendIntr(&state);
+  // Reset DMA settings
   spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr &= ~SD_CORE_DMA;
   CpuResumeIntr(state);
   g_VoiceTransIoMode[core] = 1;
@@ -1762,7 +1792,7 @@ static void do_finish_block_clean_xfer(int core)
 
 static int TransInterrupt(IntrData *intr)
 {
-  int no_flush_cache;
+  int dma_dir;
   u32 mode;
   int core;
   int i;
@@ -1775,10 +1805,10 @@ static int TransInterrupt(IntrData *intr)
   switch ( mode & 0xC00 )
   {
     case 0x400:
-      no_flush_cache = 1;
+      dma_dir = SD_DMA_DIR_IOP2SPU;
       break;
     case 0x800:
-      no_flush_cache = 0;
+      dma_dir = SD_DMA_DIR_SPU2IOP;
       break;
     default:
       return 1;
@@ -1786,7 +1816,10 @@ static int TransInterrupt(IntrData *intr)
   core = mode & 1;
   switch ( mode & 0x300 )
   {
+    // Voice Transfer
     case 0x100:
+      // SD_C_STATX(core)
+      // If done elsewise, it doesn't work, havn't figured out why yet.
       for ( i = 0; !(spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_statx & 0x80) && i < 0x1000000; i += 1 )
       {
       }
@@ -1794,7 +1827,7 @@ static int TransInterrupt(IntrData *intr)
       for ( i = 0; (spu2_mmio_hwport->m_u.m_m.m_core_regs[core].m_cregs.m_attr & SD_CORE_DMA) && i < 0xF00; i += 1 )
       {
       }
-      if ( !no_flush_cache )
+      if ( dma_dir == SD_DMA_DIR_SPU2IOP )
         FlushDcache();
       if ( g_CleanHandlers[core] )
         g_CleanHandlers[core](core);
@@ -1815,6 +1848,7 @@ static int TransInterrupt(IntrData *intr)
         }
       }
       break;
+    // Block Transfer
     case 0x200:
       if ( (mode & 0x8000) )
       {
@@ -1830,7 +1864,7 @@ static int TransInterrupt(IntrData *intr)
             ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (dma_size >> 6)
                                                                     + (dma_size - (dma_size & 0x3FFFFFF) > 0);
             (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)dma_addr;
-            (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
+            (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = dma_dir | SD_DMA_START|SD_DMA_CS;
           }
           else
           {
@@ -1841,22 +1875,24 @@ static int TransInterrupt(IntrData *intr)
         }
         else
           do_finish_block_clean_xfer(core);
-        if ( !no_flush_cache )
+        if ( dma_dir == SD_DMA_DIR_SPU2IOP )
           FlushDcache();
       }
       else
       {
-        if ( (mode & 0x1000) )
+        if ( (mode & (SD_TRANS_LOOP << 8)) )
         {
+          // Switch buffers
           g_BlockTransBuff[core] = 1 - g_BlockTransBuff[core];
+          // Setup DMA & send
           ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (int)g_BlockTransSize[core] / 0x40
                                                                   + ((int)g_BlockTransSize[core] % 0x40 > 0);
           (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)(g_BlockTransAddr[core] + g_BlockTransBuff[core] * g_BlockTransSize[core]);
-          (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
+          (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = dma_dir | SD_DMA_START|SD_DMA_CS;
         }
         else
           do_finish_block_clean_xfer(core);
-        if ( !no_flush_cache )
+        if ( dma_dir == SD_DMA_DIR_SPU2IOP )
           FlushDcache();
         if ( g_TransIntrHandlers[core] )
           g_TransIntrHandlers[core](core, intr->m_data);
@@ -2152,11 +2188,13 @@ int sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
 
 void sceSdSetParam(u16 entry, u16 value)
 {
+  // Determine the channel offset (entry & 0x80)
   g_ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (0x400 - 984 * (!!(entry & 0x80)))) >> 1)] = value;
 }
 
 u16 sceSdGetParam(u16 entry)
 {
+  // Determine the channel offset (entry & 0x80)
   return g_ParamRegList[((entry >> 8) & 0xFF)][((entry & 0x3E) << 2) + (((entry & 1) * (0x400 - 984 * (!!(entry & 0x80)))) >> 1)];
 }
 
@@ -2454,15 +2492,23 @@ static int InitVoices()
   USE_SPU2_MMIO_HWPORT();
 
   spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
+  // Set Start Address of data to transfer.
   spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[0] = 0x0000;
-  spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[1] = 0x2800;
+  spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_tsa.m_pair[1] = 0x5000 >> 1;
+  // Fill with data.
+  // First 16 bytes are reserved.
   for ( i = 0; i < (int)(sizeof(g_VoiceDataInit)/sizeof(g_VoiceDataInit[0])); i += 1 )
     spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_xferdata = g_VoiceDataInit[i];
+
+  // Set Transfer mode to IO
   spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr = (spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr & ~SD_CORE_DMA) | SD_DMA_IO;
+  // Wait for transfer to complete;
   for ( i = 0; (spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_statx & SD_IO_IN_PROCESS) && i <= 0x1000000; i += 1 )
     libsd_do_busyloop(1);
+  // Reset DMA settings
   spu2_mmio_hwport->m_u.m_m.m_core_regs[0].m_cregs.m_attr &= ~SD_CORE_DMA;
   // Unofficial: rerolled
+  // Init voices
   for ( i = 0; i < 24; i += 1 )
   {
     for ( j = 0; j < 2; j += 1 )
@@ -2477,22 +2523,29 @@ static int InitVoices()
       spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_params[i].m_adsr2 = 0;
     for ( j = 0; j < 2; j += 1 )
       spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_address[i].m_ssa.m_pair[0] = 0;
+    // Top address of waveform data
     for ( j = 0; j < 2; j += 1 )
-      spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_address[i].m_ssa.m_pair[1] = 0x2800;
+      spu2_mmio_hwport->m_u.m_m.m_core_regs[j ^ 1].m_cregs.m_voice_address[i].m_ssa.m_pair[1] = 0x5000 >> 1;
   }
   // Unofficial: rerolled
+  // Set all voices to ON
   for ( i = 0; i < 2; i += 1 )
   {
     spu2_mmio_hwport->m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[0] = 0xFFFF;
     spu2_mmio_hwport->m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_kon.m_pair[1] = 0xFF;
   }
+  // There is no guarantee that voices will be turn on at once.
+  // So we wait to make sure.
   libsd_do_busyloop(3);
   // Unofficial: rerolled
+  // Set all voices to OFF
   for ( i = 0; i < 2; i += 1 )
   {
     spu2_mmio_hwport->m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[0] = 0xFFFF;
     spu2_mmio_hwport->m_u.m_m.m_core_regs[i ^ 1].m_cregs.m_koff.m_pair[1] = 0xFF;
   }
+  // There is no guarantee that voices will be turn off at once.
+  // So we wait to make sure.
   libsd_do_busyloop(3);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
