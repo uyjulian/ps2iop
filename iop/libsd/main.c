@@ -671,7 +671,8 @@ static const u32 g_ClearEffectData[256];
 static spu2_regs_t *const g_ptr_to_bf900000 = (spu2_regs_t *)0xBF900000;
 // Unofficial: move to bss
 static int g_VoiceTransStatus[2];
-static int g_VoiceTransIoMode[] = { 1, 1 };
+// Unofficial: move to bss
+static int g_VoiceTransIoMode[2];
 static const u16 g_NotePitchTable[] =
 {
   32768,
@@ -838,7 +839,8 @@ static sceSdTransIntrHandler g_TransIntrHandlers[2];
 static CleanEffectIntrData_t g_BlockHandlerIntrData[2];
 // Unofficial: move to bss
 static SdCleanHandler g_CleanHandlers[2];
-static IntrData g_TransIntrData[2] = { { 0u, NULL }, { 1u, NULL } };
+// Unofficial: move to bss
+static IntrData g_TransIntrData[2];
 static const u16 g_VoiceDataInit[] = { 1792, 0, 0, 0, 0, 0, 0, 0 };
 static u32 g_CleanRegionMax[2];
 static u32 g_CleanRegionCur[2];
