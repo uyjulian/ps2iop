@@ -140,14 +140,14 @@ typedef struct spu2_regs_extra_
   vu16 unk7ce[25];
 } spu2_regs_extra_t;
 
-typedef struct spu2_regs_ /* base => 0xBF900000 */
+typedef struct spu2_mmio_hwport_ /* base => 0xBF900000 */
 {
   union spu2_regs_union_
   {
     spu2_regs_main_t m_m;
     spu2_regs_extra_t m_e;
   } m_u;
-} spu2_regs_t;
+} spu2_mmio_hwport_t;
 
 struct mode_data_struct
 {
@@ -851,7 +851,7 @@ static u32 g_EffectAddr[2];
 
 #if !defined(USE_SPU2_MMIO_HWPORT) && defined(_IOP)
 // cppcheck-suppress-macro constVariablePointer
-#define USE_SPU2_MMIO_HWPORT() spu2_regs_t *const spu2_mmio_hwport = (spu2_regs_t *)0xBF900000
+#define USE_SPU2_MMIO_HWPORT() spu2_mmio_hwport_t *const spu2_mmio_hwport = (spu2_mmio_hwport_t *)0xBF900000
 #endif
 #if !defined(USE_SPU2_MMIO_HWPORT)
 #define USE_SPU2_MMIO_HWPORT()
