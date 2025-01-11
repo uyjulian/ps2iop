@@ -997,30 +997,26 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   }
   if ( xferres >= 0 )
   {
-    int flag_tmp; // $s4
+    int i;
 
-    flag_tmp = 1;
-    while ( flag_tmp )
+    for ( i = 0; ; i += 1 )
     {
       u32 size; // $v1
 
-      size = 0x400;
-      if ( effect_size <= 0x400 )
-      {
-        size = effect_size;
-        flag_tmp = 0;
-      }
-      xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)(2 * effect_addr), size);
+      size = ( effect_size <= 0x400 ) ? effect_size : 0x400;
+      xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)(2 * (effect_addr + (i * 0x200))), size);
       if ( xferres < 0 )
         break;
       xferres = sceSdVoiceTransStatus(channel, 1);
       if ( xferres < 0 )
         break;
-      effect_size -= 1024;
-      effect_addr += 512;
+      if ( effect_size <= 0x400 )
+      {
+        xferres = 0;
+        break;
+      }
+      effect_size -= 0x400;
     }
-    if ( !flag_tmp )
-      xferres = 0;
   }
   g_TransIntrHandlers[channel] = handler_tmp;
   g_TransIntrCallbacks[channel] = callback_tmp;
@@ -1047,52 +1043,50 @@ static int CleanHandler(int channel)
 //----- (0040097C) --------------------------------------------------------
 int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
 {
-  unsigned int v9; // $s1
-  u32 *v10; // $a3
-  int v11; // $s0
-  CleanRegionBufferElement_t *v12; // $t0
-  u32 *v13; // $t1
-  int v14; // $v1
+  unsigned int effect_size; // $s1
+  unsigned int effect_addr; // $a3
+  int xferres; // $s0
+  int i; // $t0
 
   effect_mode &= 0xFF;
   if ( effect_mode >= 0xA )
     return -100;
   if ( !effect_mode )
     return 0;
+  // Unofficial: restrict channel
+  channel &= 1;
   if ( DmaStartStop((channel << 4) | 4, 0, 0) )
     return -210;
   if ( g_VoiceTransIoMode[channel] != 1 )
     return -201;
-  v9 = 8 * g_EffectSizes[effect_mode];
-  v10 = (u32 *)(GetEEA(core) - (v9 - 1));
-  if ( (v9 & 0x3F) )
+  effect_size = 8 * g_EffectSizes[effect_mode];
+  effect_addr = GetEEA(core) - (effect_size - 1);
+  if ( (effect_size & 0x3F) )
   {
-    v9 = v9 >> 6 << 6;
-    v11 = sceSdVoiceTrans(channel, 8u, (u8 *)g_ClearEffectData, v10, 0x40u);
-    if ( v11 < 0 )
-      return v11;
-    v10 = (u32 *)(GetEEA(core) - (v9 - 1));
+    effect_size = effect_size >> 6 << 6;
+    xferres = sceSdVoiceTrans(channel, 8u, (u8 *)g_ClearEffectData, (u32 *)effect_addr, 0x40u);
+    if ( xferres < 0 )
+      return xferres;
+    effect_addr = GetEEA(core) - (effect_size - 1);
   }
-  v12 = &g_CleanRegionBuffer[channel].m_elements[0];
-  v13 = v10 + 256;
-  g_CleanRegionMax[channel] = 0;
-  for ( v14 = v9 - 1024; v14 >= 1025; v14 -= 1024 )
+  effect_addr += 0x100;
+  effect_size -= 0x400;
+  for ( i = 0; ; i += 1 )
   {
-    v12->m_spuaddr = v13;
-    v12->m_size = 1024;
-    v12 += 1;
-    v13 += 256;
-    g_CleanRegionMax[channel] += 1;
+    g_CleanRegionBuffer[channel].m_elements[i].m_spuaddr = (u32 *)effect_addr;
+    g_CleanRegionBuffer[channel].m_elements[i].m_size = ( effect_size <= 0x400 ) ? effect_size : 0x400;
+    if ( effect_size <= 0x400 )
+      break;
+    effect_addr += 0x100;
+    effect_size -= 0x400;
   }
-  v12->m_spuaddr = v13;
-  v12->m_size = v14;
-  g_CleanRegionMax[channel] += 1;
+  g_CleanRegionMax[channel] = i + 1;
   g_CleanHandlers[channel] = CleanHandler;
   g_CleanRegionCur[channel] = 0;
-  v11 = sceSdVoiceTrans(channel & 0xFFFF, 0, (u8 *)g_ClearEffectData, v10, 0x400u);
-  if ( v11 >= 0 )
-    v11 = 0;
-  return v11;
+  xferres = sceSdVoiceTrans(channel, 0, (u8 *)g_ClearEffectData, (u32 *)effect_addr, 0x400u);
+  if ( xferres >= 0 )
+    xferres = 0;
+  return xferres;
 }
 
 //----- (00400BBC) --------------------------------------------------------
