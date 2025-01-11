@@ -218,45 +218,14 @@ typedef struct CleanRegionBuffer_
 
 typedef int (*SdCleanHandler)(int);
 
-int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode);
-int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode);
-void __cdecl sceSdGetEffectAttr(int core, sceSdEffectAttr *attr);
-int __cdecl sceSdSetEffectAttr(int core, sceSdEffectAttr *attr);
 static int __fastcall GetEEA(int core);
-int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param);
-int __cdecl sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr);
 static void InitSpu2_Inner();
-int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 size);
-u32 __cdecl sceSdVoiceTransStatus(s16 channel, s16 flag);
-int __cdecl sceSdStopTrans(int channel);
-int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...);
-u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag);
 static void libsd_do_busyloop_1(int);
 static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, u32 vararg3);
 static u32 __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan);
 static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr);
 static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode);
-int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num);
-int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice);
-void __cdecl sceSdSetParam(u16 entry, u16 value);
-u16 __cdecl sceSdGetParam(u16 entry);
-void __cdecl sceSdSetSwitch(u16 entry, u32 value);
-u32 __cdecl sceSdGetSwitch(u16 entry);
-void __cdecl sceSdSetAddr(u16 entry, u32 value);
-u32 __cdecl sceSdGetAddr(u16 entry);
-u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine);
-u16 __cdecl sceSdPitch2Note(u16 center_note, u16 center_fine, u16 pitch);
-void __cdecl sceSdSetCoreAttr(u16 entry, u16 value);
-u16 __cdecl sceSdGetCoreAttr(u16 entry);
-SdIntrCallback __cdecl sceSdSetTransCallback(s32 core, SdIntrCallback cb);
-sceSdTransIntrHandler __cdecl sceSdSetTransIntrHandler(int channel, sceSdTransIntrHandler func, void *arg);
-void *__cdecl sceSdGetTransIntrHandlerArgument(int arg);
-SdIntrCallback __cdecl sceSdSetIRQCallback(SdIntrCallback cb);
-sceSdSpu2IntrHandler __cdecl sceSdSetSpu2IntrHandler(sceSdSpu2IntrHandler func, void *arg);
-void *__cdecl sceSdGetSpu2IntrHandlerArgument();
 static void reset_vars();
-int __cdecl sceSdInit(int flag);
-int __cdecl sceSdQuit();
 
 static vu16 *const g_ParamRegList[] =
 {
