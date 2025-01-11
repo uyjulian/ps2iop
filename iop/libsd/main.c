@@ -2004,7 +2004,7 @@ int sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
               sceSdSetParam((batch[cnt].entry & ~0x3E) | (i << 1), batch[cnt].value);
             }
           }
-          --loop;
+          loop -= 1;
         }
         else
           sceSdSetParam(batch[cnt].entry, batch[cnt].value);
@@ -2023,7 +2023,7 @@ int sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
               sceSdSetAddr((batch[cnt].entry & ~0x3E) | (i << 1), batch[cnt].value);
             }
           }
-          --loop;
+          loop -= 1;
         }
         else
           sceSdSetAddr(batch[cnt].entry, batch[cnt].value);
@@ -2052,7 +2052,7 @@ int sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
               rets[loop] = Param;
             loop += 1;
           }
-          --loop;
+          loop -= 1;
         }
         else
           Param = sceSdGetParam(batch[cnt].entry);
@@ -2073,7 +2073,7 @@ int sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
               loop += 1;
             }
           }
-          --loop;
+          loop -= 1;
         }
         else
           Param = sceSdGetAddr(batch[cnt].entry);
