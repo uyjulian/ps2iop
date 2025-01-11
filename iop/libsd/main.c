@@ -236,9 +236,9 @@ int __cdecl sceSdStopTrans(int channel);
 int sceSdBlockTrans(s16 chan, u16 mode, u8 *iopaddr, u32 size, ...);
 u32 __cdecl sceSdBlockTransStatus(s16 channel, s16 flag);
 static void libsd_do_busyloop_1(int);
-static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3);
-static unsigned int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int size, int chan);
-static unsigned int __fastcall BlockTransWriteFrom(u8 *iopaddr, unsigned int size, char chan, char mode, u8 *startaddr);
+static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, u32 vararg3);
+static u32 __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan);
+static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, char chan, char mode, u8 *startaddr);
 static u32 __fastcall BlockTransRead(u8 *iopaddr, u32 size, char chan, u16 mode);
 int __cdecl sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num);
 int __cdecl sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice);
@@ -872,7 +872,7 @@ int _start()
 //----- (00400110) --------------------------------------------------------
 static void SetEffectRegisterPair(spu2_u16pair_t *pair, int val)
 {
-  unsigned int rval; // $a2
+  u32 rval; // $a2
 
   rval = val << 2;
   // Unofficial: receive register pair instead of base+offset
@@ -957,12 +957,12 @@ static void __cdecl SetEffectData(int core, const struct mode_data_struct *mode_
 //----- (00400660) --------------------------------------------------------
 int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
 {
-  unsigned int aligned_addr; // $s4
-  unsigned int effect_size; // $s1
-  unsigned int effect_addr; // $s2
+  u32 aligned_addr; // $s4
+  u32 effect_size; // $s1
+  u32 effect_addr; // $s2
   int xferres; // $s0
-  int (__cdecl *callback_tmp)(void *); // [sp+18h] [-8h]
-  int (__cdecl *handler_tmp)(int, void *); // [sp+1Ch] [-4h]
+  SdIntrCallback callback_tmp; // [sp+18h] [-8h]
+  sceSdTransIntrHandler handler_tmp; // [sp+1Ch] [-4h]
 
   effect_mode &= 0xFF;
   if ( effect_mode > SD_EFFECT_MODE_PIPE )
@@ -1049,8 +1049,8 @@ static int CleanHandler(int channel)
 //----- (0040097C) --------------------------------------------------------
 int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
 {
-  unsigned int effect_size; // $s1
-  unsigned int effect_addr; // $a3
+  u32 effect_size; // $s1
+  u32 effect_addr; // $a3
   int xferres; // $s0
   int i; // $t0
 
@@ -1205,7 +1205,7 @@ int __cdecl sceSdSetEffectMode(int core, sceSdEffectAttr *param)
 {
   int clearram; // $s6
   int channel; // $s5
-  unsigned int mode; // $s1
+  u32 mode; // $s1
   int effects_enabled; // $s4
   struct mode_data_struct mode_data; // [sp+10h] [-50h] BYREF
   int state; // [sp+5Ch] [-4h] BYREF
@@ -1648,11 +1648,11 @@ static void libsd_do_busyloop_1(int a1)
 }
 
 //----- (00402358) --------------------------------------------------------
-static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vararg3)
+static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
 {
   int core; // $s1
-  unsigned int tsa_tmp; // $t1
-  unsigned int vararg3_cal; // $a0
+  u32 tsa_tmp; // $t1
+  u32 vararg3_cal; // $a0
   u32 blocktransbufitem; // $s7
   int dma_addr; // $s5
   int i; // $a0
@@ -1750,9 +1750,9 @@ static u32 __fastcall DmaStartStop(int mainarg, void *vararg2, unsigned int vara
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (0040280C) --------------------------------------------------------
-static unsigned int __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, unsigned int size, int chan)
+static u32 __fastcall VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan)
 {
-  unsigned int size_tmp; // $s3
+  u32 size_tmp; // $s3
   int count; // $s2
   int i; // $v1
   int state; // [sp+14h] [-4h] BYREF
@@ -1900,7 +1900,7 @@ static int __fastcall TransInterrupt(IntrData *intr)
 // BF900000: using guessed type spu2_regs_t spu2_regs;
 
 //----- (00402F4C) --------------------------------------------------------
-static unsigned int __fastcall BlockTransWriteFrom(u8 *iopaddr, unsigned int size, char chan, char mode, u8 *startaddr)
+static u32 __fastcall BlockTransWriteFrom(u8 *iopaddr, u32 size, char chan, char mode, u8 *startaddr)
 {
   int core; // $s2
   u8 *startaddr_tmp; // $s3
@@ -1919,7 +1919,7 @@ static unsigned int __fastcall BlockTransWriteFrom(u8 *iopaddr, unsigned int siz
     size_align = size - (startaddr - iopaddr);
     if ( (u32)(startaddr - iopaddr) >= size )
     {
-      unsigned int other_align; // $v1
+      u32 other_align; // $v1
 
       other_align = startaddr - iopaddr - size;
       if ( !(mode & SD_TRANS_LOOP) || other_align >= size )
@@ -2268,7 +2268,7 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
   val3 = (note + _fine2 - center_note);
   _note = val3 & 0xFFFF;
   offset2 = _fine % 0x80;
-  val2 = ((_note / 6) >> 1) - ((unsigned int)val3 << 16 >> 31);
+  val2 = ((_note / 6) >> 1) - ((u32)val3 << 16 >> 31);
   offset1 = _note - 12 * val2;
   val = val2 - 2;
   if ( (offset1 < 0) || (!offset1 && offset2 < 0) )
@@ -2283,7 +2283,7 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
     offset1 += _fine2;
   }
   retval = (g_NotePitchTable[offset1] * g_NotePitchTable[offset2 + 12]) >> 16;
-  return ( val < 0 ) ? (unsigned int)(retval + (1 << (-val - 1))) >> -val : (unsigned int)retval;
+  return ( val < 0 ) ? (u32)(retval + (1 << (-val - 1))) >> -val : (u32)retval;
 }
 
 //----- (00403CE4) --------------------------------------------------------
