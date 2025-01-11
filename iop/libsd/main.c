@@ -219,9 +219,9 @@ static int GetEEA(int core);
 static void InitSpu2_Inner();
 static void libsd_do_busyloop(int count);
 static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3);
-static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan);
-static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr);
-static u32 BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode);
+static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int core);
+static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int core, int mode, u8 *startaddr);
+static u32 BlockTransRead(u8 *iopaddr, u32 size, int core, u16 mode);
 static void reset_vars();
 
 static vu16 *const g_ParamRegList[] =
@@ -1031,12 +1031,10 @@ int sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   return xferres;
 }
 
-static int CleanHandler(int channel)
+static int CleanHandler(int core)
 {
-  int core;
-
   // Unofficial: restrict core
-  core = channel & 1;
+  core &= 1;
   g_CleanRegionCur[core] += 1;
   if ( (int)g_CleanRegionCur[core] >= (int)(g_CleanRegionMax[core] - 1) )
     g_CleanHandlers[core] = 0;
@@ -1749,17 +1747,16 @@ static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3)
   }
 }
 
-static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int chan)
+static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int core)
 {
   u32 size_tmp;
   int count;
   int i;
   int state;
-  int core;
   USE_SPU2_MMIO_HWPORT();
 
   // Unofficial: restrict core
-  core = chan & 1;
+  core &= 1;
   for ( size_tmp = size; size_tmp; size_tmp -= count )
   {
     count = ( size_tmp <= 0x40 ) ? size_tmp : 0x40;
@@ -1906,9 +1903,8 @@ static int TransInterrupt(IntrData *intr)
   return 1;
 }
 
-static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *startaddr)
+static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int core, int mode, u8 *startaddr)
 {
-  int core;
   u8 *startaddr_tmp;
   int size_align;
   int size_align_r6;
@@ -1916,7 +1912,7 @@ static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *st
   USE_IOP_MMIO_HWPORT();
   USE_SPU2_MMIO_HWPORT();
 
-  core = chan & 1;
+  core &= 1;
   startaddr_tmp = startaddr;
   g_BlockTransAddr[core] = iopaddr;
   g_BlockTransBuff[core] = 0;
@@ -1963,14 +1959,13 @@ static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int chan, int mode, u8 *st
   return size;
 }
 
-static u32 BlockTransRead(u8 *iopaddr, u32 size, int chan, u16 mode)
+static u32 BlockTransRead(u8 *iopaddr, u32 size, int core, u16 mode)
 {
-  int core;
   int state;
   USE_IOP_MMIO_HWPORT();
   USE_SPU2_MMIO_HWPORT();
 
-  core = chan & 1;
+  core &= 1;
   g_BlockTransAddr[core] = iopaddr;
   g_BlockTransBuff[core] = 0;
   g_BlockTransSize[core] = size;
