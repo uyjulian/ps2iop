@@ -638,7 +638,7 @@ static const struct mode_data_struct g_EffectParams[] =
   }
 };
 // Unofficial: move to bss
-static const u32 g_ClearEffectData[256];
+static const u32 g_ClearEffectData[256] __attribute__((__aligned__(16)));
 static spu2_regs_t *const g_ptr_to_bf900000 = (spu2_regs_t *)0xBF900000;
 // Unofficial: move to bss
 static int g_VoiceTransStatus[2];
@@ -835,7 +835,7 @@ static CleanRegionBuffer_t g_CleanRegionBuffer[2];
 static u32 g_BlockTransBuff[2];
 static u8 *g_BlockTransAddr[2];
 static u32 g_BlockTransSize[2];
-static u32 g_BatchData;
+static u32 g_BatchData __attribute__((__aligned__(16)));
 static SdIntrCallback g_TransIntrCallbacks[2];
 static u32 g_EffectAddr[2];
 spu2_regs_t spu2_regs; // weak
