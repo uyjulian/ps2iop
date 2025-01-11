@@ -2563,12 +2563,12 @@ static int __fastcall Reset(int flag)
   int intrstate; // [sp+20h] [-8h] BYREF
   int i;
 
-  DisableIntr(36, &intrstate);
-  DisableIntr(40, &intrstate);
-  DisableIntr(9, &intrstate);
-  ReleaseIntrHandler(36);
-  ReleaseIntrHandler(40);
-  ReleaseIntrHandler(9);
+  DisableIntr(IOP_IRQ_DMA_SPU, &intrstate);
+  DisableIntr(IOP_IRQ_DMA_SPU2, &intrstate);
+  DisableIntr(IOP_IRQ_SPU, &intrstate);
+  ReleaseIntrHandler(IOP_IRQ_DMA_SPU);
+  ReleaseIntrHandler(IOP_IRQ_DMA_SPU2);
+  ReleaseIntrHandler(IOP_IRQ_SPU);
   // Unofficial: rerolled
   for ( i = 0; i < 2; i += 1 )
   {
@@ -2642,12 +2642,12 @@ int __cdecl sceSdInit(int flag)
   resetres = Reset(flag);
   InitVoices();
   InitCoreVolume(flag & 0xF);
-  EnableIntr(36);
-  EnableIntr(40);
-  EnableIntr(9);
-  RegisterIntrHandler(36, 1, (int (__cdecl *)(void *))TransInterrupt, &g_TransIntrData[0]);
-  RegisterIntrHandler(40, 1, (int (__cdecl *)(void *))TransInterrupt, &g_TransIntrData[1]);
-  RegisterIntrHandler(9, 1, (int (__cdecl *)(void *))Spu2Interrupt, g_Spu2IntrHandlerData);
+  EnableIntr(IOP_IRQ_DMA_SPU);
+  EnableIntr(IOP_IRQ_DMA_SPU2);
+  EnableIntr(IOP_IRQ_SPU);
+  RegisterIntrHandler(IOP_IRQ_DMA_SPU, 1, (int (__cdecl *)(void *))TransInterrupt, &g_TransIntrData[0]);
+  RegisterIntrHandler(IOP_IRQ_DMA_SPU2, 1, (int (__cdecl *)(void *))TransInterrupt, &g_TransIntrData[1]);
+  RegisterIntrHandler(IOP_IRQ_SPU, 1, (int (__cdecl *)(void *))Spu2Interrupt, g_Spu2IntrHandlerData);
   g_vars_inited = 1;
   return resetres;
 }
@@ -2666,11 +2666,11 @@ int __cdecl sceSdQuit()
   for ( i = 0; i < 2; i += 1 )
     if ( g_VoiceTransCompleteEf[i] > 0 )
       DeleteEventFlag(g_VoiceTransCompleteEf[i]);
-  DisableIntr(40, &intrstate);
-  DisableIntr(36, &intrstate);
-  DisableIntr(9, &intrstate);
-  ReleaseIntrHandler(40);
-  ReleaseIntrHandler(36);
-  ReleaseIntrHandler(9);
+  DisableIntr(IOP_IRQ_DMA_SPU2, &intrstate);
+  DisableIntr(IOP_IRQ_DMA_SPU, &intrstate);
+  DisableIntr(IOP_IRQ_SPU, &intrstate);
+  ReleaseIntrHandler(IOP_IRQ_DMA_SPU2);
+  ReleaseIntrHandler(IOP_IRQ_DMA_SPU);
+  ReleaseIntrHandler(IOP_IRQ_SPU);
   return 0;
 }
