@@ -980,7 +980,7 @@ int __cdecl sceSdClearEffectWorkArea(int core, int channel, int effect_mode)
   effect_addr = (GetEEA(core) - (effect_size - 1)) >> 1;
   if ( (effect_size & 0x3F) )
   {
-    effect_size = effect_size >> 6 << 6;
+    effect_size &= 0x3FFFFFF;
     aligned_addr = (GetEEA(core) - (effect_size - 1)) >> 1;
   }
   handler_tmp = g_TransIntrHandlers[channel];
@@ -1067,7 +1067,7 @@ int __cdecl sceSdCleanEffectWorkArea(int core, int channel, int effect_mode)
   effect_addr = GetEEA(core) - (effect_size - 1);
   if ( (effect_size & 0x3F) )
   {
-    effect_size = effect_size >> 6 << 6;
+    effect_size &= 0x3FFFFFF;
     xferres = sceSdVoiceTrans(channel, 8u, (u8 *)g_ClearEffectData, (u32 *)effect_addr, 0x40u);
     if ( xferres < 0 )
       return xferres;
@@ -1383,7 +1383,7 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
       else
         ClearEventFlag(g_VoiceTransCompleteEf[core], ~1);
       g_VoiceTransIoMode[core] = 0;
-      return DmaStartStop((core << 4) | 5, iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 0x40 : 0));
+      return DmaStartStop((core << 4) | 5, iopaddr, (size & 0x3FFFFFF) + ((size & 0x3F) ? 0x40 : 0));
     case SD_TRANS_WRITE:
       g_TransIntrData[core].m_mode = core | 0x500;
       g_BlockHandlerIntrData[core].m_cb = 0;
@@ -1397,10 +1397,10 @@ int __cdecl sceSdVoiceTrans(s16 chan, u16 mode, u8 *iopaddr, u32 *spuaddr, u32 s
       if ( !(mode & SD_TRANS_MODE_IO) )
       {
         g_VoiceTransStatus[core] = 0;
-        return DmaStartStop((core << 4) | 6, iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 0x40 : 0));
+        return DmaStartStop((core << 4) | 6, iopaddr, (size & 0x3FFFFFF) + ((size & 0x3F) ? 0x40 : 0));
       }
       g_VoiceTransStatus[core] = 1;
-      return VoiceTrans_Write_IOMode((u16 *)iopaddr, (size >> 6 << 6) + ((size & 0x3F) ? 0x40 : 0), core);
+      return VoiceTrans_Write_IOMode((u16 *)iopaddr, (size & 0x3FFFFFF) + ((size & 0x3F) ? 0x40 : 0), core);
     default:
       return -100;
   }
@@ -1854,7 +1854,7 @@ static int __fastcall TransInterrupt(IntrData *intr)
           if ( dma_size > 0 )
           {
             ((vu16 *)&((core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->bcr))[1] = (dma_size >> 6)
-                                                                    + (dma_size - (dma_size >> 6 << 6) > 0);
+                                                                    + (dma_size - (dma_size & 0x3FFFFFF) > 0);
             (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->madr = (uiptr)dma_addr;
             (core ? &iop_mmio_hwport->dmac2.newch[0] : &iop_mmio_hwport->dmac1.oldch[4])->chcr = no_flush_cache | SD_DMA_START|SD_DMA_CS;
           }
@@ -2252,8 +2252,7 @@ u32 __cdecl sceSdGetAddr(u16 entry)
 u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine)
 {
   int _fine; // $a3
-  int val3; // $v0
-  int _note; // $a1
+  s16 _note; // $a1
   int _fine2; // $a2
   int offset2; // $a3
   int val2; // $v1
@@ -2263,10 +2262,9 @@ u16 __cdecl sceSdNote2Pitch(u16 center_note, u16 center_fine, u16 note, s16 fine
 
   _fine = fine + center_fine;
   _fine2 = _fine / 0x80;
-  val3 = (note + _fine2 - center_note);
-  _note = val3 & 0xFFFF;
+  _note = note + _fine2 - center_note;
   offset2 = _fine % 0x80;
-  val2 = ((_note / 6) >> 1) - ((u32)val3 << 16 >> 31);
+  val2 = ((_note / 6) >> 1) - (_note < 0);
   offset1 = _note - 12 * val2;
   val = val2 - 2;
   if ( (offset1 < 0) || (!offset1 && offset2 < 0) )
