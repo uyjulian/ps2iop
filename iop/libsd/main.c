@@ -2622,9 +2622,12 @@ static int __fastcall Reset(char flag)
 //----- (004048C8) --------------------------------------------------------
 static void reset_vars()
 {
+  int i;
+
   g_vars_inited = 0;
-  g_VoiceTransCompleteEf[0] = 0;
-  g_VoiceTransCompleteEf[1] = 0;
+  // Unofficial: rerolled
+  for ( i = 0; i < 2; i += 1 )
+    g_VoiceTransCompleteEf[i] = 0;
 }
 // 405628: using guessed type int g_vars_inited;
 
