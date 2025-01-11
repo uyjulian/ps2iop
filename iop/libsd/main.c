@@ -2596,7 +2596,7 @@ static int Reset(int flag)
 			spu2_mmio_hwport->m_u.m_m.m_core_regs[i].m_cregs.m_esa.m_pair[1] = 0xFFF8;
 		}
 	}
-	efparam.attr = 2;
+	efparam.attr = EA_MULTI;
 	efparam.bits = 1;
 	efparam.option = 0;
 	// Unofficial: rerolled
