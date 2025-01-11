@@ -207,7 +207,6 @@ typedef struct CleanRegionBufferElement_
   u32 m_size;
 } CleanRegionBufferElement_t;
 
-
 typedef struct CleanRegionBuffer_
 {
   CleanRegionBufferElement_t m_elements[97];
@@ -216,13 +215,13 @@ typedef struct CleanRegionBuffer_
 typedef int (*SdCleanHandler)(int core);
 
 static int GetEEA(int core);
-static void InitSpu2_Inner();
+static void InitSpu2_Inner(void);
 static void libsd_do_busyloop(int count);
 static u32 DmaStartStop(int mainarg, void *vararg2, u32 vararg3);
 static u32 VoiceTrans_Write_IOMode(const u16 *iopaddr, u32 size, int core);
 static u32 BlockTransWriteFrom(u8 *iopaddr, u32 size, int core, int mode, u8 *startaddr);
 static u32 BlockTransRead(u8 *iopaddr, u32 size, int core, u16 mode);
-static void reset_vars();
+static void reset_vars(void);
 
 static vu16 *const g_ParamRegList[] =
 {
@@ -860,11 +859,13 @@ static u32 g_EffectAddr[2];
 #endif
 
 
-int _start()
+int _start(int ac, char **av)
 {
   int regres;
   int state;
 
+  (void)ac;
+  (void)av;
   CpuSuspendIntr(&state);
   regres = RegisterLibraryEntries(&_exp_libsd);
   CpuResumeIntr(state);
@@ -1290,7 +1291,7 @@ int sceSdSetEffectModeParams(int core, sceSdEffectAttr *attr)
   return 0;
 }
 
-static void InitSpu2_Inner()
+static void InitSpu2_Inner(void)
 {
   int state;
   USE_IOP_MMIO_HWPORT();
@@ -1305,7 +1306,7 @@ static void InitSpu2_Inner()
   iop_mmio_hwport->ssbus2.ind_9_delay = 0x200B31E1;
 }
 
-static void InitSpu2()
+static void InitSpu2(void)
 {
   USE_SPU2_MMIO_HWPORT();
 
@@ -1625,7 +1626,7 @@ static void SetDmaRead(int chan)
   *dmachanptr = (*dmachanptr & ~0xF000000) | 0x2000000;
 }
 
-static void __attribute__((optimize("no-unroll-loops"))) libsd_do_busyloop_inner()
+static void __attribute__((optimize("no-unroll-loops"))) libsd_do_busyloop_inner(void)
 {
   int i;
   int loopmul;
@@ -2480,7 +2481,7 @@ static int Spu2Interrupt(void *data)
   return 1;
 }
 
-static int InitVoices()
+static int InitVoices(void)
 {
   int i;
   int j;
@@ -2613,7 +2614,7 @@ static int Reset(int flag)
   return ( g_VoiceTransCompleteEf[0] <= 0 || g_VoiceTransCompleteEf[1] <= 0 ) ? -301 : 0;
 }
 
-static void reset_vars()
+static void reset_vars(void)
 {
   int i;
 
