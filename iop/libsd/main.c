@@ -2066,7 +2066,7 @@ int sceSdProcBatch(sceSdBatch *batch, u32 *rets, u32 num)
 			case SD_BATCH_EERETURN:
 				Param = SifDmaBatch((void *)batch[cnt].value, rets, batch[cnt].entry);
 				break;
-			case SD_BATCH_GETPARAM | SD_BATCH_SETPARAM:
+			case SD_BATCH_GETPARAM:
 				Param = sceSdGetParam(batch[cnt].entry);
 				break;
 			case SD_BATCH_GETSWITCH:
@@ -2149,7 +2149,7 @@ int sceSdProcBatchEx(sceSdBatch *batch, u32 *rets, u32 num, u32 voice)
 			case SD_BATCH_EERETURN:
 				Param = SifDmaBatch((void *)batch[cnt].value, rets, batch[cnt].entry);
 				break;
-			case SD_BATCH_GETPARAM | SD_BATCH_SETPARAM:
+			case SD_BATCH_GETPARAM:
 				if ( (batch[cnt].entry & 0x3E) == 0x3E )
 				{
 					for ( i = 0; i < 24; i += 1 )
