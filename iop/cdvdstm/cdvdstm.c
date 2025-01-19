@@ -2,10 +2,12 @@
 #include "../00common/defs.h"
 #include "irx_imports.h"
 
+#include <cdvd-ioctl.h>
 #include <errno.h>
 #include <kerr.h>
 
 IRX_ID("cdvd_st_driver", 2, 2);
+// Based on the module from SCE SDK 3.1.0.
 
 extern struct irx_export_table _exp_cdvdstm;
 
@@ -417,7 +419,6 @@ static unsigned int iop_stream_handler(
 
 static unsigned int iop_stream_intr_cb(void *userdata)
 {
-	int gptmp;
 	int last_error;
 	int scres_unused;
 
@@ -501,6 +502,8 @@ static unsigned int iop_stream_intr_cb(void *userdata)
 	}
 	else
 	{
+		int gptmp;
+
 		if ( !g_cdvdstm_stmstart_iop )
 		{
 			g_cdvdstm_usedmap_iop[g_cdvdstm_bankgp_iop] = 1;
@@ -990,7 +993,6 @@ static void ee_stream_handler_normal(cdrom_stm_devctl_t *instruct, int inbuf_len
 
 static unsigned int ee_stream_intr_cb_normal(void *userdata)
 {
-	int gptmp;
 	int scres_unused;
 
 	(void)userdata;
@@ -1070,6 +1072,8 @@ static unsigned int ee_stream_intr_cb_normal(void *userdata)
 	}
 	else
 	{
+		int gptmp;
+
 		if ( !g_cdvdstm_stmstart_ee )
 		{
 			g_cdvdstm_usedmap_ee[g_cdvdstm_bankgp_ee] = 1;
@@ -1454,7 +1458,6 @@ static void ee_stream_handler_cdda(cdrom_stm_devctl_t *instruct, int inbuf_len, 
 
 static unsigned int ee_stream_intr_cb_cdda(void *userdata)
 {
-	int gptmp;
 	int scres_unused;
 
 	(void)userdata;
@@ -1543,6 +1546,8 @@ static unsigned int ee_stream_intr_cb_cdda(void *userdata)
 	}
 	else
 	{
+		int gptmp;
+
 		if ( !g_cdvdstm_stmstart_ee )
 		{
 			g_cdvdstm_usedmap_ee[g_cdvdstm_bankgp_ee] = 1;

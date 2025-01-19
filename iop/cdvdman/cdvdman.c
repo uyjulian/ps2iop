@@ -2,14 +2,148 @@
 #include "../00common/defs.h"
 #include "irx_imports.h"
 
+#include <cdvdman.h>
+
 #include <cdvd-ioctl.h>
+#include <dev5_mmio_hwport.h>
 #include <errno.h>
 #include <hdd-ioctl.h>
 #include <kerr.h>
 
 IRX_ID("cdvd_driver", 2, 38);
+// Based on the module from SCE SDK 3.1.0.
 
 extern struct irx_export_table _exp_cdvdman;
+
+typedef struct cdvdman_dirtbl_entry_
+{
+	int m_number;
+	int m_parent;
+	int m_extent;
+	char m_name[32];
+} cdvdman_dirtbl_entry_t;
+
+typedef struct cdvdman_fhinfo_
+{
+	u32 m_file_lsn;
+	u32 m_read_pos;
+	u32 m_file_size;
+	u32 m_filemode;
+	int m_fd_flags;
+	int m_fd_layer;
+	int m_cache_file_fd;
+	u8 *m_fd_rcvbuf;
+	u32 m_fd_rbsize;
+	void *m_max_cluster;
+	int m_sector_count_total;
+	int m_cluster_cur;
+} cdvdman_fhinfo_t;
+
+typedef struct cdvdman_pathtbl_
+{
+	int m_cache_path_sz;
+	int m_lsn;
+	unsigned int m_nsec;
+	int m_layer;
+	unsigned int m_cache_hit_count;
+} cdvdman_pathtbl_t;
+
+typedef struct cdvdman_filetbl_entry_
+{
+	sceCdlFILE m_file_struct;
+	int m_flags;
+} cdvdman_filetbl_entry_t;
+
+typedef struct iso9660_desc_
+{
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_type[1];
+	unsigned char m_id[5];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_version[1];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused1[1];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_system_id[32];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_id[32];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused2[8];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_space_size[8];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused3[32];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_set_size[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_sequence_number[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_logical_block_size[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_path_table_size[8];
+	unsigned char m_type_l_path_table[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_opt_type_l_path_table[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_type_m_path_table[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_opt_type_m_path_table[4];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_root_directory_record[34];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_volume_set_id[128];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_publisher_id[128];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_preparer_id[128];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_application_id[128];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_copyright_file_id[37];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_abstract_file_id[37];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_bibliographic_file_id[37];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_creation_date[17];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_modification_date[17];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_expiration_date[17];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_effective_date[17];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_file_structure_version[1];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused4[1];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_application_data[512];
+	// cppcheck-suppress unusedStructMember
+	unsigned char m_unused5[653];
+} iso9660_desc_t;
+
+typedef struct iso9660_path_
+{
+	unsigned char m_name_len[2];
+	unsigned char m_extent[4];
+	unsigned char m_parent[2];
+	unsigned char m_name[];
+} iso9660_path_t;
+
+typedef struct iso9660_dirent_
+{
+	unsigned char m_length[1];
+	unsigned char m_ext_attr_length[1];
+	unsigned char m_extent[8];
+	unsigned char m_size[8];
+	unsigned char m_date[7];
+	unsigned char m_flags[1];
+	unsigned char m_file_unit_size[1];
+	unsigned char m_interleave[1];
+	unsigned char m_volume_sequence_number[4];
+	unsigned char m_name_len[1];
+	unsigned char m_name[];
+} iso9660_dirent_t;
 
 static int cdrom_init(iop_device_t *dev);
 void cdvdman_termcall(int with_stop);
@@ -55,7 +189,7 @@ static void Read2intrCDVD(int read2_flag);
 static int sceCdGetMVersion(u8 *buffer, u32 *status);
 static int cdvdman_scmd_sender_03_48(u8 *buf, u32 *status);
 static int cdvdman_scmd_sender_3B(int arg1);
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 static int cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3);
 #endif
 
@@ -101,7 +235,9 @@ static iop_device_ops_t g_cdvdman_cddev_ops = {
 static iop_device_t g_cdvdman_cddev = {"cdrom", IOP_DT_FSEXT | IOP_DT_FS, 1, "CD-ROM ", &g_cdvdman_cddev_ops};
 static int g_cdvdman_sync_timeout = 15000;
 static int g_cdvdman_stream_timeout = 5000;
+#ifdef CDVD_VARIANT_DNAS
 static iop_sys_clock_t g_readid_systemtime = {0, 0};
+#endif
 static int g_verbose_level = 0;
 static cdvdman_pathtbl_t *g_cdvdman_pathtbl = NULL;
 static unsigned int g_cache_count = 0;
@@ -1534,7 +1670,7 @@ cdrom_devctl(iop_file_t *f, const char *name, int cmd, void *argp, unsigned int 
 			}
 			retval2 = (retval2 != 1) ? -EIO : 0;
 			break;
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 		case 0x431D:
 			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
@@ -1573,7 +1709,7 @@ cdrom_devctl(iop_file_t *f, const char *name, int cmd, void *argp, unsigned int 
 		case CDIOC_DISKRDY:
 			*(u32 *)bufp = sceCdDiskReady(*(u32 *)argp);
 			break;
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 		case 0x4326:
 			for ( i = 0; i < 3 && !retval2; i += 1 )
 			{
@@ -2027,7 +2163,7 @@ u32 sceCdPosToInt(sceCdlLOCCD *p)
 			 + 10 * (p->sector >> 4) + (p->sector & 0xF) - 150;
 }
 
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 static int read_id_from_rom(int mode, int *buf)
 {
 	int chksumint;
@@ -5751,7 +5887,7 @@ static int cdvdman_scmd_sender_3B(int arg1)
 	return 0;
 }
 
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 int sceCdReadDiskID(unsigned int *id)
 {
 	sceCdRMode rmode;
@@ -5920,7 +6056,7 @@ static int cdvdman_ncmd_sender_0C(int arg1, u32 arg2, u32 arg3)
 
 int sceCdDecSet(u8 enable_xor, u8 enable_shift, u8 shiftval)
 {
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 	USE_DEV5_MMIO_HWPORT();
 
 	g_cdvdman_cd36key = enable_shift | shiftval;

@@ -2,9 +2,12 @@
 #include "../00common/defs.h"
 #include "irx_imports.h"
 
+#include <cdvd-ioctl.h>
 #include <kerr.h>
+#include <libcdvd-rpc.h>
 
 IRX_ID("cdvd_ee_driver", 2, 38);
+// Based on the module from SCE SDK 3.1.0.
 
 extern struct irx_export_table _exp_cdvdfsv;
 
@@ -1654,7 +1657,7 @@ static void cdvdfsv_rpc3_1A_rm(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen,
 	}
 }
 
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 static void cdvdfsv_rpc3_24_readguid(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvdfsv_rpc3_outpacket_t *outbuf)
 {
 	int i;
@@ -1754,7 +1757,7 @@ cdvdfsv_rpc3_01_readclock(const cdvdfsv_rpc3_inpacket_t *inbuf, int buflen, cdvd
 	}
 }
 
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 static void
 cdvdfsv_rpc5_11_readdiskid(const cdvdfsv_rpc5_inpacket_t *inbuf, int buflen, cdvdfsv_rpc5_outpacket_t *outbuf)
 {
@@ -1925,7 +1928,7 @@ static void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 		case 15:
 			cdvdfsv_rpc5_0F_readchain(buffer, length, &g_crr);
 			break;
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 		case 17:
 			cdvdfsv_rpc5_11_readdiskid(buffer, length, &g_crr);
 			break;
@@ -1935,7 +1938,7 @@ static void *cbrpc_rpc5_cdvdncmds(int fno, void *buffer, int length)
 			cdvdfsv_rpc5_01_readee(
 				buffer, length, &g_crr, !(sceCdGetDiskType() ^ SCECdPS2DVD), 1, !g_cdvdman_istruct_ptr->m_no_dec_flag);
 			break;
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 		case 23:
 			cdvdfsv_rpc5_17_doesuniquekeyexist(buffer, length, &g_crr);
 			break;
@@ -1998,7 +2001,7 @@ static void *cbrpc_rpc3_cdvdscmds(int fno, void *buffer, int length)
 		case 35:
 			cdvdfsv_rpc3_23_changethreadpriority(buffer, length, &g_outbuf);
 			break;
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 		case 36:
 			cdvdfsv_rpc3_24_readguid(buffer, length, &g_outbuf);
 			break;
@@ -2006,7 +2009,7 @@ static void *cbrpc_rpc3_cdvdscmds(int fno, void *buffer, int length)
 		case 37:
 			cdvdfsv_rpc3_25_settimeout(buffer, length, &g_outbuf);
 			break;
-#if CDVD_VARIANT_DNAS
+#ifdef CDVD_VARIANT_DNAS
 		case 38:
 			cdvdfsv_rpc3_26_readmodelid(buffer, length, &g_outbuf);
 			break;

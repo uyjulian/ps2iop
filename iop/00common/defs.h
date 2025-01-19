@@ -130,6 +130,9 @@ typedef unsigned long u_long;
 
 #if 1
 #include <cdvdman.h>
+#endif
+
+#if 0
 typedef struct dev5_mmio_hwport_
 {
 	vu8 m_dev5_reg_000;
@@ -412,7 +415,7 @@ typedef struct cdvdman_internal_struct_
 } cdvdman_internal_struct_t;
 #endif
 
-#if 1
+#if 0
 typedef struct cdvdfsv_rpc1_inpacket_
 {
 	int m_mode;
