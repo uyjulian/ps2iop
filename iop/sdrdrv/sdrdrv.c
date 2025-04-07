@@ -24,7 +24,7 @@ int module_stop(int ac, char **av);
 int sceSdrChangeThreadPriority(int priority_main, int priority_cb);
 void sce_sdr_loop(void* arg);
 void *sdrFunc(int fno, void *buffer, int length);
-sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int, sceSdrUserCommandFunction);
+sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCommandFunction func);
 void sceSifCmdLoop2(void);
 int sce_sdrDMA0IntrHandler(int core, void *common);
 int sce_sdrDMA1IntrHandler(int core, void *common);
@@ -366,14 +366,14 @@ void *sdrFunc(int fno, void *buffer, int length)
 // 401630: using guessed type int procbat_returns[384];
 
 //----- (00400DC8) --------------------------------------------------------
-sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int a1, sceSdrUserCommandFunction a2)
+sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCommandFunction func)
 {
 	sceSdrUserCommandFunction oldf; // $v0
 
-	if ( (unsigned int)(a1 - 0x9000) >= 0xF1 )
+	if ( (unsigned int)(command - 0x9000) >= 0xF1 )
 		return (sceSdrUserCommandFunction)-1;
-	oldf = sceSdr_vUserCommandFunction[(a1 & 0xF0) >> 4];
-	sceSdr_vUserCommandFunction[(a1 & 0xF0) >> 4] = a2;
+	oldf = sceSdr_vUserCommandFunction[(command & 0xF0) >> 4];
+	sceSdr_vUserCommandFunction[(command & 0xF0) >> 4] = func;
 	return oldf;
 }
 
