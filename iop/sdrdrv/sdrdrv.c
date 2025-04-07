@@ -22,14 +22,14 @@ typedef int (*sceSdrUserCommandFunction)(unsigned int command, void *data, int s
 int module_start(int ac, char **av);
 int module_stop(int ac, char **av);
 int sceSdrChangeThreadPriority(int priority_main, int priority_cb);
-int sce_sdr_loop(void);
+void sce_sdr_loop(void* arg);
 void *sdrFunc(int fno, void *buffer, int length);
 sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int, sceSdrUserCommandFunction);
 void sceSifCmdLoop2(void);
 int sce_sdrDMA0IntrHandler(int core, void *common);
 int sce_sdrDMA1IntrHandler(int core, void *common);
 int sce_sdrSpu2IntrHandler(int core_bit, void *common);
-void sce_sdrcb_loop(void);
+void sce_sdrcb_loop(void* arg);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -111,7 +111,7 @@ int module_start(int ac, char **av)
 		}
 	}
 	thprarm.attr = 0x2000000;
-	thprarm.thread = (void (*)(void *))sce_sdr_loop;
+	thprarm.thread = sce_sdr_loop;
 	thprarm.stacksize = 2048;
 	thprarm.option = 0;
 	thprarm.priority = initial_priority_main;
@@ -132,6 +132,9 @@ int module_stop(int ac, char **av)
 {
 	int code; // $s0
 	int state; // [sp+10h] [-8h] BYREF
+
+	(void)ac;
+	(void)av;
 
 	CpuSuspendIntr(&state);
 	code = ReleaseLibraryEntries(&_exp_sdrdrv);
@@ -198,405 +201,165 @@ int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
 // 401624: using guessed type int initial_priority_cb;
 
 //----- (004004E0) --------------------------------------------------------
-int sce_sdr_loop(void)
+void sce_sdr_loop(void *arg)
 {
+	(void)arg;
+
 	sceSifInitRpc(0);
 	sceSifSetRpcQueue(&rpc_qd, GetThreadId());
 	sceSifRegisterRpc(&rpc_sd, 0x80000701, sdrFunc, gRpcArg, 0, 0, &rpc_qd);
 	// Unofficial: was inlined
 	memset(sceSdr_vUserCommandFunction, 0, sizeof(sceSdr_vUserCommandFunction));
 	sceSifRpcLoop(&rpc_qd);
-	return 0;
 }
 // 401C30: using guessed type int gRpcArg[16];
 
 //----- (00400588) --------------------------------------------------------
 void *sdrFunc(int fno, void *buffer, int length)
 {
-	u16 fno_tmp; // $s1
-	unsigned int fno_mask_tmp_1; // $v1
-	int fno_eff_param; // $a0
-	unsigned int fno_mask_tmp_2; // $a0
-	int ret_tmp_2; // $v0
-	int ret_tmp_1; // $v0
-	int xfer_handler_arg0; // $a0
-	int (*xfer_handler_arg1)(int, void *); // $a1
-	int (*intr_handler_arg0)(int, void *); // $a0
+	int ret; // $v0
 	iop_thread_t thparam; // [sp+18h] [-18h] BYREF
 
-	fno_tmp = fno;
-	fno_mask_tmp_1 = fno & 0xFFF0;
 	ret = 0;
-	if ( fno_mask_tmp_1 == 0x8190 )
+	switch (fno & 0xFFF0)
 	{
-		ret = sceSdCleanEffectWorkArea(*((u32 *)buffer + 1), *((u32 *)buffer + 2), *((u32 *)buffer + 3));
-		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		goto LABEL_127;
-	}
-	if ( fno_mask_tmp_1 > 0x8190 )
-	{
-		if ( fno_mask_tmp_1 != 0x9060 )
-		{
-			if ( fno_mask_tmp_1 > 0x9060 )
-			{
-				if ( fno_mask_tmp_1 != 0x90C0 )
-				{
-					if ( fno_mask_tmp_1 > 0x90C0 )
-					{
-						if ( fno_mask_tmp_1 != 0x90F0 )
-						{
-							if ( fno_mask_tmp_1 > 0x90F0 )
-							{
-								if ( fno_mask_tmp_1 != 0xE620 )
-								{
-									if ( fno_mask_tmp_1 == 0xE630 )
-									{
-										fno_mask_tmp_2 = fno & 0xFFF0;
-										if ( thid_cb > 0 )
-										{
-											TerminateThread(thid_cb);
-											DeleteThread(thid_cb);
-											thid_cb = 0;
-											Kprintf("SDR callback thread deleted\n");
-											fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-										}
-										goto LABEL_127;
-									}
-									goto LABEL_125;
-								}
-								thparam.attr = 0x2000000;
-								thparam.thread = (void (*)(void *))sce_sdrcb_loop;
-								thparam.stacksize = 2048;
-								thparam.option = 0;
-								thparam.priority = initial_priority_cb;
-								thid_cb = CreateThread(&thparam);
-								StartThread(thid_cb, 0);
-								Kprintf("SDR callback thread created\n");
-								fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-								goto LABEL_127;
-							}
-							if ( fno_mask_tmp_1 != 0x90D0 )
-							{
-								if ( fno_mask_tmp_1 != 0x90E0 )
-									goto LABEL_125;
-								goto LABEL_120;
-							}
-						}
-					}
-					else if ( fno_mask_tmp_1 != 0x9090 )
-					{
-						if ( fno_mask_tmp_1 > 0x9090 )
-						{
-							if ( fno_mask_tmp_1 != 0x90A0 )
-							{
-								if ( fno_mask_tmp_1 != 0x90B0 )
-									goto LABEL_125;
-								goto LABEL_120;
-							}
-						}
-						else if ( fno_mask_tmp_1 != 0x9070 )
-						{
-							if ( fno_mask_tmp_1 != 0x9080 )
-								goto LABEL_125;
-							goto LABEL_120;
-						}
-					}
-				}
-			}
-			else if ( fno_mask_tmp_1 != 0x9000 )
-			{
-				if ( fno_mask_tmp_1 <= 0x9000 )
-				{
-					if ( fno_mask_tmp_1 == 0x81C0 )
-					{
-						ret_tmp_1 = sceSdProcBatch(
-													(sceSdBatch *)buffer + 1,
-													(u32 *)&procbat_returns[1],
-													*((u16 *)buffer + 1));
-					}
-					else
-					{
-						if ( fno_mask_tmp_1 <= 0x81C0 )
-						{
-							if ( fno_mask_tmp_1 == 0x81A0 )
-							{
-								ret = sceSdSetEffectMode(fno & 0xF, (sceSdEffectAttr *)buffer);
-								fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-							}
-							else
-							{
-								fno_eff_param = fno & 0xF;
-								if ( fno_mask_tmp_1 != 0x81B0 )
-									goto LABEL_125;
-								ret = sceSdSetEffectModeParams(fno_eff_param, (sceSdEffectAttr *)buffer);
-								fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-							}
-							goto LABEL_127;
-						}
-						if ( fno_mask_tmp_1 != 0x81D0 )
-						{
-							if ( fno_mask_tmp_1 != 0x8F10 )
-								goto LABEL_125;
-							ret = sceSdrChangeThreadPriority(*((u32 *)buffer + 1), *((u32 *)buffer + 2));
-							fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-							goto LABEL_127;
-						}
-						ret_tmp_1 = sceSdProcBatchEx(
-													(sceSdBatch *)buffer + 1,
-													(u32 *)&procbat_returns[1],
-													*((u16 *)buffer + 1),
-													*((u32 *)buffer + 1));
-					}
-					ret = ret_tmp_1;
-					procbat_returns[0] = ret_tmp_1;
-LABEL_126:
-					fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-					goto LABEL_127;
-				}
-				if ( fno_mask_tmp_1 != 0x9030 )
-				{
-					if ( fno_mask_tmp_1 > 0x9030 )
-					{
-						if ( fno_mask_tmp_1 != 0x9040 )
-						{
-							if ( fno_mask_tmp_1 != 0x9050 )
-								goto LABEL_125;
-							goto LABEL_120;
-						}
-					}
-					else if ( fno_mask_tmp_1 != 0x9010 )
-					{
-						if ( fno_mask_tmp_1 != 0x9020 )
-							goto LABEL_125;
-LABEL_120:
-						if ( sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4] )
-						{
-							ret = sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4](
-											fno,
-											buffer,
-											length);
-							fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-							goto LABEL_127;
-						}
-						goto LABEL_126;
-					}
-				}
-			}
-		}
-		goto LABEL_120;
-	}
-	if ( fno_mask_tmp_1 == 0x80B0 )
-	{
-		ret = sceSdProcBatch(*((sceSdBatch **)buffer + 1), *((u32 **)buffer + 2), *((u32 *)buffer + 3));
-		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		goto LABEL_127;
-	}
-	if ( fno_mask_tmp_1 > 0x80B0 )
-	{
-		if ( fno_mask_tmp_1 == 0x8130 )
-		{
-			ret = sceSdSetEffectAttr(fno & 0xF, (sceSdEffectAttr *)buffer);
-			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		}
-		else if ( fno_mask_tmp_1 > 0x8130 )
-		{
-			if ( fno_mask_tmp_1 == 0x8160 )
-			{
-				if ( *((u32 *)buffer + 1) )
-				{
-					xfer_handler_arg0 = 1;
-					if ( *((u32 *)buffer + 2) )
-						xfer_handler_arg1 = sce_sdrDMA1IntrHandler;
-					else
-						xfer_handler_arg1 = 0;
-				}
-				else
-				{
-					xfer_handler_arg0 = 0;
-					if ( *((u32 *)buffer + 2) )
-						xfer_handler_arg1 = sce_sdrDMA0IntrHandler;
-					else
-						xfer_handler_arg1 = 0;
-				}
-				ret = (int)sceSdSetTransIntrHandler(xfer_handler_arg0, xfer_handler_arg1, 0);
-				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-				goto LABEL_127;
-			}
-			if ( fno_mask_tmp_1 > 0x8160 )
-			{
-				if ( fno_mask_tmp_1 == 0x8170 )
-				{
-					intr_handler_arg0 = sce_sdrSpu2IntrHandler;
-					if ( !*((u32 *)buffer + 1) )
-						intr_handler_arg0 = 0;
-					ret = (int)sceSdSetSpu2IntrHandler(intr_handler_arg0, 0);
-					fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-					goto LABEL_127;
-				}
-				if ( fno_mask_tmp_1 != 0x8180 )
-					goto LABEL_125;
-				ret = sceSdStopTrans(*((u32 *)buffer + 1));
-				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-			}
-			else if ( fno_mask_tmp_1 == 0x8140 )
-			{
-				sceSdGetEffectAttr(fno & 0xF, &e_attr);
-				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-			}
-			else
-			{
-				if ( fno_mask_tmp_1 != 0x8150 )
-					goto LABEL_125;
-				ret = sceSdClearEffectWorkArea(*((u32 *)buffer + 1), *((u32 *)buffer + 2), *((u32 *)buffer + 3));
-				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-			}
-		}
-		else if ( fno_mask_tmp_1 == 0x80E0 )
-		{
-			ret = sceSdBlockTrans(
-							*((u16 *)buffer + 2),
-							*((u16 *)buffer + 4),
-							*((u8 **)buffer + 3),
-							*((u32 *)buffer + 4),
-							*((u32 *)buffer + 5));
-			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		}
-		else if ( fno_mask_tmp_1 > 0x80E0 )
-		{
-			if ( fno_mask_tmp_1 == 0x80F0 )
-			{
-				ret = sceSdVoiceTransStatus(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
-				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-			}
-			else
-			{
-				if ( fno_mask_tmp_1 != 0x8100 )
-					goto LABEL_125;
-				ret = sceSdBlockTransStatus(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
-				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-			}
-		}
-		else if ( fno_mask_tmp_1 == 0x80C0 )
-		{
-			ret = sceSdProcBatchEx(
-							*((sceSdBatch **)buffer + 1),
-							*((u32 **)buffer + 2),
-							*((u32 *)buffer + 3),
-							*((u32 *)buffer + 4));
-			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		}
-		else
-		{
-			if ( fno_mask_tmp_1 != 0x80D0 )
-				goto LABEL_125;
-			ret = sceSdVoiceTrans(
-							*((u16 *)buffer + 2),
-							*((u16 *)buffer + 4),
-							*((u8 **)buffer + 3),
-							*((u32 **)buffer + 4),
-							*((u32 *)buffer + 5));
-			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		}
-		goto LABEL_127;
-	}
-	if ( fno_mask_tmp_1 == 0x8050 )
-	{
-		sceSdSetAddr(*((u16 *)buffer + 2), *((u32 *)buffer + 2));
-		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		goto LABEL_127;
-	}
-	if ( fno_mask_tmp_1 > 0x8050 )
-	{
-		if ( fno_mask_tmp_1 == 0x8080 )
-		{
-			ret_tmp_2 = sceSdGetCoreAttr(*((u16 *)buffer + 2));
-		}
-		else
-		{
-			if ( fno_mask_tmp_1 <= 0x8080 )
-			{
-				if ( fno_mask_tmp_1 == 0x8060 )
-				{
-					ret = sceSdGetAddr(*((u16 *)buffer + 2));
-					fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-				}
-				else
-				{
-					if ( fno_mask_tmp_1 != 0x8070 )
-						goto LABEL_125;
-					sceSdSetCoreAttr(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
-					fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-				}
-				goto LABEL_127;
-			}
-			if ( fno_mask_tmp_1 == 0x8090 )
-			{
-				ret_tmp_2 = sceSdNote2Pitch(
-											*((u16 *)buffer + 2),
-											*((u16 *)buffer + 4),
-											*((u16 *)buffer + 6),
-											*((u16 *)buffer + 8));
-			}
-			else
-			{
-				if ( fno_mask_tmp_1 != 0x80A0 )
-					goto LABEL_125;
-				ret_tmp_2 = sceSdPitch2Note(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u16 *)buffer + 6));
-			}
-		}
-LABEL_90:
-		ret = ret_tmp_2;
-		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		goto LABEL_127;
-	}
-	if ( fno_mask_tmp_1 == 0x8020 )
-	{
-		ret_tmp_2 = sceSdGetParam(*((u16 *)buffer + 2));
-		goto LABEL_90;
-	}
-	if ( fno_mask_tmp_1 > 0x8020 )
-	{
-		if ( fno_mask_tmp_1 == 0x8030 )
-		{
+		case 0x8000:
+			ret = sceSdInit(*((u32 *)buffer + 1));
+			break;
+		case 0x8010:
+			sceSdSetParam(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
+			break;
+		case 0x8020:
+			ret = sceSdGetParam(*((u16 *)buffer + 2));
+			break;
+		case 0x8030:
 			sceSdSetSwitch(*((u16 *)buffer + 2), *((u32 *)buffer + 2));
-			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		}
-		else
-		{
-			if ( fno_mask_tmp_1 != 0x8040 )
-				goto LABEL_125;
+			break;
+		case 0x8040:
 			ret = sceSdGetSwitch(*((u16 *)buffer + 2));
-			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-		}
-	}
-	else if ( fno_mask_tmp_1 == 0x8000 )
-	{
-		ret = sceSdInit(*((u32 *)buffer + 1));
-		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-	}
-	else
-	{
-		if ( fno_mask_tmp_1 != 0x8010 )
-		{
-LABEL_125:
-			Kprintf("SDR driver ERROR: unknown command %x \n", fno_tmp & 0xFFF0);
-			goto LABEL_126;
-		}
-		sceSdSetParam(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
-		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
-	}
-LABEL_127:
-	if ( fno_mask_tmp_2 == 0x81C0 )
-		return procbat_returns;
-	if ( fno_mask_tmp_2 <= 0x81C0 )
-	{
-		if ( fno_mask_tmp_2 == 0x8140 )
+			break;
+		case 0x8050:
+			sceSdSetAddr(*((u16 *)buffer + 2), *((u32 *)buffer + 2));
+			break;
+		case 0x8060:
+			ret = sceSdGetAddr(*((u16 *)buffer + 2));
+			break;
+		case 0x8070:
+			sceSdSetCoreAttr(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
+			break;
+		case 0x8080:
+			ret = sceSdGetCoreAttr(*((u16 *)buffer + 2));
+			break;
+		case 0x8090:
+			ret = sceSdNote2Pitch(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u16 *)buffer + 6), *((u16 *)buffer + 8));
+			break;
+		case 0x80A0:
+			ret = sceSdPitch2Note(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u16 *)buffer + 6));
+			break;
+		case 0x80B0:
+			ret = sceSdProcBatch(*((sceSdBatch **)buffer + 1), *((u32 **)buffer + 2), *((u32 *)buffer + 3));
+			break;
+		case 0x80C0:
+			ret = sceSdProcBatchEx(*((sceSdBatch **)buffer + 1), *((u32 **)buffer + 2), *((u32 *)buffer + 3), *((u32 *)buffer + 4));
+			break;
+		case 0x80D0:
+			ret = sceSdVoiceTrans(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u8 **)buffer + 3), *((u32 **)buffer + 4), *((u32 *)buffer + 5));
+			break;
+		case 0x80E0:
+			ret = sceSdBlockTrans(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u8 **)buffer + 3), *((u32 *)buffer + 4), *((u32 *)buffer + 5));
+			break;
+		case 0x80F0:
+			ret = sceSdVoiceTransStatus(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
+			break;
+		case 0x8100:
+			ret = sceSdBlockTransStatus(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
+			break;
+		case 0x8130:
+			ret = sceSdSetEffectAttr(fno & 0xF, (sceSdEffectAttr *)buffer);
+			break;
+		case 0x8140:
+			sceSdGetEffectAttr(fno & 0xF, &e_attr);
 			return &e_attr;
-		return &ret;
+		case 0x8150:
+			ret = sceSdClearEffectWorkArea(*((u32 *)buffer + 1), *((u32 *)buffer + 2), *((u32 *)buffer + 3));
+			break;
+		case 0x8160:
+			ret = (int)sceSdSetTransIntrHandler(*((u32 *)buffer + 1) ? 1 : 0, *((u32 *)buffer + 2) ? (*((u32 *)buffer + 1) ? sce_sdrDMA1IntrHandler : 0) : sce_sdrDMA0IntrHandler, 0);
+			break;
+		case 0x8170:
+			ret = (int)sceSdSetSpu2IntrHandler(*((u32 *)buffer + 1) ? sce_sdrSpu2IntrHandler : 0, 0);
+			break;
+		case 0x8180:
+			ret = sceSdStopTrans(*((u32 *)buffer + 1));
+			break;
+		case 0x8190:
+			ret = sceSdCleanEffectWorkArea(*((u32 *)buffer + 1), *((u32 *)buffer + 2), *((u32 *)buffer + 3));
+			break;
+		case 0x81A0:
+			ret = sceSdSetEffectMode(fno & 0xF, (sceSdEffectAttr *)buffer);
+			break;
+		case 0x81C0:
+			ret = sceSdProcBatch((sceSdBatch *)buffer + 1, (u32 *)&procbat_returns[1], *((u16 *)buffer + 1));
+			break;
+		case 0x81D0:
+			ret = sceSdProcBatchEx((sceSdBatch *)buffer + 1, (u32 *)&procbat_returns[1], *((u16 *)buffer + 1), *((u32 *)buffer + 1));
+			break;
+		case 0x8F10:
+			ret = sceSdrChangeThreadPriority(*((u32 *)buffer + 1), *((u32 *)buffer + 2));
+			break;
+		case 0x9000:
+		case 0x9010:
+		case 0x9020:
+		case 0x9030:
+		case 0x9040:
+		case 0x9050:
+		case 0x9060:
+		case 0x9070:
+		case 0x9080:
+		case 0x9090:
+		case 0x90A0:
+		case 0x90B0:
+		case 0x90C0:
+		case 0x90D0:
+		case 0x90E0:
+		case 0x90F0:
+		{
+			if ( sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4] )
+			{
+				ret = sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4](fno, buffer, length);
+			}
+			break;
+		}
+		case 0xE620:
+		{
+			thparam.attr = 0x2000000;
+			thparam.thread = sce_sdrcb_loop;
+			thparam.stacksize = 2048;
+			thparam.option = 0;
+			thparam.priority = initial_priority_cb;
+			thid_cb = CreateThread(&thparam);
+			StartThread(thid_cb, 0);
+			Kprintf("SDR callback thread created\n");
+			break;
+		}
+		case 0xE630:
+		{
+			if ( thid_cb > 0 )
+			{
+				TerminateThread(thid_cb);
+				DeleteThread(thid_cb);
+				thid_cb = 0;
+				Kprintf("SDR callback thread deleted\n");
+			}
+			break;
+		}
+		default:
+			Kprintf("SDR driver ERROR: unknown command %x \n", fno & 0xFFF0);
+			break;
 	}
-	if ( fno_mask_tmp_2 == 0x81D0 )
-		return procbat_returns;
-	return &ret;
+	// Unofficial: always return pointer to procbat_returns
+	procbat_returns[0] = ret;
+	return procbat_returns;
 }
 // 4014E0: using guessed type int ret;
 // 401624: using guessed type int initial_priority_cb;
@@ -651,6 +414,9 @@ void sceSifCmdLoop2(void)
 //----- (00400F2C) --------------------------------------------------------
 int sce_sdrDMA0IntrHandler(int core, void *common)
 {
+	(void)core;
+	(void)common;
+
 	eeCBData.mode |= 0x100u;
 	iWakeupThread(thid_cb);
 	return 0;
@@ -660,6 +426,9 @@ int sce_sdrDMA0IntrHandler(int core, void *common)
 //----- (00400F6C) --------------------------------------------------------
 int sce_sdrDMA1IntrHandler(int core, void *common)
 {
+	(void)core;
+	(void)common;
+
 	eeCBData.mode |= 0x200u;
 	iWakeupThread(thid_cb);
 	return 0;
@@ -669,6 +438,9 @@ int sce_sdrDMA1IntrHandler(int core, void *common)
 //----- (00400FAC) --------------------------------------------------------
 int sce_sdrSpu2IntrHandler(int core_bit, void *common)
 {
+	(void)core_bit;
+	(void)common;
+
 	eeCBData.mode |= 0x400u;
 	eeCBData.voice_bit = core_bit;
 	iWakeupThread(thid_cb);
@@ -677,16 +449,16 @@ int sce_sdrSpu2IntrHandler(int core_bit, void *common)
 // 401530: using guessed type SdrEECBData eeCBData;
 
 //----- (00400FF0) --------------------------------------------------------
-void sce_sdrcb_loop(void)
+void sce_sdrcb_loop(void *arg)
 {
 	int i; // $v0
+
+	(void)arg;
 
 	eeCBData.mode = 0;
 	while ( sceSifBindRpc(&cd, 0x80000704, 0) >= 0 )
 	{
-		i = 9998;
-		while ( i-- != -1 )
-			;
+		for ( i = 0; i < 10000; i += 1 );
 		if ( cd.server )
 			sceSifCmdLoop2();
 	}
