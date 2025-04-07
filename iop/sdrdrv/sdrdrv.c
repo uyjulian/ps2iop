@@ -14,8 +14,6 @@ typedef struct SdrEECBData_
 
 typedef int (*sceSdrUserCommandFunction)(unsigned int command, void *data, int size);
 
-
-
 //-------------------------------------------------------------------------
 // Function declarations
 
@@ -35,21 +33,19 @@ void sce_sdrcb_loop(void* arg);
 // Data declarations
 
 extern struct irx_export_table _exp_sdrdrv;
-int thid_main = 0; // idb
-int thid_cb = 0; // idb
-int ret = 0; // weak
+// Unofficial: move to bss
+int thid_main;
+// Unofficial: move to bss
+int thid_cb;
 sceSdrUserCommandFunction sceSdr_vUserCommandFunction[16];
-SdrEECBData eeCBData; // weak
-SdrEECBData eeCBDataSend; // weak
-int initial_priority_main; // weak
-SifRpcDataQueue_t rpc_qd; // idb
-SifRpcServerData_t rpc_sd; // idb
-int initial_priority_cb; // weak
-int procbat_returns[384]; // weak
-int gRpcArg[16]; // weak
-sceSdEffectAttr e_attr; // idb
-SifRpcClientData_t cd; // idb
-
+SdrEECBData eeCBData;
+int initial_priority_main;
+SifRpcDataQueue_t rpc_qd;
+SifRpcServerData_t rpc_sd;
+int initial_priority_cb;
+int procbat_returns[384];
+sceSdEffectAttr e_attr;
+SifRpcClientData_t cd;
 
 //----- (00400000) --------------------------------------------------------
 int module_start(int ac, char **av)
@@ -57,8 +53,6 @@ int module_start(int ac, char **av)
 	int code; // $s0
 	int i; // $s2
 	const char *p; // $s0
-	int pval1; // $a1
-	int pval2; // $a1
 	iop_thread_t thprarm; // [sp+10h] [-20h] BYREF
 	int state; // [sp+28h] [-8h] BYREF
 
@@ -66,9 +60,7 @@ int module_start(int ac, char **av)
 	code = RegisterLibraryEntries(&_exp_sdrdrv);
 	CpuResumeIntr(state);
 	if ( code )
-	{
 		return 1;
-	}
 	Kprintf("SDR driver version 4.0.1 (C) SCEI\n");
 	initial_priority_main = 24;
 	initial_priority_cb = 24;
@@ -81,25 +73,23 @@ int module_start(int ac, char **av)
 			p = av[i] + 6;
 			if ( isdigit(*p) )
 			{
-				pval1 = strtol(p, 0, 10);
-				if ( (unsigned int)(pval1 - 9) >= 0x73 )
+				initial_priority_main = strtol(p, 0, 10);
+				if ( (unsigned int)(initial_priority_main - 9) >= 0x73 )
 				{
-					Kprintf(" SDR driver error: invalid priority %d\n", pval1);
-					pval1 = 24;
+					Kprintf(" SDR driver error: invalid priority %d\n", initial_priority_main);
+					initial_priority_main = 24;
 				}
-				initial_priority_main = pval1;
 			}
 			while ( isdigit(*p) )
 				++p;
 			if ( *p == ',' && isdigit(p[1]) )
 			{
-				pval2 = strtol(p + 1, 0, 10);
-				if ( (unsigned int)(pval2 - 9) >= 0x73 )
+				initial_priority_cb = strtol(&p[1], 0, 10);
+				if ( (unsigned int)(initial_priority_cb - 9) >= 0x73 )
 				{
-					Kprintf(" SDR driver error: invalid priority %d\n", pval2);
-					pval2 = 24;
+					Kprintf(" SDR driver error: invalid priority %d\n", initial_priority_cb);
+					initial_priority_cb = 24;
 				}
-				initial_priority_cb = pval2;
 			}
 			if ( initial_priority_cb < initial_priority_main )
 			{
@@ -117,9 +107,7 @@ int module_start(int ac, char **av)
 	thprarm.priority = initial_priority_main;
 	thid_main = CreateThread(&thprarm);
 	if ( thid_main <= 0 )
-	{
 		return 1;
-	}
 	StartThread(thid_main, 0);
 	Kprintf(" Exit rsd_main \n");
 	return 2;
@@ -203,6 +191,9 @@ int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
 //----- (004004E0) --------------------------------------------------------
 void sce_sdr_loop(void *arg)
 {
+	// Unofficial: make local variable
+	int gRpcArg[16];
+
 	(void)arg;
 
 	sceSifInitRpc(0);
@@ -212,7 +203,6 @@ void sce_sdr_loop(void *arg)
 	memset(sceSdr_vUserCommandFunction, 0, sizeof(sceSdr_vUserCommandFunction));
 	sceSifRpcLoop(&rpc_qd);
 }
-// 401C30: using guessed type int gRpcArg[16];
 
 //----- (00400588) --------------------------------------------------------
 void *sdrFunc(int fno, void *buffer, int length)
@@ -324,10 +314,7 @@ void *sdrFunc(int fno, void *buffer, int length)
 		case 0x90E0:
 		case 0x90F0:
 		{
-			if ( sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4] )
-			{
-				ret = sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4](fno, buffer, length);
-			}
+			ret = sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4] ? sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4](fno, buffer, length) : 0;
 			break;
 		}
 		case 0xE620:
@@ -361,7 +348,6 @@ void *sdrFunc(int fno, void *buffer, int length)
 	procbat_returns[0] = ret;
 	return procbat_returns;
 }
-// 4014E0: using guessed type int ret;
 // 401624: using guessed type int initial_priority_cb;
 // 401630: using guessed type int procbat_returns[384];
 
@@ -370,7 +356,7 @@ sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCo
 {
 	sceSdrUserCommandFunction oldf; // $v0
 
-	if ( (unsigned int)(command - 0x9000) >= 0xF1 )
+	if ( (command < 0x9000) || (command > 0xF0) )
 		return (sceSdrUserCommandFunction)-1;
 	oldf = sceSdr_vUserCommandFunction[(command & 0xF0) >> 4];
 	sceSdr_vUserCommandFunction[(command & 0xF0) >> 4] = func;
@@ -380,7 +366,9 @@ sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCo
 //----- (00400E10) --------------------------------------------------------
 void sceSifCmdLoop2(void)
 {
-	int state; // [sp+28h] [-8h] BYREF
+	int state;
+	// Unofficial: make local variable
+	SdrEECBData eeCBDataSend;
 
 	while ( 1 )
 	{
@@ -392,7 +380,7 @@ void sceSifCmdLoop2(void)
 				// Unofficial: was inlined
 				memcpy(&eeCBDataSend, &eeCBData, sizeof(eeCBDataSend));
 				CpuResumeIntr(state);
-				sceSifCallRpc(&cd, 0, 0, &eeCBDataSend, 64, 0, 0, 0, 0);
+				sceSifCallRpc(&cd, 0, 0, &eeCBDataSend, sizeof(eeCBDataSend), 0, 0, 0, 0);
 				CpuSuspendIntr(&state);
 				if ( eeCBData.mode == eeCBDataSend.mode )
 				{
@@ -409,7 +397,6 @@ void sceSifCmdLoop2(void)
 	}
 }
 // 401530: using guessed type SdrEECBData eeCBData;
-// 401570: using guessed type SdrEECBData eeCBDataSend;
 
 //----- (00400F2C) --------------------------------------------------------
 int sce_sdrDMA0IntrHandler(int core, void *common)
