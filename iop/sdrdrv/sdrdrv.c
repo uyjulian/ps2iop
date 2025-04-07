@@ -373,7 +373,7 @@ sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCo
 {
 	sceSdrUserCommandFunction oldf; // $v0
 
-	if ( (command < 0x9000) || (command > 0xF0) )
+	if ( (command < 0x9000) || (command > 0x90F0) )
 		return (sceSdrUserCommandFunction)-1;
 	oldf = sceSdr_vUserCommandFunction[(command & 0xF0) >> 4];
 	sceSdr_vUserCommandFunction[(command & 0xF0) >> 4] = func;
