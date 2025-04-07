@@ -26,6 +26,8 @@ I_sceSdStopTrans
 I_sceSdCleanEffectWorkArea
 I_sceSdSetEffectMode
 I_sceSdSetEffectModeParams
+I_sceSdSetIRQCallback
+I_sceSdSetTransCallback
 libsd_IMPORTS_end
 
 sysmem_IMPORTS_start

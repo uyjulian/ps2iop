@@ -1,6 +1,10 @@
 
 #include <irx_imports.h>
 
+#ifndef SDRDRV_OBSOLETE_FUNCS
+#define SDRDRV_OBSOLETE_FUNCS 1
+#endif
+
 IRX_ID("sdr_driver", 4, 1);
 
 typedef struct SdrEECBData_
@@ -24,9 +28,14 @@ void sce_sdr_loop(void* arg);
 void *sdrFunc(int fno, void *buffer, int length);
 sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCommandFunction func);
 void sceSifCmdLoop2(void);
-int sce_sdrDMA0IntrHandler(int core, void *common);
-int sce_sdrDMA1IntrHandler(int core, void *common);
-int sce_sdrSpu2IntrHandler(int core_bit, void *common);
+#if SDRDRV_OBSOLETE_FUNCS
+int _sce_sdrDMA0CallBackProc(void *data);
+int _sce_sdrDMA1CallBackProc(void *data);
+int _sce_sdrIRQCallBackProc(void *data);
+#endif
+int _sce_sdrDMA0IntrHandler(int core, void *common);
+int _sce_sdrDMA1IntrHandler(int core, void *common);
+int _sce_sdrSpu2IntrHandler(int core_bit, void *common);
 void sce_sdrcb_loop(void* arg);
 
 //-------------------------------------------------------------------------
@@ -264,6 +273,14 @@ void *sdrFunc(int fno, void *buffer, int length)
 		case 0x8100:
 			ret = sceSdBlockTransStatus(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
 			break;
+#if SDRDRV_OBSOLETE_FUNCS
+		case 0x8110:
+			ret = (int)sceSdSetTransCallback(*((u32 *)buffer + 1) ? 1 : 0, *((u32 *)buffer + 2) ? (*((u32 *)buffer + 1) ? _sce_sdrDMA1CallBackProc : _sce_sdrDMA0CallBackProc) : 0);
+			break;
+    case 0x8120:
+    	ret = (int)sceSdSetIRQCallback(*((u32 *)buffer + 1) ? _sce_sdrIRQCallBackProc : 0);
+    	break;
+#endif
 		case 0x8130:
 			ret = sceSdSetEffectAttr(fno & 0xF, (sceSdEffectAttr *)buffer);
 			break;
@@ -274,10 +291,10 @@ void *sdrFunc(int fno, void *buffer, int length)
 			ret = sceSdClearEffectWorkArea(*((u32 *)buffer + 1), *((u32 *)buffer + 2), *((u32 *)buffer + 3));
 			break;
 		case 0x8160:
-			ret = (int)sceSdSetTransIntrHandler(*((u32 *)buffer + 1) ? 1 : 0, *((u32 *)buffer + 2) ? (*((u32 *)buffer + 1) ? sce_sdrDMA1IntrHandler : 0) : sce_sdrDMA0IntrHandler, 0);
+			ret = (int)sceSdSetTransIntrHandler(*((u32 *)buffer + 1) ? 1 : 0, *((u32 *)buffer + 2) ? (*((u32 *)buffer + 1) ? _sce_sdrDMA1IntrHandler : 0) : _sce_sdrDMA0IntrHandler, 0);
 			break;
 		case 0x8170:
-			ret = (int)sceSdSetSpu2IntrHandler(*((u32 *)buffer + 1) ? sce_sdrSpu2IntrHandler : 0, 0);
+			ret = (int)sceSdSetSpu2IntrHandler(*((u32 *)buffer + 1) ? _sce_sdrSpu2IntrHandler : 0, 0);
 			break;
 		case 0x8180:
 			ret = sceSdStopTrans(*((u32 *)buffer + 1));
@@ -398,37 +415,66 @@ void sceSifCmdLoop2(void)
 }
 // 401530: using guessed type SdrEECBData eeCBData;
 
+#if SDRDRV_OBSOLETE_FUNCS
+int _sce_sdrDMA0CallBackProc(void *data)
+{
+	(void)data;
+
+	eeCBData.mode |= (1 << 0);
+	iWakeupThread(thid_cb);
+	return 1;
+}
+
+int _sce_sdrDMA1CallBackProc(void *data)
+{
+	(void)data;
+
+	eeCBData.mode |= (1 << 1);
+	iWakeupThread(thid_cb);
+	return 1;
+}
+
+int _sce_sdrIRQCallBackProc(void *data)
+{
+	(void)data;
+
+	eeCBData.mode |= (1 << 2);
+	iWakeupThread(thid_cb);
+	return 1;
+}
+#endif
+
 //----- (00400F2C) --------------------------------------------------------
-int sce_sdrDMA0IntrHandler(int core, void *common)
+int _sce_sdrDMA0IntrHandler(int core, void *common)
 {
 	(void)core;
 	(void)common;
 
-	eeCBData.mode |= 0x100u;
+	eeCBData.mode |= (1 << 8);
 	iWakeupThread(thid_cb);
 	return 0;
 }
 // 401530: using guessed type SdrEECBData eeCBData;
 
 //----- (00400F6C) --------------------------------------------------------
-int sce_sdrDMA1IntrHandler(int core, void *common)
+int _sce_sdrDMA1IntrHandler(int core, void *common)
 {
 	(void)core;
 	(void)common;
 
-	eeCBData.mode |= 0x200u;
+	eeCBData.mode |= (1 << 9);
 	iWakeupThread(thid_cb);
 	return 0;
 }
 // 401530: using guessed type SdrEECBData eeCBData;
 
 //----- (00400FAC) --------------------------------------------------------
-int sce_sdrSpu2IntrHandler(int core_bit, void *common)
+int _sce_sdrSpu2IntrHandler(int core_bit, void *common)
 {
 	(void)core_bit;
 	(void)common;
 
-	eeCBData.mode |= 0x400u;
+	eeCBData.mode |= (1 << 10);
 	eeCBData.voice_bit = core_bit;
 	iWakeupThread(thid_cb);
 	return 0;
