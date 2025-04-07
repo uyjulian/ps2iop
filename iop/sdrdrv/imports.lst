@@ -57,6 +57,8 @@ sysclib_IMPORTS_start
 I_look_ctype_table
 I_strncmp
 I_strtol
+I_memset
+I_memcpy
 sysclib_IMPORTS_end
 
 thbase_IMPORTS_start

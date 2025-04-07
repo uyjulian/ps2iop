@@ -55,9 +55,7 @@ SifRpcClientData_t cd; // idb
 int module_start(int ac, char **av)
 {
 	int code; // $s0
-	int result; // $v0
-	int ac_tmp; // $s2
-	const char **av_tmp; // $s1
+	int i; // $s2
 	const char *p; // $s0
 	int pval1; // $a1
 	int pval2; // $a1
@@ -67,73 +65,64 @@ int module_start(int ac, char **av)
 	CpuSuspendIntr(&state);
 	code = RegisterLibraryEntries(&_exp_sdrdrv);
 	CpuResumeIntr(state);
-	result = 1;
-	if ( !code )
+	if ( code )
 	{
-		ac_tmp = 1;
-		Kprintf("SDR driver version 4.0.1 (C) SCEI\n");
-		initial_priority_main = 24;
-		initial_priority_cb = 24;
-		thid_main = 0;
-		thid_cb = 0;
-		av_tmp = (const char **)(av + 1);
-		if ( ac > 1 )
+		return 1;
+	}
+	Kprintf("SDR driver version 4.0.1 (C) SCEI\n");
+	initial_priority_main = 24;
+	initial_priority_cb = 24;
+	thid_main = 0;
+	thid_cb = 0;
+	for ( i = 1; i < ac; i += 1 )
+	{
+		if ( !strncmp("thpri=", av[i], 6) )
 		{
-			do
+			p = av[i] + 6;
+			if ( isdigit(*p) )
 			{
-				if ( !strncmp("thpri=", *av_tmp, 6) )
+				pval1 = strtol(p, 0, 10);
+				if ( (unsigned int)(pval1 - 9) >= 0x73 )
 				{
-					p = *av_tmp + 6;
-					if ( (look_ctype_table(*p) & 4) != 0 )
-					{
-						pval1 = strtol(p, 0, 10);
-						if ( (unsigned int)(pval1 - 9) >= 0x73 )
-						{
-							Kprintf(" SDR driver error: invalid priority %d\n", pval1);
-							pval1 = 24;
-						}
-						initial_priority_main = pval1;
-					}
-					while ( (look_ctype_table(*p) & 4) != 0 )
-						++p;
-					if ( *p == 44 && (look_ctype_table(p[1]) & 4) != 0 )
-					{
-						pval2 = strtol(p + 1, 0, 10);
-						if ( (unsigned int)(pval2 - 9) >= 0x73 )
-						{
-							Kprintf(" SDR driver error: invalid priority %d\n", pval2);
-							pval2 = 24;
-						}
-						initial_priority_cb = pval2;
-					}
-					if ( initial_priority_cb < initial_priority_main )
-					{
-						Kprintf(" SDR driver ERROR:\n");
-						Kprintf("   callback th. priority is higher than main th. priority.\n");
-						initial_priority_cb = initial_priority_main;
-					}
-					Kprintf(" SDR driver: thread priority: main=%d, callback=%d\n", initial_priority_main, initial_priority_cb);
+					Kprintf(" SDR driver error: invalid priority %d\n", pval1);
+					pval1 = 24;
 				}
-				++ac_tmp;
-				++av_tmp;
+				initial_priority_main = pval1;
 			}
-			while ( ac_tmp < ac );
-		}
-		thprarm.attr = 0x2000000;
-		thprarm.thread = (void (*)(void *))sce_sdr_loop;
-		thprarm.stacksize = 2048;
-		thprarm.option = 0;
-		thprarm.priority = initial_priority_main;
-		thid_main = CreateThread(&thprarm);
-		result = 1;
-		if ( thid_main > 0 )
-		{
-			StartThread(thid_main, 0);
-			Kprintf(" Exit rsd_main \n");
-			return 2;
+			while ( isdigit(*p) )
+				++p;
+			if ( *p == ',' && isdigit(p[1]) )
+			{
+				pval2 = strtol(p + 1, 0, 10);
+				if ( (unsigned int)(pval2 - 9) >= 0x73 )
+				{
+					Kprintf(" SDR driver error: invalid priority %d\n", pval2);
+					pval2 = 24;
+				}
+				initial_priority_cb = pval2;
+			}
+			if ( initial_priority_cb < initial_priority_main )
+			{
+				Kprintf(" SDR driver ERROR:\n");
+				Kprintf("   callback th. priority is higher than main th. priority.\n");
+				initial_priority_cb = initial_priority_main;
+			}
+			Kprintf(" SDR driver: thread priority: main=%d, callback=%d\n", initial_priority_main, initial_priority_cb);
 		}
 	}
-	return result;
+	thprarm.attr = 0x2000000;
+	thprarm.thread = (void (*)(void *))sce_sdr_loop;
+	thprarm.stacksize = 2048;
+	thprarm.option = 0;
+	thprarm.priority = initial_priority_main;
+	thid_main = CreateThread(&thprarm);
+	if ( thid_main <= 0 )
+	{
+		return 1;
+	}
+	StartThread(thid_main, 0);
+	Kprintf(" Exit rsd_main \n");
+	return 2;
 }
 // 4015B0: using guessed type int initial_priority_main;
 // 401624: using guessed type int initial_priority_cb;
@@ -142,103 +131,80 @@ int module_start(int ac, char **av)
 int module_stop(int ac, char **av)
 {
 	int code; // $s0
-	int result; // $v0
 	int state; // [sp+10h] [-8h] BYREF
 
 	CpuSuspendIntr(&state);
 	code = ReleaseLibraryEntries(&_exp_sdrdrv);
 	CpuResumeIntr(state);
-	result = 2;
-	if ( !code )
+	if ( code )
+		return 2;
+	sceSdSetTransIntrHandler(0, 0, 0);
+	sceSdSetTransIntrHandler(1, 0, 0);
+	sceSdSetSpu2IntrHandler(0, 0);
+	if ( thid_cb > 0 )
 	{
-		sceSdSetTransIntrHandler(0, 0, 0);
-		sceSdSetTransIntrHandler(1, 0, 0);
-		sceSdSetSpu2IntrHandler(0, 0);
-		if ( thid_cb > 0 )
-		{
-			TerminateThread(thid_cb);
-			DeleteThread(thid_cb);
-			thid_cb = 0;
-		}
-		if ( thid_main > 0 )
-		{
-			sceSifRemoveRpc(&rpc_sd, &rpc_qd);
-			sceSifRemoveRpcQueue(&rpc_qd);
-			TerminateThread(thid_main);
-			DeleteThread(thid_main);
-			thid_main = 0;
-		}
-		Kprintf(" sdrdrv: unloaded! \n");
-		return 1;
+		TerminateThread(thid_cb);
+		DeleteThread(thid_cb);
+		thid_cb = 0;
 	}
-	return result;
+	if ( thid_main > 0 )
+	{
+		sceSifRemoveRpc(&rpc_sd, &rpc_qd);
+		sceSifRemoveRpcQueue(&rpc_qd);
+		TerminateThread(thid_main);
+		DeleteThread(thid_main);
+		thid_main = 0;
+	}
+	Kprintf(" sdrdrv: unloaded! \n");
+	return 1;
 }
 
 //----- (004003A0) --------------------------------------------------------
 int _start(int ac, char **av)
 {
-	if ( ac >= 0 )
-		return module_start(ac, av);
-	else
-		return module_stop(-ac, av);
+	return ( ac >= 0 ) ? module_start(ac, av) : module_stop(-ac, av);
 }
 
 //----- (004003D4) --------------------------------------------------------
 int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
 {
 	int cur_priority; // $s0
-	int result; // $v0
+	int ret; // $v0
 	iop_thread_info_t thstatus; // [sp+10h] [-48h] BYREF
 
-	cur_priority = priority_cb;
 	if ( (unsigned int)(priority_main - 9) >= 0x73 || (unsigned int)(priority_cb - 9) >= 0x73 )
 		return -403;
 	if ( priority_cb < priority_main )
 	{
-		cur_priority = priority_main;
 		Kprintf(" SDR driver ERROR:\n");
 		Kprintf("   callback th. priority is higher than main th. priority.\n");
 	}
+	cur_priority = ( priority_cb < priority_main ) ? priority_main : priority_cb;
 	ReferThreadStatus(0, &thstatus);
 	ChangeThreadPriority(0, 8);
-	if ( thid_main <= 0 || (result = ChangeThreadPriority(thid_main, priority_main), result >= 0) )
-	{
-		if ( thid_cb <= 0 )
-		{
-			initial_priority_cb = cur_priority;
-		}
-		else
-		{
-			result = ChangeThreadPriority(thid_cb, cur_priority);
-			if ( result < 0 )
-				return result;
-		}
-		ChangeThreadPriority(0, thstatus.currentPriority);
-		return 0;
-	}
-	return result;
+	ret = 0;
+	if ( thid_main > 0 )
+		ret = ChangeThreadPriority(thid_main, priority_main);
+	if ( ret < 0 )
+		return ret;
+	if ( thid_cb > 0 )
+		ret = ChangeThreadPriority(thid_cb, cur_priority);
+	if ( ret < 0 )
+		return ret;
+	initial_priority_cb = cur_priority;
+	ChangeThreadPriority(0, thstatus.currentPriority);
+	return 0;
 }
 // 401624: using guessed type int initial_priority_cb;
 
 //----- (004004E0) --------------------------------------------------------
 int sce_sdr_loop(void)
 {
-	int thid; // $v0
-	int tmpi1; // $v1
-	int tmpi2; // $v0
-
 	sceSifInitRpc(0);
-	thid = GetThreadId();
-	sceSifSetRpcQueue(&rpc_qd, thid);
+	sceSifSetRpcQueue(&rpc_qd, GetThreadId());
 	sceSifRegisterRpc(&rpc_sd, 0x80000701, sdrFunc, gRpcArg, 0, 0, &rpc_qd);
-	tmpi1 = 0;
-	tmpi2 = 0;
-	do
-	{
-		sceSdr_vUserCommandFunction[tmpi2] = 0;
-		tmpi2 = ++tmpi1;
-	}
-	while ( tmpi1 < 16 );
+	// Unofficial: was inlined
+	memset(sceSdr_vUserCommandFunction, 0, sizeof(sceSdr_vUserCommandFunction));
 	sceSifRpcLoop(&rpc_qd);
 	return 0;
 }
@@ -250,7 +216,6 @@ void *sdrFunc(int fno, void *buffer, int length)
 	u16 fno_tmp; // $s1
 	unsigned int fno_mask_tmp_1; // $v1
 	int fno_eff_param; // $a0
-	unsigned int fid; // $v0
 	unsigned int fno_mask_tmp_2; // $a0
 	int ret_tmp_2; // $v0
 	int ret_tmp_1; // $v0
@@ -312,7 +277,6 @@ void *sdrFunc(int fno, void *buffer, int length)
 							}
 							if ( fno_mask_tmp_1 != 0x90D0 )
 							{
-								fid = fno & 0xF0;
 								if ( fno_mask_tmp_1 != 0x90E0 )
 									goto LABEL_125;
 								goto LABEL_120;
@@ -325,7 +289,6 @@ void *sdrFunc(int fno, void *buffer, int length)
 						{
 							if ( fno_mask_tmp_1 != 0x90A0 )
 							{
-								fid = fno & 0xF0;
 								if ( fno_mask_tmp_1 != 0x90B0 )
 									goto LABEL_125;
 								goto LABEL_120;
@@ -333,7 +296,6 @@ void *sdrFunc(int fno, void *buffer, int length)
 						}
 						else if ( fno_mask_tmp_1 != 0x9070 )
 						{
-							fid = fno & 0xF0;
 							if ( fno_mask_tmp_1 != 0x9080 )
 								goto LABEL_125;
 							goto LABEL_120;
@@ -397,7 +359,6 @@ LABEL_126:
 					{
 						if ( fno_mask_tmp_1 != 0x9040 )
 						{
-							fid = fno & 0xF0;
 							if ( fno_mask_tmp_1 != 0x9050 )
 								goto LABEL_125;
 							goto LABEL_120;
@@ -405,13 +366,12 @@ LABEL_126:
 					}
 					else if ( fno_mask_tmp_1 != 0x9010 )
 					{
-						fid = fno & 0xF0;
 						if ( fno_mask_tmp_1 != 0x9020 )
 							goto LABEL_125;
 LABEL_120:
-						if ( *(sceSdrUserCommandFunction *)((char *)sceSdr_vUserCommandFunction + (fid >> 2)) )
+						if ( sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4] )
 						{
-							ret = (*(int (**)(u16, void *, int))((char *)sceSdr_vUserCommandFunction + (fid >> 2)))(
+							ret = sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4](
 											fno,
 											buffer,
 											length);
@@ -423,7 +383,6 @@ LABEL_120:
 				}
 			}
 		}
-		fid = fno & 0xF0;
 		goto LABEL_120;
 	}
 	if ( fno_mask_tmp_1 == 0x80B0 )
@@ -646,26 +605,19 @@ LABEL_127:
 //----- (00400DC8) --------------------------------------------------------
 sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int a1, sceSdrUserCommandFunction a2)
 {
-	int fid; // $v1
 	sceSdrUserCommandFunction oldf; // $v0
 
 	if ( (unsigned int)(a1 - 0x9000) >= 0xF1 )
 		return (sceSdrUserCommandFunction)-1;
-	fid = (u8)(a1 & 0xF0) >> 2;
-	oldf = *(sceSdrUserCommandFunction *)((char *)sceSdr_vUserCommandFunction + fid);
-	*(sceSdrUserCommandFunction *)((char *)sceSdr_vUserCommandFunction + fid) = a2;
+	oldf = sceSdr_vUserCommandFunction[(a1 & 0xF0) >> 4];
+	sceSdr_vUserCommandFunction[(a1 & 0xF0) >> 4] = a2;
 	return oldf;
 }
 
 //----- (00400E10) --------------------------------------------------------
 void sceSifCmdLoop2(void)
 {
-	SdrEECBData *send_data; // $v1
-	SdrEECBData *cur_data; // $v0
-	int voice_bit; // $t1
-	int status; // $t2
-	int opt; // $t3
-	int state[2]; // [sp+28h] [-8h] BYREF
+	int state; // [sp+28h] [-8h] BYREF
 
 	while ( 1 )
 	{
@@ -673,33 +625,22 @@ void sceSifCmdLoop2(void)
 		{
 			while ( 1 )
 			{
-				CpuSuspendIntr(state);
-				send_data = &eeCBDataSend;
-				cur_data = &eeCBData;
-				do
-				{
-					voice_bit = cur_data->voice_bit;
-					status = cur_data->status;
-					opt = cur_data->opt;
-					send_data->mode = cur_data->mode;
-					send_data->voice_bit = voice_bit;
-					send_data->status = status;
-					send_data->opt = opt;
-					cur_data = (SdrEECBData *)((char *)cur_data + 16);
-					send_data = (SdrEECBData *)((char *)send_data + 16);
-				}
-				while ( cur_data != &eeCBDataSend );
-				CpuResumeIntr(state[0]);
+				CpuSuspendIntr(&state);
+				// Unofficial: was inlined
+				memcpy(&eeCBDataSend, &eeCBData, sizeof(eeCBDataSend));
+				CpuResumeIntr(state);
 				sceSifCallRpc(&cd, 0, 0, &eeCBDataSend, 64, 0, 0, 0, 0);
-				CpuSuspendIntr(state);
+				CpuSuspendIntr(&state);
 				if ( eeCBData.mode == eeCBDataSend.mode )
+				{
+					eeCBData.mode = 0;
+					iCancelWakeupThread(0);
+					CpuResumeIntr(state);
 					break;
+				}
 				eeCBData.mode &= ~eeCBDataSend.mode;
-				CpuResumeIntr(state[0]);
+				CpuResumeIntr(state);
 			}
-			eeCBData.mode = 0;
-			iCancelWakeupThread(0);
-			CpuResumeIntr(state[0]);
 		}
 		SleepThread();
 	}
