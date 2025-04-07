@@ -3,12 +3,6 @@
 
 IRX_ID("sdr_driver", 4, 1);
 
-#define __cdecl
-#define __noreturn
-#define __fastcall
-#define _WORD u16
-#define _DWORD u32
-
 typedef struct SdrEECBData_
 {
 	int mode;
@@ -18,25 +12,24 @@ typedef struct SdrEECBData_
 	int pad[12];
 } SdrEECBData;
 
-typedef int (__cdecl *sceSdrUserCommandFunction)(unsigned int command, void *data, int size);
+typedef int (*sceSdrUserCommandFunction)(unsigned int command, void *data, int size);
 
 
 
 //-------------------------------------------------------------------------
 // Function declarations
 
-int __cdecl module_start(int ac, char **av);
-int __cdecl module_stop(int ac, char **av);
-int __cdecl sdrdrv_0(int ac, char **av);
-int __cdecl sceSdrChangeThreadPriority(int priority_main, int priority_cb);
+int module_start(int ac, char **av);
+int module_stop(int ac, char **av);
+int sceSdrChangeThreadPriority(int priority_main, int priority_cb);
 int sce_sdr_loop(void);
-void *__cdecl sdrFunc(int fno, void *buffer, int length);
-sceSdrUserCommandFunction __cdecl sceSdrSetUserCommandFunction(int, sceSdrUserCommandFunction);
-void __noreturn sceSifCmdLoop2(void);
-int __cdecl sce_sdrDMA0IntrHandler(int core, void *common);
-int __cdecl sce_sdrDMA1IntrHandler(int core, void *common);
-int __cdecl sce_sdrSpu2IntrHandler(int core_bit, void *common);
-void __noreturn sce_sdrcb_loop(void);
+void *sdrFunc(int fno, void *buffer, int length);
+sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int, sceSdrUserCommandFunction);
+void sceSifCmdLoop2(void);
+int sce_sdrDMA0IntrHandler(int core, void *common);
+int sce_sdrDMA1IntrHandler(int core, void *common);
+int sce_sdrSpu2IntrHandler(int core_bit, void *common);
+void sce_sdrcb_loop(void);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -59,7 +52,7 @@ SifRpcClientData_t cd; // idb
 
 
 //----- (00400000) --------------------------------------------------------
-int __cdecl module_start(int ac, char **av)
+int module_start(int ac, char **av)
 {
 	int code; // $s0
 	int result; // $v0
@@ -127,7 +120,7 @@ int __cdecl module_start(int ac, char **av)
 			while ( ac_tmp < ac );
 		}
 		thprarm.attr = 0x2000000;
-		thprarm.thread = (void (__cdecl *)(void *))sce_sdr_loop;
+		thprarm.thread = (void (*)(void *))sce_sdr_loop;
 		thprarm.stacksize = 2048;
 		thprarm.option = 0;
 		thprarm.priority = initial_priority_main;
@@ -146,7 +139,7 @@ int __cdecl module_start(int ac, char **av)
 // 401624: using guessed type int initial_priority_cb;
 
 //----- (00400284) --------------------------------------------------------
-int __cdecl module_stop(int ac, char **av)
+int module_stop(int ac, char **av)
 {
 	int code; // $s0
 	int result; // $v0
@@ -182,7 +175,7 @@ int __cdecl module_stop(int ac, char **av)
 }
 
 //----- (004003A0) --------------------------------------------------------
-int __cdecl _start(int ac, char **av)
+int _start(int ac, char **av)
 {
 	if ( ac >= 0 )
 		return module_start(ac, av);
@@ -191,7 +184,7 @@ int __cdecl _start(int ac, char **av)
 }
 
 //----- (004003D4) --------------------------------------------------------
-int __cdecl sceSdrChangeThreadPriority(int priority_main, int priority_cb)
+int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
 {
 	int cur_priority; // $s0
 	int result; // $v0
@@ -252,7 +245,7 @@ int sce_sdr_loop(void)
 // 401C30: using guessed type int gRpcArg[16];
 
 //----- (00400588) --------------------------------------------------------
-void *__cdecl sdrFunc(int fno, void *buffer, int length)
+void *sdrFunc(int fno, void *buffer, int length)
 {
 	u16 fno_tmp; // $s1
 	unsigned int fno_mask_tmp_1; // $v1
@@ -262,8 +255,8 @@ void *__cdecl sdrFunc(int fno, void *buffer, int length)
 	int ret_tmp_2; // $v0
 	int ret_tmp_1; // $v0
 	int xfer_handler_arg0; // $a0
-	int (__cdecl *xfer_handler_arg1)(int, void *); // $a1
-	int (__cdecl *intr_handler_arg0)(int, void *); // $a0
+	int (*xfer_handler_arg1)(int, void *); // $a1
+	int (*intr_handler_arg0)(int, void *); // $a0
 	iop_thread_t thparam; // [sp+18h] [-18h] BYREF
 
 	fno_tmp = fno;
@@ -271,7 +264,7 @@ void *__cdecl sdrFunc(int fno, void *buffer, int length)
 	ret = 0;
 	if ( fno_mask_tmp_1 == 0x8190 )
 	{
-		ret = sceSdCleanEffectWorkArea(*((_DWORD *)buffer + 1), *((_DWORD *)buffer + 2), *((_DWORD *)buffer + 3));
+		ret = sceSdCleanEffectWorkArea(*((u32 *)buffer + 1), *((u32 *)buffer + 2), *((u32 *)buffer + 3));
 		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 		goto LABEL_127;
 	}
@@ -307,7 +300,7 @@ void *__cdecl sdrFunc(int fno, void *buffer, int length)
 									goto LABEL_125;
 								}
 								thparam.attr = 0x2000000;
-								thparam.thread = (void (__cdecl *)(void *))sce_sdrcb_loop;
+								thparam.thread = (void (*)(void *))sce_sdrcb_loop;
 								thparam.stacksize = 2048;
 								thparam.option = 0;
 								thparam.priority = initial_priority_cb;
@@ -382,7 +375,7 @@ void *__cdecl sdrFunc(int fno, void *buffer, int length)
 						{
 							if ( fno_mask_tmp_1 != 0x8F10 )
 								goto LABEL_125;
-							ret = sceSdrChangeThreadPriority(*((_DWORD *)buffer + 1), *((_DWORD *)buffer + 2));
+							ret = sceSdrChangeThreadPriority(*((u32 *)buffer + 1), *((u32 *)buffer + 2));
 							fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 							goto LABEL_127;
 						}
@@ -390,7 +383,7 @@ void *__cdecl sdrFunc(int fno, void *buffer, int length)
 													(sceSdBatch *)buffer + 1,
 													(u32 *)&procbat_returns[1],
 													*((u16 *)buffer + 1),
-													*((_DWORD *)buffer + 1));
+													*((u32 *)buffer + 1));
 					}
 					ret = ret_tmp_1;
 					procbat_returns[0] = ret_tmp_1;
@@ -418,7 +411,7 @@ LABEL_126:
 LABEL_120:
 						if ( *(sceSdrUserCommandFunction *)((char *)sceSdr_vUserCommandFunction + (fid >> 2)) )
 						{
-							ret = (*(int (__fastcall **)(_WORD, void *, int))((char *)sceSdr_vUserCommandFunction + (fid >> 2)))(
+							ret = (*(int (**)(u16, void *, int))((char *)sceSdr_vUserCommandFunction + (fid >> 2)))(
 											fno,
 											buffer,
 											length);
@@ -435,7 +428,7 @@ LABEL_120:
 	}
 	if ( fno_mask_tmp_1 == 0x80B0 )
 	{
-		ret = sceSdProcBatch(*((sceSdBatch **)buffer + 1), *((u32 **)buffer + 2), *((_DWORD *)buffer + 3));
+		ret = sceSdProcBatch(*((sceSdBatch **)buffer + 1), *((u32 **)buffer + 2), *((u32 *)buffer + 3));
 		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 		goto LABEL_127;
 	}
@@ -450,10 +443,10 @@ LABEL_120:
 		{
 			if ( fno_mask_tmp_1 == 0x8160 )
 			{
-				if ( *((_DWORD *)buffer + 1) )
+				if ( *((u32 *)buffer + 1) )
 				{
 					xfer_handler_arg0 = 1;
-					if ( *((_DWORD *)buffer + 2) )
+					if ( *((u32 *)buffer + 2) )
 						xfer_handler_arg1 = sce_sdrDMA1IntrHandler;
 					else
 						xfer_handler_arg1 = 0;
@@ -461,7 +454,7 @@ LABEL_120:
 				else
 				{
 					xfer_handler_arg0 = 0;
-					if ( *((_DWORD *)buffer + 2) )
+					if ( *((u32 *)buffer + 2) )
 						xfer_handler_arg1 = sce_sdrDMA0IntrHandler;
 					else
 						xfer_handler_arg1 = 0;
@@ -475,7 +468,7 @@ LABEL_120:
 				if ( fno_mask_tmp_1 == 0x8170 )
 				{
 					intr_handler_arg0 = sce_sdrSpu2IntrHandler;
-					if ( !*((_DWORD *)buffer + 1) )
+					if ( !*((u32 *)buffer + 1) )
 						intr_handler_arg0 = 0;
 					ret = (int)sceSdSetSpu2IntrHandler(intr_handler_arg0, 0);
 					fno_mask_tmp_2 = fno_tmp & 0xFFF0;
@@ -483,7 +476,7 @@ LABEL_120:
 				}
 				if ( fno_mask_tmp_1 != 0x8180 )
 					goto LABEL_125;
-				ret = sceSdStopTrans(*((_DWORD *)buffer + 1));
+				ret = sceSdStopTrans(*((u32 *)buffer + 1));
 				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 			}
 			else if ( fno_mask_tmp_1 == 0x8140 )
@@ -495,32 +488,32 @@ LABEL_120:
 			{
 				if ( fno_mask_tmp_1 != 0x8150 )
 					goto LABEL_125;
-				ret = sceSdClearEffectWorkArea(*((_DWORD *)buffer + 1), *((_DWORD *)buffer + 2), *((_DWORD *)buffer + 3));
+				ret = sceSdClearEffectWorkArea(*((u32 *)buffer + 1), *((u32 *)buffer + 2), *((u32 *)buffer + 3));
 				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 			}
 		}
 		else if ( fno_mask_tmp_1 == 0x80E0 )
 		{
 			ret = sceSdBlockTrans(
-							*((_WORD *)buffer + 2),
-							*((_WORD *)buffer + 4),
+							*((u16 *)buffer + 2),
+							*((u16 *)buffer + 4),
 							*((u8 **)buffer + 3),
-							*((_DWORD *)buffer + 4),
-							*((_DWORD *)buffer + 5));
+							*((u32 *)buffer + 4),
+							*((u32 *)buffer + 5));
 			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 		}
 		else if ( fno_mask_tmp_1 > 0x80E0 )
 		{
 			if ( fno_mask_tmp_1 == 0x80F0 )
 			{
-				ret = sceSdVoiceTransStatus(*((_WORD *)buffer + 2), *((_WORD *)buffer + 4));
+				ret = sceSdVoiceTransStatus(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
 				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 			}
 			else
 			{
 				if ( fno_mask_tmp_1 != 0x8100 )
 					goto LABEL_125;
-				ret = sceSdBlockTransStatus(*((_WORD *)buffer + 2), *((_WORD *)buffer + 4));
+				ret = sceSdBlockTransStatus(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
 				fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 			}
 		}
@@ -529,8 +522,8 @@ LABEL_120:
 			ret = sceSdProcBatchEx(
 							*((sceSdBatch **)buffer + 1),
 							*((u32 **)buffer + 2),
-							*((_DWORD *)buffer + 3),
-							*((_DWORD *)buffer + 4));
+							*((u32 *)buffer + 3),
+							*((u32 *)buffer + 4));
 			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 		}
 		else
@@ -538,18 +531,18 @@ LABEL_120:
 			if ( fno_mask_tmp_1 != 0x80D0 )
 				goto LABEL_125;
 			ret = sceSdVoiceTrans(
-							*((_WORD *)buffer + 2),
-							*((_WORD *)buffer + 4),
+							*((u16 *)buffer + 2),
+							*((u16 *)buffer + 4),
 							*((u8 **)buffer + 3),
 							*((u32 **)buffer + 4),
-							*((_DWORD *)buffer + 5));
+							*((u32 *)buffer + 5));
 			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 		}
 		goto LABEL_127;
 	}
 	if ( fno_mask_tmp_1 == 0x8050 )
 	{
-		sceSdSetAddr(*((_WORD *)buffer + 2), *((_DWORD *)buffer + 2));
+		sceSdSetAddr(*((u16 *)buffer + 2), *((u32 *)buffer + 2));
 		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 		goto LABEL_127;
 	}
@@ -557,7 +550,7 @@ LABEL_120:
 	{
 		if ( fno_mask_tmp_1 == 0x8080 )
 		{
-			ret_tmp_2 = sceSdGetCoreAttr(*((_WORD *)buffer + 2));
+			ret_tmp_2 = sceSdGetCoreAttr(*((u16 *)buffer + 2));
 		}
 		else
 		{
@@ -565,14 +558,14 @@ LABEL_120:
 			{
 				if ( fno_mask_tmp_1 == 0x8060 )
 				{
-					ret = sceSdGetAddr(*((_WORD *)buffer + 2));
+					ret = sceSdGetAddr(*((u16 *)buffer + 2));
 					fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 				}
 				else
 				{
 					if ( fno_mask_tmp_1 != 0x8070 )
 						goto LABEL_125;
-					sceSdSetCoreAttr(*((_WORD *)buffer + 2), *((_WORD *)buffer + 4));
+					sceSdSetCoreAttr(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
 					fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 				}
 				goto LABEL_127;
@@ -580,16 +573,16 @@ LABEL_120:
 			if ( fno_mask_tmp_1 == 0x8090 )
 			{
 				ret_tmp_2 = sceSdNote2Pitch(
-											*((_WORD *)buffer + 2),
-											*((_WORD *)buffer + 4),
-											*((_WORD *)buffer + 6),
-											*((_WORD *)buffer + 8));
+											*((u16 *)buffer + 2),
+											*((u16 *)buffer + 4),
+											*((u16 *)buffer + 6),
+											*((u16 *)buffer + 8));
 			}
 			else
 			{
 				if ( fno_mask_tmp_1 != 0x80A0 )
 					goto LABEL_125;
-				ret_tmp_2 = sceSdPitch2Note(*((_WORD *)buffer + 2), *((_WORD *)buffer + 4), *((_WORD *)buffer + 6));
+				ret_tmp_2 = sceSdPitch2Note(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u16 *)buffer + 6));
 			}
 		}
 LABEL_90:
@@ -599,27 +592,27 @@ LABEL_90:
 	}
 	if ( fno_mask_tmp_1 == 0x8020 )
 	{
-		ret_tmp_2 = sceSdGetParam(*((_WORD *)buffer + 2));
+		ret_tmp_2 = sceSdGetParam(*((u16 *)buffer + 2));
 		goto LABEL_90;
 	}
 	if ( fno_mask_tmp_1 > 0x8020 )
 	{
 		if ( fno_mask_tmp_1 == 0x8030 )
 		{
-			sceSdSetSwitch(*((_WORD *)buffer + 2), *((_DWORD *)buffer + 2));
+			sceSdSetSwitch(*((u16 *)buffer + 2), *((u32 *)buffer + 2));
 			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 		}
 		else
 		{
 			if ( fno_mask_tmp_1 != 0x8040 )
 				goto LABEL_125;
-			ret = sceSdGetSwitch(*((_WORD *)buffer + 2));
+			ret = sceSdGetSwitch(*((u16 *)buffer + 2));
 			fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 		}
 	}
 	else if ( fno_mask_tmp_1 == 0x8000 )
 	{
-		ret = sceSdInit(*((_DWORD *)buffer + 1));
+		ret = sceSdInit(*((u32 *)buffer + 1));
 		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 	}
 	else
@@ -630,7 +623,7 @@ LABEL_125:
 			Kprintf("SDR driver ERROR: unknown command %x \n", fno_tmp & 0xFFF0);
 			goto LABEL_126;
 		}
-		sceSdSetParam(*((_WORD *)buffer + 2), *((_WORD *)buffer + 4));
+		sceSdSetParam(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
 		fno_mask_tmp_2 = fno_tmp & 0xFFF0;
 	}
 LABEL_127:
@@ -651,7 +644,7 @@ LABEL_127:
 // 401630: using guessed type int procbat_returns[384];
 
 //----- (00400DC8) --------------------------------------------------------
-sceSdrUserCommandFunction __cdecl sceSdrSetUserCommandFunction(int a1, sceSdrUserCommandFunction a2)
+sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int a1, sceSdrUserCommandFunction a2)
 {
 	int fid; // $v1
 	sceSdrUserCommandFunction oldf; // $v0
@@ -665,7 +658,7 @@ sceSdrUserCommandFunction __cdecl sceSdrSetUserCommandFunction(int a1, sceSdrUse
 }
 
 //----- (00400E10) --------------------------------------------------------
-void __noreturn sceSifCmdLoop2(void)
+void sceSifCmdLoop2(void)
 {
 	SdrEECBData *send_data; // $v1
 	SdrEECBData *cur_data; // $v0
@@ -715,7 +708,7 @@ void __noreturn sceSifCmdLoop2(void)
 // 401570: using guessed type SdrEECBData eeCBDataSend;
 
 //----- (00400F2C) --------------------------------------------------------
-int __cdecl sce_sdrDMA0IntrHandler(int core, void *common)
+int sce_sdrDMA0IntrHandler(int core, void *common)
 {
 	eeCBData.mode |= 0x100u;
 	iWakeupThread(thid_cb);
@@ -724,7 +717,7 @@ int __cdecl sce_sdrDMA0IntrHandler(int core, void *common)
 // 401530: using guessed type SdrEECBData eeCBData;
 
 //----- (00400F6C) --------------------------------------------------------
-int __cdecl sce_sdrDMA1IntrHandler(int core, void *common)
+int sce_sdrDMA1IntrHandler(int core, void *common)
 {
 	eeCBData.mode |= 0x200u;
 	iWakeupThread(thid_cb);
@@ -733,7 +726,7 @@ int __cdecl sce_sdrDMA1IntrHandler(int core, void *common)
 // 401530: using guessed type SdrEECBData eeCBData;
 
 //----- (00400FAC) --------------------------------------------------------
-int __cdecl sce_sdrSpu2IntrHandler(int core_bit, void *common)
+int sce_sdrSpu2IntrHandler(int core_bit, void *common)
 {
 	eeCBData.mode |= 0x400u;
 	eeCBData.voice_bit = core_bit;
@@ -743,7 +736,7 @@ int __cdecl sce_sdrSpu2IntrHandler(int core_bit, void *common)
 // 401530: using guessed type SdrEECBData eeCBData;
 
 //----- (00400FF0) --------------------------------------------------------
-void __noreturn sce_sdrcb_loop(void)
+void sce_sdrcb_loop(void)
 {
 	int i; // $v0
 
