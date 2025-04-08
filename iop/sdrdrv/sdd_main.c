@@ -44,7 +44,7 @@ static int module_start(int ac, char **av)
 				}
 			}
 			while ( isdigit(*p) )
-				++p;
+				p += 1;
 			if ( *p == ',' && isdigit(p[1]) )
 			{
 				g_eeCBInfo.m_initial_priority_cb = strtol(&p[1], 0, 10);

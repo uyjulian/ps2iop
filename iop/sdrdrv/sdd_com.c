@@ -19,7 +19,7 @@ static int AutoDmaStatusCB(void *data)
 	(void)data;
 
 	if ( g_AutoDmaIntrCount < 4 && g_AutoDmaIntrCount >= 0 )
-		++g_AutoDmaIntrCount;
+		g_AutoDmaIntrCount += 1;
 	return 0;
 }
 #endif
@@ -207,11 +207,11 @@ static void *sdrFunc(int fno, void *buffer, int length)
 				memset(g_AutoDmaBuf, 0, 0x3000);
 				for ( i = 0; i < 512; i += 128 )
 				{
-					for ( j = 0; j < 128; ++j )
+					for ( j = 0; j < 128; j += 1 )
 					{
 						buf_init_ptr[j] = buf_init_ptr[j] / 512 * (i + j);
 					}
-					for ( k = 0; k < 128; ++k )
+					for ( k = 0; k < 128; k += 1 )
 					{
 						buf_init_ptr[k + 128] = buf_init_ptr[k + 128] / 512 * (i + k);
 					}
@@ -241,18 +241,18 @@ static void *sdrFunc(int fno, void *buffer, int length)
 				}
 				for ( i = 0; i < 0x2000; i += 128 )
 				{
-					for ( j = 0; j < 128; ++j )
+					for ( j = 0; j < 128; j += 1 )
 					{
 						buf_init_ptr[j] = buf_init_ptr[j] / 0x2000 * (0x2000 - i - j);
 					}
-					for ( k = 0; k < 128; ++k )
+					for ( k = 0; k < 128; k += 1 )
 					{
 						buf_init_ptr[k + 128] = buf_init_ptr[k + 128] / 0x2000 * (0x2000 - i - k);
 					}
 				}
 				memset(buf_cler_ptr, 0, g_AutoDmaBufSize / 2);
 				g_AutoDmaIntrCount = 0;
-				for ( i = 0; g_AutoDmaIntrCount < 2 && i <= 949999; ++i );
+				for ( i = 0; g_AutoDmaIntrCount < 2 && i <= 949999; i += 1 );
 				ret = sceSdBlockTrans(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u8 **)buffer + 3), *((u32 *)buffer + 4));
 				g_AutoDmaInProcessing = 0;
 			}
