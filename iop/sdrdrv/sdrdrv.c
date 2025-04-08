@@ -16,6 +16,8 @@
 
 IRX_ID("sdr_driver", 4, 1);
 
+typedef int (*sceSdrUserCommandFunction)(unsigned int command, void *data, int size);
+
 typedef struct SdrEECBData_
 {
 	int mode;
@@ -25,7 +27,22 @@ typedef struct SdrEECBData_
 	int pad[12];
 } SdrEECBData;
 
-typedef int (*sceSdrUserCommandFunction)(unsigned int command, void *data, int size);
+typedef struct SdrEECBInfo_
+{
+	SdrEECBData m_eeCBData;
+	int m_thid_cb;
+	int m_initial_priority_cb;
+} SdrEECBInfo;
+
+typedef struct SdrInfo_
+{
+	int m_thid_main;
+	sceSdrUserCommandFunction m_sceSdr_vUserCommandFunction[16];
+	SifRpcDataQueue_t *m_rpc_qd;
+	SifRpcServerData_t *m_rpc_sd;
+	int m_procbat_returns[384];
+	sceSdEffectAttr m_e_attr;
+} SdrInfo;
 
 int module_start(int ac, char **av);
 int module_stop(int ac, char **av);
@@ -33,7 +50,6 @@ int sceSdrChangeThreadPriority(int priority_main, int priority_cb);
 void sce_sdr_loop(void* arg);
 void *sdrFunc(int fno, void *buffer, int length);
 sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCommandFunction func);
-void sceSifCmdLoop2(void);
 #if SDRDRV_OBSOLETE_FUNCS
 int _sce_sdrDMA0CallBackProc(void *data);
 int _sce_sdrDMA1CallBackProc(void *data);
@@ -45,27 +61,18 @@ int _sce_sdrSpu2IntrHandler(int core_bit, void *common);
 void sce_sdrcb_loop(void* arg);
 
 extern struct irx_export_table _exp_sdrdrv;
-// Unofficial: move to bss
-int thid_main;
-// Unofficial: move to bss
-int thid_cb;
-sceSdrUserCommandFunction sceSdr_vUserCommandFunction[16];
-SdrEECBData eeCBData;
-int initial_priority_main;
-SifRpcDataQueue_t rpc_qd;
-SifRpcServerData_t rpc_sd;
-int initial_priority_cb;
-int procbat_returns[384];
-sceSdEffectAttr e_attr;
-SifRpcClientData_t cd;
+// Unofficial: wrap members for relative access
+SdrEECBInfo g_eeCBInfo;
+SdrInfo g_sdrInfo;
 
 int module_start(int ac, char **av)
 {
 	int code;
 	int i;
-	const char *p;
 	iop_thread_t thprarm;
 	int state;
+	// Unofficial: make local
+	int initial_priority_main;
 
 	CpuSuspendIntr(&state);
 	code = RegisterLibraryEntries(&_exp_sdrdrv);
@@ -74,13 +81,15 @@ int module_start(int ac, char **av)
 		return 1;
 	Kprintf("SDR driver version 4.0.1 (C) SCEI\n");
 	initial_priority_main = 24;
-	initial_priority_cb = 24;
-	thid_main = 0;
-	thid_cb = 0;
+	g_eeCBInfo.m_initial_priority_cb = 24;
+	g_sdrInfo.m_thid_main = 0;
+	g_eeCBInfo.m_thid_cb = 0;
 	for ( i = 1; i < ac; i += 1 )
 	{
 		if ( !strncmp("thpri=", av[i], 6) )
 		{
+			const char *p;
+
 			p = av[i] + 6;
 			if ( isdigit(*p) )
 			{
@@ -95,31 +104,32 @@ int module_start(int ac, char **av)
 				++p;
 			if ( *p == ',' && isdigit(p[1]) )
 			{
-				initial_priority_cb = strtol(&p[1], 0, 10);
-				if ( (unsigned int)(initial_priority_cb - 9) >= 0x73 )
+				g_eeCBInfo.m_initial_priority_cb = strtol(&p[1], 0, 10);
+				if ( (unsigned int)(g_eeCBInfo.m_initial_priority_cb - 9) >= 0x73 )
 				{
-					Kprintf(" SDR driver error: invalid priority %d\n", initial_priority_cb);
-					initial_priority_cb = 24;
+					Kprintf(" SDR driver error: invalid priority %d\n", g_eeCBInfo.m_initial_priority_cb);
+					g_eeCBInfo.m_initial_priority_cb = 24;
 				}
 			}
-			if ( initial_priority_cb < initial_priority_main )
+			if ( g_eeCBInfo.m_initial_priority_cb < initial_priority_main )
 			{
 				Kprintf(" SDR driver ERROR:\n");
 				Kprintf("   callback th. priority is higher than main th. priority.\n");
-				initial_priority_cb = initial_priority_main;
+				g_eeCBInfo.m_initial_priority_cb = initial_priority_main;
 			}
-			Kprintf(" SDR driver: thread priority: main=%d, callback=%d\n", initial_priority_main, initial_priority_cb);
+			Kprintf(" SDR driver: thread priority: main=%d, callback=%d\n", initial_priority_main, g_eeCBInfo.m_initial_priority_cb);
 		}
 	}
 	thprarm.attr = 0x2000000;
 	thprarm.thread = sce_sdr_loop;
-	thprarm.stacksize = 2048;
+	// Unofficial: original stack size was 2048
+	thprarm.stacksize = 4096;
 	thprarm.option = 0;
 	thprarm.priority = initial_priority_main;
-	thid_main = CreateThread(&thprarm);
-	if ( thid_main <= 0 )
+	g_sdrInfo.m_thid_main = CreateThread(&thprarm);
+	if ( g_sdrInfo.m_thid_main <= 0 )
 		return 1;
-	StartThread(thid_main, 0);
+	StartThread(g_sdrInfo.m_thid_main, &g_sdrInfo);
 	Kprintf(" Exit rsd_main \n");
 	return 2;
 }
@@ -140,19 +150,19 @@ int module_stop(int ac, char **av)
 	sceSdSetTransIntrHandler(0, 0, 0);
 	sceSdSetTransIntrHandler(1, 0, 0);
 	sceSdSetSpu2IntrHandler(0, 0);
-	if ( thid_cb > 0 )
+	if ( g_eeCBInfo.m_thid_cb > 0 )
 	{
-		TerminateThread(thid_cb);
-		DeleteThread(thid_cb);
-		thid_cb = 0;
+		TerminateThread(g_eeCBInfo.m_thid_cb);
+		DeleteThread(g_eeCBInfo.m_thid_cb);
+		g_eeCBInfo.m_thid_cb = 0;
 	}
-	if ( thid_main > 0 )
+	if ( g_sdrInfo.m_thid_main > 0 )
 	{
-		sceSifRemoveRpc(&rpc_sd, &rpc_qd);
-		sceSifRemoveRpcQueue(&rpc_qd);
-		TerminateThread(thid_main);
-		DeleteThread(thid_main);
-		thid_main = 0;
+		sceSifRemoveRpc(g_sdrInfo.m_rpc_sd, g_sdrInfo.m_rpc_qd);
+		sceSifRemoveRpcQueue(g_sdrInfo.m_rpc_qd);
+		TerminateThread(g_sdrInfo.m_thid_main);
+		DeleteThread(g_sdrInfo.m_thid_main);
+		g_sdrInfo.m_thid_main = 0;
 	}
 	Kprintf(" sdrdrv: unloaded! \n");
 	return 1;
@@ -180,15 +190,15 @@ int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
 	ReferThreadStatus(0, &thstatus);
 	ChangeThreadPriority(0, 8);
 	ret = 0;
-	if ( thid_main > 0 )
-		ret = ChangeThreadPriority(thid_main, priority_main);
+	if ( g_sdrInfo.m_thid_main > 0 )
+		ret = ChangeThreadPriority(g_sdrInfo.m_thid_main, priority_main);
 	if ( ret < 0 )
 		return ret;
-	if ( thid_cb > 0 )
-		ret = ChangeThreadPriority(thid_cb, cur_priority);
+	if ( g_eeCBInfo.m_thid_cb > 0 )
+		ret = ChangeThreadPriority(g_eeCBInfo.m_thid_cb, cur_priority);
 	if ( ret < 0 )
 		return ret;
-	initial_priority_cb = cur_priority;
+	g_eeCBInfo.m_initial_priority_cb = cur_priority;
 	ChangeThreadPriority(0, thstatus.currentPriority);
 	return 0;
 }
@@ -214,22 +224,27 @@ static int AutoDmaStatusCB(void *data)
 void sce_sdr_loop(void *arg)
 {
 	// Unofficial: make local variable
-	int gRpcArg[16];
+	int rpc_arg[16];
+	SifRpcDataQueue_t rpc_qd;
+	SifRpcServerData_t rpc_sd;
+	SdrInfo *si;
+	int i;
 
-	(void)arg;
-
+	si = (SdrInfo *)arg;
+	si->m_rpc_qd = &rpc_qd;
+	si->m_rpc_sd = &rpc_sd;
 	sceSifInitRpc(0);
 	sceSifSetRpcQueue(&rpc_qd, GetThreadId());
-	sceSifRegisterRpc(&rpc_sd, 0x80000701, sdrFunc, gRpcArg, 0, 0, &rpc_qd);
+	sceSifRegisterRpc(&rpc_sd, 0x80000701, sdrFunc, rpc_arg, 0, 0, &rpc_qd);
 	// Unofficial: was inlined
-	memset(sceSdr_vUserCommandFunction, 0, sizeof(sceSdr_vUserCommandFunction));
+	for ( i = 0; i < 16; i += 1 )
+		sceSdrSetUserCommandFunction(0x9000 + (i * 0x10), NULL);
 	sceSifRpcLoop(&rpc_qd);
 }
 
 void *sdrFunc(int fno, void *buffer, int length)
 {
 	int ret;
-	iop_thread_t thparam;
 
 	ret = 0;
 	switch (fno & 0xFFF0)
@@ -462,16 +477,16 @@ void *sdrFunc(int fno, void *buffer, int length)
 			ret = sceSdSetEffectAttr(fno & 0xF, (sceSdEffectAttr *)buffer);
 			break;
 		case 0x8140:
-			sceSdGetEffectAttr(fno & 0xF, &e_attr);
-			return &e_attr;
+			sceSdGetEffectAttr(fno & 0xF, &g_sdrInfo.m_e_attr);
+			return &g_sdrInfo.m_e_attr;
 		case 0x8150:
 			ret = sceSdClearEffectWorkArea(*((u32 *)buffer + 1), *((u32 *)buffer + 2), *((u32 *)buffer + 3));
 			break;
 		case 0x8160:
-			ret = (int)sceSdSetTransIntrHandler(*((u32 *)buffer + 1) ? 1 : 0, *((u32 *)buffer + 2) ? (*((u32 *)buffer + 1) ? _sce_sdrDMA1IntrHandler : 0) : _sce_sdrDMA0IntrHandler, 0);
+			ret = (int)sceSdSetTransIntrHandler(*((u32 *)buffer + 1) ? 1 : 0, *((u32 *)buffer + 2) ? (*((u32 *)buffer + 1) ? _sce_sdrDMA1IntrHandler : 0) : _sce_sdrDMA0IntrHandler, &g_eeCBInfo);
 			break;
 		case 0x8170:
-			ret = (int)sceSdSetSpu2IntrHandler(*((u32 *)buffer + 1) ? _sce_sdrSpu2IntrHandler : 0, 0);
+			ret = (int)sceSdSetSpu2IntrHandler(*((u32 *)buffer + 1) ? _sce_sdrSpu2IntrHandler : 0, &g_eeCBInfo);
 			break;
 		case 0x8180:
 			ret = sceSdStopTrans(*((u32 *)buffer + 1));
@@ -483,10 +498,10 @@ void *sdrFunc(int fno, void *buffer, int length)
 			ret = sceSdSetEffectMode(fno & 0xF, (sceSdEffectAttr *)buffer);
 			break;
 		case 0x81C0:
-			ret = sceSdProcBatch((sceSdBatch *)buffer + 1, (u32 *)&procbat_returns[1], *((u16 *)buffer + 1));
+			ret = sceSdProcBatch((sceSdBatch *)buffer + 1, (u32 *)&g_sdrInfo.m_procbat_returns[1], *((u16 *)buffer + 1));
 			break;
 		case 0x81D0:
-			ret = sceSdProcBatchEx((sceSdBatch *)buffer + 1, (u32 *)&procbat_returns[1], *((u16 *)buffer + 1), *((u32 *)buffer + 1));
+			ret = sceSdProcBatchEx((sceSdBatch *)buffer + 1, (u32 *)&g_sdrInfo.m_procbat_returns[1], *((u16 *)buffer + 1), *((u32 *)buffer + 1));
 			break;
 		case 0x8F10:
 			ret = sceSdrChangeThreadPriority(*((u32 *)buffer + 1), *((u32 *)buffer + 2));
@@ -508,28 +523,30 @@ void *sdrFunc(int fno, void *buffer, int length)
 		case 0x90E0:
 		case 0x90F0:
 		{
-			ret = sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4] ? sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4](fno, buffer, length) : 0;
+			ret = g_sdrInfo.m_sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4] ? g_sdrInfo.m_sceSdr_vUserCommandFunction[(fno & 0xF0) >> 4](fno, buffer, length) : 0;
 			break;
 		}
 		case 0xE620:
 		{
+			iop_thread_t thparam;
+
 			thparam.attr = 0x2000000;
 			thparam.thread = sce_sdrcb_loop;
 			thparam.stacksize = 2048;
 			thparam.option = 0;
-			thparam.priority = initial_priority_cb;
-			thid_cb = CreateThread(&thparam);
-			StartThread(thid_cb, 0);
+			thparam.priority = g_eeCBInfo.m_initial_priority_cb;
+			g_eeCBInfo.m_thid_cb = CreateThread(&thparam);
+			StartThread(g_eeCBInfo.m_thid_cb, &g_eeCBInfo);
 			Kprintf("SDR callback thread created\n");
 			break;
 		}
 		case 0xE630:
 		{
-			if ( thid_cb > 0 )
+			if ( g_eeCBInfo.m_thid_cb > 0 )
 			{
-				TerminateThread(thid_cb);
-				DeleteThread(thid_cb);
-				thid_cb = 0;
+				TerminateThread(g_eeCBInfo.m_thid_cb);
+				DeleteThread(g_eeCBInfo.m_thid_cb);
+				g_eeCBInfo.m_thid_cb = 0;
 				Kprintf("SDR callback thread deleted\n");
 			}
 			break;
@@ -539,8 +556,8 @@ void *sdrFunc(int fno, void *buffer, int length)
 			break;
 	}
 	// Unofficial: always return pointer to procbat_returns
-	procbat_returns[0] = ret;
-	return procbat_returns;
+	g_sdrInfo.m_procbat_returns[0] = ret;
+	return g_sdrInfo.m_procbat_returns;
 }
 
 sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCommandFunction func)
@@ -549,96 +566,92 @@ sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCo
 
 	if ( (command < 0x9000) || (command > 0x90F0) )
 		return (sceSdrUserCommandFunction)-1;
-	oldf = sceSdr_vUserCommandFunction[(command & 0xF0) >> 4];
-	sceSdr_vUserCommandFunction[(command & 0xF0) >> 4] = func;
+	oldf = g_sdrInfo.m_sceSdr_vUserCommandFunction[(command & 0xF0) >> 4];
+	g_sdrInfo.m_sceSdr_vUserCommandFunction[(command & 0xF0) >> 4] = func;
 	return oldf;
 }
 
-void sceSifCmdLoop2(void)
+// Unofficial: argument
+static void sceSifCmdLoop2(SifRpcClientData_t *cd, SdrEECBInfo *cbi)
 {
-	int state;
-	// Unofficial: make local variable
-	SdrEECBData eeCBDataSend;
-
 	while ( 1 )
 	{
-		if ( eeCBData.mode )
+		int state;
+		// Unofficial: make local variable
+		SdrEECBData eeCBDataSend;
+
+		while ( !cbi->m_eeCBData.mode )
+			SleepThread();
+		CpuSuspendIntr(&state);
+		// Unofficial: was inlined
+		memcpy(&eeCBDataSend, &cbi->m_eeCBData, sizeof(eeCBDataSend));
+		CpuResumeIntr(state);
+#if SDRDRV_EECB_COMPAT
+		if ( eeCBDataSend.mode )
 		{
+			int mode_tmp;
+			int mode_cur;
+
+			mode_tmp = eeCBDataSend.mode;
+			mode_cur = mode_tmp;
 			while ( 1 )
 			{
-				CpuSuspendIntr(&state);
-				// Unofficial: was inlined
-				memcpy(&eeCBDataSend, &eeCBData, sizeof(eeCBDataSend));
-				CpuResumeIntr(state);
-#if SDRDRV_EECB_COMPAT
-				if ( eeCBDataSend.mode )
+				// Only the obsolete DMA0/DMA1/IRQ funcs (not implemented in libsdr 4.0.1) clashes
+				if (mode_cur & (1 << 0))
 				{
-					int mode_tmp;
-					int mode_cur;
-
-					mode_tmp = eeCBDataSend.mode;
-					mode_cur = mode_tmp;
-					while ( 1 )
-					{
-						// Only the obsolete DMA0/DMA1/IRQ funcs (not implemented in libsdr 4.0.1) clashes
-						if (mode_cur & (1 << 0))
-						{
-							mode_cur &= ~(1 << 0);
-							eeCBDataSend.mode = 1;
-						}
-						else if (mode_cur & (1 << 1))
-						{
-							mode_cur &= ~(1 << 1);
-							eeCBDataSend.mode = 2;
-						}
-						else if (mode_cur & (1 << 2))
-						{
-							mode_cur &= ~(1 << 2);
-							eeCBDataSend.mode = 3;
-						}
-						else if (mode_cur & (1 << 8))
-						{
-							mode_cur &= ~(1 << 8);
-							eeCBDataSend.mode = 11;
-						}
-						else if (mode_cur & (1 << 9))
-						{
-							mode_cur &= ~(1 << 9);
-							eeCBDataSend.mode = 12;
-						}
-						else if (mode_cur & (1 << 10))
-						{
-							mode_cur &= ~(1 << 10);
-							eeCBDataSend.mode = 13;
-						}
-						else
-						{
-							break;
-						}
-						sceSifCallRpc(&cd, 0, 0, &eeCBDataSend, sizeof(eeCBDataSend), 0, 0, 0, 0);
-					}
-					eeCBDataSend.mode = mode_tmp;
+					mode_cur &= ~(1 << 0);
+					eeCBDataSend.mode = 1;
 				}
-				// Set the high bit to make libsdr 2.0.0 and lower not process it
-				eeCBDataSend.mode |= (1 << 31);
-#endif
-				sceSifCallRpc(&cd, 0, 0, &eeCBDataSend, sizeof(eeCBDataSend), 0, 0, 0, 0);
-#if SDRDRV_EECB_COMPAT
-				eeCBDataSend.mode &= ~(1 << 31);
-#endif
-				CpuSuspendIntr(&state);
-				if ( eeCBData.mode == eeCBDataSend.mode )
+				else if (mode_cur & (1 << 1))
 				{
-					eeCBData.mode = 0;
-					iCancelWakeupThread(0);
-					CpuResumeIntr(state);
+					mode_cur &= ~(1 << 1);
+					eeCBDataSend.mode = 2;
+				}
+				else if (mode_cur & (1 << 2))
+				{
+					mode_cur &= ~(1 << 2);
+					eeCBDataSend.mode = 3;
+				}
+				else if (mode_cur & (1 << 8))
+				{
+					mode_cur &= ~(1 << 8);
+					eeCBDataSend.mode = 11;
+				}
+				else if (mode_cur & (1 << 9))
+				{
+					mode_cur &= ~(1 << 9);
+					eeCBDataSend.mode = 12;
+				}
+				else if (mode_cur & (1 << 10))
+				{
+					mode_cur &= ~(1 << 10);
+					eeCBDataSend.mode = 13;
+				}
+				else
+				{
 					break;
 				}
-				eeCBData.mode &= ~eeCBDataSend.mode;
-				CpuResumeIntr(state);
+				sceSifCallRpc(cd, 0, 0, &eeCBDataSend, sizeof(eeCBDataSend), 0, 0, 0, 0);
 			}
+			eeCBDataSend.mode = mode_tmp;
 		}
-		SleepThread();
+		// Set the high bit to make libsdr 2.0.0 and lower not process it
+		eeCBDataSend.mode |= (1 << 31);
+#endif
+		sceSifCallRpc(cd, 0, 0, &eeCBDataSend, sizeof(eeCBDataSend), 0, 0, 0, 0);
+#if SDRDRV_EECB_COMPAT
+		eeCBDataSend.mode &= ~(1 << 31);
+#endif
+		CpuSuspendIntr(&state);
+		if ( cbi->m_eeCBData.mode == eeCBDataSend.mode )
+		{
+			cbi->m_eeCBData.mode = 0;
+			iCancelWakeupThread(0);
+			CpuResumeIntr(state);
+			break;
+		}
+		cbi->m_eeCBData.mode &= ~eeCBDataSend.mode;
+		CpuResumeIntr(state);
 	}
 }
 
@@ -647,8 +660,8 @@ int _sce_sdrDMA0CallBackProc(void *data)
 {
 	(void)data;
 
-	eeCBData.mode |= (1 << 0);
-	iWakeupThread(thid_cb);
+	g_eeCBInfo.m_eeCBData.mode |= (1 << 0);
+	iWakeupThread(g_eeCBInfo.m_thid_cb);
 	return 1;
 }
 
@@ -656,8 +669,8 @@ int _sce_sdrDMA1CallBackProc(void *data)
 {
 	(void)data;
 
-	eeCBData.mode |= (1 << 1);
-	iWakeupThread(thid_cb);
+	g_eeCBInfo.m_eeCBData.mode |= (1 << 1);
+	iWakeupThread(g_eeCBInfo.m_thid_cb);
 	return 1;
 }
 
@@ -665,55 +678,64 @@ int _sce_sdrIRQCallBackProc(void *data)
 {
 	(void)data;
 
-	eeCBData.mode |= (1 << 2);
-	iWakeupThread(thid_cb);
+	g_eeCBInfo.m_eeCBData.mode |= (1 << 2);
+	iWakeupThread(g_eeCBInfo.m_thid_cb);
 	return 1;
 }
 #endif
 
 int _sce_sdrDMA0IntrHandler(int core, void *common)
 {
-	(void)core;
-	(void)common;
+	SdrEECBInfo *cbi;
 
-	eeCBData.mode |= (1 << 8);
-	iWakeupThread(thid_cb);
+	(void)core;
+
+	cbi = (SdrEECBInfo *)common;
+	cbi->m_eeCBData.mode |= (1 << 8);
+	iWakeupThread(cbi->m_thid_cb);
 	return 0;
 }
 
 int _sce_sdrDMA1IntrHandler(int core, void *common)
 {
-	(void)core;
-	(void)common;
+	SdrEECBInfo *cbi;
 
-	eeCBData.mode |= (1 << 9);
-	iWakeupThread(thid_cb);
+	(void)core;
+
+	cbi = (SdrEECBInfo *)common;
+	cbi->m_eeCBData.mode |= (1 << 9);
+	iWakeupThread(cbi->m_thid_cb);
 	return 0;
 }
 
 int _sce_sdrSpu2IntrHandler(int core_bit, void *common)
 {
-	(void)core_bit;
-	(void)common;
+	SdrEECBInfo *cbi;
 
-	eeCBData.mode |= (1 << 10);
-	eeCBData.voice_bit = core_bit;
-	iWakeupThread(thid_cb);
+	(void)core_bit;
+
+	cbi = (SdrEECBInfo *)common;
+	cbi->m_eeCBData.mode |= (1 << 10);
+	cbi->m_eeCBData.voice_bit = core_bit;
+	iWakeupThread(cbi->m_thid_cb);
 	return 0;
 }
 
 void sce_sdrcb_loop(void *arg)
 {
-	int i;
+	SdrEECBInfo *cbi;
+	// Unofficial: make local
+	SifRpcClientData_t cd;
 
-	(void)arg;
-
-	eeCBData.mode = 0;
+	cbi = (SdrEECBInfo *)arg;
+	cbi->m_eeCBData.mode = 0;
 	while ( sceSifBindRpc(&cd, 0x80000704, 0) >= 0 )
 	{
+		int i;
+
 		for ( i = 0; i < 10000; i += 1 );
 		if ( cd.server )
-			sceSifCmdLoop2();
+			sceSifCmdLoop2(&cd, cbi);
 	}
 	Kprintf("error \n");
 	while ( 1 );
