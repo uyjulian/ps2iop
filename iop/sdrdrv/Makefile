@@ -1,6 +1,6 @@
 IOP_BIN = sdrdrv.irx
 
-IOP_OBJS = sdrdrv.o imports.o exports.o
+IOP_OBJS = sdd_cb.o sdd_main.o sdd_com.o imports.o exports.o
 
 IOP_CFLAGS += -Wall -Wextra
 
