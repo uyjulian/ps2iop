@@ -27,9 +27,6 @@ typedef struct SdrEECBData_
 
 typedef int (*sceSdrUserCommandFunction)(unsigned int command, void *data, int size);
 
-//-------------------------------------------------------------------------
-// Function declarations
-
 int module_start(int ac, char **av);
 int module_stop(int ac, char **av);
 int sceSdrChangeThreadPriority(int priority_main, int priority_cb);
@@ -47,9 +44,6 @@ int _sce_sdrDMA1IntrHandler(int core, void *common);
 int _sce_sdrSpu2IntrHandler(int core_bit, void *common);
 void sce_sdrcb_loop(void* arg);
 
-//-------------------------------------------------------------------------
-// Data declarations
-
 extern struct irx_export_table _exp_sdrdrv;
 // Unofficial: move to bss
 int thid_main;
@@ -65,14 +59,13 @@ int procbat_returns[384];
 sceSdEffectAttr e_attr;
 SifRpcClientData_t cd;
 
-//----- (00400000) --------------------------------------------------------
 int module_start(int ac, char **av)
 {
-	int code; // $s0
-	int i; // $s2
-	const char *p; // $s0
-	iop_thread_t thprarm; // [sp+10h] [-20h] BYREF
-	int state; // [sp+28h] [-8h] BYREF
+	int code;
+	int i;
+	const char *p;
+	iop_thread_t thprarm;
+	int state;
 
 	CpuSuspendIntr(&state);
 	code = RegisterLibraryEntries(&_exp_sdrdrv);
@@ -130,14 +123,11 @@ int module_start(int ac, char **av)
 	Kprintf(" Exit rsd_main \n");
 	return 2;
 }
-// 4015B0: using guessed type int initial_priority_main;
-// 401624: using guessed type int initial_priority_cb;
 
-//----- (00400284) --------------------------------------------------------
 int module_stop(int ac, char **av)
 {
-	int code; // $s0
-	int state; // [sp+10h] [-8h] BYREF
+	int code;
+	int state;
 
 	(void)ac;
 	(void)av;
@@ -168,18 +158,16 @@ int module_stop(int ac, char **av)
 	return 1;
 }
 
-//----- (004003A0) --------------------------------------------------------
 int _start(int ac, char **av)
 {
 	return ( ac >= 0 ) ? module_start(ac, av) : module_stop(-ac, av);
 }
 
-//----- (004003D4) --------------------------------------------------------
 int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
 {
-	int cur_priority; // $s0
-	int ret; // $v0
-	iop_thread_info_t thstatus; // [sp+10h] [-48h] BYREF
+	int cur_priority;
+	int ret;
+	iop_thread_info_t thstatus;
 
 	if ( (unsigned int)(priority_main - 9) >= 0x73 || (unsigned int)(priority_cb - 9) >= 0x73 )
 		return -403;
@@ -204,7 +192,6 @@ int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
 	ChangeThreadPriority(0, thstatus.currentPriority);
 	return 0;
 }
-// 401624: using guessed type int initial_priority_cb;
 
 #if SDRDRV_IMPLEMENT_AUTODMA
 // Unofficial: move to bss
@@ -224,7 +211,6 @@ static int AutoDmaStatusCB(void *data)
 }
 #endif
 
-//----- (004004E0) --------------------------------------------------------
 void sce_sdr_loop(void *arg)
 {
 	// Unofficial: make local variable
@@ -240,11 +226,10 @@ void sce_sdr_loop(void *arg)
 	sceSifRpcLoop(&rpc_qd);
 }
 
-//----- (00400588) --------------------------------------------------------
 void *sdrFunc(int fno, void *buffer, int length)
 {
-	int ret; // $v0
-	iop_thread_t thparam; // [sp+18h] [-18h] BYREF
+	int ret;
+	iop_thread_t thparam;
 
 	ret = 0;
 	switch (fno & 0xFFF0)
@@ -557,13 +542,10 @@ void *sdrFunc(int fno, void *buffer, int length)
 	procbat_returns[0] = ret;
 	return procbat_returns;
 }
-// 401624: using guessed type int initial_priority_cb;
-// 401630: using guessed type int procbat_returns[384];
 
-//----- (00400DC8) --------------------------------------------------------
 sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCommandFunction func)
 {
-	sceSdrUserCommandFunction oldf; // $v0
+	sceSdrUserCommandFunction oldf;
 
 	if ( (command < 0x9000) || (command > 0x90F0) )
 		return (sceSdrUserCommandFunction)-1;
@@ -572,7 +554,6 @@ sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCo
 	return oldf;
 }
 
-//----- (00400E10) --------------------------------------------------------
 void sceSifCmdLoop2(void)
 {
 	int state;
@@ -660,7 +641,6 @@ void sceSifCmdLoop2(void)
 		SleepThread();
 	}
 }
-// 401530: using guessed type SdrEECBData eeCBData;
 
 #if SDRDRV_OBSOLETE_FUNCS
 int _sce_sdrDMA0CallBackProc(void *data)
@@ -691,7 +671,6 @@ int _sce_sdrIRQCallBackProc(void *data)
 }
 #endif
 
-//----- (00400F2C) --------------------------------------------------------
 int _sce_sdrDMA0IntrHandler(int core, void *common)
 {
 	(void)core;
@@ -701,9 +680,7 @@ int _sce_sdrDMA0IntrHandler(int core, void *common)
 	iWakeupThread(thid_cb);
 	return 0;
 }
-// 401530: using guessed type SdrEECBData eeCBData;
 
-//----- (00400F6C) --------------------------------------------------------
 int _sce_sdrDMA1IntrHandler(int core, void *common)
 {
 	(void)core;
@@ -713,9 +690,7 @@ int _sce_sdrDMA1IntrHandler(int core, void *common)
 	iWakeupThread(thid_cb);
 	return 0;
 }
-// 401530: using guessed type SdrEECBData eeCBData;
 
-//----- (00400FAC) --------------------------------------------------------
 int _sce_sdrSpu2IntrHandler(int core_bit, void *common)
 {
 	(void)core_bit;
@@ -726,12 +701,10 @@ int _sce_sdrSpu2IntrHandler(int core_bit, void *common)
 	iWakeupThread(thid_cb);
 	return 0;
 }
-// 401530: using guessed type SdrEECBData eeCBData;
 
-//----- (00400FF0) --------------------------------------------------------
 void sce_sdrcb_loop(void *arg)
 {
-	int i; // $v0
+	int i;
 
 	(void)arg;
 
@@ -743,7 +716,5 @@ void sce_sdrcb_loop(void *arg)
 			sceSifCmdLoop2();
 	}
 	Kprintf("error \n");
-	while ( 1 )
-		;
+	while ( 1 );
 }
-// 401530: using guessed type SdrEECBData eeCBData;
