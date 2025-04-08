@@ -7,6 +7,12 @@
 #ifndef SDRDRV_EECB_COMPAT
 #define SDRDRV_EECB_COMPAT 1
 #endif
+#ifndef SDRDRV_IMPLEMENT_AUTODMA
+#define SDRDRV_IMPLEMENT_AUTODMA 0
+#endif
+#ifndef SDRDRV_IMPLEMENT_LIBOSDS
+#define SDRDRV_IMPLEMENT_LIBOSDS 0
+#endif
 
 IRX_ID("sdr_driver", 4, 1);
 
@@ -200,6 +206,24 @@ int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
 }
 // 401624: using guessed type int initial_priority_cb;
 
+#if SDRDRV_IMPLEMENT_AUTODMA
+// Unofficial: move to bss
+static int g_AutoDmaIntrCount;
+// Unofficial: move to bss
+static int g_AutoDmaInProcessing;
+static void *g_AutoDmaBuf;
+static int g_AutoDmaBufSize;
+
+static int AutoDmaStatusCB(void *data)
+{
+	(void)data;
+
+	if ( g_AutoDmaIntrCount < 4 && g_AutoDmaIntrCount >= 0 )
+		++g_AutoDmaIntrCount;
+	return 0;
+}
+#endif
+
 //----- (004004E0) --------------------------------------------------------
 void sce_sdr_loop(void *arg)
 {
@@ -225,6 +249,101 @@ void *sdrFunc(int fno, void *buffer, int length)
 	ret = 0;
 	switch (fno & 0xFFF0)
 	{
+#if SDRDRV_IMPLEMENT_LIBOSDS
+		case 0x6010:
+			StInit();
+			break;
+		case 0x6020:
+			StQuit();
+			break;
+		case 0x6030:
+			StCalledVSync();
+			break;
+		case 0x6040:
+			/* nothing */
+			break;
+		case 0x6050:
+			ret = (s16)StVabOpen(*((u8 **)buffer + 1), *((u32 *)buffer + 2), *((u32 **)buffer + 3));
+			break;
+		case 0x6060:
+			ret = (s16)StVabOpenFakeBody(*((u32 *)buffer + 1), *((u32 *)buffer + 2));
+			break;
+		case 0x6070:
+			StVabOpenCompleted();
+			break;
+		case 0x6080:
+			ret = (s16)StVabClose(*((u16 *)buffer + 2));
+			break;
+		case 0x6090:
+			ret = (s16)StBgmOpen(*((u16 *)buffer + 2), *((u32 *)buffer + 2));
+			break;
+		case 0x60A0:
+			StSetTickMode(*((s16 *)buffer + 2));
+			break;
+		case 0x60B0:
+			ret = (s16)StBgmClose(*((u16 *)buffer + 2));
+			break;
+		case 0x60C0:
+			StSetReverbType(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
+			break;
+		case 0x60D0:
+			StSetReverbDepth(*((s16 *)buffer + 2), *((s16 *)buffer + 4), *((s16 *)buffer + 6));
+			break;
+		case 0x60E0:
+			StSetReverbDelaytime(*((s16 *)buffer + 2), *((s16 *)buffer + 4));
+			break;
+		case 0x60F0:
+			StSetReverbFeedback(*((s16 *)buffer + 2), *((s16 *)buffer + 4));
+			break;
+		case 0x6100:
+			ret = StGetSlotStatus(*((u16 *)buffer + 2));
+			break;
+		case 0x6110:
+			StSetSbClear(*((u32 *)buffer + 1));
+			break;
+		case 0x6120:
+			StSetMasterVol(*((s16 *)buffer + 2), *((s16 *)buffer + 4), *((s16 *)buffer + 6));
+			break;
+		case 0x6130:
+			ret = (s16)StSetBgmVol(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
+			break;
+		case 0x6140:
+			StBgmPlay(*((u16 *)buffer + 2));
+			break;
+		case 0x6150:
+			StBgmStop(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u32 *)buffer + 3));
+			break;
+		case 0x6160:
+			StSetBgmTempo(*((s16 *)buffer + 2), *((s16 *)buffer + 4));
+			break;
+		case 0x6170:
+			ret = (s16)StGetBgmTempo(*((s16 *)buffer + 2));
+			break;
+		case 0x6180:
+			ret = (s16)StGetBgmStatus(*((s16 *)buffer + 2));
+			break;
+		case 0x6190:
+			ret = (s16)StGetBgmChStatus();
+			break;
+		case 0x61A0:
+			ret = (s16)StDmaWrite(*((u8 **)buffer + 1), *((u32 **)buffer + 2), *((u32 *)buffer + 3));
+			break;
+		case 0x61B0:
+			ret = (s16)StDmaRead(*((u32 **)buffer + 1), *((u8 **)buffer + 2), *((u32 *)buffer + 3));
+			break;
+		case 0x6200:
+			ret = SetTimer(&g_timer_flag);
+			break;
+		case 0x6210:
+			ret = ReleaseTimer();
+			break;
+		case 0x6300:
+			ret = StSePlay(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
+			break;
+		case 0x6310:
+			ret = StSetSeVol(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
+			break;
+#endif
 		case 0x8000:
 			ret = sceSdInit(*((u32 *)buffer + 1));
 			break;
@@ -268,7 +387,77 @@ void *sdrFunc(int fno, void *buffer, int length)
 			ret = sceSdVoiceTrans(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u8 **)buffer + 3), *((u32 **)buffer + 4), *((u32 *)buffer + 5));
 			break;
 		case 0x80E0:
+#if SDRDRV_IMPLEMENT_AUTODMA
+		{
+			int i;
+			int j;
+			int k;
+
+			if ( !g_AutoDmaInProcessing && *((u32 *)buffer + 2) != 2 )
+			{
+				u32 *buf_init_ptr;
+
+				sceSdSetTransCallback(1, AutoDmaStatusCB);
+				g_AutoDmaBuf = (void *)(uiptr)*((u32 *)buffer + 3);
+				g_AutoDmaBufSize = *((u32 *)buffer + 4);
+				buf_init_ptr = (u32 *)((u8 *)g_AutoDmaBuf + 0x3000);
+				memset(g_AutoDmaBuf, 0, 0x3000);
+				for ( i = 0; i < 512; i += 128 )
+				{
+					for ( j = 0; j < 128; ++j )
+					{
+						buf_init_ptr[j] = buf_init_ptr[j] / 512 * (i + j);
+					}
+					for ( k = 0; k < 128; ++k )
+					{
+						buf_init_ptr[k + 128] = buf_init_ptr[k + 128] / 512 * (i + k);
+					}
+				}
+				g_AutoDmaIntrCount = 10;
+				ret = sceSdBlockTrans(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u8 **)buffer + 3), *((u32 *)buffer + 4));
+				g_AutoDmaInProcessing = 1;
+			}
+			else if ( g_AutoDmaInProcessing && *((u32 *)buffer + 2) == 2 )
+			{
+				u32 *buf_init_ptr;
+				u32 *buf_cler_ptr;
+				int cur_status_1;
+				int cur_status_2;
+
+				cur_status_1 = sceSdBlockTransStatus(1, 0);
+				// Unofficial: also handle cases other than 0, 1
+				cur_status_2 = (cur_status_1 & 0xFFFFFF) - (uiptr)(u8 *)g_AutoDmaBuf - ((cur_status_1 >> 24) == 1 ? (g_AutoDmaBufSize / 2) : 0);
+				// Unofficial: also handle cases other than 0, 1
+				buf_init_ptr = (u32 *)((u8 *)g_AutoDmaBuf + ((cur_status_1 >> 24) == (( cur_status_2 < 0xC000 ) ? 1 : 0) ? (g_AutoDmaBufSize / 2) : 0));
+				buf_cler_ptr = (u32 *)((u8 *)g_AutoDmaBuf + ((cur_status_1 >> 24) == (( cur_status_2 < 0xC000 ) ? 0 : 1) ? (g_AutoDmaBufSize / 2) : 0));
+				while ( cur_status_2 < 0xF000 )
+				{
+					cur_status_2 = sceSdBlockTransStatus(1, 0);
+					// Unofficial: also handle cases other than 0, 1
+					cur_status_2 = (cur_status_2 & 0xFFFFFF) - (uiptr)(u8 *)g_AutoDmaBuf - ((cur_status_2 >> 24) == 1 ? (g_AutoDmaBufSize / 2) : 0);
+				}
+				for ( i = 0; i < 0x2000; i += 128 )
+				{
+					for ( j = 0; j < 128; ++j )
+					{
+						buf_init_ptr[j] = buf_init_ptr[j] / 0x2000 * (0x2000 - i - j);
+					}
+					for ( k = 0; k < 128; ++k )
+					{
+						buf_init_ptr[k + 128] = buf_init_ptr[k + 128] / 0x2000 * (0x2000 - i - k);
+					}
+				}
+				memset(buf_cler_ptr, 0, g_AutoDmaBufSize / 2);
+				g_AutoDmaIntrCount = 0;
+				for ( i = 0; g_AutoDmaIntrCount < 2 && i <= 949999; ++i );
+				ret = sceSdBlockTrans(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u8 **)buffer + 3), *((u32 *)buffer + 4));
+				g_AutoDmaInProcessing = 0;
+			}
+			break;
+		}
+#else
 			ret = sceSdBlockTrans(*((u16 *)buffer + 2), *((u16 *)buffer + 4), *((u8 **)buffer + 3), *((u32 *)buffer + 4), *((u32 *)buffer + 5));
+#endif
 			break;
 		case 0x80F0:
 			ret = sceSdVoiceTransStatus(*((u16 *)buffer + 2), *((u16 *)buffer + 4));
@@ -280,9 +469,9 @@ void *sdrFunc(int fno, void *buffer, int length)
 		case 0x8110:
 			ret = (int)sceSdSetTransCallback(*((u32 *)buffer + 1) ? 1 : 0, *((u32 *)buffer + 2) ? (*((u32 *)buffer + 1) ? _sce_sdrDMA1CallBackProc : _sce_sdrDMA0CallBackProc) : 0);
 			break;
-    case 0x8120:
-    	ret = (int)sceSdSetIRQCallback(*((u32 *)buffer + 1) ? _sce_sdrIRQCallBackProc : 0);
-    	break;
+		case 0x8120:
+			ret = (int)sceSdSetIRQCallback(*((u32 *)buffer + 1) ? _sce_sdrIRQCallBackProc : 0);
+			break;
 #endif
 		case 0x8130:
 			ret = sceSdSetEffectAttr(fno & 0xF, (sceSdEffectAttr *)buffer);
