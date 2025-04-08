@@ -2,6 +2,7 @@
 #include <sdr_i.h>
 
 IRX_ID("sdr_driver", 4, 1);
+// Based on the module from SDK 3.1.0.
 
 extern struct irx_export_table _exp_sdrdrv;
 // Unofficial: wrap members for relative access
