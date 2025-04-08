@@ -22,8 +22,11 @@ typedef struct SdrEECBData_
 {
 	int mode;
 	int voice_bit;
+	// cppcheck-suppress unusedStructMember
 	int status;
+	// cppcheck-suppress unusedStructMember
 	int opt;
+	// cppcheck-suppress unusedStructMember
 	int pad[12];
 } SdrEECBData;
 
@@ -44,28 +47,26 @@ typedef struct SdrInfo_
 	sceSdEffectAttr m_e_attr;
 } SdrInfo;
 
-int module_start(int ac, char **av);
-int module_stop(int ac, char **av);
 int sceSdrChangeThreadPriority(int priority_main, int priority_cb);
-void sce_sdr_loop(void* arg);
-void *sdrFunc(int fno, void *buffer, int length);
+static void sce_sdr_loop(void* arg);
+static void *sdrFunc(int fno, void *buffer, int length);
 sceSdrUserCommandFunction sceSdrSetUserCommandFunction(int command, sceSdrUserCommandFunction func);
 #if SDRDRV_OBSOLETE_FUNCS
-int _sce_sdrDMA0CallBackProc(void *data);
-int _sce_sdrDMA1CallBackProc(void *data);
-int _sce_sdrIRQCallBackProc(void *data);
+static int _sce_sdrDMA0CallBackProc(void *data);
+static int _sce_sdrDMA1CallBackProc(void *data);
+static int _sce_sdrIRQCallBackProc(void *data);
 #endif
-int _sce_sdrDMA0IntrHandler(int core, void *common);
-int _sce_sdrDMA1IntrHandler(int core, void *common);
-int _sce_sdrSpu2IntrHandler(int core_bit, void *common);
-void sce_sdrcb_loop(void* arg);
+static int _sce_sdrDMA0IntrHandler(int core, void *common);
+static int _sce_sdrDMA1IntrHandler(int core, void *common);
+static int _sce_sdrSpu2IntrHandler(int core_bit, void *common);
+static void sce_sdrcb_loop(void* arg);
 
 extern struct irx_export_table _exp_sdrdrv;
 // Unofficial: wrap members for relative access
 SdrEECBInfo g_eeCBInfo;
 SdrInfo g_sdrInfo;
 
-int module_start(int ac, char **av)
+static int module_start(int ac, char **av)
 {
 	int code;
 	int i;
@@ -134,7 +135,7 @@ int module_start(int ac, char **av)
 	return 2;
 }
 
-int module_stop(int ac, char **av)
+static int module_stop(int ac, char **av)
 {
 	int code;
 	int state;
@@ -221,7 +222,7 @@ static int AutoDmaStatusCB(void *data)
 }
 #endif
 
-void sce_sdr_loop(void *arg)
+static void sce_sdr_loop(void *arg)
 {
 	// Unofficial: make local variable
 	int rpc_arg[16];
@@ -242,7 +243,7 @@ void sce_sdr_loop(void *arg)
 	sceSifRpcLoop(&rpc_qd);
 }
 
-void *sdrFunc(int fno, void *buffer, int length)
+static void *sdrFunc(int fno, void *buffer, int length)
 {
 	int ret;
 
@@ -636,11 +637,11 @@ static void sceSifCmdLoop2(SifRpcClientData_t *cd, SdrEECBInfo *cbi)
 			eeCBDataSend.mode = mode_tmp;
 		}
 		// Set the high bit to make libsdr 2.0.0 and lower not process it
-		eeCBDataSend.mode |= (1 << 31);
+		eeCBDataSend.mode |= ((u32)1 << 31);
 #endif
 		sceSifCallRpc(cd, 0, 0, &eeCBDataSend, sizeof(eeCBDataSend), 0, 0, 0, 0);
 #if SDRDRV_EECB_COMPAT
-		eeCBDataSend.mode &= ~(1 << 31);
+		eeCBDataSend.mode &= ~((u32)1 << 31);
 #endif
 		CpuSuspendIntr(&state);
 		if ( cbi->m_eeCBData.mode == eeCBDataSend.mode )
@@ -656,7 +657,7 @@ static void sceSifCmdLoop2(SifRpcClientData_t *cd, SdrEECBInfo *cbi)
 }
 
 #if SDRDRV_OBSOLETE_FUNCS
-int _sce_sdrDMA0CallBackProc(void *data)
+static int _sce_sdrDMA0CallBackProc(void *data)
 {
 	(void)data;
 
@@ -665,7 +666,7 @@ int _sce_sdrDMA0CallBackProc(void *data)
 	return 1;
 }
 
-int _sce_sdrDMA1CallBackProc(void *data)
+static int _sce_sdrDMA1CallBackProc(void *data)
 {
 	(void)data;
 
@@ -674,7 +675,7 @@ int _sce_sdrDMA1CallBackProc(void *data)
 	return 1;
 }
 
-int _sce_sdrIRQCallBackProc(void *data)
+static int _sce_sdrIRQCallBackProc(void *data)
 {
 	(void)data;
 
@@ -684,7 +685,7 @@ int _sce_sdrIRQCallBackProc(void *data)
 }
 #endif
 
-int _sce_sdrDMA0IntrHandler(int core, void *common)
+static int _sce_sdrDMA0IntrHandler(int core, void *common)
 {
 	SdrEECBInfo *cbi;
 
@@ -696,7 +697,7 @@ int _sce_sdrDMA0IntrHandler(int core, void *common)
 	return 0;
 }
 
-int _sce_sdrDMA1IntrHandler(int core, void *common)
+static int _sce_sdrDMA1IntrHandler(int core, void *common)
 {
 	SdrEECBInfo *cbi;
 
@@ -708,7 +709,7 @@ int _sce_sdrDMA1IntrHandler(int core, void *common)
 	return 0;
 }
 
-int _sce_sdrSpu2IntrHandler(int core_bit, void *common)
+static int _sce_sdrSpu2IntrHandler(int core_bit, void *common)
 {
 	SdrEECBInfo *cbi;
 
@@ -721,7 +722,7 @@ int _sce_sdrSpu2IntrHandler(int core_bit, void *common)
 	return 0;
 }
 
-void sce_sdrcb_loop(void *arg)
+static void sce_sdrcb_loop(void *arg)
 {
 	SdrEECBInfo *cbi;
 	// Unofficial: make local
