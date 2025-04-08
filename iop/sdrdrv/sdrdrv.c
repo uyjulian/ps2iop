@@ -4,6 +4,9 @@
 #ifndef SDRDRV_OBSOLETE_FUNCS
 #define SDRDRV_OBSOLETE_FUNCS 1
 #endif
+#ifndef SDRDRV_EECB_COMPAT
+#define SDRDRV_EECB_COMPAT 1
+#endif
 
 IRX_ID("sdr_driver", 4, 1);
 
@@ -397,7 +400,62 @@ void sceSifCmdLoop2(void)
 				// Unofficial: was inlined
 				memcpy(&eeCBDataSend, &eeCBData, sizeof(eeCBDataSend));
 				CpuResumeIntr(state);
+#if SDRDRV_EECB_COMPAT
+				if ( eeCBDataSend.mode )
+				{
+					int mode_tmp;
+					int mode_cur;
+
+					mode_tmp = eeCBDataSend.mode;
+					mode_cur = mode_tmp;
+					while ( 1 )
+					{
+						// Only the obsolete DMA0/DMA1/IRQ funcs (not implemented in libsdr 4.0.1) clashes
+						if (mode_cur & (1 << 0))
+						{
+							mode_cur &= ~(1 << 0);
+							eeCBDataSend.mode = 1;
+						}
+						else if (mode_cur & (1 << 1))
+						{
+							mode_cur &= ~(1 << 1);
+							eeCBDataSend.mode = 2;
+						}
+						else if (mode_cur & (1 << 2))
+						{
+							mode_cur &= ~(1 << 2);
+							eeCBDataSend.mode = 3;
+						}
+						else if (mode_cur & (1 << 8))
+						{
+							mode_cur &= ~(1 << 8);
+							eeCBDataSend.mode = 11;
+						}
+						else if (mode_cur & (1 << 9))
+						{
+							mode_cur &= ~(1 << 9);
+							eeCBDataSend.mode = 12;
+						}
+						else if (mode_cur & (1 << 10))
+						{
+							mode_cur &= ~(1 << 10);
+							eeCBDataSend.mode = 13;
+						}
+						else
+						{
+							break;
+						}
+						sceSifCallRpc(&cd, 0, 0, &eeCBDataSend, sizeof(eeCBDataSend), 0, 0, 0, 0);
+					}
+					eeCBDataSend.mode = mode_tmp;
+				}
+				// Set the high bit to make libsdr 2.0.0 and lower not process it
+				eeCBDataSend.mode |= (1 << 31);
+#endif
 				sceSifCallRpc(&cd, 0, 0, &eeCBDataSend, sizeof(eeCBDataSend), 0, 0, 0, 0);
+#if SDRDRV_EECB_COMPAT
+				eeCBDataSend.mode &= ~(1 << 31);
+#endif
 				CpuSuspendIntr(&state);
 				if ( eeCBData.mode == eeCBDataSend.mode )
 				{
