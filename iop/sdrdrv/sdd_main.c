@@ -60,7 +60,10 @@ static int module_start(int ac, char **av)
 				Kprintf("   callback th. priority is higher than main th. priority.\n");
 				g_eeCBInfo.m_initial_priority_cb = initial_priority_main;
 			}
-			Kprintf(" SDR driver: thread priority: main=%d, callback=%d\n", initial_priority_main, g_eeCBInfo.m_initial_priority_cb);
+			Kprintf(
+				" SDR driver: thread priority: main=%d, callback=%d\n",
+				initial_priority_main,
+				g_eeCBInfo.m_initial_priority_cb);
 		}
 	}
 	thprarm.attr = 0x2000000;
@@ -113,7 +116,7 @@ static int module_stop(int ac, char **av)
 
 int _start(int ac, char **av)
 {
-	return ( ac >= 0 ) ? module_start(ac, av) : module_stop(-ac, av);
+	return (ac >= 0) ? module_start(ac, av) : module_stop(-ac, av);
 }
 
 int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
@@ -129,7 +132,7 @@ int sceSdrChangeThreadPriority(int priority_main, int priority_cb)
 		Kprintf(" SDR driver ERROR:\n");
 		Kprintf("   callback th. priority is higher than main th. priority.\n");
 	}
-	cur_priority = ( priority_cb < priority_main ) ? priority_main : priority_cb;
+	cur_priority = (priority_cb < priority_main) ? priority_main : priority_cb;
 	ReferThreadStatus(0, &thstatus);
 	ChangeThreadPriority(0, 8);
 	ret = 0;

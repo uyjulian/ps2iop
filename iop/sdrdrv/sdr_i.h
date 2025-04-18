@@ -47,7 +47,7 @@ typedef struct SdrInfo_
 	sceSdEffectAttr m_e_attr;
 } SdrInfo;
 
-extern void sce_sdr_loop(void* arg);
+extern void sce_sdr_loop(void *arg);
 #if SDRDRV_OBSOLETE_FUNCS
 extern int _sce_sdrDMA0CallBackProc(void *data);
 extern int _sce_sdrDMA1CallBackProc(void *data);
@@ -56,7 +56,7 @@ extern int _sce_sdrIRQCallBackProc(void *data);
 extern int _sce_sdrDMA0IntrHandler(int core, void *common);
 extern int _sce_sdrDMA1IntrHandler(int core, void *common);
 extern int _sce_sdrSpu2IntrHandler(int core_bit, void *common);
-extern void sce_sdrcb_loop(void* arg);
+extern void sce_sdrcb_loop(void *arg);
 
 extern SdrEECBInfo g_eeCBInfo;
 extern SdrInfo g_sdrInfo;

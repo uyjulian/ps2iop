@@ -27,32 +27,32 @@ static void sceSifCmdLoop2(SifRpcClientData_t *cd, SdrEECBInfo *cbi)
 			while ( 1 )
 			{
 				// Only the obsolete DMA0/DMA1/IRQ funcs (not implemented in libsdr 4.0.1) clashes
-				if (mode_cur & (1 << 0))
+				if ( mode_cur & (1 << 0) )
 				{
 					mode_cur &= ~(1 << 0);
 					eeCBDataSend.mode = 1;
 				}
-				else if (mode_cur & (1 << 1))
+				else if ( mode_cur & (1 << 1) )
 				{
 					mode_cur &= ~(1 << 1);
 					eeCBDataSend.mode = 2;
 				}
-				else if (mode_cur & (1 << 2))
+				else if ( mode_cur & (1 << 2) )
 				{
 					mode_cur &= ~(1 << 2);
 					eeCBDataSend.mode = 3;
 				}
-				else if (mode_cur & (1 << 8))
+				else if ( mode_cur & (1 << 8) )
 				{
 					mode_cur &= ~(1 << 8);
 					eeCBDataSend.mode = 11;
 				}
-				else if (mode_cur & (1 << 9))
+				else if ( mode_cur & (1 << 9) )
 				{
 					mode_cur &= ~(1 << 9);
 					eeCBDataSend.mode = 12;
 				}
-				else if (mode_cur & (1 << 10))
+				else if ( mode_cur & (1 << 10) )
 				{
 					mode_cur &= ~(1 << 10);
 					eeCBDataSend.mode = 13;
@@ -163,10 +163,12 @@ void sce_sdrcb_loop(void *arg)
 	{
 		int i;
 
-		for ( i = 0; i < 10000; i += 1 );
+		for ( i = 0; i < 10000; i += 1 )
+			;
 		if ( cd.server )
 			sceSifCmdLoop2(&cd, cbi);
 	}
 	Kprintf("error \n");
-	while ( 1 );
+	while ( 1 )
+		;
 }
