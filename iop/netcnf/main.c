@@ -2947,6 +2947,7 @@ char *__fastcall do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align)
   char *retptrbegin; // $s0
   char *result; // $v0
 
+  // TODO check struct sizes and correct types for callers calling into this function
   mem_ptr = e->mem_ptr;
   if ( mem_ptr
     && (retptrbegin = (char *)(((unsigned int)mem_ptr + (1 << align) - 1) & ~((1 << align) - 1)),
