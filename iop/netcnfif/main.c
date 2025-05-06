@@ -2,6 +2,8 @@
 #include "irx_imports.h"
 #include <stdbool.h>
 
+IRX_ID("Netcnf_Interface", 2, 30);
+
 #define _BYTE u8
 #define _WORD u16
 #define _DWORD u32
