@@ -1,0 +1,13 @@
+
+DECLARE_EXPORT_TABLE(scrtpad, 1, 1)
+DECLARE_EXPORT(_start)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(_deinit)
+DECLARE_EXPORT(scrtpad_getinternaldata)
+DECLARE_EXPORT(AllocScratchPad)
+DECLARE_EXPORT(FreeScratchPad)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(_retonly)
+END_EXPORT_TABLE
+
+void _retonly() {}
