@@ -162,15 +162,7 @@ void do_delete_heap();
 //-------------------------------------------------------------------------
 // Data declarations
 
-const struct irx_export_table exports =
-{
-  1103101952u,
-  NULL,
-  288u,
-  0u,
-  { 110u, 101u, 116u, 99u, 110u, 102u, 0u, 0u },
-  { &netcnf_0 }
-}; // idb
+extern struct irx_export_table _exp_netcnf;
 int g_null_string = 0; // weak
 // FIXME jump table
 #if 0
@@ -380,7 +372,7 @@ int do_module_load(int ac, char **av)
     heap_inited = do_init_heap();
     if ( heap_inited >= 0 )
     {
-      regres = RegisterLibraryEntries((struct irx_export_table *)&exports);
+      regres = RegisterLibraryEntries(&_exp_netcnf);
       if ( !regres )
         return 2;
       printf("netcnf: RegisterLibraryEntries(%d)\n", regres);
@@ -411,7 +403,7 @@ int do_module_unload()
   int result; // $v0
 
   errstate = 0;
-  relres = ReleaseLibraryEntries((struct irx_export_table *)&exports);
+  relres = ReleaseLibraryEntries(&_exp_netcnf);
   errstr = "netcnf: ReleaseLibraryEntries (%d)\n";
   if ( relres )
     goto LABEL_4;
@@ -436,7 +428,7 @@ LABEL_6:
     result = 2;
     if ( errstate == 1 )
     {
-      RegisterLibraryEntries((struct irx_export_table *)&exports);
+      RegisterLibraryEntries(&_exp_netcnf);
       return 2;
     }
   }
