@@ -4,8 +4,6 @@
 
 IRX_ID("Sound_Data_HD", 2, 2);
 
-#define _break(...) __builtin_trap()
-
 struct sceHardSynthVersionChunk_
 {
   unsigned int Creator;
@@ -2289,9 +2287,9 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
 LABEL_25:
       calc8 = calc7 << 16;
       if ( !calc6 )
-        _break(7u, 0);
+        __builtin_trap();
       if ( calc6 == -1 && calc8 == 0x80000000 )
-        _break(6u, 0);
+        __builtin_trap();
       calc5 = calc8 / calc6;
       goto LABEL_67;
     case 8u:
@@ -2301,18 +2299,18 @@ LABEL_25:
       if ( center >= velocity )
       {
         if ( center == 1 )
-          _break(7u, 0);
+          __builtin_trap();
         if ( !center && calc9 == 0x80000000 )
-          _break(6u, 0);
+          __builtin_trap();
         calc5 = calc9 / (center - 1) * (calc9 / (center - 1)) / -16384;
       }
       else
       {
         calca = 127 - center;
         if ( 127 == center )
-          _break(7u, 0);
+          __builtin_trap();
         if ( calca == -1 && calc9 == 0x80000000 )
-          _break(6u, 0);
+          __builtin_trap();
         calc4 = calc9 / calca * (calc9 / calca);
 LABEL_39:
         calc5 = calc4 >> 14;
@@ -2332,18 +2330,18 @@ LABEL_48:
         if ( center >= velocity )
         {
           if ( center == 1 )
-            _break(7u, 0);
+            __builtin_trap();
           if ( !center && calcb == 0x80000000 )
-            _break(6u, 0);
+            __builtin_trap();
           calc5 = (calcb / (center - 1) + 0x8000) * (calcb / (center - 1) + 0x8000) / 0x4000 - 0x10000;
         }
         else
         {
           calcc = 127 - center;
           if ( 127 == center )
-            _break(7u, 0);
+            __builtin_trap();
           if ( calcc == -1 && calcb == 0x80000000 )
-            _break(6u, 0);
+            __builtin_trap();
           calcd = (0x8000 - calcb / calcc) * (0x8000 - calcb / calcc);
           calce = calcd >> 14;
           if ( calcd < 0 )
