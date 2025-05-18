@@ -2,6 +2,8 @@
 #include "irx_imports.h"
 #include <stdbool.h>
 
+IRX_ID("USB_module_loader", 2, 1);
+
 /* 411 */
 struct _USBDEV_t
 {
@@ -154,7 +156,7 @@ int _start(int ac, char **av)
   int cur_av_pos; // $s0
   char *cur_av_curstr1; // $a0
   char *cur_av_curstr2; // $v1
-  int rbmul; // $s0
+  int rbmul; // $
   const char *errstr; // $a0
   bool regres; // dc
   int thid1; // $s0
