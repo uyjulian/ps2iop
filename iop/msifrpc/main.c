@@ -268,15 +268,7 @@ int sceSifMTermRpc(int request, int flags);
 //-------------------------------------------------------------------------
 // Data declarations
 
-const struct irx_export_table exports =
-{
-  1103101952u,
-  NULL,
-  258u,
-  0u,
-  { 109u, 115u, 105u, 102u, 114u, 112u, 99u, 0u },
-  { &_start }
-}; // idb
+extern struct irx_export_table _exp_msifrpc;
 int g_first_inited = 0; // weak
 int g_pkt_table[512]; // weak
 int g_client_table[512]; // weak
@@ -287,7 +279,7 @@ struct msif_data g_msif_data; // weak
 u32 _start()
 {
   printf("Multi-thread available sifrpc module...\n");
-  return RegisterLibraryEntries((struct irx_export_table *)&exports) != 0;
+  return RegisterLibraryEntries(&_exp_msifrpc) != 0;
 }
 
 //----- (00400038) --------------------------------------------------------
