@@ -104,15 +104,7 @@ char *read_config_line(char *dstbuf, int maxlen, int fd);
 //-------------------------------------------------------------------------
 // Data declarations
 
-const struct irx_export_table exports =
-{
-  1103101952u,
-  NULL,
-  259u,
-  0u,
-  { 117u, 115u, 98u, 109u, 108u, 111u, 97u, 100u },
-  { &_start }
-}; // idb
+extern struct irx_export_table _exp_usbmload;
 sceUsbdLddOps g_usbmload_drv =
 {
   NULL,
@@ -242,7 +234,7 @@ LABEL_9:
   errstr = "Ring buffer Initialize Error!!\n";
   if ( !g_rb_entries )
     goto LABEL_36;
-  regres = RegisterLibraryEntries((struct irx_export_table *)&exports) != 0;
+  regres = RegisterLibraryEntries(&_exp_usbmload) != 0;
   result = 1;
   if ( regres )
     return result;
@@ -314,7 +306,7 @@ int module_unload()
   int stopres; // [sp+10h] [-8h] BYREF
   int state; // [sp+14h] [-4h] BYREF
 
-  relres = ReleaseLibraryEntries((struct irx_export_table *)&exports) != 0;
+  relres = ReleaseLibraryEntries(&_exp_usbmload) != 0;
   result = 2;
   if ( !relres )
   {
