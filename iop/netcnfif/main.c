@@ -113,15 +113,7 @@ void my_delete_heap(void);
 //-------------------------------------------------------------------------
 // Data declarations
 
-const struct irx_export_table exports =
-{
-  1103101952u,
-  NULL,
-  257u,
-  0u,
-  { 110u, 101u, 116u, 99u, 110u, 102u, 105u, 102u },
-  { &netcnfif_0 }
-}; // idb
+extern struct irx_export_table _exp_netcnfif;
 void *mem_area = NULL; // idb
 int mem_area_size = 0; // idb
 void *g_heap = NULL; // idb
@@ -230,7 +222,7 @@ LABEL_18:
     --cur_argc;
     ++cur_argv;
   }
-  retres1 = RegisterLibraryEntries((struct irx_export_table *)&exports);
+  retres1 = RegisterLibraryEntries(&_exp_netcnfif);
   if ( retres1 )
   {
     printf("netcnfif: RegisterLibraryEntries(%d)\n", retres1);
@@ -265,7 +257,7 @@ LABEL_18:
   {
     printf("netcnfif: c_heap(%d)\n", retres2);
   }
-  ReleaseLibraryEntries((struct irx_export_table *)&exports);
+  ReleaseLibraryEntries(&_exp_netcnfif);
   return 1;
 }
 
@@ -276,7 +268,7 @@ int module_stop(int argc, char *argv[])
   TerminateThread(g_tid);
   DeleteThread(g_tid);
   my_delete_heap();
-  ReleaseLibraryEntries((struct irx_export_table *)&exports);
+  ReleaseLibraryEntries(&_exp_netcnfif);
   return 1;
 }
 
