@@ -3,15 +3,7 @@
 
 IRX_ID("ScratchPad_service", 1, 1);
 
-const struct irx_export_table exports =
-{
-  1103101952u,
-  NULL,
-  257u,
-  0u,
-  { 115u, 99u, 114u, 116u, 112u, 97u, 100u, 0u },
-  { 0 }
-};
+extern struct irx_export_table _exp_scrtpad;
 int g_scrtpad_is_allocated;
 int g_scrtpad_alloc_count;
 
@@ -24,7 +16,7 @@ int _start(int ac, char **av)
   (void)av;
 
   CpuSuspendIntr(&state);
-  libreg_res = RegisterLibraryEntries((struct irx_export_table *)&exports);
+  libreg_res = RegisterLibraryEntries(&_exp_scrtpad);
   CpuResumeIntr(state);
   if ( libreg_res )
   {
