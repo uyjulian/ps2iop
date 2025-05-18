@@ -4,22 +4,6 @@
 
 IRX_ID("Netcnf_Interface", 2, 30);
 
-#define _BYTE u8
-#define _WORD u16
-#define _DWORD u32
-#define BOOL _DWORD
-
-#define u_char u8
-
-#define __int8 char
-#define __int16 short
-#define __int32 int
-
-#define __fastcall
-#define __cdecl
-
-#define _break(...) __builtin_trap()
-
 // TODO EE 64 byte alignment
 typedef struct __attribute__((aligned(16))) sceNetcnfifData
 {
@@ -50,18 +34,18 @@ typedef struct __attribute__((aligned(16))) sceNetcnfifData
   int dialing_type;
   int dev_idle_timeout;
   int p0;
-  unsigned __int8 dhcp;
-  unsigned __int8 dns1_nego;
-  unsigned __int8 dns2_nego;
-  unsigned __int8 f_auth;
-  unsigned __int8 auth;
-  unsigned __int8 pppoe;
-  unsigned __int8 prc_nego;
-  unsigned __int8 acc_nego;
-  unsigned __int8 accm_nego;
-  unsigned __int8 p1;
-  unsigned __int8 p2;
-  unsigned __int8 p3;
+  u8 dhcp;
+  u8 dns1_nego;
+  u8 dns2_nego;
+  u8 f_auth;
+  u8 auth;
+  u8 pppoe;
+  u8 prc_nego;
+  u8 acc_nego;
+  u8 accm_nego;
+  u8 p1;
+  u8 p2;
+  u8 p3;
   int p4[5];
 } sceNetcnfifData_t;
 
@@ -92,38 +76,38 @@ typedef struct sceNetcnfifArg
 // Function declarations
 
 void usage(void);
-int __cdecl module_start(int argc, char *argv[]);
-int __cdecl module_stop(int argc, char *argv[]);
-int __cdecl _start(int argc, char *argv[]);
+int module_start(int argc, char *argv[]);
+int module_stop(int argc, char *argv[]);
+int _start(int argc, char *argv[]);
 void netcnfif_0();
-void *__cdecl sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size);
+void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size);
 void sceNetcnfifInterfaceStart(void);
 void sceNetcnfifInterfaceStop(void);
-void __cdecl sceNetcnfifDataInit(sceNetcnfifData_t *data);
-void __cdecl sceNetcnfifEnvInit(sceNetCnfEnv_t *env, void *mem_area, int size, int f_no_decode);
-int __cdecl get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count);
-int __cdecl get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type);
-int __cdecl get_net(sceNetcnfifData_t *data, sceNetCnfRoot_t *p);
-int __cdecl sceNetcnfifReadEnv(sceNetcnfifData_t *data, sceNetCnfEnv_t *e, int type);
-u_char *__cdecl dup_string(sceNetCnfEnv_t *e, u_char *str);
-void __cdecl init_usrntcnf(sceNetCnfInterface_t *ifc);
-int __cdecl check_address(char *str);
-int __cdecl put_gw(sceNetCnfEnv_t *e, char *gw);
-int __cdecl put_ns(sceNetCnfEnv_t *e, char *ns, int ns_count);
-int __cdecl put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data);
-int __cdecl root_link(sceNetCnfEnv_t *e, int type);
-int __cdecl put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type);
-int __cdecl put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data);
-int __cdecl sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type);
-int __cdecl sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int size);
-int __cdecl sceNetcnfifDmaCheck(int id);
+void sceNetcnfifDataInit(sceNetcnfifData_t *data);
+void sceNetcnfifEnvInit(sceNetCnfEnv_t *env, void *mem_area, int size, int f_no_decode);
+int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count);
+int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type);
+int get_net(sceNetcnfifData_t *data, sceNetCnfRoot_t *p);
+int sceNetcnfifReadEnv(sceNetcnfifData_t *data, sceNetCnfEnv_t *e, int type);
+u8 *dup_string(sceNetCnfEnv_t *e, u8 *str);
+void init_usrntcnf(sceNetCnfInterface_t *ifc);
+int check_address(char *str);
+int put_gw(sceNetCnfEnv_t *e, char *gw);
+int put_ns(sceNetCnfEnv_t *e, char *ns, int ns_count);
+int put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data);
+int root_link(sceNetCnfEnv_t *e, int type);
+int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type);
+int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data);
+int sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type);
+int sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int size);
+int sceNetcnfifDmaCheck(int id);
 void sce_callback_initialize(void);
-int __cdecl sce_callback_open(const char *device, const char *pathname, int flags, int mode, int *filesize);
-int __cdecl sce_callback_read(int fd, const char *device, const char *pathname, void *buf, int offset, int size);
-int __cdecl sce_callback_close(int fd);
+int sce_callback_open(const char *device, const char *pathname, int flags, int mode, int *filesize);
+int sce_callback_read(int fd, const char *device, const char *pathname, void *buf, int offset, int size);
+int sce_callback_close(int fd);
 int my_create_heap(void);
-void *__cdecl my_alloc(int size);
-void __cdecl my_free(void *ptr);
+void *my_alloc(int size);
+void my_free(void *ptr);
 void my_delete_heap(void);
 
 //-------------------------------------------------------------------------
@@ -169,7 +153,7 @@ void usage(void)
 }
 
 //----- (00400064) --------------------------------------------------------
-int __cdecl module_start(int argc, char *argv[])
+int module_start(int argc, char *argv[])
 {
   int thpri; // $s5
   int thstack; // $s4
@@ -256,7 +240,7 @@ LABEL_18:
   if ( retres2 >= 0 )
   {
     th_param.attr = 0x2000000;
-    th_param.thread = (void (__cdecl *)(void *))sceNetcnfifInterfaceStart;
+    th_param.thread = (void (*)(void *))sceNetcnfifInterfaceStart;
     th_param.priority = thpri;
     th_param.stacksize = thstack;
     th_param.option = 0;
@@ -286,7 +270,7 @@ LABEL_18:
 }
 
 //----- (00400334) --------------------------------------------------------
-int __cdecl module_stop(int argc, char *argv[])
+int module_stop(int argc, char *argv[])
 {
   sceNetcnfifInterfaceStop();
   TerminateThread(g_tid);
@@ -297,7 +281,7 @@ int __cdecl module_stop(int argc, char *argv[])
 }
 
 //----- (0040038C) --------------------------------------------------------
-int __cdecl _start(int argc, char *argv[])
+int _start(int argc, char *argv[])
 {
   if ( argc >= 0 )
     return module_start(argc, argv);
@@ -312,7 +296,7 @@ void netcnfif_0()
 }
 
 //----- (004003F0) --------------------------------------------------------
-void *__cdecl sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
+void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
 {
   int retres1; // $s1
   int retres2; // $v0
@@ -373,8 +357,8 @@ void *__cdecl sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int siz
               do
               {
                 cpywtmp1 = p2_list_iop->stat;
-                cpywtmp2 = *(_DWORD *)p2_list_iop->sys_name;
-                cpywtmp3 = *(_DWORD *)&p2_list_iop->sys_name[4];
+                cpywtmp2 = *(u32 *)p2_list_iop->sys_name;
+                cpywtmp3 = *(u32 *)&p2_list_iop->sys_name[4];
                 *p2_list_ee = p2_list_iop->type;
                 p2_list_ee[1] = cpywtmp1;
                 p2_list_ee[2] = cpywtmp2;
@@ -569,7 +553,7 @@ void sceNetcnfifInterfaceStop(void)
 // 405578: using guessed type SifRpcDataQueue_t qd;
 
 //----- (00400AF0) --------------------------------------------------------
-void __cdecl sceNetcnfifDataInit(sceNetcnfifData_t *data)
+void sceNetcnfifDataInit(sceNetcnfifData_t *data)
 {
   memset(data, 0, sizeof(sceNetcnfifData_t));
   data->ifc_type = -1;
@@ -581,7 +565,7 @@ void __cdecl sceNetcnfifDataInit(sceNetcnfifData_t *data)
   data->dev_idle_timeout = -1;
   data->dhcp = -1;
   data->dns1_nego = -1;
-  *(_WORD *)&data->dns2_nego = 255;
+  *(u16 *)&data->dns2_nego = 255;
   data->auth = 4;
   data->pppoe = -1;
   data->prc_nego = -1;
@@ -590,7 +574,7 @@ void __cdecl sceNetcnfifDataInit(sceNetcnfifData_t *data)
 }
 
 //----- (00400B70) --------------------------------------------------------
-void __cdecl sceNetcnfifEnvInit(sceNetCnfEnv_t *env, void *mem_area, int size, int f_no_decode)
+void sceNetcnfifEnvInit(sceNetCnfEnv_t *env, void *mem_area, int size, int f_no_decode)
 {
   memset(env, 0, sizeof(sceNetCnfEnv_t));
   env->mem_ptr = mem_area;
@@ -600,7 +584,7 @@ void __cdecl sceNetcnfifEnvInit(sceNetCnfEnv_t *env, void *mem_area, int size, i
 }
 
 //----- (00400BE0) --------------------------------------------------------
-int __cdecl get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count)
+int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count)
 {
   int code; // $v1
   int retres; // $a1
@@ -634,27 +618,27 @@ int __cdecl get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_coun
 }
 
 //----- (00400C80) --------------------------------------------------------
-int __cdecl get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
+int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
 {
   int cmd; // $s4
   int result; // $v0
-  u_char *dhcp_host_name; // $a1
-  u_char *address; // $a1
-  u_char *netmask; // $a1
+  u8 *dhcp_host_name; // $a1
+  u8 *address; // $a1
+  u8 *netmask; // $a1
   struct sceNetCnfCommand *cmd_head; // $s0
   sceNetcnfifData_t *i; // $a0
   int numind; // $s0
   sceNetCnfInterface_t *p_1; // $s2
   const char *str; // $a1
   char *phone_numbers2; // $a0
-  u_char *auth_name; // $a1
-  u_char *auth_key; // $a1
-  u_char *peer_name; // $a1
-  u_char *vendor; // $a1
-  u_char *product; // $a1
+  u8 *auth_name; // $a1
+  u8 *auth_key; // $a1
+  u8 *peer_name; // $a1
+  u8 *vendor; // $a1
+  u8 *product; // $a1
   char *chat_additional; // $a0
-  u_char *outside_number; // $a1
-  u_char *outside_delay; // $a1
+  u8 *outside_number; // $a1
+  u8 *outside_delay; // $a1
 
   cmd = 0;
   if ( type != 1 )
@@ -766,7 +750,7 @@ LABEL_24:
 }
 
 //----- (00400F7C) --------------------------------------------------------
-int __cdecl get_net(sceNetcnfifData_t *data, sceNetCnfRoot_t *p)
+int get_net(sceNetcnfifData_t *data, sceNetCnfRoot_t *p)
 {
   struct sceNetCnfPair *pair; // $s0
   int i; // $s1
@@ -790,7 +774,7 @@ int __cdecl get_net(sceNetcnfifData_t *data, sceNetCnfRoot_t *p)
 }
 
 //----- (00401028) --------------------------------------------------------
-int __cdecl sceNetcnfifReadEnv(sceNetcnfifData_t *data, sceNetCnfEnv_t *e, int type)
+int sceNetcnfifReadEnv(sceNetcnfifData_t *data, sceNetCnfEnv_t *e, int type)
 {
   int retzero; // $s0
 
@@ -804,7 +788,7 @@ int __cdecl sceNetcnfifReadEnv(sceNetcnfifData_t *data, sceNetCnfEnv_t *e, int t
 }
 
 //----- (004010A0) --------------------------------------------------------
-u_char *__cdecl dup_string(sceNetCnfEnv_t *e, u_char *str)
+u8 *dup_string(sceNetCnfEnv_t *e, u8 *str)
 {
   size_t strlenval; // $v0
   char *retval; // $s0
@@ -814,14 +798,14 @@ u_char *__cdecl dup_string(sceNetCnfEnv_t *e, u_char *str)
   if ( !retval )
     return 0;
   strcpy(retval, (const char *)str);
-  return (u_char *)retval;
+  return (u8 *)retval;
 }
 
 //----- (00401104) --------------------------------------------------------
-void __cdecl init_usrntcnf(sceNetCnfInterface_t *ifc)
+void init_usrntcnf(sceNetCnfInterface_t *ifc)
 {
   int ind; // $a1
-  u_char **p_product; // $v1
+  u8 **p_product; // $v1
 
   ind = 2;
   p_product = &ifc->product;
@@ -862,7 +846,7 @@ void __cdecl init_usrntcnf(sceNetCnfInterface_t *ifc)
 }
 
 //----- (004011A0) --------------------------------------------------------
-int __cdecl check_address(char *str)
+int check_address(char *str)
 {
   int retres; // $a1
   int str_hichr; // $v0
@@ -871,13 +855,13 @@ int __cdecl check_address(char *str)
   retres = 0;
   if ( *str )
   {
-    str_hichr = (unsigned __int8)*str << 24;
+    str_hichr = (u8)*str << 24;
     do
     {
       str_lochr = str_hichr >> 24;
       if ( str_lochr != '.' && str_lochr != '0' )
         retres = 1;
-      str_hichr = (unsigned __int8)*++str << 24;
+      str_hichr = (u8)*++str << 24;
     }
     while ( *str );
   }
@@ -885,7 +869,7 @@ int __cdecl check_address(char *str)
 }
 
 //----- (004011F0) --------------------------------------------------------
-int __cdecl put_gw(sceNetCnfEnv_t *e, char *gw)
+int put_gw(sceNetCnfEnv_t *e, char *gw)
 {
   int result; // $v0
   int retres; // $v1
@@ -940,7 +924,7 @@ int __cdecl put_gw(sceNetCnfEnv_t *e, char *gw)
 // 4055A0: using guessed type route_t gateway;
 
 //----- (0040131C) --------------------------------------------------------
-int __cdecl put_ns(sceNetCnfEnv_t *e, char *ns, int ns_count)
+int put_ns(sceNetCnfEnv_t *e, char *ns, int ns_count)
 {
   nameserver_t *ns1; // $s0
   nameserver_t *ns2; // $a0
@@ -981,7 +965,7 @@ LABEL_7:
 // 405620: using guessed type nameserver_t dns2;
 
 //----- (004013E4) --------------------------------------------------------
-int __cdecl put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
+int put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 {
   int retres; // $s0
   int addrres; // $v0
@@ -1018,7 +1002,7 @@ int __cdecl put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 }
 
 //----- (004014D0) --------------------------------------------------------
-int __cdecl root_link(sceNetCnfEnv_t *e, int type)
+int root_link(sceNetCnfEnv_t *e, int type)
 {
   struct sceNetCnfInterface *ifc; // $a0
   int result; // $v0
@@ -1077,7 +1061,7 @@ LABEL_10:
 }
 
 //----- (00401628) --------------------------------------------------------
-int __cdecl put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
+int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
 {
   int retres; // $s3
   sceNetCnfInterface_t *ifctmp; // $v0
@@ -1136,12 +1120,12 @@ LABEL_70:
     if ( data->vendor[0] )
     {
       init_flag = 0;
-      e->ifc->vendor = dup_string(e, (u_char *)data->vendor);
+      e->ifc->vendor = dup_string(e, (u8 *)data->vendor);
     }
     if ( data->product[0] )
     {
       init_flag = 0;
-      e->ifc->product = dup_string(e, (u_char *)data->product);
+      e->ifc->product = dup_string(e, (u8 *)data->product);
     }
     phy_config = data->phy_config;
     if ( phy_config != -1 )
@@ -1156,17 +1140,17 @@ LABEL_70:
       if ( result < 0 )
         return result;
       init_flag = 0;
-      e->ifc->chat_additional = dup_string(e, (u_char *)chat_additional);
+      e->ifc->chat_additional = dup_string(e, (u8 *)chat_additional);
     }
     if ( data->outside_number[0] )
     {
       init_flag = 0;
-      e->ifc->outside_number = dup_string(e, (u_char *)data->outside_number);
+      e->ifc->outside_number = dup_string(e, (u8 *)data->outside_number);
     }
     if ( data->outside_delay[0] )
     {
       init_flag = 0;
-      e->ifc->outside_delay = dup_string(e, (u_char *)data->outside_delay);
+      e->ifc->outside_delay = dup_string(e, (u8 *)data->outside_delay);
     }
     dialing_type = data->dialing_type;
     if ( dialing_type != -1 )
@@ -1198,17 +1182,17 @@ LABEL_68:
   if ( data->dhcp_host_name[0] )
   {
     init_flag = 0;
-    e->ifc->dhcp_host_name = dup_string(e, (u_char *)data->dhcp_host_name);
+    e->ifc->dhcp_host_name = dup_string(e, (u8 *)data->dhcp_host_name);
   }
   if ( data->address[0] )
   {
     init_flag = 0;
-    e->ifc->address = dup_string(e, (u_char *)data->address);
+    e->ifc->address = dup_string(e, (u8 *)data->address);
   }
   if ( data->netmask[0] )
   {
     init_flag = 0;
-    e->ifc->netmask = dup_string(e, (u_char *)data->netmask);
+    e->ifc->netmask = dup_string(e, (u8 *)data->netmask);
   }
   result = put_cmd(e, data);
   retres = result;
@@ -1219,32 +1203,32 @@ LABEL_68:
     if ( data->phone_numbers1[0] )
     {
       init_flag = 0;
-      e->ifc->phone_numbers[0] = dup_string(e, (u_char *)data->phone_numbers1);
+      e->ifc->phone_numbers[0] = dup_string(e, (u8 *)data->phone_numbers1);
     }
     if ( data->phone_numbers2[0] )
     {
       init_flag = 0;
-      e->ifc->phone_numbers[1] = dup_string(e, (u_char *)data->phone_numbers2);
+      e->ifc->phone_numbers[1] = dup_string(e, (u8 *)data->phone_numbers2);
     }
     if ( data->phone_numbers3[0] )
     {
       init_flag = 0;
-      e->ifc->phone_numbers[2] = dup_string(e, (u_char *)data->phone_numbers3);
+      e->ifc->phone_numbers[2] = dup_string(e, (u8 *)data->phone_numbers3);
     }
     if ( data->auth_name[0] )
     {
       init_flag = 0;
-      e->ifc->auth_name = dup_string(e, (u_char *)data->auth_name);
+      e->ifc->auth_name = dup_string(e, (u8 *)data->auth_name);
     }
     if ( data->auth_key[0] )
     {
       init_flag = 0;
-      e->ifc->auth_key = dup_string(e, (u_char *)data->auth_key);
+      e->ifc->auth_key = dup_string(e, (u8 *)data->auth_key);
     }
     if ( data->peer_name[0] )
     {
       init_flag = 0;
-      e->ifc->peer_name = dup_string(e, (u_char *)data->peer_name);
+      e->ifc->peer_name = dup_string(e, (u8 *)data->peer_name);
     }
     dns1_nego = data->dns1_nego;
     if ( dns1_nego != 255 )
@@ -1301,13 +1285,13 @@ LABEL_68:
 }
 
 //----- (00401AC4) --------------------------------------------------------
-int __cdecl put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
+int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 {
   int result; // $v0
   struct sceNetCnfRoot *rootmem; // $v0
   struct sceNetCnfPair *p; // $s1
   struct sceNetCnfPair *pair_tail; // $v0
-  u_char *attach_dev_tmp; // $v0
+  u8 *attach_dev_tmp; // $v0
   int indx1; // $a2
   int indx2; // $s0
   int attachres1; // $v0
@@ -1344,9 +1328,9 @@ int __cdecl put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
   strcpy(display_name, data->attach_ifc);
   strcat(display_name, " + ");
   strcat(display_name, data->attach_dev);
-  p->display_name = dup_string(e, (u_char *)display_name);
-  p->attach_ifc = dup_string(e, (u_char *)data);
-  attach_dev_tmp = dup_string(e, (u_char *)data->attach_dev);
+  p->display_name = dup_string(e, (u8 *)display_name);
+  p->attach_ifc = dup_string(e, (u8 *)data);
+  attach_dev_tmp = dup_string(e, (u8 *)data->attach_dev);
   indx1 = 0;
   p->attach_dev = attach_dev_tmp;
   do
@@ -1370,7 +1354,7 @@ int __cdecl put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 }
 
 //----- (00401CB4) --------------------------------------------------------
-int __cdecl sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
+int sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
 {
   int retres1; // $s0
   void *ptraligned; // $v0
@@ -1404,7 +1388,7 @@ int __cdecl sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int 
 }
 
 //----- (00401D70) --------------------------------------------------------
-int __cdecl sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int size)
+int sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int size)
 {
   int dmatid; // $s0
   int result; // $v0
@@ -1428,7 +1412,7 @@ int __cdecl sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int
 }
 
 //----- (00401DE4) --------------------------------------------------------
-int __cdecl sceNetcnfifDmaCheck(int id)
+int sceNetcnfifDmaCheck(int id)
 {
   return sceSifDmaStat(id) >= 0;
 }
@@ -1456,7 +1440,7 @@ void sce_callback_initialize(void)
 }
 
 //----- (00401E94) --------------------------------------------------------
-int __cdecl sce_callback_open(const char *device, const char *pathname, int flags, int mode, int *filesize)
+int sce_callback_open(const char *device, const char *pathname, int flags, int mode, int *filesize)
 {
   size_t pathname_len_0; // $v0
   size_t devicelen; // $s1
@@ -1489,7 +1473,7 @@ int __cdecl sce_callback_open(const char *device, const char *pathname, int flag
 // 405678: using guessed type int gbuf[1024];
 
 //----- (00401F88) --------------------------------------------------------
-int __cdecl sce_callback_read(int fd, const char *device, const char *pathname, void *buf, int offset, int size)
+int sce_callback_read(int fd, const char *device, const char *pathname, void *buf, int offset, int size)
 {
   size_t pathname_len_0; // $v0
   size_t devicelen; // $s1
@@ -1526,7 +1510,7 @@ int __cdecl sce_callback_read(int fd, const char *device, const char *pathname, 
 // 405678: using guessed type int gbuf[1024];
 
 //----- (004020B4) --------------------------------------------------------
-int __cdecl sce_callback_close(int fd)
+int sce_callback_close(int fd)
 {
   bool condtmp; // dc
   int result; // $v0
@@ -1555,13 +1539,13 @@ int my_create_heap(void)
 }
 
 //----- (00402170) --------------------------------------------------------
-void *__cdecl my_alloc(int size)
+void *my_alloc(int size)
 {
   return AllocHeapMemory(g_heap, size);
 }
 
 //----- (0040219C) --------------------------------------------------------
-void __cdecl my_free(void *ptr)
+void my_free(void *ptr)
 {
   if ( ptr )
     FreeHeapMemory(g_heap, ptr);
