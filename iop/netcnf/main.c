@@ -3,10 +3,7 @@
 #include <stdbool.h>
 #include <netcnf.h>
 
-#define _break(...) __builtin_trap()
-
-// WARNING unwrapping for lvalue assignment only
-#define LOBYTE(x) x
+IRX_ID("NET_configuration", 2, 30);
 
 struct netcnf_callback_handle_info
 {
@@ -25,8 +22,6 @@ struct netcnf_option
   int m_offset;
   const char *m_key;
 };
-
-IRX_ID("NET_configuration", 2, 30);
 
 //-------------------------------------------------------------------------
 // Function declarations
@@ -2997,7 +2992,7 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
           printf("invalid escape (%s)", e_arg);
           goto LABEL_48;
         }
-        LOBYTE(argchr_1) = 0;
+        argchr_1 = 0;
         if ( argnumchk >= 8 )
         {
           argchr_3 = *(u8 *)argbegin;
@@ -3035,25 +3030,25 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
             switch ( argchr_1 )
             {
               case 'a':
-                LOBYTE(argchr_1) = 7;
+                argchr_1 = 7;
                 break;
               case 'b':
-                LOBYTE(argchr_1) = 8;
+                argchr_1 = 8;
                 break;
               case 'f':
-                LOBYTE(argchr_1) = 12;
+                argchr_1 = 12;
                 break;
               case 'n':
-                LOBYTE(argchr_1) = 10;
+                argchr_1 = 10;
                 break;
               case 'r':
-                LOBYTE(argchr_1) = 13;
+                argchr_1 = 13;
                 break;
               case 't':
-                LOBYTE(argchr_1) = 9;
+                argchr_1 = 9;
                 break;
               case 'v':
-                LOBYTE(argchr_1) = 11;
+                argchr_1 = 11;
                 break;
               default:
                 break;
@@ -3069,7 +3064,7 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
             if ( *(u8 *)argbegin - (unsigned int)'0' >= 8 )
               break;
             argchr_6 = *argbegin++;
-            LOBYTE(argchr_1) = 8 * argchr_1 + argchr_6 - '0';
+            argchr_1 = 8 * argchr_1 + argchr_6 - '0';
           }
           while ( argind_1 < 3 );
         }
@@ -3080,7 +3075,7 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
         if ( (u8)(argchr_7 - 64) < 0xBDu && argchr_7 != 127 )
         {
           *dbuf++ = argchr_1;
-          LOBYTE(argchr_1) = *argbegin++;
+          argchr_1 = *argbegin++;
         }
       }
       *dbuf = argchr_1;
