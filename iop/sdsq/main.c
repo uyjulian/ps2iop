@@ -154,15 +154,7 @@ int _start(int ac);
 //-------------------------------------------------------------------------
 // Data declarations
 
-const struct irx_export_table exports =
-{
-  1103101952u,
-  NULL,
-  257u,
-  0u,
-  { 115u, 100u, 115u, 113u, 0u, 0u, 0u, 0u },
-  { &_start }
-}; // idb
+extern struct irx_export_table _exp_sdsq;
 
 
 //----- (00400058) --------------------------------------------------------
@@ -818,7 +810,7 @@ int _start(int ac)
   if ( ac >= 0 )
   {
     CpuSuspendIntr(state);
-    regres = RegisterLibraryEntries((struct irx_export_table *)&exports);
+    regres = RegisterLibraryEntries(&_exp_sdsq);
     CpuResumeIntr(state[0]);
     result = 1;
     if ( !regres )
@@ -827,7 +819,7 @@ int _start(int ac)
   else
   {
     CpuSuspendIntr(state);
-    unregres = ReleaseLibraryEntries((struct irx_export_table *)&exports);
+    unregres = ReleaseLibraryEntries(&_exp_sdsq);
     CpuResumeIntr(state[0]);
     result = 2;
     if ( !unregres )
