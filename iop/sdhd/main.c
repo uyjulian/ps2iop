@@ -4,19 +4,6 @@
 
 IRX_ID("Sound_Data_HD", 2, 2);
 
-#define _BYTE u8
-#define _WORD u16
-#define _DWORD u32
-#define BOOL _DWORD
-
-#define __int8 char
-#define __int16 short
-#define __int32 int
-#define __int64 long long
-
-#define __fastcall
-#define __cdecl
-
 #define _break(...) __builtin_trap()
 
 struct sceHardSynthVersionChunk_
@@ -24,9 +11,9 @@ struct sceHardSynthVersionChunk_
   unsigned int Creator;
   unsigned int Type;
   unsigned int chunkSize;
-  unsigned __int16 reserved;
-  unsigned __int8 versionMajor;
-  unsigned __int8 versionMinor;
+  u16 reserved;
+  u8 versionMajor;
+  u8 versionMinor;
 };
 
 typedef struct sceHardSynthVersionChunk_ sceHardSynthVersionChunk;
@@ -140,20 +127,20 @@ typedef struct SceSdHdProgramParam_
 
 typedef struct sceHardSynthSplitBlock_
 {
-  unsigned __int16 sampleSetIndex;
-  unsigned __int8 splitRangeLow;
-  unsigned __int8 splitCrossFade;
-  unsigned __int8 splitRangeHigh;
-  unsigned __int8 splitNumber;
-  unsigned __int16 splitBendRangeLow;
-  unsigned __int16 splitBendRangeHigh;
+  u16 sampleSetIndex;
+  u8 splitRangeLow;
+  u8 splitCrossFade;
+  u8 splitRangeHigh;
+  u8 splitNumber;
+  u16 splitBendRangeLow;
+  u16 splitBendRangeHigh;
   char keyFollowPitch;
-  unsigned __int8 keyFollowPitchCenter;
+  u8 keyFollowPitchCenter;
   char keyFollowAmp;
-  unsigned __int8 keyFollowAmpCenter;
+  u8 keyFollowAmpCenter;
   char keyFollowPan;
-  unsigned __int8 keyFollowPanCenter;
-  unsigned __int8 splitVolume;
+  u8 keyFollowPanCenter;
+  u8 splitVolume;
   char splitPanpot;
   char splitTranspose;
   char splitDetune;
@@ -162,28 +149,28 @@ typedef struct sceHardSynthSplitBlock_
 typedef struct sceHardSynthProgramParam_
 {
   unsigned int splitBlockAddr;
-  unsigned __int8 nSplit;
-  unsigned __int8 sizeSplitBlock;
-  unsigned __int8 progVolume;
+  u8 nSplit;
+  u8 sizeSplitBlock;
+  u8 progVolume;
   char progPanpot;
   char progTranspose;
   char progDetune;
   char keyFollowPan;
-  unsigned __int8 keyFollowPanCenter;
-  unsigned __int8 progAttr;
-  unsigned __int8 dmy;
-  unsigned __int8 progLfoWave;
-  unsigned __int8 progLfoWave2;
-  unsigned __int8 progLfoStartPhase;
-  unsigned __int8 progLfoStartPhase2;
-  unsigned __int8 progLfoPhaseRandom;
-  unsigned __int8 progLfoPhaseRandom2;
-  unsigned __int16 progLfoFreq;
-  unsigned __int16 progLfoFreq2;
-  __int16 progLfoPitchDepth;
-  __int16 progLfoPitchDepth2;
-  __int16 progLfoMidiPitchDepth;
-  __int16 progLfoMidiPitchDepth2;
+  u8 keyFollowPanCenter;
+  u8 progAttr;
+  u8 dmy;
+  u8 progLfoWave;
+  u8 progLfoWave2;
+  u8 progLfoStartPhase;
+  u8 progLfoStartPhase2;
+  u8 progLfoPhaseRandom;
+  u8 progLfoPhaseRandom2;
+  u16 progLfoFreq;
+  u16 progLfoFreq2;
+  s16 progLfoPitchDepth;
+  s16 progLfoPitchDepth2;
+  s16 progLfoMidiPitchDepth;
+  s16 progLfoMidiPitchDepth2;
   char progLfoAmpDepth;
   char progLfoAmpDepth2;
   char progLfoMidiAmpDepth;
@@ -237,11 +224,11 @@ typedef struct SceSdHdSampleSetParam_
 
 typedef struct sceHardSynthSampleSetParam_
 {
-  unsigned __int8 velCurve;
-  unsigned __int8 velLimitLow;
-  unsigned __int8 velLimitHigh;
-  unsigned __int8 nSample;
-  unsigned __int16 sampleIndex[];
+  u8 velCurve;
+  u8 velLimitLow;
+  u8 velLimitHigh;
+  u8 nSample;
+  u16 sampleIndex[];
 } sceHardSynthSampleSetParam;
 
 typedef struct SceSdHdSampleVelFollow_
@@ -307,41 +294,41 @@ typedef struct SceSdHdSampleParam_
 
 typedef struct sceHardSynthSampleParam_
 {
-  unsigned __int16 VagIndex;
-  unsigned __int8 velRangeLow;
-  unsigned __int8 velCrossFade;
-  unsigned __int8 velRangeHigh;
+  u16 VagIndex;
+  u8 velRangeLow;
+  u8 velCrossFade;
+  u8 velRangeHigh;
   char velFollowPitch;
-  unsigned __int8 velFollowPitchCenter;
-  unsigned __int8 velFollowPitchVelCurve;
+  u8 velFollowPitchCenter;
+  u8 velFollowPitchVelCurve;
   char velFollowAmp;
-  unsigned __int8 velFollowAmpCenter;
-  unsigned __int8 velFollowAmpVelCurve;
-  unsigned __int8 sampleBaseNote;
+  u8 velFollowAmpCenter;
+  u8 velFollowAmpVelCurve;
+  u8 sampleBaseNote;
   char sampleDetune;
   char samplePanpot;
-  unsigned __int8 sampleGroup;
-  unsigned __int8 samplePriority;
-  unsigned __int8 sampleVolume;
-  unsigned __int8 dmy;
-  unsigned __int16 sampleAdsr1;
-  unsigned __int16 sampleAdsr2;
+  u8 sampleGroup;
+  u8 samplePriority;
+  u8 sampleVolume;
+  u8 dmy;
+  u16 sampleAdsr1;
+  u16 sampleAdsr2;
   char keyFollowAr;
-  unsigned __int8 keyFollowArCenter;
+  u8 keyFollowArCenter;
   char keyFollowDr;
-  unsigned __int8 keyFollowDrCenter;
+  u8 keyFollowDrCenter;
   char keyFollowSr;
-  unsigned __int8 keyFollowSrCenter;
+  u8 keyFollowSrCenter;
   char keyFollowRr;
-  unsigned __int8 keyFollowRrCenter;
+  u8 keyFollowRrCenter;
   char keyFollowSl;
-  unsigned __int8 keyFollowSlCenter;
-  unsigned __int16 samplePitchLfoDelay;
-  unsigned __int16 samplePitchLfoFade;
-  unsigned __int16 sampleAmpLfoDelay;
-  unsigned __int16 sampleAmpLfoFade;
-  unsigned __int8 sampleLfoAttr;
-  unsigned __int8 sampleSpuAttr;
+  u8 keyFollowSlCenter;
+  u16 samplePitchLfoDelay;
+  u16 samplePitchLfoFade;
+  u16 sampleAmpLfoDelay;
+  u16 sampleAmpLfoFade;
+  u8 sampleLfoAttr;
+  u8 sampleSpuAttr;
 } sceHardSynthSampleParam;
 
 typedef struct SceSdHdVAGInfoParam_
@@ -355,77 +342,77 @@ typedef struct SceSdHdVAGInfoParam_
 typedef struct sceHardSynthVagParam_
 {
   unsigned int vagOffsetAddr;
-  unsigned __int16 vagSampleRate;
-  unsigned __int8 vagAttribute;
-  unsigned __int8 dmy;
+  u16 vagSampleRate;
+  u8 vagAttribute;
+  u8 dmy;
 } sceHardSynthVagParam;
 
 //-------------------------------------------------------------------------
 // Function declarations
 
 void sdhd_1();
-int __fastcall do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo);
-int __fastcall do_get_prog_chunk(void *indata, struct sdhd_info *dinfo);
-int __fastcall do_get_sset_chunk(void *indata, struct sdhd_info *dinfo);
-int __fastcall do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo);
-int __fastcall do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo);
-int __fastcall do_copy_to_sdhd_program_param(SceSdHdProgramParam *dst, sceHardSynthProgramParam *src);
-int __fastcall do_copy_to_sdhd_split_block(SceSdHdSplitBlock *dst, sceHardSynthSplitBlock *src);
-unsigned int __fastcall do_copy_to_sdhd_set_param(SceSdHdSampleSetParam *dst, sceHardSynthSampleSetParam *src);
-unsigned int __fastcall do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, sceHardSynthSampleParam *src);
-unsigned int __fastcall do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, sceHardSynthVagParam *src);
-unsigned int __fastcall do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vagoffsaddr);
-unsigned int __fastcall do_check_chunk_in_bounds(void *indata, struct sdhd_info *dinfo, unsigned int hdrmagic, unsigned int idx);
-int __fastcall do_get_common_block_ptr_note(void *buffer, unsigned int programNumber, unsigned int swcase, unsigned int noteNumber, unsigned int velocity, int mode, void **ptr);
-int __fastcall do_get_common_block_ptr(void *buffer, unsigned int sampleSetNumber, unsigned int swcase, unsigned int velocity, int mode, void **param);
-int __cdecl sceSdHdGetMaxProgramNumber(void *buffer);
-int __cdecl sceSdHdGetMaxSampleSetNumber(void *buffer);
-int __cdecl sceSdHdGetMaxSampleNumber(void *buffer);
-int __cdecl sceSdHdGetMaxVAGInfoNumber(void *buffer);
-int __cdecl sceSdHdGetProgramParamAddr(void *buffer, unsigned int programNumber, sceHardSynthProgramParam **ptr);
-int __cdecl sceSdHdGetProgramParam(void *buffer, unsigned int programNumber, SceSdHdProgramParam *param);
-int __cdecl sceSdHdGetSplitBlockAddr(void *buffer, unsigned int programNumber, unsigned int splitBlockNumber, sceHardSynthSplitBlock **theParamPtr);
-int __cdecl sceSdHdGetSplitBlock(void *buffer, unsigned int programNumber, unsigned int splitBlockNumber, SceSdHdSplitBlock *param);
-int __cdecl sceSdHdGetSampleSetParamAddr(void *buffer, unsigned int sampleSetNumber, sceHardSynthSampleSetParam **ptr);
-int __cdecl sceSdHdGetSampleSetParam(void *buffer, unsigned int sampleSetNumber, SceSdHdSampleSetParam *param);
-int __cdecl sceSdHdGetSampleParamAddr(void *buffer, unsigned int sampleNumber, sceHardSynthSampleParam **ptr);
-int __cdecl sceSdHdGetSampleParam(void *buffer, unsigned int sampleNumber, SceSdHdSampleParam *param);
-int __cdecl sceSdHdGetVAGInfoParamAddr(void *buffer, unsigned int vagInfoNumber, sceHardSynthVagParam **ptr);
-int __cdecl sceSdHdGetVAGInfoParam(void *buffer, unsigned int vagInfoNumber, SceSdHdVAGInfoParam *param);
-int __cdecl sceSdHdCheckProgramNumber(void *buffer, unsigned int programNumber);
-int __cdecl sceSdHdGetSplitBlockCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber);
-int __cdecl sceSdHdGetSplitBlockAddrByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber, sceHardSynthSplitBlock **ptr);
-int __cdecl sceSdHdGetSplitBlockByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber, SceSdHdSplitBlock *param);
-int __cdecl sceSdHdGetSampleSetParamCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber);
-int __cdecl sceSdHdGetSampleSetParamAddrByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber, sceHardSynthSampleSetParam **ptr);
-int __cdecl sceSdHdGetSampleSetParamByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber, SceSdHdSampleSetParam *param);
-int __cdecl sceSdHdGetSampleParamCountByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode);
-int __cdecl sceSdHdGetSampleParamAddrByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode, sceHardSynthSampleParam **ptr);
-int __cdecl sceSdHdGetSampleParamByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode, SceSdHdSampleParam *param);
-int __cdecl sceSdHdGetVAGInfoParamCountByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode);
-int __cdecl sceSdHdGetVAGInfoParamAddrByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode, sceHardSynthVagParam **ptr);
-int __cdecl sceSdHdGetVAGInfoParamByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode, SceSdHdVAGInfoParam *param);
-int __cdecl sceSdHdGetSampleParamCountByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode);
-int __cdecl sceSdHdGetSampleParamAddrByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode, sceHardSynthSampleParam **ptr);
-int __cdecl sceSdHdGetSampleParamByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode, SceSdHdSampleParam *param);
-int __cdecl sceSdHdGetVAGInfoParamCountByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode);
-int __cdecl sceSdHdGetVAGInfoParamAddrByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode, sceHardSynthVagParam **ptr);
-int __cdecl sceSdHdGetVAGInfoParamByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode, SceSdHdVAGInfoParam *param);
-int __cdecl sceSdHdGetVAGInfoParamAddrBySampleNumber(void *buffer, unsigned int sampleNumber, sceHardSynthVagParam **ptr);
-int __cdecl sceSdHdGetVAGInfoParamBySampleNumber(void *buffer, unsigned int sampleNumber, SceSdHdVAGInfoParam *param);
-int __cdecl sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNumber, unsigned int splitNumber);
-int __cdecl sceSdHdGetVAGSize(void *buffer, unsigned int vagInfoNumber);
-int __cdecl sceSdHdGetSplitBlockCount(void *buffer, unsigned int programNumber);
-int __cdecl sceSdHdGetMaxSplitBlockCount(void *buffer);
-int __cdecl sceSdHdGetMaxSampleSetParamCount(void *buffer);
-int __cdecl sceSdHdGetMaxSampleParamCount(void *buffer);
-int __cdecl sceSdHdGetMaxVAGInfoParamCount(void *buffer);
-int __cdecl sceSdHdModifyVelocity(unsigned int curveType, int velocity);
-int __cdecl sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center);
-int __cdecl sceSdHdGetValidProgramNumberCount(void *buffer);
-int __cdecl sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr);
-int __cdecl sceSdHdGetSampleNumberBySampleIndex(void *buffer, unsigned int sampleSetNumber, unsigned int sampleIndexNumber);
-int __fastcall _start(int ac);
+int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo);
+int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo);
+int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo);
+int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo);
+int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo);
+int do_copy_to_sdhd_program_param(SceSdHdProgramParam *dst, sceHardSynthProgramParam *src);
+int do_copy_to_sdhd_split_block(SceSdHdSplitBlock *dst, sceHardSynthSplitBlock *src);
+unsigned int do_copy_to_sdhd_set_param(SceSdHdSampleSetParam *dst, sceHardSynthSampleSetParam *src);
+unsigned int do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, sceHardSynthSampleParam *src);
+unsigned int do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, sceHardSynthVagParam *src);
+unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vagoffsaddr);
+unsigned int do_check_chunk_in_bounds(void *indata, struct sdhd_info *dinfo, unsigned int hdrmagic, unsigned int idx);
+int do_get_common_block_ptr_note(void *buffer, unsigned int programNumber, unsigned int swcase, unsigned int noteNumber, unsigned int velocity, int mode, void **ptr);
+int do_get_common_block_ptr(void *buffer, unsigned int sampleSetNumber, unsigned int swcase, unsigned int velocity, int mode, void **param);
+int sceSdHdGetMaxProgramNumber(void *buffer);
+int sceSdHdGetMaxSampleSetNumber(void *buffer);
+int sceSdHdGetMaxSampleNumber(void *buffer);
+int sceSdHdGetMaxVAGInfoNumber(void *buffer);
+int sceSdHdGetProgramParamAddr(void *buffer, unsigned int programNumber, sceHardSynthProgramParam **ptr);
+int sceSdHdGetProgramParam(void *buffer, unsigned int programNumber, SceSdHdProgramParam *param);
+int sceSdHdGetSplitBlockAddr(void *buffer, unsigned int programNumber, unsigned int splitBlockNumber, sceHardSynthSplitBlock **theParamPtr);
+int sceSdHdGetSplitBlock(void *buffer, unsigned int programNumber, unsigned int splitBlockNumber, SceSdHdSplitBlock *param);
+int sceSdHdGetSampleSetParamAddr(void *buffer, unsigned int sampleSetNumber, sceHardSynthSampleSetParam **ptr);
+int sceSdHdGetSampleSetParam(void *buffer, unsigned int sampleSetNumber, SceSdHdSampleSetParam *param);
+int sceSdHdGetSampleParamAddr(void *buffer, unsigned int sampleNumber, sceHardSynthSampleParam **ptr);
+int sceSdHdGetSampleParam(void *buffer, unsigned int sampleNumber, SceSdHdSampleParam *param);
+int sceSdHdGetVAGInfoParamAddr(void *buffer, unsigned int vagInfoNumber, sceHardSynthVagParam **ptr);
+int sceSdHdGetVAGInfoParam(void *buffer, unsigned int vagInfoNumber, SceSdHdVAGInfoParam *param);
+int sceSdHdCheckProgramNumber(void *buffer, unsigned int programNumber);
+int sceSdHdGetSplitBlockCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber);
+int sceSdHdGetSplitBlockAddrByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber, sceHardSynthSplitBlock **ptr);
+int sceSdHdGetSplitBlockByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber, SceSdHdSplitBlock *param);
+int sceSdHdGetSampleSetParamCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber);
+int sceSdHdGetSampleSetParamAddrByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber, sceHardSynthSampleSetParam **ptr);
+int sceSdHdGetSampleSetParamByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber, SceSdHdSampleSetParam *param);
+int sceSdHdGetSampleParamCountByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode);
+int sceSdHdGetSampleParamAddrByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode, sceHardSynthSampleParam **ptr);
+int sceSdHdGetSampleParamByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode, SceSdHdSampleParam *param);
+int sceSdHdGetVAGInfoParamCountByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode);
+int sceSdHdGetVAGInfoParamAddrByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode, sceHardSynthVagParam **ptr);
+int sceSdHdGetVAGInfoParamByNoteVelocity(void *buffer, unsigned int programNumber, unsigned int noteNumber, unsigned int velocity, unsigned int mode, SceSdHdVAGInfoParam *param);
+int sceSdHdGetSampleParamCountByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode);
+int sceSdHdGetSampleParamAddrByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode, sceHardSynthSampleParam **ptr);
+int sceSdHdGetSampleParamByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode, SceSdHdSampleParam *param);
+int sceSdHdGetVAGInfoParamCountByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode);
+int sceSdHdGetVAGInfoParamAddrByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode, sceHardSynthVagParam **ptr);
+int sceSdHdGetVAGInfoParamByVelocity(void *buffer, unsigned int sampleSetNumber, unsigned int velocity, unsigned int mode, SceSdHdVAGInfoParam *param);
+int sceSdHdGetVAGInfoParamAddrBySampleNumber(void *buffer, unsigned int sampleNumber, sceHardSynthVagParam **ptr);
+int sceSdHdGetVAGInfoParamBySampleNumber(void *buffer, unsigned int sampleNumber, SceSdHdVAGInfoParam *param);
+int sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNumber, unsigned int splitNumber);
+int sceSdHdGetVAGSize(void *buffer, unsigned int vagInfoNumber);
+int sceSdHdGetSplitBlockCount(void *buffer, unsigned int programNumber);
+int sceSdHdGetMaxSplitBlockCount(void *buffer);
+int sceSdHdGetMaxSampleSetParamCount(void *buffer);
+int sceSdHdGetMaxSampleParamCount(void *buffer);
+int sceSdHdGetMaxVAGInfoParamCount(void *buffer);
+int sceSdHdModifyVelocity(unsigned int curveType, int velocity);
+int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center);
+int sceSdHdGetValidProgramNumberCount(void *buffer);
+int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr);
+int sceSdHdGetSampleNumberBySampleIndex(void *buffer, unsigned int sampleSetNumber, unsigned int sampleIndexNumber);
+int _start(int ac);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -448,7 +435,7 @@ void sdhd_1()
 }
 
 //----- (004000F0) --------------------------------------------------------
-int __fastcall do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
+int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
 {
   int result; // $v0
   signed int chunkSize; // $v0
@@ -494,7 +481,7 @@ int __fastcall do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct s
 }
 
 //----- (004001A0) --------------------------------------------------------
-int __fastcall do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
+int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
 {
   signed int programChunkAddr; // $a0
   sceHardSynthProgramChunk *chk; // $a0
@@ -515,7 +502,7 @@ int __fastcall do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
 }
 
 //----- (0040020C) --------------------------------------------------------
-int __fastcall do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
+int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
 {
   signed int sampleSetChunkAddr; // $a0
   sceHardSynthSampleSetChunk *chk; // $a0
@@ -536,7 +523,7 @@ int __fastcall do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
 }
 
 //----- (00400278) --------------------------------------------------------
-int __fastcall do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
+int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
 {
   signed int sampleChunkAddr; // $a0
   sceHardSynthSampleChunk *chk; // $a0
@@ -557,7 +544,7 @@ int __fastcall do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
 }
 
 //----- (004002E4) --------------------------------------------------------
-int __fastcall do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
+int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
 {
   signed int vagInfoChunkAddr; // $a0
   sceHardSynthVagInfoChunk *chk; // $a0
@@ -578,7 +565,7 @@ int __fastcall do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
 }
 
 //----- (00400350) --------------------------------------------------------
-int __fastcall do_copy_to_sdhd_program_param(SceSdHdProgramParam *dst, sceHardSynthProgramParam *src)
+int do_copy_to_sdhd_program_param(SceSdHdProgramParam *dst, sceHardSynthProgramParam *src)
 {
   int result; // $v0
 
@@ -611,7 +598,7 @@ int __fastcall do_copy_to_sdhd_program_param(SceSdHdProgramParam *dst, sceHardSy
 }
 
 //----- (00400470) --------------------------------------------------------
-int __fastcall do_copy_to_sdhd_split_block(SceSdHdSplitBlock *dst, sceHardSynthSplitBlock *src)
+int do_copy_to_sdhd_split_block(SceSdHdSplitBlock *dst, sceHardSynthSplitBlock *src)
 {
   int result; // $v0
 
@@ -637,7 +624,7 @@ int __fastcall do_copy_to_sdhd_split_block(SceSdHdSplitBlock *dst, sceHardSynthS
 }
 
 //----- (0040053C) --------------------------------------------------------
-unsigned int __fastcall do_copy_to_sdhd_set_param(SceSdHdSampleSetParam *dst, sceHardSynthSampleSetParam *src)
+unsigned int do_copy_to_sdhd_set_param(SceSdHdSampleSetParam *dst, sceHardSynthSampleSetParam *src)
 {
   unsigned int result; // $v0
 
@@ -650,7 +637,7 @@ unsigned int __fastcall do_copy_to_sdhd_set_param(SceSdHdSampleSetParam *dst, sc
 }
 
 //----- (0040056C) --------------------------------------------------------
-unsigned int __fastcall do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, sceHardSynthSampleParam *src)
+unsigned int do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, sceHardSynthSampleParam *src)
 {
   unsigned int result; // $v0
 
@@ -693,7 +680,7 @@ unsigned int __fastcall do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, sc
 }
 
 //----- (00400704) --------------------------------------------------------
-unsigned int __fastcall do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, sceHardSynthVagParam *src)
+unsigned int do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, sceHardSynthVagParam *src)
 {
   unsigned int result; // $v0
 
@@ -706,7 +693,7 @@ unsigned int __fastcall do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst,
 }
 
 //----- (0040072C) --------------------------------------------------------
-unsigned int __fastcall do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vagoffsaddr)
+unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vagoffsaddr)
 {
   bool condtmp1; // dc
   unsigned int result; // $v0
@@ -717,7 +704,7 @@ unsigned int __fastcall do_get_vag_size(sceHardSynthVersionChunk *indata, unsign
   unsigned int offsdata; // $v0
   sceHardSynthVagParam *vagparam; // $v0
   unsigned int curaddr; // $v1
-  BOOL condtmp2; // $v0
+  int condtmp2; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   condtmp1 = do_get_vers_head_chunk(indata, &dinfo) != 0;
@@ -759,7 +746,7 @@ unsigned int __fastcall do_get_vag_size(sceHardSynthVersionChunk *indata, unsign
 }
 
 //----- (004007F4) --------------------------------------------------------
-unsigned int __fastcall do_check_chunk_in_bounds(
+unsigned int do_check_chunk_in_bounds(
         void *indata,
         struct sdhd_info *dinfo,
         unsigned int hdrmagic,
@@ -832,7 +819,7 @@ unsigned int __fastcall do_check_chunk_in_bounds(
 }
 
 //----- (004009A0) --------------------------------------------------------
-int __fastcall do_get_common_block_ptr_note(
+int do_get_common_block_ptr_note(
         void *buffer,
         unsigned int programNumber,
         unsigned int swcase,
@@ -926,8 +913,8 @@ LABEL_78:
             while ( 2 )
             {
               cursampleindex1 = (char *)samplesetparam_1 + cursampleindexoffs1;
-              if ( *((unsigned __int16 *)cursampleindex1 + 2) != 0xFFFF
-                && !sceSdHdGetSampleParamAddr(buffer, *((unsigned __int16 *)cursampleindex1 + 2), &p_sampleparam)
+              if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
+                && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
                 && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
                 && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
               {
@@ -1000,8 +987,8 @@ LABEL_49:
           while ( 2 )
           {
             cursampleindex2 = (char *)p_samplesetparam_1 + cursampleindexoffs2;
-            if ( *((unsigned __int16 *)cursampleindex2 + 2) != 0xFFFF
-              && !sceSdHdGetSampleParamAddr(buffer, *((unsigned __int16 *)cursampleindex2 + 2), &p_sampleparam)
+            if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
+              && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
               && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
               && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
             {
@@ -1094,7 +1081,7 @@ LABEL_18:
 // 400B10: conditional instruction was optimized away because $s3.4==3
 
 //----- (00400F08) --------------------------------------------------------
-int __fastcall do_get_common_block_ptr(
+int do_get_common_block_ptr(
         void *buffer,
         unsigned int sampleSetNumber,
         unsigned int swcase,
@@ -1141,8 +1128,8 @@ int __fastcall do_get_common_block_ptr(
     while ( 1 )
     {
       cursampleindex1 = (char *)p_samplesetparam_1 + cursampleindexoffs1;
-      if ( *((unsigned __int16 *)cursampleindex1 + 2) == 0xFFFF
-        || sceSdHdGetSampleParamAddr(buffer, *((unsigned __int16 *)cursampleindex1 + 2), &p_sampleparam)
+      if ( *((u16 *)cursampleindex1 + 2) == 0xFFFF
+        || sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
         || velocity < (p_sampleparam->velRangeLow & 0x7Fu)
         || (p_sampleparam->velRangeHigh & 0x7Fu) < velocity )
       {
@@ -1218,8 +1205,8 @@ LABEL_55:
         while ( 1 )
         {
           cursampleindex2 = (char *)p_samplesetparam_2 + cursampleindexoffs2;
-          if ( *((unsigned __int16 *)cursampleindex2 + 2) == 0xFFFF
-            || sceSdHdGetSampleParamAddr(buffer, *((unsigned __int16 *)cursampleindex2 + 2), &p_sampleparam)
+          if ( *((u16 *)cursampleindex2 + 2) == 0xFFFF
+            || sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
             || velocity < (p_sampleparam->velRangeLow & 0x7Fu)
             || (p_sampleparam->velRangeHigh & 0x7Fu) < velocity )
           {
@@ -1291,7 +1278,7 @@ LABEL_27:
 }
 
 //----- (004012F0) --------------------------------------------------------
-int __cdecl sceSdHdGetMaxProgramNumber(void *buffer)
+int sceSdHdGetMaxProgramNumber(void *buffer)
 {
   int result; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -1307,7 +1294,7 @@ int __cdecl sceSdHdGetMaxProgramNumber(void *buffer)
 }
 
 //----- (0040133C) --------------------------------------------------------
-int __cdecl sceSdHdGetMaxSampleSetNumber(void *buffer)
+int sceSdHdGetMaxSampleSetNumber(void *buffer)
 {
   int result; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -1323,7 +1310,7 @@ int __cdecl sceSdHdGetMaxSampleSetNumber(void *buffer)
 }
 
 //----- (00401388) --------------------------------------------------------
-int __cdecl sceSdHdGetMaxSampleNumber(void *buffer)
+int sceSdHdGetMaxSampleNumber(void *buffer)
 {
   int result; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -1339,7 +1326,7 @@ int __cdecl sceSdHdGetMaxSampleNumber(void *buffer)
 }
 
 //----- (004013D4) --------------------------------------------------------
-int __cdecl sceSdHdGetMaxVAGInfoNumber(void *buffer)
+int sceSdHdGetMaxVAGInfoNumber(void *buffer)
 {
   int result; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -1355,7 +1342,7 @@ int __cdecl sceSdHdGetMaxVAGInfoNumber(void *buffer)
 }
 
 //----- (00401420) --------------------------------------------------------
-int __cdecl sceSdHdGetProgramParamAddr(void *buffer, unsigned int programNumber, sceHardSynthProgramParam **ptr)
+int sceSdHdGetProgramParamAddr(void *buffer, unsigned int programNumber, sceHardSynthProgramParam **ptr)
 {
   int result; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -1378,7 +1365,7 @@ int __cdecl sceSdHdGetProgramParamAddr(void *buffer, unsigned int programNumber,
 }
 
 //----- (004014B0) --------------------------------------------------------
-int __cdecl sceSdHdGetProgramParam(void *buffer, unsigned int programNumber, SceSdHdProgramParam *param)
+int sceSdHdGetProgramParam(void *buffer, unsigned int programNumber, SceSdHdProgramParam *param)
 {
   int result; // $v0
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
@@ -1393,7 +1380,7 @@ int __cdecl sceSdHdGetProgramParam(void *buffer, unsigned int programNumber, Sce
 }
 
 //----- (004014F0) --------------------------------------------------------
-int __cdecl sceSdHdGetSplitBlockAddr(
+int sceSdHdGetSplitBlockAddr(
         void *buffer,
         unsigned int programNumber,
         unsigned int splitBlockNumber,
@@ -1425,7 +1412,7 @@ int __cdecl sceSdHdGetSplitBlockAddr(
 }
 
 //----- (0040158C) --------------------------------------------------------
-int __cdecl sceSdHdGetSplitBlock(
+int sceSdHdGetSplitBlock(
         void *buffer,
         unsigned int programNumber,
         unsigned int splitBlockNumber,
@@ -1444,7 +1431,7 @@ int __cdecl sceSdHdGetSplitBlock(
 }
 
 //----- (004015CC) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleSetParamAddr(void *buffer, unsigned int sampleSetNumber, sceHardSynthSampleSetParam **ptr)
+int sceSdHdGetSampleSetParamAddr(void *buffer, unsigned int sampleSetNumber, sceHardSynthSampleSetParam **ptr)
 {
   int result; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -1465,10 +1452,9 @@ int __cdecl sceSdHdGetSampleSetParamAddr(void *buffer, unsigned int sampleSetNum
   }
   return result;
 }
-// 4015CC: using guessed type _DWORD dinfo[3];
 
 //----- (0040165C) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleSetParam(void *buffer, unsigned int sampleSetNumber, SceSdHdSampleSetParam *param)
+int sceSdHdGetSampleSetParam(void *buffer, unsigned int sampleSetNumber, SceSdHdSampleSetParam *param)
 {
   int result; // $v0
   sceHardSynthSampleSetParam *p_samplesetparam; // [sp+10h] [-8h] BYREF
@@ -1483,7 +1469,7 @@ int __cdecl sceSdHdGetSampleSetParam(void *buffer, unsigned int sampleSetNumber,
 }
 
 //----- (0040169C) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleParamAddr(void *buffer, unsigned int sampleNumber, sceHardSynthSampleParam **ptr)
+int sceSdHdGetSampleParamAddr(void *buffer, unsigned int sampleNumber, sceHardSynthSampleParam **ptr)
 {
   int result; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -1504,10 +1490,9 @@ int __cdecl sceSdHdGetSampleParamAddr(void *buffer, unsigned int sampleNumber, s
   }
   return result;
 }
-// 40169C: using guessed type _DWORD dinfo[4];
 
 //----- (0040172C) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleParam(void *buffer, unsigned int sampleNumber, SceSdHdSampleParam *param)
+int sceSdHdGetSampleParam(void *buffer, unsigned int sampleNumber, SceSdHdSampleParam *param)
 {
   int result; // $v0
   sceHardSynthSampleParam *p_sampleparam; // [sp+10h] [-8h] BYREF
@@ -1522,7 +1507,7 @@ int __cdecl sceSdHdGetSampleParam(void *buffer, unsigned int sampleNumber, SceSd
 }
 
 //----- (0040176C) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParamAddr(void *buffer, unsigned int vagInfoNumber, sceHardSynthVagParam **ptr)
+int sceSdHdGetVAGInfoParamAddr(void *buffer, unsigned int vagInfoNumber, sceHardSynthVagParam **ptr)
 {
   int result; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -1543,10 +1528,9 @@ int __cdecl sceSdHdGetVAGInfoParamAddr(void *buffer, unsigned int vagInfoNumber,
   }
   return result;
 }
-// 40176C: using guessed type _DWORD dinfo[5];
 
 //----- (004017FC) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParam(void *buffer, unsigned int vagInfoNumber, SceSdHdVAGInfoParam *param)
+int sceSdHdGetVAGInfoParam(void *buffer, unsigned int vagInfoNumber, SceSdHdVAGInfoParam *param)
 {
   int result; // $v0
   int vag_size; // $v0
@@ -1563,7 +1547,7 @@ int __cdecl sceSdHdGetVAGInfoParam(void *buffer, unsigned int vagInfoNumber, Sce
 }
 
 //----- (00401858) --------------------------------------------------------
-int __cdecl sceSdHdCheckProgramNumber(void *buffer, unsigned int programNumber)
+int sceSdHdCheckProgramNumber(void *buffer, unsigned int programNumber)
 {
   int result; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -1579,13 +1563,13 @@ int __cdecl sceSdHdCheckProgramNumber(void *buffer, unsigned int programNumber)
 }
 
 //----- (004018B8) --------------------------------------------------------
-int __cdecl sceSdHdGetSplitBlockCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber)
+int sceSdHdGetSplitBlockCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber)
 {
   return do_get_common_block_ptr_note(buffer, programNumber, 0, noteNumber, 0, 0, 0);
 }
 
 //----- (004018E8) --------------------------------------------------------
-int __cdecl sceSdHdGetSplitBlockAddrByNote(
+int sceSdHdGetSplitBlockAddrByNote(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1595,7 +1579,7 @@ int __cdecl sceSdHdGetSplitBlockAddrByNote(
 }
 
 //----- (0040191C) --------------------------------------------------------
-int __cdecl sceSdHdGetSplitBlockByNote(
+int sceSdHdGetSplitBlockByNote(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1605,13 +1589,13 @@ int __cdecl sceSdHdGetSplitBlockByNote(
 }
 
 //----- (00401950) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleSetParamCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber)
+int sceSdHdGetSampleSetParamCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber)
 {
   return do_get_common_block_ptr_note(buffer, programNumber, 3u, noteNumber, 0, 0, 0);
 }
 
 //----- (00401980) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleSetParamAddrByNote(
+int sceSdHdGetSampleSetParamAddrByNote(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1621,7 +1605,7 @@ int __cdecl sceSdHdGetSampleSetParamAddrByNote(
 }
 
 //----- (004019B4) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleSetParamByNote(
+int sceSdHdGetSampleSetParamByNote(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1631,7 +1615,7 @@ int __cdecl sceSdHdGetSampleSetParamByNote(
 }
 
 //----- (004019E8) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleParamCountByNoteVelocity(
+int sceSdHdGetSampleParamCountByNoteVelocity(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1642,7 +1626,7 @@ int __cdecl sceSdHdGetSampleParamCountByNoteVelocity(
 }
 
 //----- (00401A20) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleParamAddrByNoteVelocity(
+int sceSdHdGetSampleParamAddrByNoteVelocity(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1654,7 +1638,7 @@ int __cdecl sceSdHdGetSampleParamAddrByNoteVelocity(
 }
 
 //----- (00401A5C) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleParamByNoteVelocity(
+int sceSdHdGetSampleParamByNoteVelocity(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1666,7 +1650,7 @@ int __cdecl sceSdHdGetSampleParamByNoteVelocity(
 }
 
 //----- (00401A98) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParamCountByNoteVelocity(
+int sceSdHdGetVAGInfoParamCountByNoteVelocity(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1677,7 +1661,7 @@ int __cdecl sceSdHdGetVAGInfoParamCountByNoteVelocity(
 }
 
 //----- (00401AD0) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParamAddrByNoteVelocity(
+int sceSdHdGetVAGInfoParamAddrByNoteVelocity(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1689,7 +1673,7 @@ int __cdecl sceSdHdGetVAGInfoParamAddrByNoteVelocity(
 }
 
 //----- (00401B0C) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParamByNoteVelocity(
+int sceSdHdGetVAGInfoParamByNoteVelocity(
         void *buffer,
         unsigned int programNumber,
         unsigned int noteNumber,
@@ -1701,7 +1685,7 @@ int __cdecl sceSdHdGetVAGInfoParamByNoteVelocity(
 }
 
 //----- (00401B48) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleParamCountByVelocity(
+int sceSdHdGetSampleParamCountByVelocity(
         void *buffer,
         unsigned int sampleSetNumber,
         unsigned int velocity,
@@ -1711,7 +1695,7 @@ int __cdecl sceSdHdGetSampleParamCountByVelocity(
 }
 
 //----- (00401B78) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleParamAddrByVelocity(
+int sceSdHdGetSampleParamAddrByVelocity(
         void *buffer,
         unsigned int sampleSetNumber,
         unsigned int velocity,
@@ -1722,7 +1706,7 @@ int __cdecl sceSdHdGetSampleParamAddrByVelocity(
 }
 
 //----- (00401BAC) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleParamByVelocity(
+int sceSdHdGetSampleParamByVelocity(
         void *buffer,
         unsigned int sampleSetNumber,
         unsigned int velocity,
@@ -1733,7 +1717,7 @@ int __cdecl sceSdHdGetSampleParamByVelocity(
 }
 
 //----- (00401BE0) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParamCountByVelocity(
+int sceSdHdGetVAGInfoParamCountByVelocity(
         void *buffer,
         unsigned int sampleSetNumber,
         unsigned int velocity,
@@ -1743,7 +1727,7 @@ int __cdecl sceSdHdGetVAGInfoParamCountByVelocity(
 }
 
 //----- (00401C10) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParamAddrByVelocity(
+int sceSdHdGetVAGInfoParamAddrByVelocity(
         void *buffer,
         unsigned int sampleSetNumber,
         unsigned int velocity,
@@ -1754,7 +1738,7 @@ int __cdecl sceSdHdGetVAGInfoParamAddrByVelocity(
 }
 
 //----- (00401C44) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParamByVelocity(
+int sceSdHdGetVAGInfoParamByVelocity(
         void *buffer,
         unsigned int sampleSetNumber,
         unsigned int velocity,
@@ -1765,7 +1749,7 @@ int __cdecl sceSdHdGetVAGInfoParamByVelocity(
 }
 
 //----- (00401C78) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParamAddrBySampleNumber(
+int sceSdHdGetVAGInfoParamAddrBySampleNumber(
         void *buffer,
         unsigned int sampleNumber,
         sceHardSynthVagParam **ptr)
@@ -1785,7 +1769,7 @@ int __cdecl sceSdHdGetVAGInfoParamAddrBySampleNumber(
 }
 
 //----- (00401CE8) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGInfoParamBySampleNumber(void *buffer, unsigned int sampleNumber, SceSdHdVAGInfoParam *param)
+int sceSdHdGetVAGInfoParamBySampleNumber(void *buffer, unsigned int sampleNumber, SceSdHdVAGInfoParam *param)
 {
   int result; // $v0
   int vag_size; // $v0
@@ -1802,7 +1786,7 @@ int __cdecl sceSdHdGetVAGInfoParamBySampleNumber(void *buffer, unsigned int samp
 }
 
 //----- (00401D44) --------------------------------------------------------
-int __cdecl sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNumber, unsigned int splitNumber)
+int sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNumber, unsigned int splitNumber)
 {
   int result; // $v0
   int idx1; // $v1
@@ -1843,7 +1827,7 @@ int __cdecl sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int p
 }
 
 //----- (00401DD8) --------------------------------------------------------
-int __cdecl sceSdHdGetVAGSize(void *buffer, unsigned int vagInfoNumber)
+int sceSdHdGetVAGSize(void *buffer, unsigned int vagInfoNumber)
 {
   int result; // $v0
   sceHardSynthVagParam *p_vagparam; // [sp+10h] [-8h] BYREF
@@ -1855,7 +1839,7 @@ int __cdecl sceSdHdGetVAGSize(void *buffer, unsigned int vagInfoNumber)
 }
 
 //----- (00401E14) --------------------------------------------------------
-int __cdecl sceSdHdGetSplitBlockCount(void *buffer, unsigned int programNumber)
+int sceSdHdGetSplitBlockCount(void *buffer, unsigned int programNumber)
 {
   int result; // $v0
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
@@ -1867,7 +1851,7 @@ int __cdecl sceSdHdGetSplitBlockCount(void *buffer, unsigned int programNumber)
 }
 
 //----- (00401E48) --------------------------------------------------------
-int __cdecl sceSdHdGetMaxSplitBlockCount(void *buffer)
+int sceSdHdGetMaxSplitBlockCount(void *buffer)
 {
   int curminval; // $s2
   int result; // $v0
@@ -1923,7 +1907,7 @@ int __cdecl sceSdHdGetMaxSplitBlockCount(void *buffer)
 }
 
 //----- (00401F70) --------------------------------------------------------
-int __cdecl sceSdHdGetMaxSampleSetParamCount(void *buffer)
+int sceSdHdGetMaxSampleSetParamCount(void *buffer)
 {
   int curminval; // $s2
   int result; // $v0
@@ -1979,7 +1963,7 @@ int __cdecl sceSdHdGetMaxSampleSetParamCount(void *buffer)
 }
 
 //----- (00402098) --------------------------------------------------------
-int __cdecl sceSdHdGetMaxSampleParamCount(void *buffer)
+int sceSdHdGetMaxSampleParamCount(void *buffer)
 {
   int curminval; // $s0
   int result; // $v0
@@ -2084,7 +2068,7 @@ int __cdecl sceSdHdGetMaxSampleParamCount(void *buffer)
 }
 
 //----- (004022D8) --------------------------------------------------------
-int __cdecl sceSdHdGetMaxVAGInfoParamCount(void *buffer)
+int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
 {
   int curminval; // $s0
   int result; // $v0
@@ -2189,7 +2173,7 @@ int __cdecl sceSdHdGetMaxVAGInfoParamCount(void *buffer)
 }
 
 //----- (00402518) --------------------------------------------------------
-int __cdecl sceSdHdModifyVelocity(unsigned int curveType, int velocity)
+int sceSdHdModifyVelocity(unsigned int curveType, int velocity)
 {
   int retone; // $a0
   int retval1; // $a0
@@ -2229,7 +2213,7 @@ LABEL_10:
 }
 
 //----- (0040261C) --------------------------------------------------------
-int __cdecl sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
+int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
 {
   int calc3; // $v1
   int calc4; // $v0
@@ -2379,14 +2363,14 @@ LABEL_67:
       calc3 = velocity - center;
 LABEL_65:
       calcg = calc3 << 16;
-      calcf = (int)((unsigned __int64)(2181570691LL * calcg) >> 32) >> 6;
+      calcf = (int)((u64)(2181570691LL * calcg) >> 32) >> 6;
       calce = calcg >> 31;
       goto LABEL_66;
   }
 }
 
 //----- (00402AD0) --------------------------------------------------------
-int __cdecl sceSdHdGetValidProgramNumberCount(void *buffer)
+int sceSdHdGetValidProgramNumberCount(void *buffer)
 {
   int validcnt; // $s0
   int result; // $v0
@@ -2416,10 +2400,9 @@ int __cdecl sceSdHdGetValidProgramNumberCount(void *buffer)
   }
   return result;
 }
-// 402AD0: using guessed type _DWORD dinfo[2];
 
 //----- (00402B5C) --------------------------------------------------------
-int __cdecl sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
+int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
 {
   int validcnt; // $s1
   int result; // $v0
@@ -2454,10 +2437,9 @@ int __cdecl sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
   }
   return result;
 }
-// 402B5C: using guessed type _DWORD dinfo[2];
 
 //----- (00402C08) --------------------------------------------------------
-int __cdecl sceSdHdGetSampleNumberBySampleIndex(
+int sceSdHdGetSampleNumberBySampleIndex(
         void *buffer,
         unsigned int sampleSetNumber,
         unsigned int sampleIndexNumber)
@@ -2476,7 +2458,7 @@ int __cdecl sceSdHdGetSampleNumberBySampleIndex(
 }
 
 //----- (00402C70) --------------------------------------------------------
-int __fastcall _start(int ac)
+int _start(int ac)
 {
   int unregres; // $s0
   int result; // $v0
