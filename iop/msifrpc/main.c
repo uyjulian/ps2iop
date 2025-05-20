@@ -362,34 +362,29 @@ int sif_mrpc_get_fpacket2(struct msif_data *rpc_data, int rid)
 sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd)
 {
   sceSifMServeEntry *g_mserv_entries_ll; // $v1
-  sceSifMServeEntry *result; // $v0
 
   g_mserv_entries_ll = msd->g_mserv_entries_ll;
   if ( !g_mserv_entries_ll )
     return 0;
   while ( 1 )
   {
-    result = g_mserv_entries_ll;
     if ( g_mserv_entries_ll->command == cmd )
-      break;
+      return g_mserv_entries_ll;
     g_mserv_entries_ll = g_mserv_entries_ll->next;
     if ( !g_mserv_entries_ll )
       return 0;
   }
-  return result;
 }
 
 //----- (004002B0) --------------------------------------------------------
 unsigned int alarm_cb_cmd_80000018_1(void *pkt)
 {
   bool sendres; // dc
-  unsigned int result; // $v0
 
   sendres = isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) == 0;
-  result = 0xF000;
   if ( !sendres )
     return 0;
-  return result;
+  return 0xF000;
 }
 
 //----- (004002F8) --------------------------------------------------------
@@ -443,13 +438,11 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
 unsigned int alarm_cb_cmd_80000018_2(void *pkt)
 {
   bool sendres; // dc
-  unsigned int result; // $v0
 
   sendres = isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) == 0;
-  result = 0xF000;
   if ( !sendres )
     return 0;
-  return result;
+  return 0xF000;
 }
 
 //----- (00400494) --------------------------------------------------------
