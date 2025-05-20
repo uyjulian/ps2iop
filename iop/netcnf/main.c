@@ -1,6 +1,5 @@
 
 #include "irx_imports.h"
-#include <stdbool.h>
 #include <netcnf.h>
 
 IRX_ID("NET_configuration", 2, 30);
@@ -55,7 +54,7 @@ int do_read_ilink_id();
 int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr);
 int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len);
 int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_ptr);
-u32 do_init_xor_magic(char *in_id_buf);
+void do_init_xor_magic(char *in_id_buf);
 int magic_shift_write_netcnf_2(int inshft, int buflen);
 int magic_shift_read_netcnf_2(int inshft, int buflen);
 int magic_shift_write_netcnf_1(int inshft, int buflen);
@@ -139,7 +138,7 @@ int is_special_file_path(const char *netcnf_path);
 void do_init_callback_handles(void);
 int do_get_empty_callback_handle(int in_fd, int in_allocstate);
 int do_filesize_callback_handles(int in_fd, int in_allocstate);
-int do_clear_callback_handles(int fd, int allocmatch);
+void do_clear_callback_handles(int fd, int allocmatch);
 const char *do_colon_callback_handles(const char *netcnf_path, char *device);
 int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode);
 size_t do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size);
@@ -631,13 +630,11 @@ int sceNetCnfCheckCapacity(char *fname)
 int sceNetCnfConvA2S(char *sp_, char *dp_, int len)
 {
   int retres; // $v0
-  bool condtmp; // dc
 
   retres = do_conv_a2s_inner(sp_, dp_, len);
   if ( !retres )
   {
-    condtmp = len < strlen(sp_) + 1;
-    if ( !condtmp )
+    if ( len >= strlen(sp_) + 1 )
     {
       strcpy(dp_, sp_);
       return 0;
@@ -651,13 +648,11 @@ int sceNetCnfConvA2S(char *sp_, char *dp_, int len)
 int sceNetCnfConvS2A(char *sp_, char *dp_, int len)
 {
   int retres; // $v0
-  bool condtmp; // dc
 
   retres = do_conv_s2a_inner(sp_, dp_, len);
   if ( !retres )
   {
-    condtmp = len < strlen(sp_) + 1;
-    if ( !condtmp )
+    if ( len >= strlen(sp_) + 1 )
     {
       strcpy(dp_, sp_);
       return 0;
@@ -696,21 +691,16 @@ void netcnf_0()
 int do_read_ilink_id()
 {
   int i; // $s0
-  bool condtmp1; // dc
-  u32 condtmp2; // $v0
 
   for ( i = 0; ; ++i )
   {
     g_id_result = 0;
-    condtmp1 = sceCdRI((u8 *)g_id_buffer, &g_id_result) != 1;
-    condtmp2 = i < 20;
-    if ( !condtmp1 )
+    if ( sceCdRI((u8 *)g_id_buffer, &g_id_result) == 1 )
     {
-      condtmp2 = i < 20;
       if ( !g_id_result )
         break;
     }
-    if ( !condtmp2 )
+    if ( i >= 20 )
       return -13;
     DelayThread(100000);
   }
@@ -729,7 +719,6 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
   int netcnf_size_2; // $s3
   int xorind1; // $s1
   int xoroffs; // $s4
-  u32 condtmp1; // $v0
   size_t readres; // $s0
   u16 dataval1; // $v0
   int buflenx1; // $a1
@@ -779,8 +768,7 @@ LABEL_24:
     do_close_netcnf(fd);
     return xoroffs;
   }
-  condtmp1 = netcnf_size_1 < 2;
-  while ( !condtmp1 )
+  while ( netcnf_size_2 >= 2 )
   {
     readres = do_readfile_netcnf(fd, netcnf_data, 2);
     if ( readres < 0 )
@@ -799,7 +787,6 @@ LABEL_24:
     netcnf_size_2 -= 2;
     xoroffs += 2;
 LABEL_23:
-    condtmp1 = netcnf_size_2 < 2;
     if ( !netcnf_size_2 )
       goto LABEL_24;
   }
@@ -837,9 +824,7 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
   u16 *buf_1; // $s5
   int netcnf_len_1; // $s2
   int xorind1; // $s1
-  bool condtmp1; // dc
   int xoroffs; // $s4
-  u32 condtmp2; // $v0
   int buflenx1; // $a1
   u16 bufresx1; // $v0
   int xorind2_1; // $s1
@@ -866,16 +851,14 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
   }
   netcnf_len_1 = netcnf_len;
   xorind1 = 0;
-  condtmp1 = netcnf_len == 0;
   xoroffs = 0;
-  if ( condtmp1 )
+  if ( netcnf_len == 0 )
   {
 LABEL_20:
     do_close_netcnf(fd);
     return xoroffs;
   }
-  condtmp2 = netcnf_len_1 < 2;
-  while ( !condtmp2 )
+  while ( netcnf_len_1 >= 2 )
   {
     buflenx1 = (u8)g_id_xorbuf[xorind1 + 2];
     xorind2_1 = xorind1 + 1;
@@ -893,7 +876,6 @@ LABEL_20:
     netcnf_len_1 -= 2;
     xoroffs += 2;
 LABEL_19:
-    condtmp2 = netcnf_len_1 < 2;
     if ( !netcnf_len_1 )
       goto LABEL_20;
   }
@@ -974,12 +956,11 @@ LABEL_9:
 }
 
 //----- (0040127C) --------------------------------------------------------
-u32 do_init_xor_magic(char *in_id_buf)
+void do_init_xor_magic(char *in_id_buf)
 {
   int curoffs2; // $a2
   int curoffs1; // $a1
   char curchr; // $v0
-  u32 condtmp; // $v0
 
   curoffs2 = 0;
   curoffs1 = 2;
@@ -989,11 +970,9 @@ u32 do_init_xor_magic(char *in_id_buf)
     g_id_xorbuf[curoffs1 + 1] = (((u8)in_id_buf[curoffs2] >> 2) & 7) + 1;
     curchr = in_id_buf[curoffs2++];
     g_id_xorbuf[curoffs1 + 2] = (curchr & 3) + 1;
-    condtmp = curoffs2 < 8;
     curoffs1 += 3;
   }
   while ( curoffs2 < 8 );
-  return condtmp;
 }
 
 //----- (004012F4) --------------------------------------------------------
@@ -1142,14 +1121,12 @@ int do_check_capacity_inner(const char *fpath)
   int cmptmp1; // $v0
   const char *fpath_1; // $a0
   int minsize; // $a1
-  bool condtmp1; // dc
 
   cmptmp1 = strncmp(fpath, "mc", 2);
   fpath_1 = fpath;
   if ( cmptmp1 )
   {
-    condtmp1 = strncmp(fpath, "pfs", 3) != 0;
-    if ( condtmp1 )
+    if ( strncmp(fpath, "pfs", 3) != 0 )
       return -9;
     fpath_1 = fpath;
     minsize = 0xF4;
@@ -1170,7 +1147,6 @@ int do_handle_combination_path(int type, const char *fpath, char *dst, size_t ma
   char curdevnum; // $v0
   int devnr; // $s1
   u32 condtmp2; // $v0
-  bool condtmp1; // dc
   unsigned int devnr2; // $v0
   char devnum[8]; // [sp+10h] [-8h] BYREF
 
@@ -1202,9 +1178,8 @@ int do_handle_combination_path(int type, const char *fpath, char *dst, size_t ma
   }
   else
   {
-    condtmp1 = strncmp(fpath, "pfs", 3) != 0;
     devnr2 = devnr - 1;
-    condtmp2 = condtmp1 ? devnr2 < 0x3E8 : devnr2 < 0xA;
+    condtmp2 = (strncmp(fpath, "pfs", 3) != 0) ? devnr2 < 0x3E8 : devnr2 < 0xA;
   }
   if ( !condtmp2 )
     return -11;
@@ -1320,7 +1295,6 @@ int do_handle_fname(char *fpath, size_t maxlen, const char *fname)
   size_t maxlen_1; // $a1
   const char *pathname; // $a2
   int maxbuf; // $a3
-  bool condtmp1; // dc
 
   do_safe_strcpy(fpath, maxlen, fname, 266);
   index_res = index(fpath, ':');
@@ -1330,8 +1304,7 @@ int do_handle_fname(char *fpath, size_t maxlen, const char *fname)
   fpath_1 = fpath;
   if ( cmptmp1 )
   {
-    condtmp1 = strncmp(fpath, "pfs", 3) != 0;
-    if ( condtmp1 )
+    if ( strncmp(fpath, "pfs", 3) != 0 )
       return 0;
     index_res[1] = 0;
     fpath_1 = fpath;
@@ -1375,7 +1348,6 @@ char *do_check_hoge_newline(char *buf)
 //----- (00401BFC) --------------------------------------------------------
 int do_split_str_comma_index(char *dst, const char *src, int commaind)
 {
-  bool condtmp1; // dc
   int commatmp_end; // $a2
   int src_hichr1; // $v0
   int src_chr1; // $v0
@@ -1384,9 +1356,8 @@ int do_split_str_comma_index(char *dst, const char *src, int commaind)
   int src_hichr2; // $v0
   int src_chr4; // $v0
 
-  condtmp1 = commaind <= 0;
   commatmp_end = commaind - 1;
-  if ( !condtmp1 )
+  if ( commaind > 0 )
   {
     do
     {
@@ -1412,9 +1383,8 @@ int do_split_str_comma_index(char *dst, const char *src, int commaind)
       if ( src_chr1 != ',' )
         return -1;
 LABEL_11:
-      condtmp1 = commatmp_end-- > 0;
     }
-    while ( condtmp1 );
+    while ( commatmp_end-- > 0 );
   }
   src_chr2 = *src;
   src_chr3 = *(u8 *)src;
@@ -1434,10 +1404,9 @@ LABEL_11:
         break;
       if ( src_chr4 == ',' )
         break;
-      condtmp1 = src_chr4 != '\n';
       src_hichr2 = src_chr3 << 24;
     }
-    while ( condtmp1 );
+    while ( src_chr4 != '\n' );
   }
   *dst = 0;
   return 0;
@@ -1451,7 +1420,6 @@ int do_remove_old_config(
         char *iconsys_value)
 {
   int sysneticoflag; // $fp
-  bool condtmp1; // dc
   int dfd; // $s4
   int retreszero; // $v1
   int dfd_1; // $a0
@@ -1471,8 +1439,7 @@ int do_remove_old_config(
 
   sysneticoflag = 1;
   iconsysflag = 1;
-  condtmp1 = do_write_memcard_pathcopy(cur_basepath, 256, fpath) == 0;
-  if ( condtmp1 )
+  if ( do_write_memcard_pathcopy(cur_basepath, 256, fpath) == 0 )
     return 0;
   dfd = do_dopen_wrap(cur_basepath);
   if ( dfd < 0 )
@@ -1729,7 +1696,6 @@ int do_get_count_list_inner(char *fname, int type, sceNetCnfList_t *p)
 int do_load_entry_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e)
 {
   int result; // $v0
-  bool condtmp; // dc
   char *curheapbuf1; // $s0
   int type_1; // $a0
 
@@ -1742,9 +1708,8 @@ int do_load_entry_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e
       result = do_read_current_netcnf_nodecode(g_dir_name, &g_load_entry_heapptr);
       if ( result >= 0 )
       {
-        condtmp = result == 0;
         result = -8;
-        if ( !condtmp )
+        if ( result != 0 )
         {
           curheapbuf1 = g_load_entry_heapptr;
           if ( *g_load_entry_heapptr )
@@ -1790,8 +1755,6 @@ void do_some_ifc_handling_hoge(const char *arg_fname)
   char *curptr1; // $s0
   unsigned int curbufsz1; // $s2
   int curindx; // $s1
-  bool condtmp1; // dc
-  u32 condtmp2; // $v0
   int curbufadd; // $lo
 
   if ( arg_fname && *arg_fname )
@@ -1811,20 +1774,17 @@ void do_some_ifc_handling_hoge(const char *arg_fname)
         curindx = 1;
         while ( 1 )
         {
-          condtmp1 = (look_ctype_table(*curptr1) & 4) == 0;
-          condtmp2 = curbufsz1 < 0x3E8;
-          if ( condtmp1 )
+          if ( (look_ctype_table(*curptr1) & 4) == 0 )
             break;
           curbufadd = curindx * (*curptr1-- - '0');
           curindx *= 10;
           curbufsz1 += curbufadd;
           if ( curptr1 < arg_fname )
           {
-            condtmp2 = curbufsz1 < 0x3E8;
             break;
           }
         }
-        if ( condtmp2 )
+        if ( curbufsz1 < 0x3E8 )
           g_ifc_buffer[curbufsz1] = 1;
       }
     }
@@ -1906,7 +1866,6 @@ int do_add_entry_inner(
   int endbuf_chr1; // $v1
   int endbuf_hichr1; // $v0
   int endbuf_chr2; // $v0
-  bool condtmp3; // dc
   int endbuf_chr3; // $v1
   int nrind; // $s0
   const char *fileext; // $s1
@@ -2027,10 +1986,9 @@ int do_add_entry_inner(
         endbuf_chr2 = *endbuf;
         if ( endbuf_chr2 == ':' )
           goto LABEL_50;
-        condtmp3 = endbuf_chr2 != '/';
         endbuf_hichr1 = (u8)*endbuf << 24;
       }
-      while ( condtmp3 );
+      while ( endbuf_chr2 != '/' );
     }
   }
   endbuf_chr3 = *endbuf;
@@ -2110,9 +2068,8 @@ LABEL_73:
               if ( retres2 < 0 )
                 break;
             }
-            condtmp3 = retres2 == -5;
             retres2 = -18;
-            if ( condtmp3 )
+            if ( retres2 == -5 )
               break;
           }
         }
@@ -2151,9 +2108,8 @@ LABEL_83:
           }
           else
           {
-            condtmp3 = writeres != -5;
             retres2 = -5;
-            if ( !condtmp3 )
+            if ( writeres == -5 )
               retres2 = -18;
           }
         }
@@ -2187,8 +2143,7 @@ LABEL_95:
   }
   if ( strncmp(g_dir_name, "pfs", 3) )
     return retres2;
-  condtmp3 = iomanX_sync(g_dir_name, 0) == -5;
-  if ( !condtmp3 )
+  if ( iomanX_sync(g_dir_name, 0) != -5 )
     return retres2;
   return -18;
 }
@@ -2304,7 +2259,6 @@ int do_edit_entry_inner(
   int req_tmp; // $v0
   char *curfilepath1end; // $s0
   int curfilepath1chr; // $v0
-  bool condtmp1; // dc
   char curentrybuf1[256]; // [sp+18h] [-200h] BYREF
   char curfilepath1[256]; // [sp+118h] [-100h] BYREF
 
@@ -2416,11 +2370,9 @@ LABEL_37:
     if ( new_usr_name )
       rmoldcfgres = do_handle_set_usrname(g_dir_name, type, g_combination_buf2, new_usr_name);
   }
-  condtmp1 = strncmp(g_dir_name, "pfs", 3) != 0;
-  if ( !condtmp1 )
+  if ( strncmp(g_dir_name, "pfs", 3) == 0 )
   {
-    condtmp1 = iomanX_sync(g_dir_name, 0) != -5;
-    if ( !condtmp1 )
+    if ( iomanX_sync(g_dir_name, 0) == -5 )
       return -18;
   }
   return rmoldcfgres;
@@ -2446,7 +2398,6 @@ size_t do_delete_entry_inner(
   char curentry1_chr1; // $v1
   int curentry1_chr2; // $v0
   char curentry1_chr3; // $v0
-  bool condtmp1; // dc
 
   has_comma = 0;
   g_delete_entry_heapptr = 0;
@@ -2513,13 +2464,11 @@ LABEL_25:
             }
             do_free_heapmem(g_delete_entry_heapptr);
             do_free_heapmem(heapmem);
-            condtmp1 = strncmp(g_dir_name, "pfs", 3) != 0;
             result = remove_old_config_res;
-            if ( !condtmp1 )
+            if ( strncmp(g_dir_name, "pfs", 3) == 0 )
             {
-              condtmp1 = iomanX_sync(g_dir_name, 0) != -5;
               result = remove_old_config_res;
-              if ( !condtmp1 )
+              if ( iomanX_sync(g_dir_name, 0) == -5 )
                 return -18;
             }
           }
@@ -2552,12 +2501,10 @@ size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name)
   char *heapmem2_1; // $s1
   char *curentry1; // $s0
   char curentry1_chr1; // $v1
-  u32 condtmp2; // $v0
   char curentry1_chr2; // $v0
   char curentry1_chr3; // $v1
   int curentry1_chr4; // $v0
   char curentry1_chr5; // $v0
-  bool condtmp1; // dc
 
   isbeforeend1 = 0;
   result = do_handle_fname(g_dir_name, 256, fname);
@@ -2601,16 +2548,14 @@ size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name)
                     ++curentry1;
                     *heapmem1_1++ = curentry1_chr1;
                   }
-                  condtmp2 = heapmem2 < heapmem2_1;
                   if ( *curentry1 != '\n' )
                     goto LABEL_18;
 LABEL_17:
                   curentry1_chr2 = *curentry1++;
                   *heapmem1_1++ = curentry1_chr2;
-                  condtmp2 = heapmem2 < heapmem2_1;
 LABEL_18:
                   ++retres1;
-                  if ( condtmp2 )
+                  if ( heapmem2 < heapmem2_1 )
                     isbeforeend1 = 1;
                 }
                 else
@@ -2649,13 +2594,11 @@ LABEL_24:
         do_free_heapmem(g_set_latest_entry_heapptr);
         do_free_heapmem(heapmem1);
         do_free_heapmem(heapmem2);
-        condtmp1 = strncmp(g_dir_name, "pfs", 3) != 0;
         result = retres1;
-        if ( !condtmp1 )
+        if ( strncmp(g_dir_name, "pfs", 3) == 0 )
         {
-          condtmp1 = iomanX_sync(g_dir_name, 0) != -5;
           result = retres1;
-          if ( !condtmp1 )
+          if ( iomanX_sync(g_dir_name, 0) == -5 )
             return -18;
         }
       }
@@ -2679,7 +2622,6 @@ int do_delete_all_inner(const char *dev)
   int cmpres1; // $v0
   int remove_res1; // $v0
   int result; // $v0
-  bool condtmp1; // dc
   const char *devtmp_2; // $a3
   char devtmp_2_curchr; // $a0
   int j; // $t0
@@ -2729,16 +2671,14 @@ LABEL_5:
       }
     }
     do_dclose_wrap(dfd1);
-    condtmp1 = rmdir(g_netcnf_file_path) < 0;
     result = -7;
-    if ( !condtmp1 )
+    if ( rmdir(g_netcnf_file_path) >= 0 )
       return 0;
   }
   else
   {
-    condtmp1 = strncmp(dev, "pfs", 3) != 0;
     result = -17;
-    if ( !condtmp1 )
+    if ( strncmp(dev, "pfs", 3) == 0 )
     {
       devtmp_2 = dev;
       devtmp_2_curchr = *dev;
@@ -2790,9 +2730,8 @@ LABEL_20:
           rmdir_res1 = rmdir(g_netcnf_file_path);
           if ( rmdir_res1 >= 0 )
           {
-            condtmp1 = iomanX_sync(g_netcnf_file_path, 0) == -5;
             result = -18;
-            if ( !condtmp1 )
+            if ( iomanX_sync(g_netcnf_file_path, 0) != -5 )
               return 0;
           }
           else
@@ -2907,7 +2846,6 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
   int argchr_1; // $s1
   int argchr_7; // $v1
   int argchr_2; // $v0
-  bool condtmp1; // dc
   unsigned int argnumchk; // $v0
   int argind_1; // $s2
   char argchr_6; // $v0
@@ -2933,9 +2871,8 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
       if ( argchr_1 == '\\' )
       {
         argchr_2 = *(u8 *)argbegin;
-        condtmp1 = argchr_2 == 0;
         argnumchk = argchr_2 - '0';
-        if ( condtmp1 )
+        if ( argchr_2 == 0 )
         {
           printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
           printf("invalid escape (%s)", e_arg);
@@ -2961,16 +2898,16 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
                 break;
               if ( (look_ctype_table(*argbegin) & 4) != 0 )
               {
-                argchr_4 = *(u8 *)argbegin++;
+                argchr_4 = *(u8 *)argbegin;
                 argchr_1 = 16 * argchr_1 + argchr_4 - '0';
               }
               else
               {
-                condtmp1 = (look_ctype_table(*argbegin) & 2) == 0;
                 hexnum = 16 * argchr_1;
-                argchr_5 = *(u8 *)argbegin++;
-                argchr_1 = condtmp1 ? hexnum + argchr_5 - '7' : hexnum + argchr_5 - 'W';
+                argchr_5 = *(u8 *)argbegin;
+                argchr_1 = ((look_ctype_table(*argbegin) & 2) == 0) ? hexnum + argchr_5 - '7' : hexnum + argchr_5 - 'W';
               }
+              argbegin++;
             }
           }
           else
@@ -3162,7 +3099,6 @@ int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv,
 {
   int opt_argc_1; // $s2
   int bitflags1; // $s0
-  bool condtmp1; // dc
   int bitflagstmpx; // $v0
   int numval; // [sp+10h] [-8h] BYREF
 
@@ -3202,9 +3138,8 @@ int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv,
         bitflags1 |= 0x40u;
         goto LABEL_22;
       }
-      condtmp1 = strcmp("timer", *opt_argv) == 0;
       bitflagstmpx = 0x10000;
-      if ( condtmp1 )
+      if ( strcmp("timer", *opt_argv) == 0 )
         goto LABEL_21;
       if ( !strcmp("event", *opt_argv) )
       {
@@ -3314,7 +3249,6 @@ int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int o
 int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv)
 {
   int addordel; // $s0
-  bool condres1; // dc
   struct sceNetCnfCommand *route_mem_1; // $v0
   struct sceNetCnfCommand *route_mem_2; // $s4
   int argc_minus_two; // $s3
@@ -3330,8 +3264,7 @@ int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_ar
   addordel = 3;
   if ( strcmp("add", opt_argv[1]) )
   {
-    condres1 = strcmp("del", opt_argv[1]) != 0;
-    if ( condres1 )
+    if ( strcmp("del", opt_argv[1]) != 0 )
       return 0;
     addordel = 4;
   }
@@ -3361,18 +3294,14 @@ LABEL_10:
 LABEL_11:
   if ( argc_minus_two <= 0 )
     return 0;
-  condres1 = do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_2[1]) != 0;
-  if ( !condres1 )
+  if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_2[1]) == 0 )
   {
-    condres1 = do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_2[2].code) != 0;
-    if ( !condres1 )
+    if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_2[2].code) == 0 )
     {
-      condres1 = do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_2[4].back) != 0;
-      if ( !condres1 )
+      if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_2[4].back) == 0 )
       {
         if ( !strcmp("default", *argv_plus_two)
-          || (condres1 = do_netcnfname2address_wrap(e, (char *)*argv_plus_two, (sceNetCnfAddress_t *)&route_mem_2[1]) != 0,
-              !condres1) )
+          || (do_netcnfname2address_wrap(e, (char *)*argv_plus_two, (sceNetCnfAddress_t *)&route_mem_2[1]) == 0) )
         {
           argcx1 = argc_minus_two - 1;
           argvx1 = argv_plus_two + 1;
@@ -3383,15 +3312,13 @@ LABEL_11:
             {
               if ( !strcmp("gw", *argvx1) )
               {
-                condres1 = do_netcnfname2address_wrap(e, *argvx2, (sceNetCnfAddress_t *)&route_mem_2[2].code) != 0;
-                if ( condres1 )
+                if ( do_netcnfname2address_wrap(e, *argvx2, (sceNetCnfAddress_t *)&route_mem_2[2].code) != 0 )
                   return -1;
                 route_mem_2[6].forw = (struct sceNetCnfCommand *)((int)route_mem_2[6].forw | 4);
               }
               else if ( !strcmp("netmask", *argvx1) )
               {
-                condres1 = do_netcnfname2address_wrap(e, *argvx2, (sceNetCnfAddress_t *)&route_mem_2[4].back) != 0;
-                if ( condres1 )
+                if ( do_netcnfname2address_wrap(e, *argvx2, (sceNetCnfAddress_t *)&route_mem_2[4].back) != 0 )
                   return -1;
               }
               argcx1 -= 2;
@@ -3524,18 +3451,14 @@ int do_check_other_keywords(
   const char *cur_avx; // $s2
   int has_flagged; // $s3
   const char **p_m_key; // $s0
-  bool condtmp1; // dc
   int authtypenum; // $v0
   int conntypenum; // $v0
-  int condtmp2; // $v0
   sceNetCnfEnv_t *e_tmp1; // $a0
-  int condtmp3; // $v0
   int m_offset; // $v0
   char numvalx; // $v1
   int loginhashx; // $v0
   char *e_arg_chkres; // $v0
   int parseres; // $v0
-  int condtmp4; // $v0
   int numval[2]; // [sp+10h] [-8h] BYREF
 
   options_1 = options;
@@ -3590,17 +3513,14 @@ int do_check_other_keywords(
           numval[0] = 0;
           goto LABEL_37;
         }
-        condtmp1 = strcmp("pap", (const char *)e->av[1]) == 0;
         authtypenum = 1;
-        if ( condtmp1 )
+        if ( strcmp("pap", (const char *)e->av[1]) == 0 )
           goto LABEL_36;
-        condtmp1 = strcmp("chap", (const char *)e->av[1]) == 0;
         authtypenum = 2;
-        if ( condtmp1 )
+        if ( strcmp("chap", (const char *)e->av[1]) == 0 )
           goto LABEL_36;
-        condtmp1 = strcmp("pap/chap", (const char *)e->av[1]) == 0;
         authtypenum = 3;
-        if ( condtmp1 )
+        if ( strcmp("pap/chap", (const char *)e->av[1]) == 0 )
           goto LABEL_36;
         if ( !strcmp("chap/pap", (const char *)e->av[1]) )
         {
@@ -3610,8 +3530,7 @@ LABEL_36:
         }
         else
         {
-          condtmp1 = do_parse_number(e, e->av[1], numval) == 0;
-          if ( !condtmp1 )
+          if ( do_parse_number(e, e->av[1], numval) != 0 )
             return -1;
         }
 LABEL_37:
@@ -3642,13 +3561,11 @@ LABEL_22:
           goto LABEL_87;
         if ( !strcmp("tone", (const char *)e->av[1]) )
           goto LABEL_44;
-        condtmp1 = strcmp("pulse", (const char *)e->av[1]) == 0;
         conntypenum = 1;
-        if ( condtmp1 )
+        if ( strcmp("pulse", (const char *)e->av[1]) == 0 )
           goto LABEL_99;
-        condtmp2 = strcmp("any", (const char *)e->av[1]);
         e_tmp1 = e;
-        if ( condtmp2 )
+        if ( strcmp("any", (const char *)e->av[1]) )
           goto LABEL_95;
         conntypenum = 2;
         goto LABEL_99;
@@ -3676,33 +3593,26 @@ LABEL_15:
           goto LABEL_99;
         if ( e->ac < 2 )
           goto LABEL_87;
-        condtmp1 = strcmp("auto", (const char *)e->av[1]) == 0;
         conntypenum = 1;
-        if ( condtmp1 )
+        if ( strcmp("auto", (const char *)e->av[1]) == 0 )
           goto LABEL_99;
-        condtmp1 = strcmp("10", (const char *)e->av[1]) == 0;
         conntypenum = 2;
-        if ( condtmp1 )
+        if ( strcmp("10", (const char *)e->av[1]) == 0 )
           goto LABEL_99;
-        condtmp1 = strcmp("10_fd", (const char *)e->av[1]) == 0;
         conntypenum = 3;
-        if ( condtmp1 )
+        if ( strcmp("10_fd", (const char *)e->av[1]) == 0 )
           goto LABEL_99;
-        condtmp1 = strcmp("10_fd_pause", (const char *)e->av[1]) == 0;
         conntypenum = 4;
-        if ( condtmp1 )
+        if ( strcmp("10_fd_pause", (const char *)e->av[1]) == 0 )
           goto LABEL_99;
-        condtmp1 = strcmp("tx", (const char *)e->av[1]) == 0;
         conntypenum = 5;
-        if ( condtmp1 )
+        if ( strcmp("tx", (const char *)e->av[1]) == 0 )
           goto LABEL_99;
-        condtmp1 = strcmp("tx_fd", (const char *)e->av[1]) == 0;
         conntypenum = 6;
-        if ( condtmp1 )
+        if ( strcmp("tx_fd", (const char *)e->av[1]) == 0 )
           goto LABEL_99;
-        condtmp4 = strcmp("tx_fd_pause", (const char *)e->av[1]);
         e_tmp1 = e;
-        if ( condtmp4 )
+        if ( strcmp("tx_fd_pause", (const char *)e->av[1]) )
           goto LABEL_95;
         conntypenum = 7;
         goto LABEL_99;
@@ -3720,17 +3630,14 @@ LABEL_100:
           *(u32 *)((char *)cnfdata + options_1->m_offset) = numval[0];
           return 0;
         }
-        condtmp1 = strcmp("eth", (const char *)e->av[1]) == 0;
         conntypenum = 1;
-        if ( condtmp1 )
+        if ( strcmp("eth", (const char *)e->av[1]) == 0 )
           goto LABEL_99;
-        condtmp1 = strcmp("ppp", (const char *)e->av[1]) == 0;
         conntypenum = 2;
-        if ( condtmp1 )
+        if ( strcmp("ppp", (const char *)e->av[1]) == 0 )
           goto LABEL_99;
-        condtmp3 = strcmp("nic", (const char *)e->av[1]);
         e_tmp1 = e;
-        if ( !condtmp3 )
+        if ( !strcmp("nic", (const char *)e->av[1]) )
         {
           conntypenum = 3;
 LABEL_99:
@@ -3740,8 +3647,7 @@ LABEL_99:
 LABEL_95:
         parseres = do_parse_number(e_tmp1, e_tmp1->av[1], numval);
 LABEL_96:
-        condtmp1 = parseres == 0;
-        if ( condtmp1 )
+        if ( parseres == 0 )
           goto LABEL_100;
         return -1;
         break;
@@ -3760,17 +3666,14 @@ LABEL_96:
           numval[0] = 0;
           goto LABEL_83;
         }
-        condtmp1 = strcmp("md5", (const char *)e->av[1]) == 0;
         loginhashx = 5;
-        if ( condtmp1 )
+        if ( strcmp("md5", (const char *)e->av[1]) == 0 )
           goto LABEL_82;
-        condtmp1 = strcmp("ms", (const char *)e->av[1]) == 0;
         loginhashx = 128;
-        if ( condtmp1 )
+        if ( strcmp("ms", (const char *)e->av[1]) == 0 )
           goto LABEL_82;
-        condtmp1 = strcmp("ms-v1", (const char *)e->av[1]) == 0;
         loginhashx = 128;
-        if ( condtmp1 )
+        if ( strcmp("ms-v1", (const char *)e->av[1]) == 0 )
           goto LABEL_82;
         if ( !strcmp("ms-v2", (const char *)e->av[1]) )
         {
@@ -3780,8 +3683,7 @@ LABEL_82:
         }
         else
         {
-          condtmp1 = do_parse_number(e, e->av[1], numval) == 0;
-          if ( !condtmp1 )
+          if ( do_parse_number(e, e->av[1], numval) != 0 )
             return -1;
         }
 LABEL_83:
@@ -3826,7 +3728,6 @@ int do_handle_net_cnf(sceNetCnfEnv_t *e)
   int wasprefixxed; // $s2
   int ac; // $v1
   const char *attach_devarg; // $a3
-  bool retres1; // dc
 
   av_tmp = e->av[0];
   wasprefixxed = 0;
@@ -3859,8 +3760,7 @@ int do_handle_net_cnf(sceNetCnfEnv_t *e)
   attach_devarg = 0;
   if ( ac >= 4 )
     attach_devarg = e->av[3];
-  retres1 = do_check_interface_keyword(e, e->av[1], e->av[2], attach_devarg) == 0;
-  if ( retres1 )
+  if ( do_check_interface_keyword(e, e->av[1], e->av[2], attach_devarg) == 0 )
     return 0;
   return -1;
 }
@@ -3871,7 +3771,6 @@ int do_handle_attach_cnf(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
   char *curkey; // $s0
   int wasprefixed; // $s2
   int keyasnum; // $s0
-  bool condtmp1; // dc
   u8 *eargext; // $a0
 
   curkey = (char *)e->av[0];
@@ -3888,8 +3787,7 @@ int do_handle_attach_cnf(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
   {
     if ( curkey[12] )
     {
-      condtmp1 = (look_ctype_table(curkey[12]) & 4) == 0;
-      if ( condtmp1 )
+      if ( (look_ctype_table(curkey[12]) & 4) == 0 )
         return 0;
       if ( curkey[13] )
         return 0;
@@ -4122,7 +4020,6 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
   u8 *lbuf; // $s0
   char *ptr_1; // $s2
   int f_no_check_magic; // $v0
-  bool condtmp1; // dc
   int read_res3; // $v0
   int curchind; // $s0
   u32 condtmp2; // $v0
@@ -4185,9 +4082,8 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
       read_res3 = read_res2;
     }
     else if ( read_res2 < 36
-           || (condtmp1 = strncmp(ptr_1, "# <Sony Computer Entertainment Inc.>", 36) == 0,
-               read_res3 = read_res2,
-               !condtmp1) )
+           || (read_res3 = read_res2,
+               strncmp(ptr_1, "# <Sony Computer Entertainment Inc.>", 36) != 0) )
     {
       curchind = 0;
       printf("netcnf: decoding error (magic=\"");
@@ -4203,7 +4099,8 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
           if ( (u8)*curptr_1 - (unsigned int)' ' < '_' )
             curchr = (u8)*curptr_1;
           printf("%c", curchr);
-          condtmp2 = ++curchind < '$';
+          curchind++;
+          condtmp2 = curchind < '$';
         }
         while ( curchind < read_res2 );
       }
@@ -4606,7 +4503,6 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
   size_t strlen1; // $v0
   int strlencalc; // $s3
   u8 *mem_ptr_02; // $v1
-  bool condtmp1; // dc
   u8 *mem_ptr_04; // $v1
   u8 *mem_ptr_05; // $v1
   unsigned int strptr_curchr2; // $a2
@@ -4758,8 +4654,7 @@ LABEL_41:
       }
       while ( 1 )
       {
-        condtmp1 = strlencalc-- <= 0;
-        if ( condtmp1 )
+        if ( strlencalc-- <= 0 )
           break;
         mem_ptr_04 = e->mem_ptr;
         if ( mem_ptr_04 >= e->mem_last )
@@ -4838,9 +4733,8 @@ LABEL_45:
             mem_ptr_09[2] = a0123456789abcd_0[strptr_curchr2 >> 4];
             mem_last_04 = e->mem_last;
             e->mem_ptr = mem_ptr_rval_01;
-            condtmp1 = mem_ptr_rval_01 >= mem_last_04;
             mem_ptr_rval_03 = mem_ptr_09 + 4;
-            if ( condtmp1 )
+            if ( mem_ptr_rval_01 >= mem_last_04 )
               return -2;
             mem_ptr_09[3] = a0123456789abcd_0[strptr_curchr2 & 0xF];
           }
@@ -5239,7 +5133,6 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
   int code; // $v1
   int nameserverflag; // $s0
   int result; // $v0
-  bool condtmp1; // dc
   const char *del_or_add; // $a2
   const char *net_or_host; // $a2
 
@@ -5262,23 +5155,20 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
         result = do_netcnf_sprintf_buffer(e, "route add -%s", net_or_host);
         if ( result < 0 )
           return result;
-        condtmp1 = sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[1]) != 0;
-        if ( condtmp1 )
+        if ( sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[1]) != 0 )
           return -1;
         result = do_netcnf_sprintf_buffer(e, " %s", (const char *)e->lbuf);
         if ( result < 0 )
           return result;
         if ( ((int)cmd_head[6].forw & 4) != 0 )
         {
-          condtmp1 = sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[2].code) != 0;
-          if ( condtmp1 )
+          if ( sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[2].code) != 0 )
             return -1;
           result = do_netcnf_sprintf_buffer(e, " gw %s", (const char *)e->lbuf);
           if ( result < 0 )
             return result;
         }
-        condtmp1 = sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[4].back) != 0;
-        if ( condtmp1 )
+        if ( sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[4].back) != 0 )
           return -1;
         result = do_netcnf_sprintf_buffer(e, " netmask %s", (const char *)e->lbuf);
         if ( result < 0 )
@@ -5291,8 +5181,7 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
       {
         if ( code != 4 )
           return -1;
-        condtmp1 = sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[1]) != 0;
-        if ( condtmp1 )
+        if ( sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[1]) != 0 )
           return -1;
         result = do_netcnf_sprintf_buffer(e, "route del %s\n", (const char *)e->lbuf);
         if ( result < 0 )
@@ -5307,8 +5196,7 @@ LABEL_29:
       return -1;
     nameserverflag = 1;
 LABEL_10:
-    condtmp1 = sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[1]) != 0;
-    if ( condtmp1 )
+    if ( sceNetCnfAddress2String((char *)e->lbuf, 1024, (sceNetCnfAddress_t *)&cmd_head[1]) != 0 )
       return -1;
     del_or_add = "del";
     if ( nameserverflag )
@@ -5379,7 +5267,6 @@ int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
   char *fullpath; // $s0
   int result; // $v0
   const char *attach_or_net_cnf; // $a0
-  bool writerese; // dc
   int fd; // $v0
   int fd_1; // $s1
   int writeres; // $s0
@@ -5439,9 +5326,8 @@ int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
     }
     else
     {
-      writerese = do_write_netcnf_encode(fullpath, e->mem_base, memsize) >= 0;
       result = 0;
-      if ( !writerese )
+      if ( do_write_netcnf_encode(fullpath, e->mem_base, memsize) < 0 )
       {
         result = -1;
         ++e->file_err;
@@ -5537,7 +5423,6 @@ int do_export_netcnf(sceNetCnfEnv_t *e)
   int req; // $v1
   char *arg_fname; // $a1
   struct sceNetCnfInterface *ifc; // $a2
-  bool condtmp1; // dc
 
   req = e->req;
   if ( req == 1 )
@@ -5552,8 +5437,7 @@ int do_export_netcnf(sceNetCnfEnv_t *e)
     arg_fname = e->arg_fname;
     ifc = e->ifc;
   }
-  condtmp1 = do_export_netcnf_inner(e, arg_fname, ifc) == 0;
-  if ( !condtmp1 )
+  if ( do_export_netcnf_inner(e, arg_fname, ifc) != 0 )
     return -1;
   return 0;
 }
@@ -5939,13 +5823,11 @@ LABEL_42:
 int do_check_aolnet(const char *auth_name)
 {
   const char *auth_name_1; // $s0
-  bool condtmp1; // dc
   int i; // $s1
   char *periodpos; // $v0
 
   auth_name_1 = auth_name;
-  condtmp1 = strncmp(auth_name, "aolnet/", 7) != 0;
-  if ( !condtmp1 )
+  if ( strncmp(auth_name, "aolnet/", 7) == 0 )
   {
     for ( i = 0; ; ++i )
     {
@@ -5968,7 +5850,6 @@ int do_check_authnet(char *argst, char *arged)
   char *j; // $s0
   u8 ctypetmp1; // $v0
   const char *j_1; // $a0
-  bool condtmp1; // dc
   int result; // $v0
   int j_hichr1; // $a0
   int j_curchr1; // $v0
@@ -5990,9 +5871,8 @@ int do_check_authnet(char *argst, char *arged)
   }
   j_1 = j;
 LABEL_9:
-  condtmp1 = strncmp(j_1, "auth_name", 9) != 0;
   result = 0;
-  if ( !condtmp1 )
+  if ( strncmp(j_1, "auth_name", 9) == 0 )
   {
     j_hichr1 = (u8)*j << 24;
     if ( *j )
@@ -6037,7 +5917,6 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
   int errretres; // $s2
   char *curheapptr1; // $s4
   char *heapmem_2; // $s0
-  bool condtmp1; // dc
   int read_res3; // $v0
   int curchind; // $s0
   u32 condtmp2; // $v0
@@ -6070,9 +5949,8 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
     if ( no_check_magic )
     {
       if ( read_res2 < 36
-        || (condtmp1 = strncmp(g_read_check_netcnf_heapptr, "# <Sony Computer Entertainment Inc.>", 36) == 0,
-            read_res3 = read_res2,
-            !condtmp1) )
+        || (read_res3 = read_res2,
+            strncmp(g_read_check_netcnf_heapptr, "# <Sony Computer Entertainment Inc.>", 36) != 0) )
       {
         curchind = 0;
         printf("netcnf: decoding error (magic=\"");
@@ -6086,7 +5964,8 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
             curchr2 = (u8)curheapptr1[curchind];
             curchr = (unsigned int)(curchr2 - 32) >= 0x5F ? '?' : (char)curchr2;
             printf("%c", curchr);
-            condtmp2 = ++curchind < 36;
+            curchind++;
+            condtmp2 = curchind < 36;
           }
           while ( curchind < read_res2 );
         }
@@ -6205,7 +6084,6 @@ char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netc
   int fpath_1_curchr2; // $t0
   int fpath_1_curchrhi1; // $v0
   int fpath_1_curchr3; // $v0
-  bool condtmp1; // dc
   int fpath_1_curchr1; // $v1
   char *fpath_2; // $v1
   char *i; // $t0
@@ -6248,9 +6126,8 @@ LABEL_24:
     fpath_1_curchr1 = *fpath_1_minus_1;
     if ( fpath_1_curchr1 != ':' && fpath_1_curchr1 != '/' )
     {
-      condtmp1 = fpath_1_curchr1 != '\\';
       fpath_2 = fpath;
-      if ( condtmp1 )
+      if ( fpath_1_curchr1 != '\\' )
         goto LABEL_28;
     }
     goto LABEL_27;
@@ -6272,10 +6149,9 @@ LABEL_24:
         fpath_1_curchr3 = *fpath_1_minus_1;
         if ( fpath_1_curchr3 == ':' )
           goto LABEL_27;
-        condtmp1 = fpath_1_curchr3 != '/';
         fpath_1_curchrhi1 = (u8)*fpath_1_minus_1 << 24;
       }
-      while ( condtmp1 );
+      while ( fpath_1_curchr3 != '/' );
     }
     goto LABEL_24;
   }
@@ -6330,20 +6206,16 @@ int do_get_filesize_inner(int fd)
 //----- (00408B9C) --------------------------------------------------------
 int is_special_file_path(const char *netcnf_path)
 {
-  bool condtmp1; // dc
-
   if ( g_callbacks.type == 1 )
   {
-    condtmp1 = strncmp(netcnf_path, "mc", 2) == 0;
-    if ( condtmp1 )
+    if ( strncmp(netcnf_path, "mc", 2) == 0 )
       return 1;
   }
   else
   {
     if ( g_callbacks.type != 2 )
       return 1;
-    condtmp1 = strncmp(netcnf_path, "ext", 3) != 0;
-    if ( !condtmp1 )
+    if ( strncmp(netcnf_path, "ext", 3) == 0 )
       return 1;
   }
   return 0;
@@ -6422,29 +6294,26 @@ int do_filesize_callback_handles(int in_fd, int in_allocstate)
 }
 
 //----- (00408D2C) --------------------------------------------------------
-int do_clear_callback_handles(int fd, int allocmatch)
+void do_clear_callback_handles(int fd, int allocmatch)
 {
   int indtmp; // $a3
   int *p_m_allocstate; // $a2
   struct netcnf_callback_handle_info *i; // $v1
   int count_tmp; // $v0
-  int condtmp; // $v0
 
   indtmp = 0;
   p_m_allocstate = &g_callback_handle_infos[0].m_allocstate;
   for ( i = g_callback_handle_infos; i->m_fd != fd || *p_m_allocstate != allocmatch; ++i )
   {
     p_m_allocstate += 73;
-    condtmp = ++indtmp < 4;
+    ++indtmp;
     if ( indtmp >= 4 )
-      return condtmp;
+      return;
   }
   count_tmp = g_open_callback_handle_count;
   i->m_fd = -1;
   *p_m_allocstate = 0;
-  condtmp = count_tmp - 1;
-  g_open_callback_handle_count = condtmp;
-  return condtmp;
+  g_open_callback_handle_count = count_tmp - 1;
 }
 // 40C7E0: using guessed type int g_open_callback_handle_count;
 
@@ -6454,7 +6323,6 @@ const char *do_colon_callback_handles(const char *netcnf_path, char *device)
   char *index_res; // $s1
   int devnameend; // $s0
   const char *pathportionstart; // $s1
-  bool condtmp1; // dc
 
   index_res = index(netcnf_path, ':');
   if ( index_res )
@@ -6469,8 +6337,7 @@ const char *do_colon_callback_handles(const char *netcnf_path, char *device)
       memcpy(device, netcnf_path, index_res - netcnf_path + 1);
       device[devnameend] = 0;
       pathportionstart = index_res + 1;
-      condtmp1 = strlen(pathportionstart) + 1 >= 257;
-      if ( !condtmp1 )
+      if ( strlen(pathportionstart) + 1 < 257 )
         return pathportionstart;
     }
   }

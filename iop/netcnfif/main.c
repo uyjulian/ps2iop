@@ -1,6 +1,5 @@
 
 #include "irx_imports.h"
-#include <stdbool.h>
 
 IRX_ID("Netcnf_Interface", 2, 30);
 
@@ -305,7 +304,6 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
   int p2_stat_tmp; // $t1
   int dmatid1; // $s0
   int dmatid2; // $s0
-  bool condtmp1; // dc
   int typetmp; // $v1
   int redial_count; // $a1
   int dialind; // $a0
@@ -395,9 +393,8 @@ LABEL_57:
       dmatid2 = sceNetcnfifSendEE((unsigned int)&data, buf->addr, 0x1340u);
       do
       {
-        condtmp1 = sceNetcnfifDmaCheck(dmatid2) != 0;
       }
-      while ( condtmp1 );
+      while ( sceNetcnfifDmaCheck(dmatid2) != 0 );
       buf->data = retres1;
       break;
     case 3:
@@ -1418,7 +1415,6 @@ int sce_callback_open(const char *device, const char *pathname, int flags, int m
   const char *device_1; // $a1
   size_t pathname_len_1; // $s0
   size_t pathnamelen; // $s2
-  bool condtmp1; // dc
 
   gbuf[0] = flags;
   gbuf[1] = mode;
@@ -1431,8 +1427,7 @@ int sce_callback_open(const char *device, const char *pathname, int flags, int m
   gbuf[3] = pathname_len_0 + 1;
   memcpy(&gbuf[4], device_1, devicelen);
   memcpy((char *)&gbuf[4] + devicelen, pathname, pathnamelen);
-  condtmp1 = sceSifCallRpc(&gcd, 12, 0, gbuf, (pathname_len_1 + devicelen + 80) & 0xFFFFFFC0, gbuf, 64, 0, 0) < 0;
-  if ( !condtmp1 )
+  if ( sceSifCallRpc(&gcd, 12, 0, gbuf, (pathname_len_1 + devicelen + 80) & 0xFFFFFFC0, gbuf, 64, 0, 0) >= 0 )
   {
     *filesize = gbuf[1];
     return gbuf[0];
@@ -1481,11 +1476,8 @@ int sce_callback_read(int fd, const char *device, const char *pathname, void *bu
 //----- (004020B4) --------------------------------------------------------
 int sce_callback_close(int fd)
 {
-  bool condtmp; // dc
-
   gbuf[0] = fd;
-  condtmp = sceSifCallRpc(&gcd, 14, 0, gbuf, 64, gbuf, 64, 0, 0) < 0;
-  if ( !condtmp )
+  if ( sceSifCallRpc(&gcd, 14, 0, gbuf, 64, gbuf, 64, 0, 0) >= 0 )
     return gbuf[0];
   return -1;
 }
