@@ -379,10 +379,7 @@ sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd)
 //----- (004002B0) --------------------------------------------------------
 unsigned int alarm_cb_cmd_80000018_1(void *pkt)
 {
-  bool sendres; // dc
-
-  sendres = isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) == 0;
-  if ( !sendres )
+  if ( isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) != 0 )
     return 0;
   return 0xF000;
 }
@@ -437,10 +434,7 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
 //----- (0040044C) --------------------------------------------------------
 unsigned int alarm_cb_cmd_80000018_2(void *pkt)
 {
-  bool sendres; // dc
-
-  sendres = isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) == 0;
-  if ( !sendres )
+  if ( isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) != 0 )
     return 0;
   return 0xF000;
 }
