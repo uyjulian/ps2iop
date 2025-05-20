@@ -1,6 +1,5 @@
 
 #include "irx_imports.h"
-#include <stdbool.h>
 
 IRX_ID("Sound_Data_HD", 2, 2);
 
@@ -663,7 +662,6 @@ void do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, sceHardSyn
 //----- (0040072C) --------------------------------------------------------
 unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vagoffsaddr)
 {
-  bool condtmp1; // dc
   unsigned int indx1; // $a0
   sceHardSynthVagInfoChunk *m_vagi; // $v1
   unsigned int bodySize; // $a1
@@ -674,11 +672,9 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vag
   int condtmp2; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
-  condtmp1 = do_get_vers_head_chunk(indata, &dinfo) != 0;
-  if ( !condtmp1 )
+  if ( do_get_vers_head_chunk(indata, &dinfo) == 0 )
   {
-    condtmp1 = do_get_vagi_chunk(indata, &dinfo) != 0;
-    if ( !condtmp1 )
+    if ( do_get_vagi_chunk(indata, &dinfo) == 0 )
     {
       indx1 = 0;
       m_vagi = dinfo.m_vagi;
@@ -687,14 +683,12 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vag
       do
       {
         offsdata = m_vagi->vagInfoOffsetAddr[indx2];
-        condtmp1 = offsdata == -1;
         vagparam = (sceHardSynthVagParam *)((char *)m_vagi + offsdata);
-        if ( !condtmp1 )
+        if ( offsdata != -1 )
         {
           curaddr = vagparam->vagOffsetAddr;
-          condtmp1 = *vagoffsaddr >= vagparam->vagOffsetAddr;
           condtmp2 = vagparam->vagOffsetAddr < bodySize;
-          if ( !condtmp1 )
+          if ( *vagoffsaddr < vagparam->vagOffsetAddr )
           {
             if ( condtmp2 )
               bodySize = curaddr;
@@ -785,7 +779,6 @@ int do_get_common_block_ptr_note(
         void **ptr)
 {
   int idx1; // $s1
-  bool condtmp1; // dc
   int idx2; // $s6
   sceHardSynthSplitBlock *p_splitblock; // $a1
   void **ptr_1; // $a0
@@ -810,8 +803,7 @@ int do_get_common_block_ptr_note(
   sceHardSynthVagParam *p_vagparam; // [sp+1Ch] [-4h] BYREF
 
   idx1 = 0;
-  condtmp1 = sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam) != 0;
-  if ( !condtmp1 )
+  if ( sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam) == 0 )
   {
     if ( p_programparam->splitBlockAddr != -1 )
     {
@@ -1043,7 +1035,6 @@ int do_get_common_block_ptr(
         void **param)
 {
   int idx1; // $s0
-  bool condtmp; // dc
   sceHardSynthSampleSetParam *p_samplesetparam_2; // $v1
   int nsampletmp2; // $s3
   int cursampleindexoffs2; // $v0
@@ -1063,8 +1054,7 @@ int do_get_common_block_ptr(
   sceHardSynthVagParam *p_vagparam[2]; // [sp+18h] [-8h] BYREF
 
   idx1 = 0;
-  condtmp = sceSdHdGetSampleSetParamAddr(buffer, sampleSetNumber, &p_samplesetparam) != 0;
-  if ( condtmp )
+  if ( sceSdHdGetSampleSetParamAddr(buffer, sampleSetNumber, &p_samplesetparam) != 0 )
     return 0;
   if ( mode )
   {
