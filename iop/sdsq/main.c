@@ -166,7 +166,6 @@ void sdsq_1()
 //----- (00400060) --------------------------------------------------------
 int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
 {
-  int result; // $v0
   signed int chunkSize; // $v0
   sceSeqSeSequenceChunk *chk; // $a0
 
@@ -188,7 +187,6 @@ int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
       }
       else
       {
-        result = 0x8104002F;
         dinfo->m_vers = 0;
         dinfo->m_sequ = 0;
       }
@@ -204,7 +202,7 @@ int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
     dinfo->m_vers = 0;
     return 0x8104000E;
   }
-  return result;
+  return 0x8104002F;
 }
 
 //----- (00400108) --------------------------------------------------------
@@ -368,7 +366,6 @@ int sceSdSqInitMidiData(void *addr, u32 midiNumber, SceSdSqMidiData *midiData)
 int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
 {
   char niceflag; // $t1
-  int result; // $v0
   u32 originalMessageLength; // $v0
   u8 cur_message; // $a0
   sceSeqMidiDataBlock *midiData_1; // $a1
@@ -583,9 +580,8 @@ LABEL_32:
 LABEL_39:
   if ( !niceflag )
     midiData->reserve[midiData->messageLength + 6] &= ~0x80u;
-  result = 0;
   midiData->nextOffset = midiData_offs_plusone - (u8 *)midiData->midiData;
-  return result;
+  return 0;
 }
 
 //----- (0040081C) --------------------------------------------------------
@@ -803,7 +799,6 @@ int sceSdSqCopySongData(SceSdSqSongData *to, const SceSdSqSongData *from)
 int _start(int ac)
 {
   int unregres; // $s0
-  int result; // $v0
   int regres; // $s0
   int state[2]; // [sp+10h] [-8h] BYREF
 
@@ -812,18 +807,17 @@ int _start(int ac)
     CpuSuspendIntr(state);
     regres = RegisterLibraryEntries(&_exp_sdsq);
     CpuResumeIntr(state[0]);
-    result = 1;
     if ( !regres )
       return 2;
+    return 1;
   }
   else
   {
     CpuSuspendIntr(state);
     unregres = ReleaseLibraryEntries(&_exp_sdsq);
     CpuResumeIntr(state[0]);
-    result = 2;
     if ( !unregres )
       return 1;
+    return 2;
   }
-  return result;
 }
