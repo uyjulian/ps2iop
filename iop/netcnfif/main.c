@@ -304,7 +304,6 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
   int cpywtmp3; // $t3
   int p2_stat_tmp; // $t1
   int dmatid1; // $s0
-  void *result; // $v0
   int dmatid2; // $s0
   bool condtmp1; // dc
   int typetmp; // $v1
@@ -374,14 +373,12 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
         }
         my_free(list_iop);
         my_free(list_ee);
-        result = buf;
       }
       else
       {
         my_free(list_iop);
         retres1 = -2;
 LABEL_56:
-        result = buf;
       }
 LABEL_57:
       buf->data = retres1;
@@ -389,7 +386,6 @@ LABEL_57:
     case 2:
       sceNetcnfifEnvInit(&env, mem_area, mem_area_size, buf->f_no_decode);
       retres1 = sceNetCnfLoadEntry(buf->fname, buf->type, buf->usr_name, &env);
-      result = buf;
       if ( retres1 < 0 )
         goto LABEL_57;
       sceNetcnfifDataInit(&data);
@@ -400,7 +396,6 @@ LABEL_57:
       do
       {
         condtmp1 = sceNetcnfifDmaCheck(dmatid2) != 0;
-        result = buf;
       }
       while ( condtmp1 );
       buf->data = retres1;
@@ -450,22 +445,18 @@ LABEL_57:
       callback.type = typetmp;
       sce_callback_initialize();
       sceNetCnfSetCallback(&callback);
-      result = buf;
       goto LABEL_57;
     case 15:
       sceNetCnfSetCallback(0);
-      result = buf;
       goto LABEL_57;
     case 100:
       buf->addr = (int)&data;
       goto LABEL_56;
     case 101:
-      result = buf;
       if ( !mem_area )
       {
         mem_area_size = buf->data;
         mem_area = my_alloc(mem_area_size);
-        result = buf;
         if ( !mem_area )
           retres1 = -2;
       }
@@ -475,12 +466,10 @@ LABEL_57:
         my_free(mem_area);
       mem_area_size = 0;
       mem_area = 0;
-      result = buf;
       goto LABEL_57;
     case 103:
       sceNetcnfifEnvInit(&env, mem_area, mem_area_size, buf->f_no_decode);
       retres1 = sceNetcnfifWriteEnv(&env, &data, buf->type);
-      result = buf;
       if ( retres1 < 0 )
         goto LABEL_57;
       if ( env.root )
@@ -512,7 +501,7 @@ LABEL_57:
     default:
       goto LABEL_56;
   }
-  return result;
+  return buf;
 }
 // 402880: using guessed type sceNetCnfEnv_t env;
 
@@ -997,24 +986,21 @@ int put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 int root_link(sceNetCnfEnv_t *e, int type)
 {
   struct sceNetCnfInterface *ifc; // $a0
-  int result; // $v0
   struct sceNetCnfRoot *root; // $v0
   struct sceNetCnfRoot *rootmem; // $v1
   struct sceNetCnfPair *p; // $v1
   struct sceNetCnfPair *pair_tail; // $v0
 
   ifc = e->ifc;
-  result = 0;
   if ( !ifc )
-    return result;
+    return 0;
   root = e->root;
   if ( !root )
   {
     rootmem = (struct sceNetCnfRoot *)sceNetCnfAllocMem(e, 44, 2);
     e->root = rootmem;
-    result = -2;
     if ( !rootmem )
-      return result;
+      return -2;
     rootmem->version = 3;
     e->root->redial_count = -1;
     e->root->redial_interval = -1;
@@ -1025,9 +1011,8 @@ int root_link(sceNetCnfEnv_t *e, int type)
   {
 LABEL_10:
     p = (struct sceNetCnfPair *)sceNetCnfAllocMem(e, 40, 2);
-    result = -2;
     if ( !p )
-      return result;
+      return -2;
     if ( type == 1 )
       p->ifc = e->ifc;
     if ( type == 2 )
@@ -1043,13 +1028,12 @@ LABEL_10:
   }
   if ( type == 1 )
     root->pair_head->ifc = ifc;
-  result = 0;
   if ( type == 2 )
   {
     e->root->pair_head->dev = e->ifc;
     return 0;
   }
-  return result;
+  return 0;
 }
 
 //----- (00401628) --------------------------------------------------------
@@ -1090,18 +1074,17 @@ int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
     if ( type != 2 )
     {
 LABEL_70:
-      result = -100;
       if ( init_flag )
       {
         e->ifc = 0;
       }
       else
       {
-        result = -2;
         if ( !e->alloc_err )
           return retres;
+        return -2;
       }
-      return result;
+      return -100;
     }
     dev_type = data->dev_type;
     if ( dev_type != -1 )
@@ -1279,7 +1262,6 @@ LABEL_68:
 //----- (00401AC4) --------------------------------------------------------
 int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 {
-  int result; // $v0
   struct sceNetCnfRoot *rootmem; // $v0
   struct sceNetCnfPair *p; // $s1
   struct sceNetCnfPair *pair_tail; // $v0
@@ -1339,10 +1321,9 @@ int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
     indx1 = indx2;
   }
   while ( indx2 < 2 );
-  result = -2;
   if ( !e->alloc_err )
     return linkres1;
-  return result;
+  return -2;
 }
 
 //----- (00401CB4) --------------------------------------------------------
@@ -1383,7 +1364,6 @@ int sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
 int sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int size)
 {
   int dmatid; // $s0
-  int result; // $v0
   SifDmaTransfer_t dmat; // [sp+10h] [-10h] BYREF
 
   dmat.src = (void *)data;
@@ -1397,10 +1377,9 @@ int sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int size)
     CpuSuspendIntr(&oldstat);
     dmatid = sceSifSetDma(&dmat, 1);
     CpuResumeIntr(oldstat);
-    result = dmatid;
   }
   while ( !dmatid );
-  return result;
+  return dmatid;
 }
 
 //----- (00401DE4) --------------------------------------------------------
@@ -1440,7 +1419,6 @@ int sce_callback_open(const char *device, const char *pathname, int flags, int m
   size_t pathname_len_1; // $s0
   size_t pathnamelen; // $s2
   bool condtmp1; // dc
-  int result; // $v0
 
   gbuf[0] = flags;
   gbuf[1] = mode;
@@ -1454,13 +1432,12 @@ int sce_callback_open(const char *device, const char *pathname, int flags, int m
   memcpy(&gbuf[4], device_1, devicelen);
   memcpy((char *)&gbuf[4] + devicelen, pathname, pathnamelen);
   condtmp1 = sceSifCallRpc(&gcd, 12, 0, gbuf, (pathname_len_1 + devicelen + 80) & 0xFFFFFFC0, gbuf, 64, 0, 0) < 0;
-  result = -1;
   if ( !condtmp1 )
   {
     *filesize = gbuf[1];
     return gbuf[0];
   }
-  return result;
+  return -1;
 }
 // 405678: using guessed type int gbuf[1024];
 
@@ -1505,29 +1482,24 @@ int sce_callback_read(int fd, const char *device, const char *pathname, void *bu
 int sce_callback_close(int fd)
 {
   bool condtmp; // dc
-  int result; // $v0
 
   gbuf[0] = fd;
   condtmp = sceSifCallRpc(&gcd, 14, 0, gbuf, 64, gbuf, 64, 0, 0) < 0;
-  result = -1;
   if ( !condtmp )
     return gbuf[0];
-  return result;
+  return -1;
 }
 // 405678: using guessed type int gbuf[1024];
 
 //----- (00402120) --------------------------------------------------------
 int my_create_heap(void)
 {
-  int result; // $v0
-
   if ( g_heap )
     return -2;
   g_heap = CreateHeap(1024, 1);
-  result = -1;
   if ( g_heap )
     return 0;
-  return result;
+  return -1;
 }
 
 //----- (00402170) --------------------------------------------------------
