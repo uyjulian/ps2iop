@@ -1,6 +1,5 @@
 
 #include "irx_imports.h"
-#include <stdbool.h>
 
 IRX_ID("USB_module_loader", 2, 1);
 
@@ -149,7 +148,6 @@ int _start(int ac, char **av)
   char *cur_av_curstr2; // $v1
   int rbmul; // $
   const char *errstr; // $a0
-  bool regres; // dc
   int thid1; // $s0
   int thid2; // $a0
   iop_event_t efparam; // [sp+10h] [-30h] BYREF
@@ -233,8 +231,7 @@ LABEL_9:
   errstr = "Ring buffer Initialize Error!!\n";
   if ( !g_rb_entries )
     goto LABEL_36;
-  regres = RegisterLibraryEntries(&_exp_usbmload) != 0;
-  if ( regres )
+  if ( RegisterLibraryEntries(&_exp_usbmload) != 0 )
     return 1;
   if ( has_conffile == 1 )
   {
@@ -294,7 +291,6 @@ LABEL_36:
 //----- (00400480) --------------------------------------------------------
 int module_unload()
 {
-  bool relres; // dc
   USBDEV_t *listent_1; // $s2
   int argind; // $s1
   USBDEV_t *listent_2; // $s0
@@ -303,8 +299,7 @@ int module_unload()
   int stopres; // [sp+10h] [-8h] BYREF
   int state; // [sp+14h] [-4h] BYREF
 
-  relres = ReleaseLibraryEntries(&_exp_usbmload) != 0;
-  if ( !relres )
+  if ( ReleaseLibraryEntries(&_exp_usbmload) == 0 )
   {
     sceUsbmlDisable();
     TerminateThread(g_thid);
@@ -906,7 +901,6 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
   char *curbuf_3; // $v1
   int curbuf_1_chr; // $v0
   int curbuf_chr2; // $v0
-  bool condtmp_nl; // dc
   char *curbuf_1_offs; // $v0
   int curbuf_chr4; // $v1
   char *curbuf_offs5; // $v1
@@ -950,9 +944,8 @@ LABEL_9:
       curbuf_chr2 = *curbuf_3;
       if ( !*curbuf_3 || curbuf_chr2 == '\r' )
         goto LABEL_36;
-      condtmp_nl = curbuf_chr2 == '\n';
       curbuf_1_offs = &curbuf_1[chrind1];
-      if ( condtmp_nl )
+      if ( curbuf_chr2 == '\n' )
         goto LABEL_37;
       *dstptr_1++ = curbuf_2;
       ++splitfound;
@@ -1353,10 +1346,7 @@ LABEL_19:
 //----- (00401DF0) --------------------------------------------------------
 int sceUsbmlChangeThreadPriority(int prio1)
 {
-  bool chgres; // dc
-
-  chgres = ChangeThreadPriority(g_thid, prio1) == 0;
-  if ( !chgres )
+  if ( ChangeThreadPriority(g_thid, prio1) != 0 )
     return -1;
   return 0;
 }
