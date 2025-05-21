@@ -78,7 +78,6 @@ void usage(void);
 int module_start(int argc, char *argv[]);
 int module_stop(int argc, char *argv[]);
 int _start(int argc, char *argv[]);
-void netcnfif_0();
 void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size);
 void sceNetcnfifInterfaceStart(void);
 void sceNetcnfifInterfaceStop(void);
@@ -278,12 +277,6 @@ int _start(int argc, char *argv[])
     return module_start(argc, argv);
   else
     return module_stop(-argc, argv);
-}
-
-//----- (004003E8) --------------------------------------------------------
-void netcnfif_0()
-{
-  ;
 }
 
 //----- (004003F0) --------------------------------------------------------

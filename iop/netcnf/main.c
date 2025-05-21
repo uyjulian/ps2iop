@@ -49,7 +49,6 @@ int _start(int ac, char **av);
 
 
 
-void netcnf_0();
 int do_read_ilink_id();
 int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr);
 int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len);
@@ -679,12 +678,6 @@ void sceNetCnfSetCallback(sceNetCnfCallback_t *pcallback)
   WaitSema(g_semid);
   do_set_callback_inner(pcallback);
   SignalSema(g_semid);
-}
-
-//----- (00400D08) --------------------------------------------------------
-void netcnf_0()
-{
-  ;
 }
 
 //----- (00400D10) --------------------------------------------------------
