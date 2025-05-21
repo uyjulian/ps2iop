@@ -253,12 +253,11 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
 unsigned int alarm_cb_cmd_80000018_2(void *pkt);
 void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struct msif_data *harg);
 void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg);
-int do_set_rpc_queue(sceSifMQueueData *qd, int key);
-int unusedsub_400790(u32 *, int, int, int, int, int, int);
-sceSifMServeData *do_msif_remove_rpc(sceSifMServeData *sd);
-sceSifMQueueData *do_sif_remove_rpc_queue(sceSifMQueueData *qd);
+void do_set_rpc_queue(sceSifMQueueData *qd, int key);
+void do_msif_remove_rpc(sceSifMServeData *sd);
+void do_sif_remove_rpc_queue(sceSifMQueueData *qd);
 struct _sifm_serve_data *do_msif_get_next_request(sceSifMQueueData *qd);
-unsigned int do_msif_exec_request(sceSifMServeData *sd);
+void do_msif_exec_request(sceSifMServeData *sd);
 void do_msif_rpc_loop(sceSifMQueueData *qd);
 void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat);
 void unusedsub_400DC4(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
@@ -517,7 +516,7 @@ void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct ms
 }
 
 //----- (004006E8) --------------------------------------------------------
-int do_set_rpc_queue(sceSifMQueueData *qd, int key)
+void do_set_rpc_queue(sceSifMQueueData *qd, int key)
 {
   sceSifMQueueData *i; // $v1
   int state; // [sp+10h] [-8h] BYREF
@@ -539,14 +538,14 @@ int do_set_rpc_queue(sceSifMQueueData *qd, int key)
   {
     g_msif_data.m_active_queue = qd;
   }
-  return CpuResumeIntr(state);
+  CpuResumeIntr(state);
 }
 // 4025A0: using guessed type msif_data g_msif_data;
 
 // Removed unused func
 
 //----- (00400884) --------------------------------------------------------
-sceSifMServeData *do_msif_remove_rpc(sceSifMServeData *sd)
+void do_msif_remove_rpc(sceSifMServeData *sd)
 {
   sceSifMServeEntry *sentry; // $s2
   sceSifMServeData *serve_list; // $s0
@@ -573,20 +572,17 @@ sceSifMServeData *do_msif_remove_rpc(sceSifMServeData *sd)
       serve_list = serve_list->next;
     }
     while ( serve_list );
-    if ( !serve_list )
+    if ( serve_list )
     {
-LABEL_7:
-      CpuResumeIntr(state);
-      return 0;
+      serve_list_1->next = sd->next;
     }
-    serve_list_1->next = sd->next;
   }
+LABEL_7:
   CpuResumeIntr(state);
-  return serve_list;
 }
 
 //----- (00400938) --------------------------------------------------------
-sceSifMQueueData *do_sif_remove_rpc_queue(sceSifMQueueData *qd)
+void do_sif_remove_rpc_queue(sceSifMQueueData *qd)
 {
   sceSifMQueueData *m_active_queue; // $s0
   sceSifMQueueData *next; // $v0
@@ -613,7 +609,6 @@ sceSifMQueueData *do_sif_remove_rpc_queue(sceSifMQueueData *qd)
   }
 LABEL_7:
   CpuResumeIntr(state);
-  return m_active_queue;
 }
 // 4025A0: using guessed type msif_data g_msif_data;
 
@@ -639,7 +634,7 @@ struct _sifm_serve_data *do_msif_get_next_request(sceSifMQueueData *qd)
 }
 
 //----- (00400A34) --------------------------------------------------------
-unsigned int do_msif_exec_request(sceSifMServeData *sd)
+void do_msif_exec_request(sceSifMServeData *sd)
 {
   int size_extra; // $s3
   void *sentry_ret; // $s4
@@ -648,7 +643,6 @@ unsigned int do_msif_exec_request(sceSifMServeData *sd)
   SifMRpcRendPkt_t *fpacket2_tmp; // $s0
   sceSifMClientData *client; // $v1
   int adddmat; // $s1
-  unsigned int result; // $v0
   void *receive; // $v1
   int adddmat_1; // $v1
   int dmat_count; // $s1
@@ -680,9 +674,7 @@ unsigned int do_msif_exec_request(sceSifMServeData *sd)
   adddmat = 0;
   if ( sd->rmode )
   {
-    do
-      result = sceSifSendCmd(0x80000018, fpacket2_tmp, 64, sentry_ret, sd->receive, size_extra);
-    while ( !result );
+    while ( !sceSifSendCmd(0x80000018, fpacket2_tmp, 64, sentry_ret, sd->receive, size_extra) );
   }
   else
   {
@@ -709,7 +701,7 @@ unsigned int do_msif_exec_request(sceSifMServeData *sd)
     {
       CpuSuspendIntr(state);
       dmaid = sceSifSetDma(dmat, dmat_count);
-      result = CpuResumeIntr(state[0]);
+      CpuResumeIntr(state[0]);
       if ( dmaid )
         break;
       busywait = 0xFFFE;
@@ -717,7 +709,6 @@ unsigned int do_msif_exec_request(sceSifMServeData *sd)
         ;
     }
   }
-  return result;
 }
 // 400BB8: conditional instruction was optimized away because $s0.4==0
 // 4025A0: using guessed type msif_data g_msif_data;
