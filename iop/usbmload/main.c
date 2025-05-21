@@ -66,19 +66,19 @@ struct usbm_load_entry
 int _start(int ac, char **av);
 int module_unload();
 int do_parse_config_file(const char *fn);
-int do_print_device_config_info(USBDEV_t *devinfo);
+void do_print_device_config_info(USBDEV_t *devinfo);
 int usbmload_drv_probe(int dev_id);
 int usbmload_drv_connect(int dev_id);
 int usbmload_drv_disconenct(int dev_id);
 void ldd_loader_thread(); // weak
 void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo);
-int do_push_device_rb(USBDEV_t *a1);
+void do_push_device_rb(USBDEV_t *a1);
 USBDEV_t *is_rb_ok_callback();
-int do_clear_rb();
+void do_clear_rb(void);
 int split_config_line(char *curbuf, int cursplitind, char **dstptr);
 int do_parse_cmd_int(const char *buf);
 void clean_config_line(char *buf);
-int sanitize_devicename(char *buf);
+void sanitize_devicename(char *buf);
 int sceUsbmlDisable(void);
 int sceUsbmlEnable(void);
 int sceUsbmlActivateCategory(const char *category);
@@ -584,7 +584,7 @@ LABEL_52:
 // 402B00: using guessed type int g_param_debug;
 
 //----- (00400D4C) --------------------------------------------------------
-int do_print_device_config_info(USBDEV_t *devinfo)
+void do_print_device_config_info(USBDEV_t *devinfo)
 {
   int devinfo_cargc; // $s0
   USBDEV_t *devinfo_curarg; // $s1
@@ -614,7 +614,7 @@ int do_print_device_config_info(USBDEV_t *devinfo)
     }
     while ( devinfo_cargc < devinfo->argc );
   }
-  return printf("\n");
+  printf("\n");
 }
 
 //----- (00400E8C) --------------------------------------------------------
@@ -820,7 +820,7 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
 // 401130: using guessed type char modarg[256];
 
 //----- (0040135C) --------------------------------------------------------
-int do_push_device_rb(USBDEV_t *a1)
+void do_push_device_rb(USBDEV_t *a1)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -831,14 +831,8 @@ int do_push_device_rb(USBDEV_t *a1)
     if ( g_rb_offset_write >= g_param_rbsize )
       g_rb_offset_write = 0;
     ++g_rb_count;
-    CpuResumeIntr(state);
-    return 0;
   }
-  else
-  {
-    CpuResumeIntr(state);
-    return -1;
-  }
+  CpuResumeIntr(state);
 }
 // 402B08: using guessed type int g_param_rbsize;
 // 402B10: using guessed type int g_rb_offset_write;
@@ -871,13 +865,13 @@ USBDEV_t *is_rb_ok_callback()
 // 402B14: using guessed type int g_rb_count;
 
 //----- (004014AC) --------------------------------------------------------
-int do_clear_rb()
+void do_clear_rb(void)
 {
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
   g_rb_count = 0;
-  return CpuResumeIntr(state);
+  CpuResumeIntr(state);
 }
 // 402B14: using guessed type int g_rb_count;
 
@@ -1053,7 +1047,7 @@ void clean_config_line(char *buf)
 }
 
 //----- (004017E0) --------------------------------------------------------
-int sanitize_devicename(char *buf)
+void sanitize_devicename(char *buf)
 {
   int curchr_1; // $v1
   int curind_1; // $a2
@@ -1105,7 +1099,6 @@ int sanitize_devicename(char *buf)
     }
     while ( *buf != '\n' );
   }
-  return curind_1;
 }
 
 //----- (004018F4) --------------------------------------------------------
