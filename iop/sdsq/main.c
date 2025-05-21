@@ -132,7 +132,6 @@ struct sdsq_info
 //-------------------------------------------------------------------------
 // Function declarations
 
-void sdsq_1();
 int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo);
 int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo);
 int do_get_song_chunk(void *indata, struct sdsq_info *dinfo);
@@ -155,13 +154,6 @@ int _start(int ac);
 // Data declarations
 
 extern struct irx_export_table _exp_sdsq;
-
-
-//----- (00400058) --------------------------------------------------------
-void sdsq_1()
-{
-  ;
-}
 
 //----- (00400060) --------------------------------------------------------
 int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)

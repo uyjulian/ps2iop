@@ -347,7 +347,6 @@ typedef struct sceHardSynthVagParam_
 //-------------------------------------------------------------------------
 // Function declarations
 
-void sdhd_1();
 int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo);
 int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo);
 int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo);
@@ -415,13 +414,6 @@ int _start(int ac);
 // Data declarations
 
 extern struct irx_export_table _exp_sdhd;
-
-
-//----- (004000E4) --------------------------------------------------------
-void sdhd_1()
-{
-  ;
-}
 
 //----- (004000F0) --------------------------------------------------------
 int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
