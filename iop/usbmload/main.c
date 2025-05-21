@@ -3,8 +3,7 @@
 
 IRX_ID("USB_module_loader", 2, 1);
 
-/* 411 */
-struct _USBDEV_t
+typedef struct _USBDEV_t
 {
   struct _USBDEV_t *forw;
   char *dispname;
@@ -22,18 +21,12 @@ struct _USBDEV_t
   int modid;
   char modname[56];
   int load_result;
-};
+} USBDEV_t;
 
-/* 412 */
-typedef struct _USBDEV_t USBDEV_t;
-
-/* 413 */
 typedef USBDEV_t *(*sceUsbmlPopDevinfo)(void);
 
-/* 414 */
 typedef void (*sceUsbmlLoadFunc)(sceUsbmlPopDevinfo pop_devinfo);
 
-/* 416 */
 struct usbm_load_entry
 {
   struct usbm_load_entry *m_next;
@@ -66,7 +59,6 @@ struct usbm_load_entry
   int m_x35;
   int m_x36;
 };
-
 
 //-------------------------------------------------------------------------
 // Function declarations
