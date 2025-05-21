@@ -25,8 +25,8 @@ struct netcnf_option
 //-------------------------------------------------------------------------
 // Function declarations
 
-u32 get_check_provider_eq_zero();
-int do_print_usage();
+u32 get_check_provider_eq_zero(void);
+void do_print_usage(void);
 int do_module_load(int ac, char **av);
 int do_module_unload();
 int _start(int ac, char **av);
@@ -58,10 +58,10 @@ int magic_shift_write_netcnf_2(int inshft, int buflen);
 int magic_shift_read_netcnf_2(int inshft, int buflen);
 int magic_shift_write_netcnf_1(int inshft, int buflen);
 int magic_shift_read_netcnf_1(int inshft, int buflen);
-int do_safe_strcpy(char *dst, size_t maxlen, const char *src, int linenum);
-int do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum);
-int do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const char *srcbase);
-int do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *src2);
+void do_safe_strcpy(char *dst, size_t maxlen, const char *src, int linenum);
+void do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum);
+void do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const char *srcbase);
+void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *src2);
 int do_check_capacity_inner2(const char *fpath, int minsize);
 int do_check_capacity_inner(const char *fpath);
 int do_handle_combination_path(int type, const char *fpath, char *dst, size_t maxlen, char *usr_name);
@@ -97,7 +97,7 @@ int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv,
 int do_check_interface_keyword(sceNetCnfEnv_t *e, const char *display_name_arg, const char *attach_ifc_arg, const char *attach_dev_arg);
 int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv);
 int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv);
-const char *do_init_ifc_inner(sceNetCnfInterface_t *ifc);
+void do_init_ifc_inner(sceNetCnfInterface_t *ifc);
 int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list);
 int do_check_other_keywords(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata, struct sceNetCnfUnknownList *unknown_list);
 int do_handle_net_cnf(sceNetCnfEnv_t *e);
@@ -123,7 +123,7 @@ int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf);
 int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceNetCnfInterface *ifc);
 int do_export_netcnf(sceNetCnfEnv_t *e);
 char *do_address_to_string_inner_element(char *dst, int srcbyte);
-char *do_address_to_string_inner(char *dst, unsigned int srcint);
+void do_address_to_string_inner(char *dst, unsigned int srcint);
 int do_name_2_address_inner(unsigned int *dst, char *buf);
 int do_conv_a2s_inner(char *sp_, char *dp_, int len);
 int do_conv_s2a_inner(char *sp_, char *dp_, int len);
@@ -146,16 +146,16 @@ int do_write_netcnf_no_encode(int fd, void *ptr, int size);
 int do_dopen_wrap(const char *fn);
 int do_dread_wrap(int fn, iox_dirent_t *buf);
 int do_remove_wrap(const char *fn);
-int do_close_netcnf(int fd);
-int do_dclose_wrap(int fd);
+void do_close_netcnf(int fd);
+void do_dclose_wrap(int fd);
 int do_filesize_netcnf(int fd);
-int do_getstat_wrap(const char *fn, iox_stat_t *stat);
-int do_chstat_mode_copyprotect_wrap(const char *fn);
+void do_getstat_wrap(const char *fn, iox_stat_t *stat);
+void do_chstat_mode_copyprotect_wrap(const char *fn);
 void do_set_callback_inner(sceNetCnfCallback_t *pcallback);
-int do_init_heap();
+int do_init_heap(void);
 void *do_alloc_heapmem(size_t nbytes);
 void do_free_heapmem(void *ptr); // idb
-void do_delete_heap();
+void do_delete_heap(void);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -295,20 +295,19 @@ int g_open_callback_handle_count; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-u32 get_check_provider_eq_zero()
+u32 get_check_provider_eq_zero(void)
 {
   return g_no_check_provider == 0;
 }
 // 40AC6C: using guessed type int g_no_check_provider;
 
 //----- (00400010) --------------------------------------------------------
-int do_print_usage()
+void do_print_usage(void)
 {
   printf("Usage: netcnf [<option>] icon=<icon-path> iconsys=<iconsys-path>\n");
   printf("  <option>:\n");
   printf("    -no_check_capacity        do not check capacity\n");
   printf("    -no_check_provider        do not check special provider\n");
-  return -1;
 }
 
 //----- (00400068) --------------------------------------------------------
@@ -1001,22 +1000,20 @@ int magic_shift_read_netcnf_1(int inshft, int buflen)
 }
 
 //----- (004013A0) --------------------------------------------------------
-int do_safe_strcpy(char *dst, size_t maxlen, const char *src, int linenum)
+void do_safe_strcpy(char *dst, size_t maxlen, const char *src, int linenum)
 {
   if ( strlen(src) < maxlen )
   {
     strcpy(dst, src);
-    return 0;
   }
   else
   {
     printf("[netcnf] strcpy failed(%d)\n", linenum);
-    return -1;
   }
 }
 
 //----- (0040141C) --------------------------------------------------------
-int do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum)
+void do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum)
 {
   size_t curstrlen; // $s0
 
@@ -1024,17 +1021,15 @@ int do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum)
   if ( curstrlen + strlen(src) < maxlen )
   {
     strcat(dst, src);
-    return 0;
   }
   else
   {
     printf("[netcnf] strcat failed(%d)\n", linenum);
-    return -1;
   }
 }
 
 //----- (004014AC) --------------------------------------------------------
-int do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const char *srcbase)
+void do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const char *srcbase)
 {
   size_t curstrlen; // $s1
 
@@ -1044,17 +1039,15 @@ int do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const ch
     strcpy(dst, srcdir);
     strcat(dst, "/");
     strcat(dst, srcbase);
-    return 0;
   }
   else
   {
     printf("[netcnf] make_pathname failed\n");
-    return -1;
   }
 }
 
 //----- (00401560) --------------------------------------------------------
-int do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *src2)
+void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *src2)
 {
   size_t curstrlen; // $s0
 
@@ -1063,12 +1056,10 @@ int do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *sr
   {
     strcpy(dst, src1);
     strcat(dst, src2);
-    return 0;
   }
   else
   {
     printf("[netcnf] make_name failed\n");
-    return -1;
   }
 }
 
@@ -3337,7 +3328,7 @@ LABEL_11:
 }
 
 //----- (00404DE0) --------------------------------------------------------
-const char *do_init_ifc_inner(sceNetCnfInterface_t *ifc)
+void do_init_ifc_inner(sceNetCnfInterface_t *ifc)
 {
   struct netcnf_option *curentry1; // $a2
 
@@ -3367,7 +3358,6 @@ const char *do_init_ifc_inner(sceNetCnfInterface_t *ifc)
     }
     while ( curentry1->m_key );
   }
-  return 0;
 }
 
 //----- (00404E74) --------------------------------------------------------
@@ -5464,11 +5454,12 @@ char *do_address_to_string_inner_element(char *dst, int srcbyte)
 }
 
 //----- (00407DD0) --------------------------------------------------------
-char *do_address_to_string_inner(char *dst, unsigned int srcint)
+void do_address_to_string_inner(char *dst, unsigned int srcint)
 {
   char *elm1; // $v0
   char *elm2; // $v0
   char *elm3; // $v0
+  char *elm4; // $v0
 
   elm1 = do_address_to_string_inner_element(dst, (srcint >> 24) & 0xFF);
   *elm1 = '.';
@@ -5476,8 +5467,8 @@ char *do_address_to_string_inner(char *dst, unsigned int srcint)
   *elm2 = '.';
   elm3 = do_address_to_string_inner_element(elm2 + 1, (srcint >> 8) & 0xFF);
   *elm3 = '.';
-  *do_address_to_string_inner_element(elm3 + 1, srcint & 0xFF) = 0;
-  return dst;
+  elm4 = do_address_to_string_inner_element(elm3 + 1, srcint & 0xFF);
+  *elm4 = 0;
 }
 
 //----- (00407E50) --------------------------------------------------------
@@ -6493,38 +6484,40 @@ int do_remove_wrap(const char *fn)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (0040926C) --------------------------------------------------------
-int do_close_netcnf(int fd)
+void do_close_netcnf(int fd)
 {
   int cbind; // $s1
-  int closeret; // $v0
   int cbind_1; // $s0
   void *m_buf; // $a0
-  int closeret_1; // $s1
 
   if ( !g_callbacks.close )
-    return close(fd);
+  {
+    close(fd);
+    return;
+  }
   cbind = do_filesize_callback_handles(fd, 1);
   if ( cbind == -1 )
-    return close(fd);
-  closeret = ((int (*)(int))g_callbacks.close)(fd);
+  {
+    close(fd);
+    return;
+  }
+  ((int (*)(int))g_callbacks.close)(fd);
   cbind_1 = cbind;
   m_buf = g_callback_handle_infos[cbind].m_buf;
-  closeret_1 = closeret;
   do_free_heapmem(m_buf);
   g_callback_handle_infos[cbind_1].m_buf = 0;
   do_clear_callback_handles(fd, 1);
-  return closeret_1;
 }
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 // 40C34C: using guessed type int (*)(u32);
 
 //----- (00409328) --------------------------------------------------------
-int do_dclose_wrap(int fd)
+void do_dclose_wrap(int fd)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
-    return dclose(fd);
-  printf("[err] netcnf dclose()\n");
-  return -1;
+    dclose(fd);
+  else
+    printf("[err] netcnf dclose()\n");
 }
 // 40B0F0: using guessed type int g_callbacks_set;
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
@@ -6542,18 +6535,18 @@ int do_filesize_netcnf(int fd)
 }
 
 //----- (004093E4) --------------------------------------------------------
-int do_getstat_wrap(const char *fn, iox_stat_t *stat)
+void do_getstat_wrap(const char *fn, iox_stat_t *stat)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
-    return getstat(fn, stat);
-  printf("[err] netcnf getstat()\n");
-  return -1;
+    getstat(fn, stat);
+  else
+    printf("[err] netcnf getstat()\n");
 }
 // 40B0F0: using guessed type int g_callbacks_set;
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (0040943C) --------------------------------------------------------
-int do_chstat_mode_copyprotect_wrap(const char *fn)
+void do_chstat_mode_copyprotect_wrap(const char *fn)
 {
   iox_stat_t statmode; // [sp+10h] [-40h] BYREF
 
@@ -6562,12 +6555,10 @@ int do_chstat_mode_copyprotect_wrap(const char *fn)
     do_getstat_wrap(fn, &statmode);
     statmode.mode |= 8u;
     chstat(fn, &statmode, 1u);
-    return 0;
   }
   else
   {
     printf("[err] netcnf chstat()\n");
-    return -1;
   }
 }
 // 40B0F0: using guessed type int g_callbacks_set;
@@ -6603,7 +6594,7 @@ void do_set_callback_inner(sceNetCnfCallback_t *pcallback)
 // 40C34C: using guessed type int (*)(u32);
 
 //----- (00409540) --------------------------------------------------------
-int do_init_heap()
+int do_init_heap(void)
 {
   if ( g_netcnf_heap )
     return -2;
@@ -6627,7 +6618,7 @@ void do_free_heapmem(void *ptr)
 }
 
 //----- (004095EC) --------------------------------------------------------
-void do_delete_heap()
+void do_delete_heap(void)
 {
   DeleteHeap(g_netcnf_heap);
   g_netcnf_heap = 0;
