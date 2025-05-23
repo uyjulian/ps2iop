@@ -454,40 +454,42 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
   if ( !mserve_entry || (m_sd = data->m_sd, m_sd->sentry != mserve_entry) )
   {
     threadstate_tmp = 3;
-    goto LABEL_9;
   }
-  if ( !m_sd->base->sleep )
+  else if ( !m_sd->base->sleep )
   {
     threadstate_tmp = 4;
-LABEL_9:
-    fpacket = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(harg);
-    fpacket->pkt_addr = data->m_pkt_addr;
-    m_cd = data->m_cd;
-    fpacket->sid = 0x8000001D;
-    fpacket->m_eebuf_or_threadstate = threadstate_tmp;
-    fpacket->m_eeserver = 0;
-    fpacket->m_toee_unkxb = 0;
-    fpacket->cd = m_cd;
-    if ( !isceSifSendCmd(0x80000018, fpacket, 64, 0, 0, 0) )
-    {
-      alarmdat.hi = 0;
-      alarmdat.lo = 0xF000;
-      iSetAlarm(&alarmdat, (unsigned int (*)(void *))alarm_cb_cmd_80000018_2, fpacket);
-    }
+  }
+  else
+  {
+    msgboxdat = (struct msif_msgbox_msg *)AllocSysMemory(0, 44, 0);
+    if ( !msgboxdat )
+      printf("AllocSysMemory() failed.\n");
+    msgboxdat->m_probunused_unkx21 = 0;
+    msgboxdat->m_in_cmd = 0x8000001D;
+    msgboxdat->m_msg2.m_pkt_addr = data->m_pkt_addr;
+    cd_tmp = data->m_cd;
+    msgboxdat->m_msg2.m_msif_data = harg;
+    msgboxdat->m_msg2.m_mserve_entry = mserve_entry;
+    msgboxdat->m_msg2.m_sd = m_sd;
+    msgboxdat->m_msg2.m_eebuf_cd = cd_tmp;
+    iSendMbx(mserve_entry->mbxid, msgboxdat);
     return;
   }
-  msgboxdat = (struct msif_msgbox_msg *)AllocSysMemory(0, 44, 0);
-  if ( !msgboxdat )
-    printf("AllocSysMemory() failed.\n");
-  msgboxdat->m_probunused_unkx21 = 0;
-  msgboxdat->m_in_cmd = 0x8000001D;
-  msgboxdat->m_msg2.m_pkt_addr = data->m_pkt_addr;
-  cd_tmp = data->m_cd;
-  msgboxdat->m_msg2.m_msif_data = harg;
-  msgboxdat->m_msg2.m_mserve_entry = mserve_entry;
-  msgboxdat->m_msg2.m_sd = m_sd;
-  msgboxdat->m_msg2.m_eebuf_cd = cd_tmp;
-  iSendMbx(mserve_entry->mbxid, msgboxdat);
+  fpacket = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(harg);
+  fpacket->pkt_addr = data->m_pkt_addr;
+  m_cd = data->m_cd;
+  fpacket->sid = 0x8000001D;
+  fpacket->m_eebuf_or_threadstate = threadstate_tmp;
+  fpacket->m_eeserver = 0;
+  fpacket->m_toee_unkxb = 0;
+  fpacket->cd = m_cd;
+  if ( !isceSifSendCmd(0x80000018, fpacket, 64, 0, 0, 0) )
+  {
+    alarmdat.hi = 0;
+    alarmdat.lo = 0xF000;
+    iSetAlarm(&alarmdat, (unsigned int (*)(void *))alarm_cb_cmd_80000018_2, fpacket);
+  }
+  return;
 }
 
 //----- (00400610) --------------------------------------------------------
@@ -562,22 +564,17 @@ void do_msif_remove_rpc(sceSifMServeData *sd)
   }
   else
   {
-    if ( !serve_list )
-      goto LABEL_7;
-    do
+    while ( serve_list )
     {
       if ( serve_list == sd )
+      {
+        serve_list_1->next = sd->next;
         break;
+      }
       serve_list_1 = serve_list;
       serve_list = serve_list->next;
     }
-    while ( serve_list );
-    if ( serve_list )
-    {
-      serve_list_1->next = sd->next;
-    }
   }
-LABEL_7:
   CpuResumeIntr(state);
 }
 
@@ -590,24 +587,24 @@ void do_sif_remove_rpc_queue(sceSifMQueueData *qd)
 
   CpuSuspendIntr(&state);
   m_active_queue = g_msif_data.m_active_queue;
+  next = m_active_queue;
   if ( g_msif_data.m_active_queue == qd )
   {
     g_msif_data.m_active_queue = g_msif_data.m_active_queue->next;
   }
-  else if ( g_msif_data.m_active_queue )
+  else
   {
-    while ( 1 )
+    while ( next )
     {
       next = m_active_queue->next;
       if ( next == qd )
+      {
+        m_active_queue->next = next->next;
         break;
+      }
       m_active_queue = m_active_queue->next;
-      if ( !next )
-        goto LABEL_7;
     }
-    m_active_queue->next = next->next;
   }
-LABEL_7:
   CpuResumeIntr(state);
 }
 // 4025A0: using guessed type msif_data g_msif_data;
@@ -843,14 +840,23 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
     g_msif_data.g_mserv_entries_ll = se;
   }
   state_1 = state;
-LABEL_11:
   CpuResumeIntr(state_1);
   while ( 1 )
   {
     mbxrecv = ReceiveMbx((void **)&arg, se->mbxid);
     if ( mbxrecv )
-      break;
-LABEL_15:
+    {
+      if ( mbxrecv != -425 )
+      {
+        printf("ReceiveMbx() failed.\n");
+      }
+      else
+      {
+        printf("msifrpc: quit\n");
+        ChangeThreadPriority(0, thinfo.currentPriority);
+        break;
+      }
+    }
     m_in_cmd = arg->m_in_cmd;
     if ( m_in_cmd == 0x80000019 )
     {
@@ -912,16 +918,9 @@ LABEL_15:
       CpuSuspendIntr(&state);
       FreeSysMemory(arg);
       state_1 = state;
-      goto LABEL_11;
+      CpuResumeIntr(state_1);
     }
   }
-  if ( mbxrecv != -425 )
-  {
-    printf("ReceiveMbx() failed.\n");
-    goto LABEL_15;
-  }
-  printf("msifrpc: quit\n");
-  ChangeThreadPriority(0, thinfo.currentPriority);
 }
 // 4025A0: using guessed type msif_data g_msif_data;
 
@@ -935,21 +934,19 @@ int sceSifMTermRpc(int request, int flags)
   CpuSuspendIntr(&state);
   g_mserv_entries_ll = g_msif_data.g_mserv_entries_ll;
   tmp_entry = 0;
-  if ( g_msif_data.g_mserv_entries_ll )
+  while ( g_mserv_entries_ll )
   {
-    while ( g_mserv_entries_ll->command != request )
+    tmp_entry = g_mserv_entries_ll;
+    g_mserv_entries_ll = g_mserv_entries_ll->next;
+    if ( g_mserv_entries_ll->command == request )
     {
-      tmp_entry = g_mserv_entries_ll;
-      g_mserv_entries_ll = g_mserv_entries_ll->next;
-      if ( !g_mserv_entries_ll )
-        goto LABEL_7;
+      if ( tmp_entry )
+        tmp_entry->next = g_mserv_entries_ll->next;
+      else
+        g_msif_data.g_mserv_entries_ll = g_mserv_entries_ll->next;
+      break;
     }
-    if ( tmp_entry )
-      tmp_entry->next = g_mserv_entries_ll->next;
-    else
-      g_msif_data.g_mserv_entries_ll = g_mserv_entries_ll->next;
   }
-LABEL_7:
   CpuResumeIntr(state);
   if ( g_mserv_entries_ll )
   {
