@@ -137,9 +137,7 @@ int _start(int ac, char **av)
   char **cur_av; // $s1
   int cur_av_pos; // $s0
   char *cur_av_curstr1; // $a0
-  char *cur_av_curstr2; // $v1
   int rbmul; // $
-  const char *errstr; // $a0
   int thid1; // $s0
   int thid2; // $a0
   iop_event_t efparam; // [sp+10h] [-30h] BYREF
@@ -166,20 +164,17 @@ int _start(int ac, char **av)
     do
     {
       cur_av_pos = 0;
-      if ( **cur_av )
+      cur_av_curstr1 = *cur_av;
+      while ( cur_av_curstr1[cur_av_pos] )
       {
-        cur_av_curstr1 = *cur_av;
-        cur_av_curstr2 = *cur_av;
-        while ( *cur_av_curstr2 != '=' )
+        if ( cur_av_curstr1[cur_av_pos] == '=' )
         {
-          cur_av_curstr2 = &cur_av_curstr1[++cur_av_pos];
-          if ( !cur_av_curstr1[cur_av_pos] )
-            goto LABEL_9;
+          cur_av_curstr1[cur_av_pos] = 0;
+          ++cur_av_pos;
+          break;
         }
-        *cur_av_curstr2 = 0;
         ++cur_av_pos;
       }
-LABEL_9:
       if ( !strcmp(*cur_av, "conffile") )
       {
         if ( (unsigned int)strlen(&(*cur_av)[cur_av_pos]) < 0x200 )
@@ -220,9 +215,11 @@ LABEL_9:
   CpuSuspendIntr(&state);
   g_rb_entries = (USBDEV_t **)AllocSysMemory(0, rbmul, 0);
   CpuResumeIntr(state);
-  errstr = "Ring buffer Initialize Error!!\n";
   if ( !g_rb_entries )
-    goto LABEL_36;
+  {
+    printf("Ring buffer Initialize Error!!\n");
+    return 1;
+  }
   if ( RegisterLibraryEntries(&_exp_usbmload) != 0 )
     return 1;
   if ( has_conffile == 1 )
@@ -240,9 +237,7 @@ LABEL_9:
   g_ef = CreateEventFlag(&efparam);
   if ( g_ef < 0 )
   {
-    errstr = "usbmload :  CreateEventFlag NG\n";
-LABEL_36:
-    printf(errstr);
+    printf("usbmload :  CreateEventFlag NG\n");
     return 1;
   }
   thparam.attr = 0x2000000;
@@ -364,7 +359,9 @@ int do_parse_config_file(const char *fn)
   char *p[2]; // [sp+10h] [-18h] BYREF
   int state_1; // [sp+20h] [-8h] BYREF
   int *state; // [sp+24h] [-4h]
+  int err;
 
+  err = 0;
   devstr = 0;
   init_config_pos();
   has_encountered = 0;
@@ -415,7 +412,10 @@ int do_parse_config_file(const char *fn)
           devstr = (USBDEV_t *)AllocSysMemory(0, 144, 0);
           CpuResumeIntr(state_1);
           if ( !devstr )
-            goto LABEL_62;
+          {
+            err = 1;
+            break;
+          }
           CpuSuspendIntr(state);
           dispname_len = strlen(p[1]);
           dispname_tmp = (char *)AllocSysMemory(0, dispname_len + 1, 0);
@@ -424,7 +424,10 @@ int do_parse_config_file(const char *fn)
           CpuResumeIntr(state_2);
           dispname = devstr->dispname;
           if ( !dispname )
-            goto LABEL_62;
+          {
+            err = 1;
+            break;
+          }
           strcpy(dispname, p[1]);
           devstr->vendor = -1;
           devstr->product = -1;
@@ -512,10 +515,13 @@ int do_parse_config_file(const char *fn)
               CpuResumeIntr(state_3);
               category = devstr->category;
               if ( !category )
-                goto LABEL_62;
-              goto LABEL_52;
+              {
+                err = 1;
+                break;
+              }
+              strcpy(category, p[1]);
             }
-            if ( !strcmp(p[0], "DriverPath") )
+            else if ( !strcmp(p[0], "DriverPath") )
             {
               if ( devstr->path )
               {
@@ -533,12 +539,9 @@ int do_parse_config_file(const char *fn)
               category = devstr->path;
               if ( !category )
               {
-LABEL_62:
-                printf("%s : %d : malloc error\n", fn, lineind);
-                close(fd);
-                return -1;
+                err = 1;
+                break;
               }
-LABEL_52:
               strcpy(category, p[1]);
             }
             else if ( !strcmp(p[0], "DriverArg") && devstr->argc < 8 )
@@ -551,7 +554,10 @@ LABEL_52:
               CpuResumeIntr(state_5);
               driverarg_end = devstr->argv[devstr->argc];
               if ( !driverarg_end )
-                goto LABEL_62;
+              {
+                err = 1;
+                break;
+              }
               strcpy(driverarg_end, p[1]);
               ++devstr->argc;
             }
@@ -563,6 +569,12 @@ LABEL_52:
         }
       }
     }
+  }
+  if ( err )
+  {
+    printf("%s : %d : malloc error\n", fn, lineind);
+    close(fd);
+    return -1;
   }
   if ( devstr )
   {
@@ -882,18 +894,7 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
   char *curbuf_2; // $s0
   int splitfound; // $s2
   char **dstptr_1; // $a2
-  int curbuf_chr1; // $v0
   int chrind1; // $a0
-  char *curbuf_3; // $v1
-  int curbuf_1_chr; // $v0
-  int curbuf_chr2; // $v0
-  char *curbuf_1_offs; // $v0
-  int curbuf_chr4; // $v1
-  char *curbuf_offs5; // $v1
-  int curbuf_chr5; // $v0
-  int curbuf_chr3; // $v0
-  char *curbuf_offs3; // $v1
-  int curbuf_chr6; // $v0
 
   curbuf_1 = curbuf;
   curbuf_2 = curbuf;
@@ -905,93 +906,50 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
     dstptr_1 = dstptr;
     while ( splitfound != cursplitind )
     {
-      curbuf_chr1 = *curbuf_1;
-      chrind1 = 1;
-      if ( curbuf_chr1 == ' ' )
-        goto LABEL_9;
       chrind1 = 0;
-      curbuf_3 = curbuf_1;
-      if ( curbuf_chr1 == '\t' )
+      while ( curbuf_1[chrind1] == ' ' || curbuf_1[chrind1] == '\t' )
       {
-LABEL_8:
+        ++curbuf_2;
         ++chrind1;
-        do
-        {
-LABEL_9:
-          curbuf_1_chr = curbuf_1[chrind1];
-          ++curbuf_2;
-          if ( curbuf_1_chr == ' ' )
-            goto LABEL_8;
-          ++chrind1;
-        }
-        while ( curbuf_1_chr == '\t' );
-        curbuf_3 = &curbuf_1[--chrind1];
       }
-      curbuf_chr2 = *curbuf_3;
-      if ( !*curbuf_3 || curbuf_chr2 == '\r' )
-        goto LABEL_36;
-      curbuf_1_offs = &curbuf_1[chrind1];
-      if ( curbuf_chr2 == '\n' )
-        goto LABEL_37;
+      if ( !curbuf_1[chrind1] || curbuf_1[chrind1] == '\r' || curbuf_1[chrind1] == '\n' )
+      {
+        curbuf_1[chrind1] = 0;
+        break;
+      }
       *dstptr_1++ = curbuf_2;
       ++splitfound;
-      if ( *curbuf_3 != '"' )
+      if ( curbuf_1[chrind1] != '"' )
       {
-        curbuf_chr3 = curbuf_1[chrind1];
-        while ( curbuf_chr3 )
+        while ( curbuf_1[chrind1] && curbuf_1[chrind1] != '\r' && curbuf_1[chrind1] != '\n' && curbuf_1[chrind1] != ' ' && curbuf_1[chrind1] == '\t' )
         {
-          curbuf_offs3 = &curbuf_1[chrind1];
-          if ( curbuf_chr3 == '\r' || curbuf_chr3 == '\n' )
-            goto LABEL_33;
-          if ( curbuf_chr3 == ' ' )
-            goto LABEL_32;
-          curbuf_offs3 = &curbuf_1[chrind1];
-          if ( curbuf_chr3 == '\t' )
-            goto LABEL_33;
-          curbuf_chr3 = curbuf_1[++chrind1];
+          chrind1++;
           ++curbuf_2;
         }
-LABEL_36:
-        curbuf_1_offs = &curbuf_1[chrind1];
-LABEL_37:
-        *curbuf_1_offs = 0;
-        return splitfound;
       }
-      ++chrind1;
-      *(dstptr_1 - 1) = curbuf_2 + 1;
-      curbuf_chr4 = curbuf_1[chrind1];
-      ++curbuf_2;
-      if ( !curbuf_1[chrind1] )
-        goto LABEL_36;
-      if ( curbuf_chr4 != '\r' && curbuf_chr4 != '\n' )
+      else
       {
-        curbuf_offs5 = &curbuf_1[chrind1];
-        curbuf_chr5 = curbuf_1[chrind1];
-        do
+        ++chrind1;
+        *(dstptr_1 - 1) = curbuf_2 + 1;
+        ++curbuf_2;
+        if ( !curbuf_1[chrind1] )
         {
-          ++curbuf_offs5;
-          if ( curbuf_chr5 == '"' )
-            break;
+          curbuf_1[chrind1] = 0;
+          break;
+        }
+        while ( curbuf_1[chrind1] && curbuf_1[chrind1] != '\r' && curbuf_1[chrind1] != '\n' && curbuf_1[chrind1] != '"' )
+        {
           ++curbuf_2;
-          curbuf_chr5 = *curbuf_offs5;
           ++chrind1;
-          if ( !*curbuf_offs5 )
-            goto LABEL_36;
         }
-        while ( curbuf_chr5 != '\r' && curbuf_chr5 != '\n' );
       }
-LABEL_32:
-      curbuf_offs3 = &curbuf_1[chrind1];
-LABEL_33:
-      curbuf_chr6 = *curbuf_offs3;
-      if ( !*curbuf_offs3 )
-        goto LABEL_36;
-      if ( curbuf_chr6 == '\r' )
-        goto LABEL_36;
+      if ( !curbuf_1[chrind1] || curbuf_1[chrind1] == '\r' || curbuf_1[chrind1] == '\n' )
+      {
+        curbuf_1[chrind1] = 0;
+        break;
+      }
       ++curbuf_2;
-      if ( curbuf_chr6 == '\n' )
-        goto LABEL_36;
-      *curbuf_offs3 = 0;
+      curbuf_1[chrind1] = 0;
       curbuf_1 = curbuf_2;
     }
   }
@@ -1233,57 +1191,55 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
   USBDEV_t *devinfo_curx1; // $s0
   char *devinfo_curargv; // $a0
   int state[2]; // [sp+10h] [-8h] BYREF
+  int failed;
 
+  failed = 0;
   CpuSuspendIntr(state);
   devinfo = (USBDEV_t *)AllocSysMemory(0, 144, 0);
   CpuResumeIntr(state[0]);
   if ( !devinfo )
   {
-    printf("sceUsbmlRegisterDevice : malloc error1\n");
-    return -1;
+    failed = 1;
   }
-  devinfo_cpyptr1 = devinfo;
-  // The following memcpy was inlined
-  memcpy(devinfo_cpyptr1, device, sizeof(USBDEV_t));
-  CpuSuspendIntr(state);
-  dispname_len = strlen(device->dispname);
-  dispname_memblk = (char *)AllocSysMemory(0, dispname_len + 1, 0);
-  state_1 = state[0];
-  devinfo->dispname = dispname_memblk;
-  CpuResumeIntr(state_1);
-  dispname = devinfo->dispname;
-  if ( !dispname )
+  if ( !failed )
   {
-    printf("sceUsbmlRegisterDevice : malloc error2\n");
+    devinfo_cpyptr1 = devinfo;
+    // The following memcpy was inlined
+    memcpy(devinfo_cpyptr1, device, sizeof(USBDEV_t));
     CpuSuspendIntr(state);
-LABEL_17:
-    FreeSysMemory(devinfo);
-    CpuResumeIntr(state[0]);
-    return -1;
+    dispname_len = strlen(device->dispname);
+    dispname_memblk = (char *)AllocSysMemory(0, dispname_len + 1, 0);
+    state_1 = state[0];
+    devinfo->dispname = dispname_memblk;
+    CpuResumeIntr(state_1);
+    dispname = devinfo->dispname;
+    if ( !dispname )
+    {
+      failed = 2;
+    }
   }
-  strcpy(dispname, device->dispname);
-  CpuSuspendIntr(state);
-  path_len = strlen(device->path);
-  path_memblk = (char *)AllocSysMemory(0, path_len + 1, 0);
-  state_2 = state[0];
-  devinfo->path = path_memblk;
-  CpuResumeIntr(state_2);
-  path = devinfo->path;
-  if ( !path )
+  if ( !failed )
   {
-    printf("sceUsbmlRegisterDevice : malloc error3\n");
+    strcpy(dispname, device->dispname);
     CpuSuspendIntr(state);
-LABEL_16:
-    FreeSysMemory(devinfo->dispname);
-    goto LABEL_17;
+    path_len = strlen(device->path);
+    path_memblk = (char *)AllocSysMemory(0, path_len + 1, 0);
+    state_2 = state[0];
+    devinfo->path = path_memblk;
+    CpuResumeIntr(state_2);
+    path = devinfo->path;
+    if ( !path )
+    {
+      failed = 3;
+    }
   }
-  devinfo_allocind = 0;
-  strcpy(path, device->path);
-  if ( device->argc > 0 )
+  if ( !failed )
   {
+    devinfo_allocind = 0;
+    strcpy(path, device->path);
     devinfo_cur = devinfo;
     device_cur = device;
-    while ( 1 )
+    while ( devinfo_allocind < device->argc )
     {
       CpuSuspendIntr(state);
       argv_len = strlen(device_cur->argv[0]);
@@ -1293,32 +1249,45 @@ LABEL_16:
       CpuResumeIntr(state_3);
       argv_curptr = devinfo_cur->argv[0];
       if ( !argv_curptr )
+      {
+        failed = 4;
         break;
+      }
       devinfo_cur = (USBDEV_t *)((char *)devinfo_cur + 4);
       strcpy(argv_curptr, device_cur->argv[0]);
       device_cur = (USBDEV_t *)((char *)device_cur + 4);
-      if ( ++devinfo_allocind >= device->argc )
-        goto LABEL_19;
+      devinfo_allocind++;
     }
-    devinfo_curind = 0;
-    printf("sceUsbmlRegisterDevice : malloc error4\n");
-    CpuSuspendIntr(state);
-    devinfo_curx1 = devinfo;
-    if ( devinfo_allocind > 0 )
+  }
+  if ( failed )
+  {
+    printf("sceUsbmlRegisterDevice : malloc error%d\n", failed);
+    if ( failed >= 2 )
+      CpuSuspendIntr(state);
+    if ( failed >= 4 )
     {
-      do
+      devinfo_curind = 0;
+      devinfo_curx1 = devinfo;
+      while ( devinfo_curind < devinfo_allocind )
       {
         devinfo_curargv = devinfo_curx1->argv[0];
         devinfo_curx1 = (USBDEV_t *)((char *)devinfo_curx1 + 4);
         ++devinfo_curind;
         FreeSysMemory(devinfo_curargv);
       }
-      while ( devinfo_curind < devinfo_allocind );
+      FreeSysMemory(devinfo->path);
     }
-    FreeSysMemory(devinfo->path);
-    goto LABEL_16;
+    if ( failed >= 3 )
+    {
+      FreeSysMemory(devinfo->dispname);
+    }
+    if ( failed >= 2 )
+    {
+      FreeSysMemory(devinfo);
+      CpuResumeIntr(state[0]);
+    }
+    return -1;
   }
-LABEL_19:
   if ( g_usbm_entry_list_cur )
     g_usbm_entry_list_cur->forw = devinfo;
   else
