@@ -795,224 +795,191 @@ int do_get_common_block_ptr_note(
   sceHardSynthVagParam *p_vagparam; // [sp+1Ch] [-4h] BYREF
 
   idx1 = 0;
-  if ( sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam) == 0 )
+  if ( sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam) != 0 || p_programparam->splitBlockAddr == -1 )
   {
-    if ( p_programparam->splitBlockAddr != -1 )
+    return 0;
+  }
+  idx2 = 0;
+  while ( idx2 < p_programparam->nSplit )
+  {
+    p_splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam
+                                            + p_programparam->splitBlockAddr
+                                            + p_programparam->sizeSplitBlock * idx2);
+    if ( noteNumber < (p_splitblock->splitRangeLow & 0x7Fu) || noteNumber > (p_splitblock->splitRangeHigh & 0x7Fu) )
     {
-      idx2 = 0;
-      if ( p_programparam->nSplit )
-      {
-        while ( 1 )
-        {
-          p_splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam
-                                                  + p_programparam->splitBlockAddr
-                                                  + p_programparam->sizeSplitBlock * idx2);
-          if ( noteNumber < (p_splitblock->splitRangeLow & 0x7Fu) || (p_splitblock->splitRangeHigh & 0x7Fu) < noteNumber )
-            goto LABEL_78;
-          if ( swcase >= 3 )
-            break;
-          if ( swcase == 1 )
-          {
-            ++idx1;
-            *ptr++ = p_splitblock;
-          }
-          else
-          {
-            if ( !swcase )
-              goto LABEL_18;
-            ptr_1 = ptr;
-            ++idx1;
-            ptr += 17;
-            do_copy_to_sdhd_split_block((SceSdHdSplitBlock *)ptr_1, p_splitblock);
-          }
-LABEL_78:
-          if ( ++idx2 >= p_programparam->nSplit )
-            return idx1;
-        }
+      continue;
+    }
+    switch ( swcase )
+    {
+      case 0:
+        ++idx1;
+        break;
+      case 1:
+        ++idx1;
+        *ptr++ = p_splitblock;
+        break;
+      case 2:
+        ptr_1 = ptr;
+        ++idx1;
+        ptr += 17;
+        do_copy_to_sdhd_split_block((SceSdHdSplitBlock *)ptr_1, p_splitblock);
+        break;
+      default:
         if ( p_splitblock->sampleSetIndex == 0xFFFF
           || sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
         {
-          goto LABEL_78;
+          break;
         }
-        if ( swcase - 3 >= 3 )
+        switch ( swcase )
         {
-          if ( !mode )
-          {
-            samplesetparam_1 = p_samplesetparam;
-            if ( velocity < p_samplesetparam->velLimitLow )
-              goto LABEL_78;
-            if ( p_samplesetparam->velLimitHigh < velocity )
-              goto LABEL_78;
-            idxnsample = 0;
-            if ( !p_samplesetparam->nSample )
-              goto LABEL_78;
-            cursampleindexoffs1 = 0;
-            while ( 2 )
-            {
-              cursampleindex1 = (char *)samplesetparam_1 + cursampleindexoffs1;
-              if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
-                && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
-                && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
-                && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
-              {
-                if ( swcase - 6 >= 3 )
-                {
-                  if ( p_sampleparam->VagIndex != 0xFFFF
-                    && !sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, &p_vagparam) )
-                  {
-                    if ( swcase == 9 )
-                      goto LABEL_46;
-                    if ( swcase >= 9 )
-                    {
-                      if ( swcase == 10 )
-                      {
-                        ++idx1;
-                        *ptr++ = p_vagparam;
-                      }
-                      else if ( swcase == 11 )
-                      {
-                        ++idx1;
-                        vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
-                        ptr_2 = ptr;
-                        ptr += 4;
-                        do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr_2, vag_size, p_vagparam);
-                      }
-                    }
-                  }
-                }
-                else
-                {
-                  if ( swcase == 7 )
-                  {
-                    ++idx1;
-                    *ptr++ = p_sampleparam;
-                    goto LABEL_49;
-                  }
-                  if ( swcase < 8 )
-                  {
-                    if ( swcase != 6 )
-                      goto LABEL_49;
-LABEL_46:
-                    ++idx1;
-                    goto LABEL_49;
-                  }
-                  ptr_3 = ptr;
-                  if ( swcase == 8 )
-                  {
-                    ++idx1;
-                    ptr += 34;
-                    do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr_3, p_sampleparam);
-                  }
-                }
-              }
-LABEL_49:
-              samplesetparam_1 = p_samplesetparam;
-              ++idxnsample;
-              cursampleindexoffs1 = 2 * idxnsample;
-              if ( idxnsample >= p_samplesetparam->nSample )
-                goto LABEL_78;
-              continue;
-            }
-          }
-          if ( mode != 1 )
-            goto LABEL_78;
-          p_samplesetparam_1 = p_samplesetparam;
-          nsamplecur = 0;
-          if ( !p_samplesetparam->nSample )
-            goto LABEL_78;
-          cursampleindexoffs2 = 0;
-          while ( 2 )
-          {
-            cursampleindex2 = (char *)p_samplesetparam_1 + cursampleindexoffs2;
-            if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
-              && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
-              && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
-              && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
-            {
-              if ( swcase - 6 >= 3 )
-              {
-                if ( p_sampleparam->VagIndex != 0xFFFF
-                  && !sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, &p_vagparam) )
-                {
-                  if ( swcase == 9 )
-                    goto LABEL_74;
-                  if ( swcase >= 9 )
-                  {
-                    if ( swcase == 10 )
-                    {
-                      ++idx1;
-                      *ptr++ = p_vagparam;
-                    }
-                    else if ( swcase == 11 )
-                    {
-                      ++idx1;
-                      vagsz_tmp = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
-                      ptr_4 = ptr;
-                      ptr += 4;
-                      do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr_4, vagsz_tmp, p_vagparam);
-                    }
-                  }
-                }
-              }
-              else
-              {
-                if ( swcase == 7 )
-                {
-                  ++idx1;
-                  *ptr++ = p_sampleparam;
-                  goto LABEL_77;
-                }
-                if ( swcase < 8 )
-                {
-                  if ( swcase != 6 )
-                    goto LABEL_77;
-LABEL_74:
-                  ++idx1;
-                  goto LABEL_77;
-                }
-                ptr_5 = ptr;
-                if ( swcase == 8 )
-                {
-                  ++idx1;
-                  ptr += 34;
-                  do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr_5, p_sampleparam);
-                }
-              }
-            }
-LABEL_77:
-            p_samplesetparam_1 = p_samplesetparam;
-            ++nsamplecur;
-            cursampleindexoffs2 = 2 * nsamplecur;
-            if ( nsamplecur >= p_samplesetparam->nSample )
-              goto LABEL_78;
-            continue;
-          }
-        }
-        if ( swcase == 4 )
-        {
-          ++idx1;
-          *ptr++ = p_samplesetparam;
-          goto LABEL_78;
-        }
-        if ( swcase >= 5 )
-        {
-          ptr_6 = ptr;
-          if ( swcase == 5 )
-          {
+          case 3:
+            ++idx1;
+            break;
+          case 4:
+            ++idx1;
+            *ptr++ = p_samplesetparam;
+            break;
+          case 5:
+            ptr_6 = ptr;
             ++idx1;
             ptr += 4;
             do_copy_to_sdhd_set_param((SceSdHdSampleSetParam *)ptr_6, p_samplesetparam);
-          }
-          goto LABEL_78;
+            break;
+          default:
+            switch ( mode )
+            {
+              case 0:
+                samplesetparam_1 = p_samplesetparam;
+                if ( velocity < p_samplesetparam->velLimitLow || velocity > p_samplesetparam->velLimitHigh )
+                {
+                  break;
+                }
+                idxnsample = 0;
+                cursampleindexoffs1 = 0;
+                while ( idxnsample < p_samplesetparam->nSample )
+                {
+                  cursampleindex1 = (char *)samplesetparam_1 + cursampleindexoffs1;
+                  if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
+                    && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
+                    && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
+                    && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
+                  {
+                      switch ( swcase )
+                      {
+                        case 6:
+                          ++idx1;
+                          break;
+                        case 7:
+                          ++idx1;
+                          *ptr++ = p_sampleparam;
+                          break;
+                        case 8:
+                          ptr_3 = ptr;
+                          ++idx1;
+                          ptr += 34;
+                          do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr_3, p_sampleparam);
+                          break;
+                        default:
+                          if ( p_sampleparam->VagIndex == 0xFFFF
+                            || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, &p_vagparam) )
+                          {
+                            break;
+                          }
+                          switch ( swcase )
+                          {
+                            case 9:
+                              ++idx1;
+                              break;
+                            case 10:
+                              ++idx1;
+                              *ptr++ = p_vagparam;
+                              break;
+                            case 11:
+                              ++idx1;
+                              vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
+                              ptr_2 = ptr;
+                              ptr += 4;
+                              do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr_2, vag_size, p_vagparam);
+                              break;
+                            default:
+                              break;
+                          }
+                          break;
+                      }
+                  }
+                  samplesetparam_1 = p_samplesetparam;
+                  ++idxnsample;
+                  cursampleindexoffs1 = 2 * idxnsample;
+                }
+                break;
+              case 1:
+                p_samplesetparam_1 = p_samplesetparam;
+                nsamplecur = 0;
+                cursampleindexoffs2 = 0;
+                while ( nsamplecur < p_samplesetparam->nSample )
+                {
+                  cursampleindex2 = (char *)p_samplesetparam_1 + cursampleindexoffs2;
+                  if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
+                    && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
+                    && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
+                    && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
+                  {
+                    switch ( swcase )
+                    {
+                      case 6:
+                        ++idx1;
+                        break;
+                      case 7:
+                        ++idx1;
+                        *ptr++ = p_sampleparam;
+                        break;
+                      case 8:
+                        ptr_5 = ptr;
+                        ++idx1;
+                        ptr += 34;
+                        do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr_5, p_sampleparam);
+                        break;
+                      default:
+                        if ( p_sampleparam->VagIndex == 0xFFFF
+                          || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, &p_vagparam) )
+                        {
+                          break;
+                        }
+                        switch ( swcase )
+                        {
+                          case 9:
+                            ++idx1;
+                            break;
+                          case 10:
+                            ++idx1;
+                            *ptr++ = p_vagparam;
+                            break;
+                          case 11:
+                            ++idx1;
+                            vagsz_tmp = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
+                            ptr_4 = ptr;
+                            ptr += 4;
+                            do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr_4, vagsz_tmp, p_vagparam);
+                            break;
+                        }
+                        break;
+                    }
+                  }
+                  p_samplesetparam_1 = p_samplesetparam;
+                  ++nsamplecur;
+                  cursampleindexoffs2 = 2 * nsamplecur;
+                }
+                break;
+              default:
+                break;
+            }
+            break;
         }
-LABEL_18:
-        ++idx1;
-        goto LABEL_78;
-      }
-      return idx1;
+        break;
     }
+    idx2++;
   }
-  return 0;
+  return idx1;
 }
 // 400A9C: conditional instruction was optimized away because $s3.4==2
 // 400B10: conditional instruction was optimized away because $s3.4==3
@@ -1048,163 +1015,129 @@ int do_get_common_block_ptr(
   idx1 = 0;
   if ( sceSdHdGetSampleSetParamAddr(buffer, sampleSetNumber, &p_samplesetparam) != 0 )
     return 0;
-  if ( mode )
+  switch ( mode )
   {
-    if ( mode != 1 )
-      return 0;
-    p_samplesetparam_1 = p_samplesetparam;
-    nsampletmp1 = 0;
-    if ( !p_samplesetparam->nSample )
-      return idx1;
-    cursampleindexoffs1 = 0;
-    while ( 1 )
-    {
-      cursampleindex1 = (char *)p_samplesetparam_1 + cursampleindexoffs1;
-      if ( *((u16 *)cursampleindex1 + 2) == 0xFFFF
-        || sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
-        || velocity < (p_sampleparam->velRangeLow & 0x7Fu)
-        || (p_sampleparam->velRangeHigh & 0x7Fu) < velocity )
+    case 0:
+      p_samplesetparam_2 = p_samplesetparam;
+      if ( velocity < p_samplesetparam->velLimitLow || velocity > p_samplesetparam->velLimitHigh )
       {
-        goto LABEL_58;
+        return 0;
       }
-      if ( swcase - 6 >= 3 )
-        break;
-      if ( swcase == 7 )
-      {
-        ++idx1;
-        *param++ = p_sampleparam;
-      }
-      else
-      {
-        if ( swcase >= 8 )
-        {
-          param_1 = param;
-          if ( swcase == 8 )
-          {
-            ++idx1;
-            param += 34;
-            do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param_1, p_sampleparam);
-          }
-          goto LABEL_58;
-        }
-        if ( swcase == 6 )
-          goto LABEL_55;
-      }
-LABEL_58:
-      p_samplesetparam_1 = p_samplesetparam;
-      ++nsampletmp1;
-      cursampleindexoffs1 = 2 * nsampletmp1;
-      if ( nsampletmp1 >= p_samplesetparam->nSample )
-        return idx1;
-    }
-    if ( p_sampleparam->VagIndex == 0xFFFF || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, p_vagparam) )
-      goto LABEL_58;
-    if ( swcase != 9 )
-    {
-      if ( swcase >= 9 )
-      {
-        if ( swcase == 10 )
-        {
-          ++idx1;
-          *param++ = p_vagparam[0];
-        }
-        else if ( swcase == 11 )
-        {
-          ++idx1;
-          vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam[0]->vagOffsetAddr);
-          param_2 = param;
-          param += 4;
-          do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_2, vag_size, p_vagparam[0]);
-        }
-      }
-      goto LABEL_58;
-    }
-LABEL_55:
-    ++idx1;
-    goto LABEL_58;
-  }
-  p_samplesetparam_2 = p_samplesetparam;
-  if ( velocity >= p_samplesetparam->velLimitLow )
-  {
-    if ( p_samplesetparam->velLimitHigh >= velocity )
-    {
       nsampletmp2 = 0;
-      if ( p_samplesetparam->nSample )
+      cursampleindexoffs2 = 0;
+      while ( nsampletmp2 < p_samplesetparam->nSample )
       {
-        cursampleindexoffs2 = 0;
-        while ( 1 )
+        cursampleindex2 = (char *)p_samplesetparam_2 + cursampleindexoffs2;
+        if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
+          && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
+          && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
+          && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
         {
-          cursampleindex2 = (char *)p_samplesetparam_2 + cursampleindexoffs2;
-          if ( *((u16 *)cursampleindex2 + 2) == 0xFFFF
-            || sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
-            || velocity < (p_sampleparam->velRangeLow & 0x7Fu)
-            || (p_sampleparam->velRangeHigh & 0x7Fu) < velocity )
+          switch ( swcase )
           {
-            goto LABEL_30;
-          }
-          if ( swcase - 6 >= 3 )
-            break;
-          if ( swcase == 7 )
-          {
-            ++idx1;
-            *param++ = p_sampleparam;
-          }
-          else
-          {
-            if ( swcase >= 8 )
-            {
+            case 6:
+              ++idx1;
+              break;
+            case 7:
+              ++idx1;
+              *param++ = p_sampleparam;
+              break;
+            case 8:
               param_3 = param;
-              if ( swcase == 8 )
+              ++idx1;
+              param += 34;
+              do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param_3, p_sampleparam);
+              break;
+            default:
+              if ( p_sampleparam->VagIndex == 0xFFFF
+                || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, p_vagparam) )
               {
-                ++idx1;
-                param += 34;
-                do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param_3, p_sampleparam);
+                break;
               }
-              goto LABEL_30;
-            }
-            if ( swcase == 6 )
-              goto LABEL_27;
+              switch ( swcase )
+              {
+                case 9:
+                  ++idx1;
+                  break;
+                case 10:
+                  ++idx1;
+                  *param++ = p_vagparam[0];
+                  break;
+                case 11:
+                  ++idx1;
+                  vagsz_tmp = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam[0]->vagOffsetAddr);
+                  param_4 = param;
+                  param += 4;
+                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_4, vagsz_tmp, p_vagparam[0]);
+                  break;
+              }
           }
-LABEL_30:
-          p_samplesetparam_2 = p_samplesetparam;
-          ++nsampletmp2;
-          cursampleindexoffs2 = 2 * nsampletmp2;
-          if ( nsampletmp2 >= p_samplesetparam->nSample )
-            return idx1;
         }
-        if ( p_sampleparam->VagIndex == 0xFFFF
-          || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, p_vagparam) )
-        {
-          goto LABEL_30;
-        }
-        if ( swcase != 9 )
-        {
-          if ( swcase >= 9 )
-          {
-            if ( swcase == 10 )
-            {
-              ++idx1;
-              *param++ = p_vagparam[0];
-            }
-            else if ( swcase == 11 )
-            {
-              ++idx1;
-              vagsz_tmp = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam[0]->vagOffsetAddr);
-              param_4 = param;
-              param += 4;
-              do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_4, vagsz_tmp, p_vagparam[0]);
-            }
-          }
-          goto LABEL_30;
-        }
-LABEL_27:
-        ++idx1;
-        goto LABEL_30;
+        p_samplesetparam_2 = p_samplesetparam;
+        ++nsampletmp2;
+        cursampleindexoffs2 = 2 * nsampletmp2;
       }
       return idx1;
-    }
+    case 1:
+      p_samplesetparam_1 = p_samplesetparam;
+      nsampletmp1 = 0;
+      cursampleindexoffs1 = 0;
+      while ( nsampletmp1 < p_samplesetparam->nSample )
+      {
+        cursampleindex1 = (char *)p_samplesetparam_1 + cursampleindexoffs1;
+        if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
+          && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
+          && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
+          && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
+        {
+          switch ( swcase )
+          {
+            case 6:
+              ++idx1;
+              break;
+            case 7:
+              ++idx1;
+              *param++ = p_sampleparam;
+              break;
+            case 8:
+              param_1 = param;
+              ++idx1;
+              param += 34;
+              do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param_1, p_sampleparam);
+              break;
+            default:
+              if ( p_sampleparam->VagIndex == 0xFFFF || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, p_vagparam) )
+                break;
+              switch ( swcase )
+              {
+                case 9:
+                  ++idx1;
+                  break;
+                case 10:
+                  ++idx1;
+                  *param++ = p_vagparam[0];
+                  break;
+                case 11:
+                  ++idx1;
+                  vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam[0]->vagOffsetAddr);
+                  param_2 = param;
+                  param += 4;
+                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_2, vag_size, p_vagparam[0]);
+                  break;
+                default:
+                  break;
+              }
+              break;
+          }
+        }
+        p_samplesetparam_1 = p_samplesetparam;
+        ++nsampletmp1;
+        cursampleindexoffs1 = 2 * nsampletmp1;
+      }
+      return idx1;
+    default:
+      return 0;
   }
-  return 0;
 }
 
 //----- (004012F0) --------------------------------------------------------
@@ -2114,7 +2047,10 @@ int sceSdHdModifyVelocity(unsigned int curveType, int velocity)
     case 1u:
       return 128 - velocity;
     case 2u:
-      goto LABEL_10;
+      velocity = velocity * velocity / 0x7Fu;
+      if ( velocity )
+        return velocity;
+      return 1;
     case 3u:
       retval1 = 1;
       calc4 = velocity * velocity / 0x7Fu;
@@ -2129,7 +2065,6 @@ int sceSdHdModifyVelocity(unsigned int curveType, int velocity)
       return 128 - calc6;
     case 5u:
       velocity = 128 - velocity;
-LABEL_10:
       velocity = velocity * velocity / 0x7Fu;
       if ( velocity )
         return velocity;
@@ -2175,85 +2110,103 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
   {
     velocity = 0;
   }
+  calc5 = 0;
   switch ( curveType )
   {
+    case 0u:
+    default:
+      calc3 = velocity - center;
+      calcg = calc3 << 16;
+      calcf = (int)((u64)(2181570691LL * calcg) >> 32) >> 6;
+      calce = calcg >> 31;
+      calc5 = calcf - calce;
+      break;
     case 1u:
       calc3 = center - velocity;
-      goto LABEL_65;
+      calcg = calc3 << 16;
+      calcf = (int)((u64)(2181570691LL * calcg) >> 32) >> 6;
+      calce = calcg >> 31;
+      calc5 = calcf - calce;
+      break;
     case 2u:
       calc4 = ((velocity - 1) << 15) / 126 * (((velocity - 1) << 15) / 126)
             - ((center - 1) << 15) / 126 * (((center - 1) << 15) / 126);
-      goto LABEL_39;
+      calc5 = calc4 >> 14;
+      if ( calc4 < 0 )
+        calc5 = (calc4 + 0x3FFF) >> 14;
+      break;
     case 3u:
       calc5 = ((velocity - 1) << 15) / 126 * (((velocity - 1) << 15) / 126) / -16384
             - ((center - 1) << 15) / 126 * (((center - 1) << 15) / 126) / -16384;
-      goto LABEL_67;
+      break;
     case 4u:
       calc5 = (0x10000 - ((center - 1) << 15) / 126) * (0x10000 - ((center - 1) << 15) / 126) / 0x4000
             - (0x10000 - ((velocity - 1) << 15) / 126) * (0x10000 - ((velocity - 1) << 15) / 126) / 0x4000;
-      goto LABEL_67;
+      break;
     case 5u:
       calc5 = (0x10000 - ((velocity - 1) << 15) / 126) * (0x10000 - ((velocity - 1) << 15) / 126) / 0x4000
             - (0x10000 - ((center - 1) << 15) / 126) * (0x10000 - ((center - 1) << 15) / 126) / 0x4000;
-      goto LABEL_67;
+      break;
     case 6u:
-      if ( velocity == center )
-        goto LABEL_48;
-      if ( center >= velocity )
-        calc6 = center - 1;
-      else
-        calc6 = 127 - center;
-      calc7 = velocity - center;
-      goto LABEL_25;
+      if ( velocity != center )
+      {
+        if ( center >= velocity )
+          calc6 = center - 1;
+        else
+          calc6 = 127 - center;
+        calc7 = velocity - center;
+        calc8 = calc7 << 16;
+        if ( !calc6 )
+          __builtin_trap();
+        if ( calc6 == -1 && calc8 == 0x80000000 )
+          __builtin_trap();
+        calc5 = calc8 / calc6;
+      }
+      break;
     case 7u:
-      if ( velocity == center )
-        goto LABEL_48;
-      if ( center >= velocity )
-        calc6 = center - 1;
-      else
-        calc6 = 127 - center;
-      calc7 = center - velocity;
-LABEL_25:
-      calc8 = calc7 << 16;
-      if ( !calc6 )
-        __builtin_trap();
-      if ( calc6 == -1 && calc8 == 0x80000000 )
-        __builtin_trap();
-      calc5 = calc8 / calc6;
-      goto LABEL_67;
+      if ( velocity != center )
+      {
+        if ( center >= velocity )
+          calc6 = center - 1;
+        else
+          calc6 = 127 - center;
+        calc7 = center - velocity;
+        calc8 = calc7 << 16;
+        if ( !calc6 )
+          __builtin_trap();
+        if ( calc6 == -1 && calc8 == 0x80000000 )
+          __builtin_trap();
+        calc5 = calc8 / calc6;
+      }
+      break;
     case 8u:
-      if ( velocity == center )
-        goto LABEL_48;
-      calc9 = (velocity - center) << 15;
-      if ( center >= velocity )
+      if ( velocity != center )
       {
-        if ( center == 1 )
-          __builtin_trap();
-        if ( !center && calc9 == 0x80000000 )
-          __builtin_trap();
-        calc5 = calc9 / (center - 1) * (calc9 / (center - 1)) / -16384;
+        calc9 = (velocity - center) << 15;
+        if ( center >= velocity )
+        {
+          if ( center == 1 )
+            __builtin_trap();
+          if ( !center && calc9 == 0x80000000 )
+            __builtin_trap();
+          calc5 = calc9 / (center - 1) * (calc9 / (center - 1)) / -16384;
+        }
+        else
+        {
+          calca = 127 - center;
+          if ( 127 == center )
+            __builtin_trap();
+          if ( calca == -1 && calc9 == 0x80000000 )
+            __builtin_trap();
+          calc4 = calc9 / calca * (calc9 / calca);
+          calc5 = calc4 >> 14;
+          if ( calc4 < 0 )
+            calc5 = (calc4 + 0x3FFF) >> 14;
+        }
       }
-      else
-      {
-        calca = 127 - center;
-        if ( 127 == center )
-          __builtin_trap();
-        if ( calca == -1 && calc9 == 0x80000000 )
-          __builtin_trap();
-        calc4 = calc9 / calca * (calc9 / calca);
-LABEL_39:
-        calc5 = calc4 >> 14;
-        if ( calc4 < 0 )
-          calc5 = (calc4 + 0x3FFF) >> 14;
-      }
-      goto LABEL_67;
+      break;
     case 9u:
-      if ( velocity == center )
-      {
-LABEL_48:
-        calc5 = 0;
-      }
-      else
+      if ( velocity != center )
       {
         calcb = (velocity - center) << 15;
         if ( center >= velocity )
@@ -2276,24 +2229,16 @@ LABEL_48:
           if ( calcd < 0 )
             calce = (calcd + 0x3FFF) >> 14;
           calcf = 0x10000;
-LABEL_66:
           calc5 = calcf - calce;
         }
       }
-LABEL_67:
-      if ( calc5 < -65536 )
-        return -65536;
-      if ( calc5 > 0xFFFF )
-        return 0xFFFF;
-      return calc5;
-    default:
-      calc3 = velocity - center;
-LABEL_65:
-      calcg = calc3 << 16;
-      calcf = (int)((u64)(2181570691LL * calcg) >> 32) >> 6;
-      calce = calcg >> 31;
-      goto LABEL_66;
+      break;
   }
+  if ( calc5 < -65536 )
+    return -65536;
+  if ( calc5 > 0xFFFF )
+    return 0xFFFF;
+  return calc5;
 }
 
 //----- (00402AD0) --------------------------------------------------------
