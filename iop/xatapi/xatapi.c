@@ -141,10 +141,10 @@ int sceCdAtapi_BC(void);
 int atapi_spin_status_get(int unused_arg1, void *buf);
 int atapi_check_if_drive_ready(int check_nowait);
 int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int secsize, int rwtype);
-int expbay_device_reset(void);
+void expbay_device_reset(void);
 int cd_atapi_intr_callback_cb(int cbarg);
 void speedRegisterIntrDispatchCb(void *callback);
-int sceDev5Init(void);
+void sceDev5Init(void);
 int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2);
 int xatapi_do_init(void);
 int xatapi_nulldev0(void);
@@ -166,8 +166,8 @@ int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir
 int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, int dir);
 int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, int dir);
 void speedLEDCtl(int ctl);
-int speed_init(void);
-int speed_device_init(void);
+void speed_init(void);
+void speed_device_init(void);
 void do_hex_dump(void *ptr, int len);
 void ata_pre_dma_cb(void);
 void ata_post_dma_cb(void);
@@ -200,7 +200,7 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir);
 int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir);
 int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir);
 int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir);
-int DmaRun_spck(char *buf, unsigned int secsize);
+void DmaRun_spck(char *buf, unsigned int secsize);
 int sceAtaWaitResult(void);
 int xatapi_6_sceAtaWaitResult(void);
 int sceCdAtapiWaitResult_local(void);
@@ -216,9 +216,9 @@ int ata_device_set_transfer_mode(int device, int type, int mode);
 void ata_device_probe(ata_devinfo_t *devinfo);
 void atapi_device_set_transfer_mode_outer(int device);
 void ata_device_set_transfer_mode_outer(int device);
-int ata_init_devices(ata_devinfo_t *devinfo);
-ata_devinfo_t *sceAtapiInit(int device);
-int sceAtInterInit(void);
+void ata_init_devices(ata_devinfo_t *devinfo);
+void sceAtapiInit(int device);
+void sceAtInterInit(void);
 int create_event_flags(void);
 void FpgaLayer1On(void);
 void FpgaLayer1Off(void);
@@ -237,7 +237,6 @@ void FpgaCheckWriteBuffer2(void);
 void FpgaClearBuffer(void);
 int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscramblingpackptr);
 int Mpeg2CheckScramble(char *buf, unsigned int bufsize);
-void xatapi_1();
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -1149,7 +1148,7 @@ LABEL_16:
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00401958) --------------------------------------------------------
-int expbay_device_reset(void)
+void expbay_device_reset(void)
 {
   if ( (*g_dev9_reg_power & 4) != 0 )
   {
@@ -1165,7 +1164,6 @@ int expbay_device_reset(void)
     *g_dev9_reg_power |= 1u;
     DelayThread(500000);
   }
-  return 0;
 }
 
 //----- (00401A38) --------------------------------------------------------
@@ -1190,18 +1188,15 @@ void speedRegisterIntrDispatchCb(void *callback)
 // 40A5A8: using guessed type int (*p_dev5_intr_cb)(u32);
 
 //----- (00401AC8) --------------------------------------------------------
-int sceDev5Init(void)
+void sceDev5Init(void)
 {
-  int initres; // $s0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("dev5 atapi Init start\n");
   sceCdSC(0xFFFFFFE5, (int *)cd_atapi_intr_callback_cb);
   speed_device_init();
-  initres = speed_init();
+  speed_init();
   if ( g_xatapi_verbose > 0 )
     Kprintf("dev5 atapi Init end\n");
-  return initres;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 
@@ -2000,7 +1995,7 @@ void speedLEDCtl(int ctl)
 }
 
 //----- (004031C4) --------------------------------------------------------
-int speed_init(void)
+void speed_init(void)
 {
   int i1; // $v1
   int i1x; // $v0
@@ -2014,7 +2009,7 @@ int speed_init(void)
   semaparam.option = 0;
   g_dma_lock_sema = CreateSema(&semaparam);
   if ( g_dma_lock_sema <= 0 )
-    return -1;
+    return;
   speedIntrDisable(0xFFFF);
   speedRegisterIntrDispatchCb(speed_intr_dispatch);
   i1 = 15;
@@ -2037,11 +2032,11 @@ int speed_init(void)
   }
   while ( i2 < 4 );
   speedLEDCtl(0);
-  return 0;
+  return;
 }
 
 //----- (00403284) --------------------------------------------------------
-int speed_device_init(void)
+void speed_device_init(void)
 {
   vu16 spdrev_1_1; // $v0
   int spdrev_1_1_tmp; // $v1
@@ -2072,16 +2067,16 @@ int speed_device_init(void)
   }
   if ( inbounds )
   {
-    if ( g_xatapi_verbose <= 0 )
-      return 0;
-    Kprintf("Speed chip: %s\n", revtypes[inbounds + 4]);
+    if ( g_xatapi_verbose > 0 )
+      Kprintf("Speed chip: %s\n", revtypes[inbounds + 4]);
   }
   else
   {
-    if ( g_xatapi_verbose <= 0 )
-      return 0;
-    spdrev_1_2 = dev5_speed_regs.r_spd_rev_1;
-    Kprintf("Speed chip: Rev %x\n", spdrev_1_2);
+    if ( g_xatapi_verbose > 0 )
+    {
+      spdrev_1_2 = dev5_speed_regs.r_spd_rev_1;
+      Kprintf("Speed chip: Rev %x\n", spdrev_1_2);
+    }
   }
   if ( g_xatapi_verbose > 0 )
   {
@@ -2089,7 +2084,6 @@ int speed_device_init(void)
     r_spd_rev_8 = dev5_speed_regs.r_spd_rev_8;
     Kprintf("Speed version(rev3.rev8) = %04x.%04x\n", r_spd_rev_3, r_spd_rev_8);
   }
-  return 0;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 
@@ -4002,7 +3996,7 @@ LABEL_54:
 // 40A938: using guessed type int g_atapi_xfer_buf[130];
 
 //----- (004062F4) --------------------------------------------------------
-int DmaRun_spck(char *buf, unsigned int secsize)
+void DmaRun_spck(char *buf, unsigned int secsize)
 {
   unsigned int secsize_sectors; // $s2
   unsigned int unk8148_val; // $s1
@@ -4047,7 +4041,7 @@ int DmaRun_spck(char *buf, unsigned int secsize)
         goto LABEL_11;
     }
     FpgaSpckmodeOff();
-    return xferres;
+    return;
   }
   else
   {
@@ -4068,10 +4062,8 @@ LABEL_17:
       {
         Kprintf("DmaRun_spck End.\n");
       }
-      return 0;
     }
   }
-  return result;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 // 40A938: using guessed type int g_atapi_xfer_buf[130];
@@ -4751,7 +4743,7 @@ void ata_device_set_transfer_mode_outer(int device)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004076A0) --------------------------------------------------------
-int ata_init_devices(ata_devinfo_t *devinfo)
+void ata_init_devices(ata_devinfo_t *devinfo)
 {
   int result; // $v0
   int identify_nr; // $s1
@@ -4759,13 +4751,13 @@ int ata_init_devices(ata_devinfo_t *devinfo)
 
   result = xatapi_4_sceAtaSoftReset();
   if ( result )
-    return result;
+    return;
   ata_device_probe(devinfo);
   if ( devinfo->exists )
   {
     result = ata_device_select(1);
     if ( result )
-      return result;
+      return;
     // Unofficial: was 8 bit access
     if ( (dev5_speed_regs.r_spd_ata_control & 0xFF) )
       ata_device_probe(devinfo + 1);
@@ -4802,7 +4794,7 @@ int ata_init_devices(ata_devinfo_t *devinfo)
       ++identify_nr;
 LABEL_25:
       if ( identify_nr >= 2 )
-        return 0;
+        return;
     }
     atapi_device_set_transfer_mode_outer(identify_nr);
 LABEL_24:
@@ -4813,19 +4805,20 @@ LABEL_24:
   if ( g_xatapi_verbose > 0 )
     Kprintf("DEV5 ATA: error: there is no device0\n");
   devinfo[1].exists = 0;
-  return 0;
+  return;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 // 40A658: using guessed type int g_is_in_read_info;
 // 40A738: using guessed type int ata_param[128];
 
 //----- (00407898) --------------------------------------------------------
-ata_devinfo_t *sceAtapiInit(int device)
+void sceAtapiInit(int device)
 {
   int resetval; // $v0
 
+  (void)device;
   if ( g_ata_devinfo_init )
-    return &atad_devinfo[device];
+    return;
   g_ata_devinfo_init = 1;
   while ( 1 )
   {
@@ -4840,17 +4833,14 @@ ata_devinfo_t *sceAtapiInit(int device)
       break;
     dev5_speed_regs.r_spd_if_ctrl = 0;
   }
-  if ( ata_init_devices(atad_devinfo) )
-    return 0;
-  else
-    return &atad_devinfo[device];
+  ata_init_devices(atad_devinfo);
 }
 // 40A644: using guessed type int g_is_wait_busy;
 // 40A64C: using guessed type int g_ata_devinfo_init;
 // 40A6E8: using guessed type ata_devinfo_t atad_devinfo[2];
 
 //----- (00407968) --------------------------------------------------------
-int sceAtInterInit(void)
+void sceAtInterInit(void)
 {
   int sc_tmp; // [sp+10h] [-8h] BYREF
 
@@ -4860,7 +4850,6 @@ int sceAtInterInit(void)
   speedRegisterPostDmaCb(0, ata_post_dma_cb);
   if ( sceCdSC(0xFFFFFFDC, &sc_tmp) )
     speedIntrEnable(256);
-  return 1;
 }
 
 //----- (004079E4) --------------------------------------------------------
