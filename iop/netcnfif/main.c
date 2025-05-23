@@ -151,13 +151,14 @@ int module_start(int argc, char *argv[])
   const char **cur_argv; // $s2
   const char *thpri_argv_cur; // $s1
   char *bp; // $s0
-  int bp_curchr; // $v0
   const char *thstack_argv_cur; // $s1
   int retres1; // $v0
   int retres2; // $v0
   int tid; // $v0
   int retres3; // $v0
   iop_thread_t th_param; // [sp+10h] [-18h] BYREF
+  int xflg;
+
 
   thpri = 123;
   thstack = 4096;
@@ -165,32 +166,48 @@ int module_start(int argc, char *argv[])
   cur_argv = (const char **)(argv + 1);
   while ( cur_argc > 0 )
   {
+    xflg = 1;
     if ( !strncmp("thpri=", *cur_argv, 6) )
     {
       thpri_argv_cur = *cur_argv;
       bp = (char *)(*cur_argv + 6);
       if ( (look_ctype_table(*bp) & 4) == 0 )
-        goto LABEL_30;
+      {
+        usage();
+        return 1;
+      }
       thpri = strtol(bp, 0, 10);
       if ( (unsigned int)(thpri - 9) >= 0x73 )
-        goto LABEL_30;
-      if ( !thpri_argv_cur[6] )
-        goto LABEL_18;
-      while ( (look_ctype_table(*bp) & 4) != 0 )
       {
-        bp_curchr = *++bp;
-        if ( !*bp )
-          goto LABEL_17;
+        usage();
+        return 1;
+      }
+      if ( !thpri_argv_cur[6] )
+      {
+        xflg = 0;
+      }
+      else
+      {
+        while ( (look_ctype_table(*bp) & 4) != 0 )
+        {
+          bp++;
+          if ( !*bp )
+          {
+            xflg = 0;
+            break;
+          }
+        }
       }
     }
-    else
+    else if ( !strncmp("thstack=", *cur_argv, 8) )
     {
-      if ( strncmp("thstack=", *cur_argv, 8) )
-        goto LABEL_30;
       thstack_argv_cur = *cur_argv;
       bp = (char *)(*cur_argv + 8);
       if ( (look_ctype_table(*bp) & 4) == 0 )
-        goto LABEL_30;
+      {
+        usage();
+        return 1;
+      }
       thstack = strtol(bp, 0, 10);
       if ( thstack_argv_cur[8] )
       {
@@ -205,18 +222,19 @@ int module_start(int argc, char *argv[])
       if ( !strcmp(bp, "KB") )
       {
         thstack <<= 10;
-        goto LABEL_18;
+        xflg = 0;
       }
     }
-    bp_curchr = *bp;
-LABEL_17:
-    if ( bp_curchr )
+    else
     {
-LABEL_30:
       usage();
       return 1;
     }
-LABEL_18:
+    if ( xflg && *bp )
+    {
+      usage();
+      return 1;
+    }
     --cur_argc;
     ++cur_argv;
   }
@@ -309,16 +327,16 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
   {
     case 0:
       retres1 = sceNetCnfGetCount(buf->fname, buf->type);
-      goto LABEL_56;
+      break;
     case 1:
       retres2 = sceNetCnfGetCount(buf->fname, buf->type);
       retres1 = retres2;
       if ( retres2 < 0 )
-        goto LABEL_56;
+        break;
       list_iop = (sceNetCnfList_t *)my_alloc(520 * retres2);
       retres1 = -2;
       if ( !list_iop )
-        goto LABEL_56;
+        break;
       list_ee = (int *)my_alloc(576 * buf->data);
       if ( list_ee )
       {
@@ -369,33 +387,29 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
       {
         my_free(list_iop);
         retres1 = -2;
-LABEL_56:
       }
-LABEL_57:
-      buf->data = retres1;
       break;
     case 2:
       sceNetcnfifEnvInit(&env, mem_area, mem_area_size, buf->f_no_decode);
       retres1 = sceNetCnfLoadEntry(buf->fname, buf->type, buf->usr_name, &env);
       if ( retres1 < 0 )
-        goto LABEL_57;
+        break;
       sceNetcnfifDataInit(&data);
       retres1 = sceNetcnfifReadEnv(&data, &env, buf->type);
       if ( retres1 < 0 )
-        goto LABEL_56;
+        break;
       dmatid2 = sceNetcnfifSendEE((unsigned int)&data, buf->addr, 0x1340u);
       do
       {
       }
       while ( sceNetcnfifDmaCheck(dmatid2) != 0 );
-      buf->data = retres1;
       break;
     case 3:
       sceNetcnfifEnvInit(&env, mem_area, mem_area_size, buf->f_no_decode);
       retres1 = sceNetcnfifWriteEnv(&env, &data, buf->type);
       if ( retres1 >= 0 )
         retres1 = sceNetCnfAddEntry(buf->fname, buf->type, buf->usr_name, &env);
-      goto LABEL_56;
+      break;
     case 4:
       sceNetcnfifEnvInit(&env, mem_area, mem_area_size, buf->f_no_decode);
       retres1 = sceNetCnfLoadEntry(buf->fname, buf->type, buf->usr_name, &env);
@@ -407,26 +421,26 @@ LABEL_57:
         if ( retres1 >= 0 )
           retres1 = sceNetCnfEditEntry(buf->fname, buf->type, buf->usr_name, buf->new_usr_name, &env);
       }
-      goto LABEL_56;
+      break;
     case 5:
       retres1 = sceNetCnfDeleteEntry(buf->fname, buf->type, buf->usr_name);
-      goto LABEL_56;
+      break;
     case 6:
       retres1 = sceNetCnfSetLatestEntry(buf->fname, buf->type, buf->usr_name);
-      goto LABEL_56;
+      break;
     case 7:
       retres1 = sceNetCnfDeleteAll(buf->fname);
-      goto LABEL_56;
+      break;
     case 8:
       retres1 = sceNetCnfCheckCapacity(buf->fname);
-      goto LABEL_56;
+      break;
     case 9:
       retres1 = sceNetCnfConvA2S(buf->fname, dp, 256);
-      goto LABEL_56;
+      break;
     case 10:
       sceNetcnfifEnvInit(&env, mem_area, mem_area_size, buf->f_no_decode);
       retres1 = sceNetCnfCheckSpecialProvider(buf->fname, buf->type, buf->usr_name, &env);
-      goto LABEL_56;
+      break;
     case 11:
       typetmp = buf->type;
       callback.open = sce_callback_open;
@@ -435,13 +449,13 @@ LABEL_57:
       callback.type = typetmp;
       sce_callback_initialize();
       sceNetCnfSetCallback(&callback);
-      goto LABEL_57;
+      break;
     case 15:
       sceNetCnfSetCallback(0);
-      goto LABEL_57;
+      break;
     case 100:
       buf->addr = (int)&data;
-      goto LABEL_56;
+      break;
     case 101:
       if ( !mem_area )
       {
@@ -450,18 +464,18 @@ LABEL_57:
         if ( !mem_area )
           retres1 = -2;
       }
-      goto LABEL_57;
+      break;
     case 102:
       if ( mem_area )
         my_free(mem_area);
       mem_area_size = 0;
       mem_area = 0;
-      goto LABEL_57;
+      break;
     case 103:
       sceNetcnfifEnvInit(&env, mem_area, mem_area_size, buf->f_no_decode);
       retres1 = sceNetcnfifWriteEnv(&env, &data, buf->type);
       if ( retres1 < 0 )
-        goto LABEL_57;
+        break;
       if ( env.root )
       {
         if ( env.root->pair_head )
@@ -487,10 +501,11 @@ LABEL_57:
         }
       }
       buf->addr = (int)&env;
-      goto LABEL_56;
+      break;
     default:
-      goto LABEL_56;
+      break;
   }
+  buf->data = retres1;
   return buf;
 }
 // 402880: using guessed type sceNetCnfEnv_t env;
@@ -601,7 +616,6 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
   int numind; // $s0
   sceNetCnfInterface_t *p_1; // $s2
   const char *str; // $a1
-  char *phone_numbers2; // $a0
   u8 *auth_name; // $a1
   u8 *auth_key; // $a1
   u8 *peer_name; // $a1
@@ -669,32 +683,20 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
     str = (const char *)p_1->phone_numbers[0];
     if ( str )
     {
-      if ( numind == 1 )
+      switch ( numind )
       {
-        phone_numbers2 = data->phone_numbers2;
+        case 0:
+          strcpy(data->phone_numbers1, str);
+          break;
+        case 1:
+          strcpy(data->phone_numbers2, str);
+          break;
+        case 2:
+          strcpy(data->phone_numbers3, str);
+          break;
       }
-      else if ( numind >= 2 )
-      {
-        phone_numbers2 = data->phone_numbers3;
-        if ( numind != 2 )
-        {
-          p_1 = (sceNetCnfInterface_t *)((char *)p_1 + 4);
-          goto LABEL_24;
-        }
-      }
-      else
-      {
-        phone_numbers2 = data->phone_numbers1;
-        if ( numind )
-        {
-          p_1 = (sceNetCnfInterface_t *)((char *)p_1 + 4);
-          goto LABEL_24;
-        }
-      }
-      strcpy(phone_numbers2, str);
     }
     p_1 = (sceNetCnfInterface_t *)((char *)p_1 + 4);
-LABEL_24:
     ++numind;
   }
   while ( numind < 10 );
@@ -902,26 +904,22 @@ int put_ns(sceNetCnfEnv_t *e, char *ns, int ns_count)
   struct sceNetCnfCommand *cmd_tail; // $v0
 
   ns1 = 0;
-  if ( ns_count == 1 )
+  switch ( ns_count )
   {
-    ns1 = &dns1;
-    ns2 = &dns1;
-  }
-  else
-  {
-    if ( ns_count != 2 )
-    {
-#if 0
-      MEMORY[8] = 1;
-#endif
-      goto LABEL_7;
-    }
-    ns1 = &dns2;
-    ns2 = &dns2;
+    case 1:
+      ns1 = &dns1;
+      ns2 = &dns1;
+      break;
+    case 2:
+      ns1 = &dns2;
+      ns2 = &dns2;
+      break;
+    default:
+      // Unofficial: return error instead of writing 1 to 0x00000008
+      return -1;
   }
   bzero(ns2, 32);
   ns1->cmd.code = 1;
-LABEL_7:
   cmd_tail = e->ifc->cmd_tail;
   ns1->cmd.back = cmd_tail;
   if ( cmd_tail )
@@ -995,11 +993,9 @@ int root_link(sceNetCnfEnv_t *e, int type)
     e->root->redial_count = -1;
     e->root->redial_interval = -1;
     e->root->dialing_type = -1;
-    goto LABEL_10;
   }
-  if ( !root->pair_head )
+  if ( !root || !root->pair_head )
   {
-LABEL_10:
     p = (struct sceNetCnfPair *)sceNetCnfAllocMem(e, 40, 2);
     if ( !p )
       return -2;
@@ -1021,7 +1017,6 @@ LABEL_10:
   if ( type == 2 )
   {
     e->root->pair_head->dev = e->ifc;
-    return 0;
   }
   return 0;
 }
@@ -1059,194 +1054,198 @@ int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
   }
   init_flag = 1;
   init_usrntcnf(e->ifc);
-  if ( type != 1 )
+  switch ( type )
   {
-    if ( type != 2 )
-    {
-LABEL_70:
-      if ( init_flag )
+    case 1:
+      ifc_type = data->ifc_type;
+      if ( ifc_type != -1 )
       {
-        e->ifc = 0;
+        init_flag = 0;
+        e->ifc->type = ifc_type;
       }
-      else
+      dhcp = data->dhcp;
+      if ( dhcp != 255 )
       {
-        if ( !e->alloc_err )
-          return retres;
-        return -2;
+        init_flag = 0;
+        e->ifc->dhcp = dhcp;
       }
-      return -100;
-    }
-    dev_type = data->dev_type;
-    if ( dev_type != -1 )
-    {
-      init_flag = 0;
-      e->ifc->type = dev_type;
-    }
-    if ( data->vendor[0] )
-    {
-      init_flag = 0;
-      e->ifc->vendor = dup_string(e, (u8 *)data->vendor);
-    }
-    if ( data->product[0] )
-    {
-      init_flag = 0;
-      e->ifc->product = dup_string(e, (u8 *)data->product);
-    }
-    phy_config = data->phy_config;
-    if ( phy_config != -1 )
-    {
-      init_flag = 0;
-      e->ifc->phy_config = phy_config;
-    }
-    if ( data->chat_additional[0] )
-    {
-      result = sceNetCnfConvA2S(data->chat_additional, chat_additional, 256);
+      if ( data->dhcp_host_name[0] )
+      {
+        init_flag = 0;
+        e->ifc->dhcp_host_name = dup_string(e, (u8 *)data->dhcp_host_name);
+      }
+      if ( data->address[0] )
+      {
+        init_flag = 0;
+        e->ifc->address = dup_string(e, (u8 *)data->address);
+      }
+      if ( data->netmask[0] )
+      {
+        init_flag = 0;
+        e->ifc->netmask = dup_string(e, (u8 *)data->netmask);
+      }
+      result = put_cmd(e, data);
       retres = result;
       if ( result < 0 )
+      {
         return result;
-      init_flag = 0;
-      e->ifc->chat_additional = dup_string(e, (u8 *)chat_additional);
-    }
-    if ( data->outside_number[0] )
-    {
-      init_flag = 0;
-      e->ifc->outside_number = dup_string(e, (u8 *)data->outside_number);
-    }
-    if ( data->outside_delay[0] )
-    {
-      init_flag = 0;
-      e->ifc->outside_delay = dup_string(e, (u8 *)data->outside_delay);
-    }
-    dialing_type = data->dialing_type;
-    if ( dialing_type != -1 )
-    {
-      init_flag = 0;
-      e->ifc->dialing_type = dialing_type;
-    }
-    dev_idle_timeout = data->dev_idle_timeout;
-LABEL_68:
-    if ( dev_idle_timeout != -1 )
-    {
-      init_flag = 0;
-      e->ifc->idle_timeout = dev_idle_timeout;
-    }
-    goto LABEL_70;
+      }
+      if ( result )
+        init_flag = 0;
+      if ( data->phone_numbers1[0] )
+      {
+        init_flag = 0;
+        e->ifc->phone_numbers[0] = dup_string(e, (u8 *)data->phone_numbers1);
+      }
+      if ( data->phone_numbers2[0] )
+      {
+        init_flag = 0;
+        e->ifc->phone_numbers[1] = dup_string(e, (u8 *)data->phone_numbers2);
+      }
+      if ( data->phone_numbers3[0] )
+      {
+        init_flag = 0;
+        e->ifc->phone_numbers[2] = dup_string(e, (u8 *)data->phone_numbers3);
+      }
+      if ( data->auth_name[0] )
+      {
+        init_flag = 0;
+        e->ifc->auth_name = dup_string(e, (u8 *)data->auth_name);
+      }
+      if ( data->auth_key[0] )
+      {
+        init_flag = 0;
+        e->ifc->auth_key = dup_string(e, (u8 *)data->auth_key);
+      }
+      if ( data->peer_name[0] )
+      {
+        init_flag = 0;
+        e->ifc->peer_name = dup_string(e, (u8 *)data->peer_name);
+      }
+      dns1_nego = data->dns1_nego;
+      if ( dns1_nego != 255 )
+      {
+        init_flag = 0;
+        e->ifc->want.dns1_nego = dns1_nego;
+      }
+      dns2_nego = data->dns2_nego;
+      if ( dns2_nego != 255 )
+      {
+        init_flag = 0;
+        e->ifc->want.dns2_nego = dns2_nego;
+      }
+      if ( data->f_auth )
+      {
+        init_flag = 0;
+        e->ifc->allow.f_auth = data->f_auth;
+      }
+      e->ifc->allow.auth = data->auth;
+      pppoe = data->pppoe;
+      if ( pppoe != 255 )
+      {
+        init_flag = 0;
+        e->ifc->pppoe = pppoe;
+      }
+      prc_nego = data->prc_nego;
+      if ( prc_nego != 255 )
+      {
+        init_flag = 0;
+        e->ifc->want.prc_nego = prc_nego;
+      }
+      acc_nego = data->acc_nego;
+      if ( acc_nego != 255 )
+      {
+        init_flag = 0;
+        e->ifc->want.acc_nego = acc_nego;
+      }
+      accm_nego = data->accm_nego;
+      if ( accm_nego != 255 )
+      {
+        init_flag = 0;
+        e->ifc->want.accm_nego = accm_nego;
+      }
+      mtu = data->mtu;
+      if ( mtu != -1 )
+      {
+        init_flag = 0;
+        e->ifc->mtu = mtu;
+      }
+      dev_idle_timeout = data->ifc_idle_timeout;
+      if ( dev_idle_timeout != -1 )
+      {
+        init_flag = 0;
+        e->ifc->idle_timeout = dev_idle_timeout;
+      }
+      break;
+    case 2:
+      dev_type = data->dev_type;
+      if ( dev_type != -1 )
+      {
+        init_flag = 0;
+        e->ifc->type = dev_type;
+      }
+      if ( data->vendor[0] )
+      {
+        init_flag = 0;
+        e->ifc->vendor = dup_string(e, (u8 *)data->vendor);
+      }
+      if ( data->product[0] )
+      {
+        init_flag = 0;
+        e->ifc->product = dup_string(e, (u8 *)data->product);
+      }
+      phy_config = data->phy_config;
+      if ( phy_config != -1 )
+      {
+        init_flag = 0;
+        e->ifc->phy_config = phy_config;
+      }
+      if ( data->chat_additional[0] )
+      {
+        result = sceNetCnfConvA2S(data->chat_additional, chat_additional, 256);
+        retres = result;
+        if ( result < 0 )
+          return result;
+        init_flag = 0;
+        e->ifc->chat_additional = dup_string(e, (u8 *)chat_additional);
+      }
+      if ( data->outside_number[0] )
+      {
+        init_flag = 0;
+        e->ifc->outside_number = dup_string(e, (u8 *)data->outside_number);
+      }
+      if ( data->outside_delay[0] )
+      {
+        init_flag = 0;
+        e->ifc->outside_delay = dup_string(e, (u8 *)data->outside_delay);
+      }
+      dialing_type = data->dialing_type;
+      if ( dialing_type != -1 )
+      {
+        init_flag = 0;
+        e->ifc->dialing_type = dialing_type;
+      }
+      dev_idle_timeout = data->dev_idle_timeout;
+      if ( dev_idle_timeout != -1 )
+      {
+        init_flag = 0;
+        e->ifc->idle_timeout = dev_idle_timeout;
+      }
+      break;
+    default:
+      break;
   }
-  ifc_type = data->ifc_type;
-  if ( ifc_type != -1 )
+  if ( init_flag )
   {
-    init_flag = 0;
-    e->ifc->type = ifc_type;
+    e->ifc = 0;
   }
-  dhcp = data->dhcp;
-  if ( dhcp != 255 )
+  else
   {
-    init_flag = 0;
-    e->ifc->dhcp = dhcp;
+    if ( !e->alloc_err )
+      return retres;
+    return -2;
   }
-  if ( data->dhcp_host_name[0] )
-  {
-    init_flag = 0;
-    e->ifc->dhcp_host_name = dup_string(e, (u8 *)data->dhcp_host_name);
-  }
-  if ( data->address[0] )
-  {
-    init_flag = 0;
-    e->ifc->address = dup_string(e, (u8 *)data->address);
-  }
-  if ( data->netmask[0] )
-  {
-    init_flag = 0;
-    e->ifc->netmask = dup_string(e, (u8 *)data->netmask);
-  }
-  result = put_cmd(e, data);
-  retres = result;
-  if ( result >= 0 )
-  {
-    if ( result )
-      init_flag = 0;
-    if ( data->phone_numbers1[0] )
-    {
-      init_flag = 0;
-      e->ifc->phone_numbers[0] = dup_string(e, (u8 *)data->phone_numbers1);
-    }
-    if ( data->phone_numbers2[0] )
-    {
-      init_flag = 0;
-      e->ifc->phone_numbers[1] = dup_string(e, (u8 *)data->phone_numbers2);
-    }
-    if ( data->phone_numbers3[0] )
-    {
-      init_flag = 0;
-      e->ifc->phone_numbers[2] = dup_string(e, (u8 *)data->phone_numbers3);
-    }
-    if ( data->auth_name[0] )
-    {
-      init_flag = 0;
-      e->ifc->auth_name = dup_string(e, (u8 *)data->auth_name);
-    }
-    if ( data->auth_key[0] )
-    {
-      init_flag = 0;
-      e->ifc->auth_key = dup_string(e, (u8 *)data->auth_key);
-    }
-    if ( data->peer_name[0] )
-    {
-      init_flag = 0;
-      e->ifc->peer_name = dup_string(e, (u8 *)data->peer_name);
-    }
-    dns1_nego = data->dns1_nego;
-    if ( dns1_nego != 255 )
-    {
-      init_flag = 0;
-      e->ifc->want.dns1_nego = dns1_nego;
-    }
-    dns2_nego = data->dns2_nego;
-    if ( dns2_nego != 255 )
-    {
-      init_flag = 0;
-      e->ifc->want.dns2_nego = dns2_nego;
-    }
-    if ( data->f_auth )
-    {
-      init_flag = 0;
-      e->ifc->allow.f_auth = data->f_auth;
-    }
-    e->ifc->allow.auth = data->auth;
-    pppoe = data->pppoe;
-    if ( pppoe != 255 )
-    {
-      init_flag = 0;
-      e->ifc->pppoe = pppoe;
-    }
-    prc_nego = data->prc_nego;
-    if ( prc_nego != 255 )
-    {
-      init_flag = 0;
-      e->ifc->want.prc_nego = prc_nego;
-    }
-    acc_nego = data->acc_nego;
-    if ( acc_nego != 255 )
-    {
-      init_flag = 0;
-      e->ifc->want.acc_nego = acc_nego;
-    }
-    accm_nego = data->accm_nego;
-    if ( accm_nego != 255 )
-    {
-      init_flag = 0;
-      e->ifc->want.accm_nego = accm_nego;
-    }
-    mtu = data->mtu;
-    if ( mtu != -1 )
-    {
-      init_flag = 0;
-      e->ifc->mtu = mtu;
-    }
-    dev_idle_timeout = data->ifc_idle_timeout;
-    goto LABEL_68;
-  }
-  return result;
+  return -100;
 }
 
 //----- (00401AC4) --------------------------------------------------------
