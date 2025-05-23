@@ -243,15 +243,7 @@ void xatapi_1();
 //-------------------------------------------------------------------------
 // Data declarations
 
-const struct irx_export_table exports =
-{
-  1103101952u,
-  NULL,
-  257u,
-  0u,
-  { 120u, 97u, 116u, 97u, 112u, 105u, 0u, 0u },
-  { &_start }
-}; // idb
+extern struct irx_export_table _exp_xatapi;
 int g_devctl_retonly_unset = 0; // weak
 vu16 *g_dev9_reg_1460 = (vu16 *)0xBF801460;
 vu16 *g_dev9_reg_power = (vu16 *)0xBF80146C;
@@ -1624,7 +1616,7 @@ int _start(int ac, char **av)
   int result; // $v0
 
   Kprintf("xatapi_init Call\n", av);
-  condtmp = RegisterLibraryEntries((struct irx_export_table *)&exports) != 0;
+  condtmp = RegisterLibraryEntries(&_exp_xatapi) != 0;
   result = 1;
   if ( !condtmp )
   {
