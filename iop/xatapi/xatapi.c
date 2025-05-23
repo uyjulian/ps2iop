@@ -1,6 +1,5 @@
 
 #include "irx_imports.h"
-#include <stdbool.h>
 
 IRX_ID("cdvd_xatapi_driver", 2, 3);
 
@@ -1009,7 +1008,6 @@ int atapi_check_if_drive_ready(int check_nowait)
   int ata_ctrl_mask_tmp; // $v1
   u8 ata_ctrl_tmp2; // $v0
   int req_test_unit_ready_tmp1; // $s1
-  bool req_test_unit_ready_tmp2; // dc
   char spinstatus_tmp[6]; // [sp+10h] [-18h] BYREF
   int drive_err; // [sp+18h] [-10h] BYREF
   int unitreadyctrl; // [sp+1Ch] [-Ch] BYREF
@@ -1068,8 +1066,7 @@ int atapi_check_if_drive_ready(int check_nowait)
   }
   if ( ata_ctrl_mask_tmp == 64 )
   {
-    req_test_unit_ready_tmp2 = do_atapi_request_test_unit_ready(0, &drive_err, &unitreadyctrl) < 0;
-    if ( !req_test_unit_ready_tmp2 )
+    if ( do_atapi_request_test_unit_ready(0, &drive_err, &unitreadyctrl) >= 0 )
     {
       if ( !drive_err )
         return 2;
@@ -1585,11 +1582,8 @@ LABEL_75:
 //----- (004024D0) --------------------------------------------------------
 int _start(int ac, char **av)
 {
-  bool condtmp; // dc
-
   Kprintf("xatapi_init Call\n", av);
-  condtmp = RegisterLibraryEntries(&_exp_xatapi) != 0;
-  if ( !condtmp )
+  if ( RegisterLibraryEntries(&_exp_xatapi) == 0 )
   {
     DelDrv("xatapi");
     if ( AddDrv(&ata_ioman_device) )
@@ -2045,10 +2039,7 @@ int speed_device_init(void)
 {
   vu16 spdrev_1_1; // $v0
   int spdrev_1_1_tmp; // $v1
-  bool condtmp1; // dc
-  u32 condtmp2; // $v0
   int inbounds; // $v1
-  u32 condtmp3; // $v0
   vu16 spdrev_1_2; // $a1
   vu16 r_spd_rev_3; // $a1
   vu16 r_spd_rev_8; // $a2
@@ -2060,13 +2051,11 @@ int speed_device_init(void)
   revtypes[6] = "ES1";
   revtypes[7] = "ES2";
   spdrev_1_1_tmp = spdrev_1_1;
-  condtmp1 = spdrev_1_1 != 9;
-  condtmp2 = spdrev_1_1 < 9u;
-  if ( condtmp1 )
+  if ( spdrev_1_1 != 9 )
   {
-    if ( condtmp2
-      || (condtmp3 = spdrev_1_1_tmp < 16, spdrev_1_1_tmp >= 18)
-      || (inbounds = spdrev_1_1_tmp - 14, condtmp3) )
+    if ( (spdrev_1_1 < 9u)
+      || (spdrev_1_1_tmp >= 18)
+      || (inbounds = spdrev_1_1_tmp - 14, spdrev_1_1_tmp < 16) )
     {
       inbounds = 0;
     }
@@ -3142,7 +3131,6 @@ int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pk
   u8 pkt_scsi_cmd_1; // $s0
   int pkt_scsi_cmd_2; // $a1
   s16 tmp_n; // $a0
-  bool contmp; // dc
   void *tmp_buf; // $a1
   int tmp_nsec; // $a2
   int bc_res; // $v0
@@ -3161,9 +3149,8 @@ int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pk
   tmp_n = n;
   if ( pkt_scsi_cmd_2 == 0x12 || !pkt_scsi_cmd_2 )
     goto LABEL_13;
-  contmp = pkt_scsi_cmd_2 == 3;
   tmp_buf = buf;
-  if ( contmp || *g_cd_sc_ffffffd9_ptr )
+  if ( pkt_scsi_cmd_2 == 3 || *g_cd_sc_ffffffd9_ptr )
     goto LABEL_14;
   tmp_nsec = nsec;
   if ( !g_is_in_read_info )
@@ -3426,7 +3413,6 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
   unsigned int dbuf_stat_mask; // $s0
   vu16 r_spd_intr_stat; // $a1
   int dbuf_stat_1; // $a1
-  u32 condtmp1; // $v0
   int result; // $v0
   char spd_intr_stat_1; // $v0
   char r_spd_ata_control; // $v0
@@ -3460,7 +3446,6 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
         Kprintf("*R_DBUF_STAT %02x\n", dbuf_stat_1);
       }
     }
-    condtmp1 = blkcount_tmp < dbuf_stat_mask;
     if ( dbuf_stat_mask )
       goto LABEL_28;
     speedIntrEnable(3);
@@ -3489,9 +3474,8 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
     if ( (spd_intr_stat_1 & 2) == 0 )
       break;
     dbuf_stat_mask = dev5_speed_regs.r_spd_dbuf_stat & 0x1F;
-    condtmp1 = blkcount_tmp < dbuf_stat_mask;
 LABEL_28:
-    if ( condtmp1 )
+    if ( blkcount_tmp < dbuf_stat_mask )
       dbuf_stat_mask = blkcount_tmp;
     result = SpdDmaTransfer(0, buf, (dbuf_stat_mask << 18) | 0x20, dir);
     buf += 512 * dbuf_stat_mask;
@@ -3814,7 +3798,6 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   unsigned int fpga_unk8148; // $s0
   int delaythread_period; // $a0
   char intr_stat_tmp1; // $v0
-  bool condtmp; // dc
   char spd_ata_control_tmp1; // $v0
   char r_spd_ata_status; // $v0
   u8 Error; // $v0
@@ -3914,8 +3897,7 @@ LABEL_30:
             FpgaLayer1Off();
             ata_post_dma_cb();
             intr_stat_tmp1 = dev5_speed_regs.r_spd_intr_stat;
-            condtmp = (intr_stat_tmp1 & 2) != 0;
-            if ( !condtmp )
+            if ( (intr_stat_tmp1 & 2) == 0 )
             {
               spd_ata_control_tmp1 = dev5_speed_regs.r_spd_ata_control;
               if ( (spd_ata_control_tmp1 & 1) != 0 )
@@ -4503,11 +4485,9 @@ int ata_bus_reset(void)
 int xatapi_4_sceAtaSoftReset(void)
 {
   char r_spd_ata_control; // $v0
-  bool condtmp; // dc
 
   r_spd_ata_control = dev5_speed_regs.r_spd_ata_control;
-  condtmp = (r_spd_ata_control & 0x80) != 0;
-  if ( !condtmp )
+  if ( (r_spd_ata_control & 0x80) == 0 )
   {
     dev5_speed_regs.r_spd_ata_control = 6;
     DelayThread(100);
@@ -4769,7 +4749,6 @@ int ata_init_devices(ata_devinfo_t *devinfo)
   int result; // $v0
   int identify_nr; // $s1
   s32 has_packet; // $v0
-  u32 condtmp1; // $v0
 
   result = xatapi_4_sceAtaSoftReset();
   if ( result )
@@ -4805,9 +4784,8 @@ int ata_init_devices(ata_devinfo_t *devinfo)
       if ( !devinfo->exists || devinfo->has_packet != 1 )
         goto LABEL_24;
       do_hex_dump(ata_param, 512);
-      condtmp1 = do_atapi_cmd_inquiry_12h(identify_nr) == 0;
-      devinfo->lba48 = condtmp1;
-      if ( !condtmp1 )
+      devinfo->lba48 = do_atapi_cmd_inquiry_12h(identify_nr) == 0;
+      if ( !devinfo->lba48 )
         break;
       g_is_in_read_info = 1;
       if ( g_xatapi_verbose < 0 )
@@ -5173,8 +5151,6 @@ void FpgaCheckWriteBuffer(void)
 {
   int xfbufe_tmp; // $v0
   int i; // $v1
-  bool condtmp1; // dc
-  u32 condtmp2; // $v0
   vu16 r_fpga_sl3bufe; // $v0
   vu16 r_fpga_exbufe; // $a1
   vu16 sl3bufe_tmp1; // $a2
@@ -5185,17 +5161,13 @@ void FpgaCheckWriteBuffer(void)
   xfbufe_tmp = (u16)xfbufe_tmp;
   for ( i = 0; ; ++i )
   {
-    condtmp1 = xfbufe_tmp != 0;
-    condtmp2 = i < 10000;
-    if ( !condtmp1 )
+    if ( xfbufe_tmp == 0 )
     {
       r_fpga_sl3bufe = dev5_fpga_regs.r_fpga_sl3bufe;
-      condtmp1 = r_fpga_sl3bufe != 0;
-      condtmp2 = i < 10000;
-      if ( !condtmp1 )
+      if ( r_fpga_sl3bufe == 0 )
         break;
     }
-    if ( !condtmp2 )
+    if ( i >= 10000 )
       break;
     xfbufe_tmp = dev5_fpga_regs.r_fpga_exbufe;
     xfbufe_tmp = (u16)xfbufe_tmp;
