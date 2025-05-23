@@ -162,10 +162,6 @@ void do_delete_heap(void);
 
 extern struct irx_export_table _exp_netcnf;
 int g_null_string = 0; // weak
-// FIXME jump table
-#if 0
-void *off_40A9B8 = &loc_40739C; // weak
-#endif
 int g_no_check_capacity = 0; // weak
 int g_no_check_provider = 0; // weak
 u32 g_id_result = 0u; // idb
@@ -4598,7 +4594,6 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
   int offsptr6; // $s0
   int offsptr4; // $s1
   int curjptoffs; // $s2
-  void **curjptx; // $s4
 
   while ( options->m_key )
   {
@@ -4700,22 +4695,53 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
           break;
         }
         result = do_netcnf_sprintf_buffer(e, "%s", options->m_key);
-        curjptoffs = 0;
         if ( result < 0 )
           return result;
-#if 0
-        curjptx = &off_40A9B8;
-#endif
-        do
+        curjptoffs = 0;
+        while ( curjptoffs < 32 )
         {
-#if 0
-          if ( ((offsptr4 >> curjptoffs) & 1) != 0 && (unsigned int)curjptoffs < 0x12 )
-            __asm { jr      $v0 }
-#endif
+          lbuf = 0;
+          switch ( (1 << curjptoffs) & offsptr4 )
+          {
+            case 1u:
+              lbuf = "phase";
+              break;
+            case 2u:
+              lbuf = "cp";
+              break;
+            case 4u:
+              lbuf = "auth";
+              break;
+            case 8u:
+              lbuf = "chat";
+              break;
+            case 0x10u:
+              lbuf = "private";
+              break;
+            case 0x20u:
+              lbuf = "dll";
+              break;
+            case 0x40u:
+              lbuf = "dump";
+              break;
+            case 0x10000:
+              lbuf = "timer";
+              break;
+            case 0x20000:
+              lbuf = "event";
+              break;
+            default:
+              break;
+          }
+          if ( lbuf )
+          {
+            offsptr4 &= ~(1 << curjptoffs);
+            result = do_netcnf_sprintf_buffer(e, " %s", lbuf);
+            if ( result < 0 )
+              return result;
+          }
           ++curjptoffs;
-          ++curjptx;
         }
-        while ( curjptoffs < 32 );
         if ( offsptr4 )
         {
           result = do_netcnf_sprintf_buffer(e, " 0x%x", offsptr4);
@@ -4862,7 +4888,6 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
   return 0;
 }
 // 40A728: using guessed type int g_null_string;
-// 40A9B8: using guessed type void *off_40A9B8;
 
 //----- (00407688) --------------------------------------------------------
 int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
