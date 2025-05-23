@@ -990,6 +990,7 @@ int atapi_spin_status_get(int unused_arg1, void *buf)
   int result; // $v0
   char pkt[16]; // [sp+20h] [-10h] BYREF
 
+  (void)unused_arg1;
   memset(pkt, 0, 12);
   pkt[0] = 0xF6;
   pkt[2] = 0xA0;
@@ -1158,7 +1159,7 @@ int expbay_device_reset(void)
   else
   {
     Kprintf("xatapi Power On Start\n");
-    *g_dev9_reg_power = *g_dev9_reg_power & 0xFFFA | 4;
+    *g_dev9_reg_power = (*g_dev9_reg_power & 0xFFFA) | 4;
     DelayThread(500000);
     *g_dev9_reg_1460 |= 2u;
     *g_dev9_reg_power |= 1u;
@@ -1335,6 +1336,7 @@ int xatapi_2_terminate(int with_quit)
 {
   int sc_tmp[2]; // [sp+10h] [-8h] BYREF
 
+  (void)with_quit;
   sc_tmp[0] = 0;
   sceCdSC(0xFFFFFFE1, sc_tmp);
   sceCdSC(0xFFFFFFE5, sc_tmp);
@@ -1364,6 +1366,7 @@ int xatapi_dev_devctl(
   int argmask1; // $v0
   u32 efbits[2]; // [sp+20h] [-8h] BYREF
 
+  (void)name;
   retres1 = 0;
   if ( g_xatapi_verbose > 0 )
     Kprintf("xatapi devctl: cmd:%08x arg:%d\n", cmd, *(u32 *)args);
@@ -1582,7 +1585,10 @@ LABEL_75:
 //----- (004024D0) --------------------------------------------------------
 int _start(int ac, char **av)
 {
-  Kprintf("xatapi_init Call\n", av);
+  (void)ac;
+  (void)av;
+
+  Kprintf("xatapi_init Call\n");
   if ( RegisterLibraryEntries(&_exp_xatapi) == 0 )
   {
     DelDrv("xatapi");
@@ -1703,7 +1709,7 @@ void speedIntrEnable(s16 mask)
   CpuSuspendIntr(&state);
   r_spd_intr_mask = dev5_speed_regs.r_spd_intr_mask;
   dev5_speed_regs.r_spd_intr_mask = r_spd_intr_mask & ~mask;
-  dev5_speed_regs.r_spd_intr_mask = r_spd_intr_mask & ~mask | mask;
+  dev5_speed_regs.r_spd_intr_mask = (r_spd_intr_mask & ~mask) | mask;
   CpuResumeIntr(state);
 }
 
@@ -1737,7 +1743,7 @@ int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
   dmac_ch_set_chcr(3u, 0);
   dmac_ch_get_chcr(3u);
   device_1 = device;
-  if ( device < 2 || g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1] )
+  if ( device < 2 || (g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1]) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("Wait Intr\n");
@@ -1748,9 +1754,9 @@ int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
     }
     r_spd_rev_1 = dev5_speed_regs.r_spd_rev_1;
     if ( r_spd_rev_1 >= 0x11u )
-      spd_dma_ctrl = device & 1 | 6;
+      spd_dma_ctrl = (device & 1) | 6;
     else
-      spd_dma_ctrl = device & 3 | 4;
+      spd_dma_ctrl = (device & 3) | 4;
     dev5_speed_regs.r_spd_dma_ctrl = spd_dma_ctrl;
     predma_cb = (void (*)(u32, int))g_dev5_predma_cbs[device];
     if ( predma_cb )
@@ -1810,7 +1816,7 @@ int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir
   dmac_ch_set_chcr(3u, 0);
   dmac_ch_get_chcr(3u);
   device_1 = device;
-  if ( device < 2 || g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1] )
+  if ( device < 2 || (g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1]) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("Wait Intr\n");
@@ -1821,9 +1827,9 @@ int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir
     }
     r_spd_rev_1 = dev5_speed_regs.r_spd_rev_1;
     if ( r_spd_rev_1 >= 0x11u )
-      spd_dma_ctrl = device & 1 | 6;
+      spd_dma_ctrl = (device & 1) | 6;
     else
-      spd_dma_ctrl = device & 3 | 4;
+      spd_dma_ctrl = (device & 3) | 4;
     dev5_speed_regs.r_spd_dma_ctrl = spd_dma_ctrl;
     predma_cb = (void (*)(u32, int))g_dev5_predma_cbs[device];
     if ( predma_cb )
@@ -1884,7 +1890,7 @@ int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, int dir
   dmac_ch_set_chcr(3u, 0);
   dmac_ch_get_chcr(3u);
   device_1 = device;
-  if ( device < 2 || g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1] )
+  if ( device < 2 || (g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1]) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("Wait Intr\n");
@@ -1939,7 +1945,7 @@ int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, int dir
   dmac_ch_set_chcr(3u, 0);
   dmac_ch_get_chcr(3u);
   device_1 = device;
-  if ( device < 2 || g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1] )
+  if ( device < 2 || (g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1]) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("Wait Intr\n");
@@ -2159,7 +2165,7 @@ void do_hex_dump(void *ptr, int len)
         ++curchroffs;
         Kprintf("\t  ");
       }
-      while ( curchroffs < (unsigned int)(16 - charbuf_offs) );
+      while ( (unsigned int)curchroffs < (unsigned int)(16 - charbuf_offs) );
     }
     Kprintf("%s\n", charbuf);
   }
@@ -2279,7 +2285,7 @@ void xatapi_10_sceCdSpdAtaDmaEnd(void)
       r_spd_if_ctrl = dev5_speed_regs.r_spd_if_ctrl;
       dev5_speed_regs.r_spd_if_ctrl = r_spd_if_ctrl & 0xFFFB;
       dev5_speed_regs.r_spd_dbuf_stat = 3;
-      dev5_speed_regs.r_spd_if_ctrl = r_spd_if_ctrl & 0xFF7B | 0x80;
+      dev5_speed_regs.r_spd_if_ctrl = (r_spd_if_ctrl & 0xFF7B) | 0x80;
       dev5_speed_regs.r_spd_if_ctrl = r_spd_if_ctrl & 0xFF7B;
       ata_pio_mode(0);
       if ( g_dma_mode_value )
@@ -2360,7 +2366,7 @@ void ata_multiword_dma_mode(int mode)
   }
   dev5_speed_regs.r_spd_mwdma_mode = spd_mwdma_mode_rval;
   r_spd_if_ctrl = dev5_speed_regs.r_spd_if_ctrl;
-  dev5_speed_regs.r_spd_if_ctrl = r_spd_if_ctrl & 0xFFB6 | 0x48;
+  dev5_speed_regs.r_spd_if_ctrl = (r_spd_if_ctrl & 0xFFB6) | 0x48;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 
@@ -2431,6 +2437,8 @@ void AtaEjectIntrHandle(void)
 //----- (00403BD8) --------------------------------------------------------
 unsigned int AtaAlarmrHandle(void *usrdat)
 {
+  (void)usrdat;
+
   if ( g_xatapi_verbose > 0 )
     Kprintf("call AtaAlarmrHandle\n");
   iSetEventFlag(g_atapi_event_flag, 1u);
@@ -3236,7 +3244,7 @@ int ata_pio_transfer(ata_cmd_state_t *cmd_state)
       }
       while ( buf16_i_1 < 256 );
     }
-    else if ( cmd_state->type >= 4u )
+    else if ( (u32)(cmd_state->type) >= 4u )
     {
       if ( type == 11 )
       {
@@ -4436,7 +4444,6 @@ LABEL_55:
 //----- (00406E98) --------------------------------------------------------
 int xatapi_8_sceCdAtapiWaitResult(void)
 {
-  int result; // $v0
   int restmp; // $s0
   iop_event_info_t efinfo; // [sp+10h] [-20h] BYREF
 
@@ -4917,7 +4924,7 @@ void FpgaLayer1On(void)
   }
   layer1_tmp_1 = dev5_fpga_regs.r_fpga_layer1;
   dev5_fpga_regs.r_fpga_layer1 = layer1_tmp_1 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_layer1 = layer1_tmp_1 & 0xFFFE | 1;
+  dev5_fpga_regs.r_fpga_layer1 = (layer1_tmp_1 & 0xFFFE) | 1;
   if ( g_xatapi_verbose > 0 )
   {
     layer1_tmp_2 = dev5_fpga_regs.r_fpga_layer1;
@@ -4962,7 +4969,7 @@ void FpgaLayer2On(void)
   }
   layer2_tmp_1 = dev5_fpga_regs.r_fpga_layer2;
   dev5_fpga_regs.r_fpga_layer2 = layer2_tmp_1 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_layer2 = layer2_tmp_1 & 0xFFFE | 1;
+  dev5_fpga_regs.r_fpga_layer2 = (layer2_tmp_1 & 0xFFFE) | 1;
   if ( g_xatapi_verbose > 0 )
   {
     layer2_tmp_2 = dev5_fpga_regs.r_fpga_layer2;
@@ -5007,7 +5014,7 @@ void FpgaXfrenOn(void)
   }
   xfren_tmp_1 = dev5_fpga_regs.r_fpga_xfren;
   dev5_fpga_regs.r_fpga_xfren = xfren_tmp_1 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_xfren = xfren_tmp_1 & 0xFFFE | 1;
+  dev5_fpga_regs.r_fpga_xfren = (xfren_tmp_1 & 0xFFFE) | 1;
   if ( g_xatapi_verbose > 0 )
   {
     xfren_tmp_2 = dev5_fpga_regs.r_fpga_xfren;
@@ -5052,7 +5059,7 @@ void FpgaSpckmodeOn(void)
   }
   spckmode_tmp_1 = dev5_fpga_regs.r_fpga_unk32;
   dev5_fpga_regs.r_fpga_unk32 = spckmode_tmp_1 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_unk32 = spckmode_tmp_1 & 0xFFFE | 1;
+  dev5_fpga_regs.r_fpga_unk32 = (spckmode_tmp_1 & 0xFFFE) | 1;
   if ( g_xatapi_verbose > 0 )
   {
     spckmode_tmp_2 = dev5_fpga_regs.r_fpga_unk32;
@@ -5100,7 +5107,7 @@ void FpgaXfdir(int dir)
   {
     xfrdir_tmp_1 = dev5_fpga_regs.r_fpga_xfrdir;
     dev5_fpga_regs.r_fpga_xfrdir = xfrdir_tmp_1 & 0xFFFE;
-    dev5_fpga_regs.r_fpga_xfrdir = xfrdir_tmp_1 & 0xFFFE | 1;
+    dev5_fpga_regs.r_fpga_xfrdir = (xfrdir_tmp_1 & 0xFFFE) | 1;
   }
   else
   {
@@ -5260,7 +5267,7 @@ void FpgaClearBuffer(void)
   }
   r_fpga_unk30 = dev5_fpga_regs.r_fpga_unk30;
   dev5_fpga_regs.r_fpga_unk30 = r_fpga_unk30 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_unk30 = r_fpga_unk30 & 0xFFFE | 1;
+  dev5_fpga_regs.r_fpga_unk30 = (r_fpga_unk30 & 0xFFFE) | 1;
   i = dev5_fpga_regs.r_fpga_exbufd;
   for ( i = (u16)i; i || dev5_fpga_regs.r_fpga_sl3bufd; i = (u16)i )
     i = dev5_fpga_regs.r_fpga_exbufd;
