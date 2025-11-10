@@ -672,7 +672,7 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vag
       m_vagi = dinfo.m_vagi;
       bodySize = dinfo.m_head->bodySize;
       indx2 = 0;
-      do
+      while ( dinfo.m_vagi->maxVagInfoNumber >= indx1 )
       {
         offsdata = m_vagi->vagInfoOffsetAddr[indx2];
         vagparam = (sceHardSynthVagParam *)((char *)m_vagi + offsdata);
@@ -689,7 +689,6 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vag
         m_vagi = dinfo.m_vagi;
         indx2 = ++indx1;
       }
-      while ( dinfo.m_vagi->maxVagInfoNumber >= indx1 );
       return bodySize - *vagoffsaddr;
     }
   }
@@ -1666,23 +1665,15 @@ int sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNu
     else
     {
       idx1 = 0;
-      if ( p_programparam->nSplit )
+      splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam + p_programparam->splitBlockAddr);
+      while ( idx1 < p_programparam->nSplit )
       {
-        splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam + p_programparam->splitBlockAddr);
-        while ( 1 )
-        {
-          if ( splitNumber == splitblock->splitNumber )
-            return idx1;
-          ++idx1;
-          splitblock = (sceHardSynthSplitBlock *)((char *)splitblock + p_programparam->sizeSplitBlock);
-          if ( idx1 >= p_programparam->nSplit )
-            return 0x81039020;
-        }
+        if ( splitNumber == splitblock->splitNumber )
+          return idx1;
+        ++idx1;
+        splitblock = (sceHardSynthSplitBlock *)((char *)splitblock + p_programparam->sizeSplitBlock);
       }
-      else
-      {
-        return 0x81039020;
-      }
+      return 0x81039020;
     }
   }
   return result;
@@ -1717,7 +1708,6 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
 {
   int curminval; // $s2
   int result; // $v0
-  int retres; // $s4
   signed int programNr; // $s1
   void *buffer_1; // $a0
   signed int curidx2; // $s0
@@ -1729,43 +1719,34 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
 
   curminval = 0;
   result = sceSdHdGetMaxProgramNumber(buffer);
-  retres = result;
+  result = result;
   programNr = 0;
-  if ( result >= 0 )
+  buffer_1 = buffer;
+  while ( result >= programNr )
   {
-    buffer_1 = buffer;
-    do
+    if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
     {
-      if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
+      curidx2 = 0;
+      buffer_2 = buffer;
+      while ( curidx2 < p_programparam->nSplit )
       {
-        curidx2 = 0;
-        if ( p_programparam->nSplit )
+        if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock) )
         {
-          buffer_2 = buffer;
-          do
-          {
-            if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock) )
-            {
-              curval1 = sceSdHdGetSplitBlockCountByNote(buffer, programNr, p_splitblock->splitRangeLow & 0x7F);
-              if ( curminval < curval1 )
-                curminval = curval1;
-              curval2 = sceSdHdGetSplitBlockCountByNote(buffer, programNr, p_splitblock->splitRangeHigh & 0x7F);
-              if ( curminval < curval2 )
-                curminval = curval2;
-            }
-            ++curidx2;
-            buffer_2 = buffer;
-          }
-          while ( curidx2 < p_programparam->nSplit );
+          curval1 = sceSdHdGetSplitBlockCountByNote(buffer, programNr, p_splitblock->splitRangeLow & 0x7F);
+          if ( curminval < curval1 )
+            curminval = curval1;
+          curval2 = sceSdHdGetSplitBlockCountByNote(buffer, programNr, p_splitblock->splitRangeHigh & 0x7F);
+          if ( curminval < curval2 )
+            curminval = curval2;
         }
+        ++curidx2;
+        buffer_2 = buffer;
       }
-      ++programNr;
-      buffer_1 = buffer;
     }
-    while ( retres >= programNr );
-    return curminval;
+    ++programNr;
+    buffer_1 = buffer;
   }
-  return result;
+  return curminval;
 }
 
 //----- (00401F70) --------------------------------------------------------
@@ -1787,41 +1768,32 @@ int sceSdHdGetMaxSampleSetParamCount(void *buffer)
   result = sceSdHdGetMaxProgramNumber(buffer);
   retres = result;
   programNr = 0;
-  if ( result >= 0 )
+  buffer_1 = buffer;
+  while ( retres >= programNr )
   {
-    buffer_1 = buffer;
-    do
+    if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
     {
-      if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
+      curidx2 = 0;
+      buffer_2 = buffer;
+      while ( curidx2 < p_programparam->nSplit )
       {
-        curidx2 = 0;
-        if ( p_programparam->nSplit )
+        if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock) )
         {
-          buffer_2 = buffer;
-          do
-          {
-            if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock) )
-            {
-              curval1 = sceSdHdGetSampleSetParamCountByNote(buffer, programNr, p_splitblock->splitRangeLow & 0x7F);
-              if ( curminval < curval1 )
-                curminval = curval1;
-              curval2 = sceSdHdGetSampleSetParamCountByNote(buffer, programNr, p_splitblock->splitRangeHigh & 0x7F);
-              if ( curminval < curval2 )
-                curminval = curval2;
-            }
-            ++curidx2;
-            buffer_2 = buffer;
-          }
-          while ( curidx2 < p_programparam->nSplit );
+          curval1 = sceSdHdGetSampleSetParamCountByNote(buffer, programNr, p_splitblock->splitRangeLow & 0x7F);
+          if ( curminval < curval1 )
+            curminval = curval1;
+          curval2 = sceSdHdGetSampleSetParamCountByNote(buffer, programNr, p_splitblock->splitRangeHigh & 0x7F);
+          if ( curminval < curval2 )
+            curminval = curval2;
         }
+        ++curidx2;
+        buffer_2 = buffer;
       }
-      ++programNr;
-      buffer_1 = buffer;
     }
-    while ( retres >= programNr );
-    return curminval;
+    ++programNr;
+    buffer_1 = buffer;
   }
-  return result;
+  return curminval;
 }
 
 //----- (00402098) --------------------------------------------------------
@@ -1849,84 +1821,71 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
   result = sceSdHdGetMaxProgramNumber(buffer);
   retres = result;
   programNr = 0;
-  if ( result >= 0 )
+  buffer_1 = buffer;
+  while ( retres >= programNr )
   {
-    buffer_1 = buffer;
-    do
+    if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
     {
-      if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
+      curidx2 = 0;
+      buffer_2 = buffer;
+      while ( curidx2 < p_programparam->nSplit )
       {
-        curidx2 = 0;
-        if ( p_programparam->nSplit )
+        if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock)
+          && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
         {
-          buffer_2 = buffer;
-          do
+          sampleNr = 0;
+          while ( sampleNr < p_samplesetparam->nSample )
           {
-            if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock)
-              && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
+            SampleNumberBySampleIndex = sceSdHdGetSampleNumberBySampleIndex(
+                                          buffer,
+                                          p_splitblock->sampleSetIndex,
+                                          sampleNr);
+            if ( !sceSdHdGetSampleParamAddr(buffer, SampleNumberBySampleIndex, &p_sampleparam) )
             {
-              sampleNr = 0;
-              if ( p_samplesetparam->nSample )
-              {
-                do
-                {
-                  SampleNumberBySampleIndex = sceSdHdGetSampleNumberBySampleIndex(
-                                                buffer,
-                                                p_splitblock->sampleSetIndex,
-                                                sampleNr);
-                  if ( !sceSdHdGetSampleParamAddr(buffer, SampleNumberBySampleIndex, &p_sampleparam) )
-                  {
-                    curval1 = sceSdHdGetSampleParamCountByNoteVelocity(
-                                buffer,
-                                programNr,
-                                p_splitblock->splitRangeLow & 0x7F,
-                                p_sampleparam->velRangeLow & 0x7F,
-                                1u);
-                    if ( curminval < curval1 )
-                      curminval = curval1;
-                    curval2 = sceSdHdGetSampleParamCountByNoteVelocity(
-                                buffer,
-                                programNr,
-                                p_splitblock->splitRangeLow & 0x7F,
-                                p_sampleparam->velRangeHigh & 0x7F,
-                                1u);
-                    if ( curminval < curval2 )
-                      curminval = curval2;
-                    curval3 = sceSdHdGetSampleParamCountByNoteVelocity(
-                                buffer,
-                                programNr,
-                                p_splitblock->splitRangeHigh & 0x7F,
-                                p_sampleparam->velRangeLow & 0x7F,
-                                1u);
-                    if ( curminval < curval3 )
-                      curminval = curval3;
-                    curval4 = sceSdHdGetSampleParamCountByNoteVelocity(
-                                buffer,
-                                programNr,
-                                p_splitblock->splitRangeHigh & 0x7F,
-                                p_sampleparam->velRangeHigh & 0x7F,
-                                1u);
-                    if ( curminval < curval4 )
-                      curminval = curval4;
-                  }
-                  ++sampleNr;
-                }
-                while ( sampleNr < p_samplesetparam->nSample );
-              }
+              curval1 = sceSdHdGetSampleParamCountByNoteVelocity(
+                          buffer,
+                          programNr,
+                          p_splitblock->splitRangeLow & 0x7F,
+                          p_sampleparam->velRangeLow & 0x7F,
+                          1u);
+              if ( curminval < curval1 )
+                curminval = curval1;
+              curval2 = sceSdHdGetSampleParamCountByNoteVelocity(
+                          buffer,
+                          programNr,
+                          p_splitblock->splitRangeLow & 0x7F,
+                          p_sampleparam->velRangeHigh & 0x7F,
+                          1u);
+              if ( curminval < curval2 )
+                curminval = curval2;
+              curval3 = sceSdHdGetSampleParamCountByNoteVelocity(
+                          buffer,
+                          programNr,
+                          p_splitblock->splitRangeHigh & 0x7F,
+                          p_sampleparam->velRangeLow & 0x7F,
+                          1u);
+              if ( curminval < curval3 )
+                curminval = curval3;
+              curval4 = sceSdHdGetSampleParamCountByNoteVelocity(
+                          buffer,
+                          programNr,
+                          p_splitblock->splitRangeHigh & 0x7F,
+                          p_sampleparam->velRangeHigh & 0x7F,
+                          1u);
+              if ( curminval < curval4 )
+                curminval = curval4;
             }
-            ++curidx2;
-            buffer_2 = buffer;
+            ++sampleNr;
           }
-          while ( curidx2 < p_programparam->nSplit );
         }
+        ++curidx2;
+        buffer_2 = buffer;
       }
-      ++programNr;
-      buffer_1 = buffer;
     }
-    while ( retres >= programNr );
-    return curminval;
+    ++programNr;
+    buffer_1 = buffer;
   }
-  return result;
+  return curminval;
 }
 
 //----- (004022D8) --------------------------------------------------------
@@ -1954,84 +1913,71 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
   result = sceSdHdGetMaxProgramNumber(buffer);
   retres = result;
   programNr = 0;
-  if ( result >= 0 )
+  buffer_1 = buffer;
+  while ( retres >= programNr )
   {
-    buffer_1 = buffer;
-    do
+    if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
     {
-      if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
+      curidx2 = 0;
+      buffer_2 = buffer;
+      while ( curidx2 < p_programparam->nSplit )
       {
-        curidx2 = 0;
-        if ( p_programparam->nSplit )
+        if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock)
+          && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
         {
-          buffer_2 = buffer;
-          do
+          sampleNr = 0;
+          while ( sampleNr < p_samplesetparam->nSample )
           {
-            if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock)
-              && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
+            SampleNumberBySampleIndex = sceSdHdGetSampleNumberBySampleIndex(
+                                          buffer,
+                                          p_splitblock->sampleSetIndex,
+                                          sampleNr);
+            if ( !sceSdHdGetSampleParamAddr(buffer, SampleNumberBySampleIndex, &p_sampleparam) )
             {
-              sampleNr = 0;
-              if ( p_samplesetparam->nSample )
-              {
-                do
-                {
-                  SampleNumberBySampleIndex = sceSdHdGetSampleNumberBySampleIndex(
-                                                buffer,
-                                                p_splitblock->sampleSetIndex,
-                                                sampleNr);
-                  if ( !sceSdHdGetSampleParamAddr(buffer, SampleNumberBySampleIndex, &p_sampleparam) )
-                  {
-                    curval1 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
-                                buffer,
-                                programNr,
-                                p_splitblock->splitRangeLow & 0x7F,
-                                p_sampleparam->velRangeLow & 0x7F,
-                                1u);
-                    if ( curminval < curval1 )
-                      curminval = curval1;
-                    curval2 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
-                                buffer,
-                                programNr,
-                                p_splitblock->splitRangeLow & 0x7F,
-                                p_sampleparam->velRangeHigh & 0x7F,
-                                1u);
-                    if ( curminval < curval2 )
-                      curminval = curval2;
-                    curval3 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
-                                buffer,
-                                programNr,
-                                p_splitblock->splitRangeHigh & 0x7F,
-                                p_sampleparam->velRangeLow & 0x7F,
-                                1u);
-                    if ( curminval < curval3 )
-                      curminval = curval3;
-                    curval4 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
-                                buffer,
-                                programNr,
-                                p_splitblock->splitRangeHigh & 0x7F,
-                                p_sampleparam->velRangeHigh & 0x7F,
-                                1u);
-                    if ( curminval < curval4 )
-                      curminval = curval4;
-                  }
-                  ++sampleNr;
-                }
-                while ( sampleNr < p_samplesetparam->nSample );
-              }
+              curval1 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
+                          buffer,
+                          programNr,
+                          p_splitblock->splitRangeLow & 0x7F,
+                          p_sampleparam->velRangeLow & 0x7F,
+                          1u);
+              if ( curminval < curval1 )
+                curminval = curval1;
+              curval2 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
+                          buffer,
+                          programNr,
+                          p_splitblock->splitRangeLow & 0x7F,
+                          p_sampleparam->velRangeHigh & 0x7F,
+                          1u);
+              if ( curminval < curval2 )
+                curminval = curval2;
+              curval3 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
+                          buffer,
+                          programNr,
+                          p_splitblock->splitRangeHigh & 0x7F,
+                          p_sampleparam->velRangeLow & 0x7F,
+                          1u);
+              if ( curminval < curval3 )
+                curminval = curval3;
+              curval4 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
+                          buffer,
+                          programNr,
+                          p_splitblock->splitRangeHigh & 0x7F,
+                          p_sampleparam->velRangeHigh & 0x7F,
+                          1u);
+              if ( curminval < curval4 )
+                curminval = curval4;
             }
-            ++curidx2;
-            buffer_2 = buffer;
+            ++sampleNr;
           }
-          while ( curidx2 < p_programparam->nSplit );
         }
+        ++curidx2;
+        buffer_2 = buffer;
       }
-      ++programNr;
-      buffer_1 = buffer;
     }
-    while ( retres >= programNr );
-    return curminval;
+    ++programNr;
+    buffer_1 = buffer;
   }
-  return result;
+  return curminval;
 }
 
 //----- (00402518) --------------------------------------------------------
@@ -2259,14 +2205,13 @@ int sceSdHdGetValidProgramNumberCount(void *buffer)
     {
       allcnt = 0;
       curoffsaddr = dinfo.m_prog;
-      do
+      while ( dinfo.m_prog->maxProgramNumber >= allcnt )
       {
         if ( curoffsaddr->programOffsetAddr[0] != -1 )
           ++validcnt;
         ++allcnt;
         curoffsaddr = (sceHardSynthProgramChunk *)((char *)curoffsaddr + 4);
       }
-      while ( dinfo.m_prog->maxProgramNumber >= allcnt );
       return validcnt;
     }
   }
@@ -2293,7 +2238,7 @@ int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
       allcnt = 0;
       curprog = dinfo.m_prog;
       xcurind = 0;
-      do
+      while ( dinfo.m_prog->maxProgramNumber >= allcnt )
       {
         if ( curprog->programOffsetAddr[xcurind] != -1 )
         {
@@ -2303,7 +2248,6 @@ int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
         curprog = dinfo.m_prog;
         xcurind = ++allcnt;
       }
-      while ( dinfo.m_prog->maxProgramNumber >= allcnt );
       return validcnt;
     }
   }

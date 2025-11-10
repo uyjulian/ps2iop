@@ -414,21 +414,20 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   midiData->offset = nextOffset;
   if ( (cur_message & 0x80) == 0 || lastStatus == 255 )
   {
+    int xflg1_tmp;
     midiData_curval1 = *midiData_offs;
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
     midiData_curval1_1 = midiData_curval1;
     ++midiData->originalMessageLength;
     ++midiData_offs;
-    if ( (midiData_curval1 & 0x80) != 0 )
+    xflg1_tmp = midiData_curval1 & 0x80;
+    midiData_curval1_1 = midiData_curval1 & 0x7F;
+    while ( xflg1_tmp )
     {
-      midiData_curval1_1 = midiData_curval1 & 0x7F;
-      do
-      {
-        midiData_curvaladd = *midiData_offs++;
-        midiData->originalMessage[midiData->originalMessageLength++] = midiData_curvaladd;
-        midiData_curval1_1 = (midiData_curval1_1 << 7) + (midiData_curvaladd & 0x7F);
-      }
-      while ( (midiData_curvaladd & 0x80) != 0 );
+      midiData_curvaladd = *midiData_offs++;
+      midiData->originalMessage[midiData->originalMessageLength++] = midiData_curvaladd;
+      midiData_curval1_1 = (midiData_curval1_1 << 7) + (midiData_curvaladd & 0x7F);
+      xflg1_tmp = midiData_curvaladd & 0x80;
     }
     midiData->deltaTime = midiData_curval1_1;
   }
@@ -550,20 +549,17 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
             midiData_offs_plusone = someaddoffsone + 1;
             midiData->message[2] = midiData_curval7;
             midiData->messageLength = somelsglenx + 1;
+            msg2ew = midiData->message[2];
             ++midiData->originalMessageLength;
-            if ( midiData_curval7 )
+            while ( msg2ew >= somindx1 )
             {
-              do
-              {
-                midiData_curval8 = *midiData_offs_plusone++;
-                midiData->originalMessage[midiData->originalMessageLength] = midiData_curval8;
-                ptroffscw = (char *)midiData + somindx1++;
-                ptroffscw[46] = midiData_curval8;
-                msg2ew = midiData->message[2];
-                ++midiData->messageLength;
-                ++midiData->originalMessageLength;
-              }
-              while ( msg2ew >= somindx1 );
+              midiData_curval8 = *midiData_offs_plusone++;
+              midiData->originalMessage[midiData->originalMessageLength] = midiData_curval8;
+              ptroffscw = (char *)midiData + somindx1++;
+              ptroffscw[46] = midiData_curval8;
+              msg2ew = midiData->message[2];
+              ++midiData->messageLength;
+              ++midiData->originalMessageLength;
             }
             niceflag = 1;
             if ( (*(u32 *)midiData->message & 0xFFFFFF) == 0x2FFF )
@@ -783,7 +779,7 @@ int sceSdSqCopyMidiData(SceSdSqMidiData *to, const SceSdSqMidiData *from)
   u32 offset; // $t0
 
   endptr = (const SceSdSqMidiData *)&from->originalMessage[8];
-  do
+  while ( from != endptr )
   {
     midiNumber = from->midiNumber;
     midiData = from->midiData;
@@ -795,7 +791,6 @@ int sceSdSqCopyMidiData(SceSdSqMidiData *to, const SceSdSqMidiData *from)
     from = (const SceSdSqMidiData *)((char *)from + 16);
     to = (SceSdSqMidiData *)((char *)to + 16);
   }
-  while ( from != endptr );
   to->readStatus = from->readStatus;
   return 0;
 }
