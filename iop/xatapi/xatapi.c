@@ -2028,7 +2028,7 @@ void do_hex_dump(void *ptr, int len)
         ++charbuf_ptr_ptr;
         Kprintf(" %02x", (u8)*ptr_ptr);
         ++charbuf_offs;
-        if ( *ptr_ptr >= 0 && (look_ctype_table(*ptr_ptr) & 0x17) != 0 )
+        if ( *ptr_ptr >= 0 && isgraph(*ptr_ptr) )
           *chrbuf_ptr_ptr_ptr = *ptr_ptr;
         else
           *chrbuf_ptr_ptr_ptr = '.';
