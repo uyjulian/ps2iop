@@ -363,16 +363,13 @@ sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd)
   sceSifMServeEntry *g_mserv_entries_ll; // $v1
 
   g_mserv_entries_ll = msd->g_mserv_entries_ll;
-  if ( !g_mserv_entries_ll )
-    return 0;
-  while ( 1 )
+  while ( g_mserv_entries_ll )
   {
     if ( g_mserv_entries_ll->command == cmd )
       return g_mserv_entries_ll;
     g_mserv_entries_ll = g_mserv_entries_ll->next;
-    if ( !g_mserv_entries_ll )
-      return 0;
   }
+  return 0;
 }
 
 //----- (004002B0) --------------------------------------------------------
