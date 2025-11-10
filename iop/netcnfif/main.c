@@ -202,22 +202,16 @@ int module_start(int argc, char *argv[])
     else if ( !strncmp("thstack=", *cur_argv, 8) )
     {
       thstack_argv_cur = *cur_argv;
-      bp = (char *)(*cur_argv + 8);
+      bp = (char *)(thstack_argv_cur + 8);
       if ( (look_ctype_table(*bp) & 4) == 0 )
       {
         usage();
         return 1;
       }
       thstack = strtol(bp, 0, 10);
-      if ( thstack_argv_cur[8] )
+      while ( *bp && (look_ctype_table(*bp) & 4) != 0 )
       {
-        do
-        {
-          if ( (look_ctype_table(*bp) & 4) == 0 )
-            break;
-          ++bp;
-        }
-        while ( *bp );
+        ++bp;
       }
       if ( !strcmp(bp, "KB") )
       {
@@ -344,37 +338,30 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
         if ( retres1 >= 0 )
         {
           dataind1 = 0;
-          if ( buf->data > 0 )
+          p_list_iop = list_iop;
+          p_list_ee = list_ee;
+          while ( dataind1 < buf->data && dataind1 < retres1 )
           {
-            p_list_iop = list_iop;
-            p_list_ee = list_ee;
-            do
+            p2_list_ee = p_list_ee;
+            p2_list_iop = p_list_iop;
+            while ( p2_list_iop != (sceNetCnfList_t *)&p_list_iop->usr_name[248] )
             {
-              p2_list_ee = p_list_ee;
-              if ( dataind1 >= retres1 )
-                break;
-              p2_list_iop = p_list_iop;
-              do
-              {
-                cpywtmp1 = p2_list_iop->stat;
-                cpywtmp2 = *(u32 *)p2_list_iop->sys_name;
-                cpywtmp3 = *(u32 *)&p2_list_iop->sys_name[4];
-                *p2_list_ee = p2_list_iop->type;
-                p2_list_ee[1] = cpywtmp1;
-                p2_list_ee[2] = cpywtmp2;
-                p2_list_ee[3] = cpywtmp3;
-                p2_list_iop = (sceNetCnfList_t *)((char *)p2_list_iop + 16);
-                p2_list_ee += 4;
-              }
-              while ( p2_list_iop != (sceNetCnfList_t *)&p_list_iop->usr_name[248] );
-              ++p_list_iop;
-              p2_stat_tmp = p2_list_iop->stat;
+              cpywtmp1 = p2_list_iop->stat;
+              cpywtmp2 = *(u32 *)p2_list_iop->sys_name;
+              cpywtmp3 = *(u32 *)&p2_list_iop->sys_name[4];
               *p2_list_ee = p2_list_iop->type;
-              p2_list_ee[1] = p2_stat_tmp;
-              ++dataind1;
-              p_list_ee += 144;
+              p2_list_ee[1] = cpywtmp1;
+              p2_list_ee[2] = cpywtmp2;
+              p2_list_ee[3] = cpywtmp3;
+              p2_list_iop = (sceNetCnfList_t *)((char *)p2_list_iop + 16);
+              p2_list_ee += 4;
             }
-            while ( dataind1 < buf->data );
+            ++p_list_iop;
+            p2_stat_tmp = p2_list_iop->stat;
+            *p2_list_ee = p2_list_iop->type;
+            p2_list_ee[1] = p2_stat_tmp;
+            ++dataind1;
+            p_list_ee += 144;
           }
           dmatid1 = sceNetcnfifSendEE((unsigned int)list_ee, buf->addr, 576 * buf->data);
           while ( sceNetcnfifDmaCheck(dmatid1) )
@@ -399,9 +386,6 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
       if ( retres1 < 0 )
         break;
       dmatid2 = sceNetcnfifSendEE((unsigned int)&data, buf->addr, 0x1340u);
-      do
-      {
-      }
       while ( sceNetcnfifDmaCheck(dmatid2) != 0 );
       break;
     case 3:
@@ -485,14 +469,13 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
           {
             dialind = 0;
             ifc = env.root->pair_head->ifc;
-            do
+            while ( dialind < 10 )
             {
               if ( ifc->phone_numbers[0] && dialind < 3 && dialind >= 0 )
                 ++redial_count;
               ++dialind;
               ifc = (struct sceNetCnfInterface *)((char *)ifc + 4);
             }
-            while ( dialind < 10 );
             env.root->pair_head->ifc->redial_count = redial_count - 1;
             ifc_1 = env.root->pair_head->ifc;
             if ( ifc_1->pppoe != 1 && ifc_1->type != 2 )
@@ -678,7 +661,7 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
   }
   numind = 0;
   p_1 = p;
-  do
+  while ( numind < 10 )
   {
     str = (const char *)p_1->phone_numbers[0];
     if ( str )
@@ -699,7 +682,6 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
     p_1 = (sceNetCnfInterface_t *)((char *)p_1 + 4);
     ++numind;
   }
-  while ( numind < 10 );
   auth_name = p->auth_name;
   if ( auth_name )
     strcpy(data->auth_name, (const char *)auth_name);
@@ -789,13 +771,12 @@ void init_usrntcnf(sceNetCnfInterface_t *ifc)
   ifc->netmask = 0;
   ifc->cmd_head = 0;
   ifc->cmd_tail = 0;
-  do
+  while ( ind >= 0 )
   {
     p_product[14] = 0;
     --ind;
     --p_product;
   }
-  while ( ind >= 0 );
   ifc->want.dns1_nego = -1;
   ifc->want.dns2_nego = -1;
   ifc->pppoe = -1;
@@ -826,17 +807,13 @@ int check_address(char *str)
   int str_lochr; // $v0
 
   retres = 0;
-  if ( *str )
+  str_hichr = (u8)*str << 24;
+  while ( *str )
   {
-    str_hichr = (u8)*str << 24;
-    do
-    {
-      str_lochr = str_hichr >> 24;
-      if ( str_lochr != '.' && str_lochr != '0' )
-        retres = 1;
-      str_hichr = (u8)*++str << 24;
-    }
-    while ( *str );
+    str_lochr = str_hichr >> 24;
+    if ( str_lochr != '.' && str_lochr != '0' )
+      retres = 1;
+    str_hichr = (u8)*++str << 24;
   }
   return retres;
 }
@@ -1255,7 +1232,6 @@ int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
   struct sceNetCnfPair *p; // $s1
   struct sceNetCnfPair *pair_tail; // $v0
   u8 *attach_dev_tmp; // $v0
-  int indx1; // $a2
   int indx2; // $s0
   int attachres1; // $v0
   int linkres1; // $a0
@@ -1294,22 +1270,20 @@ int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
   p->display_name = dup_string(e, (u8 *)display_name);
   p->attach_ifc = dup_string(e, (u8 *)data);
   attach_dev_tmp = dup_string(e, (u8 *)data->attach_dev);
-  indx1 = 0;
   p->attach_dev = attach_dev_tmp;
-  do
+  indx2 = 0;
+  while ( indx2 < 2 )
   {
+    indx2 += 1;
     e->ifc = 0;
-    indx2 = indx1 + 1;
-    attachres1 = put_attach(e, data, indx1 + 1);
+    attachres1 = put_attach(e, data, indx2);
     linkres1 = attachres1;
     if ( attachres1 < 0 && attachres1 != -100 )
       break;
     linkres1 = root_link(e, indx2);
     if ( linkres1 < 0 )
       break;
-    indx1 = indx2;
   }
-  while ( indx2 < 2 );
   if ( !e->alloc_err )
     return linkres1;
   return -2;
@@ -1361,13 +1335,13 @@ int sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int size)
   if ( (size & 0x3F) != 0 )
     dmat.size = (size & 0xFFFFFFC0) + 64;
   dmat.attr = 0;
-  do
+  dmatid = 0;
+  while ( !dmatid )
   {
     CpuSuspendIntr(&oldstat);
     dmatid = sceSifSetDma(&dmat, 1);
     CpuResumeIntr(oldstat);
   }
-  while ( !dmatid );
   return dmatid;
 }
 
