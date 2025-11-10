@@ -171,7 +171,7 @@ int module_start(int argc, char *argv[])
     {
       thpri_argv_cur = *cur_argv;
       bp = (char *)(*cur_argv + 6);
-      if ( (look_ctype_table(*bp) & 4) == 0 )
+      if ( !isdigit(*bp) )
       {
         usage();
         return 1;
@@ -188,7 +188,7 @@ int module_start(int argc, char *argv[])
       }
       else
       {
-        while ( (look_ctype_table(*bp) & 4) != 0 )
+        while ( isdigit(*bp) )
         {
           bp++;
           if ( !*bp )
@@ -203,13 +203,13 @@ int module_start(int argc, char *argv[])
     {
       thstack_argv_cur = *cur_argv;
       bp = (char *)(thstack_argv_cur + 8);
-      if ( (look_ctype_table(*bp) & 4) == 0 )
+      if ( !isdigit(*bp) )
       {
         usage();
         return 1;
       }
       thstack = strtol(bp, 0, 10);
-      while ( *bp && (look_ctype_table(*bp) & 4) != 0 )
+      while ( *bp && isdigit(*bp) )
       {
         ++bp;
       }

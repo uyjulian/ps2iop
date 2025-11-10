@@ -1129,10 +1129,10 @@ int do_handle_combination_path(int type, const char *fpath, char *dst, size_t ma
   if ( type )
     return 0;
   devnum_offs = 0;
-  for ( i = dst; (look_ctype_table(*i) & 4) == 0; ++i )
+  for ( i = dst; !isdigit(*i); ++i )
   {
   }
-  while ( (look_ctype_table(*i) & 4) != 0 )
+  while ( isdigit(*i) )
   {
     p_devnum = &devnum[devnum_offs];
     if ( devnum_offs >= 4 )
@@ -1635,10 +1635,10 @@ void do_some_ifc_handling_hoge(const char *arg_fname)
     if ( curi1 == '.' && curptr1 >= arg_fname )
     {
       curbufsz1 = 0;
-      if ( (look_ctype_table(*curptr1) & 4) != 0 )
+      if ( isdigit(*curptr1) )
       {
         curindx = 1;
-        while ( (look_ctype_table(*curptr1) & 4) != 0 )
+        while ( isdigit(*curptr1) )
         {
           curbufadd = curindx * (*curptr1-- - '0');
           curindx *= 10;
@@ -2645,14 +2645,14 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
         {
           ++argbegin;
           argchr_1 = 0;
-          if ( (look_ctype_table(*argbegin) & 0x44) == 0 )
+          if ( !isxdigit(*argbegin) )
           {
             err = 2;
             break;
           }
-          for ( i = 0; i < 2 && (look_ctype_table(*argbegin) & 0x44) != 0; ++i )
+          for ( i = 0; i < 2 && isxdigit(*argbegin); ++i )
           {
-            if ( (look_ctype_table(*argbegin) & 4) != 0 )
+            if ( isdigit(*argbegin) )
             {
               argchr_4 = *(u8 *)argbegin;
               argchr_1 = 16 * argchr_1 + argchr_4 - '0';
@@ -2661,7 +2661,7 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
             {
               hexnum = 16 * argchr_1;
               argchr_5 = *(u8 *)argbegin;
-              argchr_1 = ((look_ctype_table(*argbegin) & 2) == 0) ? hexnum + argchr_5 - '7' : hexnum + argchr_5 - 'W';
+              argchr_1 = (!islower(*argbegin)) ? hexnum + argchr_5 - '7' : hexnum + argchr_5 - 'W';
             }
             argbegin++;
           }
@@ -3516,7 +3516,7 @@ int do_handle_attach_cnf(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
   {
     if ( curkey[12] )
     {
-      if ( (look_ctype_table(curkey[12]) & 4) == 0 )
+      if ( !isdigit(curkey[12]) )
         return 0;
       if ( curkey[13] )
         return 0;
@@ -3627,7 +3627,7 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), v
   {
   }
   *i = 0;
-  for ( j = (char *)e->lbuf; *j && (look_ctype_table(*j) & 8) != 0; ++j )
+  for ( j = (char *)e->lbuf; *j && isspace(*j); ++j )
   {
   }
   e->ac = 0;
@@ -3646,7 +3646,7 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), v
         *j = 0;
         break;
       }
-      if ( !(look_ctype_table(*j) & 8) )
+      if ( !isspace(*j) )
       {
         while ( *j )
         {
@@ -3669,7 +3669,7 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), v
           {
             if ( *j != '#' )
             {
-              if ( !(look_ctype_table(*j) & 8) )
+              if ( !isspace(*j) )
                 continue;
             }
             break;
@@ -3687,7 +3687,7 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), v
       *j = 0;
       ++j;
     }
-    while ( *j && (look_ctype_table(*j) & 8) != 0 )
+    while ( *j && isspace(*j) )
       ++j;
     ++e->ac;
     j_curchr1 = (u8)*j;
@@ -4211,7 +4211,7 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
         ++fmt;
       }
       strlened = 0;
-      while ( (look_ctype_table(*fmt) & 4) != 0 )
+      while ( isdigit(*fmt) )
       {
         strlened = 10 * strlened - '0' + *fmt;
         fmt++;
@@ -5116,13 +5116,13 @@ int do_name_2_address_inner(unsigned int *dst, char *buf)
         base = 16;
       }
     }
-    for ( i = 0; (look_ctype_table(*buf) & 0x44) != 0; i = i * base + offsbase1 )
+    for ( i = 0; isxdigit(*buf); i = i * base + offsbase1 )
     {
       offsbase1 = *buf - '0';
-      if ( (look_ctype_table(*buf) & 4) == 0 )
+      if ( !isdigit(*buf) )
       {
         offsbase1 = *buf - '7';
-        if ( (look_ctype_table(*buf) & 1) == 0 )
+        if ( !isupper(*buf) )
           offsbase1 = *buf - 'W';
       }
       if ( offsbase1 >= base )
@@ -5378,16 +5378,16 @@ int do_check_authnet(char *argst, char *arged)
   {
   }
   *i = 0;
-  for ( j = argst; *j && (look_ctype_table(*j) & 8) != 0; ++j )
+  for ( j = argst; *j && isspace(*j); ++j )
   {
   }
   if ( !strncmp(j, "auth_name", 9) )
   {
-    while ( *j && !(look_ctype_table(*j) & 8) )
+    while ( *j && !isspace(*j) )
     {
       j++;
     }
-    while ( *j && (look_ctype_table(*j) & 8) )
+    while ( *j && isspace(*j) )
     {
       j++;
     }
