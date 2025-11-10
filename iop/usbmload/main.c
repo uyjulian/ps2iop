@@ -158,56 +158,52 @@ int _start(int ac, char **av)
   g_rb_count = 0;
   g_usbm_entry_list_end = 0;
   g_usbm_entry_list_cur = 0;
-  if ( ac > 0 )
+  cur_av = av;
+  while ( cur_ac < ac )
   {
-    cur_av = av;
-    do
+    cur_av_pos = 0;
+    cur_av_curstr1 = *cur_av;
+    while ( cur_av_curstr1[cur_av_pos] )
     {
-      cur_av_pos = 0;
-      cur_av_curstr1 = *cur_av;
-      while ( cur_av_curstr1[cur_av_pos] )
+      if ( cur_av_curstr1[cur_av_pos] == '=' )
       {
-        if ( cur_av_curstr1[cur_av_pos] == '=' )
-        {
-          cur_av_curstr1[cur_av_pos] = 0;
-          ++cur_av_pos;
-          break;
-        }
+        cur_av_curstr1[cur_av_pos] = 0;
         ++cur_av_pos;
+        break;
       }
-      if ( !strcmp(*cur_av, "conffile") )
-      {
-        if ( (unsigned int)strlen(&(*cur_av)[cur_av_pos]) < 0x200 )
-        {
-          strcpy((char *)g_param_conffile, &(*cur_av)[cur_av_pos]);
-          has_conffile = 1;
-          if ( g_param_debug > 0 )
-            printf("conffile=%s\n", g_param_conffile);
-        }
-        else
-        {
-          printf("Too long file name : %s\n", &(*cur_av)[cur_av_pos]);
-        }
-      }
-      else if ( !strcmp(*cur_av, "debug") )
-      {
-        g_param_debug = do_parse_cmd_int(&(*cur_av)[cur_av_pos]);
-        printf("Debug level is %d\n", g_param_debug);
-      }
-      else if ( !strcmp(*cur_av, "rbsize") )
-      {
-        g_param_rbsize = do_parse_cmd_int(&(*cur_av)[cur_av_pos]);
-        if ( g_param_rbsize >= 257 )
-          g_param_rbsize = 256;
-        if ( g_param_rbsize < 8 )
-          g_param_rbsize = 8;
-        if ( g_param_debug > 0 )
-          printf("usbmload : ring buffer size = %d\n", g_param_rbsize);
-      }
-      ++cur_ac;
-      ++cur_av;
+      ++cur_av_pos;
     }
-    while ( cur_ac < ac );
+    if ( !strcmp(*cur_av, "conffile") )
+    {
+      if ( (unsigned int)strlen(&(*cur_av)[cur_av_pos]) < 0x200 )
+      {
+        strcpy((char *)g_param_conffile, &(*cur_av)[cur_av_pos]);
+        has_conffile = 1;
+        if ( g_param_debug > 0 )
+          printf("conffile=%s\n", g_param_conffile);
+      }
+      else
+      {
+        printf("Too long file name : %s\n", &(*cur_av)[cur_av_pos]);
+      }
+    }
+    else if ( !strcmp(*cur_av, "debug") )
+    {
+      g_param_debug = do_parse_cmd_int(&(*cur_av)[cur_av_pos]);
+      printf("Debug level is %d\n", g_param_debug);
+    }
+    else if ( !strcmp(*cur_av, "rbsize") )
+    {
+      g_param_rbsize = do_parse_cmd_int(&(*cur_av)[cur_av_pos]);
+      if ( g_param_rbsize >= 257 )
+        g_param_rbsize = 256;
+      if ( g_param_rbsize < 8 )
+        g_param_rbsize = 8;
+      if ( g_param_debug > 0 )
+        printf("usbmload : ring buffer size = %d\n", g_param_rbsize);
+    }
+    ++cur_ac;
+    ++cur_av;
   }
   rbmul = 4 * g_param_rbsize;
   if ( g_param_debug > 0 )
@@ -303,17 +299,13 @@ int module_unload()
       }
       CpuSuspendIntr(&state);
       argind = 0;
-      if ( listent_1->argc > 0 )
+      listent_2 = listent_1;
+      while ( argind < listent_1->argc )
       {
-        listent_2 = listent_1;
-        do
-        {
-          argmem_1 = listent_2->argv[0];
-          listent_2 = (USBDEV_t *)((char *)listent_2 + 4);
-          FreeSysMemory(argmem_1);
-          ++argind;
-        }
-        while ( argind < listent_1->argc );
+        argmem_1 = listent_2->argv[0];
+        listent_2 = (USBDEV_t *)((char *)listent_2 + 4);
+        FreeSysMemory(argmem_1);
+        ++argind;
       }
       FreeSysMemory(listent_1->dispname);
       FreeSysMemory(listent_1->category);
@@ -616,15 +608,11 @@ void do_print_device_config_info(USBDEV_t *devinfo)
   printf(" Category  :%s\n", devinfo->category);
   printf(" DriverPath:%s\n", devinfo->path);
   devinfo_curarg = devinfo;
-  if ( devinfo->argc > 0 )
+  while ( devinfo_cargc < devinfo->argc )
   {
-    do
-    {
-      devinfo_curargx = devinfo_curarg->argv[0];
-      devinfo_curarg = (USBDEV_t *)((char *)devinfo_curarg + 4);
-      printf(" DriverArg%d:%s\n", devinfo_cargc++, devinfo_curargx);
-    }
-    while ( devinfo_cargc < devinfo->argc );
+    devinfo_curargx = devinfo_curarg->argv[0];
+    devinfo_curarg = (USBDEV_t *)((char *)devinfo_curarg + 4);
+    printf(" DriverArg%d:%s\n", devinfo_cargc++, devinfo_curargx);
   }
   printf("\n");
 }
@@ -664,7 +652,8 @@ int usbmload_drv_probe(int dev_id)
   bInterfaceSubClass = intfdesc->bInterfaceSubClass;
   bInterfaceProtocol = intfdesc->bInterfaceProtocol;
   found_info_count = 0;
-  if ( !g_usbm_entry_list_end )
+  devinfo = g_usbm_entry_list_end;
+  if ( !devinfo )
   {
     if ( g_param_debug > 0 )
     {
@@ -673,8 +662,7 @@ int usbmload_drv_probe(int dev_id)
     }
     return 0;
   }
-  devinfo = g_usbm_entry_list_end;
-  do
+  while ( devinfo )
   {
     if ( devinfo->activate_flag )
     {
@@ -709,7 +697,6 @@ int usbmload_drv_probe(int dev_id)
     }
     devinfo = devinfo->forw;
   }
-  while ( devinfo );
   if ( found_info_count )
   {
     if ( g_param_debug > 0 )
@@ -792,22 +779,18 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
         cur_argc = 0;
       }
       cur_argv_len = 0;
-      if ( curdev->argc > 0 )
+      curdev_1 = curdev;
+      while ( cur_argc < curdev->argc )
       {
-        curdev_1 = curdev;
-        do
-        {
-          cur_argv_len_1 = cur_argv_len + strlen(curdev_1->argv[0]) + 1;
-          argdst = &modarg[cur_argv_len];
-          if ( cur_argv_len_1 >= 0xF1 )
-            break;
-          cur_argv_len = cur_argv_len_1;
-          curdev_argv = curdev_1->argv[0];
-          curdev_1 = (USBDEV_t *)((char *)curdev_1 + 4);
-          strcpy(argdst, curdev_argv);
-          ++cur_argc;
-        }
-        while ( cur_argc < curdev->argc );
+        cur_argv_len_1 = cur_argv_len + strlen(curdev_1->argv[0]) + 1;
+        argdst = &modarg[cur_argv_len];
+        if ( cur_argv_len_1 >= 0xF1 )
+          break;
+        cur_argv_len = cur_argv_len_1;
+        curdev_argv = curdev_1->argv[0];
+        curdev_1 = (USBDEV_t *)((char *)curdev_1 + 4);
+        strcpy(argdst, curdev_argv);
+        ++cur_argc;
       }
       strcpy(&modarg[cur_argv_len], "lmode=AUTOLOAD");
       modarglen = cur_argv_len + 15;
@@ -963,7 +946,6 @@ int do_parse_cmd_int(const char *buf)
   int hexval; // $a2
   const char *i; // $a0
   int hexind; // $a2
-  char bufchr_2; // $a1
 
   bufchr_1 = *buf;
   hexval = 0;
@@ -971,16 +953,13 @@ int do_parse_cmd_int(const char *buf)
     return -1;
   if ( bufchr_1 != '0' || buf[1] != 'x' )
     return strtol(buf, 0, 10);
-  for ( i = buf + 2; ; ++i )
+  for ( i = buf + 2; *i; ++i )
   {
-    bufchr_2 = *i;
-    if ( !*i )
-      break;
     hexind = 16 * hexval;
-    if ( bufchr_2 >= ':' )
-      hexval = hexind + 9 + (bufchr_2 & 0xF);
+    if ( *i >= ':' )
+      hexval = hexind + 9 + (*i & 0xF);
     else
-      hexval = hexind + (bufchr_2 & 0xF);
+      hexval = hexind + (*i & 0xF);
   }
   return hexval;
 }
@@ -991,10 +970,8 @@ void clean_config_line(char *buf)
   int in_quotes; // $v1
 
   in_quotes = 0;
-  while ( 1 )
+  while ( *buf != '\n' && *buf != '\r' && *buf )
   {
-    if ( *buf == '\n' || *buf == '\r' || !*buf )
-      break;
     if ( *buf == '"' )
       in_quotes = !in_quotes;
     if ( *buf == '#' && !in_quotes )
@@ -1007,55 +984,44 @@ void clean_config_line(char *buf)
 //----- (004017E0) --------------------------------------------------------
 void sanitize_devicename(char *buf)
 {
-  int curchr_1; // $v1
   int curind_1; // $a2
   unsigned int curchr_2; // $a1
   unsigned int curchr_3; // $v1
   char curoffs_1; // $v1
   char wrchr_1; // $a1
 
-  curchr_1 = (u8)*buf;
   curind_1 = 0;
-  if ( *buf && *buf != '\n' )
+  while ( *buf && *buf != '\n' && *buf != '\r' )
   {
-    do
+    curchr_2 = (u8)*buf;
+    if ( curchr_2 < 0x80
+      || curchr_2 - 0xA0 < 0x40
+      || curchr_2 - 0xF0 < 0x10
+      || (curchr_3 = (u8)buf[1], curchr_3 < 0x40)
+      || curchr_3 == 0x7F
+      || curchr_3 - 253 < 3 )
     {
-      if ( curchr_1 == '\r' )
-        break;
-      curchr_2 = (u8)*buf;
-      if ( curchr_2 < 0x80
-        || curchr_2 - 0xA0 < 0x40
-        || curchr_2 - 0xF0 < 0x10
-        || (curchr_3 = (u8)buf[1], curchr_3 < 0x40)
-        || curchr_3 == 0x7F
-        || curchr_3 - 253 < 3 )
+      ++buf;
+    }
+    else
+    {
+      if ( curchr_3 >= 0x9F )
       {
-        ++buf;
+        curoffs_1 = curchr_3 + 2;
+        wrchr_1 = curchr_2 >= 0xA0 ? 2 * curchr_2 + 32 : 2 * curchr_2 - '`';
       }
       else
       {
-        if ( curchr_3 >= 0x9F )
-        {
-          curoffs_1 = curchr_3 + 2;
-          wrchr_1 = curchr_2 >= 0xA0 ? 2 * curchr_2 + 32 : 2 * curchr_2 - '`';
-        }
-        else
-        {
-          if ( curchr_3 >= 0x80 )
-            curchr_3 = curchr_3 - 1;
-          curoffs_1 = curchr_3 + 'a';
-          wrchr_1 = curchr_2 >= 0xA0 ? 2 * curchr_2 + 31 : 2 * curchr_2 - 'a';
-        }
-        *buf = wrchr_1;
-        buf[1] = curoffs_1;
-        buf += 2;
-        ++curind_1;
+        if ( curchr_3 >= 0x80 )
+          curchr_3 = curchr_3 - 1;
+        curoffs_1 = curchr_3 + 'a';
+        wrchr_1 = curchr_2 >= 0xA0 ? 2 * curchr_2 + 31 : 2 * curchr_2 - 'a';
       }
-      curchr_1 = (u8)*buf;
-      if ( !*buf )
-        break;
+      *buf = wrchr_1;
+      buf[1] = curoffs_1;
+      buf += 2;
+      ++curind_1;
     }
-    while ( *buf != '\n' );
   }
 }
 
