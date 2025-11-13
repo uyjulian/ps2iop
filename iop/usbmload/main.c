@@ -322,22 +322,17 @@ int do_parse_config_file(const char *fn)
   int tokencnt; // $s1
   size_t dispname_len; // $v0
   char *dispname_tmp; // $v0
-  int state_2; // $a0
   char *dispname; // $a0
   size_t category_tmplen; // $v0
   char *category_tmp; // $v0
-  int state_3; // $a0
   char *category; // $a0
   size_t driverpath_tmplen; // $v0
   char *driverpath_tmp; // $v0
-  int state_4; // $a0
   size_t driverarg_tmp; // $v0
   char *driverarg_tmplen; // $v0
-  int state_5; // $a0
   char *driverarg_end; // $a0
   char *p[2]; // [sp+10h] [-18h] BYREF
-  int state_1; // [sp+20h] [-8h] BYREF
-  int *state; // [sp+24h] [-4h]
+  int state; // [sp+20h] [-8h] BYREF
   int err;
 
   err = 0;
@@ -353,7 +348,6 @@ int do_parse_config_file(const char *fn)
     printf("Cannot open '%s'\n", fn);
     return -1;
   }
-  state = &state_1;
   while ( read_config_line(g_config_line_buf, 256, fd) )
   {
     ++lineind;
@@ -387,20 +381,19 @@ int do_parse_config_file(const char *fn)
               do_print_device_config_info(devstr);
             }
           }
-          CpuSuspendIntr(state);
+          CpuSuspendIntr(&state);
           devstr = (USBDEV_t *)AllocSysMemory(0, 144, 0);
-          CpuResumeIntr(state_1);
+          CpuResumeIntr(state);
           if ( !devstr )
           {
             err = 1;
             break;
           }
-          CpuSuspendIntr(state);
+          CpuSuspendIntr(&state);
           dispname_len = strlen(p[1]);
           dispname_tmp = (char *)AllocSysMemory(0, dispname_len + 1, 0);
-          state_2 = state_1;
           devstr->dispname = dispname_tmp;
-          CpuResumeIntr(state_2);
+          CpuResumeIntr(state);
           dispname = devstr->dispname;
           if ( !dispname )
           {
@@ -435,17 +428,17 @@ int do_parse_config_file(const char *fn)
             has_encountered = 0;
             if ( devstr->dispname )
             {
-              CpuSuspendIntr(&state_1);
+              CpuSuspendIntr(&state);
               FreeSysMemory(devstr->dispname);
-              CpuResumeIntr(state_1);
+              CpuResumeIntr(state);
               devstr->dispname = 0;
             }
             if ( devstr )
             {
-              CpuSuspendIntr(&state_1);
+              CpuSuspendIntr(&state);
               FreeSysMemory(devstr);
               devstr = 0;
-              CpuResumeIntr(state_1);
+              CpuResumeIntr(state);
             }
           }
         }
@@ -481,17 +474,16 @@ int do_parse_config_file(const char *fn)
             {
               if ( devstr->category )
               {
-                CpuSuspendIntr(&state_1);
+                CpuSuspendIntr(&state);
                 FreeSysMemory(devstr->category);
-                CpuResumeIntr(state_1);
+                CpuResumeIntr(state);
                 devstr->category = 0;
               }
-              CpuSuspendIntr(&state_1);
+              CpuSuspendIntr(&state);
               category_tmplen = strlen(p[1]);
               category_tmp = (char *)AllocSysMemory(0, category_tmplen + 1, 0);
-              state_3 = state_1;
               devstr->category = category_tmp;
-              CpuResumeIntr(state_3);
+              CpuResumeIntr(state);
               category = devstr->category;
               if ( !category )
               {
@@ -504,17 +496,16 @@ int do_parse_config_file(const char *fn)
             {
               if ( devstr->path )
               {
-                CpuSuspendIntr(&state_1);
+                CpuSuspendIntr(&state);
                 FreeSysMemory(devstr->path);
-                CpuResumeIntr(state_1);
+                CpuResumeIntr(state);
                 devstr->path = 0;
               }
-              CpuSuspendIntr(&state_1);
+              CpuSuspendIntr(&state);
               driverpath_tmplen = strlen(p[1]);
               driverpath_tmp = (char *)AllocSysMemory(0, driverpath_tmplen + 1, 0);
-              state_4 = state_1;
               devstr->path = driverpath_tmp;
-              CpuResumeIntr(state_4);
+              CpuResumeIntr(state);
               category = devstr->path;
               if ( !category )
               {
@@ -525,12 +516,11 @@ int do_parse_config_file(const char *fn)
             }
             else if ( !strcmp(p[0], "DriverArg") && devstr->argc < 8 )
             {
-              CpuSuspendIntr(&state_1);
+              CpuSuspendIntr(&state);
               driverarg_tmp = strlen(p[1]);
               driverarg_tmplen = (char *)AllocSysMemory(0, driverarg_tmp + 1, 0);
-              state_5 = state_1;
               devstr->argv[devstr->argc] = driverarg_tmplen;
-              CpuResumeIntr(state_5);
+              CpuResumeIntr(state);
               driverarg_end = devstr->argv[devstr->argc];
               if ( !driverarg_end )
               {
@@ -1101,25 +1091,22 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
   USBDEV_t *devinfo_cpyptr1; // $v1
   size_t dispname_len; // $v0
   char *dispname_memblk; // $v0
-  int state_1; // $a0
   char *dispname; // $a0
   size_t path_len; // $v0
   char *path_memblk; // $v0
-  int state_2; // $a0
   char *path; // $a0
   int devinfo_allocind; // $s2
   size_t argv_len; // $v0
   char *argv_memblk; // $v0
-  int state_3; // $a0
   char *argv_curptr; // $a0
   int devinfo_curind; // $s1
-  int state[2]; // [sp+10h] [-8h] BYREF
+  int state; // [sp+10h] [-8h] BYREF
   int failed;
 
   failed = 0;
-  CpuSuspendIntr(state);
+  CpuSuspendIntr(&state);
   devinfo = (USBDEV_t *)AllocSysMemory(0, 144, 0);
-  CpuResumeIntr(state[0]);
+  CpuResumeIntr(state);
   if ( !devinfo )
   {
     failed = 1;
@@ -1129,12 +1116,11 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
     devinfo_cpyptr1 = devinfo;
     // The following memcpy was inlined
     memcpy(devinfo_cpyptr1, device, sizeof(USBDEV_t));
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     dispname_len = strlen(device->dispname);
     dispname_memblk = (char *)AllocSysMemory(0, dispname_len + 1, 0);
-    state_1 = state[0];
     devinfo->dispname = dispname_memblk;
-    CpuResumeIntr(state_1);
+    CpuResumeIntr(state);
     dispname = devinfo->dispname;
     if ( !dispname )
     {
@@ -1144,12 +1130,11 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
   if ( !failed )
   {
     strcpy(dispname, device->dispname);
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     path_len = strlen(device->path);
     path_memblk = (char *)AllocSysMemory(0, path_len + 1, 0);
-    state_2 = state[0];
     devinfo->path = path_memblk;
-    CpuResumeIntr(state_2);
+    CpuResumeIntr(state);
     path = devinfo->path;
     if ( !path )
     {
@@ -1161,12 +1146,11 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
     strcpy(path, device->path);
     for ( devinfo_allocind = 0; devinfo_allocind < device->argc; devinfo_allocind += 1 )
     {
-      CpuSuspendIntr(state);
+      CpuSuspendIntr(&state);
       argv_len = strlen(device->argv[devinfo_allocind]);
       argv_memblk = (char *)AllocSysMemory(0, argv_len + 1, 0);
-      state_3 = state[0];
       devinfo->argv[devinfo_allocind] = argv_memblk;
-      CpuResumeIntr(state_3);
+      CpuResumeIntr(state);
       argv_curptr = devinfo->argv[devinfo_allocind];
       if ( !argv_curptr )
       {
@@ -1180,7 +1164,7 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
   {
     printf("sceUsbmlRegisterDevice : malloc error%d\n", failed);
     if ( failed >= 2 )
-      CpuSuspendIntr(state);
+      CpuSuspendIntr(&state);
     if ( failed >= 4 )
     {
       for ( devinfo_curind = 0; devinfo_curind < devinfo_allocind; devinfo_curind += 1 )
@@ -1196,7 +1180,7 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
     if ( failed >= 2 )
     {
       FreeSysMemory(devinfo);
-      CpuResumeIntr(state[0]);
+      CpuResumeIntr(state);
     }
     return -1;
   }
