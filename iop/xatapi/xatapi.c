@@ -1094,6 +1094,7 @@ int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2)
 {
   u32 buzzerres[2]; // [sp+10h] [-8h] BYREF
 
+  (void)unused_arg2;
   if ( is_eject == 1 )
   {
     if ( g_xatapi_verbose > 0 )
@@ -1956,7 +1957,7 @@ void xatapi_9_sceCdSpdAtaDmaStart(int dir)
     Kprintf("sceCdSpdAtaDmaStart Write R_IF_CTR:%x\n", spd_if_ctrl_manip_2);
   dev5_speed_regs.r_spd_xfr_ctrl = dir | 6;
   if ( g_xatapi_verbose > 0 )
-    Kprintf("sceCdSpdAtaDmaStart R_IF_CTR:%x R_XFR_CTRL:%x\n", ev5_speed_regs.r_spd_if_ctrl, dev5_speed_regs.r_spd_xfr_ctrl);
+    Kprintf("sceCdSpdAtaDmaStart R_IF_CTR:%x R_XFR_CTRL:%x\n", dev5_speed_regs.r_spd_if_ctrl, dev5_speed_regs.r_spd_xfr_ctrl);
 }
 // 40A640: using guessed type int g_should_wait_for_dma_flag;
 // 40A644: using guessed type int g_is_wait_busy;
@@ -2735,12 +2736,10 @@ int sceCdAtapiExecCmd_local(
 //----- (00404CEC) --------------------------------------------------------
 int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto)
 {
-  u8 pkt_scsi_cmd_1; // $s0
   int pkt_scsi_cmd_2; // $a1
 
   if ( pkt_len )
   {
-    pkt_scsi_cmd_1 = *(u8 *)pkt;
     pkt_scsi_cmd_2 = *(u8 *)pkt;
     if ( g_xatapi_verbose > 0 )
       Kprintf("sceCdAtapiExecCmd %08x\n", *(u8 *)pkt);
@@ -4373,8 +4372,6 @@ void FpgaXfdir(int dir)
 //----- (004080CC) --------------------------------------------------------
 int FpgaGetRevision(void)
 {
-  vu16 r_fpga_revision; // $a2
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():FPGA_REVISION %x\n", "FpgaGetRevision", dev5_fpga_regs.r_fpga_revision);
   return (u16)dev5_fpga_regs.r_fpga_revision;
