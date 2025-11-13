@@ -816,22 +816,22 @@ int _start(int ac)
 {
   int unregres; // $s0
   int regres; // $s0
-  int state[2]; // [sp+10h] [-8h] BYREF
+  int state; // [sp+10h] [-8h] BYREF
 
   if ( ac >= 0 )
   {
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     regres = RegisterLibraryEntries(&_exp_sdsq);
-    CpuResumeIntr(state[0]);
+    CpuResumeIntr(state);
     if ( !regres )
       return 2;
     return 1;
   }
   else
   {
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     unregres = ReleaseLibraryEntries(&_exp_sdsq);
-    CpuResumeIntr(state[0]);
+    CpuResumeIntr(state);
     if ( !unregres )
       return 1;
     return 2;

@@ -998,7 +998,7 @@ int do_get_common_block_ptr(
   void **param_2; // $a0
   sceHardSynthSampleSetParam *p_samplesetparam; // [sp+10h] [-10h] BYREF
   sceHardSynthSampleParam *p_sampleparam; // [sp+14h] [-Ch] BYREF
-  sceHardSynthVagParam *p_vagparam[2]; // [sp+18h] [-8h] BYREF
+  sceHardSynthVagParam *p_vagparam; // [sp+18h] [-8h] BYREF
 
   idx1 = 0;
   if ( sceSdHdGetSampleSetParamAddr(buffer, sampleSetNumber, &p_samplesetparam) != 0 )
@@ -1037,7 +1037,7 @@ int do_get_common_block_ptr(
               break;
             default:
               if ( p_sampleparam->VagIndex == 0xFFFF
-                || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, p_vagparam) )
+                || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, &p_vagparam) )
               {
                 break;
               }
@@ -1048,14 +1048,14 @@ int do_get_common_block_ptr(
                   break;
                 case 10:
                   ++idx1;
-                  *param++ = p_vagparam[0];
+                  *param++ = p_vagparam;
                   break;
                 case 11:
                   ++idx1;
-                  vagsz_tmp = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam[0]->vagOffsetAddr);
+                  vagsz_tmp = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
                   param_4 = param;
                   param += 4;
-                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_4, vagsz_tmp, p_vagparam[0]);
+                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_4, vagsz_tmp, p_vagparam);
                   break;
               }
           }
@@ -1090,7 +1090,7 @@ int do_get_common_block_ptr(
               do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param_1, p_sampleparam);
               break;
             default:
-              if ( p_sampleparam->VagIndex == 0xFFFF || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, p_vagparam) )
+              if ( p_sampleparam->VagIndex == 0xFFFF || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, &p_vagparam) )
                 break;
               switch ( swcase )
               {
@@ -1099,14 +1099,14 @@ int do_get_common_block_ptr(
                   break;
                 case 10:
                   ++idx1;
-                  *param++ = p_vagparam[0];
+                  *param++ = p_vagparam;
                   break;
                 case 11:
                   ++idx1;
-                  vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam[0]->vagOffsetAddr);
+                  vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
                   param_2 = param;
                   param += 4;
-                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_2, vag_size, p_vagparam[0]);
+                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_2, vag_size, p_vagparam);
                   break;
                 default:
                   break;
@@ -2226,22 +2226,22 @@ int _start(int ac)
 {
   int unregres; // $s0
   int regres; // $s0
-  int state[2]; // [sp+10h] [-8h] BYREF
+  int state; // [sp+10h] [-8h] BYREF
 
   if ( ac >= 0 )
   {
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     regres = RegisterLibraryEntries(&_exp_sdhd);
-    CpuResumeIntr(state[0]);
+    CpuResumeIntr(state);
     if ( !regres )
       return 2;
     return 1;
   }
   else
   {
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     unregres = ReleaseLibraryEntries(&_exp_sdhd);
-    CpuResumeIntr(state[0]);
+    CpuResumeIntr(state);
     if ( !unregres )
       return 1;
     return 2;
