@@ -87,18 +87,12 @@ int _start(int ac, char **av)
 {
   u32 ctrl_save; // $s3
   int idx1_2; // $s0
-  int idx1_1; // $a0
   int iobind1; // $s0
-  char *p_inbuf_1; // $v0
   int indobuf_1; // $s0
-  char *p_outbuf_1; // $v0
   int i; // $s0
   int idx2_2; // $s0
-  int idx2_1; // $a0
   int iobind2; // $s0
-  char *p_inbuf_2; // $v0
   int indobuf_2; // $s0
-  char *p_outbuf_2; // $v0
   int j; // $s0
   char inoutbuf[32]; // [sp+10h] [-20h] BYREF
 
@@ -108,72 +102,50 @@ int _start(int ac, char **av)
   printf("rmreset start\n");
   ctrl_save = sio2_ctrl_get();
   sio2_ctrl_set(0xCu);
-  idx1_2 = 0;
-  idx1_1 = 0;
-  while ( idx1_2 < 4 )
+  for ( idx1_2 = 0; idx1_2 < 4; idx1_2 += 1 )
   {
-    sio2_portN_ctrl1_set(idx1_1, 0xC0C0050F);
-    sio2_portN_ctrl2_set(idx1_2++, 0x1060014u);
-    idx1_1 = idx1_2;
+    sio2_portN_ctrl1_set(idx1_2, 0xC0C0050F);
+    sio2_portN_ctrl2_set(idx1_2, 0x1060014u);
   }
   sio2_regN_set(0, 0x1C0740u);
   sio2_regN_set(1, 0);
-  iobind1 = 3;
   inoutbuf[0] = 0x61;
   inoutbuf[1] = 6;
   inoutbuf[2] = 3;
-  p_inbuf_1 = &inoutbuf[3];
-  while ( iobind1 < 12 )
+  for ( iobind1 = 3; iobind1 < 12; iobind1 += 1 )
   {
-    *p_inbuf_1 = 0;
-    p_inbuf_1 = &inoutbuf[++iobind1];
+    inoutbuf[iobind1] = 0;
   }
-  indobuf_1 = 0;
-  p_outbuf_1 = inoutbuf;
-  while ( indobuf_1 < 7 )
+  for ( indobuf_1 = 0; indobuf_1 < 7; indobuf_1 += 1 )
   {
-    ++indobuf_1;
-    sio2_data_out(*p_outbuf_1);
-    p_outbuf_1 = &inoutbuf[indobuf_1];
+    sio2_data_out(inoutbuf[indobuf_1]);
   }
   sio2_ctrl_set(0xB1u);
-  while ( ((sio2_stat6c_get() >> 12) & 1) == 0 )
-    ;
-  for ( i = 0; i < 7; ++i )
+  while ( ((sio2_stat6c_get() >> 12) & 1) == 0 );
+  for ( i = 0; i < 7; i += 1 )
     inoutbuf[i + 16] = sio2_data_in();
   sio2_ctrl_set(0xCu);
-  idx2_2 = 0;
-  idx2_1 = 0;
-  while ( idx2_2 < 4 )
+  for ( idx2_2 = 0; idx2_2 < 4; idx2_2 += 1 )
   {
-    sio2_portN_ctrl1_set(idx2_1, 0xC0C0050F);
-    sio2_portN_ctrl2_set(idx2_2++, 0x1060014u);
-    idx2_1 = idx2_2;
+    sio2_portN_ctrl1_set(idx2_2, 0xC0C0050F);
+    sio2_portN_ctrl2_set(idx2_2, 0x1060014u);
   }
   sio2_regN_set(0, 0x1C0741u);
   sio2_regN_set(1, 0);
-  iobind2 = 3;
   inoutbuf[0] = 0x61;
   inoutbuf[1] = 6;
   inoutbuf[2] = 3;
-  p_inbuf_2 = &inoutbuf[3];
-  while ( iobind2 < 12 )
+  for ( iobind2 = 3; iobind2 < 12; iobind2 += 1 )
   {
-    *p_inbuf_2 = 0;
-    p_inbuf_2 = &inoutbuf[++iobind2];
+    inoutbuf[iobind2] = 0;
   }
-  indobuf_2 = 0;
-  p_outbuf_2 = inoutbuf;
-  while ( indobuf_2 < 7 )
+  for ( indobuf_2 = 0; indobuf_2 < 7; indobuf_2 += 1 )
   {
-    ++indobuf_2;
-    sio2_data_out(*p_outbuf_2);
-    p_outbuf_2 = &inoutbuf[indobuf_2];
+    sio2_data_out(inoutbuf[indobuf_2]);
   }
   sio2_ctrl_set(0xB1u);
-  while ( ((sio2_stat6c_get() >> 12) & 1) == 0 )
-    ;
-  for ( j = 0; j < 7; ++j )
+  while ( ((sio2_stat6c_get() >> 12) & 1) == 0 );
+  for ( j = 0; j < 7; j += 1 )
     inoutbuf[j + 16] = sio2_data_in();
   sio2_ctrl_set(0xCu);
   sio2_ctrl_set(ctrl_save & 0xFFFFFFFE);
