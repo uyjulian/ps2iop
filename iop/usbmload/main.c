@@ -147,7 +147,7 @@ int _start(int ac, char **av)
   has_conffile = 0;
   if ( ac < 0 )
     return module_unload();
-  cur_ac = 0;
+  
   printf("----- USB auto module loader %s -----\n", "0.4.0");
   g_param_rbsize = 32;
   g_loadfunc_cb = (sceUsbmlLoadFunc)default_loadfunc;
@@ -159,19 +159,14 @@ int _start(int ac, char **av)
   g_usbm_entry_list_end = 0;
   g_usbm_entry_list_cur = 0;
   cur_av = av;
-  while ( cur_ac < ac )
+  for ( cur_ac = 0; cur_ac < ac; cur_ac += 1 )
   {
-    cur_av_pos = 0;
     cur_av_curstr1 = *cur_av;
-    while ( cur_av_curstr1[cur_av_pos] )
+    for ( cur_av_pos = 0; cur_av_curstr1[cur_av_pos] && cur_av_curstr1[cur_av_pos] != '='; cur_av_pos += 1 );
+    if ( cur_av_curstr1[cur_av_pos] )
     {
-      if ( cur_av_curstr1[cur_av_pos] == '=' )
-      {
-        cur_av_curstr1[cur_av_pos] = 0;
-        ++cur_av_pos;
-        break;
-      }
-      ++cur_av_pos;
+      cur_av_curstr1[cur_av_pos] = 0;
+      cur_av_pos += 1;
     }
     if ( !strcmp(*cur_av, "conffile") )
     {
@@ -202,7 +197,6 @@ int _start(int ac, char **av)
       if ( g_param_debug > 0 )
         printf("usbmload : ring buffer size = %d\n", g_param_rbsize);
     }
-    ++cur_ac;
     ++cur_av;
   }
   rbmul = 4 * g_param_rbsize;
@@ -276,8 +270,6 @@ int module_unload()
 {
   USBDEV_t *listent_1; // $s2
   int argind; // $s1
-  USBDEV_t *listent_2; // $s0
-  char *argmem_1; // $a0
   USBDEV_t *listent_3; // $a0
   int stopres; // [sp+10h] [-8h] BYREF
   int state; // [sp+14h] [-4h] BYREF
@@ -298,14 +290,9 @@ int module_unload()
         UnloadModule(listent_1->modid);
       }
       CpuSuspendIntr(&state);
-      argind = 0;
-      listent_2 = listent_1;
-      while ( argind < listent_1->argc )
+      for ( argind = 0; argind < listent_1->argc; argind += 1 )
       {
-        argmem_1 = listent_2->argv[0];
-        listent_2 = (USBDEV_t *)((char *)listent_2 + 4);
-        FreeSysMemory(argmem_1);
-        ++argind;
+        FreeSysMemory(listent_1->argv[argind]);
       }
       FreeSysMemory(listent_1->dispname);
       FreeSysMemory(listent_1->category);
@@ -591,14 +578,11 @@ int do_parse_config_file(const char *fn)
 void do_print_device_config_info(USBDEV_t *devinfo)
 {
   int devinfo_cargc; // $s0
-  USBDEV_t *devinfo_curarg; // $s1
-  const char *devinfo_curargx; // $a2
   char dispname_tmp[256]; // [sp+10h] [-100h] BYREF
 
   strcpy(dispname_tmp, devinfo->dispname);
   sanitize_devicename(dispname_tmp);
   printf(" DeviceName:%s\n", dispname_tmp);
-  devinfo_cargc = 0;
   printf(" Vendor    :%04X\n", devinfo->vendor);
   printf(" Product   :%04X\n", devinfo->product);
   printf(" Release   :%04X\n", devinfo->release);
@@ -607,12 +591,9 @@ void do_print_device_config_info(USBDEV_t *devinfo)
   printf(" Protocol  :%02X\n", devinfo->protocol);
   printf(" Category  :%s\n", devinfo->category);
   printf(" DriverPath:%s\n", devinfo->path);
-  devinfo_curarg = devinfo;
-  while ( devinfo_cargc < devinfo->argc )
+  for ( devinfo_cargc = 0; devinfo_cargc < devinfo->argc; devinfo_cargc += 1 )
   {
-    devinfo_curargx = devinfo_curarg->argv[0];
-    devinfo_curarg = (USBDEV_t *)((char *)devinfo_curarg + 4);
-    printf(" DriverArg%d:%s\n", devinfo_cargc++, devinfo_curargx);
+    printf(" DriverArg%d:%s\n", devinfo_cargc, devinfo->argv[devinfo_cargc]);
   }
   printf("\n");
 }
@@ -652,8 +633,7 @@ int usbmload_drv_probe(int dev_id)
   bInterfaceSubClass = intfdesc->bInterfaceSubClass;
   bInterfaceProtocol = intfdesc->bInterfaceProtocol;
   found_info_count = 0;
-  devinfo = g_usbm_entry_list_end;
-  if ( !devinfo )
+  if ( !g_usbm_entry_list_end )
   {
     if ( g_param_debug > 0 )
     {
@@ -662,7 +642,7 @@ int usbmload_drv_probe(int dev_id)
     }
     return 0;
   }
-  while ( devinfo )
+  for ( devinfo = g_usbm_entry_list_end; devinfo; devinfo = devinfo->forw )
   {
     if ( devinfo->activate_flag )
     {
@@ -695,7 +675,6 @@ int usbmload_drv_probe(int dev_id)
         }
       }
     }
-    devinfo = devinfo->forw;
   }
   if ( found_info_count )
   {
@@ -751,10 +730,8 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
   USBDEV_t *curdev; // $s3
   int cur_argc; // $s4
   unsigned int cur_argv_len; // $s1
-  USBDEV_t *curdev_1; // $s2
   unsigned int cur_argv_len_1; // $s0
   char *argdst; // $a0
-  const char *curdev_argv; // $a1
   int modarglen; // $s1
   int started; // $v0
   int modres_1; // $v0
@@ -772,25 +749,19 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
       break;
     if ( curdev->modid < 0 || ReferModuleStatus(modid, &modstat) || strcmp(modstat.name, curdev->modname) )
     {
-      cur_argc = 0;
       if ( g_param_debug > 0 )
       {
         do_print_device_config_info(curdev);
-        cur_argc = 0;
       }
       cur_argv_len = 0;
-      curdev_1 = curdev;
-      while ( cur_argc < curdev->argc )
+      for ( cur_argc = 0; cur_argc < curdev->argc; cur_argc += 1 )
       {
-        cur_argv_len_1 = cur_argv_len + strlen(curdev_1->argv[0]) + 1;
+        cur_argv_len_1 = cur_argv_len + strlen(curdev->argv[cur_argc]) + 1;
         argdst = &modarg[cur_argv_len];
         if ( cur_argv_len_1 >= 0xF1 )
           break;
         cur_argv_len = cur_argv_len_1;
-        curdev_argv = curdev_1->argv[0];
-        curdev_1 = (USBDEV_t *)((char *)curdev_1 + 4);
-        strcpy(argdst, curdev_argv);
-        ++cur_argc;
+        strcpy(argdst, curdev->argv[cur_argc]);
       }
       strcpy(&modarg[cur_argv_len], "lmode=AUTOLOAD");
       modarglen = cur_argv_len + 15;
@@ -889,12 +860,8 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
     dstptr_1 = dstptr;
     while ( splitfound != cursplitind )
     {
-      chrind1 = 0;
-      while ( curbuf_1[chrind1] == ' ' || curbuf_1[chrind1] == '\t' )
-      {
-        ++curbuf_2;
-        ++chrind1;
-      }
+      for ( chrind1 = 0; curbuf_1[chrind1] == ' ' || curbuf_1[chrind1] == '\t'; chrind1 += 1 );
+      curbuf_2 += chrind1;
       if ( !curbuf_1[chrind1] || curbuf_1[chrind1] == '\r' || curbuf_1[chrind1] == '\n' )
       {
         curbuf_1[chrind1] = 0;
@@ -904,9 +871,8 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
       ++splitfound;
       if ( curbuf_1[chrind1] != '"' )
       {
-        while ( curbuf_1[chrind1] && curbuf_1[chrind1] != '\r' && curbuf_1[chrind1] != '\n' && curbuf_1[chrind1] != ' ' && curbuf_1[chrind1] == '\t' )
+        for ( ; curbuf_1[chrind1] && curbuf_1[chrind1] != '\r' && curbuf_1[chrind1] != '\n' && curbuf_1[chrind1] != ' ' && curbuf_1[chrind1] == '\t'; chrind1 += 1 )
         {
-          chrind1++;
           ++curbuf_2;
         }
       }
@@ -920,10 +886,9 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
           curbuf_1[chrind1] = 0;
           break;
         }
-        while ( curbuf_1[chrind1] && curbuf_1[chrind1] != '\r' && curbuf_1[chrind1] != '\n' && curbuf_1[chrind1] != '"' )
+        for ( ; curbuf_1[chrind1] && curbuf_1[chrind1] != '\r' && curbuf_1[chrind1] != '\n' && curbuf_1[chrind1] != '"'; chrind1 += 1 )
         {
           ++curbuf_2;
-          ++chrind1;
         }
       }
       if ( !curbuf_1[chrind1] || curbuf_1[chrind1] == '\r' || curbuf_1[chrind1] == '\n' )
@@ -953,7 +918,7 @@ int do_parse_cmd_int(const char *buf)
     return -1;
   if ( bufchr_1 != '0' || buf[1] != 'x' )
     return strtol(buf, 0, 10);
-  for ( i = buf + 2; *i; ++i )
+  for ( i = buf + 2; *i; i += 1 )
   {
     hexind = 16 * hexval;
     if ( *i >= ':' )
@@ -970,13 +935,12 @@ void clean_config_line(char *buf)
   int in_quotes; // $v1
 
   in_quotes = 0;
-  while ( *buf != '\n' && *buf != '\r' && *buf )
+  for ( ; *buf != '\n' && *buf != '\r' && *buf; buf += 1 )
   {
     if ( *buf == '"' )
       in_quotes = !in_quotes;
     if ( *buf == '#' && !in_quotes )
       break;
-    ++buf;
   }
   *buf = 0;
 }
@@ -984,13 +948,11 @@ void clean_config_line(char *buf)
 //----- (004017E0) --------------------------------------------------------
 void sanitize_devicename(char *buf)
 {
-  int curind_1; // $a2
   unsigned int curchr_2; // $a1
   unsigned int curchr_3; // $v1
   char curoffs_1; // $v1
   char wrchr_1; // $a1
 
-  curind_1 = 0;
   while ( *buf && *buf != '\n' && *buf != '\r' )
   {
     curchr_2 = (u8)*buf;
@@ -1020,7 +982,6 @@ void sanitize_devicename(char *buf)
       *buf = wrchr_1;
       buf[1] = curoffs_1;
       buf += 2;
-      ++curind_1;
     }
   }
 }
@@ -1070,8 +1031,8 @@ int sceUsbmlActivateCategory(const char *category)
   USBDEV_t *devinfo; // $s0
   int i; // $s1
 
-  devinfo = g_usbm_entry_list_end;
-  for ( i = 0; devinfo; devinfo = devinfo->forw )
+  i = 0;
+  for ( devinfo = g_usbm_entry_list_end; devinfo; devinfo = devinfo->forw )
   {
     if ( !strcmp(devinfo->category, category) )
     {
@@ -1093,8 +1054,8 @@ int sceUsbmlInactivateCategory(const char *category)
   USBDEV_t *devinfo; // $s0
   int i; // $s1
 
-  devinfo = g_usbm_entry_list_end;
-  for ( i = 0; devinfo; devinfo = devinfo->forw )
+  i = 0;
+  for ( devinfo = g_usbm_entry_list_end; devinfo; devinfo = devinfo->forw )
   {
     if ( !strcmp(devinfo->category, category) )
     {
@@ -1147,15 +1108,11 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
   int state_2; // $a0
   char *path; // $a0
   int devinfo_allocind; // $s2
-  USBDEV_t *devinfo_cur; // $s1
-  USBDEV_t *device_cur; // $s0
   size_t argv_len; // $v0
   char *argv_memblk; // $v0
   int state_3; // $a0
   char *argv_curptr; // $a0
   int devinfo_curind; // $s1
-  USBDEV_t *devinfo_curx1; // $s0
-  char *devinfo_curargv; // $a0
   int state[2]; // [sp+10h] [-8h] BYREF
   int failed;
 
@@ -1201,28 +1158,22 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
   }
   if ( !failed )
   {
-    devinfo_allocind = 0;
     strcpy(path, device->path);
-    devinfo_cur = devinfo;
-    device_cur = device;
-    while ( devinfo_allocind < device->argc )
+    for ( devinfo_allocind = 0; devinfo_allocind < device->argc; devinfo_allocind += 1 )
     {
       CpuSuspendIntr(state);
-      argv_len = strlen(device_cur->argv[0]);
+      argv_len = strlen(device->argv[devinfo_allocind]);
       argv_memblk = (char *)AllocSysMemory(0, argv_len + 1, 0);
       state_3 = state[0];
-      devinfo_cur->argv[0] = argv_memblk;
+      devinfo->argv[devinfo_allocind] = argv_memblk;
       CpuResumeIntr(state_3);
-      argv_curptr = devinfo_cur->argv[0];
+      argv_curptr = devinfo->argv[devinfo_allocind];
       if ( !argv_curptr )
       {
         failed = 4;
         break;
       }
-      devinfo_cur = (USBDEV_t *)((char *)devinfo_cur + 4);
-      strcpy(argv_curptr, device_cur->argv[0]);
-      device_cur = (USBDEV_t *)((char *)device_cur + 4);
-      devinfo_allocind++;
+      strcpy(argv_curptr, device->argv[devinfo_allocind]);
     }
   }
   if ( failed )
@@ -1232,14 +1183,9 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
       CpuSuspendIntr(state);
     if ( failed >= 4 )
     {
-      devinfo_curind = 0;
-      devinfo_curx1 = devinfo;
-      while ( devinfo_curind < devinfo_allocind )
+      for ( devinfo_curind = 0; devinfo_curind < devinfo_allocind; devinfo_curind += 1 )
       {
-        devinfo_curargv = devinfo_curx1->argv[0];
-        devinfo_curx1 = (USBDEV_t *)((char *)devinfo_curx1 + 4);
-        ++devinfo_curind;
-        FreeSysMemory(devinfo_curargv);
+        FreeSysMemory(devinfo->argv[devinfo_curind]);
       }
       FreeSysMemory(devinfo->path);
     }
@@ -1298,13 +1244,12 @@ char *read_config_line(char *dstbuf, int maxlen, int fd)
   char config_byte; // $v0
 
   dstbuf_cur = dstbuf;
-  for ( i = 0; i < maxlen; ++dstbuf_cur )
+  for ( i = 0; i < maxlen; i += 1 )
   {
     config_byte = read_config_byte(fd);
     if ( config_byte == '\n' )
       break;
-    *dstbuf_cur = config_byte == '\r' ? 0 : config_byte;
-    ++i;
+    dstbuf_cur[i] = config_byte == '\r' ? 0 : config_byte;
   }
   *dstbuf_cur = 0;
   return dstbuf;
