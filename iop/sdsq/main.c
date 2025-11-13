@@ -366,7 +366,6 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   u8 *midiData_offs; // $a1
   u8 midiData_curval1; // $v1
   int midiData_curval1_1; // $a0
-  u8 midiData_curvaladd; // $v1
   u8 midiData_curval2; // $a0
   int midiData_curval2_msk; // $v1
   u8 midiData_curval9; // $v1
@@ -414,20 +413,17 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   midiData->offset = nextOffset;
   if ( (cur_message & 0x80) == 0 || lastStatus == 255 )
   {
-    int xflg1_tmp;
     midiData_curval1 = *midiData_offs;
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
     midiData_curval1_1 = midiData_curval1;
     ++midiData->originalMessageLength;
     ++midiData_offs;
-    xflg1_tmp = midiData_curval1 & 0x80;
     midiData_curval1_1 = midiData_curval1 & 0x7F;
-    while ( xflg1_tmp )
+    while ( midiData_curval1 & 0x80 )
     {
-      midiData_curvaladd = *midiData_offs++;
-      midiData->originalMessage[midiData->originalMessageLength++] = midiData_curvaladd;
-      midiData_curval1_1 = (midiData_curval1_1 << 7) + (midiData_curvaladd & 0x7F);
-      xflg1_tmp = midiData_curvaladd & 0x80;
+      midiData_curval1 = *midiData_offs++;
+      midiData->originalMessage[midiData->originalMessageLength++] = midiData_curval1;
+      midiData_curval1_1 = (midiData_curval1_1 << 7) + (midiData_curval1 & 0x7F);
     }
     midiData->deltaTime = midiData_curval1_1;
   }
@@ -549,13 +545,12 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
             midiData_offs_plusone = someaddoffsone + 1;
             midiData->message[2] = midiData_curval7;
             midiData->messageLength = somelsglenx + 1;
-            msg2ew = midiData->message[2];
             ++midiData->originalMessageLength;
-            while ( msg2ew >= somindx1 )
+            for ( msg2ew = midiData_curval7; msg2ew >= somindx1; somindx1 += 1 )
             {
               midiData_curval8 = *midiData_offs_plusone++;
               midiData->originalMessage[midiData->originalMessageLength] = midiData_curval8;
-              ptroffscw = (char *)midiData + somindx1++;
+              ptroffscw = (char *)midiData + somindx1;
               ptroffscw[46] = midiData_curval8;
               msg2ew = midiData->message[2];
               ++midiData->messageLength;

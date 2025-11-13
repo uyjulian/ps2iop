@@ -657,7 +657,6 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vag
   unsigned int indx1; // $a0
   sceHardSynthVagInfoChunk *m_vagi; // $v1
   unsigned int bodySize; // $a1
-  int indx2; // $v0
   unsigned int offsdata; // $v0
   sceHardSynthVagParam *vagparam; // $v0
   unsigned int curaddr; // $v1
@@ -668,13 +667,11 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vag
   {
     if ( do_get_vagi_chunk(indata, &dinfo) == 0 )
     {
-      indx1 = 0;
       m_vagi = dinfo.m_vagi;
       bodySize = dinfo.m_head->bodySize;
-      indx2 = 0;
-      while ( dinfo.m_vagi->maxVagInfoNumber >= indx1 )
+      for ( indx1 = 0; dinfo.m_vagi->maxVagInfoNumber >= indx1; indx1 += 1 )
       {
-        offsdata = m_vagi->vagInfoOffsetAddr[indx2];
+        offsdata = m_vagi->vagInfoOffsetAddr[indx1];
         vagparam = (sceHardSynthVagParam *)((char *)m_vagi + offsdata);
         if ( offsdata != -1 )
         {
@@ -687,7 +684,6 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vag
           }
         }
         m_vagi = dinfo.m_vagi;
-        indx2 = ++indx1;
       }
       return bodySize - *vagoffsaddr;
     }
@@ -798,8 +794,7 @@ int do_get_common_block_ptr_note(
   {
     return 0;
   }
-  idx2 = 0;
-  while ( idx2 < p_programparam->nSplit )
+  for ( idx2 = 0; idx2 < p_programparam->nSplit; idx2 += 1 )
   {
     p_splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam
                                             + p_programparam->splitBlockAddr
@@ -853,10 +848,9 @@ int do_get_common_block_ptr_note(
                 {
                   break;
                 }
-                idxnsample = 0;
-                cursampleindexoffs1 = 0;
-                while ( idxnsample < p_samplesetparam->nSample )
+                for ( idxnsample = 0; idxnsample < p_samplesetparam->nSample; idxnsample += 1 )
                 {
+                  cursampleindexoffs1 = 2 * idxnsample;
                   cursampleindex1 = (char *)samplesetparam_1 + cursampleindexoffs1;
                   if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
                     && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
@@ -907,16 +901,14 @@ int do_get_common_block_ptr_note(
                       }
                   }
                   samplesetparam_1 = p_samplesetparam;
-                  ++idxnsample;
-                  cursampleindexoffs1 = 2 * idxnsample;
                 }
                 break;
               case 1:
                 p_samplesetparam_1 = p_samplesetparam;
-                nsamplecur = 0;
                 cursampleindexoffs2 = 0;
-                while ( nsamplecur < p_samplesetparam->nSample )
+                for ( nsamplecur = 0; nsamplecur < p_samplesetparam->nSample; nsamplecur += 1 )
                 {
+                  cursampleindexoffs2 = 2 * nsamplecur;
                   cursampleindex2 = (char *)p_samplesetparam_1 + cursampleindexoffs2;
                   if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
                     && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
@@ -965,8 +957,6 @@ int do_get_common_block_ptr_note(
                     }
                   }
                   p_samplesetparam_1 = p_samplesetparam;
-                  ++nsamplecur;
-                  cursampleindexoffs2 = 2 * nsamplecur;
                 }
                 break;
               default:
@@ -976,7 +966,6 @@ int do_get_common_block_ptr_note(
         }
         break;
     }
-    idx2++;
   }
   return idx1;
 }
@@ -1022,10 +1011,9 @@ int do_get_common_block_ptr(
       {
         return 0;
       }
-      nsampletmp2 = 0;
-      cursampleindexoffs2 = 0;
-      while ( nsampletmp2 < p_samplesetparam->nSample )
+      for ( nsampletmp2 = 0; nsampletmp2 < p_samplesetparam->nSample; nsampletmp2 += 1 )
       {
+        cursampleindexoffs2 = 2 * nsampletmp2;
         cursampleindex2 = (char *)p_samplesetparam_2 + cursampleindexoffs2;
         if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
           && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
@@ -1073,16 +1061,13 @@ int do_get_common_block_ptr(
           }
         }
         p_samplesetparam_2 = p_samplesetparam;
-        ++nsampletmp2;
-        cursampleindexoffs2 = 2 * nsampletmp2;
       }
       return idx1;
     case 1:
       p_samplesetparam_1 = p_samplesetparam;
-      nsampletmp1 = 0;
-      cursampleindexoffs1 = 0;
-      while ( nsampletmp1 < p_samplesetparam->nSample )
+      for ( nsampletmp1 = 0; nsampletmp1 < p_samplesetparam->nSample; nsampletmp1 += 1 )
       {
+        cursampleindexoffs1 = 2 * nsampletmp1;
         cursampleindex1 = (char *)p_samplesetparam_1 + cursampleindexoffs1;
         if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
           && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
@@ -1130,8 +1115,6 @@ int do_get_common_block_ptr(
           }
         }
         p_samplesetparam_1 = p_samplesetparam;
-        ++nsampletmp1;
-        cursampleindexoffs1 = 2 * nsampletmp1;
       }
       return idx1;
     default:
@@ -1664,13 +1647,11 @@ int sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNu
     }
     else
     {
-      idx1 = 0;
       splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam + p_programparam->splitBlockAddr);
-      while ( idx1 < p_programparam->nSplit )
+      for ( idx1 = 0; idx1 < p_programparam->nSplit; idx1 += 1 )
       {
         if ( splitNumber == splitblock->splitNumber )
           return idx1;
-        ++idx1;
         splitblock = (sceHardSynthSplitBlock *)((char *)splitblock + p_programparam->sizeSplitBlock);
       }
       return 0x81039020;
@@ -1719,16 +1700,13 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
 
   curminval = 0;
   result = sceSdHdGetMaxProgramNumber(buffer);
-  result = result;
-  programNr = 0;
   buffer_1 = buffer;
-  while ( result >= programNr )
+  for ( programNr = 0; result >= programNr; programNr += 1 )
   {
     if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
     {
-      curidx2 = 0;
       buffer_2 = buffer;
-      while ( curidx2 < p_programparam->nSplit )
+      for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
       {
         if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock) )
         {
@@ -1739,11 +1717,9 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
           if ( curminval < curval2 )
             curminval = curval2;
         }
-        ++curidx2;
         buffer_2 = buffer;
       }
     }
-    ++programNr;
     buffer_1 = buffer;
   }
   return curminval;
@@ -1767,15 +1743,13 @@ int sceSdHdGetMaxSampleSetParamCount(void *buffer)
   curminval = 0;
   result = sceSdHdGetMaxProgramNumber(buffer);
   retres = result;
-  programNr = 0;
   buffer_1 = buffer;
-  while ( retres >= programNr )
+  for ( programNr = 0; retres >= programNr; programNr += 1 )
   {
     if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
     {
-      curidx2 = 0;
       buffer_2 = buffer;
-      while ( curidx2 < p_programparam->nSplit )
+      for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
       {
         if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock) )
         {
@@ -1786,11 +1760,9 @@ int sceSdHdGetMaxSampleSetParamCount(void *buffer)
           if ( curminval < curval2 )
             curminval = curval2;
         }
-        ++curidx2;
         buffer_2 = buffer;
       }
     }
-    ++programNr;
     buffer_1 = buffer;
   }
   return curminval;
@@ -1820,21 +1792,18 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
   curminval = 0;
   result = sceSdHdGetMaxProgramNumber(buffer);
   retres = result;
-  programNr = 0;
   buffer_1 = buffer;
-  while ( retres >= programNr )
+  for ( programNr = 0; retres >= programNr; programNr += 1 )
   {
     if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
     {
-      curidx2 = 0;
       buffer_2 = buffer;
-      while ( curidx2 < p_programparam->nSplit )
+      for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
       {
         if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock)
           && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
         {
-          sampleNr = 0;
-          while ( sampleNr < p_samplesetparam->nSample )
+          for ( sampleNr = 0; sampleNr < p_samplesetparam->nSample; sampleNr += 1 )
           {
             SampleNumberBySampleIndex = sceSdHdGetSampleNumberBySampleIndex(
                                           buffer,
@@ -1875,14 +1844,11 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
               if ( curminval < curval4 )
                 curminval = curval4;
             }
-            ++sampleNr;
           }
         }
-        ++curidx2;
         buffer_2 = buffer;
       }
     }
-    ++programNr;
     buffer_1 = buffer;
   }
   return curminval;
@@ -1912,21 +1878,18 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
   curminval = 0;
   result = sceSdHdGetMaxProgramNumber(buffer);
   retres = result;
-  programNr = 0;
   buffer_1 = buffer;
-  while ( retres >= programNr )
+  for ( programNr = 0; retres >= programNr; programNr += 1 )
   {
     if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
     {
-      curidx2 = 0;
       buffer_2 = buffer;
-      while ( curidx2 < p_programparam->nSplit )
+      for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
       {
         if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock)
           && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
         {
-          sampleNr = 0;
-          while ( sampleNr < p_samplesetparam->nSample )
+          for ( sampleNr = 0; sampleNr < p_samplesetparam->nSample; sampleNr += 1 )
           {
             SampleNumberBySampleIndex = sceSdHdGetSampleNumberBySampleIndex(
                                           buffer,
@@ -1967,14 +1930,11 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
               if ( curminval < curval4 )
                 curminval = curval4;
             }
-            ++sampleNr;
           }
         }
-        ++curidx2;
         buffer_2 = buffer;
       }
     }
-    ++programNr;
     buffer_1 = buffer;
   }
   return curminval;
@@ -2193,7 +2153,6 @@ int sceSdHdGetValidProgramNumberCount(void *buffer)
   int validcnt; // $s0
   int result; // $v0
   unsigned int allcnt; // $a0
-  sceHardSynthProgramChunk *curoffsaddr; // $v1
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   validcnt = 0;
@@ -2203,14 +2162,10 @@ int sceSdHdGetValidProgramNumberCount(void *buffer)
     result = do_get_prog_chunk(buffer, &dinfo);
     if ( !result )
     {
-      allcnt = 0;
-      curoffsaddr = dinfo.m_prog;
-      while ( dinfo.m_prog->maxProgramNumber >= allcnt )
+      for ( allcnt = 0; dinfo.m_prog->maxProgramNumber >= allcnt; allcnt += 1 )
       {
-        if ( curoffsaddr->programOffsetAddr[0] != -1 )
+        if ( dinfo.m_prog->programOffsetAddr[allcnt] != -1 )
           ++validcnt;
-        ++allcnt;
-        curoffsaddr = (sceHardSynthProgramChunk *)((char *)curoffsaddr + 4);
       }
       return validcnt;
     }
@@ -2224,8 +2179,6 @@ int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
   int validcnt; // $s1
   int result; // $v0
   unsigned int allcnt; // $v1
-  sceHardSynthProgramChunk *curprog; // $a0
-  int xcurind; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   validcnt = 0;
@@ -2235,18 +2188,13 @@ int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
     result = do_get_prog_chunk(buffer, &dinfo);
     if ( !result )
     {
-      allcnt = 0;
-      curprog = dinfo.m_prog;
-      xcurind = 0;
-      while ( dinfo.m_prog->maxProgramNumber >= allcnt )
+      for ( allcnt = 0; dinfo.m_prog->maxProgramNumber >= allcnt; allcnt += 1 )
       {
-        if ( curprog->programOffsetAddr[xcurind] != -1 )
+        if ( dinfo.m_prog->programOffsetAddr[allcnt] != -1 )
         {
           ++validcnt;
           *ptr++ = allcnt;
         }
-        curprog = dinfo.m_prog;
-        xcurind = ++allcnt;
       }
       return validcnt;
     }
