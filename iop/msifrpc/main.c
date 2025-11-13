@@ -638,7 +638,7 @@ void do_msif_exec_request(sceSifMServeData *sd)
   int dmaid; // $s0
   int busywait; // $v0
   SifDmaTransfer_t dmat[2]; // [sp+18h] [-28h] BYREF
-  int state[2]; // [sp+38h] [-8h] BYREF
+  int state; // [sp+38h] [-8h] BYREF
 
   size_extra = 0;
   sentry_ret = (void *)((int (*)(unsigned int, void *, int))sd->sentry->func)(
@@ -647,14 +647,14 @@ void do_msif_exec_request(sceSifMServeData *sd)
                          sd->size);
   if ( sentry_ret )
     size_extra = sd->rsize;
-  CpuSuspendIntr(state);
+  CpuSuspendIntr(&state);
   rid = sd->rid;
   if ( (rid & 4) != 0 )
     fpacket2 = (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket2(&g_msif_data, (rid >> 16) & 0xFFFF);
   else
     fpacket2 = (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket(&g_msif_data);
   fpacket2_tmp = fpacket2;
-  CpuResumeIntr(state[0]);
+  CpuResumeIntr(state);
   client = sd->client;
   fpacket2_tmp->cid = 0x8000001A;
   fpacket2_tmp->cd = client;
@@ -686,9 +686,9 @@ void do_msif_exec_request(sceSifMServeData *sd)
     dmat_ptr->dest = paddr;
     while ( 1 )
     {
-      CpuSuspendIntr(state);
+      CpuSuspendIntr(&state);
       dmaid = sceSifSetDma(dmat, dmat_count);
-      CpuResumeIntr(state[0]);
+      CpuResumeIntr(state);
       if ( dmaid )
         break;
       for ( busywait = 0xFFFE; busywait != -1; busywait -= 1 );
@@ -732,11 +732,11 @@ void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
   sceSifMServeEntry *m_mserve_entry; // $v0
   SifMRpcCallPkt_t *fpacket; // $s0
   sceSifMClientData *m_eebuf_cd; // $v0
-  int state[2]; // [sp+18h] [-8h] BYREF
+  int state; // [sp+18h] [-8h] BYREF
 
   p_m_msg2 = &msgboxdat->m_msg2;
   m_msif_data = msgboxdat->m_msg2.m_msif_data;
-  CpuSuspendIntr(state);
+  CpuSuspendIntr(&state);
   sd = (sceSifMServeData *)AllocSysMemory(0, 60, 0);
   if ( !sd )
     printf("AllocSysMemory() failed.\n");
@@ -746,7 +746,7 @@ void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
   funcbuf = AllocSysMemory(0, p_m_msg2->m_buffersize, 0);
   if ( !funcbuf )
     printf("AllocSysMemory() failed.\n");
-  CpuResumeIntr(state[0]);
+  CpuResumeIntr(state);
   ThreadId = GetThreadId();
   do_set_rpc_queue(qd, ThreadId);
   m_mserve_entry = p_m_msg2->m_mserve_entry;
@@ -756,9 +756,9 @@ void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
   sd->sentry = m_mserve_entry;
   qd->link = sd;
   qd->sleep = 0;
-  CpuSuspendIntr(state);
+  CpuSuspendIntr(&state);
   fpacket = (SifMRpcCallPkt_t *)sif_mrpc_get_fpacket(m_msif_data);
-  CpuResumeIntr(state[0]);
+  CpuResumeIntr(state);
   fpacket->pkt_addr = msgboxdat->m_msg2.m_pkt_addr;
   m_eebuf_cd = p_m_msg2->m_eebuf_cd;
   fpacket->rpc_number = 0x80000019;
@@ -768,9 +768,9 @@ void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
   fpacket->cd = m_eebuf_cd;
   while ( !sceSifSendCmd(0x80000018, fpacket, 64, 0, 0, 0) )
     DelayThread(0xF000);
-  CpuSuspendIntr(state);
+  CpuSuspendIntr(&state);
   FreeSysMemory(msgboxdat);
-  CpuResumeIntr(state[0]);
+  CpuResumeIntr(state);
   do_msif_rpc_loop(qd);
 }
 
@@ -781,7 +781,6 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
 {
   int curmbxid; // $v0
   sceSifMServeEntry *g_mserv_entries_ll; // $v1
-  int state_1; // $a0
   int mbxrecv; // $s1
   int m_in_cmd; // $v1
   int thid_1; // $v0
@@ -827,8 +826,7 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
   {
     g_msif_data.g_mserv_entries_ll = se;
   }
-  state_1 = state;
-  CpuResumeIntr(state_1);
+  CpuResumeIntr(state);
   while ( 1 )
   {
     mbxrecv = ReceiveMbx((void **)&arg, se->mbxid);
@@ -905,8 +903,7 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
         DelayThread(0xF000);
       CpuSuspendIntr(&state);
       FreeSysMemory(arg);
-      state_1 = state;
-      CpuResumeIntr(state_1);
+      CpuResumeIntr(state);
     }
   }
 }
