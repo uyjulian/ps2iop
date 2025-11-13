@@ -1121,7 +1121,7 @@ int xatapi_do_init(void)
   int (*oldcb)(int, void *); // $a0
   u32 *sc_tmp; // [sp+10h] [-10h] BYREF
   u32 trylocktmp; // [sp+14h] [-Ch] BYREF
-  u32 traylock_ret[2]; // [sp+18h] [-8h] BYREF
+  u32 traylock_ret; // [sp+18h] [-8h] BYREF
 
   if ( !create_event_flags() )
     return 0;
@@ -1132,10 +1132,10 @@ int xatapi_do_init(void)
   oldcb_x = (int (*)(int, void *))sceCdSetAtapiEjectCallback(
                                                (int (*)(int, void *))atapi_eject_interrupt_handler,
                                                0);
-  if ( !sceCdGetMediumRemoval(&trylocktmp, traylock_ret) )
+  if ( !sceCdGetMediumRemoval(&trylocktmp, &traylock_ret) )
   {
     if ( g_xatapi_verbose >= 0 )
-      Kprintf("xatapi:sceCdGetMediumRemoval NG(%x) !!\n", traylock_ret[0]);
+      Kprintf("xatapi:sceCdGetMediumRemoval NG(%x) !!\n", traylock_ret);
     trylocktmp = 0;
   }
   if ( trylocktmp )
@@ -1143,7 +1143,7 @@ int xatapi_do_init(void)
     if ( g_xatapi_verbose >= 0 )
       Kprintf("xatapi:Tray locked !!\n");
   }
-  else if ( sceCdSetMediumRemoval(1u, traylock_ret) )
+  else if ( sceCdSetMediumRemoval(1u, &traylock_ret) )
   {
     if ( g_xatapi_verbose >= 0 )
       Kprintf("xatapi:Tray lock\n");
@@ -1151,7 +1151,7 @@ int xatapi_do_init(void)
   else
   {
     if ( g_xatapi_verbose >= 0 )
-      Kprintf("xatapi:Tray lock NG(%x) !!\n", traylock_ret[0]);
+      Kprintf("xatapi:Tray lock NG(%x) !!\n", traylock_ret);
     trylocktmp = 0;
   }
   expbay_device_reset();
@@ -1177,10 +1177,10 @@ int xatapi_do_init(void)
   DelayThread(10000);
   if ( !trylocktmp )
   {
-    if ( !sceCdSetMediumRemoval(0, traylock_ret) )
+    if ( !sceCdSetMediumRemoval(0, &traylock_ret) )
     {
       if ( g_xatapi_verbose >= 0 )
-        Kprintf("xatapi:Tray unlock NG(%x) !!\n", traylock_ret[0]);
+        Kprintf("xatapi:Tray unlock NG(%x) !!\n", traylock_ret);
       trylocktmp = 0;
     }
     else
@@ -1225,15 +1225,15 @@ int xatapi_dev_deinit(void)
 //----- (00401EEC) --------------------------------------------------------
 int xatapi_2_terminate(int with_quit)
 {
-  int sc_tmp[2]; // [sp+10h] [-8h] BYREF
+  int sc_tmp; // [sp+10h] [-8h] BYREF
 
   (void)with_quit;
-  sc_tmp[0] = 0;
-  sceCdSC(0xFFFFFFE1, sc_tmp);
-  sceCdSC(0xFFFFFFE5, sc_tmp);
-  sceCdSC(0xFFFFFFE0, sc_tmp);
-  sceCdSC(0xFFFFFFDF, sc_tmp);
-  sceCdSC(0xFFFFFFE4, sc_tmp);
+  sc_tmp = 0;
+  sceCdSC(0xFFFFFFE1, &sc_tmp);
+  sceCdSC(0xFFFFFFE5, &sc_tmp);
+  sceCdSC(0xFFFFFFE0, &sc_tmp);
+  sceCdSC(0xFFFFFFDF, &sc_tmp);
+  sceCdSC(0xFFFFFFE4, &sc_tmp);
   Kprintf("libxatapi_terminate\n");
   return 0;
 }
@@ -1255,19 +1255,19 @@ int xatapi_dev_devctl(
   int bcres; // $v0
   int argval1; // $v1
   int argmask1; // $v0
-  u32 efbits[2]; // [sp+20h] [-8h] BYREF
+  u32 efbits; // [sp+20h] [-8h] BYREF
 
   (void)name;
   retres1 = 0;
   if ( g_xatapi_verbose > 0 )
     Kprintf("xatapi devctl: cmd:%08x arg:%d\n", cmd, *(u32 *)args);
-  efres = PollEventFlag(g_io_event_flag, 1u, 0, efbits);
+  efres = PollEventFlag(g_io_event_flag, 1u, 0, &efbits);
   if ( cmd == 0x439B && efres == -421 && *(u32 *)args == 1 )
   {
     *(u32 *)buf = 6;
     return 0;
   }
-  WaitEventFlag(g_io_event_flag, 1u, 16, efbits);
+  WaitEventFlag(g_io_event_flag, 1u, 16, &efbits);
   if ( g_devctl_retonly_unset )
   {
     SetEventFlag(g_io_event_flag, 1u);
@@ -2046,10 +2046,10 @@ void xatapi_9_sceCdSpdAtaDmaStart(int dir)
   int spd_if_ctrl_manip_2; // $a1
   vu16 spd_if_ctrl_2; // $a1
   int r_spd_xfr_ctrl; // $a2
-  u32 efbits[2]; // [sp+10h] [-8h] BYREF
+  u32 efbits; // [sp+10h] [-8h] BYREF
 
   g_is_wait_busy = 0;
-  WaitEventFlag(g_adma_evfid, 1u, 16, efbits);
+  WaitEventFlag(g_adma_evfid, 1u, 16, &efbits);
   g_should_wait_for_dma_flag = 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("sceCdSpdAtaDmaStart Call %d :Read 0:Write 1\n", dir);
@@ -2243,11 +2243,11 @@ unsigned int AtaAlarmrHandle(void *usrdat)
 //----- (00403C1C) --------------------------------------------------------
 int xatapi_14_set_speed_reg(int regaddr, u16 regval)
 {
-  u32 efbits[2]; // [sp+10h] [-8h] BYREF
+  u32 efbits; // [sp+10h] [-8h] BYREF
 
   if ( (unsigned int)(regaddr - 64) < 0x1D )
   {
-    WaitEventFlag(g_acmd_evfid, 1u, 16, efbits);
+    WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
     *(vu16 *)((char *)&dev5_speed_regs.unv00 + regaddr) = regval;
     SetEventFlag(g_acmd_evfid, 1u);
   }
@@ -2258,11 +2258,11 @@ int xatapi_14_set_speed_reg(int regaddr, u16 regval)
 int xatapi_13_get_speed_reg(int regaddr)
 {
   int tmpval; // $s0
-  u32 efbits[2]; // [sp+10h] [-8h] BYREF
+  u32 efbits; // [sp+10h] [-8h] BYREF
 
   if ( (unsigned int)(regaddr - 64) >= 0x1D )
     return 0;
-  WaitEventFlag(g_acmd_evfid, 1u, 16, efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
   tmpval = *(u16 *)((char *)&dev5_speed_regs.unv00 + regaddr);
   SetEventFlag(g_acmd_evfid, 1u);
   return tmpval;
@@ -2272,9 +2272,9 @@ int xatapi_13_get_speed_reg(int regaddr)
 int xatapi_11_sceAtaGetError(void)
 {
   u8 r_spd_ata_error; // $s0
-  u32 efbits[2]; // [sp+10h] [-8h] BYREF
+  u32 efbits; // [sp+10h] [-8h] BYREF
 
-  WaitEventFlag(g_acmd_evfid, 1u, 16, efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
   r_spd_ata_error = dev5_speed_regs.r_spd_ata_error;
   SetEventFlag(g_acmd_evfid, 1u);
   return r_spd_ata_error;
@@ -2284,9 +2284,9 @@ int xatapi_11_sceAtaGetError(void)
 int xatapi_12_get_ata_control(void)
 {
   u8 r_spd_ata_control; // $s0
-  u32 efbits[2]; // [sp+10h] [-8h] BYREF
+  u32 efbits; // [sp+10h] [-8h] BYREF
 
-  WaitEventFlag(g_acmd_evfid, 1u, 16, efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
   r_spd_ata_control = dev5_speed_regs.r_spd_ata_control;
   SetEventFlag(g_acmd_evfid, 1u);
   return r_spd_ata_control;
@@ -2666,9 +2666,9 @@ int xatapi_5_sceAtaExecCmd(
         u32 unk10)
 {
   int retres; // $s0
-  u32 efbits[2]; // [sp+28h] [-8h] BYREF
+  u32 efbits; // [sp+28h] [-8h] BYREF
 
-  WaitEventFlag(g_acmd_evfid, 1u, 16, efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
   retres = sceAtaExecCmd(buf, blkcount, feature, nsector, sector, lcyl, hcyl, select, command, unk10);
   if ( retres )
   {
@@ -2911,9 +2911,9 @@ int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pk
 int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto)
 {
   int retres; // $s0
-  u32 efbits[2]; // [sp+20h] [-8h] BYREF
+  u32 efbits; // [sp+20h] [-8h] BYREF
 
-  WaitEventFlag(g_acmd_evfid, 1u, 16, efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
   retres = sceCdAtapiExecCmd(n, buf, nsec, secsize, pkt, pkt_len, proto);
   if ( retres )
   {
@@ -3119,7 +3119,7 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
   u8 Error; // $v0
   char spd_ata_status_tmp; // $s1
   u8 error_tmp; // $s0
-  u32 efbits[2]; // [sp+10h] [-8h] BYREF
+  u32 efbits; // [sp+10h] [-8h] BYREF
   int flg;
 
   for ( blkcount_tmp = blkcount; blkcount_tmp; blkcount_tmp -= (flg ? dbuf_stat_mask : 0) )
@@ -3146,10 +3146,10 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
       speedIntrEnable(3);
       if ( g_xatapi_verbose > 0 )
         Kprintf("Wait Event\n");
-      WaitEventFlag(g_atapi_event_flag, 7u, 17, efbits);
+      WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
       if ( g_xatapi_verbose > 0 )
         Kprintf("Event come\n");
-      if ( (efbits[0] & 1) != 0 )
+      if ( (efbits & 1) != 0 )
       {
         if ( g_xatapi_verbose > 0 )
         {
@@ -3157,7 +3157,7 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
         }
         return -502;
       }
-      if ( (efbits[0] & 4) != 0 )
+      if ( (efbits & 4) != 0 )
       {
         if ( g_xatapi_verbose > 0 )
         {
@@ -3223,7 +3223,7 @@ int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
   char dbuf_stat_1; // $v0
   unsigned int dbuf_stat_sectors; // $s2
   vu16 m_spd_unk36; // $v1
-  u32 efbits[2]; // [sp+18h] [-8h] BYREF
+  u32 efbits; // [sp+18h] [-8h] BYREF
 
   blktotal = blkcount * blksize;
   blkremainder = blktotal & 0x1FF;
@@ -3240,8 +3240,8 @@ int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
     if ( !dbuf_stat_mask )
     {
       speedIntrEnable(3);
-      WaitEventFlag(g_atapi_event_flag, 7u, 17, efbits);
-      if ( (efbits[0] & 1) != 0 )
+      WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+      if ( (efbits & 1) != 0 )
       {
         if ( g_xatapi_verbose > 0 )
         {
@@ -3249,7 +3249,7 @@ int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
         }
         return -502;
       }
-      if ( (efbits[0] & 4) != 0 )
+      if ( (efbits & 4) != 0 )
       {
         if ( g_xatapi_verbose > 0 )
         {
@@ -3351,7 +3351,7 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
   char dbuf_stat_1; // $v0
   unsigned int dbuf_stat_sectors; // $s3
   vu16 m_spd_unk36; // $v1
-  u32 efbits[2]; // [sp+18h] [-8h] BYREF
+  u32 efbits; // [sp+18h] [-8h] BYREF
 
   if ( g_xatapi_verbose > 0 )
     Kprintf("DmaRun_atapi_extrans start\n");
@@ -3370,8 +3370,8 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
     if ( !dbuf_stat_mask )
     {
       speedIntrEnable(3);
-      WaitEventFlag(g_atapi_event_flag, 7u, 17, efbits);
-      if ( (efbits[0] & 1) != 0 )
+      WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+      if ( (efbits & 1) != 0 )
       {
         if ( g_xatapi_verbose > 0 )
         {
@@ -3379,7 +3379,7 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
         }
         return -502;
       }
-      if ( (efbits[0] & 4) != 0 )
+      if ( (efbits & 4) != 0 )
       {
         if ( g_xatapi_verbose > 0 )
         {
@@ -3483,7 +3483,7 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   int extransres; // $s1
   vu16 m_spd_unk36; // $v1
   iop_sys_clock_t sysclk; // [sp+18h] [-10h] BYREF
-  u32 efbits[2]; // [sp+20h] [-8h] BYREF
+  u32 efbits; // [sp+20h] [-8h] BYREF
 
   if ( g_xatapi_verbose > 0 )
     Kprintf("DmaRun_atapi_extrans start\n");
@@ -3500,8 +3500,8 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   while ( 1 )
   {
     speedIntrEnable(3);
-    WaitEventFlag(g_atapi_event_flag, 7u, 17, efbits);
-    if ( (efbits[0] & 1) != 0 )
+    WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+    if ( (efbits & 1) != 0 )
     {
       if ( g_xatapi_verbose > 0 )
       {
@@ -3509,7 +3509,7 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
       }
       return -502;
     }
-    if ( (efbits[0] & 4) != 0 )
+    if ( (efbits & 4) != 0 )
     {
       if ( g_xatapi_verbose > 0 )
       {
@@ -3561,8 +3561,8 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
           delaythread_period = 100;
         DelayThread(delaythread_period);
       }
-      PollEventFlag(g_atapi_event_flag, 5u, 17, efbits);
-      if ( (efbits[0] & 1) != 0 )
+      PollEventFlag(g_atapi_event_flag, 5u, 17, &efbits);
+      if ( (efbits & 1) != 0 )
       {
         if ( g_xatapi_verbose > 0 )
           Kprintf("DEV5 ATA: error: DmaRun_atapi_extrans, ata timedout\n");
@@ -3581,7 +3581,7 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
         }
         return -502;
       }
-      if ( (efbits[0] & 4) != 0 )
+      if ( (efbits & 4) != 0 )
       {
         if ( g_xatapi_verbose > 0 )
           Kprintf("DEV5 ATA: error: DmaRun_atapi_extrans, Media Eject\n");
@@ -3902,7 +3902,7 @@ int sceCdAtapiWaitResult_local(void)
   int intr_stat_msk; // [sp+10h] [-10h]
   char ata_status_tmp; // [sp+10h] [-10h]
   u32 efbits; // [sp+14h] [-Ch] BYREF
-  int padinfo[2]; // [sp+18h] [-8h] BYREF
+  int padinfo; // [sp+18h] [-8h] BYREF
 
   res = 0;
   if ( atad_cmd_state.type_atapi == 1 || atad_cmd_state.type_atapi == 8 )
@@ -3943,7 +3943,7 @@ int sceCdAtapiWaitResult_local(void)
         padres = Mpeg2CheckPadding(
                    (char *)atad_cmd_state.buf_atapi + blkoffs,
                    blktotal1 - blkoffs,
-                   padinfo,
+                   &padinfo,
                    &g_pes_scrambling_control_pack);
         if ( padres < 0 )
         {
@@ -3951,15 +3951,15 @@ int sceCdAtapiWaitResult_local(void)
           break;
         }
         atad_cmd_state.blksize_atapi = 2048;
-        atad_cmd_state.blkcount_atapi = padinfo[0];
+        atad_cmd_state.blkcount_atapi = padinfo;
         if ( padres )
           dmares = DmaRun_atapi_extrans1(
                      (char *)atad_cmd_state.buf_atapi + blkoffs,
-                     padinfo[0],
+                     padinfo,
                      2048,
                      atad_cmd_state.dir_atapi);
         else
-          dmares = DmaRun_atapi((char *)atad_cmd_state.buf_atapi + blkoffs, padinfo[0], 2048, atad_cmd_state.dir_atapi);
+          dmares = DmaRun_atapi((char *)atad_cmd_state.buf_atapi + blkoffs, padinfo, 2048, atad_cmd_state.dir_atapi);
         res = dmares;
       }
     }
@@ -4054,7 +4054,6 @@ int sceCdAtapiWaitResult_local(void)
 // 40A630: using guessed type int g_reset_scrambling_pack;
 // 40A648: using guessed type int g_xatapi_verbose;
 // 40A710: using guessed type ata_cmd_state_t atad_cmd_state;
-// 40694C: using guessed type s32 padinfo[2];
 
 //----- (00406E98) --------------------------------------------------------
 int xatapi_8_sceCdAtapiWaitResult(void)
