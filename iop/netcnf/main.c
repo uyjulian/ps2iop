@@ -329,7 +329,6 @@ int do_module_load(int ac, char **av)
   semaparam.option = 0;
   semid = CreateSema(&semaparam);
   g_semid = semid;
-  ac_cur = ac - 1;
   if ( semid <= 0 )
   {
     printf("netcnf: CreateSema (%d)\n", semid);
@@ -337,33 +336,31 @@ int do_module_load(int ac, char **av)
   }
   g_icon_value[0] = 0;
   g_iconsys_value[0] = 0;
-  for ( av_cur = (const char **)(av + 1); ac_cur > 0; ++av_cur )
+  av_cur = (const char **)(av + 1);
+  for ( ac_cur = ac - 1; ac_cur > 0; ac_cur -= 1 )
   {
     if ( !strncmp("icon=", *av_cur, 5) )
     {
       strcpy(g_icon_value, *av_cur + 5);
-      --ac_cur;
     }
     else if ( !strncmp("iconsys=", *av_cur, 8) )
     {
       strcpy(g_iconsys_value, *av_cur + 8);
-      --ac_cur;
     }
     else if ( !strcmp("-no_check_capacity", *av_cur) )
     {
       g_no_check_capacity = 1;
-      --ac_cur;
     }
     else if ( !strcmp("-no_check_provider", *av_cur) )
     {
       g_no_check_provider = 1;
-      --ac_cur;      
     }
     else
     {
       err = 1;
       break;
     }
+    ++av_cur;
   }
   if ( !g_icon_value[0] || !g_iconsys_value[0] )
   {
@@ -686,7 +683,7 @@ int do_read_ilink_id()
 {
   int i; // $s0
 
-  for ( i = 0; i < 20; ++i )
+  for ( i = 0; i < 20; i += 1 )
   {
     g_id_result = 0;
     if ( sceCdRI((u8 *)g_id_buffer, &g_id_result) == 1 )
@@ -951,46 +948,44 @@ void do_init_xor_magic(char *in_id_buf)
   int curoffs2; // $a2
   int curoffs1; // $a1
 
-  curoffs2 = 0;
-  while ( (curoffs2 + 1) < 8 )
+  for ( curoffs2 = 0; (curoffs2 + 1) < 8; curoffs2 += 1 )
   {
     curoffs1 = 2 + (curoffs2 * 3);
     g_id_xorbuf[curoffs1] = ((u8)in_id_buf[curoffs2] >> 5) + 1;
     g_id_xorbuf[curoffs1 + 1] = (((u8)in_id_buf[curoffs2] >> 2) & 7) + 1;
     g_id_xorbuf[curoffs1 + 2] = (in_id_buf[curoffs2] & 3) + 1;
-    curoffs2 += 1;
   }
 }
 
 //----- (004012F4) --------------------------------------------------------
 int magic_shift_write_netcnf_2(int inshft, int buflen)
 {
-  for ( ; buflen; inshft = ((u8)inshft >> 7) | (2 * inshft) )
-    --buflen;
+  for ( ; buflen; buflen -= 1 )
+    inshft = ((u8)inshft >> 7) | (2 * inshft);
   return (u8)inshft;
 }
 
 //----- (0040131C) --------------------------------------------------------
 int magic_shift_read_netcnf_2(int inshft, int buflen)
 {
-  for ( ; buflen; inshft = ((u8)inshft >> 1) | (inshft << 7) )
-    --buflen;
+  for ( ; buflen; buflen -= 1 )
+    inshft = ((u8)inshft >> 1) | (inshft << 7);
   return (u8)inshft;
 }
 
 //----- (00401344) --------------------------------------------------------
 int magic_shift_write_netcnf_1(int inshft, int buflen)
 {
-  for ( ; buflen; inshft = ((u16)inshft >> 15) | (2 * inshft) )
-    --buflen;
+  for ( ; buflen; buflen -= 1 )
+    inshft = ((u16)inshft >> 15) | (2 * inshft);
   return (u16)inshft;
 }
 
 //----- (0040136C) --------------------------------------------------------
 int magic_shift_read_netcnf_1(int inshft, int buflen)
 {
-  for ( ; buflen; inshft = ((u16)inshft >> 1) | (inshft << 15) )
-    --buflen;
+  for ( ; buflen; buflen -= 1 )
+    inshft = ((u16)inshft >> 1) | (inshft << 15);
   return (u16)inshft;
 }
 
@@ -1061,30 +1056,27 @@ void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *s
 //----- (00401600) --------------------------------------------------------
 int do_check_capacity_inner2(const char *fpath, int minsize)
 {
-  const char *fpath_1; // $t1
   int curdevnameind; // $t0
   char fpath_curchr; // $v0
   int zonesz; // kr00_4
   int zonefree; // $t2
   char devname[8]; // [sp+18h] [-8h] BYREF
 
-  fpath_1 = fpath;
-  curdevnameind = 0;
-  while ( *fpath_1 != ':' )
+  for ( curdevnameind = 0; curdevnameind < 5; curdevnameind += 1 )
   {
-    if ( curdevnameind >= 5 )
+    if ( fpath[curdevnameind] == ':' )
     {
-      return -9;
+      *(u16 *)&devname[curdevnameind] = fpath[curdevnameind];
+      zonesz = iomanX_devctl(devname, 0x5001, 0, 0, 0, 0);
+      zonefree = iomanX_devctl(devname, 0x5002, 0, 0, 0, 0) * (zonesz / 1024);
+      if ( zonefree < minsize )
+        return -16;
+      return 0;
     }
-    fpath_curchr = *fpath_1++;
-    devname[curdevnameind++] = fpath_curchr;
+    fpath_curchr = fpath[curdevnameind];
+    devname[curdevnameind] = fpath_curchr;
   }
-  *(u16 *)&devname[curdevnameind] = *(u8 *)fpath_1;
-  zonesz = iomanX_devctl(devname, 0x5001, 0, 0, 0, 0);
-  zonefree = iomanX_devctl(devname, 0x5002, 0, 0, 0, 0) * (zonesz / 1024);
-  if ( zonefree < minsize )
-    return -16;
-  return 0;
+  return -9;
 }
 // 401600: using guessed type char devname[8];
 
@@ -1128,19 +1120,15 @@ int do_handle_combination_path(int type, const char *fpath, char *dst, size_t ma
   do_safe_strcpy(dst, maxlen, usr_name, 139);
   if ( type )
     return 0;
-  devnum_offs = 0;
-  for ( i = dst; !isdigit(*i); ++i )
-  {
-  }
-  while ( isdigit(*i) )
+  for ( i = dst; !isdigit(*i); i += 1 );
+  for ( devnum_offs = 0; devnum_offs < 4 && isdigit(*i); devnum_offs += 1 )
   {
     p_devnum = &devnum[devnum_offs];
-    if ( devnum_offs >= 4 )
-      return -11;
-    ++devnum_offs;
     curdevnum = *i++;
     *p_devnum = curdevnum;
   }
+  if ( devnum_offs >= 4 )
+    return -11;
   devnum[devnum_offs] = 0;
   devnr = strtol(devnum, 0, 10);
   if ( !strncmp(fpath, "mc", 2) )
@@ -1211,11 +1199,8 @@ char *do_write_memcard_pathcopy(char *dst, size_t maxlen, const char *src)
   char *dst_end_slash; // $a0
 
   do_safe_strcpy(dst, maxlen, src, 218);
-  dst_end_slash = &dst[strlen(dst)];
-  while ( *dst_end_slash != '/' )
-    dst_end_slash -= 1;
-  while ( *dst_end_slash == '/' )
-    dst_end_slash -= 1;
+  for ( dst_end_slash = &dst[strlen(dst)]; *dst_end_slash != '/'; dst_end_slash -= 1 );
+  for ( ; *dst_end_slash == '/'; dst_end_slash -= 1 );
   if ( *dst_end_slash == ':' )
     return 0;
   dst_end_slash[1] = 0;
@@ -1285,10 +1270,7 @@ char *do_check_hoge_newline(char *buf)
 {
   int curbuf1; // $v0
 
-  while ( *buf && *buf != '\n' )
-  {
-    ++buf;
-  }
+  for ( ; *buf && *buf != '\n'; buf += 1 );
   curbuf1 = *buf;
   return &buf[curbuf1 == '\n'];
 }
@@ -1298,21 +1280,15 @@ int do_split_str_comma_index(char *dst, const char *src, int commaind)
 {
   int commatmp_end; // $a2
 
-  commatmp_end = commaind;
-  while ( commatmp_end > 0 )
+  for ( commatmp_end = commaind; commatmp_end > 0; commatmp_end -= 1 )
   {
-    commatmp_end--;
-    while ( *src && *src != '\n' && *src != ',' )
-    {
-      src++;
-    }
+    for ( ; *src && *src != '\n' && *src != ','; src += 1 );
     if ( *src++ != ',' )
       return -1;
   }
-  while ( *src && *src != ',' && *src != '\n' && *src != '\r' )
+  for ( ; *src && *src != ',' && *src != '\n' && *src != '\r'; src += 1 )
   {
     *dst = *src;
-    ++src;
     ++dst;
   }
   *dst = 0;
@@ -1360,8 +1336,7 @@ int do_remove_old_config(
     {
       if ( !strncmp(&statname.name[6], ".cnf", 4) || !strncmp(&statname.name[6], ".dat", 4) )
       {
-        curheapbuf1 = (char *)netcnf_heap_buf;
-        while ( curheapbuf1 && *curheapbuf1 )
+        for ( curheapbuf1 = (char *)netcnf_heap_buf; curheapbuf1 && *curheapbuf1; curheapbuf1 = do_check_hoge_newline(curheapbuf1) )
         {
           do_split_str_comma_index(cur_combpath, curheapbuf1, 2);
           if ( !strcmp(statname.name, cur_combpath) )
@@ -1370,7 +1345,6 @@ int do_remove_old_config(
             sizeflag = 0;
             break;
           }
-          curheapbuf1 = do_check_hoge_newline(curheapbuf1);
         }
       }
     }
@@ -1493,9 +1467,7 @@ int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int size)
   do_close_netcnf(fd);
   if ( iomanX_rename(fpath_comb, fpath) == -5 )
     return -18;
-  fpath_colon_ind = 0;
-  while ( fpath_comb[fpath_colon_ind] != ':' )
-    fpath_colon_ind += 1;
+  for ( fpath_colon_ind = 0; fpath_comb[fpath_colon_ind] != ':'; fpath_colon_ind += 1 );
   fixme_wrong_offset_fpath[fpath_colon_ind + 17] = 0;
   return 0;
 }
@@ -1535,11 +1507,10 @@ int do_get_count_list_inner(char *fname, int type, sceNetCnfList_t *p)
     result = do_read_current_netcnf_nodecode(g_dir_name, &g_count_list_heapptr);
     if ( result > 0 )
     {
-      curheapbuf1 = g_count_list_heapptr;
       curind1 = 0;
       usr_name = p->usr_name;
       type_1 = type;
-      while ( *curheapbuf1 )
+      for ( curheapbuf1 = g_count_list_heapptr; *curheapbuf1; curheapbuf1 = do_check_hoge_newline(curheapbuf1) )
       {
         if ( do_type_check(type_1, curheapbuf1) > 0 )
         {
@@ -1559,7 +1530,6 @@ int do_get_count_list_inner(char *fname, int type, sceNetCnfList_t *p)
             }
           }
         }
-        curheapbuf1 = do_check_hoge_newline(curheapbuf1);
         type_1 = type;
       }
       do_free_heapmem(g_count_list_heapptr);
@@ -1587,8 +1557,7 @@ int do_load_entry_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e
         result = -8;
         if ( result != 0 )
         {
-          curheapbuf1 = g_load_entry_heapptr;
-          while ( *curheapbuf1 )
+          for ( curheapbuf1 = g_load_entry_heapptr; *curheapbuf1; curheapbuf1 = do_check_hoge_newline(curheapbuf1) )
           {
             if ( do_type_check(type, curheapbuf1) >= 0
                && !do_split_str_comma_index(g_arg_fname, curheapbuf1, 3)
@@ -1604,7 +1573,6 @@ int do_load_entry_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e
                 e->req = 1;
               return do_load_conf_inner(e);
             }
-            curheapbuf1 = do_check_hoge_newline(curheapbuf1);
           }
           do_free_heapmem(g_load_entry_heapptr);
           return -8;
@@ -1627,9 +1595,7 @@ void do_some_ifc_handling_hoge(const char *arg_fname)
 
   if ( arg_fname && *arg_fname )
   {
-    for ( i = &arg_fname[strlen(arg_fname) - 1]; i >= arg_fname && *i != '.'; --i )
-    {
-    }
+    for ( i = &arg_fname[strlen(arg_fname) - 1]; i >= arg_fname && *i != '.'; i -= 1 );
     curi1 = *i;
     curptr1 = (char *)(i - 1);
     if ( curi1 == '.' && curptr1 >= arg_fname )
@@ -1638,15 +1604,11 @@ void do_some_ifc_handling_hoge(const char *arg_fname)
       if ( isdigit(*curptr1) )
       {
         curindx = 1;
-        while ( isdigit(*curptr1) )
+        for ( ; curptr1 >= arg_fname && isdigit(*curptr1); curptr1 -= 1 )
         {
-          curbufadd = curindx * (*curptr1-- - '0');
+          curbufadd = curindx * (*curptr1 - '0');
           curindx *= 10;
           curbufsz1 += curbufadd;
-          if ( curptr1 < arg_fname )
-          {
-            break;
-          }
         }
         if ( curbufsz1 < 0x3E8 )
           g_ifc_buffer[curbufsz1] = 1;
@@ -1730,7 +1692,6 @@ int do_add_entry_inner(
   int fd; // $v0
   char *dirname_buf1; // $s0
   char *cur_entry_buffer; // $s2
-  char dirname_chrbeg; // $v1
   int req_tmp; // $v0
   size_t pathlen; // $v0
   int strlenx; // $s0
@@ -1778,8 +1739,8 @@ int do_add_entry_inner(
     {
       if ( !strncmp(g_dir_name, "mc", 2) )
       {
-        curentry1 = g_add_entry_heapptr;
-        for ( i = 0; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
+        i = 0;
+        for ( curentry1 = g_add_entry_heapptr; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
         {
           if ( do_type_check(type, curentry1) == 1 )
             ++i;
@@ -1799,8 +1760,8 @@ int do_add_entry_inner(
       }
       else if ( !strncmp(g_dir_name, "pfs", 3) )
       {
-        curentry2 = g_add_entry_heapptr;
-        for ( j = 0; *curentry2; curentry2 = do_check_hoge_newline(curentry2) )
+        j = 0;
+        for ( curentry2 = g_add_entry_heapptr; *curentry2; curentry2 = do_check_hoge_newline(curentry2) )
         {
           if ( do_type_check(type, curentry2) == 1 )
             ++j;
@@ -1843,11 +1804,7 @@ int do_add_entry_inner(
   if ( maxflag )
   {
     do_safe_strcpy(g_arg_fname, 256, g_dir_name, 740);
-    endbuf = &g_ifc_buffer[strlen(g_arg_fname) + 999];
-    while ( endbuf >= g_arg_fname && *endbuf != ':' && *endbuf != '/' && *endbuf != '\\' )
-    {
-      endbuf--;
-    }
+    for ( endbuf = &g_ifc_buffer[strlen(g_arg_fname) + 999]; endbuf >= g_arg_fname && *endbuf != ':' && *endbuf != '/' && *endbuf != '\\'; endbuf -= 1 );
     if ( *endbuf != ':' && *endbuf != '/' && *endbuf != '\\' )
     {
       *endbuf = 0;
@@ -1856,7 +1813,6 @@ int do_add_entry_inner(
     {
       endbuf[1] = 0;
     }
-    nrind = 0;
     if ( type && !e->f_no_decode )
     {
       fileext = ".dat";
@@ -1865,7 +1821,7 @@ int do_add_entry_inner(
     {
       fileext = ".cnf";
     }
-    while ( nrind < 1000 )
+    for ( nrind = 0; nrind < 1000; nrind += 1 )
     {
       if ( !g_ifc_buffer[nrind] )
       {
@@ -1894,17 +1850,14 @@ int do_add_entry_inner(
         }
         do_close_netcnf(fd);
       }
-      nrind++;
     }
     retres2 = -12;
     if ( nrind < 1000 )
     {
-      dirname_buf1 = g_dir_name;
       cur_entry_buffer = g_entry_buffer;
-      dirname_chrbeg = g_dir_name[0];
-      while ( *dirname_buf1 )
+      for ( dirname_buf1 = g_dir_name; *dirname_buf1; dirname_buf1 += 1 )
       {
-        if ( dirname_chrbeg == '/' || dirname_chrbeg == '\\' )
+        if ( *dirname_buf1 == '/' || *dirname_buf1 == '\\' )
         {
           if ( dirname_buf1[1] )
           {
@@ -1922,8 +1875,7 @@ int do_add_entry_inner(
             retres2 = -18;
           }
         }
-        *cur_entry_buffer = *dirname_buf1++;
-        dirname_chrbeg = *dirname_buf1;
+        *cur_entry_buffer = *dirname_buf1;
         ++cur_entry_buffer;
       }
       if ( *dirname_buf1 )
@@ -1974,9 +1926,7 @@ int do_add_entry_inner(
   {
     if ( iomanX_rename(atomicrenamepath, g_dir_name) == -5 )
       return -18;
-    curatomicnamepath_2 = 0;
-    while ( atomicrenamepath[curatomicnamepath_2] != ':' )
-      curatomicnamepath_2 += 1;
+    for ( curatomicnamepath_2 = 0; atomicrenamepath[curatomicnamepath_2] != ':'; curatomicnamepath_2 += 1 );
     fixme_renamepath[curatomicnamepath_2 + 25] = 0;
   }
   if ( strncmp(g_dir_name, "pfs", 3) )
@@ -2042,15 +1992,13 @@ int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2,
           return -11;
         }
       }
-      while ( *ptr_1 )
+      for ( ; *ptr_1 && *ptr_1 != '\n'; ptr_1 += 1 )
       {
-        if ( *ptr_1 == '\n' )
-        {
-          *heapmem_1++ = *ptr_1++;
-          break;
-        }
         *heapmem_1++ = *ptr_1;
-        ++ptr_1;
+      }
+      if ( *ptr_1 == '\n' )
+      {
+        *heapmem_1++ = *ptr_1++;
       }
     }
     do_free_heapmem(ptr);
@@ -2110,9 +2058,8 @@ int do_edit_entry_inner(
   rmoldcfgres = do_remove_old_config(g_dir_name, g_edit_entry_heapptr, icon_value, iconsys_value);
   if ( rmoldcfgres >= 0 )
   {
-    curentry1 = g_edit_entry_heapptr;
     rmoldcfgres = 0;
-    while ( *curentry1 )
+    for ( curentry1 = g_edit_entry_heapptr; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
     {
       if ( do_type_check(type, curentry1) > 0
         && !do_split_str_comma_index(g_arg_fname, curentry1, 3)
@@ -2121,7 +2068,6 @@ int do_edit_entry_inner(
       {
         ++rmoldcfgres;
       }
-      curentry1 = do_check_hoge_newline(curentry1);
     }
     flg = 0;
     if ( !rmoldcfgres )
@@ -2163,8 +2109,7 @@ int do_edit_entry_inner(
       else
       {
         do_safe_strcpy(curfilepath1, 256, g_dir_name, 1010);
-        curfilepath1end = &curfilepath1[strlen(curfilepath1)];
-        while ( curfilepath1end != curfilepath1 )
+        for ( curfilepath1end = &curfilepath1[strlen(curfilepath1)]; curfilepath1end != curfilepath1; curfilepath1end -= 1 )
         {
           curfilepath1chr = *curfilepath1end;
           if ( curfilepath1chr == '/' || curfilepath1chr == '\\' )
@@ -2172,7 +2117,6 @@ int do_edit_entry_inner(
             curfilepath1end[1] = 0;
             break;
           }
-          curfilepath1end--;
         }
         do_safe_strcat(curfilepath1, 256, curentrybuf1, 1017);
         do_safe_strcpy(curentrybuf1, 256, curfilepath1, 1018);
@@ -2213,7 +2157,6 @@ size_t do_delete_entry_inner(
   int remove_old_config_res; // $s0
   char *curentry1; // $s0
   char *heapmem_1; // $s1
-  char curentry1_chr3; // $v0
 
   has_comma = 0;
   g_delete_entry_heapptr = 0;
@@ -2242,15 +2185,13 @@ size_t do_delete_entry_inner(
                   || do_split_str_comma_index(g_arg_fname, curentry1, 3)
                   || strcmp(g_arg_fname, g_combination_buf1) )
                 {
-                  while ( *curentry1 && *curentry1 != '\n' )
+                  for ( ; *curentry1 && *curentry1 != '\n'; curentry1 += 1 )
                   {
                     *heapmem_1++ = *curentry1;
-                    ++curentry1;
                   }
                   if ( *curentry1 == '\n' )
                   {
-                    curentry1_chr3 = *curentry1++;
-                    *heapmem_1++ = curentry1_chr3;
+                    *heapmem_1++ = *curentry1++;
                   }
                 }
                 else
@@ -2335,10 +2276,9 @@ size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name)
                 && !do_split_str_comma_index(g_arg_fname, curentry1, 3)
                 && !strcmp(g_arg_fname, g_combination_buf1) )
               {
-                while ( *curentry1 && *curentry1 != '\n' )
+                for ( ; *curentry1 && *curentry1 != '\n'; curentry1 += 1 )
                 {
                   *heapmem1_1++ = *curentry1;
-                  ++curentry1;
                 }
                 if ( *curentry1 == '\n' )
                 {
@@ -2351,10 +2291,9 @@ size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name)
               }
               else
               {
-                while ( *curentry1 && *curentry1 != '\n' )
+                for ( ; *curentry1 && *curentry1 != '\n'; curentry1 += 1 )
                 {
                   *heapmem2_1++ = *curentry1;
-                  ++curentry1;
                 }
                 if ( *curentry1 == '\n' )
                 {
@@ -2396,14 +2335,10 @@ size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name)
 //----- (00403C5C) --------------------------------------------------------
 int do_delete_all_inner(const char *dev)
 {
-  const char *devtmp_1; // $a3
-  char devtmp_1_curchr; // $a0
   int i; // $t0
   int dfd1; // $s1
   int remove_res1; // $v0
   int result; // $v0
-  const char *devtmp_2; // $a3
-  char devtmp_2_curchr; // $a0
   int j; // $t0
   int dfd2; // $s1
   int xretzero; // $v1
@@ -2414,15 +2349,11 @@ int do_delete_all_inner(const char *dev)
 
   if ( !strncmp(dev, "mc", 2) )
   {
-    devtmp_1 = dev;
-    devtmp_1_curchr = *dev;
-    for ( i = 0; *devtmp_1 != ':'; ++i )
+    for ( i = 0; dev[i] != ':'; i += 1 )
     {
-      ++devtmp_1;
-      g_netcnf_file_path[i] = devtmp_1_curchr;
-      devtmp_1_curchr = *devtmp_1;
+      g_netcnf_file_path[i] = dev[i];
     }
-    g_netcnf_file_path[i] = *devtmp_1;
+    g_netcnf_file_path[i] = dev[i];
     g_netcnf_file_path[i + 1] = 0;
     do_safe_strcat(g_netcnf_file_path, 256, "/BWNETCNF", 1199);
     dfd1 = do_dopen_wrap(g_netcnf_file_path);
@@ -2454,15 +2385,11 @@ int do_delete_all_inner(const char *dev)
     result = -17;
     if ( strncmp(dev, "pfs", 3) == 0 )
     {
-      devtmp_2 = dev;
-      devtmp_2_curchr = *dev;
-      for ( j = 0; *devtmp_2 != ':'; ++j )
+      for ( j = 0; dev[j] != ':'; j += 1 )
       {
-        ++devtmp_2;
-        g_netcnf_file_path[j] = devtmp_2_curchr;
-        devtmp_2_curchr = *devtmp_2;
+        g_netcnf_file_path[j] = dev[j];
       }
-      g_netcnf_file_path[j] = *devtmp_2;
+      g_netcnf_file_path[j] = dev[j];
       g_netcnf_file_path[j + 1] = 0;
       do_safe_strcat(g_netcnf_file_path, 256, "/etc/network", 1229);
       dfd2 = do_dopen_wrap(g_netcnf_file_path);
@@ -2539,10 +2466,9 @@ int do_check_special_provider_inner(char *fname, int type, char *usr_name, sceNe
       result = do_read_current_netcnf_nodecode(g_dir_name, &g_check_special_provider_heapptr);
       if ( result > 0 )
       {
-        curentry1 = g_check_special_provider_heapptr;
         curentcount = 0;
         type_1 = type;
-        while ( *curentry1 )
+        for ( curentry1 = g_check_special_provider_heapptr; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
         {
           if ( do_type_check(type_1, curentry1) > 0
             && !do_split_str_comma_index(g_arg_fname, curentry1, 3)
@@ -2551,7 +2477,6 @@ int do_check_special_provider_inner(char *fname, int type, char *usr_name, sceNe
           {
             ++curentcount;
           }
-          curentry1 = do_check_hoge_newline(curentry1);
           type_1 = type;
         }
         if ( curentcount )
@@ -2620,12 +2545,11 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
   int err;
 
   dbuf = e->dbuf;
-  argbegin = e_arg + 1;
   if ( *e_arg != '"' )
     return e_arg;
-  e_1 = e;
   err = 0;
-  while ( *argbegin && *argbegin != '"' && (char *)e_1 - (char *)e < 1022 )
+  argbegin = e_arg + 1;
+  for ( e_1 = e; *argbegin && *argbegin != '"' && (char *)e_1 - (char *)e < 1022; e_1 = (sceNetCnfEnv_t *)(dbuf - 1088) )
   {
     argchr_1 = *(u8 *)argbegin++;
     if ( argchr_1 == '\\' )
@@ -2650,7 +2574,7 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
             err = 2;
             break;
           }
-          for ( i = 0; i < 2 && isxdigit(*argbegin); ++i )
+          for ( i = 0; i < 2 && isxdigit(*argbegin); i += 1 )
           {
             if ( isdigit(*argbegin) )
             {
@@ -2699,10 +2623,8 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
       }
       else
       {
-        argind_1 = 0;
-        while ( argind_1 < 3 && ( *(u8 *)argbegin - (unsigned int)'0' < 8 ) )
+        for ( argind_1 = 0; argind_1 < 3 && ( *(u8 *)argbegin - (unsigned int)'0' < 8 ); argind_1 += 1 )
         {
-          ++argind_1;
           argchr_6 = *argbegin++;
           argchr_1 = 8 * argchr_1 + argchr_6 - '0';
         }
@@ -2719,7 +2641,6 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
     }
     *dbuf = argchr_1;
     ++dbuf;
-    e_1 = (sceNetCnfEnv_t *)(dbuf - 1088);
   }
   if ( !err )
   {
@@ -2865,9 +2786,8 @@ int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv,
   int bitflags1; // $s0
   int numval; // [sp+10h] [-8h] BYREF
 
-  opt_argc_1 = opt_argc;
   bitflags1 = 0;
-  while ( opt_argc_1 > 0 )
+  for ( opt_argc_1 = opt_argc; opt_argc_1 > 0; opt_argc_1 -= 1 )
   {
     if ( !strcmp("phase", *opt_argv) )
     {
@@ -2907,7 +2827,6 @@ int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv,
     }
     else if ( do_parse_number(e, *opt_argv, &numval) )
       return -1;
-    --opt_argc_1;
     ++opt_argv;
   }
   *p_result = bitflags1;
@@ -3048,10 +2967,9 @@ int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_ar
         if ( !strcmp("default", *argv_plus_two)
           || (do_netcnfname2address_wrap(e, (char *)*argv_plus_two, (sceNetCnfAddress_t *)&route_mem_2[1]) == 0) )
         {
-          argcx1 = argc_minus_two - 1;
           argvx1 = argv_plus_two + 1;
           argvx2 = (char **)(argvx1 + 1);
-          while ( argcx1 >= 2 )
+          for ( argcx1 = argc_minus_two - 1; argcx1 >= 2; argcx1 -= 2 )
           {
             if ( !strcmp("gw", *argvx1) )
             {
@@ -3064,7 +2982,6 @@ int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_ar
               if ( do_netcnfname2address_wrap(e, *argvx2, (sceNetCnfAddress_t *)&route_mem_2[4].back) != 0 )
                 return -1;
             }
-            argcx1 -= 2;
             argvx2 += 2;
             argvx1 += 2;
           }
@@ -3089,8 +3006,7 @@ void do_init_ifc_inner(sceNetCnfInterface_t *ifc)
 {
   struct netcnf_option *curentry1; // $a2
 
-  curentry1 = g_options_attach_cnf;
-  while ( curentry1->m_key )
+  for ( curentry1 = g_options_attach_cnf; curentry1->m_key; curentry1 += 1 )
   {
     switch ( curentry1->m_type )
     {
@@ -3109,7 +3025,6 @@ void do_init_ifc_inner(sceNetCnfInterface_t *ifc)
       default:
         break;
     }
-    ++curentry1;
   }
 }
 
@@ -3118,12 +3033,10 @@ int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
 {
   int lenx1; // $s1
   int curindx1; // $s0
-  sceNetCnfEnv_t *e_tmp2; // $s2
   const char *avtmp1; // $a0
   struct sceNetCnfUnknown *listtmp; // $s4
   struct sceNetCnfUnknown *cpydst_1; // $s2
   int cuindx2; // $s0
-  sceNetCnfEnv_t *e_tmp1; // $s3
   size_t cpysz; // $v0
   struct sceNetCnfUnknown *cpydst; // $a1
   char *cpydst_curptr; // $s2
@@ -3131,30 +3044,23 @@ int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
   struct sceNetCnfUnknown *tail; // $v0
 
   lenx1 = 0;
-  curindx1 = 0;
-  e_tmp2 = e;
-  while ( curindx1 < e->ac )
+  for ( curindx1 = 0; curindx1 < e->ac; curindx1 += 1 )
   {
-    avtmp1 = e_tmp2->av[0];
-    e_tmp2 = (sceNetCnfEnv_t *)((char *)e_tmp2 + 4);
-    ++curindx1;
+    avtmp1 = e->av[curindx1];
     lenx1 += 3 + strlen(avtmp1);
   }
   listtmp = (struct sceNetCnfUnknown *)do_alloc_mem_inner(e, lenx1 + 8, 2);
   cpydst_1 = listtmp + 1;
   if ( !listtmp )
     return -1;
-  cuindx2 = 0;
-  e_tmp1 = e;
-  while ( cuindx2 < e->ac )
+  for ( cuindx2 = 0; cuindx2 < e->ac; cuindx2 += 1 )
   {
-    cpysz = strlen(e_tmp1->av[0]);
+    cpysz = strlen(e->av[cuindx2]);
     cpydst = cpydst_1;
     cpydst_curptr = (char *)cpydst_1 + cpysz;
-    cpysrc = e_tmp1->av[0];
-    e_tmp1 = (sceNetCnfEnv_t *)((char *)e_tmp1 + 4);
+    cpysrc = e->av[cuindx2];
     bcopy(cpysrc, cpydst, cpysz);
-    *cpydst_curptr = 32 * (cuindx2++ < e->ac - 1);
+    *cpydst_curptr = 32 * (cuindx2 < e->ac - 1);
     cpydst_1 = (struct sceNetCnfUnknown *)(cpydst_curptr + 1);
   }
   tail = unknown_list->tail;
@@ -3195,10 +3101,8 @@ int do_check_other_keywords(
   }
   if ( *cur_avx )
   {
-    p_m_key = &options->m_key;
-    while ( *p_m_key && strcmp(cur_avx, *p_m_key) )
+    for ( p_m_key = &options->m_key; *p_m_key && strcmp(cur_avx, *p_m_key); p_m_key += 3 )
     {
-      p_m_key += 3;
       ++options_1;
     }
     if ( !*p_m_key )
@@ -3623,13 +3527,9 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), v
   int ac; // $v1
   u32 condtmp1; // $s1
 
-  for ( i = lbuf; e->lbuf < i && *(i - 1) < 0x21u; --i )
-  {
-  }
+  for ( i = lbuf; e->lbuf < i && *(i - 1) < 0x21u; i -= 1 );
   *i = 0;
-  for ( j = (char *)e->lbuf; *j && isspace(*j); ++j )
-  {
-  }
+  for ( j = (char *)e->lbuf; *j && isspace(*j); j += 1 );
   e->ac = 0;
   j_curchr1 = (u8)*j;
   while ( *j )
@@ -3687,8 +3587,7 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), v
       *j = 0;
       ++j;
     }
-    while ( *j && isspace(*j) )
-      ++j;
+    for ( ; *j && isspace(*j); j += 1 );
     ++e->ac;
     j_curchr1 = (u8)*j;
   }
@@ -3797,16 +3696,14 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
     else if ( read_res2 < 36
            || (strncmp(ptr_1, "# <Sony Computer Entertainment Inc.>", 36) != 0) )
     {
-      curchind = 0;
       printf("netcnf: decoding error (magic=\"");
-      while ( curchind < read_res2 && curchind < '$' )
+      for ( curchind = 0; curchind < read_res2 && curchind < '$'; curchind += 1 )
       {
         curptr_1 = &ptr_1[curchind];
         curchr = '?';
         if ( (u8)*curptr_1 - (unsigned int)' ' < '_' )
           curchr = (u8)*curptr_1;
         printf("%c", curchr);
-        curchind++;
       }
       printf("\")\n");
       do_free_heapmem(ptr);
@@ -3885,16 +3782,13 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
   int typadd1_3; // $v1
   int strptr2; // $a0
   int typadd1; // $v1
-  sceNetCnfInterface_t *ncid_1; // $a0
-  struct sceNetCnfInterface *ncis_1; // $a1
   u8 *curnumx; // $v1
 
   if ( ncis )
   {
     optx1 = g_options_attach_cnf;
     curindx = 0;
-    p_m_key = &g_options_attach_cnf[0].m_key;
-    while ( *p_m_key )
+    for ( p_m_key = &g_options_attach_cnf[0].m_key; *p_m_key; p_m_key += 3 )
     {
       switch ( optx1->m_type )
       {
@@ -3970,20 +3864,13 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
         default:
           break;
       }
-      p_m_key += 3;
       ++optx1;
     }
-    curindx = 0;
-    ncid_1 = ncid;
-    ncis_1 = ncis;
-    while ( curindx < 10 )
+    for ( curindx = 0; curindx < 10; curindx += 1 )
     {
-      curnumx = ncis_1->phone_numbers[0];
+      curnumx = ncis->phone_numbers[curindx];
       if ( curnumx )
-        ncid_1->phone_numbers[0] = curnumx;
-      ncid_1 = (sceNetCnfInterface_t *)((char *)ncid_1 + 4);
-      ++curindx;
-      ncis_1 = (struct sceNetCnfInterface *)((char *)ncis_1 + 4);
+        ncid->phone_numbers[curindx] = curnumx;
     }
   }
 }
@@ -4002,8 +3889,7 @@ int do_merge_conf_inner(sceNetCnfEnv_t *e)
   root = e->root;
   if ( root )
   {
-    pair_head = root->pair_head;
-    while ( pair_head )
+    for ( pair_head = root->pair_head; pair_head; pair_head = pair_head->forw )
     {
       ctl = pair_head->ctl;
       if ( !ctl )
@@ -4041,7 +3927,6 @@ int do_merge_conf_inner(sceNetCnfEnv_t *e)
       dev->type = -1;
       do_dialauth_related(ifmem2, pair_head->dev);
       pair_head->dev->type = type;
-      pair_head = pair_head->forw;
     }
     return 0;
   }
@@ -4076,7 +3961,7 @@ int do_load_conf_inner(sceNetCnfEnv_t *e)
       return -14;
     if ( index(e->arg_fname, ':') )
       e->dir_name = e->arg_fname;
-    while ( pair_head )
+    for ( ; pair_head; pair_head = pair_head->forw )
     {
       attach_ifc = (char *)pair_head->attach_ifc;
       if ( attach_ifc )
@@ -4127,7 +4012,6 @@ int do_load_conf_inner(sceNetCnfEnv_t *e)
       {
         pair_head->dev = 0;
       }
-      pair_head = pair_head->forw;
     }
     if ( retres1 == -21 )
       return -21;
@@ -4177,7 +4061,6 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
   char *mem_ptr_02; // $v1
   char *mem_ptr_04; // $v1
   char *mem_ptr_05; // $v1
-  unsigned int strptr_curchr2; // $a2
   char *i; // $s0
   char *mem_ptr_0a; // $a0
   void *mem_ptr_rval_02; // $v0
@@ -4189,7 +4072,6 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
   char *mem_ptr_08; // $v1
   char strptr_curchr1; // $a0
   char *mem_ptr_06; // $v1
-  int strlencalc_1; // $v0
   char *mem_ptr_0b; // $v1
   char stkstr1; // [sp+23h] [-5h] BYREF
 
@@ -4211,10 +4093,9 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
         ++fmt;
       }
       strlened = 0;
-      while ( isdigit(*fmt) )
+      for ( ; isdigit(*fmt); fmt += 1 )
       {
         strlened = 10 * strlened - '0' + *fmt;
-        fmt++;
       }
       if ( *fmt == 'l' )
         ++fmt;
@@ -4322,7 +4203,7 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
         }
         if ( !has_negative )
         {
-          while ( strlencalc-- > 0 )
+          for ( ; strlencalc > 0; strlencalc -= 1 )
           {
             mem_ptr_04 = e->mem_ptr;
             if ( mem_ptr_04 >= (char *)e->mem_last )
@@ -4341,11 +4222,10 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
         }
         if ( fmt_flag_str != 1 )
         {
-          while ( *strptr1 )
+          for ( ; *strptr1; strptr1 += 1 )
           {
             strptr_curchr1 = *strptr1;
             mem_ptr_06 = (char *)e->mem_ptr;
-            ++strptr1;
             if ( mem_ptr_06 >= (char *)e->mem_last )
               return -2;
             *mem_ptr_06 = strptr_curchr1;
@@ -4354,14 +4234,13 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
         }
         else
         {
-          strptr_curchr2 = (u8)*strptr1;
-          for ( i = strptr1 + 1; strptr_curchr2; strptr_curchr2 = (u8)*i++ )
+          for ( i = strptr1; *i; i += 1 )
           {
-            if ( ((strptr_curchr2 - 0x81 >= 0x1F) && (strptr_curchr2 - 0xE0 >= 0x1D))
+            if ( (((u8)*i - 0x81 >= 0x1F) && ((u8)*i - 0xE0 >= 0x1D))
               || ((u8)((int)*i - 64) >= 0xBDu)
               || (u8)*i == 0x7F )
             {
-              if ( strptr_curchr2 == '"' || strptr_curchr2 == '\\' )
+              if ( (u8)*i == '"' || (u8)*i == '\\' )
               {
                 mem_ptr_07 = e->mem_ptr;
                 if ( mem_ptr_07 >= (char *)e->mem_last )
@@ -4371,15 +4250,15 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
                 mem_ptr_rval_03 = mem_ptr_07 + 2;
                 if ( mem_ptr_07 + 1 >= (char *)e->mem_last )
                   return -2;
-                mem_ptr_07[1] = strptr_curchr2;
+                mem_ptr_07[1] = (u8)*i;
               }
-              else if ( strptr_curchr2 - ' ' < '_' )
+              else if ( (u8)*i - ' ' < '_' )
               {
                 mem_ptr_08 = e->mem_ptr;
                 mem_ptr_rval_03 = mem_ptr_08 + 1;
                 if ( mem_ptr_08 >= (char *)e->mem_last )
                   return -2;
-                *mem_ptr_08 = strptr_curchr2;
+                *mem_ptr_08 = (u8)*i;
               }
               else
               {
@@ -4395,12 +4274,12 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
                 mem_ptr_rval_01 = mem_ptr_09 + 3;
                 if ( mem_ptr_09 + 2 >= (char *)e->mem_last )
                   return -2;
-                mem_ptr_09[2] = a0123456789abcd_0[strptr_curchr2 >> 4];
+                mem_ptr_09[2] = a0123456789abcd_0[(u8)*i >> 4];
                 e->mem_ptr = mem_ptr_rval_01;
                 mem_ptr_rval_03 = mem_ptr_09 + 4;
                 if ( (char *)mem_ptr_rval_01 >= (char *)e->mem_last )
                   return -2;
-                mem_ptr_09[3] = a0123456789abcd_0[strptr_curchr2 & 0xF];
+                mem_ptr_09[3] = a0123456789abcd_0[(u8)*i & 0xF];
               }
             }
             else
@@ -4409,7 +4288,7 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
               mem_ptr_rval_02 = mem_ptr_0a + 1;
               if ( mem_ptr_0a >= (char *)e->mem_last )
                 return -2;
-              *mem_ptr_0a = strptr_curchr2;
+              *mem_ptr_0a = (u8)*i;
               e->mem_ptr = mem_ptr_rval_02;
               i_curchr2 = *i++;
               if ( (char *)mem_ptr_rval_02 >= (char *)e->mem_last )
@@ -4420,11 +4299,8 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
             e->mem_ptr = mem_ptr_rval_03;
           }
         }
-        strlencalc_1 = strlencalc;
-        while ( has_negative && strlencalc_1 > 0 )
+        for ( ; has_negative && strlencalc > 0; strlencalc -= 1 )
         {
-          strlencalc_1 = strlencalc;
-          --strlencalc;
           mem_ptr_0b = e->mem_ptr;
           if ( mem_ptr_0b >= (char *)e->mem_last )
             return -2;
@@ -4470,7 +4346,7 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
   int offsptr4; // $s1
   int curjptoffs; // $s2
 
-  while ( options->m_key )
+  for ( ; options->m_key; options += 1 )
   {
     result = 0;
     lbuf = (const char *)e->lbuf;
@@ -4572,8 +4448,7 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
         result = do_netcnf_sprintf_buffer(e, "%s", options->m_key);
         if ( result < 0 )
           return result;
-        curjptoffs = 0;
-        while ( curjptoffs < 32 )
+        for ( curjptoffs = 0; curjptoffs < 32; curjptoffs += 1 )
         {
           lbuf = 0;
           switch ( (1 << curjptoffs) & offsptr4 )
@@ -4615,7 +4490,6 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
             if ( result < 0 )
               return result;
           }
-          ++curjptoffs;
         }
         if ( offsptr4 )
         {
@@ -4758,7 +4632,6 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
     }
     if ( result < 0 )
       return result;
-    ++options;
   }
   return 0;
 }
@@ -4772,8 +4645,7 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
   int nameserverflag; // $s0
   int result; // $v0
 
-  cmd_head = ifc->cmd_head;
-  while ( cmd_head )
+  for ( cmd_head = ifc->cmd_head; cmd_head; cmd_head = cmd_head->forw )
   {
     code = cmd_head->code;
     nameserverflag = -1;
@@ -4831,7 +4703,6 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
       if ( result < 0 )
         return result;
     }
-    cmd_head = cmd_head->forw;
   }
   return 0;
 }
@@ -4843,18 +4714,15 @@ int do_netcnf_phone_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
   u8 *ifcnum; // $a3
   int result; // $v0
 
-  ind1 = 0;
-  while ( ind1 < 10 )
+  for ( ind1 = 0; ind1 < 10; ind1 += 1 )
   {
-    ifcnum = ifc->phone_numbers[0];
+    ifcnum = ifc->phone_numbers[ind1];
     if ( ifcnum )
     {
       result = do_netcnf_sprintf_buffer(e, "phone_number%d \"%S\"\n", ind1, ifcnum);
       if ( result < 0 )
         return result;
     }
-    ++ind1;
-    ifc = (struct sceNetCnfInterface *)((char *)ifc + 4);
   }
   return 0;
 }
@@ -4866,14 +4734,12 @@ int do_netcnf_unknown_write(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unkn
   sceNetCnfEnv_t *e_1; // $s1
   int result; // $v0
 
-  head = unknown_list->head;
   e_1 = e;
-  while ( head )
+  for ( head = unknown_list->head; head; head = head->forw )
   {
     result = do_netcnf_sprintf_buffer(e, "%s\n", (const char *)&head[1]);
     if ( result < 0 )
       return result;
-    head = head->forw;
     e = e_1;
   }
   return 0;
@@ -4995,8 +4861,7 @@ int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceN
     }
     else
     {
-      pair_head = e->root->pair_head;
-      while ( pair_head )
+      for ( pair_head = e->root->pair_head; pair_head; pair_head = pair_head->forw )
       {
         result = do_netcnf_sprintf_buffer(
                    e,
@@ -5006,7 +4871,6 @@ int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceN
                    pair_head->attach_dev);
         if ( result < 0 )
           return result;
-        pair_head = pair_head->forw;
       }
       result = do_netcnf_other_write(e, g_options_net_cnf, e->root);
       if ( result >= 0 )
@@ -5060,14 +4924,13 @@ char *do_address_to_string_inner_element(char *dst, int srcbyte)
     *dst++ = '-';
     srcbyte = -srcbyte;
   }
-  while ( srcbyte > 0 )
+  for ( ; srcbyte > 0; srcbyte /= 10 )
   {
     *tmpstk_ptr = srcbyte % 10 + 48;
-    srcbyte /= 10;
     ++tmpstk_ptr;
   }
-  while ( tmpstk < tmpstk_ptr )
-    *dst++ = *--tmpstk_ptr;
+  for ( ; tmpstk < tmpstk_ptr; tmpstk_ptr -= 1 )
+    *dst++ = *(tmpstk_ptr - 1);
   return dst;
 }
 
@@ -5194,8 +5057,7 @@ int do_conv_a2s_inner(char *sp_, char *dp_, int len)
   dp_ptroffs2 = dp_ptroffs1 + 1;
   while ( 1 )
   {
-    while ( *sp_ == ' ' || *sp_ == '\t' )
-      sp_ += 1;
+    for ( ; *sp_ == ' ' || *sp_ == '\t'; sp_ += 1 );
     if ( !*sp_ )
       break;
     if ( *sp_ != 'A' && *sp_ != 'a' )
@@ -5203,7 +5065,7 @@ int do_conv_a2s_inner(char *sp_, char *dp_, int len)
     sp_curchr3 = sp_[1];
     if ( sp_curchr3 != 'T' && sp_curchr3 != 't' )
       return 0;
-    while ( *sp_ && *sp_ != ' ' && *sp_ != '\t' )
+    for ( ; *sp_ && *sp_ != ' ' && *sp_ != '\t'; sp_ += 1 )
     {
       if ( --len_minus_three <= 0 )
         return -19;
@@ -5214,7 +5076,7 @@ int do_conv_a2s_inner(char *sp_, char *dp_, int len)
           return -19;
         *dp_ptroffs2++ = '\\';
       }
-      sp_curchr4 = *sp_++;
+      sp_curchr4 = *sp_;
       *dp_ptroffs2++ = sp_curchr4;
     }
     len_minus_three -= 4;
@@ -5255,8 +5117,7 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
   char *sp_ptroffs4; // $a0
 
   curindx1 = 0;
-  while ( *sp_ == ' ' || *sp_ == '\t' )
-    sp_ += 1;
+  for ( ; *sp_ == ' ' || *sp_ == '\t'; sp_ += 1 );
   sp_minus_one1 = sp_;
   if ( *sp_minus_one1 != '"' )
     return 0;
@@ -5268,8 +5129,7 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
   sp_ptroffs1 = sp_minus_one1 + 3;
   while ( 1 )
   {
-    while ( *sp_ptroffs1 == ' ' || *sp_ptroffs1 == '\t' )
-      sp_ptroffs1 += 1;
+    for ( ; *sp_ptroffs1 == ' ' || *sp_ptroffs1 == '\t'; sp_ptroffs1 += 1 );
     sp_ptroffs2 = sp_ptroffs1;
     if ( !*sp_ptroffs2 || *sp_ptroffs2 == '\\' )
     {
@@ -5278,8 +5138,7 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
       if ( sp_ptroffs2[1] != 'c' )
         return 0;
       sp_ptroffs4 = sp_ptroffs2 + 2;
-      while ( *sp_ptroffs4 == ' ' || *sp_ptroffs4 == '\t' )
-        sp_ptroffs4 += 1;
+      for ( ; *sp_ptroffs4 == ' ' || *sp_ptroffs4 == '\t'; sp_ptroffs4 += 1 );
       if ( *sp_ptroffs4 )
         return -19;
       if ( curindx1 <= 0 )
@@ -5329,8 +5188,7 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
         }
       }
     }
-    while ( *sp_ptroffs2 == ' ' || *sp_ptroffs2 == '\t' )
-      sp_ptroffs2 += 1;
+    for ( ; *sp_ptroffs2 == ' ' || *sp_ptroffs2 == '\t'; sp_ptroffs2 += 1 );
     sp_ptroffs3 = sp_ptroffs2;
     if ( *sp_ptroffs3 != 'O' )
       return 0;
@@ -5347,18 +5205,17 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
 //----- (004084A0) --------------------------------------------------------
 int do_check_aolnet(const char *auth_name)
 {
-  const char *auth_name_1; // $s0
   int i; // $s1
   const char *periodpos; // $v0
 
-  auth_name_1 = auth_name;
   if ( strncmp(auth_name, "aolnet/", 7) == 0 )
   {
     periodpos = auth_name;
-    for ( i = 0; periodpos; ++i )
+    for ( i = 0; periodpos; i += 1 )
     {
-      periodpos = strchr(auth_name_1, '.');
-      auth_name_1 = periodpos + 1;
+      periodpos = strchr(periodpos, '.');
+      if ( periodpos )
+        periodpos += 1;
     }
     if ( i != 5 )
       return 0;
@@ -5374,23 +5231,13 @@ int do_check_authnet(char *argst, char *arged)
   char *j; // $s0
   int result; // $v0
 
-  for ( i = arged; argst < i && *(i - 1) < '!'; --i )
-  {
-  }
+  for ( i = arged; argst < i && *(i - 1) < '!'; i -= 1 );
   *i = 0;
-  for ( j = argst; *j && isspace(*j); ++j )
-  {
-  }
+  for ( j = argst; *j && isspace(*j); j += 1 );
   if ( !strncmp(j, "auth_name", 9) )
   {
-    while ( *j && !isspace(*j) )
-    {
-      j++;
-    }
-    while ( *j && isspace(*j) )
-    {
-      j++;
-    }
+    for ( ; *j && !isspace(*j); j += 1 );
+    for ( ; *j && isspace(*j); j += 1 );
     if ( *j == '"' )
       ++j;
     result = do_check_aolnet(j);
@@ -5446,14 +5293,12 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
     if ( read_res2 < 36
       || (strncmp(g_read_check_netcnf_heapptr, "# <Sony Computer Entertainment Inc.>", 36) != 0) )
     {
-      curchind = 0;
       printf("netcnf: decoding error (magic=\"");
-      while ( curchind < read_res2 && curchind < 36 )
+      for ( curchind = 0; curchind < read_res2 && curchind < 36; curchind += 1 )
       {
         curchr2 = (u8)curheapptr1[curchind];
         curchr = (unsigned int)(curchr2 - 32) >= 0x5F ? '?' : (char)curchr2;
         printf("%c", curchr);
-        curchind++;
       }
       errretres = -15;
       printf("\")\n");
@@ -5462,7 +5307,7 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
   if ( !errretres && read_res2 > 0 )
   {
     read_res2--;
-    while ( read_res2 > 0 )
+    for ( ; read_res2 > 0; read_res2 -= 1 )
     {
       if ( *curheapptr1 == '\n' )
       {
@@ -5485,7 +5330,6 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
           *heapmem_2++ = *curheapptr1;
       }
       curheapptr1++;
-      --read_res2;
     }
   }
   if ( !errretres && heapmem_1 < heapmem_2 )
@@ -5546,27 +5390,20 @@ char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netc
   char *i; // $t0
   const char *entry_buffer_2; // $v1
 
-  entry_buffer_1 = entry_buffer;
-  if ( !entry_buffer_1 || !*entry_buffer_1 )
+  if ( !entry_buffer || !*entry_buffer )
     return 0;
-  while ( *entry_buffer_1 )
+  for ( entry_buffer_1 = entry_buffer; *entry_buffer_1; entry_buffer_1 += 1 )
   {
     if ( *entry_buffer_1 == ':' )
       return (char *)entry_buffer;
-    entry_buffer_1++;
   }
   if ( !fpath || !*fpath )
     return (char *)entry_buffer;
-  fpath_1 = fpath;
-  while ( *++fpath_1 )
-    ;
+  for ( fpath_1 = fpath; fpath_1[1]; fpath_1 += 1 );
   fpath_1_minus_1 = fpath_1 - 1;
   if ( fpath < fpath_1_minus_1 || *entry_buffer == '/' || *entry_buffer == '\\' )
   {
-    while ( fpath < fpath_1_minus_1 && *fpath_1_minus_1 != ':' )
-    {
-      fpath_1_minus_1--;
-    }
+    for ( ; fpath < fpath_1_minus_1 && *fpath_1_minus_1 != ':'; fpath_1_minus_1 -= 1 );
     if ( *fpath_1_minus_1 == ':' || *fpath_1_minus_1 == '/' || *fpath_1_minus_1 == '\\' )
     {
       ++fpath_1_minus_1;
@@ -5574,24 +5411,20 @@ char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netc
   }
   else if ( *fpath_1_minus_1 != ':' )
   {
-    while ( fpath < fpath_1_minus_1 && *fpath_1_minus_1 != ':' && *fpath_1_minus_1 != '/' && *fpath_1_minus_1 != '\\' )
-    {
-      fpath_1_minus_1--;
-    }
+    for ( ; fpath < fpath_1_minus_1 && *fpath_1_minus_1 != ':' && *fpath_1_minus_1 != '/' && *fpath_1_minus_1 != '\\'; fpath_1_minus_1 -= 1 );
     if ( *fpath_1_minus_1 == ':' || *fpath_1_minus_1 == '/' || *fpath_1_minus_1 == '\\' )
     {
       ++fpath_1_minus_1;
     }
   }
   fpath_2 = fpath;
-  for ( i = netcnf_file_path; fpath_2 < fpath_1_minus_1; ++i )
+  for ( i = netcnf_file_path; fpath_2 < fpath_1_minus_1; i += 1 )
   {
     *i = *fpath_2++;
   }
-  entry_buffer_2 = entry_buffer;
-  while ( *entry_buffer_2 )
+  for ( entry_buffer_2 = entry_buffer; *entry_buffer_2; entry_buffer_2 += 1 )
   {
-    *i++ = *entry_buffer_2++;
+    *i++ = *entry_buffer_2;
   }
   *i = 0;
   return netcnf_file_path;
@@ -5645,18 +5478,13 @@ int is_special_file_path(const char *netcnf_path)
 //----- (00408C18) --------------------------------------------------------
 void do_init_callback_handles(void)
 {
-  int handleind2; // $a0
   int handleind1; // $v1
 
-  handleind2 = 0;
-  handleind1 = 0;
-  while ( handleind2 < 4 )
+  for ( handleind1 = 0; handleind1 < 4; handleind1 += 1 )
   {
     g_callback_handle_infos[handleind1].m_fd = -1;
     g_callback_handle_infos[handleind1].m_filesize = 0;
     g_callback_handle_infos[handleind1].m_allocstate = 0;
-    ++handleind2;
-    ++handleind1;
   }
 }
 
@@ -5664,26 +5492,18 @@ void do_init_callback_handles(void)
 int do_get_empty_callback_handle(int in_fd, int in_allocstate)
 {
   int indtmp1; // $a3
-  struct netcnf_callback_handle_info *curhandle; // $a2
-  int indtmp2; // $t0
   int handlecnt; // $v1
 
-  indtmp1 = 0;
-  curhandle = g_callback_handle_infos;
-  indtmp2 = 0;
-  while ( indtmp1 < 4 )
+  for ( indtmp1 = 0; indtmp1 < 4; indtmp1 += 1 )
   {
-    if ( curhandle->m_fd == -1 )
+    if ( g_callback_handle_infos[indtmp1].m_fd == -1 )
     {
       handlecnt = g_open_callback_handle_count;
-      curhandle->m_fd = in_fd;
-      g_callback_handle_infos[indtmp2].m_allocstate = in_allocstate;
+      g_callback_handle_infos[indtmp1].m_fd = in_fd;
+      g_callback_handle_infos[indtmp1].m_allocstate = in_allocstate;
       g_open_callback_handle_count = handlecnt + 1;
       return indtmp1;
     }
-    ++curhandle;
-    ++indtmp1;
-    ++indtmp2;
   }
   return -1;
 }
@@ -5693,19 +5513,14 @@ int do_get_empty_callback_handle(int in_fd, int in_allocstate)
 int do_filesize_callback_handles(int in_fd, int in_allocstate)
 {
   int indtmp1; // $a2
-  int indtmp2; // $v1
 
-  indtmp1 = 0;
-  indtmp2 = 0;
-  while ( indtmp1 < 4 )
+  for ( indtmp1 = 0; indtmp1 < 4; indtmp1 += 1 )
   {
-    if ( g_callback_handle_infos[indtmp2].m_fd == in_fd
-      && (g_callback_handle_infos[indtmp2].m_allocstate == in_allocstate || !in_allocstate) )
+    if ( g_callback_handle_infos[indtmp1].m_fd == in_fd
+      && (g_callback_handle_infos[indtmp1].m_allocstate == in_allocstate || !in_allocstate) )
     {
       return indtmp1;
     }
-    ++indtmp1;
-    ++indtmp2;
   }
   return -1;
 }
@@ -5714,23 +5529,19 @@ int do_filesize_callback_handles(int in_fd, int in_allocstate)
 void do_clear_callback_handles(int fd, int allocmatch)
 {
   int indtmp; // $a3
-  int *p_m_allocstate; // $a2
-  struct netcnf_callback_handle_info *i; // $v1
   int count_tmp; // $v0
 
-  indtmp = 0;
-  p_m_allocstate = &g_callback_handle_infos[0].m_allocstate;
-  for ( i = g_callback_handle_infos; i->m_fd != fd || *p_m_allocstate != allocmatch; ++i )
+  for ( indtmp = 0; indtmp < 4; indtmp += 1 )
   {
-    p_m_allocstate += 73;
-    ++indtmp;
-    if ( indtmp >= 4 )
-      return;
+    if ( g_callback_handle_infos[indtmp].m_fd == fd && g_callback_handle_infos[indtmp].m_allocstate == allocmatch )
+    {
+      count_tmp = g_open_callback_handle_count;
+      g_callback_handle_infos[indtmp].m_fd = -1;
+      g_callback_handle_infos[indtmp].m_allocstate = 0;
+      g_open_callback_handle_count = count_tmp - 1;
+      break;
+    }
   }
-  count_tmp = g_open_callback_handle_count;
-  i->m_fd = -1;
-  *p_m_allocstate = 0;
-  g_open_callback_handle_count = count_tmp - 1;
 }
 // 40C7E0: using guessed type int g_open_callback_handle_count;
 

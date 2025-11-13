@@ -159,12 +159,10 @@ int module_start(int argc, char *argv[])
   iop_thread_t th_param; // [sp+10h] [-18h] BYREF
   int xflg;
 
-
   thpri = 123;
   thstack = 4096;
-  cur_argc = argc - 1;
   cur_argv = (const char **)(argv + 1);
-  while ( cur_argc > 0 )
+  for ( cur_argc = argc - 1; cur_argc > 0; cur_argc -= 1 )
   {
     xflg = 1;
     if ( !strncmp("thpri=", *cur_argv, 6) )
@@ -209,10 +207,7 @@ int module_start(int argc, char *argv[])
         return 1;
       }
       thstack = strtol(bp, 0, 10);
-      while ( *bp && isdigit(*bp) )
-      {
-        ++bp;
-      }
+      for ( ; *bp && isdigit(*bp); bp += 1 );
       if ( !strcmp(bp, "KB") )
       {
         thstack <<= 10;
@@ -229,7 +224,6 @@ int module_start(int argc, char *argv[])
       usage();
       return 1;
     }
-    --cur_argc;
     ++cur_argv;
   }
   retres1 = RegisterLibraryEntries(&_exp_netcnfif);
@@ -312,7 +306,6 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
   int typetmp; // $v1
   int redial_count; // $a1
   int dialind; // $a0
-  struct sceNetCnfInterface *ifc; // $v1
   struct sceNetCnfInterface *ifc_1; // $a0
   sceNetCnfCallback_t callback; // [sp+18h] [-10h] BYREF
 
@@ -337,10 +330,9 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
         retres1 = sceNetCnfGetList(buf->fname, buf->type, list_iop);
         if ( retres1 >= 0 )
         {
-          dataind1 = 0;
           p_list_iop = list_iop;
           p_list_ee = list_ee;
-          while ( dataind1 < buf->data && dataind1 < retres1 )
+          for ( dataind1 = 0; dataind1 < buf->data && dataind1 < retres1; dataind1 += 1 )
           {
             p2_list_ee = p_list_ee;
             p2_list_iop = p_list_iop;
@@ -360,12 +352,10 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
             p2_stat_tmp = p2_list_iop->stat;
             *p2_list_ee = p2_list_iop->type;
             p2_list_ee[1] = p2_stat_tmp;
-            ++dataind1;
             p_list_ee += 144;
           }
           dmatid1 = sceNetcnfifSendEE((unsigned int)list_ee, buf->addr, 576 * buf->data);
-          while ( sceNetcnfifDmaCheck(dmatid1) )
-            ;
+          while ( sceNetcnfifDmaCheck(dmatid1) );
         }
         my_free(list_iop);
         my_free(list_ee);
@@ -467,14 +457,10 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
           redial_count = 0;
           if ( env.root->pair_head->ifc )
           {
-            dialind = 0;
-            ifc = env.root->pair_head->ifc;
-            while ( dialind < 10 )
+            for ( dialind = 0; dialind < 10; dialind += 1 )
             {
-              if ( ifc->phone_numbers[0] && dialind < 3 && dialind >= 0 )
+              if ( env.root->pair_head->ifc->phone_numbers[dialind] && dialind < 3 && dialind >= 0 )
                 ++redial_count;
-              ++dialind;
-              ifc = (struct sceNetCnfInterface *)((char *)ifc + 4);
             }
             env.root->pair_head->ifc->redial_count = redial_count - 1;
             ifc_1 = env.root->pair_head->ifc;
@@ -595,9 +581,7 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
   u8 *address; // $a1
   u8 *netmask; // $a1
   struct sceNetCnfCommand *cmd_head; // $s0
-  sceNetcnfifData_t *i; // $a0
   int numind; // $s0
-  sceNetCnfInterface_t *p_1; // $s2
   const char *str; // $a1
   u8 *auth_name; // $a1
   u8 *auth_key; // $a1
@@ -650,20 +634,16 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
   netmask = p->netmask;
   if ( netmask )
     strcpy(data->netmask, (const char *)netmask);
-  cmd_head = p->cmd_head;
   ns_count = 0;
-  for ( i = data; cmd_head; i = data )
+  for ( cmd_head = p->cmd_head; cmd_head; cmd_head = cmd_head->forw )
   {
-    cmd = get_cmd(i, cmd_head, &ns_count);
+    cmd = get_cmd(data, cmd_head, &ns_count);
     if ( cmd < 0 )
       return cmd;
-    cmd_head = cmd_head->forw;
   }
-  numind = 0;
-  p_1 = p;
-  while ( numind < 10 )
+  for ( numind = 0; numind < 10; numind += 1 )
   {
-    str = (const char *)p_1->phone_numbers[0];
+    str = (const char *)p->phone_numbers[numind];
     if ( str )
     {
       switch ( numind )
@@ -679,8 +659,6 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
           break;
       }
     }
-    p_1 = (sceNetCnfInterface_t *)((char *)p_1 + 4);
-    ++numind;
   }
   auth_name = p->auth_name;
   if ( auth_name )
@@ -712,8 +690,8 @@ int get_net(sceNetcnfifData_t *data, sceNetCnfRoot_t *p)
   sceNetCnfInterface_t *ifc; // $a1
   sceNetCnfInterface_t *dev; // $a1
 
-  pair = p->pair_head;
-  for ( i = 0; pair; pair = pair->forw )
+  i = 0;
+  for ( pair = p->pair_head; pair; pair = pair->forw )
   {
     sceNetcnfifDataInit(data);
     strcpy(data->attach_ifc, (const char *)pair->attach_ifc);
@@ -762,7 +740,6 @@ void init_usrntcnf(sceNetCnfInterface_t *ifc)
   int ind; // $a1
   u8 **p_product; // $v1
 
-  ind = 2;
   p_product = &ifc->product;
   ifc->type = -1;
   ifc->dhcp = -1;
@@ -771,10 +748,9 @@ void init_usrntcnf(sceNetCnfInterface_t *ifc)
   ifc->netmask = 0;
   ifc->cmd_head = 0;
   ifc->cmd_tail = 0;
-  while ( ind >= 0 )
+  for ( ind = 2; ind >= 0; ind -= 1 )
   {
     p_product[14] = 0;
-    --ind;
     --p_product;
   }
   ifc->want.dns1_nego = -1;
@@ -803,17 +779,12 @@ void init_usrntcnf(sceNetCnfInterface_t *ifc)
 int check_address(char *str)
 {
   int retres; // $a1
-  int str_hichr; // $v0
-  int str_lochr; // $v0
 
   retres = 0;
-  str_hichr = (u8)*str << 24;
-  while ( *str )
+  for ( ; *str; str += 1 )
   {
-    str_lochr = str_hichr >> 24;
-    if ( str_lochr != '.' && str_lochr != '0' )
+    if ( *str != '.' && *str != '0' )
       retres = 1;
-    str_hichr = (u8)*++str << 24;
   }
   return retres;
 }
@@ -1271,16 +1242,14 @@ int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
   p->attach_ifc = dup_string(e, (u8 *)data);
   attach_dev_tmp = dup_string(e, (u8 *)data->attach_dev);
   p->attach_dev = attach_dev_tmp;
-  indx2 = 0;
-  while ( indx2 < 2 )
+  for ( indx2 = 0; indx2 < 2; indx2 += 1 )
   {
-    indx2 += 1;
     e->ifc = 0;
-    attachres1 = put_attach(e, data, indx2);
+    attachres1 = put_attach(e, data, indx2 + 1);
     linkres1 = attachres1;
     if ( attachres1 < 0 && attachres1 != -100 )
       break;
-    linkres1 = root_link(e, indx2);
+    linkres1 = root_link(e, indx2 + 1);
     if ( linkres1 < 0 )
       break;
   }
@@ -1360,16 +1329,12 @@ void sce_callback_initialize(void)
   {
     if ( sceSifBindRpc(&gcd, 0x80001101, 0) < 0 )
     {
-      while ( 1 )
-        ;
+      while ( 1 );
     }
-    while ( sceSifCheckStatRpc(&gcd) )
-      ;
+    while ( sceSifCheckStatRpc(&gcd) );
     if ( gcd.server )
       break;
-    ind = 0xFFFE;
-    while ( ind-- != -1 )
-      ;
+    for ( ind = 0xFFFE; ind != -1; ind -= 1 );
   }
 }
 
