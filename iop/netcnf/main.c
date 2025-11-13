@@ -827,7 +827,7 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
   int xorind2_2; // $s1
   int xorind3_2; // $v1
   u16 bufflipx1; // [sp+10h] [-8h] BYREF
-  char bufflipx2[6]; // [sp+12h] [-6h] BYREF
+  char bufflipx2; // [sp+12h] [-6h] BYREF
 
   result = do_read_ilink_id();
   if ( result < 0 )
@@ -876,12 +876,12 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
       xorind2_2 = xorind1 + 1;
       bufresx2 = magic_shift_write_netcnf_2(*(u8 *)buf_1, buflenx2);
       xorind3_2 = 0;
-      bufflipx2[0] = bufresx2;
+      bufflipx2 = bufresx2;
       if ( xorind2_2 != 24 )
         xorind3_2 = xorind2_2;
       xorind1 = xorind3_2;
-      bufflipx2[0] = ~bufresx2;
-      writeres = do_write_netcnf_no_encode(fd, bufflipx2, 1);
+      bufflipx2 = ~bufresx2;
+      writeres = do_write_netcnf_no_encode(fd, &bufflipx2, 1);
       --netcnf_len_1;
       ++xoroffs;
     }    
@@ -3086,7 +3086,7 @@ int do_check_other_keywords(
   int has_flagged; // $s3
   const char **p_m_key; // $s0
   char *e_arg_chkres; // $v0
-  int numval[2]; // [sp+10h] [-8h] BYREF
+  int numval; // [sp+10h] [-8h] BYREF
 
   options_1 = options;
   cur_avx = (const char *)e->av[0];
@@ -3110,22 +3110,22 @@ int do_check_other_keywords(
     switch ( options_1->m_type )
     {
       case '1':
-        numval[0] = 255;
+        numval = 255;
         if ( !has_flagged )
         {
-          if ( e->ac < 2 || do_parse_number(e, e->av[1], numval) )
+          if ( e->ac < 2 || do_parse_number(e, e->av[1], &numval) )
             break;
         }
-        *((u8 *)cnfdata + options_1->m_offset) = numval[0];
+        *((u8 *)cnfdata + options_1->m_offset) = numval;
         return 0;
       case '4':
-        numval[0] = -1;
+        numval = -1;
         if ( !has_flagged )
         {
-          if ( e->ac < 2 || do_parse_number(e, e->av[1], numval) )
+          if ( e->ac < 2 || do_parse_number(e, e->av[1], &numval) )
             break;
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval[0];
+        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
         return 0;
       case 'A':
         if ( !has_flagged )
@@ -3134,29 +3134,29 @@ int do_check_other_keywords(
             break;
           if ( !strcmp("any", (const char *)e->av[1]) )
           {
-            numval[0] = 0;
+            numval = 0;
           }
           else if ( !strcmp("pap", (const char *)e->av[1]) )
           {
-            numval[0] = 1;
+            numval = 1;
           }
           else if ( !strcmp("chap", (const char *)e->av[1]) )
           {
-            numval[0] = 2;
+            numval = 2;
           }
           else if ( !strcmp("pap/chap", (const char *)e->av[1]) )
           {
-            numval[0] = 3;
+            numval = 3;
           }
           else if ( !strcmp("chap/pap", (const char *)e->av[1]) )
           {
-            numval[0] = 4;
+            numval = 4;
           }
-          else if ( do_parse_number(e, e->av[1], numval) != 0 )
+          else if ( do_parse_number(e, e->av[1], &numval) != 0 )
           {
             return -1;
           }
-          *((u8 *)cnfdata + options_1->m_offset) = numval[0];
+          *((u8 *)cnfdata + options_1->m_offset) = numval;
         }
         if ( !strcmp("want.auth", (const char *)e->av[0]) )
           *((u8 *)cnfdata + 171) = has_flagged == 0;
@@ -3166,9 +3166,9 @@ int do_check_other_keywords(
       case 'C':
         if ( !has_flagged )
         {
-          if ( e->ac < 2 || do_parse_number(e, e->av[1], numval) )
+          if ( e->ac < 2 || do_parse_number(e, e->av[1], &numval) )
             break;
-          *(u32 *)((char *)cnfdata + options_1->m_offset) = numval[0];
+          *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
         }
         if ( !strcmp("want.accm", (const char *)e->av[0]) )
           *((u8 *)cnfdata + 170) = has_flagged == 0;
@@ -3176,45 +3176,45 @@ int do_check_other_keywords(
           *((u8 *)cnfdata + 246) = has_flagged == 0;
         return 0;
       case 'D':
-        numval[0] = -1;
+        numval = -1;
         if ( !has_flagged )
         {
           if ( e->ac < 2 )
             break;
           if ( !strcmp("tone", (const char *)e->av[1]) )
           {
-            numval[0] = 0;
+            numval = 0;
           }
           else if ( !strcmp("pulse", (const char *)e->av[1]) )
           {
-            numval[0] = 1;
+            numval = 1;
           }
           else if ( !strcmp("any", (const char *)e->av[1]) )
           {
-            numval[0] = 2;
+            numval = 2;
           }
-          else if ( do_parse_number(e, e->av[1], numval) != 0 )
+          else if ( do_parse_number(e, e->av[1], &numval) != 0 )
           {
             return -1;
           }
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval[0];
+        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
         return 0;
       case 'L':
-        numval[0] = -1;
+        numval = -1;
         if ( !has_flagged )
         {
-          if ( do_parse_phone_stuff(e, e->ac - 1, (const char **)&e->av[1], numval) != 0 )
+          if ( do_parse_phone_stuff(e, e->ac - 1, (const char **)&e->av[1], &numval) != 0 )
             return -1;
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval[0];
+        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
         return 0;
       case 'M':
         if ( !has_flagged )
         {
-          if ( e->ac < 2 || do_parse_number(e, e->av[1], numval) )
+          if ( e->ac < 2 || do_parse_number(e, e->av[1], &numval) )
             break;
-          *(u16 *)((char *)cnfdata + options_1->m_offset) = numval[0];
+          *(u16 *)((char *)cnfdata + options_1->m_offset) = numval;
         }
         if ( !strcmp("want.mru", (const char *)e->av[0]) )
           *((u8 *)cnfdata + 169) = has_flagged == 0;
@@ -3222,111 +3222,111 @@ int do_check_other_keywords(
           *((u8 *)cnfdata + 245) = has_flagged == 0;
         return 0;
       case 'P':
-        numval[0] = -1;
+        numval = -1;
         if ( !has_flagged )
         {
           if ( e->ac < 2 )
             break;
           if ( !strcmp("auto", (const char *)e->av[1]) )
           {
-            numval[0] = 1;
+            numval = 1;
           }
           else if ( !strcmp("10", (const char *)e->av[1]) )
           {
-            numval[0] = 2;
+            numval = 2;
           }
           else if ( !strcmp("10_fd", (const char *)e->av[1]) )
           {
-            numval[0] = 3;
+            numval = 3;
           }
           else if ( !strcmp("10_fd_pause", (const char *)e->av[1]) )
           {
-            numval[0] = 4;
+            numval = 4;
           }
           else if ( !strcmp("tx", (const char *)e->av[1]) )
           {
-            numval[0] = 5;
+            numval = 5;
           }
           else if ( !strcmp("tx_fd", (const char *)e->av[1]) )
           {
-            numval[0] = 6;
+            numval = 6;
           }
           else if ( !strcmp("tx_fd_pause", (const char *)e->av[1]) )
           {
-            numval[0] = 7;
+            numval = 7;
           }
-          else if ( do_parse_number(e, e->av[1], numval) != 0 )
+          else if ( do_parse_number(e, e->av[1], &numval) != 0 )
           {
             return -1;
           }
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval[0];
+        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
         return 0;
       case 'T':
-        numval[0] = -1;
+        numval = -1;
         if ( !has_flagged )
         {
           if ( e->ac < 2 )
             break;
           if ( !strcmp("any", (const char *)e->av[1]) )
           {
-            numval[0] = 0;
+            numval = 0;
           }
           if ( !strcmp("eth", (const char *)e->av[1]) )
           {
-            numval[0] = 1;
+            numval = 1;
           }
           else if ( !strcmp("ppp", (const char *)e->av[1]) )
           {
-            numval[0] = 2;
+            numval = 2;
           }
           else if ( !strcmp("nic", (const char *)e->av[1]) )
           {
-            numval[0] = 3;
+            numval = 3;
           }
-          else if ( do_parse_number(e, e->av[1], numval) != 0 )
+          else if ( do_parse_number(e, e->av[1], &numval) != 0 )
           {
             return -1;
           }
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval[0];
+        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
         return 0;
       case 'b':
-        numval[0] = has_flagged == 0;
-        *((u8 *)cnfdata + options_1->m_offset) = numval[0];
+        numval = has_flagged == 0;
+        *((u8 *)cnfdata + options_1->m_offset) = numval;
         return 0;
       case 'c':
-        numval[0] = 255;
+        numval = 255;
         if ( !has_flagged )
         {
           if ( e->ac < 2 )
             break;
           if ( !strcmp("no", (const char *)e->av[1]) )
           {
-            numval[0] = 0;
+            numval = 0;
           }
           else if ( !strcmp("md5", (const char *)e->av[1]) )
           {
-            numval[0] = 5;
+            numval = 5;
           }
           else if ( !strcmp("ms", (const char *)e->av[1]) )
           {
-            numval[0] = 128;
+            numval = 128;
           }
           else if ( !strcmp("ms-v1", (const char *)e->av[1]) )
           {
-            numval[0] = 128;
+            numval = 128;
           }
           else if ( !strcmp("ms-v2", (const char *)e->av[1]) )
           {
-            numval[0] = 129;
+            numval = 129;
           }
-          else if ( do_parse_number(e, e->av[1], numval) != 0 )
+          else if ( do_parse_number(e, e->av[1], &numval) != 0 )
           {
             return -1;
           }
         }
-        *((u8 *)cnfdata + options_1->m_offset) = numval[0];
+        *((u8 *)cnfdata + options_1->m_offset) = numval;
         return 0;
       case 'p':
         if ( !has_flagged )
@@ -3773,9 +3773,7 @@ int do_netcnf_ifc_related(sceNetCnfEnv_t *e)
 //----- (00406360) --------------------------------------------------------
 void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *ncis)
 {
-  struct netcnf_option *optx1; // $s3
   int curindx; // $a2
-  const char **p_m_key; // $s0
   int strptr2_1; // $a0
   int typadd1_1; // $v1
   int strptr2_2; // $a0
@@ -3786,16 +3784,14 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
 
   if ( ncis )
   {
-    optx1 = g_options_attach_cnf;
-    curindx = 0;
-    for ( p_m_key = &g_options_attach_cnf[0].m_key; *p_m_key; p_m_key += 3 )
+    for ( curindx = 0; g_options_attach_cnf[curindx].m_key; curindx += 1 )
     {
-      switch ( optx1->m_type )
+      switch ( g_options_attach_cnf[curindx].m_type )
       {
         case '1':
         case 'b':
         case 'c':
-          strptr2 = (int)*(p_m_key - 1);
+          strptr2 = g_options_attach_cnf[curindx].m_offset;
           typadd1 = *((u8 *)&ncis->type + strptr2);
           if ( typadd1 != 255 )
             *((u8 *)&ncid->type + strptr2) = typadd1;
@@ -3805,13 +3801,13 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
         case 'L':
         case 'P':
         case 'T':
-          strptr2_1 = (int)*(p_m_key - 1);
+          strptr2_1 = g_options_attach_cnf[curindx].m_offset;
           typadd1_1 = *(int *)((char *)&ncis->type + strptr2_1);
           if ( typadd1_1 != -1 )
             *(int *)((char *)&ncid->type + strptr2_1) = typadd1_1;
           break;
         case 'A':
-          if ( !strcmp("want.auth", *p_m_key) )
+          if ( !strcmp("want.auth", g_options_attach_cnf[curindx].m_key) )
           {
             if ( ncis->want.f_auth )
             {
@@ -3826,7 +3822,7 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
           }
           break;
         case 'C':
-          if ( !strcmp("want.accm", *p_m_key) )
+          if ( !strcmp("want.accm", g_options_attach_cnf[curindx].m_key) )
           {
             if ( ncis->want.f_accm )
             {
@@ -3841,7 +3837,7 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
           }
           break;
         case 'M':
-          if ( !strcmp("want.mru", *p_m_key) )
+          if ( !strcmp("want.mru", g_options_attach_cnf[curindx].m_key) )
           {
             if ( ncis->want.f_mru )
             {
@@ -3856,7 +3852,7 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
           }
           break;
         case 'p':
-          strptr2_2 = (int)*(p_m_key - 1);
+          strptr2_2 = g_options_attach_cnf[curindx].m_offset;
           typadd1_3 = *(int *)((char *)&ncis->type + strptr2_2);
           if ( typadd1_3 )
             *(int *)((char *)&ncid->type + strptr2_2) = typadd1_3;
@@ -3864,7 +3860,6 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
         default:
           break;
       }
-      ++optx1;
     }
     for ( curindx = 0; curindx < 10; curindx += 1 )
     {
