@@ -218,9 +218,10 @@ int _start(int ac, char **av)
     {
       printf("usbmload : load_config NG\n");
     }
-    else if ( g_param_debug > 0 )
+    else
     {
-      printf("usbmload : load_config OK\n");
+      if ( g_param_debug > 0 )
+        printf("usbmload : load_config OK\n");
     }
   }
   memset(&efparam, 0, sizeof(efparam));
@@ -246,10 +247,7 @@ int _start(int ac, char **av)
   {
     thid2 = thid1;
     if ( g_param_debug > 0 )
-    {
       printf("usbmload : CreateThread ID = %d\n", thid1);
-      thid2 = thid1;
-    }
     StartThread(thid2, 0);
     g_thid = thid1;
     return 2;
@@ -530,9 +528,10 @@ int do_parse_config_file(const char *fn)
               strcpy(driverarg_end, p[1]);
               ++devstr->argc;
             }
-            else if ( g_param_debug > 0 )
+            else
             {
-              printf("%s : %d : Illegal parameter '%s'\n", fn, lineind, p[0]);
+              if ( g_param_debug > 0 )
+                printf("%s : %d : Illegal parameter '%s'\n", fn, lineind, p[0]);
             }
           }
         }
@@ -626,10 +625,7 @@ int usbmload_drv_probe(int dev_id)
   if ( !g_usbm_entry_list_end )
   {
     if ( g_param_debug > 0 )
-    {
       printf("usbmload : Not registered\n");
-      return 0;
-    }
     return 0;
   }
   for ( devinfo = g_usbm_entry_list_end; devinfo; devinfo = devinfo->forw )
