@@ -362,14 +362,8 @@ sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd)
 {
   sceSifMServeEntry *g_mserv_entries_ll; // $v1
 
-  g_mserv_entries_ll = msd->g_mserv_entries_ll;
-  while ( g_mserv_entries_ll )
-  {
-    if ( g_mserv_entries_ll->command == cmd )
-      return g_mserv_entries_ll;
-    g_mserv_entries_ll = g_mserv_entries_ll->next;
-  }
-  return 0;
+  for ( g_mserv_entries_ll = msd->g_mserv_entries_ll; g_mserv_entries_ll && g_mserv_entries_ll->command != cmd; g_mserv_entries_ll = g_mserv_entries_ll->next );
+  return g_mserv_entries_ll;
 }
 
 //----- (004002B0) --------------------------------------------------------
@@ -529,8 +523,7 @@ void do_set_rpc_queue(sceSifMQueueData *qd, int key)
   qd->next = 0;
   if ( g_msif_data.m_active_queue )
   {
-    for ( i = g_msif_data.m_active_queue; i->next; i = i->next )
-      ;
+    for ( i = g_msif_data.m_active_queue; i->next; i = i->next );
     i->next = qd;
   }
   else
@@ -698,9 +691,7 @@ void do_msif_exec_request(sceSifMServeData *sd)
       CpuResumeIntr(state[0]);
       if ( dmaid )
         break;
-      busywait = 0xFFFE;
-      while ( busywait-- != -1 )
-        ;
+      for ( busywait = 0xFFFE; busywait != -1; busywait -= 1 );
     }
   }
 }
@@ -826,7 +817,7 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
   }
   CpuSuspendIntr(&state);
   g_mserv_entries_ll = g_msif_data.g_mserv_entries_ll;
-  if ( g_msif_data.g_mserv_entries_ll )
+  if ( g_mserv_entries_ll )
   {
     while ( g_mserv_entries_ll->next )
       g_mserv_entries_ll = g_mserv_entries_ll->next;
