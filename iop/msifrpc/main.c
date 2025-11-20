@@ -379,9 +379,7 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
 {
   sceSifMServeEntry *mserve_entry; // $s2
   SifMRpcBindPkt_t *fpacket; // $s0
-  sceSifMClientData *cd_1; // $v0
   struct msif_msgbox_msg *msgdat; // $s0
-  sceSifMClientData *m_cd; // $v0
   iop_sys_clock_t sysclks; // [sp+18h] [-8h] BYREF
 
   mserve_entry = do_get_mserve_entry(data->m_fromee_cmd, harg);
@@ -393,10 +391,9 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
     msgdat->m_probunused_unkx21 = 0;
     msgdat->m_in_cmd = 0x80000019;
     msgdat->m_msg2.m_pkt_addr = data->m_pkt_addr;
-    m_cd = data->m_cd;
     msgdat->m_msg2.m_msif_data = harg;
     msgdat->m_msg2.m_mserve_entry = mserve_entry;
-    msgdat->m_msg2.m_eebuf_cd = m_cd;
+    msgdat->m_msg2.m_eebuf_cd = data->m_cd;
     msgdat->m_msg2.m_buffersize = data->m_buffersize;
     msgdat->m_msg2.m_stacksize = data->m_stacksize;
     msgdat->m_msg2.m_priority = data->m_priority;
@@ -406,12 +403,11 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
   {
     fpacket = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(harg);
     fpacket->pkt_addr = data->m_pkt_addr;
-    cd_1 = data->m_cd;
     fpacket->sid = 0x80000019;
     fpacket->m_eebuf_or_threadstate = 0;
     fpacket->m_eeserver = 0;
     fpacket->m_toee_unkxb = 0;
-    fpacket->cd = cd_1;
+    fpacket->cd = data->m_cd;
     if ( !isceSifSendCmd(0x80000018, fpacket, 64, 0, 0, 0) )
     {
       sysclks.hi = 0;
@@ -433,20 +429,17 @@ unsigned int alarm_cb_cmd_80000018_2(void *pkt)
 void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struct msif_data *harg)
 {
   sceSifMServeEntry *mserve_entry; // $s1
-  sceSifMServeData *m_sd; // $s2
   int threadstate_tmp; // $s1
   struct msif_msgbox_msg *msgboxdat; // $s0
-  sceSifMClientData *cd_tmp; // $v0
   SifMRpcBindPkt_t *fpacket; // $s0
-  sceSifMClientData *m_cd; // $v0
   iop_sys_clock_t alarmdat; // [sp+18h] [-8h] BYREF
 
   mserve_entry = do_get_mserve_entry(data->m_command, harg);
-  if ( !mserve_entry || (m_sd = data->m_sd, m_sd->sentry != mserve_entry) )
+  if ( !mserve_entry || (data->m_sd->sentry != mserve_entry) )
   {
     threadstate_tmp = 3;
   }
-  else if ( !m_sd->base->sleep )
+  else if ( !data->m_sd->base->sleep )
   {
     threadstate_tmp = 4;
   }
@@ -458,22 +451,20 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
     msgboxdat->m_probunused_unkx21 = 0;
     msgboxdat->m_in_cmd = 0x8000001D;
     msgboxdat->m_msg2.m_pkt_addr = data->m_pkt_addr;
-    cd_tmp = data->m_cd;
     msgboxdat->m_msg2.m_msif_data = harg;
     msgboxdat->m_msg2.m_mserve_entry = mserve_entry;
-    msgboxdat->m_msg2.m_sd = m_sd;
-    msgboxdat->m_msg2.m_eebuf_cd = cd_tmp;
+    msgboxdat->m_msg2.m_sd = data->m_sd;
+    msgboxdat->m_msg2.m_eebuf_cd = data->m_cd;
     iSendMbx(mserve_entry->mbxid, msgboxdat);
     return;
   }
   fpacket = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(harg);
   fpacket->pkt_addr = data->m_pkt_addr;
-  m_cd = data->m_cd;
   fpacket->sid = 0x8000001D;
   fpacket->m_eebuf_or_threadstate = threadstate_tmp;
   fpacket->m_eeserver = 0;
   fpacket->m_toee_unkxb = 0;
-  fpacket->cd = m_cd;
+  fpacket->cd = data->m_cd;
   if ( !isceSifSendCmd(0x80000018, fpacket, 64, 0, 0, 0) )
   {
     alarmdat.hi = 0;
@@ -486,26 +477,21 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
 //----- (00400610) --------------------------------------------------------
 void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg)
 {
-  sceSifMServeData *m_sd; // $v1
-  sceSifMQueueData *base; // $a1
-
-  m_sd = data->m_sd;
-  base = m_sd->base;
-  if ( base->start )
-    base->end->next = m_sd;
+  if ( data->m_sd->base->start )
+    data->m_sd->base->end->next = data->m_sd;
   else
-    base->start = m_sd;
-  base->end = m_sd;
-  m_sd->paddr = data->m_paddr;
-  m_sd->client = data->m_cd;
-  m_sd->fno = data->m_fno;
-  m_sd->size = data->m_size;
-  m_sd->receive = data->m_receive;
-  m_sd->rsize = data->m_rsize;
-  m_sd->rmode = data->m_rmode;
-  m_sd->rid = data->m_rid;
-  if ( base->key >= 0 && !base->active )
-    iWakeupThread(base->key);
+    data->m_sd->base->start = data->m_sd;
+  data->m_sd->base->end = data->m_sd;
+  data->m_sd->paddr = data->m_paddr;
+  data->m_sd->client = data->m_cd;
+  data->m_sd->fno = data->m_fno;
+  data->m_sd->size = data->m_size;
+  data->m_sd->receive = data->m_receive;
+  data->m_sd->rsize = data->m_rsize;
+  data->m_sd->rmode = data->m_rmode;
+  data->m_sd->rid = data->m_rid;
+  if ( data->m_sd->base->key >= 0 && !data->m_sd->base->active )
+    iWakeupThread(data->m_sd->base->key);
 }
 
 //----- (004006E8) --------------------------------------------------------
@@ -539,30 +525,28 @@ void do_set_rpc_queue(sceSifMQueueData *qd, int key)
 //----- (00400884) --------------------------------------------------------
 void do_msif_remove_rpc(sceSifMServeData *sd)
 {
-  sceSifMServeEntry *sentry; // $s2
-  sceSifMServeData *serve_list; // $s0
-  sceSifMServeData *serve_list_1; // $v1
+  sceSifMServeData *server2; // $s0
+  sceSifMServeData *server1; // $v1
   int state; // [sp+10h] [-8h] BYREF
 
-  sentry = sd->sentry;
   CpuSuspendIntr(&state);
-  serve_list = sentry->serve_list;
-  serve_list_1 = serve_list;
-  if ( serve_list == sd )
+  server1 = sd->sentry->serve_list;
+  if ( server1 == sd )
   {
-    sentry->serve_list = serve_list->next;
+    sd->sentry->serve_list = server1->next;
   }
   else
   {
-    while ( serve_list )
+    server2 = server1;
+    while ( server2 )
     {
-      if ( serve_list == sd )
+      server2 = server1->next;
+      if ( server2 == sd )
       {
-        serve_list_1->next = sd->next;
+        server1->next = sd->next;
         break;
       }
-      serve_list_1 = serve_list;
-      serve_list = serve_list->next;
+      server1 = server1->next;
     }
   }
   CpuResumeIntr(state);
@@ -571,28 +555,28 @@ void do_msif_remove_rpc(sceSifMServeData *sd)
 //----- (00400938) --------------------------------------------------------
 void do_sif_remove_rpc_queue(sceSifMQueueData *qd)
 {
-  sceSifMQueueData *m_active_queue; // $s0
-  sceSifMQueueData *next; // $v0
+  sceSifMQueueData *queue1; // $s0
+  sceSifMQueueData *queue2; // $v0
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
-  m_active_queue = g_msif_data.m_active_queue;
-  next = m_active_queue;
-  if ( g_msif_data.m_active_queue == qd )
+  queue1 = g_msif_data.m_active_queue;
+  if ( queue1 == qd )
   {
-    g_msif_data.m_active_queue = g_msif_data.m_active_queue->next;
+    g_msif_data.m_active_queue = queue1->next;
   }
   else
   {
-    while ( next )
+    queue2 = queue1;
+    while ( queue2 )
     {
-      next = m_active_queue->next;
-      if ( next == qd )
+      queue2 = queue1->next;
+      if ( queue2 == qd )
       {
-        m_active_queue->next = next->next;
+        queue1->next = queue2->next;
         break;
       }
-      m_active_queue = m_active_queue->next;
+      queue1 = queue1->next;
     }
   }
   CpuResumeIntr(state);
@@ -625,16 +609,8 @@ void do_msif_exec_request(sceSifMServeData *sd)
 {
   int size_extra; // $s3
   void *sentry_ret; // $s4
-  unsigned int rid; // $a1
   SifMRpcRendPkt_t *fpacket2; // $v0
-  SifMRpcRendPkt_t *fpacket2_tmp; // $s0
-  sceSifMClientData *client; // $v1
   int adddmat; // $s1
-  void *receive; // $v1
-  int adddmat_1; // $v1
-  int dmat_count; // $s1
-  SifDmaTransfer_t *dmat_ptr; // $v0
-  void *paddr; // $a0
   int dmaid; // $s0
   int busywait; // $v0
   SifDmaTransfer_t dmat[2]; // [sp+18h] [-28h] BYREF
@@ -648,46 +624,38 @@ void do_msif_exec_request(sceSifMServeData *sd)
   if ( sentry_ret )
     size_extra = sd->rsize;
   CpuSuspendIntr(&state);
-  rid = sd->rid;
-  if ( (rid & 4) != 0 )
-    fpacket2 = (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket2(&g_msif_data, (rid >> 16) & 0xFFFF);
+  if ( (sd->rid & 4) != 0 )
+    fpacket2 = (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket2(&g_msif_data, (sd->rid >> 16) & 0xFFFF);
   else
     fpacket2 = (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket(&g_msif_data);
-  fpacket2_tmp = fpacket2;
   CpuResumeIntr(state);
-  client = sd->client;
-  fpacket2_tmp->cid = 0x8000001A;
-  fpacket2_tmp->cd = client;
+  fpacket2->cid = 0x8000001A;
+  fpacket2->cd = sd->client;
   adddmat = 0;
   if ( sd->rmode )
   {
-    while ( !sceSifSendCmd(0x80000018, fpacket2_tmp, 64, sentry_ret, sd->receive, size_extra) );
+    while ( !sceSifSendCmd(0x80000018, fpacket2, 64, sentry_ret, sd->receive, size_extra) );
   }
   else
   {
-    fpacket2_tmp->rpc_id = 0;
-    fpacket2_tmp->rec_id = 0;
+    fpacket2->rpc_id = 0;
+    fpacket2->rec_id = 0;
     if ( size_extra > 0 )
     {
       adddmat = 1;
       dmat[0].src = sentry_ret;
-      receive = sd->receive;
       dmat[0].size = size_extra;
       dmat[0].attr = 0;
-      dmat[0].dest = receive;
+      dmat[0].dest = sd->receive;
     }
-    adddmat_1 = adddmat;
-    dmat_count = adddmat + 1;
-    dmat_ptr = &dmat[adddmat_1];
-    dmat_ptr->src = fpacket2_tmp;
-    paddr = sd->paddr;
-    dmat_ptr->size = 64;
-    dmat_ptr->attr = 0;
-    dmat_ptr->dest = paddr;
+    dmat[adddmat].src = fpacket2;
+    dmat[adddmat].size = 64;
+    dmat[adddmat].attr = 0;
+    dmat[adddmat].dest = sd->paddr;
     while ( 1 )
     {
       CpuSuspendIntr(&state);
-      dmaid = sceSifSetDma(dmat, dmat_count);
+      dmaid = sceSifSetDma(dmat, adddmat + 1);
       CpuResumeIntr(state);
       if ( dmaid )
         break;
@@ -723,19 +691,12 @@ void do_msif_rpc_loop(sceSifMQueueData *qd)
 //----- (00400C28) --------------------------------------------------------
 void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
 {
-  struct msif_msgbox_msg2 *p_m_msg2; // $s4
-  struct msif_data *m_msif_data; // $s6
   sceSifMServeData *sd; // $s1
   sceSifMQueueData *qd; // $s3
   void *funcbuf; // $s2
-  int ThreadId; // $v0
-  sceSifMServeEntry *m_mserve_entry; // $v0
   SifMRpcCallPkt_t *fpacket; // $s0
-  sceSifMClientData *m_eebuf_cd; // $v0
   int state; // [sp+18h] [-8h] BYREF
 
-  p_m_msg2 = &msgboxdat->m_msg2;
-  m_msif_data = msgboxdat->m_msg2.m_msif_data;
   CpuSuspendIntr(&state);
   sd = (sceSifMServeData *)AllocSysMemory(0, 60, 0);
   if ( !sd )
@@ -743,29 +704,26 @@ void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
   qd = (sceSifMQueueData *)AllocSysMemory(0, 28, 0);
   if ( !qd )
     printf("AllocSysMemory() failed.\n");
-  funcbuf = AllocSysMemory(0, p_m_msg2->m_buffersize, 0);
+  funcbuf = AllocSysMemory(0, msgboxdat->m_msg2.m_buffersize, 0);
   if ( !funcbuf )
     printf("AllocSysMemory() failed.\n");
   CpuResumeIntr(state);
-  ThreadId = GetThreadId();
-  do_set_rpc_queue(qd, ThreadId);
-  m_mserve_entry = p_m_msg2->m_mserve_entry;
+  do_set_rpc_queue(qd, GetThreadId());
   sd->func_buff = funcbuf;
   sd->base = qd;
   sd->next = 0;
-  sd->sentry = m_mserve_entry;
+  sd->sentry = msgboxdat->m_msg2.m_mserve_entry;
   qd->link = sd;
   qd->sleep = 0;
   CpuSuspendIntr(&state);
-  fpacket = (SifMRpcCallPkt_t *)sif_mrpc_get_fpacket(m_msif_data);
+  fpacket = (SifMRpcCallPkt_t *)sif_mrpc_get_fpacket(msgboxdat->m_msg2.m_msif_data);
   CpuResumeIntr(state);
   fpacket->pkt_addr = msgboxdat->m_msg2.m_pkt_addr;
-  m_eebuf_cd = p_m_msg2->m_eebuf_cd;
   fpacket->rpc_number = 0x80000019;
   fpacket->sd = sd;
   fpacket->recvbuf = funcbuf;
   fpacket->recv_size = 0;
-  fpacket->cd = m_eebuf_cd;
+  fpacket->cd = msgboxdat->m_msg2.m_eebuf_cd;
   while ( !sceSifSendCmd(0x80000018, fpacket, 64, 0, 0, 0) )
     DelayThread(0xF000);
   CpuSuspendIntr(&state);
@@ -779,19 +737,12 @@ void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
 //----- (00400DEC) --------------------------------------------------------
 void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, sceSifMRpcFunc cfunc)
 {
-  int curmbxid; // $v0
   sceSifMServeEntry *g_mserv_entries_ll; // $v1
   int mbxrecv; // $s1
-  int m_in_cmd; // $v1
   int thid_1; // $v0
-  sceSifMServeData *m_sd; // $s0
   int termthread_1; // $v0
-  struct msif_msgbox_msg2 *p_m_msg2; // $s2
   int delthread_1; // $s1
-  unsigned int rid; // $a1
   SifMRpcBindPkt_t *fpacket2; // $v0
-  SifMRpcBindPkt_t *fpacket2_1; // $s0
-  sceSifMClientData *m_eebuf_cd; // $v0
   iop_mbx_t mbxparam; // [sp+18h] [-70h] BYREF
   iop_thread_t thparam_1; // [sp+20h] [-68h] BYREF
   iop_thread_info_t thinfo; // [sp+38h] [-50h] BYREF
@@ -808,9 +759,8 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
   mbxparam.attr = 0;
   while ( 1 )
   {
-    curmbxid = CreateMbx(&mbxparam);
-    se->mbxid = curmbxid;
-    if ( curmbxid )
+    se->mbxid = CreateMbx(&mbxparam);
+    if ( se->mbxid )
       break;
     DelayThread(0xF000);
   }
@@ -843,8 +793,7 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
         break;
       }
     }
-    m_in_cmd = arg->m_in_cmd;
-    if ( m_in_cmd == 0x80000019 )
+    if ( arg->m_in_cmd == 0x80000019 )
     {
       thparam_1.thread = (void (*)(void *))thread_proc_80000019;
       thparam_1.attr = 0x2000000;
@@ -856,14 +805,12 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
       else
         StartThread(thid_1, arg);
     }
-    else if ( m_in_cmd == 0x8000001D )
+    else if ( arg->m_in_cmd == 0x8000001D )
     {
-      m_sd = arg->m_msg2.m_sd;
-      p_m_msg2 = &arg->m_msg2;
-      termthread_1 = TerminateThread(m_sd->base->key);
+      termthread_1 = TerminateThread(arg->m_msg2.m_sd->base->key);
       if ( termthread_1 )
         Kprintf("TerminateThread(): ret = %d\n", termthread_1);
-      delthread_1 = DeleteThread(m_sd->base->key);
+      delthread_1 = DeleteThread(arg->m_msg2.m_sd->base->key);
       if ( delthread_1 )
       {
         if ( delthread_1 == -414 )
@@ -874,32 +821,29 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
       else
       {
         delthread_1 = 1;
-        do_sif_remove_rpc_queue(m_sd->base);
+        do_sif_remove_rpc_queue(arg->m_msg2.m_sd->base);
         CpuSuspendIntr(&state);
-        FreeSysMemory(m_sd->base);
-        FreeSysMemory(m_sd->func_buff);
+        FreeSysMemory(arg->m_msg2.m_sd->base);
+        FreeSysMemory(arg->m_msg2.m_sd->func_buff);
         CpuResumeIntr(state);
-        do_msif_remove_rpc(m_sd);
+        do_msif_remove_rpc(arg->m_msg2.m_sd);
         CpuSuspendIntr(&state);
-        FreeSysMemory(m_sd);
+        FreeSysMemory(arg->m_msg2.m_sd);
         CpuResumeIntr(state);
       }
       CpuSuspendIntr(&state);
-      rid = m_sd->rid;
-      if ( (rid & 4) != 0 )
-        fpacket2 = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket2(p_m_msg2->m_msif_data, (rid >> 16) & 0xFFFF);
+      if ( (arg->m_msg2.m_sd->rid & 4) != 0 )
+        fpacket2 = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket2(arg->m_msg2.m_msif_data, (arg->m_msg2.m_sd->rid >> 16) & 0xFFFF);
       else
-        fpacket2 = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(p_m_msg2->m_msif_data);
-      fpacket2_1 = fpacket2;
+        fpacket2 = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(arg->m_msg2.m_msif_data);
       CpuResumeIntr(state);
-      fpacket2_1->pkt_addr = p_m_msg2->m_pkt_addr;
-      m_eebuf_cd = p_m_msg2->m_eebuf_cd;
-      fpacket2_1->sid = 0x8000001D;
-      fpacket2_1->m_eebuf_or_threadstate = delthread_1;
-      fpacket2_1->m_eeserver = 0;
-      fpacket2_1->m_toee_unkxb = 0;
-      fpacket2_1->cd = m_eebuf_cd;
-      while ( !sceSifSendCmd(0x80000018, fpacket2_1, 64, 0, 0, 0) )
+      fpacket2->pkt_addr = arg->m_msg2.m_pkt_addr;
+      fpacket2->sid = 0x8000001D;
+      fpacket2->m_eebuf_or_threadstate = delthread_1;
+      fpacket2->m_eeserver = 0;
+      fpacket2->m_toee_unkxb = 0;
+      fpacket2->cd = arg->m_msg2.m_eebuf_cd;
+      while ( !sceSifSendCmd(0x80000018, fpacket2, 64, 0, 0, 0) )
         DelayThread(0xF000);
       CpuSuspendIntr(&state);
       FreeSysMemory(arg);
