@@ -1718,13 +1718,16 @@ int do_add_entry_inner(
         switch ( type )
         {
           case 1:
-            sprintf(g_netcnf_file_path, "%sifc%03d%s", g_arg_fname, nrind, fileext);
+            // Unofficial: specify max length for g_arg_fname to avoid overflow
+            sprintf(g_netcnf_file_path, "%.245sifc%03d%s", g_arg_fname, nrind, fileext);
             break;
           case 2:
-            sprintf(g_netcnf_file_path, "%sdev%03d%s", g_arg_fname, nrind, fileext);
+            // Unofficial: specify max length for g_arg_fname to avoid overflow
+            sprintf(g_netcnf_file_path, "%.245sdev%03d%s", g_arg_fname, nrind, fileext);
             break;
           case 3:
-            sprintf(g_netcnf_file_path, "%snet%03d%s", g_arg_fname, nrind, fileext);
+            // Unofficial: specify max length for g_arg_fname to avoid overflow
+            sprintf(g_netcnf_file_path, "%.245snet%03d%s", g_arg_fname, nrind, fileext);
             break;
           default:
             do_free_heapmem(g_add_entry_heapptr);
