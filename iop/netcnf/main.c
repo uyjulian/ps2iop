@@ -1353,8 +1353,6 @@ int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int size)
 {
   int fd; // $s0
   int writeres; // $s1
-  int fpath_colon_ind; // $a0
-  u8 fixme_wrong_offset_fpath[16]; // [sp+0h] [-110h] BYREF
   char fpath_comb[256]; // [sp+10h] [-100h] BYREF
 
   if ( !fpath )
@@ -1378,8 +1376,7 @@ int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int size)
   do_close_netcnf(fd);
   if ( iomanX_rename(fpath_comb, fpath) == -5 )
     return -18;
-  for ( fpath_colon_ind = 0; fpath_comb[fpath_colon_ind] != ':'; fpath_colon_ind += 1 );
-  fixme_wrong_offset_fpath[fpath_colon_ind + 17] = 0;
+  // Unofficial: dead code removed
   return 0;
 }
 // 402104: using guessed type char fpath_comb[256];
@@ -1594,8 +1591,6 @@ int do_add_entry_inner(
   char *cur_entry_buffer; // $s2
   int strlenx; // $s0
   int writeres; // $s1
-  int curatomicnamepath_2; // $s2
-  u8 fixme_renamepath[16]; // [sp+0h] [-120h] BYREF
   char atomicrenamepath[256]; // [sp+18h] [-108h] BYREF
   int retres1; // [sp+118h] [-8h]
   int maxflag;
@@ -1818,8 +1813,7 @@ int do_add_entry_inner(
   {
     if ( iomanX_rename(atomicrenamepath, g_dir_name) == -5 )
       return -18;
-    for ( curatomicnamepath_2 = 0; atomicrenamepath[curatomicnamepath_2] != ':'; curatomicnamepath_2 += 1 );
-    fixme_renamepath[curatomicnamepath_2 + 25] = 0;
+    // Unofficial: dead code removed
   }
   if ( strncmp(g_dir_name, "pfs", 3) )
     return retres2;
