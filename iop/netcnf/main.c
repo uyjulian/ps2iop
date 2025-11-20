@@ -311,7 +311,6 @@ int do_module_load(int ac, char **av)
 {
   int semid; // $v0
   int ac_cur; // $s1
-  const char **av_cur; // $s0
   int heap_inited; // $v0
   int regres; // $v0
   iop_sema_t semaparam; // [sp+10h] [-10h] BYREF
@@ -336,22 +335,21 @@ int do_module_load(int ac, char **av)
   }
   g_icon_value[0] = 0;
   g_iconsys_value[0] = 0;
-  av_cur = (const char **)(av + 1);
-  for ( ac_cur = ac - 1; ac_cur > 0; ac_cur -= 1 )
+  for ( ac_cur = 1; ac_cur < ac; ac_cur += 1 )
   {
-    if ( !strncmp("icon=", *av_cur, 5) )
+    if ( !strncmp("icon=", av[ac_cur], 5) )
     {
-      strcpy(g_icon_value, *av_cur + 5);
+      strcpy(g_icon_value, av[ac_cur] + 5);
     }
-    else if ( !strncmp("iconsys=", *av_cur, 8) )
+    else if ( !strncmp("iconsys=", av[ac_cur], 8) )
     {
-      strcpy(g_iconsys_value, *av_cur + 8);
+      strcpy(g_iconsys_value, av[ac_cur] + 8);
     }
-    else if ( !strcmp("-no_check_capacity", *av_cur) )
+    else if ( !strcmp("-no_check_capacity", av[ac_cur]) )
     {
       g_no_check_capacity = 1;
     }
-    else if ( !strcmp("-no_check_provider", *av_cur) )
+    else if ( !strcmp("-no_check_provider", av[ac_cur]) )
     {
       g_no_check_provider = 1;
     }
@@ -360,7 +358,6 @@ int do_module_load(int ac, char **av)
       err = 1;
       break;
     }
-    ++av_cur;
   }
   if ( !g_icon_value[0] || !g_iconsys_value[0] )
   {
@@ -564,29 +561,25 @@ int sceNetCnfMergeConf(sceNetCnfEnv_t *e)
 //----- (004008C0) --------------------------------------------------------
 int sceNetCnfName2Address(sceNetCnfAddress_t *paddr, char *buf)
 {
-  int retn1; // $s0
-  unsigned int paddr_tmp[2]; // [sp+10h] [-8h] BYREF
+  unsigned int paddr_tmp; // [sp+10h] [-8h] BYREF
 
-  retn1 = -1;
-  paddr_tmp[0] = 0;
-  if ( !buf || do_name_2_address_inner(paddr_tmp, buf) )
+  paddr_tmp = 0;
+  if ( !buf || do_name_2_address_inner(&paddr_tmp, buf) )
   {
     bzero(paddr, 20);
-    bcopy(paddr_tmp, paddr->data, 4);
+    bcopy(&paddr_tmp, paddr->data, 4);
     return 0;
   }
-  return retn1;
+  return -1;
 }
 
 //----- (00400940) --------------------------------------------------------
 int sceNetCnfAddress2String(char *buf, int len, sceNetCnfAddress_t *paddr)
 {
-  int v5; // $s0
   int buflen; // $a2
   char buf_tmp[24]; // [sp+10h] [-20h] BYREF
   unsigned int srcintx; // [sp+28h] [-8h] BYREF
 
-  v5 = -1;
   if ( !paddr->reserved )
   {
     bcopy(paddr->data, &srcintx, 4);
@@ -598,7 +591,7 @@ int sceNetCnfAddress2String(char *buf, int len, sceNetCnfAddress_t *paddr)
       return 0;
     }
   }
-  return v5;
+  return -1;
 }
 
 //----- (004009E0) --------------------------------------------------------
@@ -702,22 +695,14 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
   int result; // $v0
   int fd; // $s5
   int netcnf_size; // $v0
-  int netcnf_size_1; // $s0
   char *heapmem; // $v0
   char *netcnf_data; // $s2
-  int netcnf_size_2; // $s3
   int xorind1; // $s1
   int xoroffs; // $s4
   size_t readres; // $s0
-  u16 dataval1; // $v0
-  int buflenx1; // $a1
   int xorind2_1; // $s1
-  u16 bufresx1; // $v0
   int xorind3_1; // $v1
-  u8 dataval2; // $v0
-  int buflenx2; // $a1
   int xorind2_2; // $s1
-  char bufresx2; // $v0
   int xorind3_2; // $v1
 
   *netcnf_heap_ptr = 0;
@@ -733,11 +718,10 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
     return -3;
   }
   netcnf_size = do_filesize_netcnf(fd);
-  netcnf_size_1 = netcnf_size;
   if ( netcnf_size < 0 )
   {
     do_close_netcnf(fd);
-    return netcnf_size_1;
+    return netcnf_size;
   }
   heapmem = (char *)do_alloc_heapmem(netcnf_size + 1);
   *netcnf_heap_ptr = heapmem;
@@ -747,60 +731,53 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
     return -2;
   }
   netcnf_data = heapmem;
-  netcnf_size_2 = netcnf_size_1;
   xorind1 = 0;
   xoroffs = 0;
   readres = 0;
-  while ( netcnf_size_2 >= 2 )
+  while ( netcnf_size >= 2 )
   {
     readres = do_readfile_netcnf(fd, netcnf_data, 2);
     if ( readres < 0 )
       break;
-    dataval1 = ~*(u16 *)netcnf_data;
-    *(u16 *)netcnf_data = dataval1;
-    buflenx1 = (u8)g_id_xorbuf[xorind1 + 2];
+    *(u16 *)netcnf_data = ~*(u16 *)netcnf_data;
+    *(u16 *)netcnf_data = magic_shift_read_netcnf_1(*(u16 *)netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
     xorind2_1 = xorind1 + 1;
-    bufresx1 = magic_shift_read_netcnf_1(dataval1, buflenx1);
     xorind3_1 = 0;
-    *(u16 *)netcnf_data = bufresx1;
     if ( xorind2_1 != 24 )
       xorind3_1 = xorind2_1;
     xorind1 = xorind3_1;
     netcnf_data += 2;
-    netcnf_size_2 -= 2;
+    netcnf_size -= 2;
     xoroffs += 2;
-    if ( !netcnf_size_2 )
+    if ( !netcnf_size )
       break;
   }
   if ( readres >= 0 )
   {
-    if ( netcnf_size_2 )
+    if ( netcnf_size )
     {
       readres = do_readfile_netcnf(fd, netcnf_data, 1);
       if ( readres >= 0 )
       {
-        dataval2 = ~*netcnf_data;
-        *netcnf_data = dataval2;
-        buflenx2 = (u8)g_id_xorbuf[xorind1 + 2];
+        *netcnf_data = ~*netcnf_data;
+        *netcnf_data = magic_shift_read_netcnf_2(*netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
         xorind2_2 = xorind1 + 1;
-        bufresx2 = magic_shift_read_netcnf_2(dataval2, buflenx2);
         xorind3_2 = 0;
-        *netcnf_data = bufresx2;
         if ( xorind2_2 != 24 )
           xorind3_2 = xorind2_2;
         xorind1 = xorind3_2;
-        --netcnf_size_2;
+        --netcnf_size;
         ++xoroffs;
       }
     }
-    if ( !netcnf_size_2 )
+    if ( !netcnf_size )
     {
-      (*netcnf_heap_ptr)[xoroffs] = 0;
+      netcnf_data[xoroffs] = 0;
       do_close_netcnf(fd);
       return xoroffs;
     }
   }
-  do_free_heapmem(*netcnf_heap_ptr);
+  do_free_heapmem(netcnf_data);
   *netcnf_heap_ptr = 0;
   do_close_netcnf(fd);
   if ( readres != -5 )
@@ -817,13 +794,9 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
   int netcnf_len_1; // $s2
   int xorind1; // $s1
   int xoroffs; // $s4
-  int buflenx1; // $a1
-  u16 bufresx1; // $v0
   int xorind2_1; // $s1
   int xorind3_1; // $v1
   int writeres; // $s0
-  int buflenx2; // $a1
-  char bufresx2; // $v0
   int xorind2_2; // $s1
   int xorind3_2; // $v1
   u16 bufflipx1; // [sp+10h] [-8h] BYREF
@@ -849,15 +822,13 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
   {
     while ( netcnf_len_1 >= 2 )
     {
-      buflenx1 = (u8)g_id_xorbuf[xorind1 + 2];
       xorind2_1 = xorind1 + 1;
-      bufresx1 = magic_shift_write_netcnf_1(*buf_1, buflenx1);
       xorind3_1 = 0;
-      bufflipx1 = bufresx1;
+      bufflipx1 = magic_shift_write_netcnf_1(*buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
       if ( xorind2_1 != 24 )
         xorind3_1 = xorind2_1;
       xorind1 = xorind3_1;
-      bufflipx1 = ~bufresx1;
+      bufflipx1 = ~bufflipx1;
       writeres = do_write_netcnf_no_encode(fd, &bufflipx1, 2);
       ++buf_1;
       if ( writeres < 0 )
@@ -872,15 +843,13 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
     }
     if ( writeres >= 0 )
     {
-      buflenx2 = (u8)g_id_xorbuf[xorind1 + 2];
       xorind2_2 = xorind1 + 1;
-      bufresx2 = magic_shift_write_netcnf_2(*(u8 *)buf_1, buflenx2);
       xorind3_2 = 0;
-      bufflipx2 = bufresx2;
+      bufflipx2 = magic_shift_write_netcnf_2(*(u8 *)buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
       if ( xorind2_2 != 24 )
         xorind3_2 = xorind2_2;
       xorind1 = xorind3_2;
-      bufflipx2 = ~bufresx2;
+      bufflipx2 = ~bufflipx2;
       writeres = do_write_netcnf_no_encode(fd, &bufflipx2, 1);
       --netcnf_len_1;
       ++xoroffs;
@@ -897,63 +866,56 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
 int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_ptr)
 {
   int fd; // $v0
-  int fd_1; // $s0
   int netcnf_size; // $v0
-  int netcnf_size_1; // $s1
   char *netcnf_data; // $v0
-  size_t readres; // $v0
 
   *netcnf_heap_ptr = 0;
   fd = do_open_netcnf(netcnf_path, 1, 0);
-  fd_1 = fd;
+  fd = fd;
   if ( fd < 0 )
   {
-    if ( fd_1 != -5 )
+    if ( fd != -5 )
       return -3;
     return -18;
   }
   netcnf_size = do_filesize_netcnf(fd);
-  netcnf_size_1 = netcnf_size;
-  if ( netcnf_size_1 < 0 )
+  if ( netcnf_size < 0 )
   {
-    do_close_netcnf(fd_1);
-    return netcnf_size_1;
+    do_close_netcnf(fd);
+    return netcnf_size;
   }
   netcnf_data = (char *)do_alloc_heapmem(netcnf_size + 1);
   *netcnf_heap_ptr = netcnf_data;
   if ( !netcnf_data )
   {
-    do_close_netcnf(fd_1);
+    do_close_netcnf(fd);
     return -2;
   }
-  readres = do_readfile_netcnf(fd_1, netcnf_data, netcnf_size_1);
-  netcnf_size_1 = readres;
-  if ( netcnf_size_1 < 0 )
+  netcnf_size = do_readfile_netcnf(fd, netcnf_data, netcnf_size);
+  if ( netcnf_size < 0 )
   {
     do_free_heapmem(*netcnf_heap_ptr);
     *netcnf_heap_ptr = 0;
-    do_close_netcnf(fd_1);
-    if ( netcnf_size_1 != -5 )
+    do_close_netcnf(fd);
+    if ( netcnf_size != -5 )
       return -4;
     return -18;
   }
-  (*netcnf_heap_ptr)[readres] = 0;
-  do_close_netcnf(fd_1);
-  return readres;
+  (*netcnf_heap_ptr)[netcnf_size] = 0;
+  do_close_netcnf(fd);
+  return netcnf_size;
 }
 
 //----- (0040127C) --------------------------------------------------------
 void do_init_xor_magic(char *in_id_buf)
 {
   int curoffs2; // $a2
-  int curoffs1; // $a1
 
   for ( curoffs2 = 0; (curoffs2 + 1) < 8; curoffs2 += 1 )
   {
-    curoffs1 = 2 + (curoffs2 * 3);
-    g_id_xorbuf[curoffs1] = ((u8)in_id_buf[curoffs2] >> 5) + 1;
-    g_id_xorbuf[curoffs1 + 1] = (((u8)in_id_buf[curoffs2] >> 2) & 7) + 1;
-    g_id_xorbuf[curoffs1 + 2] = (in_id_buf[curoffs2] & 3) + 1;
+    g_id_xorbuf[(curoffs2 * 3) + 2] = ((u8)in_id_buf[curoffs2] >> 5) + 1;
+    g_id_xorbuf[(curoffs2 * 3) + 3] = (((u8)in_id_buf[curoffs2] >> 2) & 7) + 1;
+    g_id_xorbuf[(curoffs2 * 3) + 4] = (in_id_buf[curoffs2] & 3) + 1;
   }
 }
 
@@ -1005,10 +967,7 @@ void do_safe_strcpy(char *dst, size_t maxlen, const char *src, int linenum)
 //----- (0040141C) --------------------------------------------------------
 void do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum)
 {
-  size_t curstrlen; // $s0
-
-  curstrlen = strlen(dst);
-  if ( curstrlen + strlen(src) < maxlen )
+  if ( strlen(dst) + strlen(src) < maxlen )
   {
     strcat(dst, src);
   }
@@ -1021,10 +980,7 @@ void do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum)
 //----- (004014AC) --------------------------------------------------------
 void do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const char *srcbase)
 {
-  size_t curstrlen; // $s1
-
-  curstrlen = strlen(srcdir);
-  if ( curstrlen + strlen(srcbase) + 1 < maxlen )
+  if ( strlen(srcdir) + strlen(srcbase) + 1 < maxlen )
   {
     strcpy(dst, srcdir);
     strcat(dst, "/");
@@ -1039,10 +995,7 @@ void do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const c
 //----- (00401560) --------------------------------------------------------
 void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *src2)
 {
-  size_t curstrlen; // $s0
-
-  curstrlen = strlen(src1);
-  if ( curstrlen + strlen(src2) < maxlen )
+  if ( strlen(src1) + strlen(src2) < maxlen )
   {
     strcpy(dst, src1);
     strcat(dst, src2);
@@ -1057,7 +1010,6 @@ void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *s
 int do_check_capacity_inner2(const char *fpath, int minsize)
 {
   int curdevnameind; // $t0
-  char fpath_curchr; // $v0
   int zonesz; // kr00_4
   int zonefree; // $t2
   char devname[8]; // [sp+18h] [-8h] BYREF
@@ -1073,8 +1025,7 @@ int do_check_capacity_inner2(const char *fpath, int minsize)
         return -16;
       return 0;
     }
-    fpath_curchr = fpath[curdevnameind];
-    devname[curdevnameind] = fpath_curchr;
+    devname[curdevnameind] = fpath[curdevnameind];
   }
   return -9;
 }
@@ -1083,24 +1034,19 @@ int do_check_capacity_inner2(const char *fpath, int minsize)
 //----- (004016F0) --------------------------------------------------------
 int do_check_capacity_inner(const char *fpath)
 {
-  int cmptmp1; // $v0
-  const char *fpath_1; // $a0
   int minsize; // $a1
 
-  cmptmp1 = strncmp(fpath, "mc", 2);
-  fpath_1 = fpath;
-  if ( cmptmp1 )
+  if ( strncmp(fpath, "mc", 2) )
   {
     if ( strncmp(fpath, "pfs", 3) != 0 )
       return -9;
-    fpath_1 = fpath;
     minsize = 0xF4;
   }
   else
   {
     minsize = 0x5E;
   }
-  return do_check_capacity_inner2(fpath_1, minsize);
+  return do_check_capacity_inner2(fpath, minsize);
 }
 
 //----- (00401758) --------------------------------------------------------
@@ -1108,11 +1054,7 @@ int do_handle_combination_path(int type, const char *fpath, char *dst, size_t ma
 {
   char *i; // $s0
   int devnum_offs; // $s1
-  char *p_devnum; // $v1
-  char curdevnum; // $v0
   int devnr; // $s1
-  u32 condtmp2; // $v0
-  unsigned int devnr2; // $v0
   char devnum[8]; // [sp+10h] [-8h] BYREF
 
   if ( !usr_name )
@@ -1121,26 +1063,15 @@ int do_handle_combination_path(int type, const char *fpath, char *dst, size_t ma
   if ( type )
     return 0;
   for ( i = dst; !isdigit(*i); i += 1 );
-  for ( devnum_offs = 0; devnum_offs < 4 && isdigit(*i); devnum_offs += 1 )
+  for ( devnum_offs = 0; devnum_offs < 4 && isdigit(i[devnum_offs]); devnum_offs += 1 )
   {
-    p_devnum = &devnum[devnum_offs];
-    curdevnum = *i++;
-    *p_devnum = curdevnum;
+    devnum[devnum_offs] = i[devnum_offs];
   }
   if ( devnum_offs >= 4 )
     return -11;
   devnum[devnum_offs] = 0;
   devnr = strtol(devnum, 0, 10);
-  if ( !strncmp(fpath, "mc", 2) )
-  {
-    condtmp2 = (unsigned int)(devnr - 1) < 6;
-  }
-  else
-  {
-    devnr2 = devnr - 1;
-    condtmp2 = (strncmp(fpath, "pfs", 3) != 0) ? devnr2 < 0x3E8 : devnr2 < 0xA;
-  }
-  if ( !condtmp2 )
+  if ( !strncmp(fpath, "mc", 2) ? ((unsigned int)(devnr - 1) >= 6) : ((!strncmp(fpath, "pfs", 3) != 0) ? (unsigned int)(devnr - 1) >= 0xA : (unsigned int)(devnr - 1) >= 0x3E8) )
     return -11;
   do_safe_make_name(dst, maxlen, "Combination", devnum);
   return 0;
@@ -1152,9 +1083,7 @@ int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2)
 {
   int fd2; // $s2
   int fd1; // $s1
-  int fd1_1; // $a0
   int readres; // $v0
-  int readres_1; // $s0
   int writeres; // $v0
   char tmpbuf[512]; // [sp+10h] [-200h] BYREF
 
@@ -1162,18 +1091,15 @@ int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2)
   if ( fd2 < 0 )
     return -3;
   fd1 = do_open_netcnf(netcnf_path_1, 1, 0);
-  fd1_1 = fd1;
   if ( fd1 >= 0 )
   {
     while ( 1 )
     {
-      readres = do_readfile_netcnf(fd1_1, tmpbuf, 512);
-      readres_1 = readres;
+      readres = do_readfile_netcnf(fd1, tmpbuf, 512);
       if ( readres <= 0 )
         break;
       writeres = do_write_netcnf_no_encode(fd2, tmpbuf, readres);
-      fd1_1 = fd1;
-      if ( readres_1 != writeres )
+      if ( readres != writeres )
       {
         do_close_netcnf(fd2);
         do_close_netcnf(fd1);
@@ -1182,7 +1108,7 @@ int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2)
     }
     do_close_netcnf(fd2);
     do_close_netcnf(fd1);
-    if ( readres_1 >= 0 )
+    if ( readres >= 0 )
       return 0;
   }
   else
@@ -1232,9 +1158,6 @@ int do_write_memcard_files(const char *fpath, const char *icon_value, const char
 int do_handle_fname(char *fpath, size_t maxlen, const char *fname)
 {
   char *index_res; // $s0
-  int cmptmp1; // $v0
-  char *fpath_1; // $a0
-  size_t maxlen_1; // $a1
   const char *pathname; // $a2
   int maxbuf; // $a3
 
@@ -1242,37 +1165,29 @@ int do_handle_fname(char *fpath, size_t maxlen, const char *fname)
   index_res = index(fpath, ':');
   if ( !index_res )
     return -9;
-  cmptmp1 = strncmp(fpath, "mc", 2);
-  fpath_1 = fpath;
-  if ( cmptmp1 )
+  if ( strncmp(fpath, "mc", 2) )
   {
     if ( strncmp(fpath, "pfs", 3) != 0 )
       return 0;
     index_res[1] = 0;
-    fpath_1 = fpath;
-    maxlen_1 = maxlen;
     pathname = "/etc/network/net.db";
     maxbuf = 279;
   }
   else
   {
     index_res[1] = 0;
-    maxlen_1 = maxlen;
     pathname = "/BWNETCNF/BWNETCNF";
     maxbuf = 275;
   }
-  do_safe_strcat(fpath_1, maxlen_1, pathname, maxbuf);
+  do_safe_strcat(fpath, maxlen, pathname, maxbuf);
   return 0;
 }
 
 //----- (00401BB0) --------------------------------------------------------
 char *do_check_hoge_newline(char *buf)
 {
-  int curbuf1; // $v0
-
   for ( ; *buf && *buf != '\n'; buf += 1 );
-  curbuf1 = *buf;
-  return &buf[curbuf1 == '\n'];
+  return &buf[*buf == '\n'];
 }
 
 //----- (00401BFC) --------------------------------------------------------
@@ -1304,7 +1219,6 @@ int do_remove_old_config(
 {
   int sysneticoflag; // $fp
   int dfd; // $s4
-  int retreszero; // $v1
   int fileop_res; // $s0
   char *curheapbuf1; // $s0
   char cur_basepath[256]; // [sp+10h] [-390h] BYREF
@@ -1321,10 +1235,9 @@ int do_remove_old_config(
   dfd = do_dopen_wrap(cur_basepath);
   if ( dfd < 0 )
   {
-    retreszero = 0;
     if ( dfd == -5 )
       return -18;
-    return retreszero;
+    return 0;
   }
   while ( 1 )
   {
@@ -1421,20 +1334,18 @@ int do_type_check(int type, const char *buf)
 //----- (004020C0) --------------------------------------------------------
 int do_read_current_netcnf_nodecode(const char *fpath, char **netcnf_heap_ptr)
 {
-  int result; // $v0
   int retres; // $a0
 
   if ( !fpath )
     return -9;
-  result = do_read_netcnf_no_decode(fpath, netcnf_heap_ptr);
-  retres = result;
-  if ( result < 0 )
+  retres = do_read_netcnf_no_decode(fpath, netcnf_heap_ptr);
+  if ( retres < 0 )
   {
-    result = 0;
     if ( retres != -3 )
       return retres;
+    return 0;
   }
-  return result;
+  return retres;
 }
 
 //----- (00402104) --------------------------------------------------------
@@ -1499,7 +1410,6 @@ int do_get_count_list_inner(char *fname, int type, sceNetCnfList_t *p)
   char *curheapbuf1; // $s0
   int curind1; // $s3
   char *usr_name; // $s1
-  int type_1; // $a0
 
   result = do_handle_fname(g_dir_name, 256, fname);
   if ( result >= 0 )
@@ -1509,10 +1419,9 @@ int do_get_count_list_inner(char *fname, int type, sceNetCnfList_t *p)
     {
       curind1 = 0;
       usr_name = p->usr_name;
-      type_1 = type;
       for ( curheapbuf1 = g_count_list_heapptr; *curheapbuf1; curheapbuf1 = do_check_hoge_newline(curheapbuf1) )
       {
-        if ( do_type_check(type_1, curheapbuf1) > 0 )
+        if ( do_type_check(type, curheapbuf1) > 0 )
         {
           ++curind1;
           if ( p )
@@ -1530,7 +1439,6 @@ int do_get_count_list_inner(char *fname, int type, sceNetCnfList_t *p)
             }
           }
         }
-        type_1 = type;
       }
       do_free_heapmem(g_count_list_heapptr);
       return curind1;
@@ -1587,18 +1495,15 @@ int do_load_entry_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e
 void do_some_ifc_handling_hoge(const char *arg_fname)
 {
   const char *i; // $s0
-  int curi1; // $v1
   char *curptr1; // $s0
   unsigned int curbufsz1; // $s2
   int curindx; // $s1
-  int curbufadd; // $lo
 
   if ( arg_fname && *arg_fname )
   {
     for ( i = &arg_fname[strlen(arg_fname) - 1]; i >= arg_fname && *i != '.'; i -= 1 );
-    curi1 = *i;
     curptr1 = (char *)(i - 1);
-    if ( curi1 == '.' && curptr1 >= arg_fname )
+    if ( *i == '.' && curptr1 >= arg_fname )
     {
       curbufsz1 = 0;
       if ( isdigit(*curptr1) )
@@ -1606,9 +1511,8 @@ void do_some_ifc_handling_hoge(const char *arg_fname)
         curindx = 1;
         for ( ; curptr1 >= arg_fname && isdigit(*curptr1); curptr1 -= 1 )
         {
-          curbufadd = curindx * (*curptr1 - '0');
+          curbufsz1 += curindx * (*curptr1 - '0');
           curindx *= 10;
-          curbufsz1 += curbufadd;
         }
         if ( curbufsz1 < 0x3E8 )
           g_ifc_buffer[curbufsz1] = 1;
@@ -1622,7 +1526,6 @@ void do_some_pair_handling(char *fpath, int type, const char *src, sceNetCnfEnv_
 {
   sceNetCnfEnv_t *heapmem; // $s1
   int conf_inner; // $v1
-  struct sceNetCnfRoot *root; // $v0
   struct sceNetCnfPair *i; // $s0
   const char *attach_ifc; // $a0
 
@@ -1643,10 +1546,9 @@ void do_some_pair_handling(char *fpath, int type, const char *src, sceNetCnfEnv_
       conf_inner = do_load_conf_inner(heapmem);
       if ( !conf_inner || conf_inner == -21 )
       {
-        root = heapmem->root;
-        if ( root )
+        if ( heapmem->root )
         {
-          for ( i = root->pair_head; i; i = i->forw )
+          for ( i = heapmem->root->pair_head; i; i = i->forw )
           {
             if ( type == 1 )
             {
@@ -1677,9 +1579,7 @@ int do_add_entry_inner(
         char *iconsys_value,
         int no_check_capacity)
 {
-  int fd_1; // $s3
   int result; // $v0
-  int type_1; // $a0
   int retres2; // $s1
   char *curentry1; // $s0
   int i; // $s2
@@ -1692,8 +1592,6 @@ int do_add_entry_inner(
   int fd; // $v0
   char *dirname_buf1; // $s0
   char *cur_entry_buffer; // $s2
-  int req_tmp; // $v0
-  size_t pathlen; // $v0
   int strlenx; // $s0
   int writeres; // $s1
   int curatomicnamepath_2; // $s2
@@ -1703,7 +1601,7 @@ int do_add_entry_inner(
   int maxflag;
 
   maxflag = 1;
-  fd_1 = -1;
+  fd = -1;
   if ( get_check_provider_eq_zero() )
   {
     result = do_check_provider_inner(e, type);
@@ -1713,21 +1611,18 @@ int do_add_entry_inner(
   result = do_handle_fname(g_dir_name, 256, fname);
   if ( result < 0 )
     return result;
-  type_1 = type;
   if ( !no_check_capacity )
   {
     result = do_check_capacity_inner(g_dir_name);
-    type_1 = type;
     if ( result < 0 )
       return result;
   }
   atomicrenamepath[0] = 0;
-  result = do_handle_combination_path(type_1, g_dir_name, g_combination_buf1, 256, usr_name);
+  result = do_handle_combination_path(type, g_dir_name, g_combination_buf1, 256, usr_name);
   if ( result < 0 )
     return result;
-  result = do_read_current_netcnf_nodecode(g_dir_name, &g_add_entry_heapptr);
-  retres1 = result;
-  if ( result < 0 )
+  retres1 = do_read_current_netcnf_nodecode(g_dir_name, &g_add_entry_heapptr);
+  if ( retres1 < 0 )
     return result;
   retres2 = do_remove_old_config(g_dir_name, g_add_entry_heapptr, icon_value, iconsys_value);
   if ( retres2 < 0 )
@@ -1841,10 +1736,9 @@ int do_add_entry_inner(
             return -10;
         }
         fd = do_open_netcnf(g_netcnf_file_path, 1, 0);
-        fd_1 = fd;
         if ( fd < 0 )
         {
-          if ( fd_1 == -5 )
+          if ( fd == -5 )
             return -18;
           break;
         }
@@ -1883,22 +1777,20 @@ int do_add_entry_inner(
         e->dir_name = g_dir_name;
         e->arg_fname = &g_netcnf_file_path[strlen(g_arg_fname)];
         if ( type )
-          req_tmp = 2;
+          e->req = 2;
         else
-          req_tmp = 1;
-        e->req = req_tmp;
+          e->req = 1;
         retres2 = -1;
         if ( !do_export_netcnf(e) )
         {
           do_safe_make_name(atomicrenamepath, 256, g_dir_name, ".tmp");
-          fd_1 = do_open_netcnf(atomicrenamepath, 1538, 511);
-          if ( fd_1 >= 0 )
+          fd = do_open_netcnf(atomicrenamepath, 1538, 511);
+          if ( fd >= 0 )
           {
-            pathlen = strlen(g_arg_fname);
-            strlenx = sprintf(g_entry_buffer, "%d,%d,%s,%s\n", type, 1, &g_netcnf_file_path[pathlen], g_combination_buf1);
-            writeres = do_write_netcnf_no_encode(fd_1, g_entry_buffer, strlenx);
+            strlenx = sprintf(g_entry_buffer, "%d,%d,%s,%s\n", type, 1, &g_netcnf_file_path[strlen(g_arg_fname)], g_combination_buf1);
+            writeres = do_write_netcnf_no_encode(fd, g_entry_buffer, strlenx);
             if ( strlenx == writeres
-              && (writeres = do_write_netcnf_no_encode(fd_1, g_add_entry_heapptr, retres1), retres1 == writeres) )
+              && (writeres = do_write_netcnf_no_encode(fd, g_add_entry_heapptr, retres1), retres1 == writeres) )
             {
               retres2 = 0;
             }
@@ -1912,7 +1804,7 @@ int do_add_entry_inner(
           else
           {
             retres2 = -3;
-            if ( fd_1 == -5 )
+            if ( fd == -5 )
               retres2 = -18;
           }
         }
@@ -1920,8 +1812,8 @@ int do_add_entry_inner(
     }
   }
   do_free_heapmem(g_add_entry_heapptr);
-  if ( fd_1 >= 0 )
-    do_close_netcnf(fd_1);
+  if ( fd >= 0 )
+    do_close_netcnf(fd);
   if ( atomicrenamepath[0] )
   {
     if ( iomanX_rename(atomicrenamepath, g_dir_name) == -5 )
@@ -1942,7 +1834,6 @@ int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2,
 {
   int result; // $v0
   int retres1; // $s0
-  size_t usrnamelen; // $v0
   char *heapmem; // $s2
   char *ptr_1; // $s0
   char *heapmem_1; // $s1
@@ -1955,16 +1846,14 @@ int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2,
   result = do_handle_combination_path(type, g_dir_name, g_combination_buf1, 256, (char *)usrname_bufnew);
   if ( result >= 0 )
   {
-    result = do_read_current_netcnf_nodecode(fpath, &ptr);
-    retres1 = result;
-    if ( result <= 0 )
+    retres1 = do_read_current_netcnf_nodecode(fpath, &ptr);
+    if ( retres1 <= 0 )
     {
-      if ( !result )
+      if ( !retres1 )
         return -3;
-      return result;
+      return retres1;
     }
-    usrnamelen = strlen(usrname_bufnew);
-    heapmem = (char *)do_alloc_heapmem(retres1 + usrnamelen + 1);
+    heapmem = (char *)do_alloc_heapmem(retres1 + strlen(usrname_bufnew) + 1);
     if ( !heapmem )
     {
       do_free_heapmem(ptr);
@@ -2023,9 +1912,7 @@ int do_edit_entry_inner(
   int result; // $v0
   int rmoldcfgres; // $s1
   char *curentry1; // $s0
-  int req_tmp; // $v0
   char *curfilepath1end; // $s0
-  int curfilepath1chr; // $v0
   char curentrybuf1[256]; // [sp+18h] [-200h] BYREF
   char curfilepath1[256]; // [sp+118h] [-100h] BYREF
   int flg;
@@ -2098,10 +1985,9 @@ int do_edit_entry_inner(
       e->dir_name = g_dir_name;
       e->arg_fname = curfilepath1;
       if ( type )
-        req_tmp = 2;
+        e->req = 2;
       else
-        req_tmp = 1;
-      e->req = req_tmp;
+        e->req = 1;
       if ( do_export_netcnf(e) )
       {
         rmoldcfgres = -1;
@@ -2111,8 +1997,7 @@ int do_edit_entry_inner(
         do_safe_strcpy(curfilepath1, 256, g_dir_name, 1010);
         for ( curfilepath1end = &curfilepath1[strlen(curfilepath1)]; curfilepath1end != curfilepath1; curfilepath1end -= 1 )
         {
-          curfilepath1chr = *curfilepath1end;
-          if ( curfilepath1chr == '/' || curfilepath1chr == '\\' )
+          if ( *curfilepath1end == '/' || *curfilepath1end == '\\' )
           {
             curfilepath1end[1] = 0;
             break;
@@ -2243,8 +2128,6 @@ size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name)
   char *heapmem1_1; // $s2
   char *heapmem2_1; // $s1
   char *curentry1; // $s0
-  char curentry1_chr2; // $v0
-  char curentry1_chr5; // $v0
 
   isbeforeend1 = 0;
   result = do_handle_fname(g_dir_name, 256, fname);
@@ -2282,8 +2165,7 @@ size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name)
                 }
                 if ( *curentry1 == '\n' )
                 {
-                  curentry1_chr2 = *curentry1++;
-                  *heapmem1_1++ = curentry1_chr2;
+                  *heapmem1_1++ = *curentry1++;
                 }
                 ++retres1;
                 if ( heapmem2 < heapmem2_1 )
@@ -2297,8 +2179,7 @@ size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name)
                 }
                 if ( *curentry1 == '\n' )
                 {
-                  curentry1_chr5 = *curentry1++;
-                  *heapmem2_1++ = curentry1_chr5;
+                  *heapmem2_1++ = *curentry1++;
                 }
               }
             }
@@ -2337,11 +2218,9 @@ int do_delete_all_inner(const char *dev)
 {
   int i; // $t0
   int dfd1; // $s1
-  int remove_res1; // $v0
   int result; // $v0
   int j; // $t0
   int dfd2; // $s1
-  int xretzero; // $v1
   int dread_res; // $v0
   int remove_res2; // $s0
   int rmdir_res1; // $s0
@@ -2367,8 +2246,7 @@ int do_delete_all_inner(const char *dev)
       if ( strcmp(v21.name, ".") && strcmp(v21.name, "..") )
       {
         do_safe_make_pathname(g_dir_name, 256, g_netcnf_file_path, v21.name);
-        remove_res1 = do_remove_wrap(g_dir_name);
-        if ( remove_res1 < 0 )
+        if ( do_remove_wrap(g_dir_name) < 0 )
         {
           do_dclose_wrap(dfd1);
           return -7;
@@ -2438,10 +2316,9 @@ int do_delete_all_inner(const char *dev)
       }
       else
       {
-        xretzero = 0;
         if ( dfd2 == -5 )
           return -18;
-        return xretzero;
+        return 0;
       }
     }
   }
@@ -2454,7 +2331,6 @@ int do_check_special_provider_inner(char *fname, int type, char *usr_name, sceNe
   int result; // $v0
   char *curentry1; // $s1
   int curentcount; // $s0
-  int type_1; // $a0
   int retres; // $s0
 
   result = do_handle_fname(g_dir_name, 256, fname);
@@ -2467,17 +2343,15 @@ int do_check_special_provider_inner(char *fname, int type, char *usr_name, sceNe
       if ( result > 0 )
       {
         curentcount = 0;
-        type_1 = type;
         for ( curentry1 = g_check_special_provider_heapptr; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
         {
-          if ( do_type_check(type_1, curentry1) > 0
+          if ( do_type_check(type, curentry1) > 0
             && !do_split_str_comma_index(g_arg_fname, curentry1, 3)
             && !strcmp(g_arg_fname, g_combination_buf2)
             && !do_split_str_comma_index((char *)e->lbuf, curentry1, 2) )
           {
             ++curentcount;
           }
-          type_1 = type;
         }
         if ( curentcount )
         {
@@ -2532,16 +2406,9 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
   const char *argbegin; // $s0
   sceNetCnfEnv_t *e_1; // $v0
   int argchr_1; // $s1
-  int argchr_7; // $v1
-  int argchr_2; // $v0
-  unsigned int argnumchk; // $v0
   int argind_1; // $s2
-  char argchr_6; // $v0
-  int argchr_3; // $v1
   int i; // $s2
-  int argchr_4; // $v1
   int hexnum; // $v0
-  int argchr_5; // $v1
   int err;
 
   dbuf = e->dbuf;
@@ -2554,18 +2421,15 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
     argchr_1 = *(u8 *)argbegin++;
     if ( argchr_1 == '\\' )
     {
-      argchr_2 = *(u8 *)argbegin;
-      argnumchk = argchr_2 - '0';
-      if ( argchr_2 == 0 )
+      if ( *(u8 *)argbegin == 0 )
       {
         err = 1;
         break;
       }
       argchr_1 = 0;
-      if ( argnumchk >= 8 )
+      if ( (unsigned int)(*(u8 *)argbegin - '0') >= 8 )
       {
-        argchr_3 = *(u8 *)argbegin;
-        if ( argchr_3 == 'x' || argchr_3 == 'X' )
+        if ( *(u8 *)argbegin == 'x' || *(u8 *)argbegin == 'X' )
         {
           ++argbegin;
           argchr_1 = 0;
@@ -2578,14 +2442,12 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
           {
             if ( isdigit(*argbegin) )
             {
-              argchr_4 = *(u8 *)argbegin;
-              argchr_1 = 16 * argchr_1 + argchr_4 - '0';
+              argchr_1 = 16 * argchr_1 + *(u8 *)argbegin - '0';
             }
             else
             {
               hexnum = 16 * argchr_1;
-              argchr_5 = *(u8 *)argbegin;
-              argchr_1 = (!islower(*argbegin)) ? hexnum + argchr_5 - '7' : hexnum + argchr_5 - 'W';
+              argchr_1 = (!islower(*argbegin)) ? hexnum + *(u8 *)argbegin - '7' : hexnum + *(u8 *)argbegin - 'W';
             }
             argbegin++;
           }
@@ -2625,15 +2487,14 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
       {
         for ( argind_1 = 0; argind_1 < 3 && ( *(u8 *)argbegin - (unsigned int)'0' < 8 ); argind_1 += 1 )
         {
-          argchr_6 = *argbegin++;
-          argchr_1 = 8 * argchr_1 + argchr_6 - '0';
+          argchr_1 = 8 * argchr_1 + *argbegin - '0';
+          argbegin++;
         }
       }
     }
     else if ( (unsigned int)(argchr_1 - 129) < 0x1F || (unsigned int)(argchr_1 - 224) < 0x1D )
     {
-      argchr_7 = *(u8 *)argbegin;
-      if ( (u8)(argchr_7 - 64) < 0xBDu && argchr_7 != 127 )
+      if ( (u8)(*(u8 *)argbegin - 64) < 0xBDu && *(u8 *)argbegin != 127 )
       {
         *dbuf++ = argchr_1;
         argchr_1 = *argbegin++;
@@ -2684,11 +2545,9 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
 //----- (00404568) --------------------------------------------------------
 char *do_alloc_mem_for_write(sceNetCnfEnv_t *e, const char *str)
 {
-  size_t strsz; // $v0
   char *strptr; // $s0
 
-  strsz = strlen(str);
-  strptr = do_alloc_mem_inner(e, strsz + 1, 0);
+  strptr = do_alloc_mem_inner(e, strlen(str) + 1, 0);
   if ( !strptr )
     return 0;
   strcpy(strptr, str);
@@ -2713,7 +2572,6 @@ int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
   const char *e_arg_1; // $a0
   int curbasex; // $a3
   int curnum; // $a1
-  int e_arg_1_chr; // $v1
   int e_arg_1_num; // $v1
 
   e_arg_1 = e_arg;
@@ -2733,16 +2591,15 @@ int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
   {
     while ( 1 )
     {
-      e_arg_1_chr = *(u8 *)e_arg_1;
-      if ( e_arg_1_chr - (unsigned int)'0' >= 0xA )
+      if ( *(u8 *)e_arg_1 - (unsigned int)'0' >= 0xA )
       {
-        if ( e_arg_1_chr - (unsigned int)'a' >= 6 )
+        if ( *(u8 *)e_arg_1 - (unsigned int)'a' >= 6 )
           break;
-        e_arg_1_num = (char)e_arg_1_chr - 'W';
+        e_arg_1_num = (char)(*(u8 *)e_arg_1) - 'W';
       }
       else
       {
-        e_arg_1_num = (char)e_arg_1_chr - '0';
+        e_arg_1_num = (char)(*(u8 *)e_arg_1) - '0';
       }
       if ( e_arg_1_num >= curbasex )
         break;
@@ -2787,47 +2644,46 @@ int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv,
   int numval; // [sp+10h] [-8h] BYREF
 
   bitflags1 = 0;
-  for ( opt_argc_1 = opt_argc; opt_argc_1 > 0; opt_argc_1 -= 1 )
+  for ( opt_argc_1 = 0; opt_argc_1 < opt_argc; opt_argc_1 += 1 )
   {
-    if ( !strcmp("phase", *opt_argv) )
+    if ( !strcmp("phase", opt_argv[opt_argc_1]) )
     {
       bitflags1 |= 1u;
     }
-    else if ( !strcmp("cp", *opt_argv) )
+    else if ( !strcmp("cp", opt_argv[opt_argc_1]) )
     {
       bitflags1 |= 2u;
     }
-    else if ( !strcmp("auth", *opt_argv) )
+    else if ( !strcmp("auth", opt_argv[opt_argc_1]) )
     {
       bitflags1 |= 4u;
     }
-    else if ( !strcmp("chat", *opt_argv) )
+    else if ( !strcmp("chat", opt_argv[opt_argc_1]) )
     {
       bitflags1 |= 8u;
     }
-    else if ( !strcmp("private", *opt_argv) )
+    else if ( !strcmp("private", opt_argv[opt_argc_1]) )
     {
       bitflags1 |= 0x10u;
     }
-    else if ( !strcmp("dll", *opt_argv) )
+    else if ( !strcmp("dll", opt_argv[opt_argc_1]) )
     {
       bitflags1 |= 0x20u;
     }
-    else if ( !strcmp("dump", *opt_argv) )
+    else if ( !strcmp("dump", opt_argv[opt_argc_1]) )
     {
       bitflags1 |= 0x40u;
     }
-    else if ( !strcmp("timer", *opt_argv) )
+    else if ( !strcmp("timer", opt_argv[opt_argc_1]) )
     {
       bitflags1 |= 0x10000;
     }
-    else if ( !strcmp("event", *opt_argv) )
+    else if ( !strcmp("event", opt_argv[opt_argc_1]) )
     {
       bitflags1 |= 0x20000;
     }
-    else if ( do_parse_number(e, *opt_argv, &numval) )
+    else if ( do_parse_number(e, opt_argv[opt_argc_1], &numval) )
       return -1;
-    ++opt_argv;
   }
   *p_result = bitflags1;
   return 0;
@@ -2841,29 +2697,23 @@ int do_check_interface_keyword(
         const char *attach_dev_arg)
 {
   struct sceNetCnfPair *cnfpair1; // $s0
-  char *str_display_name; // $v0
-  char *str_attach_ifc; // $v0
-  char *str_attach_dev; // $v0
   struct sceNetCnfPair *pair_tail; // $v0
 
   cnfpair1 = (struct sceNetCnfPair *)do_alloc_mem_inner(e, 40, 2);
   if ( !cnfpair1 )
     return -1;
-  str_display_name = do_check_e_arg(e, display_name_arg);
-  cnfpair1->display_name = (u8 *)str_display_name;
-  if ( !str_display_name )
+  cnfpair1->display_name = (u8 *)do_check_e_arg(e, display_name_arg);
+  if ( !cnfpair1->display_name )
     return -1;
-  str_attach_ifc = do_check_e_arg(e, attach_ifc_arg);
-  cnfpair1->attach_ifc = (u8 *)str_attach_ifc;
-  if ( !str_attach_ifc )
+  cnfpair1->attach_ifc = (u8 *)do_check_e_arg(e, attach_ifc_arg);
+  if ( !cnfpair1->attach_ifc )
     return -1;
   if ( attach_dev_arg )
   {
     if ( *attach_dev_arg )
     {
-      str_attach_dev = do_check_e_arg(e, attach_dev_arg);
-      cnfpair1->attach_dev = (u8 *)str_attach_dev;
-      if ( !str_attach_dev )
+      cnfpair1->attach_dev = (u8 *)do_check_e_arg(e, attach_dev_arg);
+      if ( !cnfpair1->attach_dev )
         return -1;
     }
   }
@@ -2882,8 +2732,6 @@ int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int o
 {
   int addordel; // $s1
   struct sceNetCnfCommand *nameservermem_1; // $v0
-  struct sceNetCnfCommand *nameservermem_2; // $s0
-  struct sceNetCnfCommand *cmd_tail; // $v0
 
   if ( opt_argc < 3 )
     return 0;
@@ -2895,20 +2743,18 @@ int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int o
       return 0;
   }
   nameservermem_1 = (struct sceNetCnfCommand *)do_alloc_mem_inner(e, 32, 2);
-  nameservermem_2 = nameservermem_1;
   if ( !nameservermem_1 )
     return -1;
   nameservermem_1->code = addordel;
   if ( do_netcnfname2address_wrap(e, opt_argv[2], (sceNetCnfAddress_t *)&nameservermem_1[1]) )
     return -1;
-  cmd_tail = ifc->cmd_tail;
-  nameservermem_2->back = cmd_tail;
-  if ( cmd_tail )
-    cmd_tail->forw = nameservermem_2;
+  nameservermem_1->back = ifc->cmd_tail;
+  if ( ifc->cmd_tail )
+    ifc->cmd_tail->forw = nameservermem_1;
   else
-    ifc->cmd_head = nameservermem_2;
-  nameservermem_2->forw = 0;
-  ifc->cmd_tail = nameservermem_2;
+    ifc->cmd_head = nameservermem_1;
+  nameservermem_1->forw = 0;
+  ifc->cmd_tail = nameservermem_1;
   return 0;
 }
 
@@ -2917,14 +2763,7 @@ int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_ar
 {
   int addordel; // $s0
   struct sceNetCnfCommand *route_mem_1; // $v0
-  struct sceNetCnfCommand *route_mem_2; // $s4
-  int argc_minus_two; // $s3
-  const char **argv_plus_two; // $s1
-  unsigned int routetmp1; // $v0
-  int argcx1; // $s3
-  const char **argvx1; // $s1
-  char **argvx2; // $s0
-  struct sceNetCnfCommand *cmd_tail; // $v0
+  int cur_argc; // $s3
 
   if ( opt_argc < 3 )
     return 0;
@@ -2936,63 +2775,53 @@ int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_ar
     addordel = 4;
   }
   route_mem_1 = (struct sceNetCnfCommand *)do_alloc_mem_inner(e, 96, 2);
-  route_mem_2 = route_mem_1;
-  argc_minus_two = opt_argc - 2;
   if ( !route_mem_1 )
     return -1;
-  argv_plus_two = (const char **)(opt_argv + 2);
+  cur_argc = 2;
   route_mem_1->code = addordel;
-  if ( !strcmp("-net", *argv_plus_two) )
+  if ( !strcmp("-net", opt_argv[cur_argc]) )
   {
-    --argc_minus_two;
-    ++argv_plus_two;
-    routetmp1 = (int)route_mem_2[6].forw & 0xFFFFFFFD;
-    route_mem_2[6].forw = (struct sceNetCnfCommand *)routetmp1;
+    cur_argc += 1;
+    route_mem_1[6].forw = (struct sceNetCnfCommand *)((int)route_mem_1[6].forw & 0xFFFFFFFD);
   }
-  else if ( !strcmp("-host", *argv_plus_two) )
+  else if ( !strcmp("-host", opt_argv[cur_argc]) )
   {
-    --argc_minus_two;
-    ++argv_plus_two;
-    routetmp1 = (int)route_mem_2[6].forw | 2;
-    route_mem_2[6].forw = (struct sceNetCnfCommand *)routetmp1;
+    cur_argc += 1;
+    route_mem_1[6].forw = (struct sceNetCnfCommand *)((int)route_mem_1[6].forw | 2);
   }
-  if ( argc_minus_two <= 0 )
+  if ( cur_argc >= opt_argc )
     return 0;
-  if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_2[1]) == 0 )
+  if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_1[1]) == 0 )
   {
-    if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_2[2].code) == 0 )
+    if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_1[2].code) == 0 )
     {
-      if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_2[4].back) == 0 )
+      if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_1[4].back) == 0 )
       {
-        if ( !strcmp("default", *argv_plus_two)
-          || (do_netcnfname2address_wrap(e, (char *)*argv_plus_two, (sceNetCnfAddress_t *)&route_mem_2[1]) == 0) )
+        if ( !strcmp("default", opt_argv[cur_argc])
+          || (do_netcnfname2address_wrap(e, (char *)opt_argv[cur_argc], (sceNetCnfAddress_t *)&route_mem_1[1]) == 0) )
         {
-          argvx1 = argv_plus_two + 1;
-          argvx2 = (char **)(argvx1 + 1);
-          for ( argcx1 = argc_minus_two - 1; argcx1 >= 2; argcx1 -= 2 )
+          cur_argc += 1;
+          for ( ; cur_argc < opt_argc; cur_argc += 2 )
           {
-            if ( !strcmp("gw", *argvx1) )
+            if ( !strcmp("gw", opt_argv[cur_argc]) )
             {
-              if ( do_netcnfname2address_wrap(e, *argvx2, (sceNetCnfAddress_t *)&route_mem_2[2].code) != 0 )
+              if ( do_netcnfname2address_wrap(e, opt_argv[cur_argc + 1], (sceNetCnfAddress_t *)&route_mem_1[2].code) != 0 )
                 return -1;
-              route_mem_2[6].forw = (struct sceNetCnfCommand *)((int)route_mem_2[6].forw | 4);
+              route_mem_1[6].forw = (struct sceNetCnfCommand *)((int)route_mem_1[6].forw | 4);
             }
-            else if ( !strcmp("netmask", *argvx1) )
+            else if ( !strcmp("netmask", opt_argv[cur_argc]) )
             {
-              if ( do_netcnfname2address_wrap(e, *argvx2, (sceNetCnfAddress_t *)&route_mem_2[4].back) != 0 )
+              if ( do_netcnfname2address_wrap(e, opt_argv[cur_argc + 1], (sceNetCnfAddress_t *)&route_mem_1[4].back) != 0 )
                 return -1;
             }
-            argvx2 += 2;
-            argvx1 += 2;
           }
-          cmd_tail = ifc->cmd_tail;
-          route_mem_2->back = cmd_tail;
-          if ( cmd_tail )
-            cmd_tail->forw = route_mem_2;
+          route_mem_1->back = ifc->cmd_tail;
+          if ( ifc->cmd_tail )
+            ifc->cmd_tail->forw = route_mem_1;
           else
-            ifc->cmd_head = route_mem_2;
-          route_mem_2->forw = 0;
-          ifc->cmd_tail = route_mem_2;
+            ifc->cmd_head = route_mem_1;
+          route_mem_1->forw = 0;
+          ifc->cmd_tail = route_mem_1;
           return 0;
         }
       }
@@ -3033,21 +2862,15 @@ int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
 {
   int lenx1; // $s1
   int curindx1; // $s0
-  const char *avtmp1; // $a0
   struct sceNetCnfUnknown *listtmp; // $s4
   struct sceNetCnfUnknown *cpydst_1; // $s2
   int cuindx2; // $s0
   size_t cpysz; // $v0
-  struct sceNetCnfUnknown *cpydst; // $a1
-  char *cpydst_curptr; // $s2
-  char *cpysrc; // $a0
-  struct sceNetCnfUnknown *tail; // $v0
 
   lenx1 = 0;
   for ( curindx1 = 0; curindx1 < e->ac; curindx1 += 1 )
   {
-    avtmp1 = e->av[curindx1];
-    lenx1 += 3 + strlen(avtmp1);
+    lenx1 += 3 + strlen(e->av[curindx1]);
   }
   listtmp = (struct sceNetCnfUnknown *)do_alloc_mem_inner(e, lenx1 + 8, 2);
   cpydst_1 = listtmp + 1;
@@ -3056,17 +2879,13 @@ int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
   for ( cuindx2 = 0; cuindx2 < e->ac; cuindx2 += 1 )
   {
     cpysz = strlen(e->av[cuindx2]);
-    cpydst = cpydst_1;
-    cpydst_curptr = (char *)cpydst_1 + cpysz;
-    cpysrc = e->av[cuindx2];
-    bcopy(cpysrc, cpydst, cpysz);
-    *cpydst_curptr = 32 * (cuindx2 < e->ac - 1);
-    cpydst_1 = (struct sceNetCnfUnknown *)(cpydst_curptr + 1);
+    bcopy(e->av[cuindx2], cpydst_1, cpysz);
+    ((char *)cpydst_1)[cpysz] = 32 * (cuindx2 < e->ac - 1);
+    cpydst_1 = (struct sceNetCnfUnknown *)&((char *)cpydst_1)[cpysz + 1];
   }
-  tail = unknown_list->tail;
-  listtmp->back = tail;
-  if ( tail )
-    tail->forw = listtmp;
+  listtmp->back = unknown_list->tail;
+  if ( unknown_list->tail )
+    unknown_list->tail->forw = listtmp;
   else
     unknown_list->head = listtmp;
   listtmp->forw = 0;
@@ -3081,54 +2900,41 @@ int do_check_other_keywords(
         void *cnfdata,
         struct sceNetCnfUnknownList *unknown_list)
 {
-  struct netcnf_option *options_1; // $s4
-  const char *cur_avx; // $s2
-  int has_flagged; // $s3
-  const char **p_m_key; // $s0
-  char *e_arg_chkres; // $v0
+  int wasprefixed; // $s3
   int numval; // [sp+10h] [-8h] BYREF
 
-  options_1 = options;
-  cur_avx = (const char *)e->av[0];
-  if ( *cur_avx == '-' )
+  wasprefixed = 0;
+  if ( e->av[0][0] == '-' )
   {
-    ++cur_avx;
-    has_flagged = 1;
+    wasprefixed = 1;
   }
-  else
+  if ( e->av[0][wasprefixed] )
   {
-    has_flagged = 0;
-  }
-  if ( *cur_avx )
-  {
-    for ( p_m_key = &options->m_key; *p_m_key && strcmp(cur_avx, *p_m_key); p_m_key += 3 )
-    {
-      ++options_1;
-    }
-    if ( !*p_m_key )
+    for ( ; options->m_key && strcmp(&(e->av[0])[wasprefixed], options->m_key); options += 1 );
+    if ( !options->m_key )
       return do_check_args(e, unknown_list);
-    switch ( options_1->m_type )
+    switch ( options->m_type )
     {
       case '1':
         numval = 255;
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 || do_parse_number(e, e->av[1], &numval) )
             break;
         }
-        *((u8 *)cnfdata + options_1->m_offset) = numval;
+        *((u8 *)cnfdata + options->m_offset) = numval;
         return 0;
       case '4':
         numval = -1;
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 || do_parse_number(e, e->av[1], &numval) )
             break;
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
+        *(u32 *)((char *)cnfdata + options->m_offset) = numval;
         return 0;
       case 'A':
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 )
             break;
@@ -3156,28 +2962,28 @@ int do_check_other_keywords(
           {
             return -1;
           }
-          *((u8 *)cnfdata + options_1->m_offset) = numval;
+          *((u8 *)cnfdata + options->m_offset) = numval;
         }
         if ( !strcmp("want.auth", (const char *)e->av[0]) )
-          *((u8 *)cnfdata + 171) = has_flagged == 0;
+          *((u8 *)cnfdata + 171) = wasprefixed == 0;
         else
-          *((u8 *)cnfdata + 247) = has_flagged == 0;
+          *((u8 *)cnfdata + 247) = wasprefixed == 0;
         return 0;
       case 'C':
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 || do_parse_number(e, e->av[1], &numval) )
             break;
-          *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
+          *(u32 *)((char *)cnfdata + options->m_offset) = numval;
         }
         if ( !strcmp("want.accm", (const char *)e->av[0]) )
-          *((u8 *)cnfdata + 170) = has_flagged == 0;
+          *((u8 *)cnfdata + 170) = wasprefixed == 0;
         else
-          *((u8 *)cnfdata + 246) = has_flagged == 0;
+          *((u8 *)cnfdata + 246) = wasprefixed == 0;
         return 0;
       case 'D':
         numval = -1;
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 )
             break;
@@ -3198,32 +3004,32 @@ int do_check_other_keywords(
             return -1;
           }
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
+        *(u32 *)((char *)cnfdata + options->m_offset) = numval;
         return 0;
       case 'L':
         numval = -1;
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( do_parse_phone_stuff(e, e->ac - 1, (const char **)&e->av[1], &numval) != 0 )
             return -1;
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
+        *(u32 *)((char *)cnfdata + options->m_offset) = numval;
         return 0;
       case 'M':
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 || do_parse_number(e, e->av[1], &numval) )
             break;
-          *(u16 *)((char *)cnfdata + options_1->m_offset) = numval;
+          *(u16 *)((char *)cnfdata + options->m_offset) = numval;
         }
         if ( !strcmp("want.mru", (const char *)e->av[0]) )
-          *((u8 *)cnfdata + 169) = has_flagged == 0;
+          *((u8 *)cnfdata + 169) = wasprefixed == 0;
         else
-          *((u8 *)cnfdata + 245) = has_flagged == 0;
+          *((u8 *)cnfdata + 245) = wasprefixed == 0;
         return 0;
       case 'P':
         numval = -1;
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 )
             break;
@@ -3260,11 +3066,11 @@ int do_check_other_keywords(
             return -1;
           }
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
+        *(u32 *)((char *)cnfdata + options->m_offset) = numval;
         return 0;
       case 'T':
         numval = -1;
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 )
             break;
@@ -3289,15 +3095,15 @@ int do_check_other_keywords(
             return -1;
           }
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = numval;
+        *(u32 *)((char *)cnfdata + options->m_offset) = numval;
         return 0;
       case 'b':
-        numval = has_flagged == 0;
-        *((u8 *)cnfdata + options_1->m_offset) = numval;
+        numval = wasprefixed == 0;
+        *((u8 *)cnfdata + options->m_offset) = numval;
         return 0;
       case 'c':
         numval = 255;
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 )
             break;
@@ -3326,25 +3132,24 @@ int do_check_other_keywords(
             return -1;
           }
         }
-        *((u8 *)cnfdata + options_1->m_offset) = numval;
+        *((u8 *)cnfdata + options->m_offset) = numval;
         return 0;
       case 'p':
-        if ( !has_flagged )
+        if ( !wasprefixed )
         {
           if ( e->ac < 2 )
           {
             break;
           }
-          e_arg_chkres = do_check_e_arg(e, e->av[1]);
-          *(char **)((char *)cnfdata + options_1->m_offset) = e_arg_chkres;
-          if ( !e_arg_chkres )
+          *(char **)((char *)cnfdata + options->m_offset) = do_check_e_arg(e, e->av[1]);
+          if ( !*(char **)((char *)cnfdata + options->m_offset) )
             return -1;
           return 0;
         }
-        *(u32 *)((char *)cnfdata + options_1->m_offset) = 0;
+        *(u32 *)((char *)cnfdata + options->m_offset) = 0;
         return 0;
       default:
-        return printf("netcnf: internal load err (%d, type=%c)\n", 606, options_1->m_type);
+        return printf("netcnf: internal load err (%d, type=%c)\n", 606, options->m_type);
     }
   }
   printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
@@ -3357,32 +3162,26 @@ int do_check_other_keywords(
 //----- (0040575C) --------------------------------------------------------
 int do_handle_net_cnf(sceNetCnfEnv_t *e)
 {
-  char *av_tmp; // $s0
-  int wasprefixxed; // $s2
-  int ac; // $v1
-  const char *attach_devarg; // $a3
+  int wasprefixed; // $s2
 
-  av_tmp = e->av[0];
-  wasprefixxed = 0;
-  if ( *av_tmp == '-' )
+  wasprefixed = 0;
+  if ( e->av[0][0] == '-' )
   {
-    ++av_tmp;
-    wasprefixxed = 1;
+    wasprefixed = 1;
   }
-  if ( strcmp("interface", av_tmp) )
+  if ( strcmp("interface", &(e->av[0])[wasprefixed]) )
   {
-    if ( strcmp("zero_prefix", av_tmp) )
+    if ( strcmp("zero_prefix", &(e->av[0])[wasprefixed]) )
       return do_check_other_keywords(e, g_options_net_cnf, e->root, &e->root->unknown_list);
     printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
-    printf("obsoleted keyword (%s)", av_tmp);
+    printf("obsoleted keyword (%s)", &(e->av[0])[wasprefixed]);
     printf("\n");
     ++e->syntax_err;
     return 0;
   }
-  if ( wasprefixxed )
+  if ( wasprefixed )
     return 0;
-  ac = e->ac;
-  if ( ac < 3 )
+  if ( e->ac < 3 )
   {
     printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
     printf("ac=%d", e->ac);
@@ -3390,10 +3189,7 @@ int do_handle_net_cnf(sceNetCnfEnv_t *e)
     ++e->syntax_err;
     return -1;
   }
-  attach_devarg = 0;
-  if ( ac >= 4 )
-    attach_devarg = e->av[3];
-  if ( do_check_interface_keyword(e, e->av[1], e->av[2], attach_devarg) == 0 )
+  if ( do_check_interface_keyword(e, e->av[1], e->av[2], ( e->ac >= 4 ) ? e->av[3] : 0) == 0 )
     return 0;
   return -1;
 }
@@ -3401,30 +3197,23 @@ int do_handle_net_cnf(sceNetCnfEnv_t *e)
 //----- (004058E0) --------------------------------------------------------
 int do_handle_attach_cnf(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 {
-  char *curkey; // $s0
   int wasprefixed; // $s2
   int keyasnum; // $s0
-  u8 *eargext; // $a0
 
-  curkey = (char *)e->av[0];
-  if ( *curkey == '-' )
+  wasprefixed = 0;
+  if ( e->av[0][0] == '-' )
   {
-    ++curkey;
     wasprefixed = 1;
   }
-  else
+  if ( !strncmp("phone_number", &(e->av[0])[wasprefixed], 12) )
   {
-    wasprefixed = 0;
-  }
-  if ( !strncmp("phone_number", curkey, 12) )
-  {
-    if ( curkey[12] )
+    if ( e->av[0][wasprefixed + 12] )
     {
-      if ( !isdigit(curkey[12]) )
+      if ( !isdigit(e->av[0][wasprefixed + 12]) )
         return 0;
-      if ( curkey[13] )
+      if ( e->av[0][wasprefixed + 13] )
         return 0;
-      keyasnum = curkey[12] - 48;
+      keyasnum = e->av[0][wasprefixed + 12] - 48;
     }
     else
     {
@@ -3437,26 +3226,25 @@ int do_handle_attach_cnf(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
     }
     if ( e->ac >= 2 )
     {
-      eargext = (u8 *)do_check_e_arg(e, e->av[1]);
-      ifc->phone_numbers[keyasnum] = eargext;
-      if ( eargext )
+      ifc->phone_numbers[keyasnum] = (u8 *)do_check_e_arg(e, e->av[1]);
+      if ( ifc->phone_numbers[keyasnum] )
         return 0;
       return -1;
     }
   }
-  else if ( !strcmp("nameserver", curkey) )
+  else if ( !strcmp("nameserver", &(e->av[0])[wasprefixed]) )
   {
     if ( !wasprefixed )
       return do_check_nameserver(e, ifc, e->ac, (char **)e->av);
   }
   else
   {
-    if ( strcmp("route", curkey) )
+    if ( strcmp("route", &(e->av[0])[wasprefixed]) )
     {
-      if ( strcmp("zero_prefix", curkey) && strcmp("dial_cnf", curkey) )
+      if ( strcmp("zero_prefix", &(e->av[0])[wasprefixed]) && strcmp("dial_cnf", &(e->av[0])[wasprefixed]) )
         return do_check_other_keywords(e, g_options_attach_cnf, ifc, &ifc->unknown_list);
       printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
-      printf("obsoleted keyword (%s)", curkey);
+      printf("obsoleted keyword (%s)", &(e->av[0])[wasprefixed]);
       printf("\n");
       ++e->syntax_err;
       return 0;
@@ -3470,40 +3258,31 @@ int do_handle_attach_cnf(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 //----- (00405B08) --------------------------------------------------------
 int do_handle_dial_cnf(sceNetCnfEnv_t *e, struct sceNetCnfDial *dial)
 {
-  const char *av_tmp; // $a1
   int wasprefixed; // $s1
-  u8 *tone_dial1; // $v0
-  u8 *pulse_dial1; // $v0
-  u8 *any_dial1; // $v0
 
-  av_tmp = (const char *)e->av[0];
   wasprefixed = 0;
-  if ( *av_tmp == '-' )
+  if ( e->av[0][0] == '-' )
   {
-    ++av_tmp;
     wasprefixed = 1;
   }
-  if ( strcmp("dialing_type_string", av_tmp) )
+  if ( strcmp("dialing_type_string", &(e->av[0])[wasprefixed]) )
     return do_check_other_keywords(e, g_options_dial_cnf, dial, &dial->unknown_list);
   if ( !wasprefixed )
   {
     if ( e->ac >= 2 )
     {
-      tone_dial1 = (u8 *)do_check_e_arg(e, e->av[1]);
-      dial->tone_dial = tone_dial1;
-      if ( !tone_dial1 )
+      dial->tone_dial = (u8 *)do_check_e_arg(e, e->av[1]);
+      if ( !dial->tone_dial )
         return -1;
       if ( e->ac < 3 )
         return 0;
-      pulse_dial1 = (u8 *)do_check_e_arg(e, e->av[2]);
-      dial->pulse_dial = pulse_dial1;
-      if ( pulse_dial1 )
+      dial->pulse_dial = (u8 *)do_check_e_arg(e, e->av[2]);
+      if ( dial->pulse_dial )
       {
         if ( e->ac >= 4 )
         {
-          any_dial1 = (u8 *)do_check_e_arg(e, e->av[3]);
-          dial->any_dial = any_dial1;
-          if ( any_dial1 )
+          dial->any_dial = (u8 *)do_check_e_arg(e, e->av[3]);
+          if ( dial->any_dial  )
             return 0;
           else
             return -1;
@@ -3523,21 +3302,17 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), v
 {
   u8 *i; // $s0
   char *j; // $s0
-  int j_curchr1; // $a0
-  int ac; // $v1
   u32 condtmp1; // $s1
 
   for ( i = lbuf; e->lbuf < i && *(i - 1) < 0x21u; i -= 1 );
   *i = 0;
   for ( j = (char *)e->lbuf; *j && isspace(*j); j += 1 );
   e->ac = 0;
-  j_curchr1 = (u8)*j;
   while ( *j )
   {
-    ac = e->ac;
-    if ( ac >= '\n' || j_curchr1 == '#' )
+    if ( e->ac >= '\n' || (u8)*j == '#' )
       break;
-    e->av[ac] = j;
+    e->av[e->ac] = j;
     condtmp1 = 0;
     if ( *j )
     {
@@ -3589,7 +3364,6 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), v
     }
     for ( ; *j && isspace(*j); j += 1 );
     ++e->ac;
-    j_curchr1 = (u8)*j;
   }
   *j = 0;
   if ( e->ac <= 0 )
@@ -3615,12 +3389,10 @@ int do_read_netcnf(sceNetCnfEnv_t *e, const char *netcnf_path, char **netcnf_hea
 //----- (00405EF4) --------------------------------------------------------
 char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer)
 {
-  u8 *lbuf; // $s0
   char *result; // $v0
 
-  lbuf = e->lbuf;
   result = do_handle_netcnf_dirname(e->dir_name, entry_buffer, (char *)e->lbuf);
-  if ( result == (char *)lbuf )
+  if ( result == (char *)e->lbuf )
     return do_alloc_mem_for_write(e, result);
   return result;
 }
@@ -3629,31 +3401,16 @@ char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer)
 int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(), void *userdata)
 {
   int cur_linelen; // $s4
-  char *dir_name_or_null; // $a1
-  const char *path_or_null; // $a2
   char *fullpath; // $s0
-  const char *dial_cnf_or_unk; // $a0
   int read_res1; // $v0
-  int read_res2; // $s1
   u8 *lbuf; // $s0
-  char *ptr_1; // $s2
-  int f_no_check_magic; // $v0
   int curchind; // $s0
-  char *curptr_1; // $v1
-  int curchr; // $a1
-  int curptr_chr1; // $v1
   char *ptr; // [sp+10h] [-8h] BYREF
 
   cur_linelen = 0;
   if ( e->f_verbose )
   {
-    dir_name_or_null = e->dir_name;
-    if ( !e->dir_name )
-      dir_name_or_null = "NULL";
-    path_or_null = path;
-    if ( !path )
-      path_or_null = "NULL";
-    printf("netcnf: dir=%s path=%s\n", dir_name_or_null, path_or_null);
+    printf("netcnf: dir=%s path=%s\n", e->dir_name ? e->dir_name : "NULL", path ? path : "NULL");
   }
   fullpath = do_handle_netcnf_prerw(e, path);
   if ( fullpath )
@@ -3669,51 +3426,44 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
       {
         printf("ATTACH_CNF");
       }
+      else if ( (char *)readcb == (char *)do_handle_dial_cnf )
+      {
+        printf("DIAL_CNF");
+      }
       else
       {
-        dial_cnf_or_unk = "???";
-        if ( (char *)readcb == (char *)do_handle_dial_cnf )
-          dial_cnf_or_unk = "DIAL_CNF";
-        printf(dial_cnf_or_unk);
+        printf("???");
       }
       printf("\n");
     }
     e->fname = fullpath;
     read_res1 = do_read_netcnf(e, fullpath, &ptr, readcb == (int (*)())do_handle_attach_cnf);
-    read_res2 = read_res1;
-    lbuf = e->lbuf;
     if ( read_res1 < 0 )
     {
       printf("netcnf: can't load %s (%d)\n", e->fname, read_res1);
       return -1;
     }
-    ptr_1 = ptr;
-    f_no_check_magic = e->f_no_check_magic;
     e->lno = 0;
-    if ( f_no_check_magic )
+    if ( e->f_no_check_magic )
     {
     }
-    else if ( read_res2 < 36
-           || (strncmp(ptr_1, "# <Sony Computer Entertainment Inc.>", 36) != 0) )
+    else if ( read_res1 < 36
+           || (strncmp(ptr, "# <Sony Computer Entertainment Inc.>", 36) != 0) )
     {
       printf("netcnf: decoding error (magic=\"");
-      for ( curchind = 0; curchind < read_res2 && curchind < '$'; curchind += 1 )
+      for ( curchind = 0; curchind < read_res1 && curchind < '$'; curchind += 1 )
       {
-        curptr_1 = &ptr_1[curchind];
-        curchr = '?';
-        if ( (u8)*curptr_1 - (unsigned int)' ' < '_' )
-          curchr = (u8)*curptr_1;
-        printf("%c", curchr);
+        printf("%c", ((u8)ptr[curchind] - (unsigned int)' ' < '_') ? ((u8)ptr[curchind]) : '?');
       }
       printf("\")\n");
       do_free_heapmem(ptr);
       return -15;
     }
-    read_res2 -= 1;
-    while ( (read_res2 + 1) > 0 )
+    lbuf = e->lbuf;
+    read_res1 -= 1;
+    while ( (read_res1 + 1) > 0 )
     {
-      curptr_chr1 = (u8)*ptr_1++;
-      if ( curptr_chr1 == '\n' )
+      if ( *ptr == '\n' )
       {
         ++e->lno;
         if ( e->lbuf < lbuf && *(lbuf - 1) == '\\' )
@@ -3728,10 +3478,11 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
       }
       else
       {
-        if ( lbuf < &e->lbuf[1023] && curptr_chr1 != '\r' )
-          *lbuf++ = curptr_chr1;
+        if ( lbuf < &e->lbuf[1023] && *ptr != '\r' )
+          *lbuf++ = *ptr;
       }
-      read_res2 -= 1;
+      ptr++;
+      read_res1 -= 1;
     }
     if ( e->lbuf < lbuf )
       cur_linelen += do_check_line_buffer(e, lbuf, (int (*)(int, int))readcb, userdata);
@@ -3744,13 +3495,10 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
 //----- (0040627C) --------------------------------------------------------
 int do_netcnf_dial_related(sceNetCnfEnv_t *e)
 {
-  struct sceNetCnfRoot *rootdial; // $v0
-
-  rootdial = (struct sceNetCnfRoot *)do_alloc_mem_inner(e, 44, 2);
-  e->root = rootdial;
-  if ( !rootdial )
+  e->root = (struct sceNetCnfRoot *)do_alloc_mem_inner(e, 44, 2);
+  if ( !e->root )
     return -2;
-  rootdial->version = 3;
+  e->root->version = 3;
   e->root->redial_count = -1;
   e->root->redial_interval = -1;
   e->root->dialing_type = -1;
@@ -3760,13 +3508,10 @@ int do_netcnf_dial_related(sceNetCnfEnv_t *e)
 //----- (004062FC) --------------------------------------------------------
 int do_netcnf_ifc_related(sceNetCnfEnv_t *e)
 {
-  sceNetCnfInterface_t *rootifc; // $v0
-
-  rootifc = (sceNetCnfInterface_t *)do_alloc_mem_inner(e, 352, 2);
-  e->ifc = rootifc;
-  if ( !rootifc )
+  e->ifc = (sceNetCnfInterface_t *)do_alloc_mem_inner(e, 352, 2);
+  if ( !e->ifc )
     return -2;
-  do_init_ifc_inner(rootifc);
+  do_init_ifc_inner(e->ifc);
   return do_netcnf_read_related(e, e->arg_fname, (int (*)())do_handle_attach_cnf, e->ifc);
 }
 
@@ -3774,13 +3519,9 @@ int do_netcnf_ifc_related(sceNetCnfEnv_t *e)
 void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *ncis)
 {
   int curindx; // $a2
-  int strptr2_1; // $a0
   int typadd1_1; // $v1
-  int strptr2_2; // $a0
   int typadd1_3; // $v1
-  int strptr2; // $a0
   int typadd1; // $v1
-  u8 *curnumx; // $v1
 
   if ( ncis )
   {
@@ -3791,20 +3532,18 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
         case '1':
         case 'b':
         case 'c':
-          strptr2 = g_options_attach_cnf[curindx].m_offset;
-          typadd1 = *((u8 *)&ncis->type + strptr2);
+          typadd1 = *((u8 *)&ncis->type + g_options_attach_cnf[curindx].m_offset);
           if ( typadd1 != 255 )
-            *((u8 *)&ncid->type + strptr2) = typadd1;
+            *((u8 *)&ncid->type + g_options_attach_cnf[curindx].m_offset) = typadd1;
           break;
         case '4':
         case 'D':
         case 'L':
         case 'P':
         case 'T':
-          strptr2_1 = g_options_attach_cnf[curindx].m_offset;
-          typadd1_1 = *(int *)((char *)&ncis->type + strptr2_1);
+          typadd1_1 = *(int *)((char *)&ncis->type + g_options_attach_cnf[curindx].m_offset);
           if ( typadd1_1 != -1 )
-            *(int *)((char *)&ncid->type + strptr2_1) = typadd1_1;
+            *(int *)((char *)&ncid->type + g_options_attach_cnf[curindx].m_offset) = typadd1_1;
           break;
         case 'A':
           if ( !strcmp("want.auth", g_options_attach_cnf[curindx].m_key) )
@@ -3852,10 +3591,9 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
           }
           break;
         case 'p':
-          strptr2_2 = g_options_attach_cnf[curindx].m_offset;
-          typadd1_3 = *(int *)((char *)&ncis->type + strptr2_2);
+          typadd1_3 = *(int *)((char *)&ncis->type + g_options_attach_cnf[curindx].m_offset);
           if ( typadd1_3 )
-            *(int *)((char *)&ncid->type + strptr2_2) = typadd1_3;
+            *(int *)((char *)&ncid->type + g_options_attach_cnf[curindx].m_offset) = typadd1_3;
           break;
         default:
           break;
@@ -3863,9 +3601,8 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
     }
     for ( curindx = 0; curindx < 10; curindx += 1 )
     {
-      curnumx = ncis->phone_numbers[curindx];
-      if ( curnumx )
-        ncid->phone_numbers[curindx] = curnumx;
+      if ( ncis->phone_numbers[curindx] )
+        ncid->phone_numbers[curindx] = ncis->phone_numbers[curindx];
     }
   }
 }
@@ -3873,54 +3610,42 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
 //----- (004065CC) --------------------------------------------------------
 int do_merge_conf_inner(sceNetCnfEnv_t *e)
 {
-  struct sceNetCnfRoot *root; // $s3
   struct sceNetCnfPair *pair_head; // $s2
-  struct sceNetCnfCtl *ctl; // $s0
-  struct sceNetCnfDial *dial; // $v0
-  sceNetCnfInterface_t *ifmem2; // $s1
-  struct sceNetCnfInterface *dev; // $v0
   int type; // $s0
 
-  root = e->root;
-  if ( root )
+  if ( e->root )
   {
-    for ( pair_head = root->pair_head; pair_head; pair_head = pair_head->forw )
+    for ( pair_head = e->root->pair_head; pair_head; pair_head = pair_head->forw )
     {
-      ctl = pair_head->ctl;
-      if ( !ctl )
+      if ( !pair_head->ctl )
       {
-        ctl = (struct sceNetCnfCtl *)do_alloc_mem_inner(e, 32, 2);
-        pair_head->ctl = ctl;
-        if ( !ctl )
+        pair_head->ctl = (struct sceNetCnfCtl *)do_alloc_mem_inner(e, 32, 2);
+        if ( !pair_head->ctl )
           return -2;
       }
-      if ( !ctl->dial )
+      if ( !pair_head->ctl->dial )
       {
-        dial = (struct sceNetCnfDial *)do_alloc_mem_inner(e, 36, 2);
-        ctl->dial = dial;
-        if ( !dial )
+        pair_head->ctl->dial = (struct sceNetCnfDial *)do_alloc_mem_inner(e, 36, 2);
+        if ( !pair_head->ctl->dial )
           return -2;
       }
-      ifmem2 = ctl->ifc;
-      if ( !ifmem2 )
+      if ( !pair_head->ctl->ifc )
       {
-        ifmem2 = (sceNetCnfInterface_t *)do_alloc_mem_inner(e, 352, 2);
-        ctl->ifc = ifmem2;
-        if ( !ifmem2 )
+        pair_head->ctl->ifc = (sceNetCnfInterface_t *)do_alloc_mem_inner(e, 352, 2);
+        if ( !pair_head->ctl->ifc )
           return -2;
       }
-      do_init_ifc_inner(ifmem2);
-      ifmem2->chat_additional = root->chat_additional;
-      ifmem2->redial_count = root->redial_count;
-      ifmem2->redial_interval = root->redial_interval;
-      ifmem2->outside_number = root->outside_number;
-      ifmem2->outside_delay = root->outside_delay;
-      ifmem2->dialing_type = root->dialing_type;
-      do_dialauth_related(ifmem2, pair_head->ifc);
-      dev = pair_head->dev;
-      type = dev->type;
-      dev->type = -1;
-      do_dialauth_related(ifmem2, pair_head->dev);
+      do_init_ifc_inner(pair_head->ctl->ifc);
+      pair_head->ctl->ifc->chat_additional = e->root->chat_additional;
+      pair_head->ctl->ifc->redial_count = e->root->redial_count;
+      pair_head->ctl->ifc->redial_interval = e->root->redial_interval;
+      pair_head->ctl->ifc->outside_number = e->root->outside_number;
+      pair_head->ctl->ifc->outside_delay = e->root->outside_delay;
+      pair_head->ctl->ifc->dialing_type = e->root->dialing_type;
+      do_dialauth_related(pair_head->ctl->ifc, pair_head->ifc);
+      type = pair_head->dev->type;
+      pair_head->dev->type = -1;
+      do_dialauth_related(pair_head->ctl->ifc, pair_head->dev);
       pair_head->dev->type = type;
     }
     return 0;
@@ -3931,42 +3656,32 @@ int do_merge_conf_inner(sceNetCnfEnv_t *e)
 //----- (00406750) --------------------------------------------------------
 int do_load_conf_inner(sceNetCnfEnv_t *e)
 {
-  int req; // $v1
   int retres1; // $s3
   int ifcres1_1; // $s1
-  struct sceNetCnfRoot *root; // $v0
   struct sceNetCnfPair *pair_head; // $s0
-  char *attach_ifc; // $v0
-  int ifcres1; // $v0
-  char *attach_dev; // $v0
-  int ifcres2; // $v0
 
-  req = e->req;
   retres1 = 0;
-  if ( req == 1 )
+  if ( e->req == 1 )
   {
     ifcres1_1 = do_netcnf_dial_related(e);
     if ( ifcres1_1 )
       return ifcres1_1;
-    root = e->root;
-    if ( !root )
+    if ( !e->root )
       return -14;
-    pair_head = root->pair_head;
+    pair_head = e->root->pair_head;
     if ( !pair_head )
       return -14;
     if ( index(e->arg_fname, ':') )
       e->dir_name = e->arg_fname;
     for ( ; pair_head; pair_head = pair_head->forw )
     {
-      attach_ifc = (char *)pair_head->attach_ifc;
-      if ( attach_ifc )
+      if ( pair_head->attach_ifc )
       {
-        e->arg_fname = attach_ifc;
-        ifcres1 = do_netcnf_ifc_related(e);
-        ifcres1_1 = ifcres1;
-        if ( ifcres1 )
+        e->arg_fname = (char *)pair_head->attach_ifc;
+        ifcres1_1 = do_netcnf_ifc_related(e);
+        if ( ifcres1_1 )
         {
-          printf("netcnf: load_attach ifc(%d)\n", ifcres1);
+          printf("netcnf: load_attach ifc(%d)\n", ifcres1_1);
           pair_head->ifc = 0;
           if ( (unsigned int)(ifcres1_1 + 15) < 2 )
           {
@@ -3984,15 +3699,13 @@ int do_load_conf_inner(sceNetCnfEnv_t *e)
       {
         pair_head->ifc = 0;
       }
-      attach_dev = (char *)pair_head->attach_dev;
-      if ( attach_dev )
+      if ( pair_head->attach_dev )
       {
-        e->arg_fname = attach_dev;
-        ifcres2 = do_netcnf_ifc_related(e);
-        ifcres1_1 = ifcres2;
-        if ( ifcres2 )
+        e->arg_fname = (char *)pair_head->attach_dev;
+        ifcres1_1 = do_netcnf_ifc_related(e);
+        if ( ifcres1_1 )
         {
-          printf("netcnf: load_attach dev(%d)\n", ifcres2);
+          printf("netcnf: load_attach dev(%d)\n", ifcres1_1);
           pair_head->dev = 0;
           if ( (unsigned int)(ifcres1_1 + 15) < 2 )
             break;
@@ -4012,7 +3725,7 @@ int do_load_conf_inner(sceNetCnfEnv_t *e)
       return -21;
     return ifcres1_1;
   }
-  if ( req == 2 )
+  if ( e->req == 2 )
     return do_netcnf_ifc_related(e);
   return -1;
 }
@@ -4020,16 +3733,11 @@ int do_load_conf_inner(sceNetCnfEnv_t *e)
 //----- (0040690C) --------------------------------------------------------
 int do_load_dial_inner(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair)
 {
-  struct sceNetCnfCtl *ctl; // $s0
-  struct sceNetCnfDial *dialresx; // $v0
-
-  ctl = pair->ctl;
-  if ( !ctl )
+  if ( !pair->ctl )
     return -1;
-  dialresx = (struct sceNetCnfDial *)do_alloc_mem_inner(e, 36, 2);
-  ctl->dial = dialresx;
-  if ( dialresx )
-    return do_netcnf_read_related(e, e->arg_fname, (int (*)())do_handle_dial_cnf, dialresx);
+  pair->ctl->dial = (struct sceNetCnfDial *)do_alloc_mem_inner(e, 36, 2);
+  if ( pair->ctl->dial )
+    return do_netcnf_read_related(e, e->arg_fname, (int (*)())do_handle_dial_cnf, pair->ctl->dial);
   else
     return -2;
 }
@@ -4335,7 +4043,6 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
   int result; // $v0
   int offsptr3; // $s1
   const char *lbuf; // $s0
-  int *offsptr5; // $a2
   char *offsptr1; // $v0
   int offsptr6; // $s0
   int offsptr4; // $s1
@@ -4573,10 +4280,7 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
           lbuf = 0;
           break;
         }
-        offsptr5 = (int *)"-";
-        if ( *((u8 *)cnfdata + options->m_offset) )
-          offsptr5 = &g_null_string;
-        result = do_netcnf_sprintf_buffer(e, "%s%s\n", offsptr5, options->m_key);
+        result = do_netcnf_sprintf_buffer(e, "%s%s\n", *((u8 *)cnfdata + options->m_offset) ? &g_null_string : (int *)"-", options->m_key);
         lbuf = 0;
         break;
       case 'c':
@@ -4636,15 +4340,13 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
 int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 {
   struct sceNetCnfCommand *cmd_head; // $s2
-  int code; // $v1
   int nameserverflag; // $s0
   int result; // $v0
 
   for ( cmd_head = ifc->cmd_head; cmd_head; cmd_head = cmd_head->forw )
   {
-    code = cmd_head->code;
     nameserverflag = -1;
-    switch ( code )
+    switch ( cmd_head->code )
     {
       case 1:
         nameserverflag = 1;
@@ -4706,15 +4408,13 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 int do_netcnf_phone_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 {
   int ind1; // $s0
-  u8 *ifcnum; // $a3
   int result; // $v0
 
   for ( ind1 = 0; ind1 < 10; ind1 += 1 )
   {
-    ifcnum = ifc->phone_numbers[ind1];
-    if ( ifcnum )
+    if ( ifc->phone_numbers[ind1] )
     {
-      result = do_netcnf_sprintf_buffer(e, "phone_number%d \"%S\"\n", ind1, ifcnum);
+      result = do_netcnf_sprintf_buffer(e, "phone_number%d \"%S\"\n", ind1, ifc->phone_numbers[ind1]);
       if ( result < 0 )
         return result;
     }
@@ -4726,16 +4426,13 @@ int do_netcnf_phone_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 int do_netcnf_unknown_write(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
 {
   struct sceNetCnfUnknown *head; // $s0
-  sceNetCnfEnv_t *e_1; // $s1
   int result; // $v0
 
-  e_1 = e;
   for ( head = unknown_list->head; head; head = head->forw )
   {
     result = do_netcnf_sprintf_buffer(e, "%s\n", (const char *)&head[1]);
     if ( result < 0 )
       return result;
-    e = e_1;
   }
   return 0;
 }
@@ -4744,25 +4441,15 @@ int do_netcnf_unknown_write(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unkn
 int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
 {
   int memsize; // $s3
-  char *dir_name_or_null; // $a1
-  const char *path_or_null; // $a2
   char *fullpath; // $s0
   int result; // $v0
-  const char *attach_or_net_cnf; // $a0
   int fd; // $v0
-  int fd_1; // $s1
   int writeres; // $s0
 
   memsize = e->mem_ptr - e->mem_base;
   if ( e->f_verbose )
   {
-    dir_name_or_null = e->dir_name;
-    if ( !e->dir_name )
-      dir_name_or_null = "NULL";
-    path_or_null = path;
-    if ( !path )
-      path_or_null = "NULL";
-    printf("netcnf: dir=%s path=%s\n", dir_name_or_null, path_or_null);
+    printf("netcnf: dir=%s path=%s\n", e->dir_name ? e->dir_name : "NULL", path ? path : "NULL");
   }
   fullpath = do_handle_netcnf_prerw(e, path);
   result = -1;
@@ -4771,28 +4458,27 @@ int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
     if ( e->f_verbose )
     {
       printf("netcnf: writing \"%s\" as ", fullpath);
-      attach_or_net_cnf = "NET_CNF";
       if ( is_attach_cnf )
-        attach_or_net_cnf = "ATTACH_CNF";
-      printf(attach_or_net_cnf);
+        printf("ATTACH_CNF");
+      else
+        printf("NET_CNF");
       printf("\n");
     }
     if ( !is_attach_cnf || e->f_no_decode )
     {
       fd = do_open_netcnf(fullpath, 1538, 511);
-      fd_1 = fd;
       if ( fd >= 0 )
       {
         writeres = do_write_netcnf_no_encode(fd, e->mem_base, memsize);
         if ( memsize == writeres )
         {
-          do_close_netcnf(fd_1);
+          do_close_netcnf(fd);
           return 0;
         }
         else
         {
           ++e->file_err;
-          do_close_netcnf(fd_1);
+          do_close_netcnf(fd);
           result = -5;
           if ( writeres == -5 )
             return -18;
@@ -4824,7 +4510,6 @@ int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceN
 {
   void *memalign; // $v0
   int result; // $v0
-  int isattachcnf; // $a2
   struct sceNetCnfPair *pair_head; // $s0
 
   memalign = (void *)(((int)e->mem_base + 3) & 0xFFFFFFFC);
@@ -4847,8 +4532,7 @@ int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceN
             result = do_netcnf_unknown_write(e, &ifc->unknown_list);
             if ( result >= 0 )
             {
-              isattachcnf = 1;
-              return do_write_netcnf(e, arg_fname, isattachcnf);
+              return do_write_netcnf(e, arg_fname, 1);
             }
           }
         }
@@ -4873,8 +4557,7 @@ int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceN
         result = do_netcnf_unknown_write(e, &e->root->unknown_list);
         if ( result >= 0 )
         {
-          isattachcnf = 0;
-          return do_write_netcnf(e, arg_fname, isattachcnf);
+          return do_write_netcnf(e, arg_fname, 0);
         }
       }
     }
@@ -4885,24 +4568,16 @@ int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceN
 //----- (00407CCC) --------------------------------------------------------
 int do_export_netcnf(sceNetCnfEnv_t *e)
 {
-  int req; // $v1
-  char *arg_fname; // $a1
-  struct sceNetCnfInterface *ifc; // $a2
-
-  req = e->req;
-  if ( req == 1 )
+  if ( e->req != 1 && e->req != 2 )
   {
-    arg_fname = e->arg_fname;
-    ifc = 0;
+    return -1;
   }
   else
   {
-    if ( req != 2 )
+    if ( e->req != 2 )
       return -1;
-    arg_fname = e->arg_fname;
-    ifc = e->ifc;
   }
-  if ( do_export_netcnf_inner(e, arg_fname, ifc) != 0 )
+  if ( do_export_netcnf_inner(e, e->arg_fname, ( e->req == 1 ) ? 0 : e->ifc) != 0 )
     return -1;
   return 0;
 }
@@ -4933,25 +4608,21 @@ char *do_address_to_string_inner_element(char *dst, int srcbyte)
 void do_address_to_string_inner(char *dst, unsigned int srcint)
 {
   char *elm1; // $v0
-  char *elm2; // $v0
-  char *elm3; // $v0
-  char *elm4; // $v0
 
   elm1 = do_address_to_string_inner_element(dst, (srcint >> 24) & 0xFF);
   *elm1 = '.';
-  elm2 = do_address_to_string_inner_element(elm1 + 1, (srcint >> 16) & 0xFF);
-  *elm2 = '.';
-  elm3 = do_address_to_string_inner_element(elm2 + 1, (srcint >> 8) & 0xFF);
-  *elm3 = '.';
-  elm4 = do_address_to_string_inner_element(elm3 + 1, srcint & 0xFF);
-  *elm4 = 0;
+  elm1 = do_address_to_string_inner_element(elm1 + 1, (srcint >> 16) & 0xFF);
+  *elm1 = '.';
+  elm1 = do_address_to_string_inner_element(elm1 + 1, (srcint >> 8) & 0xFF);
+  *elm1 = '.';
+  elm1 = do_address_to_string_inner_element(elm1 + 1, srcint & 0xFF);
+  *elm1 = 0;
 }
 
 //----- (00407E50) --------------------------------------------------------
 int do_name_2_address_inner(unsigned int *dst, char *buf)
 {
   int prefixchkn; // $s4
-  int *tmpstk1_ptr; // $s5
   int curindx2; // $s6
   int base; // $s2
   unsigned int i; // $s3
@@ -4959,7 +4630,6 @@ int do_name_2_address_inner(unsigned int *dst, char *buf)
   int tmpstk1[3]; // [sp+10h] [-10h] BYREF
 
   prefixchkn = 0;
-  tmpstk1_ptr = tmpstk1;
   curindx2 = -1;
   while ( 1 )
   {
@@ -4992,7 +4662,7 @@ int do_name_2_address_inner(unsigned int *dst, char *buf)
       if ( (unsigned int)tmpstk1[curindx2] >= 0x100 )
         return 0;
     }
-    *tmpstk1_ptr++ = i;
+    tmpstk1[curindx2] = i;
     ++curindx2;
     ++prefixchkn;
     if ( *buf != '.' || prefixchkn >= 4 )
@@ -5036,10 +4706,7 @@ int do_conv_a2s_inner(char *sp_, char *dp_, int len)
   int curindx1; // $t2
   char *dp_ptroffs1; // $a1
   char *dp_ptroffs2; // $a1
-  int sp_curchr3; // $v1
-  char sp_curchr4; // $v0
   char *dp_ptroffs3; // $a1
-  int len_minus_three_minus_five; // $a2
 
   len_minus_three = len - 3;
   curindx1 = 0;
@@ -5057,8 +4724,7 @@ int do_conv_a2s_inner(char *sp_, char *dp_, int len)
       break;
     if ( *sp_ != 'A' && *sp_ != 'a' )
       return 0;
-    sp_curchr3 = sp_[1];
-    if ( sp_curchr3 != 'T' && sp_curchr3 != 't' )
+    if ( sp_[1] != 'T' && sp_[1] != 't' )
       return 0;
     for ( ; *sp_ && *sp_ != ' ' && *sp_ != '\t'; sp_ += 1 )
     {
@@ -5071,8 +4737,7 @@ int do_conv_a2s_inner(char *sp_, char *dp_, int len)
           return -19;
         *dp_ptroffs2++ = '\\';
       }
-      sp_curchr4 = *sp_;
-      *dp_ptroffs2++ = sp_curchr4;
+      *dp_ptroffs2++ = *sp_;
     }
     len_minus_three -= 4;
     if ( len_minus_three <= 0 )
@@ -5085,10 +4750,9 @@ int do_conv_a2s_inner(char *sp_, char *dp_, int len)
     dp_ptroffs2 = dp_ptroffs3 + 1;
     ++curindx1;
   }
-  len_minus_three_minus_five = len_minus_three - 2;
   if ( curindx1 <= 0 )
     return 0;
-  if ( len_minus_three_minus_five <= 0 )
+  if ( (len_minus_three - 2) <= 0 )
     return -19;
   strcpy(dp_ptroffs2, "\\c");
   return 1;
@@ -5100,15 +4764,9 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
 {
   int curindx1; // $t2
   char *sp_minus_one1; // $a0
-  int sp_chr2_1; // $v1
   char *sp_ptroffs1; // $a0
   char *sp_ptroffs2; // $a0
-  int sp_curchr4; // $v1
-  int sp_curchr5; // $v1
-  int sp_curchr7; // $v1
-  char sp_curchr8; // $v0
   char *sp_ptroffs3; // $a0
-  int sp_curchra; // $v0
   char *sp_ptroffs4; // $a0
 
   curindx1 = 0;
@@ -5118,8 +4776,7 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
     return 0;
   if ( sp_minus_one1[1] != '"' )
     return 0;
-  sp_chr2_1 = sp_minus_one1[2];
-  if ( sp_chr2_1 != ' ' && sp_chr2_1 != '\t' )
+  if ( sp_minus_one1[2] != ' ' && sp_minus_one1[2] != '\t' )
     return 0;
   sp_ptroffs1 = sp_minus_one1 + 3;
   while ( 1 )
@@ -5145,8 +4802,7 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
     }
     if ( *sp_ptroffs2 != 'A' && *sp_ptroffs2 != 'a' )
       return 0;
-    sp_curchr4 = sp_ptroffs2[1];
-    if ( sp_curchr4 != 'T' && sp_curchr4 != 't' )
+    if ( sp_ptroffs2[1] != 'T' && sp_ptroffs2[1] != 't' )
       return 0;
     if ( curindx1 > 0 )
     {
@@ -5154,11 +4810,10 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
         return -19;
       *dp_++ = ' ';
     }
-    sp_curchr5 = *sp_ptroffs2;
     if ( *sp_ptroffs2 )
     {
       ++sp_ptroffs2;
-      if ( sp_curchr5 != ' ' )
+      if ( (*(sp_ptroffs2 - 1)) != ' ' )
       {
         --sp_ptroffs2;
         while ( *sp_ptroffs2 != '\t' )
@@ -5167,13 +4822,11 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
             return -19;
           if ( *sp_ptroffs2 == '\\' )
           {
-            sp_curchr7 = sp_ptroffs2[1];
-            if ( sp_curchr7 != '-' && sp_curchr7 != '\\' && sp_curchr7 != '"' && sp_curchr7 != '^' )
+            if ( sp_ptroffs2[1] != '-' && sp_ptroffs2[1] != '\\' && sp_ptroffs2[1] != '"' && sp_ptroffs2[1] != '^' )
               return 0;
             ++sp_ptroffs2;
           }
-          sp_curchr8 = *sp_ptroffs2++;
-          *dp_++ = sp_curchr8;
+          *dp_++ = *sp_ptroffs2++;
           if ( *sp_ptroffs2 )
           {
             if ( *sp_ptroffs2 != ' ' )
@@ -5189,8 +4842,7 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
       return 0;
     if ( sp_ptroffs3[1] != 'K' )
       return 0;
-    sp_curchra = sp_ptroffs3[2];
-    if ( sp_curchra != ' ' && sp_curchra != '\t' )
+    if ( sp_ptroffs3[2] != ' ' && sp_ptroffs3[2] != '\t' )
       return 0;
     sp_ptroffs1 = sp_ptroffs3 + 3;
     ++curindx1;
@@ -5245,16 +4897,12 @@ int do_check_authnet(char *argst, char *arged)
 //----- (00408644) --------------------------------------------------------
 int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, int no_decode)
 {
-  int result; // $v0
   int read_res2; // $s1
   char *heapmem; // $v0
-  char *heapmem_1; // $s3
   int errretres; // $s2
   char *curheapptr1; // $s4
   char *heapmem_2; // $s0
   int curchind; // $s0
-  int curchr2; // $v1
-  int curchr; // $a1
 
   switch ( type )
   {
@@ -5267,14 +4915,12 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
       break;
   }
   if ( no_decode )
-    result = do_read_netcnf_no_decode(netcnf_path, &g_read_check_netcnf_heapptr);
+    read_res2 = do_read_netcnf_no_decode(netcnf_path, &g_read_check_netcnf_heapptr);
   else
-    result = do_read_netcnf_decode(netcnf_path, &g_read_check_netcnf_heapptr);
-  read_res2 = result;
-  if ( result < 0 )
-    return result;
+    read_res2 = do_read_netcnf_decode(netcnf_path, &g_read_check_netcnf_heapptr);
+  if ( read_res2 < 0 )
+    return read_res2;
   heapmem = (char *)do_alloc_heapmem(1024);
-  heapmem_1 = heapmem;
   errretres = 0;
   if ( !heapmem )
   {
@@ -5291,9 +4937,7 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
       printf("netcnf: decoding error (magic=\"");
       for ( curchind = 0; curchind < read_res2 && curchind < 36; curchind += 1 )
       {
-        curchr2 = (u8)curheapptr1[curchind];
-        curchr = (unsigned int)(curchr2 - 32) >= 0x5F ? '?' : (char)curchr2;
-        printf("%c", curchr);
+        printf("%c", (unsigned int)((u8)curheapptr1[curchind] - 32) >= 0x5F ? '?' : (char)(u8)curheapptr1[curchind]);
       }
       errretres = -15;
       printf("\")\n");
@@ -5306,31 +4950,31 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
     {
       if ( *curheapptr1 == '\n' )
       {
-        if ( heapmem_1 < heapmem_2 && *(heapmem_2 - 1) == '\\' )
+        if ( heapmem < heapmem_2 && *(heapmem_2 - 1) == '\\' )
         {
           --heapmem_2;
         }
         else
         {
           *heapmem_2 = 0;
-          errretres = do_check_authnet(heapmem_1, heapmem_2);
-          heapmem_2 = heapmem_1;
+          errretres = do_check_authnet(heapmem, heapmem_2);
+          heapmem_2 = heapmem;
           if ( errretres < 0 )
             break;
         }
       }
       else
       {
-        if ( heapmem_2 < heapmem_1 + 1023 && *curheapptr1 != '\r' )
+        if ( heapmem_2 < heapmem + 1023 && *curheapptr1 != '\r' )
           *heapmem_2++ = *curheapptr1;
       }
       curheapptr1++;
     }
   }
-  if ( !errretres && heapmem_1 < heapmem_2 )
-    errretres = do_check_authnet(heapmem_1, heapmem_2);
+  if ( !errretres && heapmem < heapmem_2 )
+    errretres = do_check_authnet(heapmem, heapmem_2);
   do_free_heapmem(g_read_check_netcnf_heapptr);
-  do_free_heapmem(heapmem_1);
+  do_free_heapmem(heapmem);
   return errretres;
 }
 
@@ -5338,27 +4982,23 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
 int do_check_provider_inner(sceNetCnfEnv_t *e, int type)
 {
   int result; // $v0
-  struct sceNetCnfInterface *ifc; // $a0
-  const char *auth_name; // $a0
 
   if ( type == 1 )
   {
-    result = -14;
     if ( e )
     {
-      ifc = e->ifc;
-      if ( ifc )
+      if ( e->ifc )
       {
-        auth_name = (const char *)ifc->auth_name;
-        result = 0;
-        if ( auth_name )
+        if ( e->ifc->auth_name )
         {
-          result = do_check_aolnet(auth_name);
-          if ( result >= 0 )
-            return 0;
+          result = do_check_aolnet((const char *)e->ifc->auth_name);
+          if ( result < 0 )
+            return result;
         }
+        return 0;
       }
     }
+    return -14;
   }
   else
   {
@@ -5372,7 +5012,6 @@ int do_check_provider_inner(sceNetCnfEnv_t *e, int type)
       return 0;
     return -10;
   }
-  return result;
 }
 
 //----- (00408970) --------------------------------------------------------
@@ -5487,16 +5126,14 @@ void do_init_callback_handles(void)
 int do_get_empty_callback_handle(int in_fd, int in_allocstate)
 {
   int indtmp1; // $a3
-  int handlecnt; // $v1
 
   for ( indtmp1 = 0; indtmp1 < 4; indtmp1 += 1 )
   {
     if ( g_callback_handle_infos[indtmp1].m_fd == -1 )
     {
-      handlecnt = g_open_callback_handle_count;
       g_callback_handle_infos[indtmp1].m_fd = in_fd;
       g_callback_handle_infos[indtmp1].m_allocstate = in_allocstate;
-      g_open_callback_handle_count = handlecnt + 1;
+      g_open_callback_handle_count += 1;
       return indtmp1;
     }
   }
@@ -5524,16 +5161,14 @@ int do_filesize_callback_handles(int in_fd, int in_allocstate)
 void do_clear_callback_handles(int fd, int allocmatch)
 {
   int indtmp; // $a3
-  int count_tmp; // $v0
 
   for ( indtmp = 0; indtmp < 4; indtmp += 1 )
   {
     if ( g_callback_handle_infos[indtmp].m_fd == fd && g_callback_handle_infos[indtmp].m_allocstate == allocmatch )
     {
-      count_tmp = g_open_callback_handle_count;
       g_callback_handle_infos[indtmp].m_fd = -1;
       g_callback_handle_infos[indtmp].m_allocstate = 0;
-      g_open_callback_handle_count = count_tmp - 1;
+      g_open_callback_handle_count -= 1;
       break;
     }
   }
@@ -5545,7 +5180,6 @@ const char *do_colon_callback_handles(const char *netcnf_path, char *device)
 {
   char *index_res; // $s1
   int devnameend; // $s0
-  const char *pathportionstart; // $s1
 
   index_res = index(netcnf_path, ':');
   if ( index_res )
@@ -5559,9 +5193,8 @@ const char *do_colon_callback_handles(const char *netcnf_path, char *device)
     {
       memcpy(device, netcnf_path, index_res - netcnf_path + 1);
       device[devnameend] = 0;
-      pathportionstart = index_res + 1;
-      if ( strlen(pathportionstart) + 1 < 257 )
-        return pathportionstart;
+      if ( strlen(index_res + 1) + 1 < 257 )
+        return index_res + 1;
     }
   }
   return 0;
@@ -5570,27 +5203,19 @@ const char *do_colon_callback_handles(const char *netcnf_path, char *device)
 //----- (00408E40) --------------------------------------------------------
 int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode)
 {
-  const char *netcnf_path_1; // $s0
-  int special_pathcond; // $v0
   const char *cbind; // $v0
-  const char *cbind_1; // $s3
   int openret1; // $s2
   int empty_callback_handle; // $s0
-  int filesz2; // $v0
   char pathconcat[16]; // [sp+18h] [-18h] BYREF
   int filesz1; // [sp+28h] [-8h] BYREF
 
-  netcnf_path_1 = netcnf_path;
   if ( !g_callbacks.open )
     return open(netcnf_path, file_flags, file_mode);
-  special_pathcond = is_special_file_path(netcnf_path);
-  netcnf_path = netcnf_path_1;
-  if ( !special_pathcond )
+  if ( !is_special_file_path(netcnf_path) )
     return open(netcnf_path, file_flags, file_mode);
   if ( g_open_callback_handle_count < 4 )
   {
-    cbind = do_colon_callback_handles(netcnf_path_1, pathconcat);
-    cbind_1 = cbind;
+    cbind = do_colon_callback_handles(netcnf_path, pathconcat);
     if ( cbind )
     {
       openret1 = ((int (*)(char *, const char *, int, int, int *))g_callbacks.open)(
@@ -5603,11 +5228,10 @@ int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode)
       {
         empty_callback_handle = do_get_empty_callback_handle(openret1, 1);
         strcpy(g_callback_handle_infos[empty_callback_handle].m_device, pathconcat);
-        strcpy(g_callback_handle_infos[empty_callback_handle].m_pathname, cbind_1);
-        filesz2 = filesz1;
+        strcpy(g_callback_handle_infos[empty_callback_handle].m_pathname, cbind);
         g_callback_handle_infos[empty_callback_handle].m_buf = 0;
         g_callback_handle_infos[empty_callback_handle].m_bufpos = 0;
-        g_callback_handle_infos[empty_callback_handle].m_filesize = filesz2;
+        g_callback_handle_infos[empty_callback_handle].m_filesize = filesz1;
       }
       return openret1;
     }
@@ -5626,37 +5250,24 @@ int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode)
 size_t do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size)
 {
   struct netcnf_callback_handle_info *cbh; // $s0
-  void *heapmem; // $v0
-  int readres1; // $v0
-  void *ptr_1; // $a0
 
   cbh = &g_callback_handle_infos[handlefd];
   if ( cbh->m_bufpos )
   {
-    ptr_1 = ptr;
   }
   else
   {
-    heapmem = do_alloc_heapmem(cbh->m_filesize);
-    cbh->m_buf = heapmem;
-    if ( !heapmem )
+    cbh->m_buf = do_alloc_heapmem(cbh->m_filesize);
+    if ( !cbh->m_buf )
       return -1;
-    readres1 = ((int (*)(int, char *, char *, void *, u32, int))g_callbacks.read)(
-                 fd,
-                 cbh->m_device,
-                 cbh->m_pathname,
-                 cbh->m_buf,
-                 0,
-                 cbh->m_filesize);
-    ptr_1 = ptr;
-    if ( readres1 != cbh->m_filesize )
+    if ( ((int (*)(int, char *, char *, void *, u32, int))g_callbacks.read)(fd, cbh->m_device, cbh->m_pathname, cbh->m_buf, 0, cbh->m_filesize) != cbh->m_filesize )
     {
       do_free_heapmem(cbh->m_buf);
       cbh->m_buf = 0;
       return -1;
     }
   }
-  memcpy(ptr_1, (char *)cbh->m_buf + cbh->m_bufpos, size);
+  memcpy(ptr, (char *)cbh->m_buf + cbh->m_bufpos, size);
   cbh->m_bufpos += size;
   return size;
 }
@@ -5726,8 +5337,6 @@ int do_remove_wrap(const char *fn)
 void do_close_netcnf(int fd)
 {
   int cbind; // $s1
-  int cbind_1; // $s0
-  void *m_buf; // $a0
 
   if ( !g_callbacks.close )
   {
@@ -5741,10 +5350,8 @@ void do_close_netcnf(int fd)
     return;
   }
   ((int (*)(int))g_callbacks.close)(fd);
-  cbind_1 = cbind;
-  m_buf = g_callback_handle_infos[cbind].m_buf;
-  do_free_heapmem(m_buf);
-  g_callback_handle_infos[cbind_1].m_buf = 0;
+  do_free_heapmem(g_callback_handle_infos[cbind].m_buf);
+  g_callback_handle_infos[cbind].m_buf = 0;
   do_clear_callback_handles(fd, 1);
 }
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
@@ -5806,16 +5413,11 @@ void do_chstat_mode_copyprotect_wrap(const char *fn)
 //----- (004094C0) --------------------------------------------------------
 void do_set_callback_inner(sceNetCnfCallback_t *pcallback)
 {
-  int (*open)(const char *, const char *, int, int, int *); // $a3
-  int (*read)(int, const char *, const char *, void *, int, int); // $t0
-
   if ( pcallback )
   {
-    open = pcallback->open;
-    read = pcallback->read;
     g_callbacks.type = pcallback->type;
-    g_callbacks.open = open;
-    g_callbacks.read = read;
+    g_callbacks.open = pcallback->open;
+    g_callbacks.read = pcallback->read;
     g_callbacks.close = pcallback->close;
     g_callbacks_set = 1;
   }
