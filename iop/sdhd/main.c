@@ -418,7 +418,6 @@ extern struct irx_export_table _exp_sdhd;
 //----- (004000F0) --------------------------------------------------------
 int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
 {
-  signed int chunkSize; // $v0
   sceHardSynthHeaderChunk *chk; // $a0
 
   dinfo->m_vers = 0;
@@ -430,9 +429,8 @@ int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *d
   dinfo->m_vers = indata;
   if ( indata->Creator == 0x53434549 && indata->Type == 0x56657273 )
   {
-    chunkSize = indata->chunkSize;
-    chk = (sceHardSynthHeaderChunk *)((char *)indata + chunkSize);
-    if ( chunkSize >= 0 )
+    chk = (sceHardSynthHeaderChunk *)((char *)indata + indata->chunkSize);
+    if ( indata->chunkSize >= 0 )
     {
       dinfo->m_head = chk;
       if ( chk->Creator == 0x53434549 && chk->Type == 0x48656164 )
@@ -462,15 +460,13 @@ int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *d
 //----- (004001A0) --------------------------------------------------------
 int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
 {
-  signed int programChunkAddr; // $a0
   sceHardSynthProgramChunk *chk; // $a0
 
-  programChunkAddr = dinfo->m_head->programChunkAddr;
-  if ( programChunkAddr == -1 )
+  if ( dinfo->m_head->programChunkAddr == -1 )
     return 0x81039005;
-  if ( programChunkAddr < 0 )
+  if ( dinfo->m_head->programChunkAddr < 0 )
     return 0x8103002F;
-  chk = (sceHardSynthProgramChunk *)((char *)indata + programChunkAddr);
+  chk = (sceHardSynthProgramChunk *)((char *)indata + dinfo->m_head->programChunkAddr);
   dinfo->m_prog = chk;
   if ( chk->Creator != 0x53434549 || chk->Type != 0x50726F67 )
   {
@@ -483,15 +479,13 @@ int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
 //----- (0040020C) --------------------------------------------------------
 int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
 {
-  signed int sampleSetChunkAddr; // $a0
   sceHardSynthSampleSetChunk *chk; // $a0
 
-  sampleSetChunkAddr = dinfo->m_head->sampleSetChunkAddr;
-  if ( sampleSetChunkAddr == -1 )
+  if ( dinfo->m_head->sampleSetChunkAddr == -1 )
     return 0x81039006;
-  if ( sampleSetChunkAddr < 0 )
+  if ( dinfo->m_head->sampleSetChunkAddr < 0 )
     return 0x8103002F;
-  chk = (sceHardSynthSampleSetChunk *)((char *)indata + sampleSetChunkAddr);
+  chk = (sceHardSynthSampleSetChunk *)((char *)indata + dinfo->m_head->sampleSetChunkAddr);
   dinfo->m_sset = chk;
   if ( chk->Creator != 0x53434549 || chk->Type != 0x53736574 )
   {
@@ -504,15 +498,13 @@ int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
 //----- (00400278) --------------------------------------------------------
 int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
 {
-  signed int sampleChunkAddr; // $a0
   sceHardSynthSampleChunk *chk; // $a0
 
-  sampleChunkAddr = dinfo->m_head->sampleChunkAddr;
-  if ( sampleChunkAddr == -1 )
+  if ( dinfo->m_head->sampleChunkAddr == -1 )
     return 0x81039007;
-  if ( sampleChunkAddr < 0 )
+  if ( dinfo->m_head->sampleChunkAddr < 0 )
     return 0x8103002F;
-  chk = (sceHardSynthSampleChunk *)((char *)indata + sampleChunkAddr);
+  chk = (sceHardSynthSampleChunk *)((char *)indata + dinfo->m_head->sampleChunkAddr);
   dinfo->m_smpl = chk;
   if ( chk->Creator != 0x53434549 || chk->Type != 0x536D706C )
   {
@@ -525,15 +517,13 @@ int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
 //----- (004002E4) --------------------------------------------------------
 int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
 {
-  signed int vagInfoChunkAddr; // $a0
   sceHardSynthVagInfoChunk *chk; // $a0
 
-  vagInfoChunkAddr = dinfo->m_head->vagInfoChunkAddr;
-  if ( vagInfoChunkAddr == -1 )
+  if ( dinfo->m_head->vagInfoChunkAddr == -1 )
     return 0x81039008;
-  if ( vagInfoChunkAddr < 0 )
+  if ( dinfo->m_head->vagInfoChunkAddr < 0 )
     return 0x8103002F;
-  chk = (sceHardSynthVagInfoChunk *)((char *)indata + vagInfoChunkAddr);
+  chk = (sceHardSynthVagInfoChunk *)((char *)indata + dinfo->m_head->vagInfoChunkAddr);
   dinfo->m_vagi = chk;
   if ( chk->Creator != 0x53434549 || chk->Type != 0x56616769 )
   {
@@ -655,35 +645,26 @@ void do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, sceHardSyn
 unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vagoffsaddr)
 {
   unsigned int indx1; // $a0
-  sceHardSynthVagInfoChunk *m_vagi; // $v1
   unsigned int bodySize; // $a1
-  unsigned int offsdata; // $v0
   sceHardSynthVagParam *vagparam; // $v0
-  unsigned int curaddr; // $v1
-  int condtmp2; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   if ( do_get_vers_head_chunk(indata, &dinfo) == 0 )
   {
     if ( do_get_vagi_chunk(indata, &dinfo) == 0 )
     {
-      m_vagi = dinfo.m_vagi;
       bodySize = dinfo.m_head->bodySize;
       for ( indx1 = 0; dinfo.m_vagi->maxVagInfoNumber >= indx1; indx1 += 1 )
       {
-        offsdata = m_vagi->vagInfoOffsetAddr[indx1];
-        vagparam = (sceHardSynthVagParam *)((char *)m_vagi + offsdata);
-        if ( offsdata != -1 )
+        if ( dinfo.m_vagi->vagInfoOffsetAddr[indx1] != -1 )
         {
-          curaddr = vagparam->vagOffsetAddr;
-          condtmp2 = vagparam->vagOffsetAddr < bodySize;
+          vagparam = (sceHardSynthVagParam *)((char *)(dinfo.m_vagi) + dinfo.m_vagi->vagInfoOffsetAddr[indx1]);
           if ( *vagoffsaddr < vagparam->vagOffsetAddr )
           {
-            if ( condtmp2 )
-              bodySize = curaddr;
+            if ( vagparam->vagOffsetAddr < bodySize )
+              bodySize = vagparam->vagOffsetAddr;
           }
         }
-        m_vagi = dinfo.m_vagi;
       }
       return bodySize - *vagoffsaddr;
     }
@@ -698,43 +679,35 @@ unsigned int do_check_chunk_in_bounds(
         unsigned int hdrmagic,
         unsigned int idx)
 {
-  sceHardSynthProgramChunk *m_prog; // $a1
-  sceHardSynthSampleSetChunk *m_sset; // $a1
-  sceHardSynthSampleChunk *m_smpl; // $a1
-  sceHardSynthVagInfoChunk *m_vagi; // $a1
-
   if ( hdrmagic == 0x536D706C )
   {
-    m_smpl = dinfo->m_smpl;
-    if ( !m_smpl )
+    if ( !dinfo->m_smpl )
       return 0x8103002F;
-    if ( m_smpl->maxSampleNumber < idx )
+    if ( dinfo->m_smpl->maxSampleNumber < idx )
       return 0x81039014;
-    if ( m_smpl->sampleOffsetAddr[idx] == -1 )
+    if ( dinfo->m_smpl->sampleOffsetAddr[idx] == -1 )
       return 0x81039015;
   }
   else if ( hdrmagic > 0x536D706C )
   {
     if ( hdrmagic == 0x53736574 )
     {
-      m_sset = dinfo->m_sset;
-      if ( !m_sset )
+      if ( !dinfo->m_sset )
         return 0x8103002F;
-      if ( m_sset->maxSampleSetNumber < idx )
+      if ( dinfo->m_sset->maxSampleSetNumber < idx )
         return 0x81039012;
-      if ( m_sset->sampleSetOffsetAddr[idx] == -1 )
+      if ( dinfo->m_sset->sampleSetOffsetAddr[idx] == -1 )
         return 0x81039012;
     }
     else
     {
       if ( hdrmagic == 0x56616769 )
       {
-        m_vagi = dinfo->m_vagi;
-        if ( !m_vagi )
+        if ( !dinfo->m_vagi )
           return 0x8103002F;
-        if ( m_vagi->maxVagInfoNumber < idx )
+        if ( dinfo->m_vagi->maxVagInfoNumber < idx )
           return 0x81039016;
-        if ( m_vagi->vagInfoOffsetAddr[idx] == -1 )
+        if ( dinfo->m_vagi->vagInfoOffsetAddr[idx] == -1 )
           return 0x81039017;
       }
     }
@@ -743,12 +716,11 @@ unsigned int do_check_chunk_in_bounds(
   {
     if ( hdrmagic == 0x50726F67 )
     {
-      m_prog = dinfo->m_prog;
-      if ( !m_prog )
+      if ( !dinfo->m_prog )
         return 0x8103002F;
-      if ( m_prog->maxProgramNumber < idx )
+      if ( dinfo->m_prog->maxProgramNumber < idx )
         return 0x81039010;
-      if ( m_prog->programOffsetAddr[idx] == -1 )
+      if ( dinfo->m_prog->programOffsetAddr[idx] == -1 )
         return 0x81039011;
     }
   }
@@ -768,22 +740,12 @@ int do_get_common_block_ptr_note(
   int idx1; // $s1
   int idx2; // $s6
   sceHardSynthSplitBlock *p_splitblock; // $a1
-  void **ptr_1; // $a0
-  void **ptr_6; // $a0
-  sceHardSynthSampleSetParam *samplesetparam_1; // $v1
   int idxnsample; // $s2
   int cursampleindexoffs1; // $v0
   char *cursampleindex1; // $v1
-  void **ptr_3; // $a0
-  int vag_size; // $v0
-  void **ptr_2; // $a0
-  sceHardSynthSampleSetParam *p_samplesetparam_1; // $v1
   int nsamplecur; // $s2
   int cursampleindexoffs2; // $v0
   char *cursampleindex2; // $v1
-  void **ptr_5; // $a0
-  int vagsz_tmp; // $v0
-  void **ptr_4; // $a0
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-10h] BYREF
   sceHardSynthSampleSetParam *p_samplesetparam; // [sp+14h] [-Ch] BYREF
   sceHardSynthSampleParam *p_sampleparam; // [sp+18h] [-8h] BYREF
@@ -813,10 +775,9 @@ int do_get_common_block_ptr_note(
         *ptr++ = p_splitblock;
         break;
       case 2:
-        ptr_1 = ptr;
         ++idx1;
+        do_copy_to_sdhd_split_block((SceSdHdSplitBlock *)ptr, p_splitblock);
         ptr += 17;
-        do_copy_to_sdhd_split_block((SceSdHdSplitBlock *)ptr_1, p_splitblock);
         break;
       default:
         if ( p_splitblock->sampleSetIndex == 0xFFFF
@@ -834,16 +795,14 @@ int do_get_common_block_ptr_note(
             *ptr++ = p_samplesetparam;
             break;
           case 5:
-            ptr_6 = ptr;
             ++idx1;
+            do_copy_to_sdhd_set_param((SceSdHdSampleSetParam *)ptr, p_samplesetparam);
             ptr += 4;
-            do_copy_to_sdhd_set_param((SceSdHdSampleSetParam *)ptr_6, p_samplesetparam);
             break;
           default:
             switch ( mode )
             {
               case 0:
-                samplesetparam_1 = p_samplesetparam;
                 if ( velocity < p_samplesetparam->velLimitLow || velocity > p_samplesetparam->velLimitHigh )
                 {
                   break;
@@ -851,7 +810,7 @@ int do_get_common_block_ptr_note(
                 for ( idxnsample = 0; idxnsample < p_samplesetparam->nSample; idxnsample += 1 )
                 {
                   cursampleindexoffs1 = 2 * idxnsample;
-                  cursampleindex1 = (char *)samplesetparam_1 + cursampleindexoffs1;
+                  cursampleindex1 = (char *)p_samplesetparam + cursampleindexoffs1;
                   if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
                     && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
                     && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
@@ -867,10 +826,9 @@ int do_get_common_block_ptr_note(
                           *ptr++ = p_sampleparam;
                           break;
                         case 8:
-                          ptr_3 = ptr;
                           ++idx1;
+                          do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr, p_sampleparam);
                           ptr += 34;
-                          do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr_3, p_sampleparam);
                           break;
                         default:
                           if ( p_sampleparam->VagIndex == 0xFFFF
@@ -889,10 +847,8 @@ int do_get_common_block_ptr_note(
                               break;
                             case 11:
                               ++idx1;
-                              vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
-                              ptr_2 = ptr;
+                              do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                               ptr += 4;
-                              do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr_2, vag_size, p_vagparam);
                               break;
                             default:
                               break;
@@ -900,16 +856,13 @@ int do_get_common_block_ptr_note(
                           break;
                       }
                   }
-                  samplesetparam_1 = p_samplesetparam;
                 }
                 break;
               case 1:
-                p_samplesetparam_1 = p_samplesetparam;
-                cursampleindexoffs2 = 0;
                 for ( nsamplecur = 0; nsamplecur < p_samplesetparam->nSample; nsamplecur += 1 )
                 {
                   cursampleindexoffs2 = 2 * nsamplecur;
-                  cursampleindex2 = (char *)p_samplesetparam_1 + cursampleindexoffs2;
+                  cursampleindex2 = (char *)p_samplesetparam + cursampleindexoffs2;
                   if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
                     && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
                     && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
@@ -925,10 +878,9 @@ int do_get_common_block_ptr_note(
                         *ptr++ = p_sampleparam;
                         break;
                       case 8:
-                        ptr_5 = ptr;
                         ++idx1;
+                        do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr, p_sampleparam);
                         ptr += 34;
-                        do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr_5, p_sampleparam);
                         break;
                       default:
                         if ( p_sampleparam->VagIndex == 0xFFFF
@@ -947,16 +899,13 @@ int do_get_common_block_ptr_note(
                             break;
                           case 11:
                             ++idx1;
-                            vagsz_tmp = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
-                            ptr_4 = ptr;
+                            do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                             ptr += 4;
-                            do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr_4, vagsz_tmp, p_vagparam);
                             break;
                         }
                         break;
                     }
                   }
-                  p_samplesetparam_1 = p_samplesetparam;
                 }
                 break;
               default:
@@ -982,20 +931,12 @@ int do_get_common_block_ptr(
         void **param)
 {
   int idx1; // $s0
-  sceHardSynthSampleSetParam *p_samplesetparam_2; // $v1
   int nsampletmp2; // $s3
   int cursampleindexoffs2; // $v0
   char *cursampleindex2; // $v1
-  void **param_3; // $a0
-  int vagsz_tmp; // $v0
-  void **param_4; // $a0
-  sceHardSynthSampleSetParam *p_samplesetparam_1; // $v1
   int nsampletmp1; // $s3
   int cursampleindexoffs1; // $v0
   char *cursampleindex1; // $v1
-  void **param_1; // $a0
-  int vag_size; // $v0
-  void **param_2; // $a0
   sceHardSynthSampleSetParam *p_samplesetparam; // [sp+10h] [-10h] BYREF
   sceHardSynthSampleParam *p_sampleparam; // [sp+14h] [-Ch] BYREF
   sceHardSynthVagParam *p_vagparam; // [sp+18h] [-8h] BYREF
@@ -1006,7 +947,6 @@ int do_get_common_block_ptr(
   switch ( mode )
   {
     case 0:
-      p_samplesetparam_2 = p_samplesetparam;
       if ( velocity < p_samplesetparam->velLimitLow || velocity > p_samplesetparam->velLimitHigh )
       {
         return 0;
@@ -1014,7 +954,7 @@ int do_get_common_block_ptr(
       for ( nsampletmp2 = 0; nsampletmp2 < p_samplesetparam->nSample; nsampletmp2 += 1 )
       {
         cursampleindexoffs2 = 2 * nsampletmp2;
-        cursampleindex2 = (char *)p_samplesetparam_2 + cursampleindexoffs2;
+        cursampleindex2 = (char *)p_samplesetparam + cursampleindexoffs2;
         if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
           && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
           && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
@@ -1030,10 +970,9 @@ int do_get_common_block_ptr(
               *param++ = p_sampleparam;
               break;
             case 8:
-              param_3 = param;
               ++idx1;
+              do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param, p_sampleparam);
               param += 34;
-              do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param_3, p_sampleparam);
               break;
             default:
               if ( p_sampleparam->VagIndex == 0xFFFF
@@ -1052,23 +991,19 @@ int do_get_common_block_ptr(
                   break;
                 case 11:
                   ++idx1;
-                  vagsz_tmp = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
-                  param_4 = param;
+                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                   param += 4;
-                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_4, vagsz_tmp, p_vagparam);
                   break;
               }
           }
         }
-        p_samplesetparam_2 = p_samplesetparam;
       }
       return idx1;
     case 1:
-      p_samplesetparam_1 = p_samplesetparam;
       for ( nsampletmp1 = 0; nsampletmp1 < p_samplesetparam->nSample; nsampletmp1 += 1 )
       {
         cursampleindexoffs1 = 2 * nsampletmp1;
-        cursampleindex1 = (char *)p_samplesetparam_1 + cursampleindexoffs1;
+        cursampleindex1 = (char *)p_samplesetparam + cursampleindexoffs1;
         if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
           && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
           && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
@@ -1084,10 +1019,9 @@ int do_get_common_block_ptr(
               *param++ = p_sampleparam;
               break;
             case 8:
-              param_1 = param;
               ++idx1;
+              do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param, p_sampleparam);
               param += 34;
-              do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param_1, p_sampleparam);
               break;
             default:
               if ( p_sampleparam->VagIndex == 0xFFFF || sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, &p_vagparam) )
@@ -1103,10 +1037,8 @@ int do_get_common_block_ptr(
                   break;
                 case 11:
                   ++idx1;
-                  vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
-                  param_2 = param;
+                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                   param += 4;
-                  do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param_2, vag_size, p_vagparam);
                   break;
                 default:
                   break;
@@ -1114,7 +1046,6 @@ int do_get_common_block_ptr(
               break;
           }
         }
-        p_samplesetparam_1 = p_samplesetparam;
       }
       return idx1;
     default:
@@ -1378,14 +1309,12 @@ int sceSdHdGetVAGInfoParamAddr(void *buffer, unsigned int vagInfoNumber, sceHard
 int sceSdHdGetVAGInfoParam(void *buffer, unsigned int vagInfoNumber, SceSdHdVAGInfoParam *param)
 {
   int result; // $v0
-  int vag_size; // $v0
   sceHardSynthVagParam *p_vagparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetVAGInfoParamAddr(buffer, vagInfoNumber, &p_vagparam);
   if ( !result )
   {
-    vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
-    do_copy_to_sdhd_vag_info_param(param, vag_size, p_vagparam);
+    do_copy_to_sdhd_vag_info_param(param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
     return 0;
   }
   return result;
@@ -1617,14 +1546,12 @@ int sceSdHdGetVAGInfoParamAddrBySampleNumber(
 int sceSdHdGetVAGInfoParamBySampleNumber(void *buffer, unsigned int sampleNumber, SceSdHdVAGInfoParam *param)
 {
   int result; // $v0
-  int vag_size; // $v0
   sceHardSynthVagParam *p_vagparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetVAGInfoParamAddrBySampleNumber(buffer, sampleNumber, &p_vagparam);
   if ( !result )
   {
-    vag_size = do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
-    do_copy_to_sdhd_vag_info_param(param, vag_size, p_vagparam);
+    do_copy_to_sdhd_vag_info_param(param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
     return 0;
   }
   return result;
@@ -1688,27 +1615,23 @@ int sceSdHdGetSplitBlockCount(void *buffer, unsigned int programNumber)
 int sceSdHdGetMaxSplitBlockCount(void *buffer)
 {
   int curminval; // $s2
-  int result; // $v0
+  int retres; // $v0
   signed int programNr; // $s1
-  void *buffer_1; // $a0
   signed int curidx2; // $s0
-  void *buffer_2; // $a0
   int curval1; // $v1
   int curval2; // $v1
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
   sceHardSynthSplitBlock *p_splitblock; // [sp+14h] [-4h] BYREF
 
   curminval = 0;
-  result = sceSdHdGetMaxProgramNumber(buffer);
-  buffer_1 = buffer;
-  for ( programNr = 0; result >= programNr; programNr += 1 )
+  retres = sceSdHdGetMaxProgramNumber(buffer);
+  for ( programNr = 0; retres >= programNr; programNr += 1 )
   {
-    if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
+    if ( !sceSdHdGetProgramParamAddr(buffer, programNr, &p_programparam) )
     {
-      buffer_2 = buffer;
       for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
       {
-        if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock) )
+        if ( !sceSdHdGetSplitBlockAddr(buffer, programNr, curidx2, &p_splitblock) )
         {
           curval1 = sceSdHdGetSplitBlockCountByNote(buffer, programNr, p_splitblock->splitRangeLow & 0x7F);
           if ( curminval < curval1 )
@@ -1717,10 +1640,8 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
           if ( curminval < curval2 )
             curminval = curval2;
         }
-        buffer_2 = buffer;
       }
     }
-    buffer_1 = buffer;
   }
   return curminval;
 }
@@ -1729,29 +1650,23 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
 int sceSdHdGetMaxSampleSetParamCount(void *buffer)
 {
   int curminval; // $s2
-  int result; // $v0
   int retres; // $s4
   signed int programNr; // $s1
-  void *buffer_1; // $a0
   signed int curidx2; // $s0
-  void *buffer_2; // $a0
   int curval1; // $v1
   int curval2; // $v1
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
   sceHardSynthSplitBlock *p_splitblock; // [sp+14h] [-4h] BYREF
 
   curminval = 0;
-  result = sceSdHdGetMaxProgramNumber(buffer);
-  retres = result;
-  buffer_1 = buffer;
+  retres = sceSdHdGetMaxProgramNumber(buffer);
   for ( programNr = 0; retres >= programNr; programNr += 1 )
   {
-    if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
+    if ( !sceSdHdGetProgramParamAddr(buffer, programNr, &p_programparam) )
     {
-      buffer_2 = buffer;
       for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
       {
-        if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock) )
+        if ( !sceSdHdGetSplitBlockAddr(buffer, programNr, curidx2, &p_splitblock) )
         {
           curval1 = sceSdHdGetSampleSetParamCountByNote(buffer, programNr, p_splitblock->splitRangeLow & 0x7F);
           if ( curminval < curval1 )
@@ -1760,10 +1675,8 @@ int sceSdHdGetMaxSampleSetParamCount(void *buffer)
           if ( curminval < curval2 )
             curminval = curval2;
         }
-        buffer_2 = buffer;
       }
     }
-    buffer_1 = buffer;
   }
   return curminval;
 }
@@ -1772,14 +1685,10 @@ int sceSdHdGetMaxSampleSetParamCount(void *buffer)
 int sceSdHdGetMaxSampleParamCount(void *buffer)
 {
   int curminval; // $s0
-  int result; // $v0
   int retres; // $s6
   signed int programNr; // $s2
-  void *buffer_1; // $a0
   signed int curidx2; // $s4
-  void *buffer_2; // $a0
   signed int sampleNr; // $s1
-  int SampleNumberBySampleIndex; // $v0
   int curval1; // $v1
   int curval2; // $v1
   int curval3; // $v1
@@ -1790,26 +1699,19 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
   sceHardSynthSampleParam *p_sampleparam; // [sp+24h] [-4h] BYREF
 
   curminval = 0;
-  result = sceSdHdGetMaxProgramNumber(buffer);
-  retres = result;
-  buffer_1 = buffer;
+  retres = sceSdHdGetMaxProgramNumber(buffer);
   for ( programNr = 0; retres >= programNr; programNr += 1 )
   {
-    if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
+    if ( !sceSdHdGetProgramParamAddr(buffer, programNr, &p_programparam) )
     {
-      buffer_2 = buffer;
       for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
       {
-        if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock)
+        if ( !sceSdHdGetSplitBlockAddr(buffer, programNr, curidx2, &p_splitblock)
           && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
         {
           for ( sampleNr = 0; sampleNr < p_samplesetparam->nSample; sampleNr += 1 )
           {
-            SampleNumberBySampleIndex = sceSdHdGetSampleNumberBySampleIndex(
-                                          buffer,
-                                          p_splitblock->sampleSetIndex,
-                                          sampleNr);
-            if ( !sceSdHdGetSampleParamAddr(buffer, SampleNumberBySampleIndex, &p_sampleparam) )
+            if ( !sceSdHdGetSampleParamAddr(buffer, sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, sampleNr), &p_sampleparam) )
             {
               curval1 = sceSdHdGetSampleParamCountByNoteVelocity(
                           buffer,
@@ -1846,10 +1748,8 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
             }
           }
         }
-        buffer_2 = buffer;
       }
     }
-    buffer_1 = buffer;
   }
   return curminval;
 }
@@ -1858,14 +1758,10 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
 int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
 {
   int curminval; // $s0
-  int result; // $v0
   int retres; // $s6
   signed int programNr; // $s2
-  void *buffer_1; // $a0
   signed int curidx2; // $s4
-  void *buffer_2; // $a0
   signed int sampleNr; // $s1
-  int SampleNumberBySampleIndex; // $v0
   int curval1; // $v1
   int curval2; // $v1
   int curval3; // $v1
@@ -1876,26 +1772,19 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
   sceHardSynthSampleParam *p_sampleparam; // [sp+24h] [-4h] BYREF
 
   curminval = 0;
-  result = sceSdHdGetMaxProgramNumber(buffer);
-  retres = result;
-  buffer_1 = buffer;
+  retres = sceSdHdGetMaxProgramNumber(buffer);
   for ( programNr = 0; retres >= programNr; programNr += 1 )
   {
-    if ( !sceSdHdGetProgramParamAddr(buffer_1, programNr, &p_programparam) )
+    if ( !sceSdHdGetProgramParamAddr(buffer, programNr, &p_programparam) )
     {
-      buffer_2 = buffer;
       for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
       {
-        if ( !sceSdHdGetSplitBlockAddr(buffer_2, programNr, curidx2, &p_splitblock)
+        if ( !sceSdHdGetSplitBlockAddr(buffer, programNr, curidx2, &p_splitblock)
           && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
         {
           for ( sampleNr = 0; sampleNr < p_samplesetparam->nSample; sampleNr += 1 )
           {
-            SampleNumberBySampleIndex = sceSdHdGetSampleNumberBySampleIndex(
-                                          buffer,
-                                          p_splitblock->sampleSetIndex,
-                                          sampleNr);
-            if ( !sceSdHdGetSampleParamAddr(buffer, SampleNumberBySampleIndex, &p_sampleparam) )
+            if ( !sceSdHdGetSampleParamAddr(buffer, sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, sampleNr), &p_sampleparam) )
             {
               curval1 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
                           buffer,
@@ -1932,10 +1821,8 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
             }
           }
         }
-        buffer_2 = buffer;
       }
     }
-    buffer_1 = buffer;
   }
   return curminval;
 }

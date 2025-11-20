@@ -158,7 +158,6 @@ extern struct irx_export_table _exp_sdsq;
 //----- (00400060) --------------------------------------------------------
 int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
 {
-  signed int chunkSize; // $v0
   sceSeqSeSequenceChunk *chk; // $a0
 
   dinfo->m_vers = 0;
@@ -168,10 +167,9 @@ int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
   dinfo->m_vers = indata;
   if ( indata->Creator == 0x53434549 && indata->Type == 0x56657273 )
   {
-    chunkSize = indata->chunkSize;
-    chk = (sceSeqSeSequenceChunk *)((char *)indata + chunkSize);
-    if ( chunkSize >= 0 )
+    if ( indata->chunkSize >= 0 )
     {
+      chk = (sceSeqSeSequenceChunk *)((char *)indata + indata->chunkSize);
       dinfo->m_sequ = (sceSeqHeaderChunk *)chk;
       if ( chk->Creator == 0x53434549 && chk->Type == 0x53657175 )
       {
@@ -200,15 +198,13 @@ int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
 //----- (00400108) --------------------------------------------------------
 int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo)
 {
-  signed int midiChunkAddr; // $a0
   sceSeqMidiChunk *chk; // $a0
 
-  midiChunkAddr = dinfo->m_sequ->midiChunkAddr;
-  if ( midiChunkAddr == -1 )
+  if ( dinfo->m_sequ->midiChunkAddr == -1 )
     return 0x81049024;
-  if ( midiChunkAddr < 0 )
+  if ( dinfo->m_sequ->midiChunkAddr < 0 )
     return 0x8104002F;
-  chk = (sceSeqMidiChunk *)((char *)indata + midiChunkAddr);
+  chk = (sceSeqMidiChunk *)((char *)indata + dinfo->m_sequ->midiChunkAddr);
   dinfo->m_midi = chk;
   if ( chk->Creator != 0x53434549 || chk->Type != 0x4D696469 )
   {
@@ -221,15 +217,13 @@ int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo)
 //----- (00400174) --------------------------------------------------------
 int do_get_song_chunk(void *indata, struct sdsq_info *dinfo)
 {
-  signed int songChunkAddr; // $a0
   sceSeqSongChunk *chk; // $a0
 
-  songChunkAddr = dinfo->m_sequ->songChunkAddr;
-  if ( songChunkAddr == -1 )
+  if ( dinfo->m_sequ->songChunkAddr == -1 )
     return 0x81049025;
-  if ( songChunkAddr < 0 )
+  if ( dinfo->m_sequ->songChunkAddr < 0 )
     return 0x8104002F;
-  chk = (sceSeqSongChunk *)((char *)indata + songChunkAddr);
+  chk = (sceSeqSongChunk *)((char *)indata + dinfo->m_sequ->songChunkAddr);
   dinfo->m_song = chk;
   if ( chk->Creator != 0x53434549 || chk->Type != 0x536F6E67 )
   {
@@ -243,7 +237,6 @@ int do_get_song_chunk(void *indata, struct sdsq_info *dinfo)
 int do_get_midi_data_block(void *indata, unsigned int idx, sceSeqMidiDataBlock **datablk)
 {
   int result; // $v0
-  unsigned int offs; // $a0
   struct sdsq_info dinfo; // [sp+10h] [-10h] BYREF
 
   result = do_get_vers_sequ_chunk((sceSeqVersionChunk *)indata, &dinfo);
@@ -254,14 +247,13 @@ int do_get_midi_data_block(void *indata, unsigned int idx, sceSeqMidiDataBlock *
     {
       if ( dinfo.m_midi->maxMidiNumber < idx )
         return 0x81049026;
-      offs = dinfo.m_midi->midiOffsetAddr[idx];
-      if ( offs == -1 )
+      if ( dinfo.m_midi->midiOffsetAddr[idx] == -1 )
       {
         return 0x81049026;
       }
       else
       {
-        *datablk = (sceSeqMidiDataBlock *)((char *)dinfo.m_midi + offs);
+        *datablk = (sceSeqMidiDataBlock *)((char *)dinfo.m_midi + dinfo.m_midi->midiOffsetAddr[idx]);
         return 0;
       }
     }
@@ -305,10 +297,7 @@ int sceSdSqGetMaxSongNumber(void *addr)
 int sceSdSqInitMidiData(void *addr, u32 midiNumber, SceSdSqMidiData *midiData)
 {
   int result; // $v0
-  unsigned int offs; // $a0
   sceSeqMidiDataBlock *dblk; // $a1
-  u32 Division; // $v0
-  u32 nextOffset; // $v1
   struct sdsq_info dinfo; // [sp+10h] [-10h] BYREF
 
   result = do_get_vers_sequ_chunk((sceSeqVersionChunk *)addr, &dinfo);
@@ -319,25 +308,22 @@ int sceSdSqInitMidiData(void *addr, u32 midiNumber, SceSdSqMidiData *midiData)
     {
       if ( dinfo.m_midi->maxMidiNumber < midiNumber )
         return 0x81049026;
-      offs = dinfo.m_midi->midiOffsetAddr[midiNumber];
-      dblk = (sceSeqMidiDataBlock *)((char *)dinfo.m_midi + offs);
-      if ( offs == -1 )
+      if ( dinfo.m_midi->midiOffsetAddr[midiNumber] == -1 )
       {
         return 0x81049026;
       }
       else
       {
+        dblk = (sceSeqMidiDataBlock *)((char *)dinfo.m_midi + dinfo.m_midi->midiOffsetAddr[midiNumber]);
         // Unofficial: the following call was inlined
         memset(midiData, 0, sizeof(SceSdSqMidiData));
         midiData->midiData = dblk;
         midiData->midiNumber = midiNumber;
         midiData->nextOffset = dblk->sequenceDataOffset;
-        Division = dblk->Division;
-        nextOffset = midiData->nextOffset;
         midiData->messageLength = 1;
         midiData->originalMessageLength = 1;
-        midiData->division = Division;
-        if ( nextOffset == 6 )
+        midiData->division = dblk->Division;
+        if ( midiData->nextOffset == 6 )
         {
           midiData->compMode = 0;
         }
@@ -358,7 +344,6 @@ int sceSdSqInitMidiData(void *addr, u32 midiNumber, SceSdSqMidiData *midiData)
 int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
 {
   char niceflag; // $t1
-  u32 originalMessageLength; // $v0
   u8 cur_message; // $a0
   sceSeqMidiDataBlock *midiData_1; // $a1
   u32 nextOffset; // $v0
@@ -367,29 +352,14 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   u8 midiData_curval1; // $v1
   int midiData_curval1_1; // $a0
   u8 midiData_curval2; // $a0
-  int midiData_curval2_msk; // $v1
-  u8 midiData_curval9; // $v1
-  u32 originalMessageLength_3; // $v0
   u8 *midiData_offs_plusone; // $a1
   u32 nextMessageLength; // $v1
   u8 midiData_curval4; // $v1
-  u32 originalMessageLength_2; // $v0
   u8 *currofssplusone; // $a1
-  u8 midiData_curval5; // $v1
-  u8 midiData_curval3; // $v1
-  u32 originalMessageLength_1; // $v0
-  u8 msg1_tmp1; // $a0
-  u8 msg0_tmp1; // $v1
   int someoffsx; // $v1
-  u8 midiData_curval6; // $v1
   u8 *someaddoffsone; // $a1
-  u32 messageLength; // $v0
   int somindx1; // $a3
-  u32 addmsglen; // $v1
   u8 midiData_curval7; // $a0
-  u32 somelsglenx; // $v0
-  u8 midiData_curval8; // $v1
-  char *ptroffscw; // $v0
   int msg2ew; // $v1
   int endflg;
 
@@ -397,13 +367,12 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   niceflag = 0;
   if ( midiData->readStatus )
     return 0x81048001;
-  originalMessageLength = midiData->originalMessageLength;
-  if ( !originalMessageLength )
+  if ( !midiData->originalMessageLength )
   {
     midiData->readStatus = 2;
     return 0x8104002F;
   }
-  cur_message = midiData->message[originalMessageLength + 11];
+  cur_message = midiData->message[midiData->originalMessageLength + 11];
   midiData_1 = midiData->midiData;
   nextOffset = midiData->nextOffset;
   lastStatus = midiData->lastStatus;
@@ -415,7 +384,6 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   {
     midiData_curval1 = *midiData_offs;
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
-    midiData_curval1_1 = midiData_curval1;
     ++midiData->originalMessageLength;
     ++midiData_offs;
     midiData_curval1_1 = midiData_curval1 & 0x7F;
@@ -443,9 +411,8 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
     midiData_curval2 = lastStatus;
   }
   midiData->message[0] = midiData_curval2;
-  midiData_curval2_msk = midiData_curval2 & 0xF0;
   midiData->lastStatus = midiData_curval2;
-  if ( midiData_curval2_msk == 0xB0 )
+  if ( (midiData_curval2 & 0xF0) == 0xB0 )
   {
     endflg = 4;
   }
@@ -453,7 +420,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   {
     if ( (midiData_curval2 & 0xF0u) < 0xB1 )
     {
-      if ( midiData_curval2_msk == 0x90 )
+      if ( (midiData_curval2 & 0xF0) == 0x90 )
       {
         endflg = 4;
       }
@@ -461,7 +428,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
       {
         if ( (midiData_curval2 & 0xF0u) < 0x91 )
         {
-          if ( midiData_curval2_msk != 0x80 )
+          if ( (midiData_curval2 & 0xF0) != 0x80 )
           {
             midiData->readStatus = 2;
             return 0x8104002F;
@@ -469,7 +436,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
         }
         else
         {
-          if ( midiData_curval2_msk != 0xA0 )
+          if ( (midiData_curval2 & 0xF0) != 0xA0 )
           {
             midiData->readStatus = 2;
             return 0x8104002F;
@@ -480,16 +447,12 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
           }
           else
           {
-            midiData_curval3 = *midiData_offs;
             midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
-            midiData->message[1] = midiData_curval3;
-            originalMessageLength_1 = midiData->originalMessageLength;
-            msg1_tmp1 = midiData->message[1];
-            midiData->message[2] = 8 * (midiData_curval3 & 0xF);
-            msg0_tmp1 = midiData->message[0];
-            midiData->originalMessageLength = originalMessageLength_1 + 1;
-            midiData->message[1] = msg1_tmp1 & 0x7F;
-            someoffsx = 2 * ((msg0_tmp1 & 0xF) | (msg1_tmp1 & 0x70));
+            midiData->message[1] = midiData->originalMessage[midiData->originalMessageLength];
+            midiData->message[2] = 8 * (midiData->originalMessage[midiData->originalMessageLength] & 0xF);
+            midiData->originalMessageLength = midiData->originalMessageLength + 1;
+            someoffsx = 2 * ((midiData->message[0] & 0xF) | (midiData->message[1] & 0x70));
+            midiData->message[1] = midiData->message[1] & 0x7F;
             midiData_offs_plusone = midiData_offs + 1;
             midiData->message[0] = *((u8 *)&midiData->midiData->compBlock[1].compOption + someoffsx);
             midiData->message[1] = *((u8 *)&midiData->midiData->compBlock[1].compOption + someoffsx + 1);
@@ -501,11 +464,11 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
     }
     else
     {
-      if ( midiData_curval2_msk != 208 )
+      if ( (midiData_curval2 & 0xF0) != 208 )
       {
         if ( (midiData_curval2 & 0xF0u) < 0xD1 )
         {
-          if ( midiData_curval2_msk != 192 )
+          if ( (midiData_curval2 & 0xF0) != 192 )
           {
             midiData->readStatus = 2;
             return 0x8104002F;
@@ -513,13 +476,13 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
         }
         else
         {
-          if ( midiData_curval2_msk == 224 )
+          if ( (midiData_curval2 & 0xF0) == 224 )
           {
             endflg = 4;
           }
           else
           {
-            if ( midiData_curval2_msk != 240 )
+            if ( (midiData_curval2 & 0xF0) != 240 )
             {
               midiData->readStatus = 2;
               return 0x8104002F;
@@ -530,28 +493,22 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
               return 0x8104002F;
             }
             midiData->messageLength = 1;
-            midiData_curval6 = *midiData_offs;
+            midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
+            midiData->message[1] = midiData->originalMessage[midiData->originalMessageLength];
+            midiData->messageLength = midiData->messageLength + 1;
+            midiData->originalMessageLength = midiData->originalMessageLength + 1;
             someaddoffsone = midiData_offs + 1;
-            midiData->originalMessage[midiData->originalMessageLength] = midiData_curval6;
-            messageLength = midiData->messageLength;
-            somindx1 = 1;
-            midiData->message[1] = midiData_curval6;
-            addmsglen = midiData->originalMessageLength + 1;
-            midiData->messageLength = messageLength + 1;
-            midiData->originalMessageLength = addmsglen;
             midiData_curval7 = *someaddoffsone;
-            midiData->originalMessage[addmsglen] = *someaddoffsone;
-            somelsglenx = midiData->messageLength;
+            midiData->originalMessage[midiData->originalMessageLength] = *someaddoffsone;
+            midiData->message[2] = midiData->originalMessage[midiData->originalMessageLength];
+            midiData->messageLength = midiData->messageLength + 1;
             midiData_offs_plusone = someaddoffsone + 1;
-            midiData->message[2] = midiData_curval7;
-            midiData->messageLength = somelsglenx + 1;
             ++midiData->originalMessageLength;
+            somindx1 = 1;
             for ( msg2ew = midiData_curval7; msg2ew >= somindx1; somindx1 += 1 )
             {
-              midiData_curval8 = *midiData_offs_plusone++;
-              midiData->originalMessage[midiData->originalMessageLength] = midiData_curval8;
-              ptroffscw = (char *)midiData + somindx1;
-              ptroffscw[46] = midiData_curval8;
+              midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs_plusone++;
+              *(((char *)midiData + somindx1) + 46) = midiData->originalMessage[midiData->originalMessageLength];
               msg2ew = midiData->message[2];
               ++midiData->messageLength;
               ++midiData->originalMessageLength;
@@ -569,31 +526,26 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   {
     midiData_curval4 = *midiData_offs;
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
-    originalMessageLength_2 = midiData->originalMessageLength;
-    currofssplusone = midiData_offs + 1;
     midiData->message[1] = midiData_curval4;
-    midiData->originalMessageLength = ++originalMessageLength_2;
-    midiData_curval5 = *currofssplusone;
-    midiData->originalMessage[originalMessageLength_2] = *currofssplusone;
-    originalMessageLength_3 = midiData->originalMessageLength;
+    midiData->originalMessageLength = midiData->originalMessageLength + 1;
+    currofssplusone = midiData_offs + 1;
+    midiData->originalMessage[midiData->originalMessageLength] = *currofssplusone;
     midiData_offs_plusone = currofssplusone + 1;
-    midiData->message[2] = midiData_curval5;
+    midiData->message[2] = midiData->originalMessage[midiData->originalMessageLength];
     nextMessageLength = 3;
     endflg = 2;
   }
   if ( endflg >= 3 )
   {
-    midiData_curval9 = *midiData_offs;
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
-    originalMessageLength_3 = midiData->originalMessageLength;
     midiData_offs_plusone = midiData_offs + 1;
-    midiData->message[1] = midiData_curval9;
+    midiData->message[1] = midiData->originalMessage[midiData->originalMessageLength];
     nextMessageLength = 2;
   }
   if ( endflg >= 2 )
   {
     midiData->messageLength = nextMessageLength;
-    midiData->originalMessageLength = originalMessageLength_3 + 1;
+    midiData->originalMessageLength = midiData->originalMessageLength + 1;
   }
   if ( !niceflag )
     midiData->reserve[midiData->messageLength + 6] &= ~0x80u;
@@ -605,8 +557,6 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
 int sceSdSqInitSongData(void *addr, u32 songNumber, SceSdSqSongData *songData)
 {
   int result; // $v0
-  sceSeqSongChunk *m_song; // $v1
-  unsigned int offs; // $a0
   struct sdsq_info dinfo; // [sp+10h] [-10h] BYREF
 
   result = do_get_vers_sequ_chunk((sceSeqVersionChunk *)addr, &dinfo);
@@ -626,11 +576,9 @@ int sceSdSqInitSongData(void *addr, u32 songNumber, SceSdSqSongData *songData)
         // Unofficial: the following call was inlined
         memset(songData, 0, sizeof(SceSdSqSongData));
         songData->songNumber = songNumber;
-        m_song = dinfo.m_song;
-        offs = dinfo.m_song->songOffsetAddr[songNumber];
         result = 0;
         songData->readStatus = 0;
-        songData->topAddr = (char *)m_song + offs;
+        songData->topAddr = (char *)(dinfo.m_song) + dinfo.m_song->songOffsetAddr[songNumber];
       }
     }
   }
@@ -640,16 +588,14 @@ int sceSdSqInitSongData(void *addr, u32 songNumber, SceSdSqSongData *songData)
 //----- (004008F0) --------------------------------------------------------
 int sceSdSqReadSongData(SceSdSqSongData *songData)
 {
-  u32 nextOffset; // $a0
   u8 *curOffset; // $a1
 
   if ( songData->readStatus )
     return 0x81048001;
-  nextOffset = songData->nextOffset;
-  curOffset = (u8 *)songData->topAddr + nextOffset;
+  curOffset = (u8 *)songData->topAddr + songData->nextOffset;
   if ( (*curOffset & 0xF0) == 160 && (curOffset[1] & 0x80u) == 0 )
   {
-    songData->offset = nextOffset;
+    songData->offset = songData->nextOffset;
     songData->message[0] = *curOffset;
     songData->message[1] = curOffset[1];
     songData->message[2] = curOffset[2];
@@ -743,15 +689,13 @@ int sceSdSqGetNoteOnEventByPolyKeyPress(
         SceSdSqPolyKeyData *pData,
         SceSdSqCompTableNoteOnEvent *kData)
 {
-  u8 status; // $a2
   u32 compTableIndex; // $a2
   int result; // $v0
   SceSdSqCompTableData data; // [sp+10h] [-8h] BYREF
 
-  status = pData->status;
-  if ( (status & 0xF0) != 160 )
+  if ( (pData->status & 0xF0) != 160 )
     return 0x8104902A;
-  compTableIndex = (status & 0xF) + (pData->data & 0xF0);
+  compTableIndex = (pData->status & 0xF) + (pData->data & 0xF0);
   if ( compTableIndex >= 0x80 )
     return 0x8104902A;
   result = sceSdSqGetCompTableDataByIndex(addr, midiNumber, compTableIndex, &data);
@@ -768,46 +712,16 @@ int sceSdSqGetNoteOnEventByPolyKeyPress(
 //----- (00400BC0) --------------------------------------------------------
 int sceSdSqCopyMidiData(SceSdSqMidiData *to, const SceSdSqMidiData *from)
 {
-  const SceSdSqMidiData *endptr; // $v0
-  u32 midiNumber; // $a2
-  sceSeqMidiDataBlock *midiData; // $a3
-  u32 offset; // $t0
-
-  endptr = (const SceSdSqMidiData *)&from->originalMessage[8];
-  while ( from != endptr )
-  {
-    midiNumber = from->midiNumber;
-    midiData = from->midiData;
-    offset = from->offset;
-    to->readStatus = from->readStatus;
-    to->midiNumber = midiNumber;
-    to->midiData = midiData;
-    to->offset = offset;
-    from = (const SceSdSqMidiData *)((char *)from + 16);
-    to = (SceSdSqMidiData *)((char *)to + 16);
-  }
-  to->readStatus = from->readStatus;
+  // The following memcpy was inlined
+  memcpy(to, from, sizeof(SceSdSqMidiData));
   return 0;
 }
 
 //----- (00400C04) --------------------------------------------------------
 int sceSdSqCopySongData(SceSdSqSongData *to, const SceSdSqSongData *from)
 {
-  u32 songNumber; // $a2
-  void *topAddr; // $a3
-  u32 offset; // $t0
-  int cpywtmp1; // $a2
-
-  songNumber = from->songNumber;
-  topAddr = from->topAddr;
-  offset = from->offset;
-  to->readStatus = from->readStatus;
-  to->songNumber = songNumber;
-  to->topAddr = topAddr;
-  to->offset = offset;
-  cpywtmp1 = *(u32 *)from->message;
-  to->nextOffset = from->nextOffset;
-  *(u32 *)to->message = cpywtmp1;
+  // The following memcpy was inlined
+  memcpy(to, from, sizeof(SceSdSqSongData));
   return 0;
 }
 
