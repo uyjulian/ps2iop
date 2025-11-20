@@ -134,12 +134,8 @@ int _start(int ac, char **av)
 {
   int has_conffile; // $s4
   int cur_ac; // $s3
-  char **cur_av; // $s1
   int cur_av_pos; // $s0
-  char *cur_av_curstr1; // $a0
-  int rbmul; // $
   int thid1; // $s0
-  int thid2; // $a0
   iop_event_t efparam; // [sp+10h] [-30h] BYREF
   iop_thread_t thparam; // [sp+20h] [-20h] BYREF
   int state; // [sp+38h] [-8h] BYREF
@@ -158,38 +154,36 @@ int _start(int ac, char **av)
   g_rb_count = 0;
   g_usbm_entry_list_end = 0;
   g_usbm_entry_list_cur = 0;
-  cur_av = av;
-  for ( cur_ac = 0; cur_ac < ac; cur_ac += 1 )
+  for ( cur_ac = 1; cur_ac < ac; cur_ac += 1 )
   {
-    cur_av_curstr1 = *cur_av;
-    for ( cur_av_pos = 0; cur_av_curstr1[cur_av_pos] && cur_av_curstr1[cur_av_pos] != '='; cur_av_pos += 1 );
-    if ( cur_av_curstr1[cur_av_pos] )
+    for ( cur_av_pos = 0; av[cur_ac][cur_av_pos] && av[cur_ac][cur_av_pos] != '='; cur_av_pos += 1 );
+    if ( av[cur_ac][cur_av_pos] )
     {
-      cur_av_curstr1[cur_av_pos] = 0;
+      av[cur_ac][cur_av_pos] = 0;
       cur_av_pos += 1;
     }
-    if ( !strcmp(*cur_av, "conffile") )
+    if ( !strcmp(av[cur_ac], "conffile") )
     {
-      if ( (unsigned int)strlen(&(*cur_av)[cur_av_pos]) < 0x200 )
+      if ( (unsigned int)strlen(&(av[cur_ac])[cur_av_pos]) < 0x200 )
       {
-        strcpy((char *)g_param_conffile, &(*cur_av)[cur_av_pos]);
+        strcpy((char *)g_param_conffile, &(av[cur_ac])[cur_av_pos]);
         has_conffile = 1;
         if ( g_param_debug > 0 )
           printf("conffile=%s\n", g_param_conffile);
       }
       else
       {
-        printf("Too long file name : %s\n", &(*cur_av)[cur_av_pos]);
+        printf("Too long file name : %s\n", &(av[cur_ac])[cur_av_pos]);
       }
     }
-    else if ( !strcmp(*cur_av, "debug") )
+    else if ( !strcmp(av[cur_ac], "debug") )
     {
-      g_param_debug = do_parse_cmd_int(&(*cur_av)[cur_av_pos]);
+      g_param_debug = do_parse_cmd_int(&(av[cur_ac])[cur_av_pos]);
       printf("Debug level is %d\n", g_param_debug);
     }
-    else if ( !strcmp(*cur_av, "rbsize") )
+    else if ( !strcmp(av[cur_ac], "rbsize") )
     {
-      g_param_rbsize = do_parse_cmd_int(&(*cur_av)[cur_av_pos]);
+      g_param_rbsize = do_parse_cmd_int(&(av[cur_ac])[cur_av_pos]);
       if ( g_param_rbsize >= 257 )
         g_param_rbsize = 256;
       if ( g_param_rbsize < 8 )
@@ -197,13 +191,11 @@ int _start(int ac, char **av)
       if ( g_param_debug > 0 )
         printf("usbmload : ring buffer size = %d\n", g_param_rbsize);
     }
-    ++cur_av;
   }
-  rbmul = 4 * g_param_rbsize;
   if ( g_param_debug > 0 )
     printf("allocsize(for ring buffer) : %d\n", 4 * g_param_rbsize);
   CpuSuspendIntr(&state);
-  g_rb_entries = (USBDEV_t **)AllocSysMemory(0, rbmul, 0);
+  g_rb_entries = (USBDEV_t **)AllocSysMemory(0, 4 * g_param_rbsize, 0);
   CpuResumeIntr(state);
   if ( !g_rb_entries )
   {
@@ -245,10 +237,9 @@ int _start(int ac, char **av)
   }
   else
   {
-    thid2 = thid1;
     if ( g_param_debug > 0 )
       printf("usbmload : CreateThread ID = %d\n", thid1);
-    StartThread(thid2, 0);
+    StartThread(thid1, 0);
     g_thid = thid1;
     return 2;
   }
@@ -318,17 +309,6 @@ int do_parse_config_file(const char *fn)
   int fd; // $s4
   int lineind; // $s2
   int tokencnt; // $s1
-  size_t dispname_len; // $v0
-  char *dispname_tmp; // $v0
-  char *dispname; // $a0
-  size_t category_tmplen; // $v0
-  char *category_tmp; // $v0
-  char *category; // $a0
-  size_t driverpath_tmplen; // $v0
-  char *driverpath_tmp; // $v0
-  size_t driverarg_tmp; // $v0
-  char *driverarg_tmplen; // $v0
-  char *driverarg_end; // $a0
   char *p[2]; // [sp+10h] [-18h] BYREF
   int state; // [sp+20h] [-8h] BYREF
   int err;
@@ -388,17 +368,14 @@ int do_parse_config_file(const char *fn)
             break;
           }
           CpuSuspendIntr(&state);
-          dispname_len = strlen(p[1]);
-          dispname_tmp = (char *)AllocSysMemory(0, dispname_len + 1, 0);
-          devstr->dispname = dispname_tmp;
+          devstr->dispname = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
           CpuResumeIntr(state);
-          dispname = devstr->dispname;
-          if ( !dispname )
+          if ( !devstr->dispname )
           {
             err = 1;
             break;
           }
-          strcpy(dispname, p[1]);
+          strcpy(devstr->dispname, p[1]);
           devstr->vendor = -1;
           devstr->product = -1;
           devstr->release = -1;
@@ -478,17 +455,14 @@ int do_parse_config_file(const char *fn)
                 devstr->category = 0;
               }
               CpuSuspendIntr(&state);
-              category_tmplen = strlen(p[1]);
-              category_tmp = (char *)AllocSysMemory(0, category_tmplen + 1, 0);
-              devstr->category = category_tmp;
+              devstr->category = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
               CpuResumeIntr(state);
-              category = devstr->category;
-              if ( !category )
+              if ( !devstr->category )
               {
                 err = 1;
                 break;
               }
-              strcpy(category, p[1]);
+              strcpy(devstr->category, p[1]);
             }
             else if ( !strcmp(p[0], "DriverPath") )
             {
@@ -500,32 +474,26 @@ int do_parse_config_file(const char *fn)
                 devstr->path = 0;
               }
               CpuSuspendIntr(&state);
-              driverpath_tmplen = strlen(p[1]);
-              driverpath_tmp = (char *)AllocSysMemory(0, driverpath_tmplen + 1, 0);
-              devstr->path = driverpath_tmp;
+              devstr->path = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
               CpuResumeIntr(state);
-              category = devstr->path;
-              if ( !category )
+              if ( !devstr->path )
               {
                 err = 1;
                 break;
               }
-              strcpy(category, p[1]);
+              strcpy(devstr->path, p[1]);
             }
             else if ( !strcmp(p[0], "DriverArg") && devstr->argc < 8 )
             {
               CpuSuspendIntr(&state);
-              driverarg_tmp = strlen(p[1]);
-              driverarg_tmplen = (char *)AllocSysMemory(0, driverarg_tmp + 1, 0);
-              devstr->argv[devstr->argc] = driverarg_tmplen;
+              devstr->argv[devstr->argc] = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
               CpuResumeIntr(state);
-              driverarg_end = devstr->argv[devstr->argc];
-              if ( !driverarg_end )
+              if ( !devstr->argv[devstr->argc] )
               {
                 err = 1;
                 break;
               }
-              strcpy(driverarg_end, p[1]);
+              strcpy(devstr->argv[devstr->argc], p[1]);
               ++devstr->argc;
             }
             else
@@ -591,36 +559,18 @@ void do_print_device_config_info(USBDEV_t *devinfo)
 int usbmload_drv_probe(int dev_id)
 {
   UsbDeviceDescriptor *devdesc; // $v0
-  int idVendor; // $fp
-  int idProduct; // $s7
-  int bcdUSB; // $s6
   UsbInterfaceDescriptor *intfdesc; // $v0
-  int bInterfaceClass; // $s5
-  int bInterfaceSubClass; // $s4
-  int bInterfaceProtocol; // $s3
   int found_info_count; // $s2
   USBDEV_t *devinfo; // $s0
-  int vendor; // $v0
-  int product; // $v0
-  int release; // $v0
-  int class_; // $v0
-  int subclass; // $v0
-  int protocol; // $v0
 
   if ( g_param_debug > 0 )
     printf("Call usbmload_probe\n");
   devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, 1u);
   if ( !devdesc )
     return 0;
-  idVendor = devdesc->idVendor;
-  idProduct = devdesc->idProduct;
-  bcdUSB = devdesc->bcdUSB;
   intfdesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, devdesc, 4u);
   if ( !intfdesc )
     return 0;
-  bInterfaceClass = intfdesc->bInterfaceClass;
-  bInterfaceSubClass = intfdesc->bInterfaceSubClass;
-  bInterfaceProtocol = intfdesc->bInterfaceProtocol;
   found_info_count = 0;
   if ( !g_usbm_entry_list_end )
   {
@@ -632,23 +582,17 @@ int usbmload_drv_probe(int dev_id)
   {
     if ( devinfo->activate_flag )
     {
-      vendor = devinfo->vendor;
-      if ( vendor == idVendor || vendor == -1 )
+      if ( devinfo->vendor == devdesc->idVendor || devinfo->vendor == -1 )
       {
-        product = devinfo->product;
-        if ( product == idProduct || product == -1 )
+        if ( devinfo->product == devdesc->idProduct || devinfo->product == -1 )
         {
-          release = devinfo->release;
-          if ( release == bcdUSB || release == -1 )
+          if ( devinfo->release == devdesc->bcdUSB || devinfo->release == -1 )
           {
-            class_ = devinfo->class_;
-            if ( class_ == bInterfaceClass || class_ == -1 )
+            if ( devinfo->class_ == intfdesc->bInterfaceClass || devinfo->class_ == -1 )
             {
-              subclass = devinfo->subclass;
-              if ( subclass == bInterfaceSubClass || subclass == -1 )
+              if ( devinfo->subclass == intfdesc->bInterfaceSubClass || devinfo->subclass == -1 )
               {
-                protocol = devinfo->protocol;
-                if ( protocol == bInterfaceProtocol || protocol == -1 )
+                if ( devinfo->protocol == intfdesc->bInterfaceProtocol || devinfo->protocol == -1 )
                 {
                   if ( g_param_debug > 0 )
                     printf("push_devinfo : %s\n", devinfo->path);
@@ -693,11 +637,11 @@ int usbmload_drv_disconenct(int dev_id)
 //----- (004010C4) --------------------------------------------------------
 void ldd_loader_thread()
 {
-  int efres[2]; // [sp+10h] [-8h] BYREF
+  u32 efres; // [sp+10h] [-8h] BYREF
 
   while ( 1 )
   {
-    WaitEventFlag(g_ef, 1u, 17, (u32 *)efres);
+    WaitEventFlag(g_ef, 1u, 17, &efres);
     if ( g_param_debug > 0 )
       printf("ldd_loader_thread : get event!\n");
     g_loadfunc_cb(is_rb_ok_callback);
@@ -717,10 +661,6 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
   int cur_argc; // $s4
   unsigned int cur_argv_len; // $s1
   unsigned int cur_argv_len_1; // $s0
-  char *argdst; // $a0
-  int modarglen; // $s1
-  int started; // $v0
-  int modres_1; // $v0
   char modarg[256]; // [sp+10h] [-168h] BYREF
   ModuleStatus modstat; // [sp+110h] [-68h] BYREF
   int modres; // [sp+170h] [-8h] BYREF
@@ -743,25 +683,21 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
       for ( cur_argc = 0; cur_argc < curdev->argc; cur_argc += 1 )
       {
         cur_argv_len_1 = cur_argv_len + strlen(curdev->argv[cur_argc]) + 1;
-        argdst = &modarg[cur_argv_len];
         if ( cur_argv_len_1 >= 0xF1 )
           break;
         cur_argv_len = cur_argv_len_1;
-        strcpy(argdst, curdev->argv[cur_argc]);
+        strcpy(&modarg[cur_argv_len], curdev->argv[cur_argc]);
       }
       strcpy(&modarg[cur_argv_len], "lmode=AUTOLOAD");
-      modarglen = cur_argv_len + 15;
       if ( g_param_debug > 0 )
         printf("LoadStartModule : %s\n", curdev->path);
-      started = LoadStartModule(curdev->path, modarglen, modarg, &modres);
-      modid = started;
+      modid = LoadStartModule(curdev->path, cur_argv_len + 15, modarg, &modres);
       if ( g_param_debug > 0 )
-        printf("LoadStartModule done: %d\n", started);
+        printf("LoadStartModule done: %d\n", modid);
       if ( modid >= 0 )
       {
-        modres_1 = modres;
         curdev->modid = modid;
-        curdev->load_result = modres_1;
+        curdev->load_result = modres;
         ReferModuleStatus(modid, &modstat);
         strcpy(curdev->modname, modstat.name);
       }
@@ -1084,17 +1020,7 @@ int sceUsbmlLoadConffile(const char *conffile)
 int sceUsbmlRegisterDevice(USBDEV_t *device)
 {
   USBDEV_t *devinfo; // $s3
-  USBDEV_t *devinfo_cpyptr1; // $v1
-  size_t dispname_len; // $v0
-  char *dispname_memblk; // $v0
-  char *dispname; // $a0
-  size_t path_len; // $v0
-  char *path_memblk; // $v0
-  char *path; // $a0
   int devinfo_allocind; // $s2
-  size_t argv_len; // $v0
-  char *argv_memblk; // $v0
-  char *argv_curptr; // $a0
   int devinfo_curind; // $s1
   int state; // [sp+10h] [-8h] BYREF
   int failed;
@@ -1109,51 +1035,41 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
   }
   if ( !failed )
   {
-    devinfo_cpyptr1 = devinfo;
     // The following memcpy was inlined
-    memcpy(devinfo_cpyptr1, device, sizeof(USBDEV_t));
+    memcpy(devinfo, device, sizeof(USBDEV_t));
     CpuSuspendIntr(&state);
-    dispname_len = strlen(device->dispname);
-    dispname_memblk = (char *)AllocSysMemory(0, dispname_len + 1, 0);
-    devinfo->dispname = dispname_memblk;
+    devinfo->dispname = (char *)AllocSysMemory(0, strlen(device->dispname) + 1, 0);
     CpuResumeIntr(state);
-    dispname = devinfo->dispname;
-    if ( !dispname )
+    if ( !devinfo->dispname )
     {
       failed = 2;
     }
   }
   if ( !failed )
   {
-    strcpy(dispname, device->dispname);
+    strcpy(devinfo->dispname, device->dispname);
     CpuSuspendIntr(&state);
-    path_len = strlen(device->path);
-    path_memblk = (char *)AllocSysMemory(0, path_len + 1, 0);
-    devinfo->path = path_memblk;
+    devinfo->path = (char *)AllocSysMemory(0, strlen(device->path) + 1, 0);
     CpuResumeIntr(state);
-    path = devinfo->path;
-    if ( !path )
+    if ( !devinfo->path )
     {
       failed = 3;
     }
   }
   if ( !failed )
   {
-    strcpy(path, device->path);
+    strcpy(devinfo->path, device->path);
     for ( devinfo_allocind = 0; devinfo_allocind < device->argc; devinfo_allocind += 1 )
     {
       CpuSuspendIntr(&state);
-      argv_len = strlen(device->argv[devinfo_allocind]);
-      argv_memblk = (char *)AllocSysMemory(0, argv_len + 1, 0);
-      devinfo->argv[devinfo_allocind] = argv_memblk;
+      devinfo->argv[devinfo_allocind] = (char *)AllocSysMemory(0, strlen(device->argv[devinfo_allocind]) + 1, 0);
       CpuResumeIntr(state);
-      argv_curptr = devinfo->argv[devinfo_allocind];
-      if ( !argv_curptr )
+      if ( !devinfo->argv[devinfo_allocind] )
       {
         failed = 4;
         break;
       }
-      strcpy(argv_curptr, device->argv[devinfo_allocind]);
+      strcpy(devinfo->argv[devinfo_allocind], device->argv[devinfo_allocind]);
     }
   }
   if ( failed )
@@ -1219,18 +1135,15 @@ char read_config_byte(int fd)
 //----- (00401EA4) --------------------------------------------------------
 char *read_config_line(char *dstbuf, int maxlen, int fd)
 {
-  char *dstbuf_cur; // $s0
   int i; // $s1
-  char config_byte; // $v0
 
-  dstbuf_cur = dstbuf;
   for ( i = 0; i < maxlen; i += 1 )
   {
-    config_byte = read_config_byte(fd);
-    if ( config_byte == '\n' )
+    dstbuf[i] = read_config_byte(fd);
+    if ( dstbuf[i] == '\n' )
       break;
-    dstbuf_cur[i] = config_byte == '\r' ? 0 : config_byte;
+    dstbuf[i] = dstbuf[i] == '\r' ? 0 : dstbuf[i];
   }
-  *dstbuf_cur = 0;
+  dstbuf[i] = 0;
   return dstbuf;
 }
