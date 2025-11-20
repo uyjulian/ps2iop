@@ -292,9 +292,9 @@ int g_io_event_flag; // idb
 int g_adma_evfid; // idb
 int g_acmd_evfid; // idb
 int g_dma_lock_sema; // idb
-void *g_dev5_intr_cbs[16];
-void *g_dev5_predma_cbs[4];
-void *g_dev5_postdma_cbs[4];
+void (*g_dev5_intr_cbs[16])(int);
+void (*g_dev5_predma_cbs[4])(u32, int);
+void (*g_dev5_postdma_cbs[4])(u32, int);
 int g_atapi_event_flag; // idb
 ata_devinfo_t atad_devinfo[2]; // weak
 ata_cmd_state_t atad_cmd_state; // weak
@@ -340,25 +340,21 @@ int do_atapi_cmd_inquiry_12h(s16 dev_nr)
 //----- (0040013C) --------------------------------------------------------
 int do_atapi_request_test_unit_ready(s16 dev_nr, int *errptr, int *ctrlptr)
 {
-  int result; // $v0
   int retres; // $s0
-  int ata_control; // $v1
   char pkt[16]; // [sp+20h] [-10h] BYREF
 
   *errptr = 0;
   *ctrlptr = 0;
   memset(pkt, 0, 12);
   pkt[0] = 0;
-  result = xatapi_7_sceCdAtapiExecCmd(dev_nr, 0, 0, 0, pkt, 12, 1);
-  if ( !result )
+  retres = xatapi_7_sceCdAtapiExecCmd(dev_nr, 0, 0, 0, pkt, 12, 1);
+  if ( !retres )
   {
     retres = xatapi_8_sceCdAtapiWaitResult();
     *errptr = (u8)xatapi_11_sceAtaGetError();
-    ata_control = (u8)xatapi_12_get_ata_control();
-    result = retres;
-    *ctrlptr = ata_control;
+    *ctrlptr = (u8)xatapi_12_get_ata_control();
   }
-  return result;
+  return retres;
 }
 
 //----- (004001F0) --------------------------------------------------------
@@ -479,7 +475,6 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
   int trycnt2; // $s1
   int tryres1; // $s0
   int maskchk; // $s0
-  int mediaptr_tmp; // $v1
   int trycnt4; // $s1
   int retres; // $s0
   int trycnt3; // $s1
@@ -554,10 +549,7 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
       {
         if ( g_xatapi_verbose > 0 )
           Kprintf("Atapi Drive Media DVD:%d.\n", outbuf[5] & 0x20);
-        mediaptr_tmp = 2;
-        if ( (outbuf[5] & 0x20) != 0 )
-          mediaptr_tmp = 3;
-        *mediaptr = mediaptr_tmp;
+        *mediaptr = ( (outbuf[5] & 0x20) != 0 ) ? 3 : 2;
       }
     }
     else
@@ -718,7 +710,6 @@ int sceCdAtapi_BC(void)
   int trycnt6; // $s1
   int trycnt7; // $s1
   int trycnt8; // $s1
-  int retresx; // $s5
   int retres5; // $s0
   char pkt[16]; // [sp+20h] [-58h] BYREF
   char outbuf[16]; // [sp+30h] [-48h] BYREF
@@ -873,7 +864,6 @@ int sceCdAtapi_BC(void)
     }
   }
   memset(pkt, 0, 12);
-  retresx = retres4;
   retres5 = 1;
   pkt[0] = 0xF6;
   pkt[2] = 0xB1;
@@ -885,9 +875,9 @@ int sceCdAtapi_BC(void)
       DelayThread(10000);
   }
   if ( retres5 )
-    return retresx;
+    return retres4;
   *g_cd_sc_ffffffd9_ptr = (outbuf[4] & 0x81) != 0;
-  return retresx;
+  return retres4;
 }
 // 40A640: using guessed type int g_should_wait_for_dma_flag;
 // 40A648: using guessed type int g_xatapi_verbose;
@@ -913,7 +903,6 @@ int atapi_spin_status_get(int unused_arg1, void *buf)
 int atapi_check_if_drive_ready(int check_nowait)
 {
   u8 ata_control; // $v0
-  int ata_ctrl_tmp; // $s0
   int req_test_unit_ready_tmp1; // $s1
   char spinstatus_tmp[6]; // [sp+10h] [-18h] BYREF
   int drive_err; // [sp+18h] [-10h] BYREF
@@ -924,7 +913,7 @@ int atapi_check_if_drive_ready(int check_nowait)
   if ( g_xatapi_verbose > 0 )
     Kprintf("Atapi Drive Ready Call %d\n", check_nowait);
   ata_control = xatapi_12_get_ata_control();
-  ata_ctrl_tmp = ata_control;
+  ata_control = ata_control;
   if ( g_xatapi_verbose > 0 )
     Kprintf("Atapi Drive Ready %04x\n", ata_control);
   if ( !check_nowait )
@@ -932,12 +921,12 @@ int atapi_check_if_drive_ready(int check_nowait)
     req_test_unit_ready_tmp1 = -1;
     while ( req_test_unit_ready_tmp1 < 0 )
     {
-      while ( (ata_ctrl_tmp & 0xC0) != 64 )
+      while ( (ata_control & 0xC0) != 64 )
       {
         if ( g_xatapi_verbose > 0 )
-          Kprintf("Drive Not Ready %04x\n", ata_ctrl_tmp);
+          Kprintf("Drive Not Ready %04x\n", ata_control);
         DelayThread(2000);
-        ata_ctrl_tmp = xatapi_12_get_ata_control();
+        ata_control = xatapi_12_get_ata_control();
       }
       req_test_unit_ready_tmp1 = do_atapi_request_test_unit_ready(0, &drive_err, &unitreadyctrl);
       if ( req_test_unit_ready_tmp1 < 0 )
@@ -963,7 +952,7 @@ int atapi_check_if_drive_ready(int check_nowait)
     }
     return 2;
   }
-  if ( (ata_ctrl_tmp & 0xC0) == 64 )
+  if ( (ata_control & 0xC0) == 64 )
   {
     if ( do_atapi_request_test_unit_ready(0, &drive_err, &unitreadyctrl) >= 0 )
     {
@@ -983,8 +972,6 @@ int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int 
   int retres1; // $s0
   int seccnt; // $s1
   int trycnt1; // $s2
-  char scsirwtype; // $v1
-  int trycnt1x; // $v0
   char pkt_stk[16]; // [sp+20h] [-18h] BYREF
   char *pkt; // [sp+30h] [-8h]
 
@@ -998,15 +985,11 @@ int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int 
     seccnt = nsec_tmp;
     if ( nsec_tmp >= 0x21 )
       seccnt = 32;
-    trycnt1 = 3;
-    while ( 1 )
+    for ( trycnt1 = 3; trycnt1 < 3; trycnt1 += 1 )
     {
       xatapi_9_sceCdSpdAtaDmaStart(rwtype);
       memset(pkt_stk, 0, 12);
-      scsirwtype = 0x2A;
-      if ( !rwtype )
-        scsirwtype = 0x28;
-      pkt_stk[0] = scsirwtype;
+      pkt_stk[0] = ( !rwtype ) ? 0x28 : 0x2A;
       pkt_stk[2] = ((uiptr)rwbuf_tmp >> 24) & 0xFF;
       pkt_stk[3] = ((uiptr)rwbuf_tmp >> 16) & 0xFF;
       pkt_stk[4] = ((uiptr)rwbuf_tmp >> 8) & 0xFF;
@@ -1020,14 +1003,10 @@ int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int 
       }
       retres1 = xatapi_8_sceCdAtapiWaitResult();
       xatapi_10_sceCdSpdAtaDmaEnd();
-      trycnt1x = trycnt1;
-      if ( retres1 == -510 )
+      if ( retres1 != -510 )
       {
-        --trycnt1;
-        if ( trycnt1x > 0 )
-          continue;
+        break;
       }
-      break;
     }
     rwbuf_tmp += seccnt;
     buf = (char *)buf + seccnt * secsize;
@@ -1092,14 +1071,14 @@ void sceDev5Init(void)
 //----- (00401B48) --------------------------------------------------------
 int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2)
 {
-  u32 buzzerres[2]; // [sp+10h] [-8h] BYREF
+  u32 buzzerres; // [sp+10h] [-8h] BYREF
 
   (void)unused_arg2;
   if ( is_eject == 1 )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("Eject intr : media removal\n");
-    return sceCdBuzzerCtl(buzzerres);
+    return sceCdBuzzerCtl(&buzzerres);
   }
   return 1;
 }
@@ -1108,8 +1087,7 @@ int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2)
 //----- (00401B94) --------------------------------------------------------
 int xatapi_do_init(void)
 {
-  int (*oldcb_x)(int, void *); // $s0
-  int (*oldcb)(int, void *); // $a0
+  int (*oldcb)(int, void *); // $s0
   u32 *sc_tmp; // [sp+10h] [-10h] BYREF
   u32 trylocktmp; // [sp+14h] [-Ch] BYREF
   u32 traylock_ret; // [sp+18h] [-8h] BYREF
@@ -1120,7 +1098,7 @@ int xatapi_do_init(void)
   g_cd_sc_ffffffd9_ptr = sc_tmp;
   sceCdSC(0xFFFFFFD7, (int *)&sc_tmp);
   g_bf40200a_is_set_ptr = (int)sc_tmp;
-  oldcb_x = (int (*)(int, void *))sceCdSetAtapiEjectCallback(
+  oldcb = (int (*)(int, void *))sceCdSetAtapiEjectCallback(
                                                (int (*)(int, void *))atapi_eject_interrupt_handler,
                                                0);
   if ( !sceCdGetMediumRemoval(&trylocktmp, &traylock_ret) )
@@ -1178,7 +1156,6 @@ int xatapi_do_init(void)
         Kprintf("xatapi:Tray unlock\n");
     }
   }
-  oldcb = oldcb_x;
   sceCdSetAtapiEjectCallback(oldcb, 0);
   return 1;
 }
@@ -1238,20 +1215,13 @@ int xatapi_dev_devctl(
         unsigned int buflen)
 {
   int retres1; // $s1
-  int efres; // $v1
-  int ata_control; // $v0
-  int execres; // $v0
-  int bcres; // $v0
-  int argval1; // $v1
-  int argmask1; // $v0
   u32 efbits; // [sp+20h] [-8h] BYREF
 
   (void)name;
   retres1 = 0;
   if ( g_xatapi_verbose > 0 )
     Kprintf("xatapi devctl: cmd:%08x arg:%d\n", cmd, *(u32 *)args);
-  efres = PollEventFlag(g_io_event_flag, 1u, 0, &efbits);
-  if ( cmd == 0x439B && efres == -421 && *(u32 *)args == 1 )
+  if ( cmd == 0x439B && PollEventFlag(g_io_event_flag, 1u, 0, &efbits) == -421 && *(u32 *)args == 1 )
   {
     *(u32 *)buf = 6;
     return 0;
@@ -1277,7 +1247,7 @@ int xatapi_dev_devctl(
               retres1 = -22;
               break;
             }
-            execres = xatapi_7_sceCdAtapiExecCmd(
+            retres1 = xatapi_7_sceCdAtapiExecCmd(
                         f->unit,
                         buf,
                         1,
@@ -1285,13 +1255,12 @@ int xatapi_dev_devctl(
                         (char *)args + 8,
                         *(u32 *)args,
                         *((u32 *)args + 1));
-            retres1 = execres;
             break;
           case 3:
           case 6:
             if ( *((u32 *)args + 250) )
             {
-              execres = xatapi_7_sceCdAtapiExecCmd(
+              retres1 = xatapi_7_sceCdAtapiExecCmd(
                           f->unit,
                           (char *)args + 40,
                           1,
@@ -1299,7 +1268,6 @@ int xatapi_dev_devctl(
                           (char *)args + 8,
                           *(u32 *)args,
                           *((u32 *)args + 1));
-              retres1 = execres;
             }
             else
             {
@@ -1307,7 +1275,7 @@ int xatapi_dev_devctl(
             }
             break;
           default:
-            execres = xatapi_7_sceCdAtapiExecCmd(
+            retres1 = xatapi_7_sceCdAtapiExecCmd(
                         f->unit,
                         0,
                         0,
@@ -1315,7 +1283,6 @@ int xatapi_dev_devctl(
                         (char *)args + 8,
                         *(u32 *)args,
                         *((u32 *)args + 1));
-            retres1 = execres;
             break;
         }
         if ( !retres1 )
@@ -1323,17 +1290,14 @@ int xatapi_dev_devctl(
       }
       break;
     case 0x4333:
-      ata_control = (u8)xatapi_11_sceAtaGetError();
-      *(u32 *)buf = ata_control;
+      *(u32 *)buf = (u8)xatapi_11_sceAtaGetError();
       break;
     case 0x4334:
-      ata_control = (u8)xatapi_12_get_ata_control();
-      *(u32 *)buf = ata_control;
+      *(u32 *)buf = (u8)xatapi_12_get_ata_control();
       break;
     case 0x4335:
-      bcres = sceCdAtapi_BC();
-      retres1 = bcres;
-      if ( bcres == 1 )
+      retres1 = sceCdAtapi_BC();
+      if ( retres1 == 1 )
         retres1 = 0;
       break;
     case 0x4336:
@@ -1358,18 +1322,15 @@ int xatapi_dev_devctl(
       DmaRun_spck((char *)args, arglen);
       break;
     case 0x433A:
-      argval1 = *(u32 *)args;
       if ( (*(u32 *)args & 0x40) != 0 )
       {
         g_dma_mode_value = 1;
-        argmask1 = argval1 & 7;
       }
       else
       {
-        argmask1 = *(u32 *)args & 7;
         g_dma_mode_value = 0;
       }
-      g_dma_speed_value = argmask1;
+      g_dma_speed_value = *(u32 *)args & 7;
       atapi_device_set_transfer_mode_outer(0);
       break;
     case 0x433B:
@@ -1478,14 +1439,8 @@ void speedRegisterPostDmaCb(int ctrl, void *cb)
 //----- (004025B8) --------------------------------------------------------
 int speed_intr_dispatch(int flag)
 {
-  vu16 r_spd_intr_stat_1; // $v0
-  vu16 r_spd_intr_mask_2; // $v0
-  int r_spd_intr_stat_masked_1; // $v1
   int maskind2; // $s2
   int cbind1_1; // $s0
-  void (*intr_cb)(int); // $a1
-  vu16 r_spd_intr_mask_3; // $v1
-  vu16 r_spd_intr_mask_4; // $v1
 
   if ( flag == 1 )
   {
@@ -1493,30 +1448,23 @@ int speed_intr_dispatch(int flag)
   }
   else
   {
-    r_spd_intr_stat_1 = dev5_speed_regs.r_spd_intr_stat;
-    if ( (r_spd_intr_stat_1 & 0x3EFC) != 0 )
+    if ( (dev5_speed_regs.r_spd_intr_stat & 0x3EFC) != 0 )
     {
       if ( g_xatapi_verbose >= 0 )
         Kprintf("SL3 register access failed(%x:%x) !!\n", dev5_speed_regs.r_spd_intr_stat, dev5_speed_regs.r_spd_intr_mask);
     }
     else
     {
-      r_spd_intr_mask_2 = dev5_speed_regs.r_spd_intr_mask;
-      r_spd_intr_stat_masked_1 = (u16)(dev5_speed_regs.r_spd_intr_stat & r_spd_intr_mask_2);
-      for ( maskind2 = 0; maskind2 < 3 && r_spd_intr_stat_masked_1; maskind2 += 1 )
+      for ( maskind2 = 0; maskind2 < 3 && (u16)(dev5_speed_regs.r_spd_intr_stat & dev5_speed_regs.r_spd_intr_mask); maskind2 += 1 )
       {
         for ( cbind1_1 = 0; cbind1_1 < 16; cbind1_1 += 1 )
         {
-          intr_cb = (void (*)(int))g_dev5_intr_cbs[cbind1_1];
-          if ( intr_cb )
+          if ( g_dev5_intr_cbs[cbind1_1] )
           {
-            r_spd_intr_mask_3 = dev5_speed_regs.r_spd_intr_mask;
-            if ( ((int)(u16)(dev5_speed_regs.r_spd_intr_stat & r_spd_intr_mask_3) >> cbind1_1) & 1 )
-              intr_cb(flag);
+            if ( ((int)(u16)(dev5_speed_regs.r_spd_intr_stat & dev5_speed_regs.r_spd_intr_mask) >> cbind1_1) & 1 )
+              g_dev5_intr_cbs[cbind1_1](flag);
           }
         }
-        r_spd_intr_mask_4 = dev5_speed_regs.r_spd_intr_mask;
-        r_spd_intr_stat_masked_1 = (u16)(dev5_speed_regs.r_spd_intr_stat & r_spd_intr_mask_4);
       }
     }
   }
@@ -1527,42 +1475,32 @@ int speed_intr_dispatch(int flag)
 //----- (00402714) --------------------------------------------------------
 void speedIntrEnable(s16 mask)
 {
-  vu16 r_spd_intr_mask; // $v0
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
-  r_spd_intr_mask = dev5_speed_regs.r_spd_intr_mask;
-  dev5_speed_regs.r_spd_intr_mask = r_spd_intr_mask & ~mask;
-  dev5_speed_regs.r_spd_intr_mask = (r_spd_intr_mask & ~mask) | mask;
+  dev5_speed_regs.r_spd_intr_mask &= ~mask;
+  dev5_speed_regs.r_spd_intr_mask |= mask;
   CpuResumeIntr(state);
 }
 
 //----- (00402774) --------------------------------------------------------
 void speedIntrDisable(s16 mask)
 {
-  vu16 r_spd_intr_mask; // $v0
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
-  r_spd_intr_mask = dev5_speed_regs.r_spd_intr_mask;
-  dev5_speed_regs.r_spd_intr_mask = r_spd_intr_mask & ~mask;
+  dev5_speed_regs.r_spd_intr_mask &= ~mask;
   CpuResumeIntr(state);
 }
 
 //----- (004027C4) --------------------------------------------------------
 int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
-  unsigned int device_1; // $v1
   int result; // $v0
-  vu16 r_spd_rev_1; // $v0
-  vu16 spd_dma_ctrl; // $v0
-  void (*predma_cb)(u32, int); // $v0
-  void (*postdma_cb)(u32, int); // $v0
 
   dmac_ch_set_chcr(3u, 0);
   dmac_ch_get_chcr(3u);
-  device_1 = device;
-  if ( device < 2 || (g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1]) )
+  if ( device < 2 || (g_dev5_predma_cbs[device] && g_dev5_postdma_cbs[device]) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("Wait Intr\n");
@@ -1571,15 +1509,9 @@ int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
     {
       return result;
     }
-    r_spd_rev_1 = dev5_speed_regs.r_spd_rev_1;
-    if ( r_spd_rev_1 >= 0x11u )
-      spd_dma_ctrl = (device & 1) | 6;
-    else
-      spd_dma_ctrl = (device & 3) | 4;
-    dev5_speed_regs.r_spd_dma_ctrl = spd_dma_ctrl;
-    predma_cb = (void (*)(u32, int))g_dev5_predma_cbs[device];
-    if ( predma_cb )
-      predma_cb(bcr_in, dir);
+    dev5_speed_regs.r_spd_dma_ctrl = ( dev5_speed_regs.r_spd_rev_1 >= 0x11u ) ? ((device & 1) | 6) : ((device & 3) | 4);
+    if ( g_dev5_predma_cbs[device] )
+      g_dev5_predma_cbs[device](bcr_in, dir);
     if ( g_xatapi_verbose > 0 )
       Kprintf("DMA Ch3 Set.\n");
     if ( g_xatapi_verbose > 0 )
@@ -1593,9 +1525,8 @@ int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
     while ( (dmac_ch_get_chcr(3u) & 0x1000000) != 0 );
     if ( g_xatapi_verbose > 0 )
       Kprintf("MADR3= %08x\n", dmac_ch_get_madr(3u));
-    postdma_cb = (void (*)(u32, int))g_dev5_postdma_cbs[device];
-    if ( postdma_cb )
-      postdma_cb(bcr_in, dir);
+    if ( g_dev5_postdma_cbs[device] )
+      g_dev5_postdma_cbs[device](bcr_in, dir);
     if ( g_xatapi_verbose > 0 )
       Kprintf("SpdDmaTransfer End.\n");
     SignalSema(g_dma_lock_sema);
@@ -1608,17 +1539,11 @@ int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
 //----- (00402A6C) --------------------------------------------------------
 int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
-  unsigned int device_1; // $v1
   int result; // $v0
-  vu16 r_spd_rev_1; // $v0
-  vu16 spd_dma_ctrl; // $v0
-  void (*predma_cb)(u32, int); // $v0
-  void (*postdma_cb)(u32, int); // $v0
 
   dmac_ch_set_chcr(3u, 0);
   dmac_ch_get_chcr(3u);
-  device_1 = device;
-  if ( device < 2 || (g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1]) )
+  if ( device < 2 || (g_dev5_predma_cbs[device] && g_dev5_postdma_cbs[device]) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("Wait Intr\n");
@@ -1627,15 +1552,9 @@ int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir
     {
       return result;
     }
-    r_spd_rev_1 = dev5_speed_regs.r_spd_rev_1;
-    if ( r_spd_rev_1 >= 0x11u )
-      spd_dma_ctrl = (device & 1) | 6;
-    else
-      spd_dma_ctrl = (device & 3) | 4;
-    dev5_speed_regs.r_spd_dma_ctrl = spd_dma_ctrl;
-    predma_cb = (void (*)(u32, int))g_dev5_predma_cbs[device];
-    if ( predma_cb )
-      predma_cb(bcr_in, dir);
+    dev5_speed_regs.r_spd_dma_ctrl = ( dev5_speed_regs.r_spd_rev_1 >= 0x11u ) ? ((device & 1) | 6) : ((device & 3) | 4);
+    if ( g_dev5_predma_cbs[device] )
+      g_dev5_predma_cbs[device](bcr_in, dir);
     speedIntrDisable(256);
     FpgaLayer1On();
     FpgaXfrenOn();
@@ -1656,9 +1575,8 @@ int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir
     FpgaXfrenOff();
     FpgaLayer1Off();
     speedIntrEnable(256);
-    postdma_cb = (void (*)(u32, int))g_dev5_postdma_cbs[device];
-    if ( postdma_cb )
-      postdma_cb(bcr_in, dir);
+    if ( g_dev5_postdma_cbs[device] )
+      g_dev5_postdma_cbs[device](bcr_in, dir);
     if ( g_xatapi_verbose > 0 )
       Kprintf("SpdDmaTransfer_extrans End.\n");
     SignalSema(g_dma_lock_sema);
@@ -1671,13 +1589,11 @@ int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir
 //----- (00402D4C) --------------------------------------------------------
 int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
-  unsigned int device_1; // $a0
   int result; // $v0
 
   dmac_ch_set_chcr(3u, 0);
   dmac_ch_get_chcr(3u);
-  device_1 = device;
-  if ( device < 2 || (g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1]) )
+  if ( device < 2 || (g_dev5_predma_cbs[device] && g_dev5_postdma_cbs[device]) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("Wait Intr\n");
@@ -1711,13 +1627,11 @@ int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, int dir
 //----- (00402F68) --------------------------------------------------------
 int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
-  unsigned int device_1; // $a0
   int result; // $v0
 
   dmac_ch_set_chcr(3u, 0);
   dmac_ch_get_chcr(3u);
-  device_1 = device;
-  if ( device < 2 || (g_dev5_predma_cbs[device_1] && g_dev5_postdma_cbs[device_1]) )
+  if ( device < 2 || (g_dev5_predma_cbs[device] && g_dev5_postdma_cbs[device]) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("Wait Intr\n");
@@ -1792,34 +1706,32 @@ void speed_init(void)
 //----- (00403284) --------------------------------------------------------
 void speed_device_init(void)
 {
-  vu16 spdrev_1_1; // $v0
-  int spdrev_1_1_tmp; // $v1
-  int inbounds; // $v1
+  int idx; // $v1
   char *revtypes[8]; // [sp+0h] [-20h] BYREF
 
-  spdrev_1_1 = dev5_speed_regs.r_spd_rev_1;
   revtypes[4] = "unknown";
   revtypes[5] = "TS";
   revtypes[6] = "ES1";
   revtypes[7] = "ES2";
-  spdrev_1_1_tmp = spdrev_1_1;
-  if ( spdrev_1_1 != 9 )
+  switch ( dev5_speed_regs.r_spd_rev_1 )
   {
-    if ( (spdrev_1_1 < 9u)
-      || (spdrev_1_1_tmp >= 18)
-      || (inbounds = spdrev_1_1_tmp - 14, spdrev_1_1_tmp < 16) )
-    {
-      inbounds = 0;
-    }
+  case 9:
+    idx = 1;
+    break;
+  case 16:
+    idx = 2;
+    break;
+  case 17:
+    idx = 3;
+    break;
+  default:
+    idx = 0;
+    break;
   }
-  else
-  {
-    inbounds = 1;
-  }
-  if ( inbounds )
+  if ( idx )
   {
     if ( g_xatapi_verbose > 0 )
-      Kprintf("Speed chip: %s\n", revtypes[inbounds + 4]);
+      Kprintf("Speed chip: %s\n", revtypes[idx + 4]);
   }
   else
   {
@@ -1835,60 +1747,35 @@ void speed_device_init(void)
 void do_hex_dump(void *ptr, int len)
 {
   int offstotal; // $fp
-  int totalx; // $s6
   int charbuf_offs; // $s5
-  unsigned int curline; // $s4
-  unsigned int curbyte; // $s1
-  char *charbuf_ptr_ptr; // $s2
-  char *chrbuf_ptr_ptr_ptr; // $s3
-  char *ptr_ptr; // $s0
+  int curbyte; // $s1
   int curchroffs; // $s6
-  u8 fixme_chrbufbegin[16]; // [sp+0h] [-30h] BYREF
-  char charbuf[24]; // [sp+10h] [-20h] BYREF
-  int totalx_hi; // [sp+28h] [-8h]
-  char *charbuf_ptr; // [sp+2Ch] [-4h]
+  char charbuf[17]; // [sp+10h] [-20h] BYREF
 
-  offstotal = 0;
   if ( g_xatapi_verbose )
   {
-    totalx = 0;
     Kprintf("Hex dump 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f");
-    charbuf_offs = 0;
-    charbuf_ptr = charbuf;
-    for ( ; len; len -= curline )
+    curbyte = 0;
+    for ( offstotal = 0; offstotal < len; offstotal += 256 )
     {
-      curline = 256;
-      if ( len < 257 )
-        curline = len;
-      totalx_hi = totalx << 8;
-      charbuf_ptr_ptr = &charbuf_ptr[charbuf_offs];
-      for ( curbyte = 0; curbyte < curline; curbyte += 1 )
+      for ( curbyte = 0; curbyte < (( (len - offstotal) > 256 ) ? 256 : (len - offstotal)); curbyte += 1 )
       {
-        if ( !(curbyte & 0xF) )
+        charbuf_offs = curbyte & 0xF;
+        if ( !charbuf_offs && curbyte )
         {
-          charbuf_offs = 0;
-          *charbuf_ptr_ptr = 0;
-          charbuf_ptr_ptr = charbuf_ptr;
-          Kprintf(" %s\n%08x", charbuf_ptr, curbyte + totalx_hi);
+          charbuf[16] = 0;
+          Kprintf(" %s\n%08x", charbuf, offstotal + curbyte);
         }
-        chrbuf_ptr_ptr_ptr = charbuf_ptr_ptr;
-        ptr_ptr = (char *)ptr + offstotal + curbyte;
-        ++charbuf_ptr_ptr;
-        Kprintf(" %02x", (u8)*ptr_ptr);
-        ++charbuf_offs;
-        if ( *ptr_ptr >= 0 && isgraph(*ptr_ptr) )
-          *chrbuf_ptr_ptr_ptr = *ptr_ptr;
-        else
-          *chrbuf_ptr_ptr_ptr = '.';
+        Kprintf(" %02x", (u8)((char *)ptr)[offstotal + curbyte]);
+        charbuf[charbuf_offs] = ( ((char *)ptr)[offstotal + curbyte] >= 0 && isgraph(((char *)ptr)[offstotal + curbyte]) ) ? ((char *)ptr)[offstotal + curbyte] : '.';
       }
-      ++totalx;
-      offstotal += curline;
     }
-    fixme_chrbufbegin[charbuf_offs + 16] = 0;
+    charbuf_offs = curbyte & 0xF;
     for ( curchroffs = 0; (unsigned int)curchroffs < (unsigned int)(16 - charbuf_offs); curchroffs += 1 )
     {
       Kprintf("\t  ");
     }
+    charbuf[charbuf_offs] = 0;
     Kprintf("%s\n", charbuf);
   }
 }
@@ -1898,12 +1785,9 @@ void do_hex_dump(void *ptr, int len)
 //----- (00403554) --------------------------------------------------------
 void ata_pre_dma_cb(void)
 {
-  vu16 spd_xfr_ctrl_2; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("ata_pre_dma_handler:old %x\n", dev5_speed_regs.r_spd_xfr_ctrl);
-  spd_xfr_ctrl_2 = dev5_speed_regs.r_spd_xfr_ctrl;
-  dev5_speed_regs.r_spd_xfr_ctrl = spd_xfr_ctrl_2 | 0x80;
+  dev5_speed_regs.r_spd_xfr_ctrl |= 0x80;
   if ( g_xatapi_verbose > 0 )
     Kprintf("ata_pre_dma_handler:new %x\n", dev5_speed_regs.r_spd_xfr_ctrl);
 }
@@ -1912,12 +1796,9 @@ void ata_pre_dma_cb(void)
 //----- (004035CC) --------------------------------------------------------
 void ata_post_dma_cb(void)
 {
-  vu16 spd_xfr_ctrl_2; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("ata_post_dma_handler:old %x\n", dev5_speed_regs.r_spd_xfr_ctrl);
-  spd_xfr_ctrl_2 = dev5_speed_regs.r_spd_xfr_ctrl;
-  dev5_speed_regs.r_spd_xfr_ctrl = spd_xfr_ctrl_2 & 0xFF7F;
+  dev5_speed_regs.r_spd_xfr_ctrl &= 0xFF7F;
   if ( g_xatapi_verbose > 0 )
     Kprintf("ata_post_dma_handler:new %x\n", dev5_speed_regs.r_spd_xfr_ctrl);
 }
@@ -1935,8 +1816,6 @@ int vReferEventFlagStatus(int ef, iop_event_info_t *info)
 //----- (00403694) --------------------------------------------------------
 void xatapi_9_sceCdSpdAtaDmaStart(int dir)
 {
-  char spd_if_ctrl_1; // $v0
-  int spd_if_ctrl_manip_1; // $v0
   int spd_if_ctrl_manip_2; // $a1
   u32 efbits; // [sp+10h] [-8h] BYREF
 
@@ -1946,12 +1825,7 @@ void xatapi_9_sceCdSpdAtaDmaStart(int dir)
   if ( g_xatapi_verbose > 0 )
     Kprintf("sceCdSpdAtaDmaStart Call %d :Read 0:Write 1\n", dir);
   dev5_speed_regs.r_spd_dbuf_stat = 3;
-  spd_if_ctrl_1 = dev5_speed_regs.r_spd_if_ctrl;
-  spd_if_ctrl_manip_1 = spd_if_ctrl_1 & 1;
-  if ( dir )
-    spd_if_ctrl_manip_2 = spd_if_ctrl_manip_1 | 0x4C;
-  else
-    spd_if_ctrl_manip_2 = spd_if_ctrl_manip_1 | 0x4E;
+  spd_if_ctrl_manip_2 = (dev5_speed_regs.r_spd_if_ctrl & 1) | (dir ? 0x4C : 0x4E);
   dev5_speed_regs.r_spd_if_ctrl = spd_if_ctrl_manip_2;
   if ( g_xatapi_verbose > 0 )
     Kprintf("sceCdSpdAtaDmaStart Write R_IF_CTR:%x\n", spd_if_ctrl_manip_2);
@@ -1966,7 +1840,6 @@ void xatapi_9_sceCdSpdAtaDmaStart(int dir)
 //----- (00403790) --------------------------------------------------------
 void xatapi_10_sceCdSpdAtaDmaEnd(void)
 {
-  vu16 r_spd_if_ctrl; // $v0
   iop_event_info_t efinfo; // [sp+10h] [-20h] BYREF
 
   if ( g_xatapi_verbose > 0 )
@@ -1982,11 +1855,11 @@ void xatapi_10_sceCdSpdAtaDmaEnd(void)
     else
     {
       dev5_speed_regs.r_spd_xfr_ctrl = 1;
-      r_spd_if_ctrl = dev5_speed_regs.r_spd_if_ctrl;
-      dev5_speed_regs.r_spd_if_ctrl = r_spd_if_ctrl & 0xFFFB;
+      dev5_speed_regs.r_spd_if_ctrl &= ~0x4;
       dev5_speed_regs.r_spd_dbuf_stat = 3;
-      dev5_speed_regs.r_spd_if_ctrl = (r_spd_if_ctrl & 0xFF7B) | 0x80;
-      dev5_speed_regs.r_spd_if_ctrl = r_spd_if_ctrl & 0xFF7B;
+      dev5_speed_regs.r_spd_if_ctrl &= ~0x84;
+      dev5_speed_regs.r_spd_if_ctrl |= 0x80;
+      dev5_speed_regs.r_spd_if_ctrl &= ~0x84;
       ata_pio_mode(0);
       if ( g_dma_mode_value )
         ata_ultra_dma_mode(g_dma_speed_value);
@@ -2009,89 +1882,76 @@ void xatapi_10_sceCdSpdAtaDmaEnd(void)
 //----- (00403918) --------------------------------------------------------
 void ata_pio_mode(int mode)
 {
-  vu16 spd_pio_mode_rvalue; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("SpdAtaSetPioTiming %d\n", mode);
   switch ( mode )
   {
     case 0:
     default:
-      spd_pio_mode_rvalue = 146;
+      dev5_speed_regs.r_spd_pio_mode = 146;
       break;
     case 1:
-      spd_pio_mode_rvalue = 114;
+      dev5_speed_regs.r_spd_pio_mode = 114;
       break;
     case 2:
-      spd_pio_mode_rvalue = 50;
+      dev5_speed_regs.r_spd_pio_mode = 50;
       break;
     case 3:
-      spd_pio_mode_rvalue = 36;
+      dev5_speed_regs.r_spd_pio_mode = 36;
       break;
     case 4:
-      spd_pio_mode_rvalue = 35;
+      dev5_speed_regs.r_spd_pio_mode = 35;
       break;
   }
-  dev5_speed_regs.r_spd_pio_mode = spd_pio_mode_rvalue;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004039D0) --------------------------------------------------------
 void ata_multiword_dma_mode(int mode)
 {
-  vu16 spd_mwdma_mode_rval; // $v0
-  vu16 r_spd_if_ctrl; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("SpdAtaSetMdmaTiming %d\n", mode);
   if ( mode == 1 )
   {
-    spd_mwdma_mode_rval = 69;
+    dev5_speed_regs.r_spd_mwdma_mode = 69;
   }
   else if ( mode == 2 )
   {
-    spd_mwdma_mode_rval = 36;
+    dev5_speed_regs.r_spd_mwdma_mode = 36;
   }
   else
   {
-    spd_mwdma_mode_rval = 255;
+    dev5_speed_regs.r_spd_mwdma_mode = 255;
   }
-  dev5_speed_regs.r_spd_mwdma_mode = spd_mwdma_mode_rval;
-  r_spd_if_ctrl = dev5_speed_regs.r_spd_if_ctrl;
-  dev5_speed_regs.r_spd_if_ctrl = (r_spd_if_ctrl & 0xFFB6) | 0x48;
+  dev5_speed_regs.r_spd_if_ctrl = (dev5_speed_regs.r_spd_if_ctrl & 0xFFB6) | 0x48;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00403A64) --------------------------------------------------------
 void ata_ultra_dma_mode(int mode)
 {
-  vu16 spd_udma_mode_rval; // $v0
-  vu16 r_spd_if_ctrl; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("SpdAtaSetUdmaTiming %d\n", mode);
   switch ( mode )
   {
     case 0:
     default:
-      spd_udma_mode_rval = 167;
+      dev5_speed_regs.r_spd_udma_mode = 167;
       break;
     case 1:
-      spd_udma_mode_rval = 133;
+      dev5_speed_regs.r_spd_udma_mode = 133;
       break;
     case 2:
-      spd_udma_mode_rval = 99;
+      dev5_speed_regs.r_spd_udma_mode = 99;
       break;
     case 3:
-      spd_udma_mode_rval = 98;
+      dev5_speed_regs.r_spd_udma_mode = 98;
       break;
     case 4:
-      spd_udma_mode_rval = 97;
+      dev5_speed_regs.r_spd_udma_mode = 97;
       break;
   }
-  dev5_speed_regs.r_spd_udma_mode = spd_udma_mode_rval;
-  r_spd_if_ctrl = dev5_speed_regs.r_spd_if_ctrl;
-  dev5_speed_regs.r_spd_if_ctrl = r_spd_if_ctrl | 0x49;
+  dev5_speed_regs.r_spd_if_ctrl = dev5_speed_regs.r_spd_if_ctrl | 0x49;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 
@@ -2191,11 +2051,8 @@ int sceAtaGetError(void)
 int ata_wait_busy1_busy(void)
 {
   unsigned int waitcnt; // $s0
-  int waitcnt_div; // $a1
-  int delaythread_period; // $a0
 
-  waitcnt = 0;
-  while ( 2 )
+  for ( waitcnt = 0; waitcnt < 0x50; waitcnt += 1 )
   {
     if ( (dev5_speed_regs.r_spd_ata_control & 0x80) != 0 )
     {
@@ -2209,35 +2066,26 @@ int ata_wait_busy1_busy(void)
         }
         else
         {
-          waitcnt_div = (0xCCCCCCCD * (u64)waitcnt) >> 32;
           switch ( waitcnt / 0xA )
           {
             case 0u:
-              delaythread_period = 0;
               break;
             case 1u:
-              delaythread_period = 100;
+              DelayThread(100);
               break;
             case 2u:
-              delaythread_period = 1000;
+              DelayThread(1000);
               break;
             case 3u:
-              delaythread_period = 10000;
+              DelayThread(10000);
               break;
             case 4u:
-              delaythread_period = 100000;
+              DelayThread(100000);
               break;
             default:
-              delaythread_period = 1000000;
+              DelayThread(1000000);
               break;
           }
-          if ( delaythread_period )
-            DelayThread(delaythread_period);
-          if ( ++waitcnt < 0x50 )
-            continue;
-          if ( g_xatapi_verbose > 0 )
-            Kprintf("DEV5 ATA: error: wait busy, timedout.\n", waitcnt_div);
-          return -502;
         }
       }
       else
@@ -2247,8 +2095,14 @@ int ata_wait_busy1_busy(void)
         return -551;
       }
     }
-    return 0;
+    else
+    {
+      return 0;
+    }
   }
+  if ( g_xatapi_verbose > 0 )
+    Kprintf("DEV5 ATA: error: wait busy, timedout.\n", waitcnt / 0xA);
+  return -502;
 }
 // 403F14: variable 'waitcnt_div' is possibly undefined
 // 40A644: using guessed type int g_is_wait_busy;
@@ -2258,11 +2112,8 @@ int ata_wait_busy1_busy(void)
 int ata_wait_busy2_busy(void)
 {
   unsigned int waitcnt; // $s0
-  int waitcnt_div; // $a1
-  int delaythread_period; // $a0
 
-  waitcnt = 0;
-  while ( 2 )
+  for ( waitcnt = 0; waitcnt < 55; waitcnt += 1 )
   {
     if ( (dev5_speed_regs.r_spd_ata_control & 0x80) != 0 )
     {
@@ -2276,35 +2127,26 @@ int ata_wait_busy2_busy(void)
         }
         else
         {
-          waitcnt_div = (0xCCCCCCCD * (u64)waitcnt) >> 32;
           switch ( waitcnt / 0xA )
           {
             case 0u:
-              delaythread_period = 0;
               break;
             case 1u:
-              delaythread_period = 100;
+              DelayThread(100);
               break;
             case 2u:
-              delaythread_period = 1000;
+              DelayThread(1000);
               break;
             case 3u:
-              delaythread_period = 10000;
+              DelayThread(10000);
               break;
             case 4u:
-              delaythread_period = 100000;
+              DelayThread(100000);
               break;
             default:
-              delaythread_period = 1000000;
+              DelayThread(1000000);
               break;
           }
-          if ( delaythread_period )
-            DelayThread(delaythread_period);
-          if ( ++waitcnt < 55 )
-            continue;
-          if ( g_xatapi_verbose > 0 )
-            Kprintf("DEV5 ATA: error: wait busy, timedout.\n", waitcnt_div);
-          return -502;
         }
       }
       else
@@ -2314,8 +2156,14 @@ int ata_wait_busy2_busy(void)
         return -551;
       }
     }
-    return 0;
+    else
+    {
+      return 0;
+    }
   }
+  if ( g_xatapi_verbose > 0 )
+    Kprintf("DEV5 ATA: error: wait busy, timedout.\n", waitcnt / 0xA);
+  return -502;
 }
 // 40408C: variable 'waitcnt_div' is possibly undefined
 // 40A644: using guessed type int g_is_wait_busy;
@@ -2325,11 +2173,8 @@ int ata_wait_busy2_busy(void)
 int ata_wait_bus_busy_busbusy(void)
 {
   unsigned int waitcnt; // $s0
-  int waitcnt_div; // $a1
-  int delaythread_period; // $a0
 
-  waitcnt = 0;
-  while ( 2 )
+  for ( waitcnt = 0; waitcnt < 80; waitcnt += 1 )
   {
     if ( (dev5_speed_regs.r_spd_ata_control & 0x88) != 0 )
     {
@@ -2343,35 +2188,26 @@ int ata_wait_bus_busy_busbusy(void)
         }
         else
         {
-          waitcnt_div = (0xCCCCCCCD * (u64)waitcnt) >> 32;
           switch ( waitcnt / 0xA )
           {
             case 0u:
-              delaythread_period = 0;
               break;
             case 1u:
-              delaythread_period = 100;
+              DelayThread(100);
               break;
             case 2u:
-              delaythread_period = 1000;
+              DelayThread(1000);
               break;
             case 3u:
-              delaythread_period = 10000;
+              DelayThread(10000);
               break;
             case 4u:
-              delaythread_period = 100000;
+              DelayThread(100000);
               break;
             default:
-              delaythread_period = 1000000;
+              DelayThread(1000000);
               break;
           }
-          if ( delaythread_period )
-            DelayThread(delaythread_period);
-          if ( ++waitcnt < 80 )
-            continue;
-          if ( g_xatapi_verbose > 0 )
-            Kprintf("DEV5 ATA: error: wait busbusy, timedout.\n", waitcnt_div);
-          return -502;
         }
       }
       else
@@ -2381,8 +2217,14 @@ int ata_wait_bus_busy_busbusy(void)
         return -551;
       }
     }
-    return 0;
+    else
+    {
+      return 0;
+    }
   }
+  if ( g_xatapi_verbose > 0 )
+    Kprintf("DEV5 ATA: error: wait busbusy, timedout.\n", waitcnt / 0xA);
+  return -502;
 }
 // 404204: variable 'waitcnt_div' is possibly undefined
 // 40A644: using guessed type int g_is_wait_busy;
@@ -2392,13 +2234,11 @@ int ata_wait_bus_busy_busbusy(void)
 int ata_device_select(int device)
 {
   int result; // $v0
-  vu16 r_spd_ata_select; // $v0
 
   result = ata_wait_bus_busy_busbusy();
   if ( result >= 0 )
   {
-    r_spd_ata_select = dev5_speed_regs.r_spd_ata_select;
-    if ( ((r_spd_ata_select >> 4) & 1) == device )
+    if ( ((dev5_speed_regs.r_spd_ata_select >> 4) & 1) == device )
     {
       return 0;
     }
@@ -2424,23 +2264,14 @@ int sceAtaExecCmd(
         u16 command,
         u32 unk10)
 {
-  int devinfo_item; // $v0
   int result; // $v0
-  char r_spd_ata_control; // $v0
   int using_timeout; // $s0
   u32 usec_val; // $a0
   iop_sys_clock_t sysclk; // [sp+10h] [-10h] BYREF
-  u16 nsector_tmp; // [sp+18h] [-8h]
-  u16 hcyl_tmp; // [sp+1Ah] [-6h]
 
-  nsector_tmp = nsector;
-  hcyl_tmp = hcyl;
   ClearEventFlag(g_atapi_event_flag, 0);
-  devinfo_item = 0;
   g_is_wait_busy = 0;
-  if ( (select & 0x10) != 0 )
-    devinfo_item = 1;
-  if ( !atad_devinfo[devinfo_item].exists )
+  if ( !atad_devinfo[( (select & 0x10) != 0 ) ? 1 : 0].exists )
     return -505;
   result = ata_device_select((select >> 4) & 1);
   if ( !result )
@@ -2454,10 +2285,9 @@ int sceAtaExecCmd(
     atad_cmd_state.type = unk10;
     if ( !unk10 )
       return -506;
-    r_spd_ata_control = dev5_speed_regs.r_spd_ata_control;
     atad_cmd_state.buf = buf;
     atad_cmd_state.blkcount = blkcount;
-    if ( (r_spd_ata_control & 0x40) == 0 )
+    if ( (dev5_speed_regs.r_spd_ata_control & 0x40) == 0 )
     {
       if ( (command < 0x92u && command < 0x90u && command != 8) || (command >= 0xA2u || command < 0xA0u) )
       {
@@ -2503,10 +2333,10 @@ int sceAtaExecCmd(
       }
     }
     dev5_speed_regs.r_spd_ata_error = feature;
-    dev5_speed_regs.r_spd_ata_nsector = nsector_tmp;
+    dev5_speed_regs.r_spd_ata_nsector = nsector;
     dev5_speed_regs.r_spd_ata_sector = sector;
     dev5_speed_regs.r_spd_ata_lcyl = lcyl;
-    dev5_speed_regs.r_spd_ata_hcyl = hcyl_tmp;
+    dev5_speed_regs.r_spd_ata_hcyl = hcyl;
     dev5_speed_regs.r_spd_ata_select = select | 0x40;
     dev5_speed_regs.r_spd_ata_status = command;
     speedLEDCtl(1);
@@ -2554,26 +2384,20 @@ int sceCdAtapiExecCmd_local(
         unsigned int pkt_len,
         int proto)
 {
-  u16 *pkt_u16; // $s4
   u16 feature_tmp; // $s2
-  u8 pkt_scsi_cmd; // $s6
   int result; // $v0
   int using_timeout; // $s1
   int retres1; // $s0
   char ata_status_1; // $s0
   int ata_status_2; // $a1
-  unsigned int pkt_len_div2; // $a1
   unsigned int pkt_data_i; // $s0
-  vu16 pkt_data_tmp; // $v0
   iop_sys_clock_t sysclk; // [sp+28h] [-8h] BYREF
 
-  pkt_u16 = (u16 *)pkt;
   feature_tmp = 0;
   if ( g_xatapi_verbose > 0 )
     Kprintf("sceCdAtapiExecCmd Start. pkt_len %d proto %d\n", pkt_len, proto);
   do_hex_dump(pkt, 12);
   g_is_wait_busy = 0;
-  pkt_scsi_cmd = *(u8 *)pkt;
   if ( !proto )
     return -506;
   atad_cmd_state.type_atapi = proto;
@@ -2587,7 +2411,7 @@ int sceCdAtapiExecCmd_local(
       using_timeout = 1;
       break;
     case 4:
-      switch ( pkt_scsi_cmd )
+      switch ( *(u8 *)pkt )
       {
         case 0x03:
         case 0x12:
@@ -2699,22 +2523,20 @@ int sceCdAtapiExecCmd_local(
       if ( g_xatapi_verbose > 0 )
         Kprintf("sceCdAtapiExecCmd_local ATA_NO_DREQ\n");
     }
-    pkt_len_div2 = pkt_len >> 1;
-    for ( pkt_data_i = 0; pkt_data_i < pkt_len_div2; pkt_data_i += 1 )
+    for ( pkt_data_i = 0; pkt_data_i < (pkt_len >> 1); pkt_data_i += 1 )
     {
       if ( g_xatapi_verbose > 0 )
-        Kprintf("sceCdAtapiExecCmd_local Packet %04x\n", *pkt_u16);
-      pkt_data_tmp = *pkt_u16++;
-      dev5_speed_regs.r_spd_ata_data = pkt_data_tmp;
+        Kprintf("sceCdAtapiExecCmd_local Packet %04x\n", ((u16 *)pkt)[pkt_data_i]);
+      dev5_speed_regs.r_spd_ata_data = ((u16 *)pkt)[pkt_data_i];
     }
     if ( g_xatapi_verbose > 0 )
-      Kprintf("sceCdAtapiExecCmd End. cmd %02x\n", pkt_scsi_cmd);
+      Kprintf("sceCdAtapiExecCmd End. cmd %02x\n", *(u8 *)pkt);
     if ( g_is_wait_busy )
     {
       if ( using_timeout )
         CancelAlarm(AtaAlarmrHandle, 0);
       if ( g_xatapi_verbose > 0 )
-        Kprintf("sceCdAtapiExecCmd Tray Eject last\n", pkt_len_div2);
+        Kprintf("sceCdAtapiExecCmd Tray Eject last\n", pkt_len >> 1);
       return -550;
     }
     else
@@ -2727,7 +2549,6 @@ int sceCdAtapiExecCmd_local(
   return result;
 }
 // 404AF0: variable 'ata_status_2' is possibly undefined
-// 404C84: variable 'pkt_len_div2' is possibly undefined
 // 40A630: using guessed type int g_reset_scrambling_pack;
 // 40A644: using guessed type int g_is_wait_busy;
 // 40A648: using guessed type int g_xatapi_verbose;
@@ -2742,7 +2563,7 @@ int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pk
   {
     pkt_scsi_cmd_2 = *(u8 *)pkt;
     if ( g_xatapi_verbose > 0 )
-      Kprintf("sceCdAtapiExecCmd %08x\n", *(u8 *)pkt);
+      Kprintf("sceCdAtapiExecCmd %08x\n", pkt_scsi_cmd_2);
     if ( !(pkt_scsi_cmd_2 == 0x1B || pkt_scsi_cmd_2 == 0x12 || !pkt_scsi_cmd_2 || pkt_scsi_cmd_2 == 3 || *g_cd_sc_ffffffd9_ptr) )
     {
       if ( !g_is_in_read_info )
@@ -2770,7 +2591,6 @@ int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pk
   if ( retres )
   {
     SetEventFlag(g_acmd_evfid, 1u);
-    return retres;
   }
   return retres;
 }
@@ -2779,19 +2599,10 @@ int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pk
 int ata_pio_transfer(ata_cmd_state_t *cmd_state)
 {
   char r_spd_ata_status; // $s0
-  s32 type; // $v1
   int buf16_i_1; // $a1
-  u16 *buf16_tmp_1; // $v0
-  u16 rval_tmp_1; // $v1
   int buf16_i_3; // $a1
-  u16 *buf16_tmp_3; // $v0
-  vu16 r_spd_ata_data; // $v1
   int buf16_i_2; // $a1
-  u16 *buf16_tmp_2; // $v0
-  u16 tval_tmp_3; // $v1
   int buf8_i_1; // $a1
-  u8 *buf8_tmp_1; // $v0
-  vu16 rval_tmp_2; // $v1
 
   r_spd_ata_status = dev5_speed_regs.r_spd_ata_status;
   if ( (r_spd_ata_status & 1) != 0 )
@@ -2802,48 +2613,39 @@ int ata_pio_transfer(ata_cmd_state_t *cmd_state)
   }
   else if ( (r_spd_ata_status & 8) != 0 )
   {
-    type = cmd_state->type;
     if ( cmd_state->type == 3 )
     {
       for ( buf16_i_1 = 0; buf16_i_1 < 256; buf16_i_1 += 1 )
       {
-        buf16_tmp_1 = cmd_state->buf16;
-        rval_tmp_1 = *buf16_tmp_1;
-        cmd_state->buf = buf16_tmp_1 + 1;
-        dev5_speed_regs.r_spd_ata_data = rval_tmp_1;
+        dev5_speed_regs.r_spd_ata_data = cmd_state->buf16[buf16_i_1];
       }
+      cmd_state->buf16 += 256;
     }
     else if ( (u32)(cmd_state->type) >= 4u )
     {
-      if ( type == 11 )
+      if ( cmd_state->type == 11 )
       {
         for ( buf16_i_2 = 0; buf16_i_2 < 256; buf16_i_2 += 1 )
         {
-          buf16_tmp_2 = cmd_state->buf16;
-          tval_tmp_3 = *buf16_tmp_2;
-          cmd_state->buf = buf16_tmp_2 + 1;
-          dev5_speed_regs.r_spd_ata_data = tval_tmp_3;
+          dev5_speed_regs.r_spd_ata_data = cmd_state->buf16[buf16_i_2];
         }
+        cmd_state->buf16 += 256;
         for ( buf8_i_1 = 0; buf8_i_1 < 4; buf8_i_1 += 1 )
         {
-          buf8_tmp_1 = cmd_state->buf8;
-          rval_tmp_2 = *buf8_tmp_1;
-          cmd_state->buf = buf8_tmp_1 + 1;
-          dev5_speed_regs.r_spd_ata_data = rval_tmp_2;
+          dev5_speed_regs.r_spd_ata_data = cmd_state->buf8[512 + buf8_i_1];
         }
+        cmd_state->buf8 += 4;
       }
     }
     else
     {
-      if ( type == 2 )
+      if ( cmd_state->type == 2 )
       {
         for ( buf16_i_3 = 0; buf16_i_3 < 256; buf16_i_3 += 1 )
         {
-          buf16_tmp_3 = cmd_state->buf16;
-          r_spd_ata_data = dev5_speed_regs.r_spd_ata_data;
-          *buf16_tmp_3 = r_spd_ata_data;
-          cmd_state->buf = buf16_tmp_3 + 1;
+          cmd_state->buf16[buf16_i_3] = dev5_speed_regs.r_spd_ata_data;
         }
+        cmd_state->buf16 += 256;
       }
     }
   }
@@ -2861,19 +2663,9 @@ int IoRun_atapi(ata_cmd_state_t *cmd_state)
   int result; // $v0
   u32 blktotal; // $s3
   char r_spd_ata_status; // $s0
-  int lcyl_lo; // $v0
-  int hcyl_hi; // $v1
   unsigned int lhcyl; // $s0
-  s32 type_atapi; // $v1
-  unsigned int lhcyl_div_2_1; // $a0
   unsigned int buf_atapi_i1; // $a1
-  vu16 *buf_atapi; // $v1
-  vu16 rvaltmp; // $v0
-  unsigned int lhcyl_div_2_2; // $a2
   unsigned int buf_atapi_i2; // $a1
-  int buf_atapi_offs; // $v0
-  vu16 r_spd_ata_data; // $a0
-  char ata_data_rval; // $a0
 
   if ( g_xatapi_verbose > 0 )
     Kprintf("Pio trans %d\n", cmd_state->blkcount_atapi * cmd_state->blksize_atapi);
@@ -2893,41 +2685,30 @@ int IoRun_atapi(ata_cmd_state_t *cmd_state)
     if ( (r_spd_ata_status & 8) == 0 )
       return -504;
     // Unofficial: was 8 bit access
-    lcyl_lo = (dev5_speed_regs.r_spd_ata_lcyl & 0xFF);
-    // Unofficial: was 8 bit access
-    hcyl_hi = (dev5_speed_regs.r_spd_ata_hcyl & 0xFF) << 8;
-    lhcyl = lcyl_lo | hcyl_hi;
+    lhcyl = (dev5_speed_regs.r_spd_ata_lcyl & 0xFF) | ((dev5_speed_regs.r_spd_ata_hcyl & 0xFF) << 8);
     if ( g_xatapi_verbose > 0 )
-      Kprintf("ByteCount Trans byte %04x\n", lcyl_lo | hcyl_hi);
-    type_atapi = cmd_state->type_atapi;
-    if ( type_atapi == 2 )
+      Kprintf("ByteCount Trans byte %04x\n", lhcyl);
+    if ( cmd_state->type_atapi == 2 )
     {
-      lhcyl_div_2_2 = lhcyl >> 1;
       if ( g_xatapi_verbose > 0 )
         Kprintf("IoRun_atapi input trans %d\n", cmd_state->blksize_atapi);
-      for ( buf_atapi_i2 = 0; buf_atapi_i2 < lhcyl_div_2_2; buf_atapi_i2 += 1 )
+      for ( buf_atapi_i2 = 0; buf_atapi_i2 < (lhcyl >> 1); buf_atapi_i2 += 1 )
       {
-        buf_atapi_offs = 2 * buf_atapi_i2;
-        r_spd_ata_data = dev5_speed_regs.r_spd_ata_data;
-        *(u16 *)((char *)cmd_state->buf_atapi + buf_atapi_offs) = r_spd_ata_data;
+        *(u16 *)((char *)cmd_state->buf_atapi + (2 * buf_atapi_i2)) = dev5_speed_regs.r_spd_ata_data;
       }
       if ( (lhcyl & 1) != 0 )
       {
-        ata_data_rval = dev5_speed_regs.r_spd_ata_data;
-        *((u8 *)cmd_state->buf_atapi + 2 * buf_atapi_i2) = ata_data_rval;
+        *((u8 *)cmd_state->buf_atapi + 2 * buf_atapi_i2) = dev5_speed_regs.r_spd_ata_data;
       }
       cmd_state->buf_atapi = (char *)cmd_state->buf_atapi + lhcyl;
     }
-    else if ( type_atapi == 3 )
+    else if ( cmd_state->type_atapi == 3 )
     {
-      lhcyl_div_2_1 = lhcyl >> 1;
       if ( g_xatapi_verbose > 0 )
         Kprintf("IoRun_atapi output trans %d\n", cmd_state->blksize_atapi);
-      buf_atapi = (vu16 *)cmd_state->buf_atapi;
-      for ( buf_atapi_i1 = 0; buf_atapi_i1 < lhcyl_div_2_1; buf_atapi_i1 += 1 )
+      for ( buf_atapi_i1 = 0; buf_atapi_i1 < (lhcyl >> 1); buf_atapi_i1 += 1 )
       {
-        rvaltmp = *buf_atapi++;
-        dev5_speed_regs.r_spd_ata_data = rvaltmp;
+        dev5_speed_regs.r_spd_ata_data = ((u16 *)cmd_state->buf_atapi)[buf_atapi_i1];
       }
       if ( (lhcyl & 1) != 0 )
         dev5_speed_regs.r_spd_ata_data = *((u8 *)cmd_state->buf_atapi + 2 * buf_atapi_i1);
@@ -2946,15 +2727,10 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
 {
   unsigned int blkcount_tmp; // $s2
   int i; // $v1
-  char r_spd_dbuf_stat; // $v0
   unsigned int dbuf_stat_mask; // $s0
   int result; // $v0
-  char spd_intr_stat_1; // $v0
-  char r_spd_ata_control; // $v0
-  char r_spd_ata_status; // $v0
   u8 Error; // $v0
   char spd_ata_status_tmp; // $s1
-  u8 error_tmp; // $s0
   u32 efbits; // [sp+10h] [-8h] BYREF
   int flg;
 
@@ -2963,8 +2739,7 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
     dbuf_stat_mask = 0;
     for ( i = 0; i < 20 && !dbuf_stat_mask; i += 1 )
     {
-      r_spd_dbuf_stat = dev5_speed_regs.r_spd_dbuf_stat;
-      dbuf_stat_mask = r_spd_dbuf_stat & 0x1F;
+      dbuf_stat_mask = dev5_speed_regs.r_spd_dbuf_stat & 0x1F;
     }
     if ( g_xatapi_verbose > 0 )
       Kprintf("*SPD_RINTR_STAT %02x\n", dev5_speed_regs.r_spd_intr_stat);
@@ -2991,19 +2766,15 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
           Kprintf("DEV5 ATA: error: DmaRun, Media Eject\n");
         return -550;
       }
-      spd_intr_stat_1 = dev5_speed_regs.r_spd_intr_stat;
-      if ( (spd_intr_stat_1 & 2) == 0 )
+      if ( (dev5_speed_regs.r_spd_intr_stat & 2) == 0 )
       {
-        r_spd_ata_control = dev5_speed_regs.r_spd_ata_control;
-        if ( (r_spd_ata_control & 1) != 0 )
+        if ( (dev5_speed_regs.r_spd_ata_control & 1) != 0 )
         {
-          r_spd_ata_status = dev5_speed_regs.r_spd_ata_status;
-          spd_ata_status_tmp = r_spd_ata_status;
+          spd_ata_status_tmp = dev5_speed_regs.r_spd_ata_status;
           Error = sceAtaGetError();
-          error_tmp = Error;
           if ( g_xatapi_verbose > 0 )
             Kprintf("DEV5 ATA: error: cmd err 0x%02x, 0x%02x, while DmaRun\n", spd_ata_status_tmp, Error);
-          if ( (error_tmp & 0x80) == 0 )
+          if ( (Error & 0x80) == 0 )
             return -503;
           return -510;
         }
@@ -3033,35 +2804,25 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
 //----- (004055B0) --------------------------------------------------------
 int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
 {
-  unsigned int blktotal; // $a1
+  unsigned int blkremainder; // $a1
   unsigned int blksectors; // $s3
-  int blkremainder; // $s6
   int i; // $v1
-  char r_spd_dbuf_stat; // $v0
   unsigned int dbuf_stat_mask; // $s0
   int result; // $v0
-  char r_spd_intr_stat; // $v0
-  char r_spd_ata_control; // $v0
-  char r_spd_ata_status; // $v0
   u8 Error; // $v0
   char spd_ata_status_tmp; // $s1
-  u8 error_tmp; // $s0
-  char dbuf_stat_1; // $v0
   unsigned int dbuf_stat_sectors; // $s2
-  vu16 m_spd_unk36; // $v1
   u32 efbits; // [sp+18h] [-8h] BYREF
 
-  blktotal = blkcount * blksize;
-  blkremainder = blktotal & 0x1FF;
   if ( g_xatapi_verbose > 0 )
     Kprintf("DmaRun_atapi start\n");
-  for ( blksectors = blktotal >> 9; blksectors; blksectors -= dbuf_stat_mask )
+  blkremainder = (blkcount * blksize) & 0x1FF;
+  for ( blksectors = (unsigned int)(blkcount * blksize) >> 9; blksectors; blksectors -= dbuf_stat_mask )
   {
     dbuf_stat_mask = 0;
     for ( i = 0; i < 20 && !dbuf_stat_mask; i += 1 )
     {
-      r_spd_dbuf_stat = dev5_speed_regs.r_spd_dbuf_stat;
-      dbuf_stat_mask = r_spd_dbuf_stat & 0x1F;
+      dbuf_stat_mask = dev5_speed_regs.r_spd_dbuf_stat & 0x1F;
     }
     if ( !dbuf_stat_mask )
     {
@@ -3079,24 +2840,19 @@ int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
           Kprintf("DEV5 ATA: error: DmaRun, Media Eject\n");
         return -550;
       }
-      r_spd_intr_stat = dev5_speed_regs.r_spd_intr_stat;
-      if ( (r_spd_intr_stat & 2) != 0 )
+      if ( (dev5_speed_regs.r_spd_intr_stat & 2) != 0 )
       {
-        dbuf_stat_1 = dev5_speed_regs.r_spd_dbuf_stat;
-        dbuf_stat_mask = dbuf_stat_1 & 0x1F;
+        dbuf_stat_mask = dev5_speed_regs.r_spd_dbuf_stat & 0x1F;
       }
       else
       {
-        r_spd_ata_control = dev5_speed_regs.r_spd_ata_control;
-        if ( (r_spd_ata_control & 1) != 0 )
+        if ( (dev5_speed_regs.r_spd_ata_control & 1) != 0 )
         {
-          r_spd_ata_status = dev5_speed_regs.r_spd_ata_status;
-          spd_ata_status_tmp = r_spd_ata_status;
+          spd_ata_status_tmp = dev5_speed_regs.r_spd_ata_status;
           Error = sceAtaGetError();
-          error_tmp = Error;
           if ( g_xatapi_verbose > 0 )
             Kprintf("DEV5 ATA: error: cmd err 0x%02x, 0x%02x, while DmaRun\n", spd_ata_status_tmp, Error);
-          if ( (error_tmp & 0x80) == 0 )
+          if ( (Error & 0x80) == 0 )
             return -503;
           return -510;
         }
@@ -3105,12 +2861,11 @@ int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
         continue;
       }
     }
-    dbuf_stat_sectors = dbuf_stat_mask << 9;
     if ( blksectors < dbuf_stat_mask )
     {
       dbuf_stat_mask = blksectors;
-      dbuf_stat_sectors = blksectors << 9;
     }
+    dbuf_stat_sectors = dbuf_stat_mask << 9;
     if ( g_xatapi_verbose > 0 )
       Kprintf("DmaRun_atapi  cnt %d nblk %d secsize %d bcr %08x\n", dbuf_stat_mask, blksectors, blksize, (dbuf_stat_sectors << 9) | 0x20);
     result = SpdDmaTransfer(0, buf, (dbuf_stat_sectors << 9) | 0x20, dir);
@@ -3121,8 +2876,7 @@ int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
   if ( blkremainder )
   {
     while ( (dev5_speed_regs.r_spd_intr_stat & 1) == 0 );
-    m_spd_unk36 = dev5_speed_regs.m_spd_unk36;
-    dev5_speed_regs.m_spd_unk36 = m_spd_unk36 + 512;
+    dev5_speed_regs.m_spd_unk36 += 512;
     if ( g_xatapi_verbose > 0 )
       Kprintf("SpdDmaTransfer buf:%08x bcr:%d dir:%d\n", buf, 0x40020, dir);
     if ( dir )
@@ -3154,18 +2908,11 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
   unsigned int blksectors; // $s2
   int blkremainder; // $s6
   int spd_dbuf_stat_i1; // $v1
-  char r_spd_dbuf_stat; // $v0
   unsigned int dbuf_stat_mask; // $s0
   int result; // $v0
-  char r_spd_intr_stat; // $v0
-  char r_spd_ata_control; // $v0
-  char r_spd_ata_status; // $v0
   u8 Error; // $v0
   char spd_ata_status_tmp; // $s1
-  u8 error_tmp; // $s0
-  char dbuf_stat_1; // $v0
   unsigned int dbuf_stat_sectors; // $s3
-  vu16 m_spd_unk36; // $v1
   u32 efbits; // [sp+18h] [-8h] BYREF
 
   if ( g_xatapi_verbose > 0 )
@@ -3179,8 +2926,7 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
     dbuf_stat_mask = 0;
     for ( spd_dbuf_stat_i1 = 0; spd_dbuf_stat_i1 < 20 && !dbuf_stat_mask; spd_dbuf_stat_i1 += 1 )
     {
-      r_spd_dbuf_stat = dev5_speed_regs.r_spd_dbuf_stat;
-      dbuf_stat_mask = r_spd_dbuf_stat & 0x1F;
+      dbuf_stat_mask = dev5_speed_regs.r_spd_dbuf_stat & 0x1F;
     }
     if ( !dbuf_stat_mask )
     {
@@ -3198,24 +2944,19 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
           Kprintf("DEV5 ATA: error: DmaRun_atapi_extrans, Media Eject\n");
         return -550;
       }
-      r_spd_intr_stat = dev5_speed_regs.r_spd_intr_stat;
-      if ( (r_spd_intr_stat & 2) != 0 )
+      if ( (dev5_speed_regs.r_spd_intr_stat & 2) != 0 )
       {
-        dbuf_stat_1 = dev5_speed_regs.r_spd_dbuf_stat;
-        dbuf_stat_mask = dbuf_stat_1 & 0x1F;
+        dbuf_stat_mask = dev5_speed_regs.r_spd_dbuf_stat & 0x1F;
       }
       else
       {
-        r_spd_ata_control = dev5_speed_regs.r_spd_ata_control;
-        if ( (r_spd_ata_control & 1) != 0 )
+        if ( (dev5_speed_regs.r_spd_ata_control & 1) != 0 )
         {
-          r_spd_ata_status = dev5_speed_regs.r_spd_ata_status;
-          spd_ata_status_tmp = r_spd_ata_status;
+          spd_ata_status_tmp = dev5_speed_regs.r_spd_ata_status;
           Error = sceAtaGetError();
-          error_tmp = Error;
           if ( g_xatapi_verbose > 0 )
             Kprintf("DEV5 ATA: error: cmd err 0x%02x, 0x%02x, while DmaRun\n", spd_ata_status_tmp, Error);
-          if ( (error_tmp & 0x80) == 0 )
+          if ( (Error & 0x80) == 0 )
             return -503;
           return -510;
         }
@@ -3224,12 +2965,11 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
         continue;
       }
     }
-    dbuf_stat_sectors = dbuf_stat_mask << 9;
     if ( blksectors < dbuf_stat_mask )
     {
       dbuf_stat_mask = blksectors;
-      dbuf_stat_sectors = blksectors << 9;
     }
+    dbuf_stat_sectors = dbuf_stat_mask << 9;
     if ( g_xatapi_verbose > 0 )
       Kprintf("DmaRun_atapi_extrans  cnt %d nblk %d secsize %d bcr %08x\n", dbuf_stat_mask, blksectors, blksize, (dbuf_stat_sectors << 9) | 0x20);
     result = SpdDmaTransfer_extrans_1(0, buf, (dbuf_stat_sectors << 9) | 0x20, dir);
@@ -3240,8 +2980,7 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
   if ( blkremainder )
   {
     while ( (dev5_speed_regs.r_spd_intr_stat & 1) == 0 );
-    m_spd_unk36 = dev5_speed_regs.m_spd_unk36;
-    dev5_speed_regs.m_spd_unk36 = m_spd_unk36 + 512;
+    dev5_speed_regs.m_spd_unk36 += 512;
     if ( g_xatapi_verbose > 0 )
       Kprintf("SpdDmaTransfer buf:%08x bcr:%d dir:%d\n", buf, 262176, dir);
     if ( dir )
@@ -3271,21 +3010,13 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
 int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
 {
   int result; // $v0
-  char r_spd_intr_stat; // $v0
-  char r_spd_ata_control; // $v0
-  vu16 r_spd_rev_1; // $v0
-  vu16 dma_ctrl_rval; // $v0
-  s16 blktotal; // $v0
   unsigned int blksectors; // $s2
   int blkremainder; // $s6
   int i; // $s1
   unsigned int fpga_unk8148; // $s0
-  int delaythread_period; // $a0
   u8 Error; // $v0
-  u8 error_tmp; // $s0
   unsigned int unk8148_bytes; // $s3
   int extransres; // $s1
-  vu16 m_spd_unk36; // $v1
   iop_sys_clock_t sysclk; // [sp+18h] [-10h] BYREF
   u32 efbits; // [sp+20h] [-8h] BYREF
 
@@ -3317,36 +3048,27 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
         Kprintf("DEV5 ATA: error: DmaRun_atapi_extrans, Media Eject\n");
       return -550;
     }
-    r_spd_intr_stat = dev5_speed_regs.r_spd_intr_stat;
-    if ( (r_spd_intr_stat & 2) != 0 )
+    if ( (dev5_speed_regs.r_spd_intr_stat & 2) != 0 )
     {
       break;
     }
-    r_spd_ata_control = dev5_speed_regs.r_spd_ata_control;
-    if ( (r_spd_ata_control & 1) != 0 )
+    if ( (dev5_speed_regs.r_spd_ata_control & 1) != 0 )
     {
       Error = sceAtaGetError();
-      error_tmp = Error;
       if ( g_xatapi_verbose > 0 )
         Kprintf("DEV5 ATA: error: cmd err 0x%02x, 0x%02x, while DmaRun\n", dev5_speed_regs.r_spd_ata_status, Error);
-      if ( (error_tmp & 0x80) == 0 )
+      if ( (Error & 0x80) == 0 )
         return -503;
       return -510;
     }
     if ( g_xatapi_verbose > 0 )
       Kprintf("DEV5 ATA: warning: ata intr without error.\n");
   }
-  r_spd_rev_1 = dev5_speed_regs.r_spd_rev_1;
-  if ( r_spd_rev_1 >= 0x11u )
-    dma_ctrl_rval = 6;
-  else
-    dma_ctrl_rval = 4;
-  dev5_speed_regs.r_spd_dma_ctrl = dma_ctrl_rval;
+  dev5_speed_regs.r_spd_dma_ctrl = ( dev5_speed_regs.r_spd_rev_1 >= 0x11u ) ? 6 : 4;
   ata_pre_dma_cb();
   FpgaLayer1On();
   FpgaXfrenOn();
-  blktotal = blkcount * blksize;
-  blkremainder = blktotal & 0x1FF;
+  blkremainder = (blkcount * blksize) & 0x1FF;
   for ( blksectors = (unsigned int)(blkcount * blksize) >> 9; blksectors; blksectors -= fpga_unk8148 )
   {
     for ( i = 0; ; i += 1 )
@@ -3356,10 +3078,10 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
         break;
       if ( i / 500 )
       {
-        delaythread_period = 10000;
         if ( i / 500 == 1 )
-          delaythread_period = 100;
-        DelayThread(delaythread_period);
+          DelayThread(100);
+        else
+          DelayThread(10000);
       }
       PollEventFlag(g_atapi_event_flag, 5u, 17, &efbits);
       if ( (efbits & 1) != 0 )
@@ -3372,10 +3094,9 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
         if ( (dev5_speed_regs.r_spd_intr_stat & 2) == 0 && (dev5_speed_regs.r_spd_ata_control & 1) != 0 )
         {
           Error = sceAtaGetError();
-          error_tmp = Error;
           if ( g_xatapi_verbose > 0 )
             Kprintf("DEV5 ATA: error: cmd err 0x%02x, 0x%02x, while DmaRun\n", dev5_speed_regs.r_spd_ata_status, Error);
-          if ( (error_tmp & 0x80) == 0 )
+          if ( (Error & 0x80) == 0 )
             return -503;
           return -510;
         }
@@ -3391,12 +3112,11 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
         return -550;
       }
     }
-    unk8148_bytes = fpga_unk8148 << 9;
     if ( blksectors < fpga_unk8148 )
     {
       fpga_unk8148 = blksectors;
-      unk8148_bytes = blksectors << 9;
     }
+    unk8148_bytes = fpga_unk8148 << 9;
     if ( g_xatapi_verbose > 0 )
       Kprintf("DmaRun_atapi_extrans  cnt %d nblk %d secsize %d bcr %08x\n", fpga_unk8148, blksectors, blksize, (unk8148_bytes << 9) | 0x20);
     extransres = SpdDmaTransfer_extrans_2(0, buf, (unk8148_bytes << 9) | 0x20, dir);
@@ -3410,8 +3130,7 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   if ( extransres >= 0 && blkremainder )
   {
     while ( (dev5_speed_regs.r_spd_intr_stat & 1) == 0 );
-    m_spd_unk36 = dev5_speed_regs.m_spd_unk36;
-    dev5_speed_regs.m_spd_unk36 = m_spd_unk36 + 512;
+    dev5_speed_regs.m_spd_unk36 +=  512;
     if ( g_xatapi_verbose > 0 )
       Kprintf("SpdDmaTransfer buf:%08x bcr:%d dir:%d\n", buf, 0x40020, dir);
     ata_pre_dma_cb();
@@ -3451,9 +3170,6 @@ void DmaRun_spck(char *buf, unsigned int secsize)
   unsigned int secsize_sectors; // $s2
   unsigned int unk8148_val; // $s1
   unsigned int unk8148_bytes; // $s3
-  int xferres; // $s0
-  vu16 m_spd_unk36; // $v1
-  int result; // $v0
 
   if ( g_xatapi_verbose > 0 )
     Kprintf("DmaRun_spck start\n");
@@ -3464,17 +3180,14 @@ void DmaRun_spck(char *buf, unsigned int secsize)
   for ( secsize_sectors = secsize >> 9; secsize_sectors; secsize_sectors -= unk8148_val )
   {
     for ( unk8148_val = 0; unk8148_val < 4; unk8148_val = do_fpga_check_unk8148() );
-    unk8148_bytes = unk8148_val << 9;
     if ( secsize_sectors < unk8148_val )
     {
       unk8148_val = secsize_sectors;
-      unk8148_bytes = secsize_sectors << 9;
     }
+    unk8148_bytes = unk8148_val << 9;
     if ( g_xatapi_verbose > 0 )
       Kprintf("DmaRun_spck  cnt %d nblk %d secsize %d bcr %08x\n", unk8148_val, secsize_sectors, secsize, (unk8148_bytes << 9) | 0x20);
-    xferres = SpdDmaTransfer_extrans_3(0, buf, (unk8148_bytes << 9) | 0x20, 1);
-    
-    if ( xferres < 0 )
+    if ( SpdDmaTransfer_extrans_3(0, buf, (unk8148_bytes << 9) | 0x20, 1) < 0 )
     {
       FpgaSpckmodeOff();
       return;
@@ -3483,13 +3196,11 @@ void DmaRun_spck(char *buf, unsigned int secsize)
   }
   if ( (secsize & 0x1FF) != 0 )
   {
-    m_spd_unk36 = dev5_speed_regs.m_spd_unk36;
-    dev5_speed_regs.m_spd_unk36 = m_spd_unk36 + 512;
+    dev5_speed_regs.m_spd_unk36 += 512;
     if ( g_xatapi_verbose > 0 )
       Kprintf("SpdDmaTransfer buf:%08x bcr:%d dir:%d\n", buf, 262176, 1);
     memcpy(g_atapi_xfer_buf, buf, secsize & 0x1FF);
-    result = SpdDmaTransfer_extrans_3(0, g_atapi_xfer_buf, 0x40020u, 1);
-    if ( result < 0 )
+    if ( SpdDmaTransfer_extrans_3(0, g_atapi_xfer_buf, 0x40020u, 1) < 0 )
     {
       return;
     }
@@ -3506,9 +3217,7 @@ int sceAtaWaitResult(void)
 {
   int res; // $s0
   int waittmp1; // $v1
-  char r_spd_ata_status; // $v0
   u8 Error; // $v0
-  u8 error_tmp; // $s1
   int intr_stat_msk; // [sp+10h] [-8h]
   char status_tmp; // [sp+10h] [-8h]
   u32 efbits; // [sp+14h] [-4h] BYREF
@@ -3591,9 +3300,8 @@ int sceAtaWaitResult(void)
   }
   if ( suc && !res )
   {
-    r_spd_ata_status = dev5_speed_regs.r_spd_ata_status;
-    status_tmp = r_spd_ata_status;
-    if ( (r_spd_ata_status & 0x80) != 0 )
+    status_tmp = dev5_speed_regs.r_spd_ata_status;
+    if ( (status_tmp & 0x80) != 0 )
     {
       res = ata_wait_busy1_busy();
       status_tmp = dev5_speed_regs.r_spd_ata_status;
@@ -3601,11 +3309,10 @@ int sceAtaWaitResult(void)
     if ( (status_tmp & 1) != 0 )
     {
       Error = sceAtaGetError();
-      error_tmp = Error;
       if ( g_xatapi_verbose > 0 )
         Kprintf("DEV5 ATA: error: cmd err 0x%02x, 0x%02x\n", status_tmp, Error);
       res = -503;
-      if ( (error_tmp & 0x80) != 0 )
+      if ( (Error & 0x80) != 0 )
         res = -510;
     }
   }
@@ -3650,11 +3357,8 @@ int sceCdAtapiWaitResult_local(void)
   int blktotal1; // $s3
   int blkoffs; // $s0
   int padres; // $v0
-  int dmares; // $v0
   int trycnt1; // $v1
-  char r_spd_ata_status; // $v0
   u8 Error; // $v0
-  u8 error_tmp; // $s0
   int intr_stat_msk; // [sp+10h] [-10h]
   char ata_status_tmp; // [sp+10h] [-10h]
   u32 efbits; // [sp+14h] [-Ch] BYREF
@@ -3709,14 +3413,13 @@ int sceCdAtapiWaitResult_local(void)
         atad_cmd_state.blksize_atapi = 2048;
         atad_cmd_state.blkcount_atapi = padinfo;
         if ( padres )
-          dmares = DmaRun_atapi_extrans1(
+          res = DmaRun_atapi_extrans1(
                      (char *)atad_cmd_state.buf_atapi + blkoffs,
                      padinfo,
                      2048,
                      atad_cmd_state.dir_atapi);
         else
-          dmares = DmaRun_atapi((char *)atad_cmd_state.buf_atapi + blkoffs, padinfo, 2048, atad_cmd_state.dir_atapi);
-        res = dmares;
+          res = DmaRun_atapi((char *)atad_cmd_state.buf_atapi + blkoffs, padinfo, 2048, atad_cmd_state.dir_atapi);
       }
     }
     else
@@ -3761,9 +3464,8 @@ int sceCdAtapiWaitResult_local(void)
   }
   if ( !res )
   {
-    r_spd_ata_status = dev5_speed_regs.r_spd_ata_status;
-    ata_status_tmp = r_spd_ata_status;
-    if ( (r_spd_ata_status & 0x80) != 0 )
+    ata_status_tmp = dev5_speed_regs.r_spd_ata_status;
+    if ( (ata_status_tmp & 0x80) != 0 )
     {
       res = ata_wait_busy1_busy();
       ata_status_tmp = dev5_speed_regs.r_spd_ata_status;
@@ -3771,11 +3473,10 @@ int sceCdAtapiWaitResult_local(void)
     if ( (ata_status_tmp & 1) != 0 )
     {
       Error = sceAtaGetError();
-      error_tmp = Error;
       if ( g_xatapi_verbose > 0 )
         Kprintf("DEV5 ATA: error: cmd status 0x%02x, error 0x%02x\n", ata_status_tmp, Error);
       res = -503;
-      if ( (error_tmp & 0x80) != 0 )
+      if ( (Error & 0x80) != 0 )
         res = -510;
     }
   }
@@ -3832,10 +3533,7 @@ void ata_bus_reset_inner(void)
 //----- (00406F9C) --------------------------------------------------------
 int ata_bus_reset(void)
 {
-  char r_spd_if_ctrl; // $v0
-
-  r_spd_if_ctrl = dev5_speed_regs.r_spd_if_ctrl;
-  if ( (r_spd_if_ctrl & 0x40) == 0 )
+  if ( (dev5_speed_regs.r_spd_if_ctrl & 0x40) == 0 )
     ata_bus_reset_inner();
   return ata_wait_busy2_busy();
 }
@@ -3843,10 +3541,7 @@ int ata_bus_reset(void)
 //----- (00406FE0) --------------------------------------------------------
 int xatapi_4_sceAtaSoftReset(void)
 {
-  char r_spd_ata_control; // $v0
-
-  r_spd_ata_control = dev5_speed_regs.r_spd_ata_control;
-  if ( (r_spd_ata_control & 0x80) == 0 )
+  if ( (dev5_speed_regs.r_spd_ata_control & 0x80) == 0 )
   {
     dev5_speed_regs.r_spd_ata_control = 6;
     DelayThread(100);
@@ -3896,36 +3591,32 @@ int ata_device_pkt_identify(int device, void *info)
 //----- (00407198) --------------------------------------------------------
 int atapi_device_set_transfer_mode(int device, int type, int mode)
 {
-  u8 type_tmp; // $s1
-  u8 mode_tmp; // $s0
   int result; // $v0
 
-  type_tmp = type;
-  mode_tmp = mode;
   result = xatapi_5_sceAtaExecCmd(0, 1u, 3u, (u8)(mode | type), 0, 0, 0, 16 * device, 0xEFu, 1u);
   if ( !result )
   {
     result = xatapi_6_sceAtaWaitResult();
     if ( !result )
     {
-      if ( type_tmp == 0x20 )
+      if ( type == 0x20 )
       {
-        ata_multiword_dma_mode(mode_tmp);
+        ata_multiword_dma_mode(mode);
         return 0;
       }
-      else if ( type_tmp >= 0x21u )
+      else if ( (unsigned int)type >= 0x21u )
       {
-        if ( type_tmp == 0x40 )
+        if ( type == 0x40 )
         {
-          ata_ultra_dma_mode(mode_tmp);
+          ata_ultra_dma_mode(mode);
         }
         return 0;
       }
       else
       {
-        if ( type_tmp == 8 )
+        if ( type == 8 )
         {
-          ata_pio_mode(mode_tmp);
+          ata_pio_mode(mode);
         }
         return 0;
       }
@@ -3937,36 +3628,32 @@ int atapi_device_set_transfer_mode(int device, int type, int mode)
 //----- (00407284) --------------------------------------------------------
 int ata_device_set_transfer_mode(int device, int type, int mode)
 {
-  u8 type_tmp; // $s1
-  u8 mode_tmp; // $s0
   int result; // $v0
 
-  type_tmp = type;
-  mode_tmp = mode;
   result = sceAtaExecCmd(0, 1u, 3u, (u8)(mode | type), 0, 0, 0, 16 * device, 0xEFu, 1u);
   if ( !result )
   {
     result = sceAtaWaitResult();
     if ( !result )
     {
-      if ( type_tmp == 32 )
+      if ( type == 32 )
       {
-        ata_multiword_dma_mode(mode_tmp);
+        ata_multiword_dma_mode(mode);
         return 0;
       }
-      else if ( type_tmp >= 0x21u )
+      else if ( (unsigned int)type >= 0x21u )
       {
-        if ( type_tmp == 64 )
+        if ( type == 64 )
         {
-          ata_ultra_dma_mode(mode_tmp);
+          ata_ultra_dma_mode(mode);
         }
         return 0;
       }
       else
       {
-        if ( type_tmp == 8 )
+        if ( type == 8 )
         {
-          ata_pio_mode(mode_tmp);
+          ata_pio_mode(mode);
         }
         return 0;
       }
@@ -3978,28 +3665,21 @@ int ata_device_set_transfer_mode(int device, int type, int mode)
 //----- (00407370) --------------------------------------------------------
 void ata_device_probe(ata_devinfo_t *devinfo)
 {
-  char r_spd_ata_control; // $v0
-  char r_spd_ata_nsector; // $a2
-  char r_spd_ata_sector; // $a0
   char r_spd_ata_lcyl; // $a1
   u8 r_spd_ata_hcyl; // $v1
-  int r_spd_ata_hcyl_low; // $v1
 
   devinfo->exists = 0;
-  r_spd_ata_control = dev5_speed_regs.r_spd_ata_control;
   devinfo->has_packet = 2;
-  if ( (r_spd_ata_control & 0x88) != 0 )
+  if ( (dev5_speed_regs.r_spd_ata_control & 0x88) != 0 )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("FindDev ATA_BUSY\n");
   }
   else
   {
-    r_spd_ata_nsector = dev5_speed_regs.r_spd_ata_nsector;
-    r_spd_ata_sector = dev5_speed_regs.r_spd_ata_sector;
     r_spd_ata_lcyl = dev5_speed_regs.r_spd_ata_lcyl;
     r_spd_ata_hcyl = dev5_speed_regs.r_spd_ata_hcyl;
-    if ( r_spd_ata_nsector == 1 && r_spd_ata_sector == 1 )
+    if ( dev5_speed_regs.r_spd_ata_nsector == 1 && dev5_speed_regs.r_spd_ata_sector == 1 )
     {
       devinfo->exists = 1;
       if ( !r_spd_ata_lcyl && !r_spd_ata_hcyl )
@@ -4009,9 +3689,7 @@ void ata_device_probe(ata_devinfo_t *devinfo)
       dev5_speed_regs.r_spd_ata_lcyl = 85;
       dev5_speed_regs.r_spd_ata_hcyl = 170;
       // Unofficial: was 8 bit access
-      r_spd_ata_hcyl_low = (dev5_speed_regs.r_spd_ata_hcyl & 0xFF);
-      // Unofficial: was 8 bit access
-      if ( (dev5_speed_regs.r_spd_ata_lcyl & 0xFF) != 85 || r_spd_ata_hcyl_low != 170 )
+      if ( (dev5_speed_regs.r_spd_ata_lcyl & 0xFF) != 85 || (dev5_speed_regs.r_spd_ata_hcyl & 0xFF) != 170 )
         devinfo->exists = 0;
     }
     else
@@ -4079,12 +3757,9 @@ void ata_device_set_transfer_mode_outer(int device)
 //----- (004076A0) --------------------------------------------------------
 void ata_init_devices(ata_devinfo_t *devinfo)
 {
-  int result; // $v0
   int identify_nr; // $s1
-  s32 has_packet; // $v0
 
-  result = xatapi_4_sceAtaSoftReset();
-  if ( result )
+  if ( xatapi_4_sceAtaSoftReset() )
     return;
   ata_device_probe(devinfo);
   if ( !devinfo->exists )
@@ -4094,8 +3769,7 @@ void ata_init_devices(ata_devinfo_t *devinfo)
     devinfo[1].exists = 0;
     return;
   }
-  result = ata_device_select(1);
-  if ( result )
+  if ( ata_device_select(1) )
     return;
   // Unofficial: was 8 bit access
   if ( (dev5_speed_regs.r_spd_ata_control & 0xFF) )
@@ -4108,13 +3782,11 @@ void ata_init_devices(ata_devinfo_t *devinfo)
   {
     if ( devinfo->exists )
     {
-      has_packet = devinfo->has_packet;
-      if ( !has_packet )
+      if ( !devinfo->has_packet )
       {
         devinfo->exists = ata_device_identify(identify_nr, ata_param) == 0;
-        has_packet = devinfo->has_packet;
       }
-      if ( has_packet == 1 )
+      if ( devinfo->has_packet == 1 )
         devinfo->exists = ata_device_pkt_identify(identify_nr, ata_param) == 0;
       if ( g_xatapi_verbose > 0 )
         Kprintf("device%d connected, kind %d.\n", identify_nr, devinfo->has_packet);
@@ -4185,7 +3857,6 @@ void sceAtInterInit(void)
 //----- (004079E4) --------------------------------------------------------
 int create_event_flags(void)
 {
-  int efidx; // $a0
   iop_event_t efparam; // [sp+10h] [-10h] BYREF
 
   efparam.attr = 0;
@@ -4213,32 +3884,28 @@ int create_event_flags(void)
       }
       DeleteEventFlag(g_atapi_event_flag);
       DeleteEventFlag(g_acmd_evfid);
-      efidx = g_adma_evfid;
+      DeleteEventFlag(g_adma_evfid);
     }
     else
     {
       DeleteEventFlag(g_atapi_event_flag);
-      efidx = g_acmd_evfid;
+      DeleteEventFlag(g_acmd_evfid);
     }
   }
   else
   {
-    efidx = g_atapi_event_flag;
+    DeleteEventFlag(g_atapi_event_flag);
   }
-  DeleteEventFlag(efidx);
   return 0;
 }
 
 //----- (00407B20) --------------------------------------------------------
 void FpgaLayer1On(void)
 {
-  vu16 layer1_tmp_1; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER1 %x\n", "FpgaLayer1On", dev5_fpga_regs.r_fpga_layer1);
-  layer1_tmp_1 = dev5_fpga_regs.r_fpga_layer1;
-  dev5_fpga_regs.r_fpga_layer1 = layer1_tmp_1 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_layer1 = (layer1_tmp_1 & 0xFFFE) | 1;
+  dev5_fpga_regs.r_fpga_layer1 &= 0xFFFE;
+  dev5_fpga_regs.r_fpga_layer1 |= 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_LAYER1 %x\n", "FpgaLayer1On", dev5_fpga_regs.r_fpga_layer1);
 }
@@ -4247,12 +3914,9 @@ void FpgaLayer1On(void)
 //----- (00407BC4) --------------------------------------------------------
 void FpgaLayer1Off(void)
 {
-  vu16 layer1_tmp_1; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER1 %x\n", "FpgaLayer1Off", dev5_fpga_regs.r_fpga_layer1);
-  layer1_tmp_1 = dev5_fpga_regs.r_fpga_layer1;
-  dev5_fpga_regs.r_fpga_layer1 = layer1_tmp_1 & 0xFFFE;
+  dev5_fpga_regs.r_fpga_layer1 &= 0xFFFE;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_LAYER1 %x\n", "FpgaLayer1Off", dev5_fpga_regs.r_fpga_layer1);
 }
@@ -4261,13 +3925,10 @@ void FpgaLayer1Off(void)
 //----- (00407C54) --------------------------------------------------------
 void FpgaLayer2On(void)
 {
-  vu16 layer2_tmp_1; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER2 %x\n", "FpgaLayer2On", dev5_fpga_regs.r_fpga_layer2);
-  layer2_tmp_1 = dev5_fpga_regs.r_fpga_layer2;
-  dev5_fpga_regs.r_fpga_layer2 = layer2_tmp_1 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_layer2 = (layer2_tmp_1 & 0xFFFE) | 1;
+  dev5_fpga_regs.r_fpga_layer2 &= 0xFFFE;
+  dev5_fpga_regs.r_fpga_layer2 |= 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_LAYER2 %x\n", "FpgaLayer2On", dev5_fpga_regs.r_fpga_layer2);
 }
@@ -4276,12 +3937,9 @@ void FpgaLayer2On(void)
 //----- (00407CF8) --------------------------------------------------------
 void FpgaLayer2Off(void)
 {
-  vu16 layer2_tmp_1; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER2 %x\n", "FpgaLayer2Off", dev5_fpga_regs.r_fpga_layer2);
-  layer2_tmp_1 = dev5_fpga_regs.r_fpga_layer2;
-  dev5_fpga_regs.r_fpga_layer2 = layer2_tmp_1 & 0xFFFE;
+  dev5_fpga_regs.r_fpga_layer2 &= 0xFFFE;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_LAYER2 %x\n", "FpgaLayer2Off", dev5_fpga_regs.r_fpga_layer2);
 }
@@ -4290,13 +3948,10 @@ void FpgaLayer2Off(void)
 //----- (00407D88) --------------------------------------------------------
 void FpgaXfrenOn(void)
 {
-  vu16 xfren_tmp_1; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_XFREN %x\n", "FpgaXfrenOn", dev5_fpga_regs.r_fpga_xfren);
-  xfren_tmp_1 = dev5_fpga_regs.r_fpga_xfren;
-  dev5_fpga_regs.r_fpga_xfren = xfren_tmp_1 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_xfren = (xfren_tmp_1 & 0xFFFE) | 1;
+  dev5_fpga_regs.r_fpga_xfren &= 0xFFFE;
+  dev5_fpga_regs.r_fpga_xfren |= 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_XFREN %x\n", "FpgaXfrenOn", dev5_fpga_regs.r_fpga_xfren);
 }
@@ -4305,12 +3960,9 @@ void FpgaXfrenOn(void)
 //----- (00407E2C) --------------------------------------------------------
 void FpgaXfrenOff(void)
 {
-  vu16 xfren_tmp_1; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_XFREN %x\n", "FpgaXfrenOff", dev5_fpga_regs.r_fpga_xfren);
-  xfren_tmp_1 = dev5_fpga_regs.r_fpga_xfren;
-  dev5_fpga_regs.r_fpga_xfren = xfren_tmp_1 & 0xFFFE;
+  dev5_fpga_regs.r_fpga_xfren &= 0xFFFE;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_XFREN %x\n", "FpgaXfrenOff", dev5_fpga_regs.r_fpga_xfren);
 }
@@ -4319,13 +3971,10 @@ void FpgaXfrenOff(void)
 //----- (00407EBC) --------------------------------------------------------
 void FpgaSpckmodeOn(void)
 {
-  vu16 spckmode_tmp_1; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs.r_fpga_unk32);
-  spckmode_tmp_1 = dev5_fpga_regs.r_fpga_unk32;
-  dev5_fpga_regs.r_fpga_unk32 = spckmode_tmp_1 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_unk32 = (spckmode_tmp_1 & 0xFFFE) | 1;
+  dev5_fpga_regs.r_fpga_unk32 &= 0xFFFE;
+  dev5_fpga_regs.r_fpga_unk32 |= 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs.r_fpga_unk32);
 }
@@ -4334,12 +3983,9 @@ void FpgaSpckmodeOn(void)
 //----- (00407F60) --------------------------------------------------------
 void FpgaSpckmodeOff(void)
 {
-  vu16 spckmode_tmp_1; // $v0
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs.r_fpga_unk32);
-  spckmode_tmp_1 = dev5_fpga_regs.r_fpga_unk32;
-  dev5_fpga_regs.r_fpga_unk32 = spckmode_tmp_1 & 0xFFFE;
+  dev5_fpga_regs.r_fpga_unk32 &= 0xFFFE;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs.r_fpga_unk32);
 }
@@ -4348,21 +3994,17 @@ void FpgaSpckmodeOff(void)
 //----- (00407FF0) --------------------------------------------------------
 void FpgaXfdir(int dir)
 {
-  vu16 xfrdir_tmp_1; // $v1
-  vu16 xfrdir_tmp_2; // $v0
 
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_XFRDIR %x\n", "FpgaXfrdir", dev5_fpga_regs.r_fpga_xfrdir);
   if ( dir )
   {
-    xfrdir_tmp_1 = dev5_fpga_regs.r_fpga_xfrdir;
-    dev5_fpga_regs.r_fpga_xfrdir = xfrdir_tmp_1 & 0xFFFE;
-    dev5_fpga_regs.r_fpga_xfrdir = (xfrdir_tmp_1 & 0xFFFE) | 1;
+    dev5_fpga_regs.r_fpga_xfrdir &= 0xFFFE;
+    dev5_fpga_regs.r_fpga_xfrdir |= 1;
   }
   else
   {
-    xfrdir_tmp_2 = dev5_fpga_regs.r_fpga_xfrdir;
-    dev5_fpga_regs.r_fpga_xfrdir = xfrdir_tmp_2 & 0xFFFE;
+    dev5_fpga_regs.r_fpga_xfrdir &= 0xFFFE;
   }
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_XFRDIR %x\n", "FpgaXfrdir", dev5_fpga_regs.r_fpga_xfrdir);
@@ -4381,12 +4023,7 @@ int FpgaGetRevision(void)
 //----- (00408120) --------------------------------------------------------
 unsigned int do_fpga_add_unused8120(void)
 {
-  vu16 r_fpga_exbufd; // $v1
-  vu16 r_fpga_sl3bufd; // $v0
-
-  r_fpga_exbufd = dev5_fpga_regs.r_fpga_exbufd;
-  r_fpga_sl3bufd = dev5_fpga_regs.r_fpga_sl3bufd;
-  return (r_fpga_sl3bufd + (unsigned int)r_fpga_exbufd) >> 7;
+  return (dev5_fpga_regs.r_fpga_sl3bufd + (unsigned int)dev5_fpga_regs.r_fpga_exbufd) >> 7;
 }
 
 //----- (00408148) --------------------------------------------------------
@@ -4399,7 +4036,6 @@ int do_fpga_check_unk8148(void)
 void FpgaCheckWriteBuffer(void)
 {
   int i; // $v1
-  vu16 r_fpga_sl3bufe; // $v0
 
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():in ...\n", "FpgaCheckWriteBuffer");
@@ -4407,8 +4043,7 @@ void FpgaCheckWriteBuffer(void)
   {
     if ( (u16)(dev5_fpga_regs.r_fpga_exbufe) == 0 )
     {
-      r_fpga_sl3bufe = dev5_fpga_regs.r_fpga_sl3bufe;
-      if ( r_fpga_sl3bufe == 0 )
+      if ( dev5_fpga_regs.r_fpga_sl3bufe == 0 )
         break;
     }
   }
@@ -4446,9 +4081,6 @@ void FpgaCheckWriteBuffer2(void)
 //----- (004083C8) --------------------------------------------------------
 void FpgaClearBuffer(void)
 {
-  vu16 r_fpga_unk30; // $v0
-  vu16 unk30_tmp_1; // $v1
-
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_SL3BUFD %x\n", "FpgaClearBuffer", dev5_fpga_regs.r_fpga_sl3bufd);
   if ( g_xatapi_verbose > 0 )
@@ -4457,13 +4089,11 @@ void FpgaClearBuffer(void)
     Kprintf("%s():old:FPGA_EXBUFD %x\n", "FpgaClearBuffer", dev5_fpga_regs.r_fpga_exbufd);
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_EXBUFE %x\n", "FpgaClearBuffer", dev5_fpga_regs.r_fpga_exbufe);
-  r_fpga_unk30 = dev5_fpga_regs.r_fpga_unk30;
-  dev5_fpga_regs.r_fpga_unk30 = r_fpga_unk30 & 0xFFFE;
-  dev5_fpga_regs.r_fpga_unk30 = (r_fpga_unk30 & 0xFFFE) | 1;
+  dev5_fpga_regs.r_fpga_unk30 &= 0xFFFE;
+  dev5_fpga_regs.r_fpga_unk30 |= 1;
   while ( (u16)(dev5_fpga_regs.r_fpga_exbufd) || dev5_fpga_regs.r_fpga_sl3bufd );
   while ( dev5_fpga_regs.r_fpga_exbufe || dev5_fpga_regs.r_fpga_sl3bufe );
-  unk30_tmp_1 = dev5_fpga_regs.r_fpga_unk30;
-  dev5_fpga_regs.r_fpga_unk30 = unk30_tmp_1 & 0xFFFE;
+  dev5_fpga_regs.r_fpga_unk30 &= 0xFFFE;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_SL3BUFD %x\n", "FpgaClearBuffer", dev5_fpga_regs.r_fpga_sl3bufd);
   if ( g_xatapi_verbose > 0 )
@@ -4479,7 +4109,6 @@ void FpgaClearBuffer(void)
 int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscramblingpackptr)
 {
   int bufchk; // $s0
-  signed int buf_2048units; // $a1
   char *bufoffs1; // $a0
   char *bufoffs2; // $v1
   int bufcuri; // $v0
@@ -4495,10 +4124,9 @@ int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscra
   }
   else
   {
-    buf_2048units = bufsize >> 11;
     if ( !*buf && !buf[1] && buf[2] == 1 && (u8)buf[3] == 0xBA )
       bufchk = 1;
-    for ( bufcuri = 0; bufcuri < buf_2048units; bufcuri += 1 )
+    for ( bufcuri = 0; (unsigned int)bufcuri < (bufsize >> 11); bufcuri += 1 )
     {
       bufoffs1 = &buf[2048 * bufcuri];
       if ( *bufoffs1 || bufoffs1[1] || bufoffs1[2] != 1 || (u8)bufoffs1[3] != 0xBA )
@@ -4554,9 +4182,9 @@ int Mpeg2CheckScramble(char *buf, unsigned int bufsize)
   }
   else
   {
-    bufcur = buf;
     for ( bufi = 0; bufi < (int)(bufsize >> 11); bufi += 1 )
     {
+      bufcur = buf + (2048 * bufi);
       if ( !*bufcur && !bufcur[1] && bufcur[2] == 1 && (u8)bufcur[3] == 0xBA )
       {
         bufbuf = bufcur + 14;
@@ -4575,7 +4203,6 @@ int Mpeg2CheckScramble(char *buf, unsigned int bufsize)
           }
         }
       }
-      bufcur += 2048;
     }
     if ( g_xatapi_verbose > 0 )
       Kprintf("%s():out\n", "Mpeg2CheckScramble");
