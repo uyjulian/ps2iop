@@ -351,10 +351,7 @@ int sif_mrpc_get_fpacket(struct msif_data *rpc_data)
 //----- (00400224) --------------------------------------------------------
 int sif_mrpc_get_fpacket2(struct msif_data *rpc_data, int rid)
 {
-  if ( rid >= 0 && rid < rpc_data->m_client_table_len )
-    return rpc_data->m_client_table + (rid << 6);
-  else
-    return sif_mrpc_get_fpacket(rpc_data);
+  return ( rid >= 0 && rid < rpc_data->m_client_table_len ) ? (rpc_data->m_client_table + (rid << 6)) : sif_mrpc_get_fpacket(rpc_data);
 }
 
 //----- (00400270) --------------------------------------------------------
@@ -369,9 +366,7 @@ sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd)
 //----- (004002B0) --------------------------------------------------------
 unsigned int alarm_cb_cmd_80000018_1(void *pkt)
 {
-  if ( isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) != 0 )
-    return 0;
-  return 0xF000;
+  return ( isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) != 0 ) ? 0 : 0xF000;
 }
 
 //----- (004002F8) --------------------------------------------------------
@@ -420,9 +415,7 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
 //----- (0040044C) --------------------------------------------------------
 unsigned int alarm_cb_cmd_80000018_2(void *pkt)
 {
-  if ( isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) != 0 )
-    return 0;
-  return 0xF000;
+  return ( isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) != 0 ) ? 0 : 0xF000;
 }
 
 //----- (00400494) --------------------------------------------------------
@@ -591,14 +584,10 @@ struct _sifm_serve_data *do_msif_get_next_request(sceSifMQueueData *qd)
 
   CpuSuspendIntr(&state);
   start = qd->start;
+  qd->active = start ? 1 : 0;
   if ( start )
   {
-    qd->active = 1;
     qd->start = start->next;
-  }
-  else
-  {
-    qd->active = 0;
   }
   CpuResumeIntr(state);
   return start;
@@ -624,10 +613,7 @@ void do_msif_exec_request(sceSifMServeData *sd)
   if ( sentry_ret )
     size_extra = sd->rsize;
   CpuSuspendIntr(&state);
-  if ( (sd->rid & 4) != 0 )
-    fpacket2 = (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket2(&g_msif_data, (sd->rid >> 16) & 0xFFFF);
-  else
-    fpacket2 = (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket(&g_msif_data);
+  fpacket2 = ( (sd->rid & 4) != 0 ) ? (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket2(&g_msif_data, (sd->rid >> 16) & 0xFFFF) : (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket(&g_msif_data);
   CpuResumeIntr(state);
   fpacket2->cid = 0x8000001A;
   fpacket2->cd = sd->client;
@@ -832,10 +818,7 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
         CpuResumeIntr(state);
       }
       CpuSuspendIntr(&state);
-      if ( (arg->m_msg2.m_sd->rid & 4) != 0 )
-        fpacket2 = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket2(arg->m_msg2.m_msif_data, (arg->m_msg2.m_sd->rid >> 16) & 0xFFFF);
-      else
-        fpacket2 = (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(arg->m_msg2.m_msif_data);
+      fpacket2 = ( (arg->m_msg2.m_sd->rid & 4) != 0 ) ? (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket2(arg->m_msg2.m_msif_data, (arg->m_msg2.m_sd->rid >> 16) & 0xFFFF) : (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(arg->m_msg2.m_msif_data);
       CpuResumeIntr(state);
       fpacket2->pkt_addr = arg->m_msg2.m_pkt_addr;
       fpacket2->sid = 0x8000001D;
