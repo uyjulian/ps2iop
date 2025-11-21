@@ -349,7 +349,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   u8 *currofssplusone; // $a1
   int someoffsx; // $v1
   u8 *someaddoffsone; // $a1
-  int somindx1; // $a3
+  int i; // $a3
   u8 midiData_curval7; // $a0
   int msg2ew; // $v1
   int endflg;
@@ -495,11 +495,11 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
             midiData->messageLength = midiData->messageLength + 1;
             midiData_offs_plusone = someaddoffsone + 1;
             ++midiData->originalMessageLength;
-            somindx1 = 1;
-            for ( msg2ew = midiData_curval7; msg2ew >= somindx1; somindx1 += 1 )
+            msg2ew = midiData_curval7;
+            for ( i = 1; msg2ew >= i; i += 1 )
             {
               midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs_plusone++;
-              *(((char *)midiData + somindx1) + 46) = midiData->originalMessage[midiData->originalMessageLength];
+              *(((char *)midiData + i) + 46) = midiData->originalMessage[midiData->originalMessageLength];
               msg2ew = midiData->message[2];
               ++midiData->messageLength;
               ++midiData->originalMessageLength;
