@@ -86,14 +86,7 @@ u8 sio2_data_in(void)
 int _start(int ac, char **av)
 {
   u32 ctrl_save; // $s3
-  int idx1_2; // $s0
-  int iobind1; // $s0
-  int indobuf_1; // $s0
   int i; // $s0
-  int idx2_2; // $s0
-  int iobind2; // $s0
-  int indobuf_2; // $s0
-  int j; // $s0
   char inoutbuf[32]; // [sp+10h] [-20h] BYREF
 
   (void)ac;
@@ -102,51 +95,51 @@ int _start(int ac, char **av)
   printf("rmreset start\n");
   ctrl_save = sio2_ctrl_get();
   sio2_ctrl_set(0xCu);
-  for ( idx1_2 = 0; idx1_2 < 4; idx1_2 += 1 )
+  for ( i = 0; i < 4; i += 1 )
   {
-    sio2_portN_ctrl1_set(idx1_2, 0xC0C0050F);
-    sio2_portN_ctrl2_set(idx1_2, 0x1060014u);
+    sio2_portN_ctrl1_set(i, 0xC0C0050F);
+    sio2_portN_ctrl2_set(i, 0x1060014u);
   }
   sio2_regN_set(0, 0x1C0740u);
   sio2_regN_set(1, 0);
   inoutbuf[0] = 0x61;
   inoutbuf[1] = 6;
   inoutbuf[2] = 3;
-  for ( iobind1 = 3; iobind1 < 12; iobind1 += 1 )
+  for ( i = 3; i < 12; i += 1 )
   {
-    inoutbuf[iobind1] = 0;
+    inoutbuf[i] = 0;
   }
-  for ( indobuf_1 = 0; indobuf_1 < 7; indobuf_1 += 1 )
+  for ( i = 0; i < 7; i += 1 )
   {
-    sio2_data_out(inoutbuf[indobuf_1]);
+    sio2_data_out(inoutbuf[i]);
   }
   sio2_ctrl_set(0xB1u);
   while ( ((sio2_stat6c_get() >> 12) & 1) == 0 );
   for ( i = 0; i < 7; i += 1 )
     inoutbuf[i + 16] = sio2_data_in();
   sio2_ctrl_set(0xCu);
-  for ( idx2_2 = 0; idx2_2 < 4; idx2_2 += 1 )
+  for ( i = 0; i < 4; i += 1 )
   {
-    sio2_portN_ctrl1_set(idx2_2, 0xC0C0050F);
-    sio2_portN_ctrl2_set(idx2_2, 0x1060014u);
+    sio2_portN_ctrl1_set(i, 0xC0C0050F);
+    sio2_portN_ctrl2_set(i, 0x1060014u);
   }
   sio2_regN_set(0, 0x1C0741u);
   sio2_regN_set(1, 0);
   inoutbuf[0] = 0x61;
   inoutbuf[1] = 6;
   inoutbuf[2] = 3;
-  for ( iobind2 = 3; iobind2 < 12; iobind2 += 1 )
+  for ( i = 3; i < 12; i += 1 )
   {
-    inoutbuf[iobind2] = 0;
+    inoutbuf[i] = 0;
   }
-  for ( indobuf_2 = 0; indobuf_2 < 7; indobuf_2 += 1 )
+  for ( i = 0; i < 7; i += 1 )
   {
-    sio2_data_out(inoutbuf[indobuf_2]);
+    sio2_data_out(inoutbuf[i]);
   }
   sio2_ctrl_set(0xB1u);
   while ( ((sio2_stat6c_get() >> 12) & 1) == 0 );
-  for ( j = 0; j < 7; j += 1 )
-    inoutbuf[j + 16] = sio2_data_in();
+  for ( i = 0; i < 7; i += 1 )
+    inoutbuf[i + 16] = sio2_data_in();
   sio2_ctrl_set(0xCu);
   sio2_ctrl_set(ctrl_save & 0xFFFFFFFE);
   printf("rmreset end\n");
