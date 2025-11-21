@@ -664,18 +664,19 @@ unsigned int do_check_chunk_in_bounds(
         unsigned int hdrmagic,
         unsigned int idx)
 {
-  if ( hdrmagic == 0x536D706C )
+  switch ( hdrmagic )
   {
-    if ( !dinfo->m_smpl )
-      return 0x8103002F;
-    if ( dinfo->m_smpl->maxSampleNumber < idx )
-      return 0x81039014;
-    if ( dinfo->m_smpl->sampleOffsetAddr[idx] == -1 )
-      return 0x81039015;
-  }
-  else if ( hdrmagic > 0x536D706C )
-  {
-    if ( hdrmagic == 0x53736574 )
+    case 0x536D706C:
+    {
+      if ( !dinfo->m_smpl )
+        return 0x8103002F;
+      if ( dinfo->m_smpl->maxSampleNumber < idx )
+        return 0x81039014;
+      if ( dinfo->m_smpl->sampleOffsetAddr[idx] == -1 )
+        return 0x81039015;
+      break;
+    }
+    case 0x53736574:
     {
       if ( !dinfo->m_sset )
         return 0x8103002F;
@@ -683,23 +684,19 @@ unsigned int do_check_chunk_in_bounds(
         return 0x81039012;
       if ( dinfo->m_sset->sampleSetOffsetAddr[idx] == -1 )
         return 0x81039012;
+      break;
     }
-    else
+    case 0x56616769:
     {
-      if ( hdrmagic == 0x56616769 )
-      {
-        if ( !dinfo->m_vagi )
-          return 0x8103002F;
-        if ( dinfo->m_vagi->maxVagInfoNumber < idx )
-          return 0x81039016;
-        if ( dinfo->m_vagi->vagInfoOffsetAddr[idx] == -1 )
-          return 0x81039017;
-      }
+      if ( !dinfo->m_vagi )
+        return 0x8103002F;
+      if ( dinfo->m_vagi->maxVagInfoNumber < idx )
+        return 0x81039016;
+      if ( dinfo->m_vagi->vagInfoOffsetAddr[idx] == -1 )
+        return 0x81039017;
+      break;
     }
-  }
-  else
-  {
-    if ( hdrmagic == 0x50726F67 )
+    case 0x50726F67:
     {
       if ( !dinfo->m_prog )
         return 0x8103002F;
@@ -707,7 +704,10 @@ unsigned int do_check_chunk_in_bounds(
         return 0x81039010;
       if ( dinfo->m_prog->programOffsetAddr[idx] == -1 )
         return 0x81039011;
+      break;
     }
+    default:
+      break;
   }
   return 0;
 }
@@ -1823,7 +1823,6 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
 //----- (00402518) --------------------------------------------------------
 int sceSdHdModifyVelocity(unsigned int curveType, int velocity)
 {
-  int retval1; // $a0
   unsigned int calc4; // $a1
   unsigned int calc5; // $v0
   unsigned int calc6; // $a0
@@ -1838,16 +1837,15 @@ int sceSdHdModifyVelocity(unsigned int curveType, int velocity)
         return velocity;
       return 1;
     case 3u:
-      retval1 = 1;
       calc4 = velocity * velocity / 0x7Fu;
-      if ( calc4 )
-        retval1 = calc4;
-      return 128 - retval1;
+      if ( calc4 == 0 )
+        calc4 = 1;
+      return 128 - calc4;
     case 4u:
       calc5 = (128 - velocity) * (128 - velocity);
-      calc6 = 1;
-      if ( ((calc5 / 0x7F) & 0x3FFFFFF) != 0 )
-        calc6 = (calc5 / 0x7F) & 0x3FFFFFF;
+      calc6 = (calc5 / 0x7F) & 0x3FFFFFF;
+      if ( calc6 == 0 )
+        calc6 = 1;
       return 128 - calc6;
     case 5u:
       velocity = 128 - velocity;
@@ -1936,10 +1934,7 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
     case 6u:
       if ( velocity != center )
       {
-        if ( center >= velocity )
-          calc6 = center - 1;
-        else
-          calc6 = 127 - center;
+        calc6 = ( center >= velocity ) ? (center - 1) : (127 - center);
         calc7 = velocity - center;
         calc8 = calc7 << 16;
         if ( !calc6 )
@@ -1952,10 +1947,7 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
     case 7u:
       if ( velocity != center )
       {
-        if ( center >= velocity )
-          calc6 = center - 1;
-        else
-          calc6 = 127 - center;
+        calc6 = ( center >= velocity ) ? (center - 1) : (127 - center);
         calc7 = center - velocity;
         calc8 = calc7 << 16;
         if ( !calc6 )
@@ -1985,9 +1977,7 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
           if ( calca == -1 && calc9 == 0x80000000 )
             __builtin_trap();
           calc4 = calc9 / calca * (calc9 / calca);
-          calc5 = calc4 >> 14;
-          if ( calc4 < 0 )
-            calc5 = (calc4 + 0x3FFF) >> 14;
+          calc5 = ( calc4 < 0 ) ? ((calc4 + 0x3FFF) >> 14) : (calc4 >> 14);
         }
       }
       break;
@@ -2011,9 +2001,7 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
           if ( calcc == -1 && calcb == 0x80000000 )
             __builtin_trap();
           calcd = (0x8000 - calcb / calcc) * (0x8000 - calcb / calcc);
-          calce = calcd >> 14;
-          if ( calcd < 0 )
-            calce = (calcd + 0x3FFF) >> 14;
+          calce = ( calcd < 0 ) ? ((calcd + 0x3FFF) >> 14) : (calcd >> 14);
           calcf = 0x10000;
           calc5 = calcf - calce;
         }
@@ -2113,17 +2101,13 @@ int _start(int ac)
     CpuSuspendIntr(&state);
     regres = RegisterLibraryEntries(&_exp_sdhd);
     CpuResumeIntr(state);
-    if ( !regres )
-      return 2;
-    return 1;
+    return ( !regres ) ? 2 : 1;
   }
   else
   {
     CpuSuspendIntr(&state);
     unregres = ReleaseLibraryEntries(&_exp_sdhd);
     CpuResumeIntr(state);
-    if ( !unregres )
-      return 1;
-    return 2;
+    return ( !unregres ) ? 1 : 2;
   }
 }

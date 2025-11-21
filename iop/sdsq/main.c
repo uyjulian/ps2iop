@@ -403,114 +403,81 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   }
   midiData->message[0] = midiData_curval2;
   midiData->lastStatus = midiData_curval2;
-  if ( (midiData_curval2 & 0xF0) == 0xB0 )
+  switch ( midiData_curval2 & 0xF0 )
   {
-    endflg = 4;
-  }
-  else
-  {
-    if ( (midiData_curval2 & 0xF0u) < 0xB1 )
+    case 0x90:
+    case 0xB0:
+    case 0xE0:
     {
-      if ( (midiData_curval2 & 0xF0) == 0x90 )
+      endflg = 4;
+      break;
+    }
+    case 0x80:
+    case 0xC0:
+    case 0xD0:
+    {
+      break;
+    }
+    case 0xA0:
+    {
+      if ( !midiData->compMode )
       {
         endflg = 4;
       }
       else
       {
-        if ( (midiData_curval2 & 0xF0u) < 0x91 )
-        {
-          if ( (midiData_curval2 & 0xF0) != 0x80 )
-          {
-            midiData->readStatus = 2;
-            return 0x8104002F;
-          }
-        }
-        else
-        {
-          if ( (midiData_curval2 & 0xF0) != 0xA0 )
-          {
-            midiData->readStatus = 2;
-            return 0x8104002F;
-          }
-          if ( !midiData->compMode )
-          {
-            endflg = 4;
-          }
-          else
-          {
-            midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
-            midiData->message[1] = midiData->originalMessage[midiData->originalMessageLength];
-            midiData->message[2] = 8 * (midiData->originalMessage[midiData->originalMessageLength] & 0xF);
-            midiData->originalMessageLength = midiData->originalMessageLength + 1;
-            someoffsx = 2 * ((midiData->message[0] & 0xF) | (midiData->message[1] & 0x70));
-            midiData->message[1] = midiData->message[1] & 0x7F;
-            midiData_offs_plusone = midiData_offs + 1;
-            midiData->message[0] = *((u8 *)&midiData->midiData->compBlock[1].compOption + someoffsx);
-            midiData->message[1] = *((u8 *)&midiData->midiData->compBlock[1].compOption + someoffsx + 1);
-            midiData->messageLength = 3;
-            endflg = 1;
-          }
-        }
+        midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
+        midiData->message[1] = midiData->originalMessage[midiData->originalMessageLength];
+        midiData->message[2] = 8 * (midiData->originalMessage[midiData->originalMessageLength] & 0xF);
+        midiData->originalMessageLength = midiData->originalMessageLength + 1;
+        someoffsx = 2 * ((midiData->message[0] & 0xF) | (midiData->message[1] & 0x70));
+        midiData->message[1] = midiData->message[1] & 0x7F;
+        midiData_offs_plusone = midiData_offs + 1;
+        midiData->message[0] = *((u8 *)&midiData->midiData->compBlock[1].compOption + someoffsx);
+        midiData->message[1] = *((u8 *)&midiData->midiData->compBlock[1].compOption + someoffsx + 1);
+        midiData->messageLength = 3;
+        endflg = 1;
       }
+      break;
     }
-    else
+    case 0xF0:
     {
-      if ( (midiData_curval2 & 0xF0) != 208 )
+      if ( midiData_curval2 != 255 )
       {
-        if ( (midiData_curval2 & 0xF0u) < 0xD1 )
-        {
-          if ( (midiData_curval2 & 0xF0) != 192 )
-          {
-            midiData->readStatus = 2;
-            return 0x8104002F;
-          }
-        }
-        else
-        {
-          if ( (midiData_curval2 & 0xF0) == 224 )
-          {
-            endflg = 4;
-          }
-          else
-          {
-            if ( (midiData_curval2 & 0xF0) != 240 )
-            {
-              midiData->readStatus = 2;
-              return 0x8104002F;
-            }
-            if ( midiData_curval2 != 255 )
-            {
-              midiData->readStatus = 2;
-              return 0x8104002F;
-            }
-            midiData->messageLength = 1;
-            midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
-            midiData->message[1] = midiData->originalMessage[midiData->originalMessageLength];
-            midiData->messageLength = midiData->messageLength + 1;
-            midiData->originalMessageLength = midiData->originalMessageLength + 1;
-            someaddoffsone = midiData_offs + 1;
-            midiData_curval7 = *someaddoffsone;
-            midiData->originalMessage[midiData->originalMessageLength] = *someaddoffsone;
-            midiData->message[2] = midiData->originalMessage[midiData->originalMessageLength];
-            midiData->messageLength = midiData->messageLength + 1;
-            midiData_offs_plusone = someaddoffsone + 1;
-            ++midiData->originalMessageLength;
-            msg2ew = midiData_curval7;
-            for ( i = 1; msg2ew >= i; i += 1 )
-            {
-              midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs_plusone++;
-              *(((char *)midiData + i) + 46) = midiData->originalMessage[midiData->originalMessageLength];
-              msg2ew = midiData->message[2];
-              ++midiData->messageLength;
-              ++midiData->originalMessageLength;
-            }
-            niceflag = 1;
-            if ( (*(u32 *)midiData->message & 0xFFFFFF) == 0x2FFF )
-              midiData->readStatus = 1;
-            endflg = 1;
-          }
-        }
+        midiData->readStatus = 2;
+        return 0x8104002F;
       }
+      midiData->messageLength = 1;
+      midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
+      midiData->message[1] = midiData->originalMessage[midiData->originalMessageLength];
+      midiData->messageLength = midiData->messageLength + 1;
+      midiData->originalMessageLength = midiData->originalMessageLength + 1;
+      someaddoffsone = midiData_offs + 1;
+      midiData_curval7 = *someaddoffsone;
+      midiData->originalMessage[midiData->originalMessageLength] = *someaddoffsone;
+      midiData->message[2] = midiData->originalMessage[midiData->originalMessageLength];
+      midiData->messageLength = midiData->messageLength + 1;
+      midiData_offs_plusone = someaddoffsone + 1;
+      ++midiData->originalMessageLength;
+      msg2ew = midiData_curval7;
+      for ( i = 1; msg2ew >= i; i += 1 )
+      {
+        midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs_plusone++;
+        *(((char *)midiData + i) + 46) = midiData->originalMessage[midiData->originalMessageLength];
+        msg2ew = midiData->message[2];
+        ++midiData->messageLength;
+        ++midiData->originalMessageLength;
+      }
+      niceflag = 1;
+      if ( (*(u32 *)midiData->message & 0xFFFFFF) == 0x2FFF )
+        midiData->readStatus = 1;
+      endflg = 1;
+      break;
+    }
+    default:
+    {
+      midiData->readStatus = 2;
+      return 0x8104002F;
     }
   }
   if ( endflg >= 4 )
@@ -728,17 +695,13 @@ int _start(int ac)
     CpuSuspendIntr(&state);
     regres = RegisterLibraryEntries(&_exp_sdsq);
     CpuResumeIntr(state);
-    if ( !regres )
-      return 2;
-    return 1;
+    return ( !regres ) ? 2 : 1;
   }
   else
   {
     CpuSuspendIntr(&state);
     unregres = ReleaseLibraryEntries(&_exp_sdsq);
     CpuResumeIntr(state);
-    if ( !unregres )
-      return 1;
-    return 2;
+    return ( !unregres ) ? 1 : 2;
   }
 }
