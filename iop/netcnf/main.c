@@ -743,7 +743,7 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
     *(u16 *)netcnf_data = magic_shift_read_netcnf_1(*(u16 *)netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
     xorind2_1 = xorind1 + 1;
     xorind3_1 = 0;
-    if ( xorind2_1 != 24 )
+    if ( xorind2_1 != sizeof(g_id_xorbuf) )
       xorind3_1 = xorind2_1;
     xorind1 = xorind3_1;
     netcnf_data += 2;
@@ -763,7 +763,7 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
         *netcnf_data = magic_shift_read_netcnf_2(*netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
         xorind2_2 = xorind1 + 1;
         xorind3_2 = 0;
-        if ( xorind2_2 != 24 )
+        if ( xorind2_2 != sizeof(g_id_xorbuf) )
           xorind3_2 = xorind2_2;
         xorind1 = xorind3_2;
         --netcnf_size;
@@ -825,7 +825,7 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
       xorind2_1 = xorind1 + 1;
       xorind3_1 = 0;
       bufflipx1 = magic_shift_write_netcnf_1(*buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
-      if ( xorind2_1 != 24 )
+      if ( xorind2_1 != sizeof(g_id_xorbuf) )
         xorind3_1 = xorind2_1;
       xorind1 = xorind3_1;
       bufflipx1 = ~bufflipx1;
@@ -846,7 +846,7 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
       xorind2_2 = xorind1 + 1;
       xorind3_2 = 0;
       bufflipx2 = magic_shift_write_netcnf_2(*(u8 *)buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
-      if ( xorind2_2 != 24 )
+      if ( xorind2_2 != sizeof(g_id_xorbuf) )
         xorind3_2 = xorind2_2;
       xorind1 = xorind3_2;
       bufflipx2 = ~bufflipx2;
@@ -5103,7 +5103,7 @@ void do_init_callback_handles(void)
 {
   int handleind1; // $v1
 
-  for ( handleind1 = 0; handleind1 < 4; handleind1 += 1 )
+  for ( handleind1 = 0; handleind1 < (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); handleind1 += 1 )
   {
     g_callback_handle_infos[handleind1].m_fd = -1;
     g_callback_handle_infos[handleind1].m_filesize = 0;
@@ -5116,7 +5116,7 @@ int do_get_empty_callback_handle(int in_fd, int in_allocstate)
 {
   int indtmp1; // $a3
 
-  for ( indtmp1 = 0; indtmp1 < 4; indtmp1 += 1 )
+  for ( indtmp1 = 0; indtmp1 < (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); indtmp1 += 1 )
   {
     if ( g_callback_handle_infos[indtmp1].m_fd == -1 )
     {
@@ -5135,7 +5135,7 @@ int do_filesize_callback_handles(int in_fd, int in_allocstate)
 {
   int indtmp1; // $a2
 
-  for ( indtmp1 = 0; indtmp1 < 4; indtmp1 += 1 )
+  for ( indtmp1 = 0; indtmp1 < (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); indtmp1 += 1 )
   {
     if ( g_callback_handle_infos[indtmp1].m_fd == in_fd
       && (g_callback_handle_infos[indtmp1].m_allocstate == in_allocstate || !in_allocstate) )
@@ -5151,7 +5151,7 @@ void do_clear_callback_handles(int fd, int allocmatch)
 {
   int indtmp; // $a3
 
-  for ( indtmp = 0; indtmp < 4; indtmp += 1 )
+  for ( indtmp = 0; indtmp < (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); indtmp += 1 )
   {
     if ( g_callback_handle_infos[indtmp].m_fd == fd && g_callback_handle_infos[indtmp].m_allocstate == allocmatch )
     {
@@ -5202,7 +5202,7 @@ int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode)
     return open(netcnf_path, file_flags, file_mode);
   if ( !is_special_file_path(netcnf_path) )
     return open(netcnf_path, file_flags, file_mode);
-  if ( g_open_callback_handle_count < 4 )
+  if ( g_open_callback_handle_count < (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])) )
   {
     cbind = do_colon_callback_handles(netcnf_path, pathconcat);
     if ( cbind )
