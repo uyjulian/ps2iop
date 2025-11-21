@@ -296,11 +296,11 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
       retres1 = sceNetCnfGetCount(buf->fname, buf->type);
       if ( retres1 < 0 )
         break;
-      list_iop = (sceNetCnfList_t *)my_alloc(520 * retres1);
+      list_iop = (sceNetCnfList_t *)my_alloc(sizeof(sceNetCnfList_t) * retres1);
       retres1 = -2;
       if ( !list_iop )
         break;
-      list_ee = (sceNetcnfifList_t *)my_alloc(576 * buf->data);
+      list_ee = (sceNetcnfifList_t *)my_alloc(sizeof(sceNetcnfifList_t) * buf->data);
       if ( list_ee )
       {
         retres1 = sceNetCnfGetList(buf->fname, buf->type, list_iop);
@@ -311,7 +311,7 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
             // The following memcpy was inlined
             memcpy(&list_ee[dataind1], &list_iop[dataind1], sizeof(sceNetCnfList_t));
           }
-          dmatid1 = sceNetcnfifSendEE((unsigned int)list_ee, buf->addr, 576 * buf->data);
+          dmatid1 = sceNetcnfifSendEE((unsigned int)list_ee, buf->addr, sizeof(sceNetcnfifList_t) * buf->data);
           while ( sceNetcnfifDmaCheck(dmatid1) );
         }
         my_free(list_iop);
@@ -332,7 +332,7 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
       retres1 = sceNetcnfifReadEnv(&data, &env, buf->type);
       if ( retres1 < 0 )
         break;
-      dmatid2 = sceNetcnfifSendEE((unsigned int)&data, buf->addr, 0x1340u);
+      dmatid2 = sceNetcnfifSendEE((unsigned int)&data, buf->addr, sizeof(sceNetcnfifData_t));
       while ( sceNetcnfifDmaCheck(dmatid2) != 0 );
       break;
     case 3:
@@ -366,7 +366,7 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
       retres1 = sceNetCnfCheckCapacity(buf->fname);
       break;
     case 9:
-      retres1 = sceNetCnfConvA2S(buf->fname, dp, 256);
+      retres1 = sceNetCnfConvA2S(buf->fname, dp, sizeof(buf->fname));
       break;
     case 10:
       sceNetcnfifEnvInit(&env, mem_area, mem_area_size, buf->f_no_decode);
@@ -413,7 +413,7 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
           redial_count = 0;
           if ( env.root->pair_head->ifc )
           {
-            for ( dialind = 0; dialind < 10; dialind += 1 )
+            for ( dialind = 0; dialind < (sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); dialind += 1 )
             {
               if ( env.root->pair_head->ifc->phone_numbers[dialind] && dialind < 3 && dialind >= 0 )
                 ++redial_count;
@@ -494,28 +494,26 @@ void sceNetcnfifEnvInit(sceNetCnfEnv_t *env, void *mem_area, int size, int f_no_
 int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count)
 {
   int retres; // $a1
-  char *dns_address; // $a0
 
   if ( p->code == 1 )
   {
     if ( *ns_count )
     {
-      dns_address = data->dns2_address;
       if ( *ns_count != 1 )
         return 0;
+      retres = sceNetCnfAddress2String(data->dns2_address, sizeof(data->dns2_address), (sceNetCnfAddress_t *)&p[1]);
     }
     else
     {
-      dns_address = data->dns1_address;
+      retres = sceNetCnfAddress2String(data->dns1_address, sizeof(data->dns1_address), (sceNetCnfAddress_t *)&p[1]);
     }
-    retres = sceNetCnfAddress2String(dns_address, 256, (sceNetCnfAddress_t *)&p[1]);
     ++*ns_count;
     return retres;
   }
   else
   {
     if ( p->code == 3 )
-      return sceNetCnfAddress2String(data->gateway, 256, (sceNetCnfAddress_t *)&p[2].code);
+      return sceNetCnfAddress2String(data->gateway, sizeof(data->gateway), (sceNetCnfAddress_t *)&p[2].code);
   }
   return 0;
 }
@@ -539,7 +537,7 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
         strcpy(data->product, (const char *)p->product);
       data->phy_config = p->phy_config;
       if ( !((char *)p->chat_additional)
-        || (cmd = sceNetCnfConvS2A((char *)p->chat_additional, data->chat_additional, 256), cmd >= 0) )
+        || (cmd = sceNetCnfConvS2A((char *)p->chat_additional, data->chat_additional, sizeof(p->chat_additional)), cmd >= 0) )
       {
         if ( p->outside_number )
           strcpy(data->outside_number, (const char *)p->outside_number);
@@ -566,7 +564,7 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
     if ( cmd < 0 )
       return cmd;
   }
-  for ( numind = 0; numind < 10; numind += 1 )
+  for ( numind = 0; numind < (sizeof(p->phone_numbers)/sizeof(p->phone_numbers[0])); numind += 1 )
   {
     if ( p->phone_numbers[numind] )
     {
@@ -706,7 +704,7 @@ int put_gw(sceNetCnfEnv_t *e, char *gw)
 {
   int retres; // $v1
 
-  bzero(&gateway, 96);
+  bzero(&gateway, sizeof(gateway));
   gateway.cmd.code = 3;
   gateway.cmd.back = e->ifc->cmd_tail;
   if ( gateway.cmd.back )
@@ -774,7 +772,7 @@ int put_ns(sceNetCnfEnv_t *e, char *ns, int ns_count)
       // Unofficial: return error instead of writing 1 to 0x00000008
       return -1;
   }
-  bzero(ns2, 32);
+  bzero(ns2, sizeof(nameserver_t));
   ns1->cmd.code = 1;
   ns1->cmd.back = e->ifc->cmd_tail;
   if ( e->ifc->cmd_tail )
@@ -825,7 +823,7 @@ int root_link(sceNetCnfEnv_t *e, int type)
   root = e->root;
   if ( !root )
   {
-    e->root = (struct sceNetCnfRoot *)sceNetCnfAllocMem(e, 44, 2);
+    e->root = (sceNetCnfRoot_t *)sceNetCnfAllocMem(e, sizeof(sceNetCnfRoot_t), 2);
     if ( !e->root )
       return -2;
     e->root->version = 3;
@@ -835,7 +833,7 @@ int root_link(sceNetCnfEnv_t *e, int type)
   }
   if ( !root || !root->pair_head )
   {
-    p = (struct sceNetCnfPair *)sceNetCnfAllocMem(e, 40, 2);
+    p = (sceNetCnfPair_t *)sceNetCnfAllocMem(e, sizeof(sceNetCnfPair_t), 2);
     if ( !p )
       return -2;
     if ( type == 1 )
@@ -845,7 +843,7 @@ int root_link(sceNetCnfEnv_t *e, int type)
     pair_tail = e->root->pair_tail;
     p->back = pair_tail;
     if ( !pair_tail )
-      pair_tail = (struct sceNetCnfPair *)e->root;
+      pair_tail = (sceNetCnfPair_t *)e->root;
     pair_tail->forw = p;
     p->forw = 0;
     e->root->pair_tail = p;
@@ -870,7 +868,7 @@ int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
   retres = 0;
   if ( !e->ifc )
   {
-    e->ifc = (sceNetCnfInterface_t *)sceNetCnfAllocMem(e, 352, 2);
+    e->ifc = (sceNetCnfInterface_t *)sceNetCnfAllocMem(e, sizeof(sceNetCnfInterface_t), 2);
     if ( !e->ifc )
       return -2;
     sceNetCnfInitIFC(e->ifc);
@@ -1012,7 +1010,7 @@ int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
       }
       if ( data->chat_additional[0] )
       {
-        retres = sceNetCnfConvA2S(data->chat_additional, chat_additional, 256);
+        retres = sceNetCnfConvA2S(data->chat_additional, chat_additional, sizeof(data->chat_additional));
         if ( retres < 0 )
           return retres;
         init_flag = 0;
@@ -1068,7 +1066,7 @@ int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
     return -100;
   if ( !e->root )
   {
-    e->root = (struct sceNetCnfRoot *)sceNetCnfAllocMem(e, 44, 2);
+    e->root = (sceNetCnfRoot_t *)sceNetCnfAllocMem(e, sizeof(sceNetCnfRoot_t), 2);
     if ( !e->root )
       return -2;
   }
@@ -1079,13 +1077,13 @@ int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
   p = e->root->pair_head;
   if ( !p )
   {
-    p = (struct sceNetCnfPair *)sceNetCnfAllocMem(e, 40, 2);
+    p = (sceNetCnfPair_t *)sceNetCnfAllocMem(e, sizeof(sceNetCnfPair_t), 2);
     if ( !p )
       return -2;
     pair_tail = e->root->pair_tail;
     p->back = pair_tail;
     if ( !pair_tail )
-      pair_tail = (struct sceNetCnfPair *)e->root;
+      pair_tail = (sceNetCnfPair_t *)e->root;
     pair_tail->forw = p;
     p->forw = 0;
     e->root->pair_tail = p;
