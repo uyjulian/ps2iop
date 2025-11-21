@@ -629,7 +629,7 @@ void do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, sceHardSyn
 //----- (0040072C) --------------------------------------------------------
 unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vagoffsaddr)
 {
-  unsigned int indx1; // $a0
+  unsigned int i; // $a0
   unsigned int bodySize; // $a1
   sceHardSynthVagParam *vagparam; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
@@ -639,11 +639,11 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vag
     if ( do_get_vagi_chunk(indata, &dinfo) == 0 )
     {
       bodySize = dinfo.m_head->bodySize;
-      for ( indx1 = 0; dinfo.m_vagi->maxVagInfoNumber >= indx1; indx1 += 1 )
+      for ( i = 0; dinfo.m_vagi->maxVagInfoNumber >= i; i += 1 )
       {
-        if ( dinfo.m_vagi->vagInfoOffsetAddr[indx1] != -1 )
+        if ( dinfo.m_vagi->vagInfoOffsetAddr[i] != -1 )
         {
-          vagparam = (sceHardSynthVagParam *)((char *)(dinfo.m_vagi) + dinfo.m_vagi->vagInfoOffsetAddr[indx1]);
+          vagparam = (sceHardSynthVagParam *)((char *)(dinfo.m_vagi) + dinfo.m_vagi->vagInfoOffsetAddr[i]);
           if ( *vagoffsaddr < vagparam->vagOffsetAddr )
           {
             if ( vagparam->vagOffsetAddr < bodySize )
@@ -723,12 +723,11 @@ int do_get_common_block_ptr_note(
         void **ptr)
 {
   int idx1; // $s1
-  int idx2; // $s6
+  int i; // $s6
   sceHardSynthSplitBlock *p_splitblock; // $a1
-  int idxnsample; // $s2
+  int j; // $s2
   int cursampleindexoffs1; // $v0
   char *cursampleindex1; // $v1
-  int nsamplecur; // $s2
   int cursampleindexoffs2; // $v0
   char *cursampleindex2; // $v1
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-10h] BYREF
@@ -741,11 +740,11 @@ int do_get_common_block_ptr_note(
   {
     return 0;
   }
-  for ( idx2 = 0; idx2 < p_programparam->nSplit; idx2 += 1 )
+  for ( i = 0; i < p_programparam->nSplit; i += 1 )
   {
     p_splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam
                                             + p_programparam->splitBlockAddr
-                                            + p_programparam->sizeSplitBlock * idx2);
+                                            + p_programparam->sizeSplitBlock * i);
     if ( noteNumber < (p_splitblock->splitRangeLow & 0x7Fu) || noteNumber > (p_splitblock->splitRangeHigh & 0x7Fu) )
     {
       continue;
@@ -794,9 +793,9 @@ int do_get_common_block_ptr_note(
                 {
                   break;
                 }
-                for ( idxnsample = 0; idxnsample < p_samplesetparam->nSample; idxnsample += 1 )
+                for ( j = 0; j < p_samplesetparam->nSample; j += 1 )
                 {
-                  cursampleindexoffs1 = 2 * idxnsample;
+                  cursampleindexoffs1 = 2 * j;
                   cursampleindex1 = (char *)p_samplesetparam + cursampleindexoffs1;
                   if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
                     && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
@@ -848,9 +847,9 @@ int do_get_common_block_ptr_note(
                 }
                 break;
               case 1:
-                for ( nsamplecur = 0; nsamplecur < p_samplesetparam->nSample; nsamplecur += 1 )
+                for ( j = 0; j < p_samplesetparam->nSample; j += 1 )
                 {
-                  cursampleindexoffs2 = 2 * nsamplecur;
+                  cursampleindexoffs2 = 2 * j;
                   cursampleindex2 = (char *)p_samplesetparam + cursampleindexoffs2;
                   if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
                     && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
@@ -922,10 +921,9 @@ int do_get_common_block_ptr(
         void **param)
 {
   int idx1; // $s0
-  int nsampletmp2; // $s3
+  int i; // $s3
   int cursampleindexoffs2; // $v0
   char *cursampleindex2; // $v1
-  int nsampletmp1; // $s3
   int cursampleindexoffs1; // $v0
   char *cursampleindex1; // $v1
   sceHardSynthSampleSetParam *p_samplesetparam; // [sp+10h] [-10h] BYREF
@@ -942,9 +940,9 @@ int do_get_common_block_ptr(
       {
         return 0;
       }
-      for ( nsampletmp2 = 0; nsampletmp2 < p_samplesetparam->nSample; nsampletmp2 += 1 )
+      for ( i = 0; i < p_samplesetparam->nSample; i += 1 )
       {
-        cursampleindexoffs2 = 2 * nsampletmp2;
+        cursampleindexoffs2 = 2 * i;
         cursampleindex2 = (char *)p_samplesetparam + cursampleindexoffs2;
         if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
           && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
@@ -993,9 +991,9 @@ int do_get_common_block_ptr(
       }
       return idx1;
     case 1:
-      for ( nsampletmp1 = 0; nsampletmp1 < p_samplesetparam->nSample; nsampletmp1 += 1 )
+      for ( i = 0; i < p_samplesetparam->nSample; i += 1 )
       {
-        cursampleindexoffs1 = 2 * nsampletmp1;
+        cursampleindexoffs1 = 2 * i;
         cursampleindex1 = (char *)p_samplesetparam + cursampleindexoffs1;
         if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
           && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
@@ -1556,7 +1554,7 @@ int sceSdHdGetVAGInfoParamBySampleNumber(void *buffer, unsigned int sampleNumber
 int sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNumber, unsigned int splitNumber)
 {
   int result; // $v0
-  int idx1; // $v1
+  int i; // $v1
   sceHardSynthSplitBlock *splitblock; // $a0
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
 
@@ -1570,10 +1568,10 @@ int sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNu
     else
     {
       splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam + p_programparam->splitBlockAddr);
-      for ( idx1 = 0; idx1 < p_programparam->nSplit; idx1 += 1 )
+      for ( i = 0; i < p_programparam->nSplit; i += 1 )
       {
         if ( splitNumber == splitblock->splitNumber )
-          return idx1;
+          return i;
         splitblock = (sceHardSynthSplitBlock *)((char *)splitblock + p_programparam->sizeSplitBlock);
       }
       return 0x81039020;
@@ -1611,8 +1609,8 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
 {
   int curminval; // $s2
   int retres; // $v0
-  signed int programNr; // $s1
-  signed int curidx2; // $s0
+  signed int i; // $s1
+  signed int j; // $s0
   int curval1; // $v1
   int curval2; // $v1
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
@@ -1620,18 +1618,18 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
 
   curminval = 0;
   retres = sceSdHdGetMaxProgramNumber(buffer);
-  for ( programNr = 0; retres >= programNr; programNr += 1 )
+  for ( i = 0; retres >= i; i += 1 )
   {
-    if ( !sceSdHdGetProgramParamAddr(buffer, programNr, &p_programparam) )
+    if ( !sceSdHdGetProgramParamAddr(buffer, i, &p_programparam) )
     {
-      for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
+      for ( j = 0; j < p_programparam->nSplit; j += 1 )
       {
-        if ( !sceSdHdGetSplitBlockAddr(buffer, programNr, curidx2, &p_splitblock) )
+        if ( !sceSdHdGetSplitBlockAddr(buffer, i, j, &p_splitblock) )
         {
-          curval1 = sceSdHdGetSplitBlockCountByNote(buffer, programNr, p_splitblock->splitRangeLow & 0x7F);
+          curval1 = sceSdHdGetSplitBlockCountByNote(buffer, i, p_splitblock->splitRangeLow & 0x7F);
           if ( curminval < curval1 )
             curminval = curval1;
-          curval2 = sceSdHdGetSplitBlockCountByNote(buffer, programNr, p_splitblock->splitRangeHigh & 0x7F);
+          curval2 = sceSdHdGetSplitBlockCountByNote(buffer, i, p_splitblock->splitRangeHigh & 0x7F);
           if ( curminval < curval2 )
             curminval = curval2;
         }
@@ -1646,8 +1644,8 @@ int sceSdHdGetMaxSampleSetParamCount(void *buffer)
 {
   int curminval; // $s2
   int retres; // $s4
-  signed int programNr; // $s1
-  signed int curidx2; // $s0
+  signed int i; // $s1
+  signed int j; // $s0
   int curval1; // $v1
   int curval2; // $v1
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
@@ -1655,18 +1653,18 @@ int sceSdHdGetMaxSampleSetParamCount(void *buffer)
 
   curminval = 0;
   retres = sceSdHdGetMaxProgramNumber(buffer);
-  for ( programNr = 0; retres >= programNr; programNr += 1 )
+  for ( i = 0; retres >= i; i += 1 )
   {
-    if ( !sceSdHdGetProgramParamAddr(buffer, programNr, &p_programparam) )
+    if ( !sceSdHdGetProgramParamAddr(buffer, i, &p_programparam) )
     {
-      for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
+      for ( j = 0; j < p_programparam->nSplit; j += 1 )
       {
-        if ( !sceSdHdGetSplitBlockAddr(buffer, programNr, curidx2, &p_splitblock) )
+        if ( !sceSdHdGetSplitBlockAddr(buffer, i, j, &p_splitblock) )
         {
-          curval1 = sceSdHdGetSampleSetParamCountByNote(buffer, programNr, p_splitblock->splitRangeLow & 0x7F);
+          curval1 = sceSdHdGetSampleSetParamCountByNote(buffer, i, p_splitblock->splitRangeLow & 0x7F);
           if ( curminval < curval1 )
             curminval = curval1;
-          curval2 = sceSdHdGetSampleSetParamCountByNote(buffer, programNr, p_splitblock->splitRangeHigh & 0x7F);
+          curval2 = sceSdHdGetSampleSetParamCountByNote(buffer, i, p_splitblock->splitRangeHigh & 0x7F);
           if ( curminval < curval2 )
             curminval = curval2;
         }
@@ -1681,9 +1679,9 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
 {
   int curminval; // $s0
   int retres; // $s6
-  signed int programNr; // $s2
-  signed int curidx2; // $s4
-  signed int sampleNr; // $s1
+  signed int i; // $s2
+  signed int j; // $s4
+  signed int k; // $s1
   int curval1; // $v1
   int curval2; // $v1
   int curval3; // $v1
@@ -1695,22 +1693,22 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
 
   curminval = 0;
   retres = sceSdHdGetMaxProgramNumber(buffer);
-  for ( programNr = 0; retres >= programNr; programNr += 1 )
+  for ( i = 0; retres >= i; i += 1 )
   {
-    if ( !sceSdHdGetProgramParamAddr(buffer, programNr, &p_programparam) )
+    if ( !sceSdHdGetProgramParamAddr(buffer, i, &p_programparam) )
     {
-      for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
+      for ( j = 0; j < p_programparam->nSplit; j += 1 )
       {
-        if ( !sceSdHdGetSplitBlockAddr(buffer, programNr, curidx2, &p_splitblock)
+        if ( !sceSdHdGetSplitBlockAddr(buffer, i, j, &p_splitblock)
           && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
         {
-          for ( sampleNr = 0; sampleNr < p_samplesetparam->nSample; sampleNr += 1 )
+          for ( k = 0; k < p_samplesetparam->nSample; k += 1 )
           {
-            if ( !sceSdHdGetSampleParamAddr(buffer, sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, sampleNr), &p_sampleparam) )
+            if ( !sceSdHdGetSampleParamAddr(buffer, sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, k), &p_sampleparam) )
             {
               curval1 = sceSdHdGetSampleParamCountByNoteVelocity(
                           buffer,
-                          programNr,
+                          i,
                           p_splitblock->splitRangeLow & 0x7F,
                           p_sampleparam->velRangeLow & 0x7F,
                           1u);
@@ -1718,7 +1716,7 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
                 curminval = curval1;
               curval2 = sceSdHdGetSampleParamCountByNoteVelocity(
                           buffer,
-                          programNr,
+                          i,
                           p_splitblock->splitRangeLow & 0x7F,
                           p_sampleparam->velRangeHigh & 0x7F,
                           1u);
@@ -1726,7 +1724,7 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
                 curminval = curval2;
               curval3 = sceSdHdGetSampleParamCountByNoteVelocity(
                           buffer,
-                          programNr,
+                          i,
                           p_splitblock->splitRangeHigh & 0x7F,
                           p_sampleparam->velRangeLow & 0x7F,
                           1u);
@@ -1734,7 +1732,7 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
                 curminval = curval3;
               curval4 = sceSdHdGetSampleParamCountByNoteVelocity(
                           buffer,
-                          programNr,
+                          i,
                           p_splitblock->splitRangeHigh & 0x7F,
                           p_sampleparam->velRangeHigh & 0x7F,
                           1u);
@@ -1754,9 +1752,9 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
 {
   int curminval; // $s0
   int retres; // $s6
-  signed int programNr; // $s2
-  signed int curidx2; // $s4
-  signed int sampleNr; // $s1
+  signed int i; // $s2
+  signed int j; // $s4
+  signed int k; // $s1
   int curval1; // $v1
   int curval2; // $v1
   int curval3; // $v1
@@ -1768,22 +1766,22 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
 
   curminval = 0;
   retres = sceSdHdGetMaxProgramNumber(buffer);
-  for ( programNr = 0; retres >= programNr; programNr += 1 )
+  for ( i = 0; retres >= i; i += 1 )
   {
-    if ( !sceSdHdGetProgramParamAddr(buffer, programNr, &p_programparam) )
+    if ( !sceSdHdGetProgramParamAddr(buffer, i, &p_programparam) )
     {
-      for ( curidx2 = 0; curidx2 < p_programparam->nSplit; curidx2 += 1 )
+      for ( j = 0; j < p_programparam->nSplit; j += 1 )
       {
-        if ( !sceSdHdGetSplitBlockAddr(buffer, programNr, curidx2, &p_splitblock)
+        if ( !sceSdHdGetSplitBlockAddr(buffer, i, j, &p_splitblock)
           && !sceSdHdGetSampleSetParamAddr(buffer, p_splitblock->sampleSetIndex, &p_samplesetparam) )
         {
-          for ( sampleNr = 0; sampleNr < p_samplesetparam->nSample; sampleNr += 1 )
+          for ( k = 0; k < p_samplesetparam->nSample; k += 1 )
           {
-            if ( !sceSdHdGetSampleParamAddr(buffer, sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, sampleNr), &p_sampleparam) )
+            if ( !sceSdHdGetSampleParamAddr(buffer, sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, k), &p_sampleparam) )
             {
               curval1 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
                           buffer,
-                          programNr,
+                          i,
                           p_splitblock->splitRangeLow & 0x7F,
                           p_sampleparam->velRangeLow & 0x7F,
                           1u);
@@ -1791,7 +1789,7 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
                 curminval = curval1;
               curval2 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
                           buffer,
-                          programNr,
+                          i,
                           p_splitblock->splitRangeLow & 0x7F,
                           p_sampleparam->velRangeHigh & 0x7F,
                           1u);
@@ -1799,7 +1797,7 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
                 curminval = curval2;
               curval3 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
                           buffer,
-                          programNr,
+                          i,
                           p_splitblock->splitRangeHigh & 0x7F,
                           p_sampleparam->velRangeLow & 0x7F,
                           1u);
@@ -1807,7 +1805,7 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
                 curminval = curval3;
               curval4 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
                           buffer,
-                          programNr,
+                          i,
                           p_splitblock->splitRangeHigh & 0x7F,
                           p_sampleparam->velRangeHigh & 0x7F,
                           1u);
@@ -2034,7 +2032,7 @@ int sceSdHdGetValidProgramNumberCount(void *buffer)
 {
   int validcnt; // $s0
   int result; // $v0
-  unsigned int allcnt; // $a0
+  unsigned int i; // $a0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   validcnt = 0;
@@ -2044,9 +2042,9 @@ int sceSdHdGetValidProgramNumberCount(void *buffer)
     result = do_get_prog_chunk(buffer, &dinfo);
     if ( !result )
     {
-      for ( allcnt = 0; dinfo.m_prog->maxProgramNumber >= allcnt; allcnt += 1 )
+      for ( i = 0; dinfo.m_prog->maxProgramNumber >= i; i += 1 )
       {
-        if ( dinfo.m_prog->programOffsetAddr[allcnt] != -1 )
+        if ( dinfo.m_prog->programOffsetAddr[i] != -1 )
           ++validcnt;
       }
       return validcnt;
@@ -2060,7 +2058,7 @@ int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
 {
   int validcnt; // $s1
   int result; // $v0
-  unsigned int allcnt; // $v1
+  unsigned int i; // $v1
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   validcnt = 0;
@@ -2070,11 +2068,11 @@ int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
     result = do_get_prog_chunk(buffer, &dinfo);
     if ( !result )
     {
-      for ( allcnt = 0; dinfo.m_prog->maxProgramNumber >= allcnt; allcnt += 1 )
+      for ( i = 0; dinfo.m_prog->maxProgramNumber >= i; i += 1 )
       {
-        if ( dinfo.m_prog->programOffsetAddr[allcnt] != -1 )
+        if ( dinfo.m_prog->programOffsetAddr[i] != -1 )
         {
-          ptr[validcnt] = allcnt;
+          ptr[validcnt] = i;
           validcnt += 1;
         }
       }
