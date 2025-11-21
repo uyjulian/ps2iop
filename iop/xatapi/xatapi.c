@@ -2487,7 +2487,7 @@ int sceCdAtapiExecCmd_local(
                (u8)((atad_cmd_state.blkcount_atapi & 0xFF) * (atad_cmd_state.blksize_atapi & 0xFF)),
                (u8)((u16)((atad_cmd_state.blkcount_atapi & 0xFFFF)
                                                   * (atad_cmd_state.blksize_atapi & 0xFFFF)) >> 8),
-               16 * n,
+               n << 4,
                0xA0u,
                9u);
     retres1 = result;
@@ -2710,7 +2710,7 @@ int IoRun_atapi(ata_cmd_state_t *cmd_state)
         Kprintf("IoRun_atapi input trans %d\n", cmd_state->blksize_atapi);
       for ( buf_atapi_i2 = 0; buf_atapi_i2 < (lhcyl >> 1); buf_atapi_i2 += 1 )
       {
-        *(u16 *)((char *)cmd_state->buf_atapi + (2 * buf_atapi_i2)) = dev5_speed_regs.r_spd_ata_data;
+        ((u16 *)((char *)cmd_state->buf_atapi))[buf_atapi_i2] = dev5_speed_regs.r_spd_ata_data;
       }
       if ( (lhcyl & 1) != 0 )
       {
@@ -2808,7 +2808,7 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
       if ( blkcount_tmp < dbuf_stat_mask )
         dbuf_stat_mask = blkcount_tmp;
       result = SpdDmaTransfer(0, buf, (dbuf_stat_mask << 18) | 0x20, dir);
-      buf += 512 * dbuf_stat_mask;
+      buf += dbuf_stat_mask << 9;
       if ( result < 0 )
         return result;
     }
@@ -3576,7 +3576,7 @@ int sceAtaFlushCache(int device)
 {
   int result; // $v0
 
-  result = xatapi_5_sceAtaExecCmd(0, 1u, 0, 0, 0, 0, 0, 16 * device, 0xE7u, 1u);
+  result = xatapi_5_sceAtaExecCmd(0, 1u, 0, 0, 0, 0, 0, device << 4, 0xE7u, 1u);
   if ( !result )
     return xatapi_6_sceAtaWaitResult();
   return result;
@@ -3587,7 +3587,7 @@ int ata_device_identify(int device, void *info)
 {
   int result; // $v0
 
-  result = xatapi_5_sceAtaExecCmd(info, 1u, 0, 0, 0, 0, 0, 16 * device, 0xECu, 2u);
+  result = xatapi_5_sceAtaExecCmd(info, 1u, 0, 0, 0, 0, 0, device << 4, 0xECu, 2u);
   if ( !result )
     return xatapi_6_sceAtaWaitResult();
   return result;
@@ -3598,7 +3598,7 @@ int ata_device_pkt_identify(int device, void *info)
 {
   int result; // $v0
 
-  result = xatapi_5_sceAtaExecCmd(info, 1u, 0, 0, 0, 0, 0, 16 * device, 0xA1u, 2u);
+  result = xatapi_5_sceAtaExecCmd(info, 1u, 0, 0, 0, 0, 0, device << 4, 0xA1u, 2u);
   if ( !result )
     return xatapi_6_sceAtaWaitResult();
   return result;
@@ -3609,7 +3609,7 @@ int atapi_device_set_transfer_mode(int device, int type, int mode)
 {
   int result; // $v0
 
-  result = xatapi_5_sceAtaExecCmd(0, 1u, 3u, (u8)(mode | type), 0, 0, 0, 16 * device, 0xEFu, 1u);
+  result = xatapi_5_sceAtaExecCmd(0, 1u, 3u, (u8)(mode | type), 0, 0, 0, device << 4, 0xEFu, 1u);
   if ( !result )
   {
     result = xatapi_6_sceAtaWaitResult();
@@ -3646,7 +3646,7 @@ int ata_device_set_transfer_mode(int device, int type, int mode)
 {
   int result; // $v0
 
-  result = sceAtaExecCmd(0, 1u, 3u, (u8)(mode | type), 0, 0, 0, 16 * device, 0xEFu, 1u);
+  result = sceAtaExecCmd(0, 1u, 3u, (u8)(mode | type), 0, 0, 0, device << 4, 0xEFu, 1u);
   if ( !result )
   {
     result = sceAtaWaitResult();
@@ -4143,7 +4143,7 @@ int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscra
       bufchk = 1;
     for ( bufcuri = 0; (unsigned int)bufcuri < (bufsize >> 11); bufcuri += 1 )
     {
-      bufoffs1 = &buf[2048 * bufcuri];
+      bufoffs1 = &buf[bufcuri << 11];
       if ( *bufoffs1 || bufoffs1[1] || bufoffs1[2] != 1 || (u8)bufoffs1[3] != 0xBA )
       {
         if ( bufchk )
@@ -4199,7 +4199,7 @@ int Mpeg2CheckScramble(char *buf, unsigned int bufsize)
   {
     for ( bufi = 0; bufi < (int)(bufsize >> 11); bufi += 1 )
     {
-      bufcur = buf + (2048 * bufi);
+      bufcur = buf + (bufi << 11);
       if ( !*bufcur && !bufcur[1] && bufcur[2] == 1 && (u8)bufcur[3] == 0xBA )
       {
         bufbuf = bufcur + 14;
