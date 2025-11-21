@@ -143,7 +143,7 @@ int module_start(int argc, char *argv[])
 {
   int thpri; // $s5
   int thstack; // $s4
-  int cur_argc; // $s3
+  int i; // $s3
   int bp; // $s0
   int retres1; // $v0
   int retres2; // $v0
@@ -153,40 +153,40 @@ int module_start(int argc, char *argv[])
 
   thpri = 123;
   thstack = 4096;
-  for ( cur_argc = 1; cur_argc < argc; cur_argc += 1 )
+  for ( i = 1; i < argc; i += 1 )
   {
     xflg = 1;
-    if ( !strncmp("thpri=", argv[cur_argc], 6) )
+    if ( !strncmp("thpri=", argv[i], 6) )
     {
       bp = 6;
-      if ( !isdigit(argv[cur_argc][bp]) )
+      if ( !isdigit(argv[i][bp]) )
       {
         usage();
         return 1;
       }
-      thpri = strtol(&argv[cur_argc][bp], 0, 10);
+      thpri = strtol(&argv[i][bp], 0, 10);
       if ( (unsigned int)(thpri - 9) >= 0x73 )
       {
         usage();
         return 1;
       }
-      for ( ; argv[cur_argc][bp] && isdigit(argv[cur_argc][bp]); bp += 1 );
-      if ( !argv[cur_argc][bp] )
+      for ( ; argv[i][bp] && isdigit(argv[i][bp]); bp += 1 );
+      if ( !argv[i][bp] )
       {
         xflg = 0;
       }
     }
-    else if ( !strncmp("thstack=", argv[cur_argc], 8) )
+    else if ( !strncmp("thstack=", argv[i], 8) )
     {
       bp = 8;
-      if ( !isdigit(argv[cur_argc][bp]) )
+      if ( !isdigit(argv[i][bp]) )
       {
         usage();
         return 1;
       }
-      thstack = strtol(&argv[cur_argc][bp], 0, 10);
-      for ( ; argv[cur_argc][bp] && isdigit(argv[cur_argc][bp]); bp += 1 );
-      if ( !strcmp(&argv[cur_argc][bp], "KB") )
+      thstack = strtol(&argv[i][bp], 0, 10);
+      for ( ; argv[i][bp] && isdigit(argv[i][bp]); bp += 1 );
+      if ( !strcmp(&argv[i][bp], "KB") )
       {
         thstack <<= 10;
         xflg = 0;
@@ -197,7 +197,7 @@ int module_start(int argc, char *argv[])
       usage();
       return 1;
     }
-    if ( xflg && argv[cur_argc][bp] )
+    if ( xflg && argv[i][bp] )
     {
       usage();
       return 1;
@@ -267,11 +267,10 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
   int retres1; // $s1
   sceNetCnfList_t *list_iop; // $s3
   sceNetcnfifList_t *list_ee; // $s4
-  int dataind1; // $a0
+  int i; // $a0
   int dmatid1; // $s0
   int dmatid2; // $s0
   int redial_count; // $a1
-  int dialind; // $a0
   sceNetCnfCallback_t callback; // [sp+18h] [-10h] BYREF
 
   retres1 = 0;
@@ -294,10 +293,10 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
         retres1 = sceNetCnfGetList(buf->fname, buf->type, list_iop);
         if ( retres1 >= 0 )
         {
-          for ( dataind1 = 0; dataind1 < buf->data && dataind1 < retres1; dataind1 += 1 )
+          for ( i = 0; i < buf->data && i < retres1; i += 1 )
           {
             // The following memcpy was inlined
-            memcpy(&list_ee[dataind1], &list_iop[dataind1], sizeof(sceNetCnfList_t));
+            memcpy(&list_ee[i], &list_iop[i], sizeof(sceNetCnfList_t));
           }
           dmatid1 = sceNetcnfifSendEE((unsigned int)list_ee, buf->addr, sizeof(sceNetcnfifList_t) * buf->data);
           while ( sceNetcnfifDmaCheck(dmatid1) );
@@ -401,9 +400,9 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
           redial_count = 0;
           if ( env.root->pair_head->ifc )
           {
-            for ( dialind = 0; dialind < (sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); dialind += 1 )
+            for ( i = 0; i < (sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); i += 1 )
             {
-              if ( env.root->pair_head->ifc->phone_numbers[dialind] && dialind < 3 && dialind >= 0 )
+              if ( env.root->pair_head->ifc->phone_numbers[i] && i < 3 && i >= 0 )
                 ++redial_count;
             }
             env.root->pair_head->ifc->redial_count = redial_count - 1;
@@ -511,7 +510,7 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
 {
   int cmd; // $s4
   struct sceNetCnfCommand *cmd_head; // $s0
-  int numind; // $s0
+  int i; // $s0
 
   cmd = 0;
   if ( type != 1 )
@@ -552,20 +551,20 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
     if ( cmd < 0 )
       return cmd;
   }
-  for ( numind = 0; numind < (sizeof(p->phone_numbers)/sizeof(p->phone_numbers[0])); numind += 1 )
+  for ( i = 0; i < (sizeof(p->phone_numbers)/sizeof(p->phone_numbers[0])); i += 1 )
   {
-    if ( p->phone_numbers[numind] )
+    if ( p->phone_numbers[i] )
     {
-      switch ( numind )
+      switch ( i )
       {
         case 0:
-          strcpy(data->phone_numbers1, (const char *)p->phone_numbers[numind]);
+          strcpy(data->phone_numbers1, (const char *)p->phone_numbers[i]);
           break;
         case 1:
-          strcpy(data->phone_numbers2, (const char *)p->phone_numbers[numind]);
+          strcpy(data->phone_numbers2, (const char *)p->phone_numbers[i]);
           break;
         case 2:
-          strcpy(data->phone_numbers3, (const char *)p->phone_numbers[numind]);
+          strcpy(data->phone_numbers3, (const char *)p->phone_numbers[i]);
           break;
       }
     }
@@ -635,10 +634,8 @@ u8 *dup_string(sceNetCnfEnv_t *e, u8 *str)
 //----- (00401104) --------------------------------------------------------
 void init_usrntcnf(sceNetCnfInterface_t *ifc)
 {
-  int ind; // $a1
-  u8 **p_product; // $v1
+  int i; // $a1
 
-  p_product = &ifc->product;
   ifc->type = -1;
   ifc->dhcp = -1;
   ifc->dhcp_host_name = 0;
@@ -646,10 +643,9 @@ void init_usrntcnf(sceNetCnfInterface_t *ifc)
   ifc->netmask = 0;
   ifc->cmd_head = 0;
   ifc->cmd_tail = 0;
-  for ( ind = 2; ind >= 0; ind -= 1 )
+  for ( i = 0; i < 3; i += 1 )
   {
-    p_product[14] = 0;
-    --p_product;
+    ifc->phone_numbers[i] = 0;
   }
   ifc->want.dns1_nego = -1;
   ifc->want.dns2_nego = -1;
@@ -1046,7 +1042,7 @@ int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 {
   struct sceNetCnfPair *p; // $s1
   struct sceNetCnfPair *pair_tail; // $v0
-  int indx2; // $s0
+  int i; // $s0
   int attachres1; // $v0
   char display_name[256]; // [sp+10h] [-100h] BYREF
 
@@ -1082,13 +1078,13 @@ int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
   p->display_name = dup_string(e, (u8 *)display_name);
   p->attach_ifc = dup_string(e, (u8 *)data);
   p->attach_dev = dup_string(e, (u8 *)data->attach_dev);
-  for ( indx2 = 0; indx2 < 2; indx2 += 1 )
+  for ( i = 0; i < 2; i += 1 )
   {
     e->ifc = 0;
-    attachres1 = put_attach(e, data, indx2 + 1);
+    attachres1 = put_attach(e, data, i + 1);
     if ( attachres1 < 0 && attachres1 != -100 )
       break;
-    attachres1 = root_link(e, indx2 + 1);
+    attachres1 = root_link(e, i + 1);
     if ( attachres1 < 0 )
       break;
   }
@@ -1160,7 +1156,7 @@ int sceNetcnfifDmaCheck(int id)
 //----- (00401E10) --------------------------------------------------------
 void sce_callback_initialize(void)
 {
-  int ind; // $v0
+  int i; // $v0
 
   while ( 1 )
   {
@@ -1171,7 +1167,7 @@ void sce_callback_initialize(void)
     while ( sceSifCheckStatRpc(&gcd) );
     if ( gcd.server )
       break;
-    for ( ind = 0xFFFE; ind != -1; ind -= 1 );
+    for ( i = 0xFFFE; i != -1; i -= 1 );
   }
 }
 
