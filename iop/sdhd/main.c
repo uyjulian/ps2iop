@@ -1920,14 +1920,14 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
     default:
       calc3 = velocity - center;
       calcg = calc3 << 16;
-      calcf = (int)((u64)(2181570691LL * calcg) >> 32) >> 6;
+      calcf = calcg / 126;
       calce = calcg >> 31;
       calc5 = calcf - calce;
       break;
     case 1u:
       calc3 = center - velocity;
       calcg = calc3 << 16;
-      calcf = (int)((u64)(2181570691LL * calcg) >> 32) >> 6;
+      calcf = calcg / 126;
       calce = calcg >> 31;
       calc5 = calcf - calce;
       break;

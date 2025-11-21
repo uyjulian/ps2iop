@@ -674,9 +674,9 @@ int sceSdSqGetCompTableDataByIndex(
     }
     else
     {
-      data->status = *((u8 *)&dblk->compBlock[1].compOption + 2 * compTableIndex);
+      data->status = *((u8 *)&dblk->compBlock[1].compOption + (compTableIndex << 1));
       result = 0;
-      data->data = *((u8 *)&dblk->compBlock[1].compOption + 2 * compTableIndex + 1);
+      data->data = *((u8 *)&dblk->compBlock[1].compOption + (compTableIndex << 1) + 1);
     }
   }
   return result;
