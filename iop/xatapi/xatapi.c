@@ -309,16 +309,16 @@ int do_atapi_cmd_inquiry_12h(s16 dev_nr)
 {
   int trycnt; // $s1
   int retres; // $s0
-  char pkt[32]; // [sp+20h] [-80h] BYREF
+  char pkt[12]; // [sp+20h] [-80h] BYREF
   char outbuf[56]; // [sp+40h] [-60h] BYREF
 
   retres = 1;
   for ( trycnt = 0; retres && trycnt < 16; trycnt += 1 )
   {
-    memset(pkt, 0, 12);
+    memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0x12;
     pkt[4] = 0x38;
-    retres = sceCdAtapiExecCmd_local(dev_nr, outbuf, 1, 56, pkt, 0xCu, 2);
+    retres = sceCdAtapiExecCmd_local(dev_nr, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 2);
     if ( !retres )
     {
       retres = sceCdAtapiWaitResult_local();
@@ -332,7 +332,7 @@ int do_atapi_cmd_inquiry_12h(s16 dev_nr)
   }
   if ( retres )
     return retres;
-  do_hex_dump(outbuf, 56);
+  do_hex_dump(outbuf, sizeof(outbuf));
   return strncmp(&outbuf[32], "BOOT", 4) != 0;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
@@ -341,13 +341,13 @@ int do_atapi_cmd_inquiry_12h(s16 dev_nr)
 int do_atapi_request_test_unit_ready(s16 dev_nr, int *errptr, int *ctrlptr)
 {
   int retres; // $s0
-  char pkt[16]; // [sp+20h] [-10h] BYREF
+  char pkt[12]; // [sp+20h] [-10h] BYREF
 
   *errptr = 0;
   *ctrlptr = 0;
-  memset(pkt, 0, 12);
+  memset(pkt, 0, sizeof(pkt));
   pkt[0] = 0;
-  retres = xatapi_7_sceCdAtapiExecCmd(dev_nr, 0, 0, 0, pkt, 12, 1);
+  retres = xatapi_7_sceCdAtapiExecCmd(dev_nr, 0, 0, 0, pkt, sizeof(pkt), 1);
   if ( !retres )
   {
     retres = xatapi_8_sceCdAtapiWaitResult();
@@ -361,14 +361,14 @@ int do_atapi_request_test_unit_ready(s16 dev_nr, int *errptr, int *ctrlptr)
 int atapi_req_sense_get(s16 dev_nr, int *retptr)
 {
   int result; // $v0
-  char pkt[16]; // [sp+20h] [-50h] BYREF
-  char outbuf[64]; // [sp+30h] [-40h] BYREF
+  char pkt[12]; // [sp+20h] [-50h] BYREF
+  char outbuf[18]; // [sp+30h] [-40h] BYREF
 
   *retptr = 0;
-  memset(pkt, 0, 12);
+  memset(pkt, 0, sizeof(pkt));
   pkt[0] = 3;
-  pkt[4] = 18;
-  result = xatapi_7_sceCdAtapiExecCmd(dev_nr, outbuf, 1, 18, pkt, 12, 2);
+  pkt[4] = sizeof(outbuf);
+  result = xatapi_7_sceCdAtapiExecCmd(dev_nr, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 2);
   if ( !result )
   {
     result = xatapi_8_sceCdAtapiWaitResult();
@@ -385,14 +385,14 @@ int atapi_req_sense_get(s16 dev_nr, int *retptr)
 int atapi_exec_cmd_request_sense_03h_unused(s16 dev_nr, int *retptr)
 {
   int result; // $v0
-  char pkt[16]; // [sp+20h] [-50h] BYREF
-  char outbuf[64]; // [sp+30h] [-40h] BYREF
+  char pkt[12]; // [sp+20h] [-50h] BYREF
+  char outbuf[18]; // [sp+30h] [-40h] BYREF
 
   *retptr = 0;
-  memset(pkt, 0, 12);
+  memset(pkt, 0, sizeof(pkt));
   pkt[0] = 3;
-  pkt[4] = 0x12;
-  result = sceCdAtapiExecCmd_local(dev_nr, outbuf, 1, 18, pkt, 0xCu, 2);
+  pkt[4] = sizeof(outbuf);
+  result = sceCdAtapiExecCmd_local(dev_nr, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 2);
   if ( !result )
   {
     result = sceCdAtapiWaitResult_local();
@@ -411,16 +411,16 @@ int do_start_stop_unit_1bh_unused(void)
   int trycnt1; // $s1
   int retres; // $s0
   int trycnt2; // $s1
-  char pkt[16]; // [sp+20h] [-10h] BYREF
+  char pkt[12]; // [sp+20h] [-10h] BYREF
 
   retres = 1;
   for ( trycnt1 = 0; trycnt1 < 16 && retres && retres != -550; trycnt1 += 1 )
   {
-    memset(pkt, 0, 12);
+    memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0x1B;
     pkt[4] = 2;
     pkt[5] = 0;
-    retres = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, 0xCu, 1);
+    retres = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, sizeof(pkt), 1);
     if ( !retres )
     {
       retres = sceCdAtapiWaitResult_local();
@@ -442,11 +442,11 @@ int do_start_stop_unit_1bh_unused(void)
     retres = 1;
     for ( trycnt2 = 0; trycnt2 < 16 && retres && retres != -550; trycnt2 += 1 )
     {
-      memset(pkt, 0, 12);
+      memset(pkt, 0, sizeof(pkt));
       pkt[0] = 0x1B;
       pkt[4] = 3;
       pkt[5] = 0;
-      retres = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, 0xCu, 1);
+      retres = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, sizeof(pkt), 1);
       if ( !retres )
       {
         retres = sceCdAtapiWaitResult_local();
@@ -479,8 +479,8 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
   int retres; // $s0
   int trycnt3; // $s1
   int trycnt1; // $s1
-  char pkt[16]; // [sp+20h] [-20h] BYREF
-  char outbuf[6]; // [sp+30h] [-10h] BYREF
+  char pkt[12]; // [sp+20h] [-20h] BYREF
+  char outbuf1[6]; // [sp+30h] [-10h] BYREF
 
   *mediaptr = 4;
   if ( want_atapi )
@@ -518,11 +518,11 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
   tryres1 = 1;
   for ( trycnt2 = 0; trycnt2 < 16 && tryres1 && tryres1 != -550; trycnt2 += 1 )
   {
-    memset(pkt, 0, 12);
+    memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0xF6;
     pkt[2] = 0xA0;
     pkt[8] = 6;
-    tryres1 = sceCdAtapiExecCmd_local(0, outbuf, 1, 6, pkt, 0xCu, 2);
+    tryres1 = sceCdAtapiExecCmd_local(0, outbuf1, 1, sizeof(outbuf1), pkt, sizeof(pkt), 2);
     if ( !tryres1 )
     {
       tryres1 = sceCdAtapiWaitResult_local();
@@ -536,16 +536,18 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
   }
   if ( !tryres1 )
   {
-    maskchk = (((u8)outbuf[5] >> 1) ^ 1) & 1;
-    if ( (outbuf[3] & 0x10) != 0 )
+    maskchk = (((u8)outbuf1[5] >> 1) ^ 1) & 1;
+    if ( (outbuf1[3] & 0x10) != 0 )
     {
+      char outbuf[8]; // [sp+30h] [-10h] BYREF
+
       if ( g_xatapi_verbose > 0 )
         Kprintf("Atapi Drive Media found.\n");
-      memset(pkt, 0, 12);
+      memset(pkt, 0, sizeof(pkt));
       pkt[0] = 0xF6;
       pkt[2] = 0xA2;
-      pkt[8] = 8;
-      if ( !sceCdAtapiExecCmd_local(0, outbuf, 1, 8, pkt, 0xCu, 2) && !sceCdAtapiWaitResult_local() )
+      pkt[8] = sizeof(outbuf);
+      if ( !sceCdAtapiExecCmd_local(0, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 2) && !sceCdAtapiWaitResult_local() )
       {
         if ( g_xatapi_verbose > 0 )
           Kprintf("Atapi Drive Media DVD:%d.\n", outbuf[5] & 0x20);
@@ -567,10 +569,10 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
       retres = 1;
       for ( trycnt4 = 0; trycnt4 < 16 && retres && retres != -550; trycnt4 += 1 )
       {
-        memset(pkt, 0, 12);
+        memset(pkt, 0, sizeof(pkt));
         pkt[0] = 0x1B;
         pkt[5] = 0;
-        retres = sceCdAtapiExecCmd(0, 0, 0, 0, pkt, 12, 1);
+        retres = sceCdAtapiExecCmd(0, 0, 0, 0, pkt, sizeof(pkt), 1);
         if ( !retres )
         {
           retres = sceCdAtapiWaitResult_local();
@@ -594,11 +596,11 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
     retres = 1;
     for ( trycnt3 = 0; trycnt3 < 16 && retres && retres != -550; trycnt3 += 1 )
     {
-      memset(pkt, 0, 12);
+      memset(pkt, 0, sizeof(pkt));
       pkt[0] = 0x1B;
       pkt[4] = 2;
       pkt[5] = 0;
-      retres = sceCdAtapiExecCmd(0, 0, 0, 0, pkt, 12, 1);
+      retres = sceCdAtapiExecCmd(0, 0, 0, 0, pkt, sizeof(pkt), 1);
       if ( !retres )
       {
         retres = sceCdAtapiWaitResult_local();
@@ -627,16 +629,16 @@ int sceCdAtapi_SC(void)
 {
   int trycnt; // $s1
   int retres; // $s0
-  char pkt[16]; // [sp+20h] [-10h] BYREF
+  char pkt[12]; // [sp+20h] [-10h] BYREF
 
-  memset(pkt, 0, 12);
+  memset(pkt, 0, sizeof(pkt));
   retres = 1;
   pkt[0] = 0xF9;
   pkt[2] = 0xB1;
   pkt[8] = 0;
   for ( trycnt = 0; trycnt < 10 && retres; trycnt += 1 )
   {
-    retres = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, 0xCu, 1);
+    retres = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, sizeof(pkt), 1);
     if ( retres || (retres = sceCdAtapiWaitResult_local()) != 0 )
       DelayThread(10000);
   }
@@ -660,30 +662,30 @@ int xatapi_15_exec_f6_f9_scsi(void)
   int retres1; // $s0
   int trycnt2; // $s1
   int retres2; // $s0
-  char pkt[16]; // [sp+20h] [-30h] BYREF
-  char outbuf[32]; // [sp+30h] [-20h] BYREF
+  char pkt[12]; // [sp+20h] [-30h] BYREF
+  char outbuf[6]; // [sp+30h] [-20h] BYREF
 
-  memset(pkt, 0, 12);
+  memset(pkt, 0, sizeof(pkt));
   retres1 = 1;
   pkt[0] = 0xF6;
   pkt[2] = 0xB1;
   pkt[8] = 6;
   for ( trycnt1 = 0; trycnt1 < 4 && retres1; trycnt1 += 1 )
   {
-    retres1 = sceCdAtapiExecCmd_local(0, outbuf, 1, 6, pkt, 0xCu, 2);
+    retres1 = sceCdAtapiExecCmd_local(0, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 2);
     if ( retres1 || (retres1 = sceCdAtapiWaitResult_local()) != 0 )
       DelayThread(10000);
   }
   if ( retres1 && (outbuf[4] & 0x80) == 0 )
     return retres1;
-  memset(pkt, 0, 12);
+  memset(pkt, 0, sizeof(pkt));
   retres2 = 1;
   pkt[0] = 0xF9;
   pkt[2] = 0xB2;
   pkt[8] = 0;
   for ( trycnt2 = 0; trycnt2 < 10 && retres2; trycnt2 += 1 )
   {
-    retres2 = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, 0xCu, 1);
+    retres2 = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, sizeof(pkt), 1);
     if ( !retres2 )
     {
       retres2 = sceCdAtapiWaitResult_local();
@@ -711,34 +713,35 @@ int sceCdAtapi_BC(void)
   int trycnt7; // $s1
   int trycnt8; // $s1
   int retres5; // $s0
-  char pkt[16]; // [sp+20h] [-58h] BYREF
-  char outbuf[16]; // [sp+30h] [-48h] BYREF
+  char pkt[12]; // [sp+20h] [-58h] BYREF
   iop_event_info_t efinfo; // [sp+50h] [-28h] BYREF
   u32 waresontmp; // [sp+70h] [-8h] BYREF
   u32 efbits; // [sp+74h] [-4h] BYREF
   int flg;
-
-  memset(pkt, 0, 12);
-  retres1 = 1;
-  pkt[0] = 0xF6;
-  pkt[2] = 0xB1;
-  pkt[8] = 6;
-  for ( trycnt1 = 0; trycnt1 < 10 && retres1; trycnt1 += 1 )
+  char outbuf1[6];
   {
-    retres1 = sceCdAtapiExecCmd_local(0, outbuf, 1, 6, pkt, 0xCu, 2);
-    if ( retres1 || (retres1 = sceCdAtapiWaitResult_local()) != 0 )
-      DelayThread(10000);
+    memset(pkt, 0, sizeof(pkt));
+    retres1 = 1;
+    pkt[0] = 0xF6;
+    pkt[2] = 0xB1;
+    pkt[8] = sizeof(outbuf1);
+    for ( trycnt1 = 0; trycnt1 < 10 && retres1; trycnt1 += 1 )
+    {
+      retres1 = sceCdAtapiExecCmd_local(0, outbuf1, 1, sizeof(outbuf1), pkt, sizeof(pkt), 2);
+      if ( retres1 || (retres1 = sceCdAtapiWaitResult_local()) != 0 )
+        DelayThread(10000);
+    }
   }
-  if ( !retres1 || (outbuf[4] & 0x80) != 0 )
+  if ( !retres1 || (outbuf1[4] & 0x80) != 0 )
   {
-    memset(pkt, 0, 12);
+    memset(pkt, 0, sizeof(pkt));
     retres2 = 1;
     pkt[0] = 0xF9;
     pkt[2] = 0xB2;
     pkt[8] = 0;
     for ( trycnt2 = 0; trycnt2 < 10 && retres2; trycnt2 += 1 )
     {
-      retres2 = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, 0xCu, 1);
+      retres2 = sceCdAtapiExecCmd_local(0, 0, 0, 0, pkt, sizeof(pkt), 1);
       if ( !retres2 )
       {
         retres2 = sceCdAtapiWaitResult_local();
@@ -748,36 +751,45 @@ int sceCdAtapi_BC(void)
       DelayThread(10000);
     }
   }
-  memset(pkt, 0, 12);
-  retres3 = 1;
-  pkt[0] = 0xF6;
-  pkt[2] = 0xB1;
-  pkt[8] = 6;
-  for ( trycnt3 = 0; trycnt3 < 10 && retres3; trycnt3 += 1 )
   {
-    retres3 = sceCdAtapiExecCmd_local(0, outbuf, 1, 6, pkt, 0xCu, 2);
-    if ( retres3 || (retres3 = sceCdAtapiWaitResult_local()) != 0 )
-      DelayThread(10000);
-  }
-  if ( !retres3 )
-  {
-    if ( (outbuf[4] & 0x81) != 0 )
+    char outbuf[6];
+
+    memset(pkt, 0, sizeof(pkt));
+    retres3 = 1;
+    pkt[0] = 0xF6;
+    pkt[2] = 0xB1;
+    pkt[8] = sizeof(outbuf);
+    for ( trycnt3 = 0; trycnt3 < 10 && retres3; trycnt3 += 1 )
     {
-      *g_cd_sc_ffffffd9_ptr = 1;
-      return 1;
+      retres3 = sceCdAtapiExecCmd_local(0, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 2);
+      if ( retres3 || (retres3 = sceCdAtapiWaitResult_local()) != 0 )
+        DelayThread(10000);
+    }
+    if ( !retres3 )
+    {
+      if ( (outbuf[4] & 0x81) != 0 )
+      {
+        *g_cd_sc_ffffffd9_ptr = 1;
+        return 1;
+      }
     }
   }
-  memset(pkt, 0, 12);
-  retres4 = 1;
-  pkt[0] = 0xF6;
-  pkt[2] = 0xB0;
-  pkt[8] = 16;
-  for ( trycnt4 = 0; trycnt4 < 10 && retres4; trycnt4 += 1 )
   {
-    retres4 = sceCdAtapiExecCmd_local(0, outbuf, 1, 16, pkt, 0xCu, 2);
-    if ( retres4 || (retres4 = sceCdAtapiWaitResult_local()) != 0 )
-      DelayThread(10000);
+    char outbuf[16];
+
+    memset(pkt, 0, sizeof(pkt));
+    retres4 = 1;
+    pkt[0] = 0xF6;
+    pkt[2] = 0xB0;
+    pkt[8] = sizeof(outbuf);
+    for ( trycnt4 = 0; trycnt4 < 10 && retres4; trycnt4 += 1 )
+    {
+      retres4 = sceCdAtapiExecCmd_local(0, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 2);
+      if ( retres4 || (retres4 = sceCdAtapiWaitResult_local()) != 0 )
+        DelayThread(10000);
+    }
   }
+
   if ( retres4 )
   {
     if ( g_xatapi_verbose > 0 )
@@ -828,18 +840,20 @@ int sceCdAtapi_BC(void)
       }
       else
       {
+        char outbuf[16];
+
         if ( g_should_wait_for_dma_flag )
           WaitEventFlag(g_adma_evfid, 1u, 16, &efbits);
         
         retres4 = 1;
         WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
-        memset(pkt, 0, 12);
+        memset(pkt, 0, sizeof(pkt));
         pkt[0] = 0xF9;
         pkt[2] = 0xB0;
-        pkt[8] = 16;
+        pkt[8] = sizeof(outbuf);
         for ( trycnt7 = 0; trycnt7 < 10 && retres4; trycnt7 += 1 )
         {
-          retres4 = sceCdAtapiExecCmd_local(0, outbuf, 1, 16, pkt, 0xCu, 3);
+          retres4 = sceCdAtapiExecCmd_local(0, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 3);
           if ( retres4 || (retres4 = sceCdAtapiWaitResult_local()) != 0 )
             DelayThread(10000);
         }
@@ -863,20 +877,24 @@ int sceCdAtapi_BC(void)
       WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
     }
   }
-  memset(pkt, 0, 12);
-  retres5 = 1;
-  pkt[0] = 0xF6;
-  pkt[2] = 0xB1;
-  pkt[8] = 6;
-  for ( trycnt8 = 0; trycnt8 < 10 && retres5; trycnt8 += 1 )
   {
-    retres5 = sceCdAtapiExecCmd_local(0, outbuf, 1, 6, pkt, 0xCu, 2);
-    if ( retres5 || (retres5 = sceCdAtapiWaitResult_local()) != 0 )
-      DelayThread(10000);
+    char outbuf[6];
+
+    memset(pkt, 0, sizeof(pkt));
+    retres5 = 1;
+    pkt[0] = 0xF6;
+    pkt[2] = 0xB1;
+    pkt[8] = sizeof(outbuf);
+    for ( trycnt8 = 0; trycnt8 < 10 && retres5; trycnt8 += 1 )
+    {
+      retres5 = sceCdAtapiExecCmd_local(0, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 2);
+      if ( retres5 || (retres5 = sceCdAtapiWaitResult_local()) != 0 )
+        DelayThread(10000);
+    }
+    if ( retres5 )
+      return retres4;
+    *g_cd_sc_ffffffd9_ptr = (outbuf[4] & 0x81) != 0;
   }
-  if ( retres5 )
-    return retres4;
-  *g_cd_sc_ffffffd9_ptr = (outbuf[4] & 0x81) != 0;
   return retres4;
 }
 // 40A640: using guessed type int g_should_wait_for_dma_flag;
@@ -886,14 +904,14 @@ int sceCdAtapi_BC(void)
 int atapi_spin_status_get(int unused_arg1, void *buf)
 {
   int result; // $v0
-  char pkt[16]; // [sp+20h] [-10h] BYREF
+  char pkt[12]; // [sp+20h] [-10h] BYREF
 
   (void)unused_arg1;
-  memset(pkt, 0, 12);
+  memset(pkt, 0, sizeof(pkt));
   pkt[0] = 0xF6;
   pkt[2] = 0xA0;
   pkt[8] = 6;
-  result = xatapi_7_sceCdAtapiExecCmd(0, buf, 1, 6, pkt, 12, 2);
+  result = xatapi_7_sceCdAtapiExecCmd(0, buf, 1, 6, pkt, sizeof(pkt), 2);
   if ( !result )
     return xatapi_8_sceCdAtapiWaitResult();
   return result;
@@ -972,14 +990,12 @@ int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int 
   int retres1; // $s0
   int seccnt; // $s1
   int trycnt1; // $s2
-  char pkt_stk[16]; // [sp+20h] [-18h] BYREF
-  char *pkt; // [sp+30h] [-8h]
+  char pkt[12]; // [sp+20h] [-18h] BYREF
 
   rwbuf_tmp = (char *)rwbuf;
   retres1 = 0;
   if ( g_xatapi_verbose > 0 )
     Kprintf("dma %c %08x, nsec %d\n", rwtype ? 'w' : 'r', rwbuf, nsec);
-  pkt = pkt_stk;
   for ( nsec_tmp = nsec; !retres1 && nsec_tmp; nsec_tmp -= seccnt )
   {
     seccnt = nsec_tmp;
@@ -988,14 +1004,14 @@ int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int 
     for ( trycnt1 = 3; trycnt1 < 3; trycnt1 += 1 )
     {
       xatapi_9_sceCdSpdAtaDmaStart(rwtype);
-      memset(pkt_stk, 0, 12);
-      pkt_stk[0] = ( !rwtype ) ? 0x28 : 0x2A;
-      pkt_stk[2] = ((uiptr)rwbuf_tmp >> 24) & 0xFF;
-      pkt_stk[3] = ((uiptr)rwbuf_tmp >> 16) & 0xFF;
-      pkt_stk[4] = ((uiptr)rwbuf_tmp >> 8) & 0xFF;
-      pkt_stk[5] = ((uiptr)rwbuf_tmp) & 0xFF;
-      pkt_stk[8] = seccnt;
-      retres1 = xatapi_7_sceCdAtapiExecCmd(dev_nr, buf, seccnt, secsize, pkt, 12, 4);
+      memset(pkt, 0, sizeof(pkt));
+      pkt[0] = ( !rwtype ) ? 0x28 : 0x2A;
+      pkt[2] = ((uiptr)rwbuf_tmp >> 24) & 0xFF;
+      pkt[3] = ((uiptr)rwbuf_tmp >> 16) & 0xFF;
+      pkt[4] = ((uiptr)rwbuf_tmp >> 8) & 0xFF;
+      pkt[5] = ((uiptr)rwbuf_tmp) & 0xFF;
+      pkt[8] = seccnt;
+      retres1 = xatapi_7_sceCdAtapiExecCmd(dev_nr, buf, seccnt, secsize, pkt, sizeof(pkt), 4);
       if ( retres1 )
       {
         xatapi_10_sceCdSpdAtaDmaEnd();
@@ -1771,7 +1787,7 @@ void do_hex_dump(void *ptr, int len)
       }
     }
     charbuf_offs = curbyte & 0xF;
-    for ( curchroffs = 0; (unsigned int)curchroffs < (unsigned int)(16 - charbuf_offs); curchroffs += 1 )
+    for ( curchroffs = 0; (unsigned int)curchroffs < (unsigned int)((sizeof(charbuf) - 1) - charbuf_offs); curchroffs += 1 )
     {
       Kprintf("\t  ");
     }
@@ -3761,8 +3777,8 @@ void ata_init_devices(ata_devinfo_t *devinfo)
 
   if ( xatapi_4_sceAtaSoftReset() )
     return;
-  ata_device_probe(devinfo);
-  if ( !devinfo->exists )
+  ata_device_probe(&devinfo[0]);
+  if ( !devinfo[0].exists )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("DEV5 ATA: error: there is no device0\n");
@@ -3773,28 +3789,28 @@ void ata_init_devices(ata_devinfo_t *devinfo)
     return;
   // Unofficial: was 8 bit access
   if ( (dev5_speed_regs.r_spd_ata_control & 0xFF) )
-    ata_device_probe(devinfo + 1);
+    ata_device_probe(&devinfo[1]);
   else
     devinfo[1].exists = 0;
   ata_pio_mode(0);
   g_is_in_read_info = 0;
   for ( identify_nr = 0; identify_nr < 2; identify_nr += 1 )
   {
-    if ( devinfo->exists )
+    if ( devinfo[identify_nr].exists )
     {
-      if ( !devinfo->has_packet )
+      if ( !devinfo[identify_nr].has_packet )
       {
-        devinfo->exists = ata_device_identify(identify_nr, ata_param) == 0;
+        devinfo[identify_nr].exists = ata_device_identify(identify_nr, ata_param) == 0;
       }
-      if ( devinfo->has_packet == 1 )
-        devinfo->exists = ata_device_pkt_identify(identify_nr, ata_param) == 0;
+      if ( devinfo[identify_nr].has_packet == 1 )
+        devinfo[identify_nr].exists = ata_device_pkt_identify(identify_nr, ata_param) == 0;
       if ( g_xatapi_verbose > 0 )
-        Kprintf("device%d connected, kind %d.\n", identify_nr, devinfo->has_packet);
-      if ( devinfo->exists && devinfo->has_packet == 1 )
+        Kprintf("device%d connected, kind %d.\n", identify_nr, devinfo[identify_nr].has_packet);
+      if ( devinfo[identify_nr].exists && devinfo[identify_nr].has_packet == 1 )
       {
         do_hex_dump(ata_param, 512);
-        devinfo->lba48 = do_atapi_cmd_inquiry_12h(identify_nr) == 0;
-        if ( !devinfo->lba48 )
+        devinfo[identify_nr].lba48 = do_atapi_cmd_inquiry_12h(identify_nr) == 0;
+        if ( !devinfo[identify_nr].lba48 )
         {
           atapi_device_set_transfer_mode_outer(identify_nr);
         }
@@ -3806,7 +3822,6 @@ void ata_init_devices(ata_devinfo_t *devinfo)
         }
       }
     }
-    ++devinfo;
   }
 }
 // 40A648: using guessed type int g_xatapi_verbose;
