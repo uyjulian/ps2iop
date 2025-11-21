@@ -923,7 +923,7 @@ void do_init_xor_magic(char *in_id_buf)
 int magic_shift_write_netcnf_2(int inshft, int buflen)
 {
   for ( ; buflen; buflen -= 1 )
-    inshft = ((u8)inshft >> 7) | (2 * inshft);
+    inshft = ((u8)inshft >> 7) | (inshft << 1);
   return (u8)inshft;
 }
 
@@ -939,7 +939,7 @@ int magic_shift_read_netcnf_2(int inshft, int buflen)
 int magic_shift_write_netcnf_1(int inshft, int buflen)
 {
   for ( ; buflen; buflen -= 1 )
-    inshft = ((u16)inshft >> 15) | (2 * inshft);
+    inshft = ((u16)inshft >> 15) | (inshft << 1);
   return (u16)inshft;
 }
 
