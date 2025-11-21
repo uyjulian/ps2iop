@@ -113,7 +113,7 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
 int do_merge_conf_inner(sceNetCnfEnv_t *e);
 int do_load_conf_inner(sceNetCnfEnv_t *e);
 int do_load_dial_inner(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair);
-int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va);
+int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list va);
 int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...);
 int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata);
 int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc);
@@ -3735,7 +3735,7 @@ int do_load_dial_inner(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair)
 }
 
 //----- (00406990) --------------------------------------------------------
-int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
+int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list va)
 {
   char *mem_ptr_03; // $v1
   void *mem_ptr_rval_04; // $v0
@@ -3744,14 +3744,12 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
   int strlened; // $s3
   int fmt_flag_str; // $fp
   char *mem_ptr_01; // $v1
-  char **cur_va2; // $v0
   char *strptr1; // $s0
   int strlenmax; // $s4
   unsigned int strpad1; // $a2
   int cur_va1; // $a1
   int valmod1; // $hi
   char *curnumvals; // $a0
-  size_t strlen1; // $v0
   int strlencalc; // $s3
   char *mem_ptr_02; // $v1
   char *mem_ptr_04; // $v1
@@ -3799,12 +3797,11 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
       switch ( *fmt )
       {
         case 'c':
-          va = ((va + 3) & 0xFFFFFFFC) + 4;
           mem_ptr_01 = e->mem_ptr;
           mem_ptr_rval_04 = mem_ptr_01 + 1;
           if ( mem_ptr_01 >= (char *)e->mem_last )
             return -2;
-          *mem_ptr_01 = *(u32 *)(va - 4);
+          *mem_ptr_01 = va_arg(va, int);
           e->mem_ptr = mem_ptr_rval_04;
           ++fmt;
           continue;
@@ -3843,17 +3840,14 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
       }
       if ( fmt_flag_str != -1 )
       {
-        cur_va2 = (char **)((va + 3) & 0xFFFFFFFC);
-        va = (unsigned int)(cur_va2 + 1);
-        strptr1 = *cur_va2;
+        strptr1 = va_arg(va, char *);
         strlenmax = 0;
         if ( !strptr1 )
           strpad1 = 0;
       }
       if ( strpad1 )
       {
-        va = ((va + 3) & 0xFFFFFFFC) + 4;
-        cur_va1 = *(u32 *)(va - 4);
+        cur_va1 = va_arg(va, int);
         stkstr1 = 0;
         strptr1 = &stkstr1;
         strlenmax = 0;
@@ -3883,11 +3877,11 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
       }
       if ( strptr1 )
       {
-        strlen1 = strlen(strptr1);
         if ( strlenmax )
-          strlencalc = strlened + 1 - strlen1;
+          strlencalc = strlened + 1;
         else
-          strlencalc = strlened - strlen1;
+          strlencalc = strlened;
+        strlencalc -= strlen(strptr1);
         if ( has_sero == '0' && strlenmax )
         {
           mem_ptr_02 = e->mem_ptr;
@@ -4024,9 +4018,12 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, char *fmt, unsigned int va)
 int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...)
 {
   va_list va; // [sp+20h] [+10h] BYREF
+  int retval;
 
   va_start(va, fmt);
-  return do_netcnf_vsprintf_buffer(e, (char *)fmt, (unsigned int)va);
+  retval = do_netcnf_vsprintf_buffer(e, fmt, va);
+  va_end(va);
+  return retval;
 }
 
 //----- (00406F5C) --------------------------------------------------------
