@@ -255,10 +255,7 @@ int module_stop(int argc, char *argv[])
 //----- (0040038C) --------------------------------------------------------
 int _start(int argc, char *argv[])
 {
-  if ( argc >= 0 )
-    return module_start(argc, argv);
-  else
-    return module_stop(-argc, argv);
+  return ( argc >= 0 ) ? module_start(argc, argv) : module_stop(-argc, argv);
 }
 
 //----- (004003F0) --------------------------------------------------------
@@ -482,25 +479,28 @@ int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count)
 {
   int retres; // $a1
 
-  if ( p->code == 1 )
+  switch ( p->code )
   {
-    if ( *ns_count )
+    case 1:
     {
-      if ( *ns_count != 1 )
-        return 0;
-      retres = sceNetCnfAddress2String(data->dns2_address, sizeof(data->dns2_address), &((nameserver_t *)p)->address);
+      switch ( *ns_count )
+      {
+        case 0:
+          retres = sceNetCnfAddress2String(data->dns1_address, sizeof(data->dns1_address), &((nameserver_t *)p)->address);
+          break;
+        case 1:
+          retres = sceNetCnfAddress2String(data->dns2_address, sizeof(data->dns2_address), &((nameserver_t *)p)->address);
+          break;
+        default:
+          return 0;
+      }
+      ++*ns_count;
+      return retres;
     }
-    else
-    {
-      retres = sceNetCnfAddress2String(data->dns1_address, sizeof(data->dns1_address), &((nameserver_t *)p)->address);
-    }
-    ++*ns_count;
-    return retres;
-  }
-  else
-  {
-    if ( p->code == 3 )
+    case 3:
       return sceNetCnfAddress2String(data->gateway, sizeof(data->gateway), &((route_t *)p)->re.gateway);
+    default:
+      break;
   }
   return 0;
 }
@@ -513,9 +513,62 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
   int i; // $s0
 
   cmd = 0;
-  if ( type != 1 )
+  switch ( type )
   {
-    if ( type == 2 )
+    case 1:
+    {
+      data->ifc_type = p->type;
+      data->dhcp = p->dhcp;
+      if ( p->dhcp_host_name )
+        strcpy(data->dhcp_host_name, (const char *)p->dhcp_host_name);
+      if ( p->address )
+        strcpy(data->address, (const char *)p->address);
+      if ( p->netmask )
+        strcpy(data->netmask, (const char *)p->netmask);
+      ns_count = 0;
+      for ( cmd_head = p->cmd_head; cmd_head; cmd_head = cmd_head->forw )
+      {
+        cmd = get_cmd(data, cmd_head, &ns_count);
+        if ( cmd < 0 )
+          return cmd;
+      }
+      for ( i = 0; i < (sizeof(p->phone_numbers)/sizeof(p->phone_numbers[0])); i += 1 )
+      {
+        if ( p->phone_numbers[i] )
+        {
+          switch ( i )
+          {
+            case 0:
+              strcpy(data->phone_numbers1, (const char *)p->phone_numbers[i]);
+              break;
+            case 1:
+              strcpy(data->phone_numbers2, (const char *)p->phone_numbers[i]);
+              break;
+            case 2:
+              strcpy(data->phone_numbers3, (const char *)p->phone_numbers[i]);
+              break;
+          }
+        }
+      }
+      if ( p->auth_name )
+        strcpy(data->auth_name, (const char *)p->auth_name);
+      if ( p->auth_key )
+        strcpy(data->auth_key, (const char *)p->auth_key);
+      if ( p->peer_name )
+        strcpy(data->peer_name, (const char *)p->peer_name);
+      data->dns1_nego = p->want.dns1_nego;
+      data->dns2_nego = p->want.dns2_nego;
+      data->f_auth = p->allow.f_auth;
+      data->auth = p->allow.auth;
+      data->pppoe = p->pppoe;
+      data->prc_nego = p->want.prc_nego;
+      data->acc_nego = p->want.acc_nego;
+      data->accm_nego = p->want.accm_nego;
+      data->mtu = p->mtu;
+      data->ifc_idle_timeout = p->idle_timeout;
+      
+    }
+    case 2:
     {
       data->dev_type = p->type;
       if ( p->vendor )
@@ -533,58 +586,11 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
         data->dialing_type = p->dialing_type;
         data->dev_idle_timeout = p->idle_timeout;
       }
+      break;
     }
-    return cmd;
+    default:
+      break;
   }
-  data->ifc_type = p->type;
-  data->dhcp = p->dhcp;
-  if ( p->dhcp_host_name )
-    strcpy(data->dhcp_host_name, (const char *)p->dhcp_host_name);
-  if ( p->address )
-    strcpy(data->address, (const char *)p->address);
-  if ( p->netmask )
-    strcpy(data->netmask, (const char *)p->netmask);
-  ns_count = 0;
-  for ( cmd_head = p->cmd_head; cmd_head; cmd_head = cmd_head->forw )
-  {
-    cmd = get_cmd(data, cmd_head, &ns_count);
-    if ( cmd < 0 )
-      return cmd;
-  }
-  for ( i = 0; i < (sizeof(p->phone_numbers)/sizeof(p->phone_numbers[0])); i += 1 )
-  {
-    if ( p->phone_numbers[i] )
-    {
-      switch ( i )
-      {
-        case 0:
-          strcpy(data->phone_numbers1, (const char *)p->phone_numbers[i]);
-          break;
-        case 1:
-          strcpy(data->phone_numbers2, (const char *)p->phone_numbers[i]);
-          break;
-        case 2:
-          strcpy(data->phone_numbers3, (const char *)p->phone_numbers[i]);
-          break;
-      }
-    }
-  }
-  if ( p->auth_name )
-    strcpy(data->auth_name, (const char *)p->auth_name);
-  if ( p->auth_key )
-    strcpy(data->auth_key, (const char *)p->auth_key);
-  if ( p->peer_name )
-    strcpy(data->peer_name, (const char *)p->peer_name);
-  data->dns1_nego = p->want.dns1_nego;
-  data->dns2_nego = p->want.dns2_nego;
-  data->f_auth = p->allow.f_auth;
-  data->auth = p->allow.auth;
-  data->pppoe = p->pppoe;
-  data->prc_nego = p->want.prc_nego;
-  data->acc_nego = p->want.acc_nego;
-  data->accm_nego = p->want.accm_nego;
-  data->mtu = p->mtu;
-  data->ifc_idle_timeout = p->idle_timeout;
   return cmd;
 }
 
@@ -692,11 +698,11 @@ int put_gw(sceNetCnfEnv_t *e, char *gw)
   gateway.cmd.code = 3;
   gateway.cmd.back = e->ifc->cmd_tail;
   if ( gateway.cmd.back )
-    gateway.cmd.back->forw = (struct sceNetCnfCommand *)&gateway;
+    gateway.cmd.back->forw = &gateway.cmd;
   else
-    e->ifc->cmd_head = (struct sceNetCnfCommand *)&gateway;
+    e->ifc->cmd_head = &gateway.cmd;
   gateway.cmd.forw = 0;
-  e->ifc->cmd_tail = (struct sceNetCnfCommand *)&gateway;
+  e->ifc->cmd_tail = &gateway.cmd;
   if ( gw )
   {
     retres = sceNetCnfName2Address(&gateway.re.dstaddr, 0);
@@ -820,10 +826,17 @@ int root_link(sceNetCnfEnv_t *e, int type)
     p = (sceNetCnfPair_t *)sceNetCnfAllocMem(e, sizeof(sceNetCnfPair_t), 2);
     if ( !p )
       return -2;
-    if ( type == 1 )
-      p->ifc = e->ifc;
-    if ( type == 2 )
-      p->dev = e->ifc;
+    switch ( type )
+    {
+      case 1:
+        p->ifc = e->ifc;
+        break;
+      case 2:
+        p->dev = e->ifc;
+        break;
+      default:
+        break;
+    }
     pair_tail = e->root->pair_tail;
     p->back = pair_tail;
     if ( !pair_tail )
@@ -833,11 +846,16 @@ int root_link(sceNetCnfEnv_t *e, int type)
     e->root->pair_tail = p;
     return 0;
   }
-  if ( type == 1 )
-    root->pair_head->ifc = e->ifc;
-  if ( type == 2 )
+  switch ( type )
   {
-    e->root->pair_head->dev = e->ifc;
+    case 1:
+      root->pair_head->ifc = e->ifc;
+      break;
+    case 2:
+      e->root->pair_head->dev = e->ifc;
+      break;
+    default:
+      break;
   }
   return 0;
 }
@@ -1024,16 +1042,11 @@ int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
     default:
       break;
   }
-  if ( init_flag )
+  if ( !init_flag )
   {
-    e->ifc = 0;
+    return ( !e->alloc_err ) ? retres : -2;
   }
-  else
-  {
-    if ( !e->alloc_err )
-      return retres;
-    return -2;
-  }
+  e->ifc = 0;
   return -100;
 }
 
@@ -1088,9 +1101,7 @@ int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
     if ( attachres1 < 0 )
       break;
   }
-  if ( !e->alloc_err )
-    return attachres1;
-  return -2;
+  return ( !e->alloc_err ) ? attachres1 : -2;
 }
 
 //----- (00401CB4) --------------------------------------------------------
@@ -1099,23 +1110,24 @@ int sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
   int retres1; // $s0
 
   retres1 = 0;
-  if ( type )
+  switch ( type )
   {
-    if ( type < 0 || type >= 3 )
-    {
-      printf("[%s] unknown type (%d)\n", "sceNetcnfifWriteEnv", type);
-    }
-    else
+    case 0:
+      retres1 = put_net(e, data);
+      break;
+    case 1:
+    case 2:
+    case 3:
     {
       retres1 = put_attach(e, data, type);
       if ( retres1 < 0 )
         return retres1;
       retres1 = root_link(e, type);
+      break;
     }
-  }
-  else
-  {
-    retres1 = put_net(e, data);
+    default:
+      printf("[%s] unknown type (%d)\n", "sceNetcnfifWriteEnv", type);
+      break;
   }
   if ( retres1 >= 0 )
   {
@@ -1231,9 +1243,7 @@ int my_create_heap(void)
   if ( g_heap )
     return -2;
   g_heap = CreateHeap(1024, 1);
-  if ( g_heap )
-    return 0;
-  return -1;
+  return g_heap ? 0 : -1;
 }
 
 //----- (00402170) --------------------------------------------------------
