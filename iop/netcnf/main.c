@@ -3443,7 +3443,7 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
            || (strncmp(ptr, "# <Sony Computer Entertainment Inc.>", 36) != 0) )
     {
       printf("netcnf: decoding error (magic=\"");
-      for ( curchind = 0; curchind < read_res1 && curchind < '$'; curchind += 1 )
+      for ( curchind = 0; curchind < read_res1 && curchind < 36; curchind += 1 )
       {
         printf("%c", ((u8)ptr[curchind] - (unsigned int)' ' < '_') ? ((u8)ptr[curchind]) : '?');
       }
