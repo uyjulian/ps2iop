@@ -158,8 +158,6 @@ extern struct irx_export_table _exp_sdsq;
 //----- (00400060) --------------------------------------------------------
 int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
 {
-  sceSeqSeSequenceChunk *chk; // $a0
-
   dinfo->m_vers = 0;
   dinfo->m_sequ = 0;
   dinfo->m_midi = 0;
@@ -169,9 +167,8 @@ int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
   {
     if ( indata->chunkSize >= 0 )
     {
-      chk = (sceSeqSeSequenceChunk *)((char *)indata + indata->chunkSize);
-      dinfo->m_sequ = (sceSeqHeaderChunk *)chk;
-      if ( chk->Creator == 0x53434549 && chk->Type == 0x53657175 )
+      dinfo->m_sequ = (sceSeqHeaderChunk *)((char *)indata + indata->chunkSize);
+      if ( dinfo->m_sequ->Creator == 0x53434549 && dinfo->m_sequ->Type == 0x53657175 )
       {
         return 0;
       }
@@ -198,15 +195,12 @@ int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
 //----- (00400108) --------------------------------------------------------
 int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo)
 {
-  sceSeqMidiChunk *chk; // $a0
-
   if ( dinfo->m_sequ->midiChunkAddr == -1 )
     return 0x81049024;
   if ( dinfo->m_sequ->midiChunkAddr < 0 )
     return 0x8104002F;
-  chk = (sceSeqMidiChunk *)((char *)indata + dinfo->m_sequ->midiChunkAddr);
-  dinfo->m_midi = chk;
-  if ( chk->Creator != 0x53434549 || chk->Type != 0x4D696469 )
+  dinfo->m_midi = (sceSeqMidiChunk *)((char *)indata + dinfo->m_sequ->midiChunkAddr);
+  if ( dinfo->m_midi->Creator != 0x53434549 || dinfo->m_midi->Type != 0x4D696469 )
   {
     dinfo->m_midi = 0;
     return 0x8104002F;
@@ -217,15 +211,12 @@ int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo)
 //----- (00400174) --------------------------------------------------------
 int do_get_song_chunk(void *indata, struct sdsq_info *dinfo)
 {
-  sceSeqSongChunk *chk; // $a0
-
   if ( dinfo->m_sequ->songChunkAddr == -1 )
     return 0x81049025;
   if ( dinfo->m_sequ->songChunkAddr < 0 )
     return 0x8104002F;
-  chk = (sceSeqSongChunk *)((char *)indata + dinfo->m_sequ->songChunkAddr);
-  dinfo->m_song = chk;
-  if ( chk->Creator != 0x53434549 || chk->Type != 0x536F6E67 )
+  dinfo->m_song = (sceSeqSongChunk *)((char *)indata + dinfo->m_sequ->songChunkAddr);
+  if ( dinfo->m_song->Creator != 0x53434549 || dinfo->m_song->Type != 0x536F6E67 )
   {
     dinfo->m_song = 0;
     return 0x8104002F;

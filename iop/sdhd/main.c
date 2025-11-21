@@ -418,8 +418,6 @@ extern struct irx_export_table _exp_sdhd;
 //----- (004000F0) --------------------------------------------------------
 int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
 {
-  sceHardSynthHeaderChunk *chk; // $a0
-
   dinfo->m_vers = 0;
   dinfo->m_head = 0;
   dinfo->m_prog = 0;
@@ -429,11 +427,10 @@ int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *d
   dinfo->m_vers = indata;
   if ( indata->Creator == 0x53434549 && indata->Type == 0x56657273 )
   {
-    chk = (sceHardSynthHeaderChunk *)((char *)indata + indata->chunkSize);
     if ( indata->chunkSize >= 0 )
     {
-      dinfo->m_head = chk;
-      if ( chk->Creator == 0x53434549 && chk->Type == 0x48656164 )
+      dinfo->m_head = (sceHardSynthHeaderChunk *)((char *)indata + indata->chunkSize);
+      if ( dinfo->m_head->Creator == 0x53434549 && dinfo->m_head->Type == 0x48656164 )
       {
         return 0;
       }
@@ -460,15 +457,12 @@ int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *d
 //----- (004001A0) --------------------------------------------------------
 int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
 {
-  sceHardSynthProgramChunk *chk; // $a0
-
   if ( dinfo->m_head->programChunkAddr == -1 )
     return 0x81039005;
   if ( dinfo->m_head->programChunkAddr < 0 )
     return 0x8103002F;
-  chk = (sceHardSynthProgramChunk *)((char *)indata + dinfo->m_head->programChunkAddr);
-  dinfo->m_prog = chk;
-  if ( chk->Creator != 0x53434549 || chk->Type != 0x50726F67 )
+  dinfo->m_prog = (sceHardSynthProgramChunk *)((char *)indata + dinfo->m_head->programChunkAddr);
+  if ( dinfo->m_prog->Creator != 0x53434549 || dinfo->m_prog->Type != 0x50726F67 )
   {
     dinfo->m_prog = 0;
     return 0x8103002F;
@@ -479,15 +473,12 @@ int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
 //----- (0040020C) --------------------------------------------------------
 int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
 {
-  sceHardSynthSampleSetChunk *chk; // $a0
-
   if ( dinfo->m_head->sampleSetChunkAddr == -1 )
     return 0x81039006;
   if ( dinfo->m_head->sampleSetChunkAddr < 0 )
     return 0x8103002F;
-  chk = (sceHardSynthSampleSetChunk *)((char *)indata + dinfo->m_head->sampleSetChunkAddr);
-  dinfo->m_sset = chk;
-  if ( chk->Creator != 0x53434549 || chk->Type != 0x53736574 )
+  dinfo->m_sset = (sceHardSynthSampleSetChunk *)((char *)indata + dinfo->m_head->sampleSetChunkAddr);
+  if ( dinfo->m_sset->Creator != 0x53434549 || dinfo->m_sset->Type != 0x53736574 )
   {
     dinfo->m_sset = 0;
     return 0x8103002F;
@@ -498,15 +489,12 @@ int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
 //----- (00400278) --------------------------------------------------------
 int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
 {
-  sceHardSynthSampleChunk *chk; // $a0
-
   if ( dinfo->m_head->sampleChunkAddr == -1 )
     return 0x81039007;
   if ( dinfo->m_head->sampleChunkAddr < 0 )
     return 0x8103002F;
-  chk = (sceHardSynthSampleChunk *)((char *)indata + dinfo->m_head->sampleChunkAddr);
-  dinfo->m_smpl = chk;
-  if ( chk->Creator != 0x53434549 || chk->Type != 0x536D706C )
+  dinfo->m_smpl = (sceHardSynthSampleChunk *)((char *)indata + dinfo->m_head->sampleChunkAddr);
+  if ( dinfo->m_smpl->Creator != 0x53434549 || dinfo->m_smpl->Type != 0x536D706C )
   {
     dinfo->m_smpl = 0;
     return 0x8103002F;
@@ -517,15 +505,12 @@ int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
 //----- (004002E4) --------------------------------------------------------
 int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
 {
-  sceHardSynthVagInfoChunk *chk; // $a0
-
   if ( dinfo->m_head->vagInfoChunkAddr == -1 )
     return 0x81039008;
   if ( dinfo->m_head->vagInfoChunkAddr < 0 )
     return 0x8103002F;
-  chk = (sceHardSynthVagInfoChunk *)((char *)indata + dinfo->m_head->vagInfoChunkAddr);
-  dinfo->m_vagi = chk;
-  if ( chk->Creator != 0x53434549 || chk->Type != 0x56616769 )
+  dinfo->m_vagi = (sceHardSynthVagInfoChunk *)((char *)indata + dinfo->m_head->vagInfoChunkAddr);
+  if ( dinfo->m_vagi->Creator != 0x53434549 || dinfo->m_vagi->Type != 0x56616769 )
   {
     dinfo->m_vagi = 0;
     return 0x8103002F;
