@@ -133,8 +133,8 @@ char g_config_chr_buf[2048]; // weak
 int _start(int ac, char **av)
 {
   int has_conffile; // $s4
-  int cur_ac; // $s3
-  int cur_av_pos; // $s0
+  int i; // $s3
+  int j; // $s0
   int thid1; // $s0
   iop_event_t efparam; // [sp+10h] [-30h] BYREF
   iop_thread_t thparam; // [sp+20h] [-20h] BYREF
@@ -154,36 +154,36 @@ int _start(int ac, char **av)
   g_rb_count = 0;
   g_usbm_entry_list_end = 0;
   g_usbm_entry_list_cur = 0;
-  for ( cur_ac = 1; cur_ac < ac; cur_ac += 1 )
+  for ( i = 1; i < ac; i += 1 )
   {
-    for ( cur_av_pos = 0; av[cur_ac][cur_av_pos] && av[cur_ac][cur_av_pos] != '='; cur_av_pos += 1 );
-    if ( av[cur_ac][cur_av_pos] )
+    for ( j = 0; av[i][j] && av[i][j] != '='; j += 1 );
+    if ( av[i][j] )
     {
-      av[cur_ac][cur_av_pos] = 0;
-      cur_av_pos += 1;
+      av[i][j] = 0;
+      j += 1;
     }
-    if ( !strcmp(av[cur_ac], "conffile") )
+    if ( !strcmp(av[i], "conffile") )
     {
-      if ( (unsigned int)strlen(&(av[cur_ac])[cur_av_pos]) < 0x200 )
+      if ( (unsigned int)strlen(&(av[i])[j]) < 0x200 )
       {
-        strcpy((char *)g_param_conffile, &(av[cur_ac])[cur_av_pos]);
+        strcpy((char *)g_param_conffile, &(av[i])[j]);
         has_conffile = 1;
         if ( g_param_debug > 0 )
           printf("conffile=%s\n", g_param_conffile);
       }
       else
       {
-        printf("Too long file name : %s\n", &(av[cur_ac])[cur_av_pos]);
+        printf("Too long file name : %s\n", &(av[i])[j]);
       }
     }
-    else if ( !strcmp(av[cur_ac], "debug") )
+    else if ( !strcmp(av[i], "debug") )
     {
-      g_param_debug = do_parse_cmd_int(&(av[cur_ac])[cur_av_pos]);
+      g_param_debug = do_parse_cmd_int(&(av[i])[j]);
       printf("Debug level is %d\n", g_param_debug);
     }
-    else if ( !strcmp(av[cur_ac], "rbsize") )
+    else if ( !strcmp(av[i], "rbsize") )
     {
-      g_param_rbsize = do_parse_cmd_int(&(av[cur_ac])[cur_av_pos]);
+      g_param_rbsize = do_parse_cmd_int(&(av[i])[j]);
       if ( g_param_rbsize >= 257 )
         g_param_rbsize = 256;
       if ( g_param_rbsize < 8 )
@@ -258,7 +258,7 @@ int _start(int ac, char **av)
 int module_unload()
 {
   USBDEV_t *listent_1; // $s2
-  int argind; // $s1
+  int i; // $s1
   USBDEV_t *listent_3; // $a0
   int stopres; // [sp+10h] [-8h] BYREF
   int state; // [sp+14h] [-4h] BYREF
@@ -279,9 +279,9 @@ int module_unload()
         UnloadModule(listent_1->modid);
       }
       CpuSuspendIntr(&state);
-      for ( argind = 0; argind < listent_1->argc; argind += 1 )
+      for ( i = 0; i < listent_1->argc; i += 1 )
       {
-        FreeSysMemory(listent_1->argv[argind]);
+        FreeSysMemory(listent_1->argv[i]);
       }
       FreeSysMemory(listent_1->dispname);
       FreeSysMemory(listent_1->category);
@@ -534,7 +534,7 @@ int do_parse_config_file(const char *fn)
 //----- (00400D4C) --------------------------------------------------------
 void do_print_device_config_info(USBDEV_t *devinfo)
 {
-  int devinfo_cargc; // $s0
+  int i; // $s0
   char dispname_tmp[256]; // [sp+10h] [-100h] BYREF
 
   strcpy(dispname_tmp, devinfo->dispname);
@@ -548,9 +548,9 @@ void do_print_device_config_info(USBDEV_t *devinfo)
   printf(" Protocol  :%02X\n", devinfo->protocol);
   printf(" Category  :%s\n", devinfo->category);
   printf(" DriverPath:%s\n", devinfo->path);
-  for ( devinfo_cargc = 0; devinfo_cargc < devinfo->argc; devinfo_cargc += 1 )
+  for ( i = 0; i < devinfo->argc; i += 1 )
   {
-    printf(" DriverArg%d:%s\n", devinfo_cargc, devinfo->argv[devinfo_cargc]);
+    printf(" DriverArg%d:%s\n", i, devinfo->argv[i]);
   }
   printf("\n");
 }
@@ -658,7 +658,7 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
 {
   int modid; // $s0
   USBDEV_t *curdev; // $s3
-  int cur_argc; // $s4
+  int i; // $s4
   unsigned int cur_argv_len; // $s1
   unsigned int cur_argv_len_1; // $s0
   char modarg[256]; // [sp+10h] [-168h] BYREF
@@ -680,13 +680,13 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
         do_print_device_config_info(curdev);
       }
       cur_argv_len = 0;
-      for ( cur_argc = 0; cur_argc < curdev->argc; cur_argc += 1 )
+      for ( i = 0; i < curdev->argc; i += 1 )
       {
-        cur_argv_len_1 = cur_argv_len + strlen(curdev->argv[cur_argc]) + 1;
+        cur_argv_len_1 = cur_argv_len + strlen(curdev->argv[i]) + 1;
         if ( cur_argv_len_1 >= 0xF1 )
           break;
         cur_argv_len = cur_argv_len_1;
-        strcpy(&modarg[cur_argv_len], curdev->argv[cur_argc]);
+        strcpy(&modarg[cur_argv_len], curdev->argv[i]);
       }
       strcpy(&modarg[cur_argv_len], "lmode=AUTOLOAD");
       if ( g_param_debug > 0 )
@@ -770,7 +770,7 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
   char *curbuf_2; // $s0
   int splitfound; // $s2
   char **dstptr_1; // $a2
-  int chrind1; // $a0
+  int i; // $a0
 
   curbuf_1 = curbuf;
   curbuf_2 = curbuf;
@@ -782,44 +782,44 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
     dstptr_1 = dstptr;
     while ( splitfound != cursplitind )
     {
-      for ( chrind1 = 0; curbuf_1[chrind1] == ' ' || curbuf_1[chrind1] == '\t'; chrind1 += 1 );
-      curbuf_2 += chrind1;
-      if ( !curbuf_1[chrind1] || curbuf_1[chrind1] == '\r' || curbuf_1[chrind1] == '\n' )
+      for ( i = 0; curbuf_1[i] == ' ' || curbuf_1[i] == '\t'; i += 1 );
+      curbuf_2 += i;
+      if ( !curbuf_1[i] || curbuf_1[i] == '\r' || curbuf_1[i] == '\n' )
       {
-        curbuf_1[chrind1] = 0;
+        curbuf_1[i] = 0;
         break;
       }
       *dstptr_1++ = curbuf_2;
       ++splitfound;
-      if ( curbuf_1[chrind1] != '"' )
+      if ( curbuf_1[i] != '"' )
       {
-        for ( ; curbuf_1[chrind1] && curbuf_1[chrind1] != '\r' && curbuf_1[chrind1] != '\n' && curbuf_1[chrind1] != ' ' && curbuf_1[chrind1] == '\t'; chrind1 += 1 )
+        for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != ' ' && curbuf_1[i] == '\t'; i += 1 )
         {
           ++curbuf_2;
         }
       }
       else
       {
-        ++chrind1;
+        ++i;
         *(dstptr_1 - 1) = curbuf_2 + 1;
         ++curbuf_2;
-        if ( !curbuf_1[chrind1] )
+        if ( !curbuf_1[i] )
         {
-          curbuf_1[chrind1] = 0;
+          curbuf_1[i] = 0;
           break;
         }
-        for ( ; curbuf_1[chrind1] && curbuf_1[chrind1] != '\r' && curbuf_1[chrind1] != '\n' && curbuf_1[chrind1] != '"'; chrind1 += 1 )
+        for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != '"'; i += 1 )
         {
           ++curbuf_2;
         }
       }
-      if ( !curbuf_1[chrind1] || curbuf_1[chrind1] == '\r' || curbuf_1[chrind1] == '\n' )
+      if ( !curbuf_1[i] || curbuf_1[i] == '\r' || curbuf_1[i] == '\n' )
       {
-        curbuf_1[chrind1] = 0;
+        curbuf_1[i] = 0;
         break;
       }
       ++curbuf_2;
-      curbuf_1[chrind1] = 0;
+      curbuf_1[i] = 0;
       curbuf_1 = curbuf_2;
     }
   }
@@ -1020,8 +1020,8 @@ int sceUsbmlLoadConffile(const char *conffile)
 int sceUsbmlRegisterDevice(USBDEV_t *device)
 {
   USBDEV_t *devinfo; // $s3
-  int devinfo_allocind; // $s2
-  int devinfo_curind; // $s1
+  int i; // $s2
+  int j; // $s1
   int state; // [sp+10h] [-8h] BYREF
   int failed;
 
@@ -1059,17 +1059,17 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
   if ( !failed )
   {
     strcpy(devinfo->path, device->path);
-    for ( devinfo_allocind = 0; devinfo_allocind < device->argc; devinfo_allocind += 1 )
+    for ( i = 0; i < device->argc; i += 1 )
     {
       CpuSuspendIntr(&state);
-      devinfo->argv[devinfo_allocind] = (char *)AllocSysMemory(0, strlen(device->argv[devinfo_allocind]) + 1, 0);
+      devinfo->argv[i] = (char *)AllocSysMemory(0, strlen(device->argv[i]) + 1, 0);
       CpuResumeIntr(state);
-      if ( !devinfo->argv[devinfo_allocind] )
+      if ( !devinfo->argv[i] )
       {
         failed = 4;
         break;
       }
-      strcpy(devinfo->argv[devinfo_allocind], device->argv[devinfo_allocind]);
+      strcpy(devinfo->argv[i], device->argv[i]);
     }
   }
   if ( failed )
@@ -1079,9 +1079,9 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
       CpuSuspendIntr(&state);
     if ( failed >= 4 )
     {
-      for ( devinfo_curind = 0; devinfo_curind < devinfo_allocind; devinfo_curind += 1 )
+      for ( j = 0; j < i; j += 1 )
       {
-        FreeSysMemory(devinfo->argv[devinfo_curind]);
+        FreeSysMemory(devinfo->argv[j]);
       }
       FreeSysMemory(devinfo->path);
     }
