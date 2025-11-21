@@ -612,7 +612,7 @@ void do_msif_exec_request(sceSifMServeData *sd)
   SifMRpcRendPkt_t *fpacket2; // $v0
   int adddmat; // $s1
   int dmaid; // $s0
-  int busywait; // $v0
+  int i; // $v0
   SifDmaTransfer_t dmat[2]; // [sp+18h] [-28h] BYREF
   int state; // [sp+38h] [-8h] BYREF
 
@@ -659,7 +659,7 @@ void do_msif_exec_request(sceSifMServeData *sd)
       CpuResumeIntr(state);
       if ( dmaid )
         break;
-      for ( busywait = 0xFFFE; busywait != -1; busywait -= 1 );
+      for ( i = 0xFFFE; i != -1; i -= 1 );
     }
   }
 }
