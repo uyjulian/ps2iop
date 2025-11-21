@@ -193,9 +193,9 @@ int _start(int ac, char **av)
     }
   }
   if ( g_param_debug > 0 )
-    printf("allocsize(for ring buffer) : %d\n", 4 * g_param_rbsize);
+    printf("allocsize(for ring buffer) : %d\n", sizeof(USBDEV_t *) * g_param_rbsize);
   CpuSuspendIntr(&state);
-  g_rb_entries = (USBDEV_t **)AllocSysMemory(0, 4 * g_param_rbsize, 0);
+  g_rb_entries = (USBDEV_t **)AllocSysMemory(0, sizeof(USBDEV_t *) * g_param_rbsize, 0);
   CpuResumeIntr(state);
   if ( !g_rb_entries )
   {
@@ -326,7 +326,7 @@ int do_parse_config_file(const char *fn)
     printf("Cannot open '%s'\n", fn);
     return -1;
   }
-  while ( read_config_line(g_config_line_buf, 256, fd) )
+  while ( read_config_line(g_config_line_buf, sizeof(g_config_line_buf), fd) )
   {
     ++lineind;
     if ( g_param_debug >= 2 )
@@ -360,7 +360,7 @@ int do_parse_config_file(const char *fn)
             }
           }
           CpuSuspendIntr(&state);
-          devstr = (USBDEV_t *)AllocSysMemory(0, 144, 0);
+          devstr = (USBDEV_t *)AllocSysMemory(0, sizeof(USBDEV_t), 0);
           CpuResumeIntr(state);
           if ( !devstr )
           {
@@ -691,7 +691,7 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
       strcpy(&modarg[cur_argv_len], "lmode=AUTOLOAD");
       if ( g_param_debug > 0 )
         printf("LoadStartModule : %s\n", curdev->path);
-      modid = LoadStartModule(curdev->path, cur_argv_len + 15, modarg, &modres);
+      modid = LoadStartModule(curdev->path, cur_argv_len + strlen("lmode=AUTOLOAD") + 1, modarg, &modres);
       if ( g_param_debug > 0 )
         printf("LoadStartModule done: %d\n", modid);
       if ( modid >= 0 )
@@ -1027,7 +1027,7 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
 
   failed = 0;
   CpuSuspendIntr(&state);
-  devinfo = (USBDEV_t *)AllocSysMemory(0, 144, 0);
+  devinfo = (USBDEV_t *)AllocSysMemory(0, sizeof(USBDEV_t), 0);
   CpuResumeIntr(state);
   if ( !devinfo )
   {
@@ -1116,16 +1116,16 @@ int sceUsbmlChangeThreadPriority(int prio1)
 //----- (00401E2C) --------------------------------------------------------
 void init_config_pos(void)
 {
-  g_config_chr_pos = 2048;
+  g_config_chr_pos = sizeof(g_config_chr_buf);
 }
 // 4026F8: using guessed type int g_config_chr_pos;
 
 //----- (00401E40) --------------------------------------------------------
 char read_config_byte(int fd)
 {
-  if ( g_config_chr_pos == 2048 )
+  if ( g_config_chr_pos == sizeof(g_config_chr_buf) )
   {
-    read(fd, g_config_chr_buf, 2048);
+    read(fd, g_config_chr_buf, sizeof(g_config_chr_buf));
     g_config_chr_pos = 0;
   }
   return g_config_chr_buf[g_config_chr_pos++];
