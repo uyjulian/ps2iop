@@ -56,18 +56,6 @@ typedef struct __attribute__((aligned(64))) sceNetcnfifData
   int p4[5];
 } sceNetcnfifData_t;
 
-typedef struct route
-{
-  sceNetCnfCommand_t cmd;
-  sceNetCnfRoutingEntry_t re;
-} route_t;
-
-typedef struct nameserver
-{
-  sceNetCnfCommand_t cmd;
-  sceNetCnfAddress_t address;
-} nameserver_t;
-
 typedef struct sceNetcnfifArg
 {
   int data;
@@ -501,11 +489,11 @@ int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count)
     {
       if ( *ns_count != 1 )
         return 0;
-      retres = sceNetCnfAddress2String(data->dns2_address, sizeof(data->dns2_address), (sceNetCnfAddress_t *)&p[1]);
+      retres = sceNetCnfAddress2String(data->dns2_address, sizeof(data->dns2_address), &((nameserver_t *)p)->address);
     }
     else
     {
-      retres = sceNetCnfAddress2String(data->dns1_address, sizeof(data->dns1_address), (sceNetCnfAddress_t *)&p[1]);
+      retres = sceNetCnfAddress2String(data->dns1_address, sizeof(data->dns1_address), &((nameserver_t *)p)->address);
     }
     ++*ns_count;
     return retres;
@@ -513,7 +501,7 @@ int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count)
   else
   {
     if ( p->code == 3 )
-      return sceNetCnfAddress2String(data->gateway, sizeof(data->gateway), (sceNetCnfAddress_t *)&p[2].code);
+      return sceNetCnfAddress2String(data->gateway, sizeof(data->gateway), &((route_t *)p)->re.gateway);
   }
   return 0;
 }

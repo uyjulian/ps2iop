@@ -2723,7 +2723,7 @@ int do_check_interface_keyword(
 int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv)
 {
   int addordel; // $s1
-  struct sceNetCnfCommand *nameservermem_1; // $v0
+  nameserver_t *nameservermem_1; // $v0
 
   if ( opt_argc < 3 )
     return 0;
@@ -2734,19 +2734,19 @@ int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int o
     if ( strcmp("del", opt_argv[1]) )
       return 0;
   }
-  nameservermem_1 = (sceNetCnfCommand_t *)do_alloc_mem_inner(e, sizeof(sceNetCnfCommand_t) + 20, 2);
+  nameservermem_1 = (nameserver_t *)do_alloc_mem_inner(e, sizeof(nameserver_t), 2);
   if ( !nameservermem_1 )
     return -1;
-  nameservermem_1->code = addordel;
-  if ( do_netcnfname2address_wrap(e, opt_argv[2], (sceNetCnfAddress_t *)&nameservermem_1[1]) )
+  nameservermem_1->cmd.code = addordel;
+  if ( do_netcnfname2address_wrap(e, opt_argv[2], &nameservermem_1->address) )
     return -1;
-  nameservermem_1->back = ifc->cmd_tail;
+  nameservermem_1->cmd.back = ifc->cmd_tail;
   if ( ifc->cmd_tail )
-    ifc->cmd_tail->forw = nameservermem_1;
+    ifc->cmd_tail->forw = &nameservermem_1->cmd;
   else
-    ifc->cmd_head = nameservermem_1;
-  nameservermem_1->forw = 0;
-  ifc->cmd_tail = nameservermem_1;
+    ifc->cmd_head = &nameservermem_1->cmd;
+  nameservermem_1->cmd.forw = 0;
+  ifc->cmd_tail = &nameservermem_1->cmd;
   return 0;
 }
 
@@ -2754,7 +2754,7 @@ int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int o
 int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv)
 {
   int addordel; // $s0
-  struct sceNetCnfCommand *route_mem_1; // $v0
+  route_t *route_mem_1; // $v0
   int cur_argc; // $s3
 
   if ( opt_argc < 3 )
@@ -2766,54 +2766,54 @@ int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_ar
       return 0;
     addordel = 4;
   }
-  route_mem_1 = (sceNetCnfCommand_t *)do_alloc_mem_inner(e, sizeof(sceNetCnfCommand_t) + 84, 2);
+  route_mem_1 = (route_t *)do_alloc_mem_inner(e, sizeof(route_t), 2);
   if ( !route_mem_1 )
     return -1;
   cur_argc = 2;
-  route_mem_1->code = addordel;
+  route_mem_1->cmd.code = addordel;
   if ( !strcmp("-net", opt_argv[cur_argc]) )
   {
     cur_argc += 1;
-    route_mem_1[6].forw = (struct sceNetCnfCommand *)((int)route_mem_1[6].forw & 0xFFFFFFFD);
+    route_mem_1->re.flags &= 0xFFFFFFFD;
   }
   else if ( !strcmp("-host", opt_argv[cur_argc]) )
   {
     cur_argc += 1;
-    route_mem_1[6].forw = (struct sceNetCnfCommand *)((int)route_mem_1[6].forw | 2);
+    route_mem_1->re.flags |= 2;
   }
   if ( cur_argc >= opt_argc )
     return 0;
-  if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_1[1]) == 0 )
+  if ( do_netcnfname2address_wrap(e, 0, &route_mem_1->re.dstaddr) == 0 )
   {
-    if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_1[2].code) == 0 )
+    if ( do_netcnfname2address_wrap(e, 0, &route_mem_1->re.gateway) == 0 )
     {
-      if ( do_netcnfname2address_wrap(e, 0, (sceNetCnfAddress_t *)&route_mem_1[4].back) == 0 )
+      if ( do_netcnfname2address_wrap(e, 0, &route_mem_1->re.genmask) == 0 )
       {
         if ( !strcmp("default", opt_argv[cur_argc])
-          || (do_netcnfname2address_wrap(e, (char *)opt_argv[cur_argc], (sceNetCnfAddress_t *)&route_mem_1[1]) == 0) )
+          || (do_netcnfname2address_wrap(e, (char *)opt_argv[cur_argc], &route_mem_1->re.dstaddr) == 0) )
         {
           cur_argc += 1;
           for ( ; cur_argc < opt_argc; cur_argc += 2 )
           {
             if ( !strcmp("gw", opt_argv[cur_argc]) )
             {
-              if ( do_netcnfname2address_wrap(e, opt_argv[cur_argc + 1], (sceNetCnfAddress_t *)&route_mem_1[2].code) != 0 )
+              if ( do_netcnfname2address_wrap(e, opt_argv[cur_argc + 1], &route_mem_1->re.gateway) != 0 )
                 return -1;
-              route_mem_1[6].forw = (struct sceNetCnfCommand *)((int)route_mem_1[6].forw | 4);
+              route_mem_1->re.flags |= 4;
             }
             else if ( !strcmp("netmask", opt_argv[cur_argc]) )
             {
-              if ( do_netcnfname2address_wrap(e, opt_argv[cur_argc + 1], (sceNetCnfAddress_t *)&route_mem_1[4].back) != 0 )
+              if ( do_netcnfname2address_wrap(e, opt_argv[cur_argc + 1], &route_mem_1->re.genmask) != 0 )
                 return -1;
             }
           }
-          route_mem_1->back = ifc->cmd_tail;
+          route_mem_1->cmd.back = ifc->cmd_tail;
           if ( ifc->cmd_tail )
-            ifc->cmd_tail->forw = route_mem_1;
+            ifc->cmd_tail->forw = &route_mem_1->cmd;
           else
-            ifc->cmd_head = route_mem_1;
-          route_mem_1->forw = 0;
-          ifc->cmd_tail = route_mem_1;
+            ifc->cmd_head = &route_mem_1->cmd;
+          route_mem_1->cmd.forw = 0;
+          ifc->cmd_tail = &route_mem_1->cmd;
           return 0;
         }
       }
@@ -4348,23 +4348,23 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
         break;
       case 3:
       {
-        result = do_netcnf_sprintf_buffer(e, "route add -%s", ( ((int)cmd_head[6].forw & 2) != 0 ) ? "host" : "net");
+        result = do_netcnf_sprintf_buffer(e, "route add -%s", ( (((route_t *)cmd_head)->re.flags & 2) != 0 ) ? "host" : "net");
         if ( result < 0 )
           return result;
-        if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), (sceNetCnfAddress_t *)&cmd_head[1]) != 0 )
+        if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), &((route_t *)cmd_head)->re.dstaddr) != 0 )
           return -1;
         result = do_netcnf_sprintf_buffer(e, " %s", (const char *)e->lbuf);
         if ( result < 0 )
           return result;
-        if ( ((int)cmd_head[6].forw & 4) != 0 )
+        if ( (((route_t *)cmd_head)->re.flags & 4) != 0 )
         {
-          if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), (sceNetCnfAddress_t *)&cmd_head[2].code) != 0 )
+          if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), &((route_t *)cmd_head)->re.gateway) != 0 )
             return -1;
           result = do_netcnf_sprintf_buffer(e, " gw %s", (const char *)e->lbuf);
           if ( result < 0 )
             return result;
         }
-        if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), (sceNetCnfAddress_t *)&cmd_head[4].back) != 0 )
+        if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), &((route_t *)cmd_head)->re.genmask) != 0 )
           return -1;
         result = do_netcnf_sprintf_buffer(e, " netmask %s", (const char *)e->lbuf);
         if ( result < 0 )
@@ -4375,7 +4375,7 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
       }
       case 4:
       {
-        if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), (sceNetCnfAddress_t *)&cmd_head[1]) != 0 )
+        if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), &((route_t *)cmd_head)->re.dstaddr) != 0 )
           return -1;
         result = do_netcnf_sprintf_buffer(e, "route del %s\n", (const char *)e->lbuf);
         if ( result < 0 )
@@ -4386,7 +4386,7 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
     }
     if ( nameserverflag != -1 )
     {
-      if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), (sceNetCnfAddress_t *)&cmd_head[1]) != 0 )
+      if ( sceNetCnfAddress2String((char *)e->lbuf, sizeof(e->lbuf), &((nameserver_t *)cmd_head)->address) != 0 )
         return -1;
       result = do_netcnf_sprintf_buffer(e, "nameserver %s %s\n", nameserverflag ? "add" : "del", (const char *)e->lbuf);
       if ( result < 0 )

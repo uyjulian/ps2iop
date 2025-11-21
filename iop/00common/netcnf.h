@@ -210,6 +210,18 @@ typedef struct sceNetCnfRoutingEntry
   char interface[9];
 } sceNetCnfRoutingEntry_t;
 
+typedef struct route
+{
+  sceNetCnfCommand_t cmd;
+  sceNetCnfRoutingEntry_t re;
+} route_t;
+
+typedef struct nameserver
+{
+  sceNetCnfCommand_t cmd;
+  sceNetCnfAddress_t address;
+} nameserver_t;
+
 extern int sceNetCnfGetCount(char *fname, int type);
 extern int sceNetCnfGetList(char *fname, int type, sceNetCnfList_t *p);
 extern int sceNetCnfLoadEntry(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e);
