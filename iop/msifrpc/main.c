@@ -385,7 +385,7 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
   mserve_entry = do_get_mserve_entry(data->m_fromee_cmd, harg);
   if ( mserve_entry )
   {
-    msgdat = (struct msif_msgbox_msg *)AllocSysMemory(0, 44, 0);
+    msgdat = (struct msif_msgbox_msg *)AllocSysMemory(0, sizeof(struct msif_msgbox_msg), 0);
     if ( !msgdat )
       printf("AllocSysMemory() failed.\n");
     msgdat->m_probunused_unkx21 = 0;
@@ -445,7 +445,7 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
   }
   else
   {
-    msgboxdat = (struct msif_msgbox_msg *)AllocSysMemory(0, 44, 0);
+    msgboxdat = (struct msif_msgbox_msg *)AllocSysMemory(0, sizeof(struct msif_msgbox_msg), 0);
     if ( !msgboxdat )
       printf("AllocSysMemory() failed.\n");
     msgboxdat->m_probunused_unkx21 = 0;
@@ -698,10 +698,10 @@ void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
   int state; // [sp+18h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
-  sd = (sceSifMServeData *)AllocSysMemory(0, 60, 0);
+  sd = (sceSifMServeData *)AllocSysMemory(0, sizeof(sceSifMServeData), 0);
   if ( !sd )
     printf("AllocSysMemory() failed.\n");
-  qd = (sceSifMQueueData *)AllocSysMemory(0, 28, 0);
+  qd = (sceSifMQueueData *)AllocSysMemory(0, sizeof(sceSifMQueueData), 0);
   if ( !qd )
     printf("AllocSysMemory() failed.\n");
   funcbuf = AllocSysMemory(0, msgboxdat->m_msg2.m_buffersize, 0);
