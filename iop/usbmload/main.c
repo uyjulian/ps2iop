@@ -143,7 +143,6 @@ int _start(int ac, char **av)
   has_conffile = 0;
   if ( ac < 0 )
     return module_unload();
-  
   printf("----- USB auto module loader %s -----\n", "0.4.0");
   g_param_rbsize = 32;
   g_loadfunc_cb = (sceUsbmlLoadFunc)default_loadfunc;
@@ -443,64 +442,61 @@ int do_parse_config_file(const char *fn)
           {
             devstr->protocol = do_parse_cmd_int(p[1]);
           }
+          else if ( !strcmp(p[0], "Category") )
+          {
+            if ( devstr->category )
+            {
+              CpuSuspendIntr(&state);
+              FreeSysMemory(devstr->category);
+              CpuResumeIntr(state);
+              devstr->category = 0;
+            }
+            CpuSuspendIntr(&state);
+            devstr->category = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
+            CpuResumeIntr(state);
+            if ( !devstr->category )
+            {
+              err = 1;
+              break;
+            }
+            strcpy(devstr->category, p[1]);
+          }
+          else if ( !strcmp(p[0], "DriverPath") )
+          {
+            if ( devstr->path )
+            {
+              CpuSuspendIntr(&state);
+              FreeSysMemory(devstr->path);
+              CpuResumeIntr(state);
+              devstr->path = 0;
+            }
+            CpuSuspendIntr(&state);
+            devstr->path = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
+            CpuResumeIntr(state);
+            if ( !devstr->path )
+            {
+              err = 1;
+              break;
+            }
+            strcpy(devstr->path, p[1]);
+          }
+          else if ( !strcmp(p[0], "DriverArg") && devstr->argc < 8 )
+          {
+            CpuSuspendIntr(&state);
+            devstr->argv[devstr->argc] = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
+            CpuResumeIntr(state);
+            if ( !devstr->argv[devstr->argc] )
+            {
+              err = 1;
+              break;
+            }
+            strcpy(devstr->argv[devstr->argc], p[1]);
+            ++devstr->argc;
+          }
           else
           {
-            if ( !strcmp(p[0], "Category") )
-            {
-              if ( devstr->category )
-              {
-                CpuSuspendIntr(&state);
-                FreeSysMemory(devstr->category);
-                CpuResumeIntr(state);
-                devstr->category = 0;
-              }
-              CpuSuspendIntr(&state);
-              devstr->category = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
-              CpuResumeIntr(state);
-              if ( !devstr->category )
-              {
-                err = 1;
-                break;
-              }
-              strcpy(devstr->category, p[1]);
-            }
-            else if ( !strcmp(p[0], "DriverPath") )
-            {
-              if ( devstr->path )
-              {
-                CpuSuspendIntr(&state);
-                FreeSysMemory(devstr->path);
-                CpuResumeIntr(state);
-                devstr->path = 0;
-              }
-              CpuSuspendIntr(&state);
-              devstr->path = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
-              CpuResumeIntr(state);
-              if ( !devstr->path )
-              {
-                err = 1;
-                break;
-              }
-              strcpy(devstr->path, p[1]);
-            }
-            else if ( !strcmp(p[0], "DriverArg") && devstr->argc < 8 )
-            {
-              CpuSuspendIntr(&state);
-              devstr->argv[devstr->argc] = (char *)AllocSysMemory(0, strlen(p[1]) + 1, 0);
-              CpuResumeIntr(state);
-              if ( !devstr->argv[devstr->argc] )
-              {
-                err = 1;
-                break;
-              }
-              strcpy(devstr->argv[devstr->argc], p[1]);
-              ++devstr->argc;
-            }
-            else
-            {
-              if ( g_param_debug > 0 )
-                printf("%s : %d : Illegal parameter '%s'\n", fn, lineind, p[0]);
-            }
+            if ( g_param_debug > 0 )
+              printf("%s : %d : Illegal parameter '%s'\n", fn, lineind, p[0]);
           }
         }
       }
@@ -611,7 +607,6 @@ int usbmload_drv_probe(int dev_id)
     if ( g_param_debug > 0 )
       printf("SetEventFlag\n");
     SetEventFlag(g_ef, 1u);
-    return 0;
   }
   return 0;
 }
@@ -829,24 +824,17 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
 //----- (004016E0) --------------------------------------------------------
 int do_parse_cmd_int(const char *buf)
 {
-  int bufchr_1; // $v1
   int hexval; // $a2
   const char *i; // $a0
-  int hexind; // $a2
 
-  bufchr_1 = *buf;
   hexval = 0;
-  if ( bufchr_1 == '*' )
+  if ( *buf == '*' )
     return -1;
-  if ( bufchr_1 != '0' || buf[1] != 'x' )
+  if ( *buf != '0' || buf[1] != 'x' )
     return strtol(buf, 0, 10);
   for ( i = buf + 2; *i; i += 1 )
   {
-    hexind = 16 * hexval;
-    if ( *i >= ':' )
-      hexval = hexind + 9 + (*i & 0xF);
-    else
-      hexval = hexind + (*i & 0xF);
+    hexval = (16 * hexval) + (*i & 0xF) + (( *i >= ':' ) ? 9 : 0);
   }
   return hexval;
 }
@@ -872,16 +860,15 @@ void sanitize_devicename(char *buf)
 {
   unsigned int curchr_2; // $a1
   unsigned int curchr_3; // $v1
-  char curoffs_1; // $v1
-  char wrchr_1; // $a1
 
   while ( *buf && *buf != '\n' && *buf != '\r' )
   {
-    curchr_2 = (u8)*buf;
+    curchr_2 = (u8)buf[0];
+    curchr_3 = (u8)buf[1];
     if ( curchr_2 < 0x80
       || curchr_2 - 0xA0 < 0x40
       || curchr_2 - 0xF0 < 0x10
-      || (curchr_3 = (u8)buf[1], curchr_3 < 0x40)
+      || curchr_3 < 0x40
       || curchr_3 == 0x7F
       || curchr_3 - 253 < 3 )
     {
@@ -891,18 +878,16 @@ void sanitize_devicename(char *buf)
     {
       if ( curchr_3 >= 0x9F )
       {
-        curoffs_1 = curchr_3 + 2;
-        wrchr_1 = curchr_2 >= 0xA0 ? 2 * curchr_2 + 32 : 2 * curchr_2 - '`';
+        buf[0] = curchr_2 >= 0xA0 ? 2 * curchr_2 + 32 : 2 * curchr_2 - '`';
+        buf[1] = curchr_3 + 2;
       }
       else
       {
         if ( curchr_3 >= 0x80 )
           curchr_3 = curchr_3 - 1;
-        curoffs_1 = curchr_3 + 'a';
-        wrchr_1 = curchr_2 >= 0xA0 ? 2 * curchr_2 + 31 : 2 * curchr_2 - 'a';
+        buf[0] = curchr_2 >= 0xA0 ? 2 * curchr_2 + 31 : 2 * curchr_2 - 'a';
+        buf[1] = curchr_3 + 'a';
       }
-      *buf = wrchr_1;
-      buf[1] = curoffs_1;
       buf += 2;
     }
   }
@@ -964,9 +949,7 @@ int sceUsbmlActivateCategory(const char *category)
   }
   if ( g_usbmload_enabled == 1 )
     sceUsbmlEnable();
-  if ( i )
-    return i;
-  return -1;
+  return i ? i : -1;
 }
 // 402B04: using guessed type int g_usbmload_enabled;
 
@@ -987,9 +970,7 @@ int sceUsbmlInactivateCategory(const char *category)
   }
   if ( g_usbmload_enabled == 1 )
     sceUsbmlEnable();
-  if ( i )
-    return i;
-  return -1;
+  return i ? i : -1;
 }
 // 402B04: using guessed type int g_usbmload_enabled;
 
@@ -1108,9 +1089,7 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
 //----- (00401DF0) --------------------------------------------------------
 int sceUsbmlChangeThreadPriority(int prio1)
 {
-  if ( ChangeThreadPriority(g_thid, prio1) != 0 )
-    return -1;
-  return 0;
+  return ( ChangeThreadPriority(g_thid, prio1) != 0 ) ? -1 : 0;
 }
 
 //----- (00401E2C) --------------------------------------------------------
