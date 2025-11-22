@@ -183,10 +183,8 @@ int _start(int ac, char **av)
     else if ( !strcmp(av[i], "rbsize") )
     {
       g_param_rbsize = do_parse_cmd_int(&(av[i])[j]);
-      if ( g_param_rbsize >= 257 )
-        g_param_rbsize = 256;
-      if ( g_param_rbsize < 8 )
-        g_param_rbsize = 8;
+      g_param_rbsize = ( g_param_rbsize > 256 ) ? 256 : g_param_rbsize;
+      g_param_rbsize = ( g_param_rbsize < 8 ) ? 8 : g_param_rbsize;
       if ( g_param_debug > 0 )
         printf("usbmload : ring buffer size = %d\n", g_param_rbsize);
     }
@@ -201,7 +199,7 @@ int _start(int ac, char **av)
     printf("Ring buffer Initialize Error!!\n");
     return 1;
   }
-  if ( RegisterLibraryEntries(&_exp_usbmload) != 0 )
+  if ( RegisterLibraryEntries(&_exp_usbmload) )
     return 1;
   if ( has_conffile == 1 )
   {
@@ -234,14 +232,11 @@ int _start(int ac, char **av)
     DeleteEventFlag(g_ef);
     return 1;
   }
-  else
-  {
-    if ( g_param_debug > 0 )
-      printf("usbmload : CreateThread ID = %d\n", thid1);
-    StartThread(thid1, 0);
-    g_thid = thid1;
-    return 2;
-  }
+  if ( g_param_debug > 0 )
+    printf("usbmload : CreateThread ID = %d\n", thid1);
+  StartThread(thid1, 0);
+  g_thid = thid1;
+  return 2;
 }
 // 4010C4: using guessed type void ldd_loader_thread();
 // 402700: using guessed type int g_param_conffile[128];
@@ -262,40 +257,40 @@ int module_unload()
   int stopres; // [sp+10h] [-8h] BYREF
   int state; // [sp+14h] [-4h] BYREF
 
-  if ( ReleaseLibraryEntries(&_exp_usbmload) == 0 )
+  if ( ReleaseLibraryEntries(&_exp_usbmload) )
   {
-    sceUsbmlDisable();
-    TerminateThread(g_thid);
-    DeleteThread(g_thid);
-    DeleteEventFlag(g_ef);
-    listent_1 = g_usbm_entry_list_end;
-    while ( listent_1 )
+    return 2;
+  }
+  sceUsbmlDisable();
+  TerminateThread(g_thid);
+  DeleteThread(g_thid);
+  DeleteEventFlag(g_ef);
+  listent_1 = g_usbm_entry_list_end;
+  while ( listent_1 )
+  {
+    if ( StopModule(listent_1->modid, 0, 0, &stopres) >= 0 )
     {
-      if ( StopModule(listent_1->modid, 0, 0, &stopres) >= 0 )
-      {
-        if ( g_param_debug > 0 )
-          printf("usbmload : Unload LDD module (%xh)\n", listent_1->modid);
-        UnloadModule(listent_1->modid);
-      }
-      CpuSuspendIntr(&state);
-      for ( i = 0; i < listent_1->argc; i += 1 )
-      {
-        FreeSysMemory(listent_1->argv[i]);
-      }
-      FreeSysMemory(listent_1->dispname);
-      FreeSysMemory(listent_1->category);
-      FreeSysMemory(listent_1->path);
-      listent_3 = listent_1;
-      listent_1 = listent_1->forw;
-      FreeSysMemory(listent_3);
-      CpuResumeIntr(state);
+      if ( g_param_debug > 0 )
+        printf("usbmload : Unload LDD module (%xh)\n", listent_1->modid);
+      UnloadModule(listent_1->modid);
     }
     CpuSuspendIntr(&state);
-    FreeSysMemory(g_rb_entries);
+    for ( i = 0; i < listent_1->argc; i += 1 )
+    {
+      FreeSysMemory(listent_1->argv[i]);
+    }
+    FreeSysMemory(listent_1->dispname);
+    FreeSysMemory(listent_1->category);
+    FreeSysMemory(listent_1->path);
+    listent_3 = listent_1;
+    listent_1 = listent_1->forw;
+    FreeSysMemory(listent_3);
     CpuResumeIntr(state);
-    return 1;
   }
-  return 2;
+  CpuSuspendIntr(&state);
+  FreeSysMemory(g_rb_entries);
+  CpuResumeIntr(state);
+  return 1;
 }
 // 402B00: using guessed type int g_param_debug;
 // 402B24: using guessed type int g_ef;
@@ -576,30 +571,12 @@ int usbmload_drv_probe(int dev_id)
   }
   for ( devinfo = g_usbm_entry_list_end; devinfo; devinfo = devinfo->forw )
   {
-    if ( devinfo->activate_flag )
+    if ( devinfo->activate_flag && (devinfo->vendor == devdesc->idVendor || devinfo->vendor == -1) && (devinfo->product == devdesc->idProduct || devinfo->product == -1) && (devinfo->release == devdesc->bcdUSB || devinfo->release == -1) && (devinfo->class_ == intfdesc->bInterfaceClass || devinfo->class_ == -1) && (devinfo->protocol == intfdesc->bInterfaceProtocol || devinfo->protocol == -1) && (devinfo->subclass == intfdesc->bInterfaceSubClass || devinfo->subclass == -1) )
     {
-      if ( devinfo->vendor == devdesc->idVendor || devinfo->vendor == -1 )
-      {
-        if ( devinfo->product == devdesc->idProduct || devinfo->product == -1 )
-        {
-          if ( devinfo->release == devdesc->bcdUSB || devinfo->release == -1 )
-          {
-            if ( devinfo->class_ == intfdesc->bInterfaceClass || devinfo->class_ == -1 )
-            {
-              if ( devinfo->subclass == intfdesc->bInterfaceSubClass || devinfo->subclass == -1 )
-              {
-                if ( devinfo->protocol == intfdesc->bInterfaceProtocol || devinfo->protocol == -1 )
-                {
-                  if ( g_param_debug > 0 )
-                    printf("push_devinfo : %s\n", devinfo->path);
-                  do_push_device_rb(devinfo);
-                  ++found_info_count;
-                }
-              }
-            }
-          }
-        }
-      }
+      if ( g_param_debug > 0 )
+        printf("push_devinfo : %s\n", devinfo->path);
+      do_push_device_rb(devinfo);
+      ++found_info_count;
     }
   }
   if ( found_info_count )
@@ -728,20 +705,16 @@ USBDEV_t *is_rb_ok_callback()
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
+  devinfo = NULL;
   if ( g_rb_count )
   {
     devinfo = g_rb_entries[g_rb_offset_read++];
     if ( g_rb_offset_read >= g_param_rbsize )
       g_rb_offset_read = 0;
     --g_rb_count;
-    CpuResumeIntr(state);
-    return devinfo;
   }
-  else
-  {
-    CpuResumeIntr(state);
-    return 0;
-  }
+  CpuResumeIntr(state);
+  return devinfo;
 }
 // 402B08: using guessed type int g_param_rbsize;
 // 402B0C: using guessed type int g_rb_offset_read;
@@ -770,53 +743,50 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
   curbuf_1 = curbuf;
   curbuf_2 = curbuf;
   splitfound = 0;
-  if ( cursplitind > 0 )
+  if ( cursplitind <= 0 || !strlen(curbuf) )
+    return 0;
+  dstptr_1 = dstptr;
+  while ( splitfound != cursplitind )
   {
-    if ( !strlen(curbuf) )
-      return 0;
-    dstptr_1 = dstptr;
-    while ( splitfound != cursplitind )
+    for ( i = 0; curbuf_1[i] == ' ' || curbuf_1[i] == '\t'; i += 1 );
+    curbuf_2 += i;
+    if ( !curbuf_1[i] || curbuf_1[i] == '\r' || curbuf_1[i] == '\n' )
     {
-      for ( i = 0; curbuf_1[i] == ' ' || curbuf_1[i] == '\t'; i += 1 );
-      curbuf_2 += i;
-      if ( !curbuf_1[i] || curbuf_1[i] == '\r' || curbuf_1[i] == '\n' )
-      {
-        curbuf_1[i] = 0;
-        break;
-      }
-      *dstptr_1++ = curbuf_2;
-      ++splitfound;
-      if ( curbuf_1[i] != '"' )
-      {
-        for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != ' ' && curbuf_1[i] == '\t'; i += 1 )
-        {
-          ++curbuf_2;
-        }
-      }
-      else
-      {
-        ++i;
-        *(dstptr_1 - 1) = curbuf_2 + 1;
-        ++curbuf_2;
-        if ( !curbuf_1[i] )
-        {
-          curbuf_1[i] = 0;
-          break;
-        }
-        for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != '"'; i += 1 )
-        {
-          ++curbuf_2;
-        }
-      }
-      if ( !curbuf_1[i] || curbuf_1[i] == '\r' || curbuf_1[i] == '\n' )
-      {
-        curbuf_1[i] = 0;
-        break;
-      }
-      ++curbuf_2;
       curbuf_1[i] = 0;
-      curbuf_1 = curbuf_2;
+      break;
     }
+    *dstptr_1++ = curbuf_2;
+    ++splitfound;
+    if ( curbuf_1[i] != '"' )
+    {
+      for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != ' ' && curbuf_1[i] == '\t'; i += 1 )
+      {
+        ++curbuf_2;
+      }
+    }
+    else
+    {
+      ++i;
+      *(dstptr_1 - 1) = curbuf_2 + 1;
+      ++curbuf_2;
+      if ( !curbuf_1[i] )
+      {
+        curbuf_1[i] = 0;
+        break;
+      }
+      for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != '"'; i += 1 )
+      {
+        ++curbuf_2;
+      }
+    }
+    if ( !curbuf_1[i] || curbuf_1[i] == '\r' || curbuf_1[i] == '\n' )
+    {
+      curbuf_1[i] = 0;
+      break;
+    }
+    ++curbuf_2;
+    curbuf_1[i] = 0;
+    curbuf_1 = curbuf_2;
   }
   return splitfound;
 }
@@ -904,11 +874,8 @@ int sceUsbmlDisable(void)
     printf("sceUsbmlDisable:Error(0x%X)\n", unregres);
     return -1;
   }
-  else
-  {
-    g_usbmload_enabled = 0;
-    return 0;
-  }
+  g_usbmload_enabled = 0;
+  return 0;
 }
 // 402B04: using guessed type int g_usbmload_enabled;
 
@@ -924,11 +891,8 @@ int sceUsbmlEnable(void)
     printf("sceUsbmlEnable:Error(0x%X)\n", regres);
     return -1;
   }
-  else
-  {
-    g_usbmload_enabled = 1;
-    return 0;
-  }
+  g_usbmload_enabled = 1;
+  return 0;
 }
 // 402B04: using guessed type int g_usbmload_enabled;
 
@@ -1089,7 +1053,7 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
 //----- (00401DF0) --------------------------------------------------------
 int sceUsbmlChangeThreadPriority(int prio1)
 {
-  return ( ChangeThreadPriority(g_thid, prio1) != 0 ) ? -1 : 0;
+  return ChangeThreadPriority(g_thid, prio1) ? -1 : 0;
 }
 
 //----- (00401E2C) --------------------------------------------------------
