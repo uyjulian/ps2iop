@@ -42,7 +42,7 @@ void *AllocScratchPad(int mode)
   }
   g_scrtpad_is_allocated = 1;
   g_scrtpad_alloc_count += 1;
-  alloc_addr = ( (g_scrtpad_alloc_count & 1) != 0 ) ? 0x1F800800 : 0x1F800C00;
+  alloc_addr = (g_scrtpad_alloc_count & 1) ? 0x1F800800 : 0x1F800C00;
   *((vu32 *)0xFFFE0144) = alloc_addr;
   CpuResumeIntr(state);
   return (void *)alloc_addr;
@@ -58,7 +58,7 @@ int FreeScratchPad(void *alloced_addr)
     CpuResumeIntr(state);
     return -430;
   }
-  if ( *((vu32 *)0xFFFE0144) != (( (g_scrtpad_alloc_count & 1) != 0 ) ? 0x1F800800 : 0x1F800C00) )
+  if ( *((vu32 *)0xFFFE0144) != ((g_scrtpad_alloc_count & 1) ? 0x1F800800 : 0x1F800C00) )
   {
     CpuResumeIntr(state);
     return -428;
@@ -71,11 +71,10 @@ int FreeScratchPad(void *alloced_addr)
 
 void _deinit(int disintr)
 {
-  if ( !disintr )
-  {
-  	*((vu32 *)0xFFFE0144) = 0x1F800000;
-    g_scrtpad_is_allocated = 0;
-  }
+  if ( disintr )
+    return;
+  *((vu32 *)0xFFFE0144) = 0x1F800000;
+  g_scrtpad_is_allocated = 0;
 }
 
 int *scrtpad_getinternaldata(void)
