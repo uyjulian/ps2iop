@@ -106,15 +106,11 @@ int _start(int ac, char **av)
   inoutbuf[1] = 6;
   inoutbuf[2] = 3;
   for ( i = 3; i < 12; i += 1 )
-  {
     inoutbuf[i] = 0;
-  }
   for ( i = 0; i < 7; i += 1 )
-  {
     sio2_data_out(inoutbuf[i]);
-  }
   sio2_ctrl_set(0xB1u);
-  while ( ((sio2_stat6c_get() >> 12) & 1) == 0 );
+  while ( !((sio2_stat6c_get() >> 12) & 1) );
   for ( i = 0; i < 7; i += 1 )
     inoutbuf[i + 16] = sio2_data_in();
   sio2_ctrl_set(0xCu);
@@ -129,15 +125,11 @@ int _start(int ac, char **av)
   inoutbuf[1] = 6;
   inoutbuf[2] = 3;
   for ( i = 3; i < 12; i += 1 )
-  {
     inoutbuf[i] = 0;
-  }
   for ( i = 0; i < 7; i += 1 )
-  {
     sio2_data_out(inoutbuf[i]);
-  }
   sio2_ctrl_set(0xB1u);
-  while ( ((sio2_stat6c_get() >> 12) & 1) == 0 );
+  while ( !((sio2_stat6c_get() >> 12) & 1) );
   for ( i = 0; i < 7; i += 1 )
     inoutbuf[i + 16] = sio2_data_in();
   sio2_ctrl_set(0xCu);
