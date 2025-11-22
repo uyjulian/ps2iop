@@ -168,7 +168,7 @@ int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
     dinfo->m_vers = 0;
     return 0x8104000E;
   }
-  if ( indata->chunkSize < 0 )
+  if ( (indata->chunkSize & 0x80000000) )
   {
     dinfo->m_vers = 0;
     return 0x8104002F;
@@ -186,9 +186,9 @@ int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
 //----- (00400108) --------------------------------------------------------
 int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo)
 {
-  if ( dinfo->m_sequ->midiChunkAddr == -1 )
+  if ( dinfo->m_sequ->midiChunkAddr == 0xFFFFFFFF )
     return 0x81049024;
-  if ( dinfo->m_sequ->midiChunkAddr < 0 )
+  if ( (dinfo->m_sequ->midiChunkAddr & 0x80000000) )
     return 0x8104002F;
   dinfo->m_midi = (sceSeqMidiChunk *)((char *)indata + dinfo->m_sequ->midiChunkAddr);
   if ( dinfo->m_midi->Creator != 0x53434549 || dinfo->m_midi->Type != 0x4D696469 )
@@ -202,9 +202,9 @@ int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo)
 //----- (00400174) --------------------------------------------------------
 int do_get_song_chunk(void *indata, struct sdsq_info *dinfo)
 {
-  if ( dinfo->m_sequ->songChunkAddr == -1 )
+  if ( dinfo->m_sequ->songChunkAddr == 0xFFFFFFFF )
     return 0x81049025;
-  if ( dinfo->m_sequ->songChunkAddr < 0 )
+  if ( (dinfo->m_sequ->songChunkAddr & 0x80000000) )
     return 0x8104002F;
   dinfo->m_song = (sceSeqSongChunk *)((char *)indata + dinfo->m_sequ->songChunkAddr);
   if ( dinfo->m_song->Creator != 0x53434549 || dinfo->m_song->Type != 0x536F6E67 )
@@ -229,7 +229,7 @@ int do_get_midi_data_block(void *indata, unsigned int idx, sceSeqMidiDataBlock *
     return result;
   if ( dinfo.m_midi->maxMidiNumber < idx )
     return 0x81049026;
-  if ( dinfo.m_midi->midiOffsetAddr[idx] == -1 )
+  if ( dinfo.m_midi->midiOffsetAddr[idx] == 0xFFFFFFFF )
     return 0x81049026;
   *datablk = (sceSeqMidiDataBlock *)((char *)dinfo.m_midi + dinfo.m_midi->midiOffsetAddr[idx]);
   return 0;
@@ -280,7 +280,7 @@ int sceSdSqInitMidiData(void *addr, u32 midiNumber, SceSdSqMidiData *midiData)
     return result;
   if ( dinfo.m_midi->maxMidiNumber < midiNumber )
     return 0x81049026;
-  if ( dinfo.m_midi->midiOffsetAddr[midiNumber] == -1 )
+  if ( dinfo.m_midi->midiOffsetAddr[midiNumber] == 0xFFFFFFFF )
     return 0x81049026;
   dblk = (sceSeqMidiDataBlock *)((char *)dinfo.m_midi + dinfo.m_midi->midiOffsetAddr[midiNumber]);
   // Unofficial: the following call was inlined
@@ -488,7 +488,7 @@ int sceSdSqInitSongData(void *addr, u32 songNumber, SceSdSqSongData *songData)
     return result;
   if ( dinfo.m_song->maxSongNumber < songNumber )
     return 0x81049027;
-  if ( dinfo.m_song->songOffsetAddr[songNumber] == -1 )
+  if ( dinfo.m_song->songOffsetAddr[songNumber] == 0xFFFFFFFF )
     return 0x81049027;
   // Unofficial: the following call was inlined
   memset(songData, 0, sizeof(SceSdSqSongData));

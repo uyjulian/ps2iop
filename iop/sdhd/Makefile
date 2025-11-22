@@ -2,6 +2,8 @@ IOP_BIN = sdhd.irx
 
 IOP_OBJS = imports.o exports.o main.o
 
+IOP_WARNFLAGS += -Wall -Wextra
+
 all: $(IOP_BIN)
 
 clean:
