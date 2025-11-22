@@ -18,7 +18,7 @@ typedef void (*sceSifMEndFunc)(void *);
 struct _sifm_client_data
 {
   struct _sifm_rpc_data rpcd;
-  unsigned int command;
+  int command;
   void *buff;
   void *cbuff;
   sceSifMEndFunc func;
@@ -65,7 +65,7 @@ typedef struct _sifm_serve_data sceSifMServeData;
 struct _sifm_serve_entry
 {
   unsigned int mbxid;
-  unsigned int command;
+  int command;
   sceSifMRpcFunc func;
   sceSifMRpcFunc cfunc;
   sceSifMServeData *serve_list;
@@ -288,6 +288,7 @@ void sceSifMInitRpc(unsigned int mode)
   int delayth_2; // $v0
   int state; // [sp+18h] [-8h] BYREF
 
+  (void)mode;
   CpuSuspendIntr(&state);
   if ( g_first_inited )
   {
@@ -340,7 +341,7 @@ int sif_mrpc_get_fpacket(struct msif_data *rpc_data)
   m_rdata_table_idx = rpc_data->m_rdata_table_idx;
   m_rdata_table_len = rpc_data->m_rdata_table_len;
   index_calc = m_rdata_table_idx % m_rdata_table_len;
-  if ( m_rdata_table_len == -1 && m_rdata_table_idx == 0x80000000 )
+  if ( m_rdata_table_len == -1 && (unsigned int)m_rdata_table_idx == 0x80000000 )
     __builtin_trap();
   rpc_data->m_rdata_table_idx = index_calc;
   rpc_data->m_rdata_table_idx = index_calc + 1;
@@ -469,6 +470,7 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
 //----- (00400610) --------------------------------------------------------
 void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg)
 {
+  (void)harg;
   if ( data->m_sd->base->start )
     data->m_sd->base->end->next = data->m_sd;
   else
@@ -605,10 +607,7 @@ void do_msif_exec_request(sceSifMServeData *sd)
   int state; // [sp+38h] [-8h] BYREF
 
   size_extra = 0;
-  sentry_ret = (void *)((int (*)(unsigned int, void *, int))sd->sentry->func)(
-                         sd->fno,
-                         sd->func_buff,
-                         sd->size);
+  sentry_ret = sd->sentry->func(sd->fno, sd->func_buff, sd->size);
   if ( sentry_ret )
     size_extra = sd->rsize;
   CpuSuspendIntr(&state);
@@ -845,6 +844,7 @@ int sceSifMTermRpc(int request, int flags)
   sceSifMServeEntry *tmp_entry; // $s1
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)flags;
   CpuSuspendIntr(&state);
   g_mserv_entries_ll = g_msif_data.g_mserv_entries_ll;
   tmp_entry = 0;
