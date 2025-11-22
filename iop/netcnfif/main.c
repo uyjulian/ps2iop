@@ -3,7 +3,8 @@
 
 IRX_ID("Netcnf_Interface", 2, 30);
 
-typedef struct __attribute__((aligned(64))) sceNetcnfifList
+// TODO EE alignment 64
+typedef struct __attribute__((aligned(16))) sceNetcnfifList
 {
   int type;
   int stat;
@@ -12,7 +13,8 @@ typedef struct __attribute__((aligned(64))) sceNetcnfifList
   int padding[14];
 } sceNetcnfifList_t;
 
-typedef struct __attribute__((aligned(64))) sceNetcnfifData
+// TODO EE alignment 64
+typedef struct __attribute__((aligned(16))) sceNetcnfifData
 {
   char attach_ifc[256];
   char attach_dev[256];
@@ -317,7 +319,7 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
       if ( retres1 < 0 )
         break;
       dmatid2 = sceNetcnfifSendEE((unsigned int)&data, buf->addr, sizeof(sceNetcnfifData_t));
-      while ( sceNetcnfifDmaCheck(dmatid2) != 0 );
+      while ( sceNetcnfifDmaCheck(dmatid2) );
       break;
     case 3:
       sceNetcnfifEnvInit(&env, mem_area, mem_area_size, buf->f_no_decode);
@@ -371,13 +373,14 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
       buf->addr = (int)&data;
       break;
     case 101:
-      if ( !mem_area )
+      if ( mem_area )
       {
-        mem_area_size = buf->data;
-        mem_area = my_alloc(mem_area_size);
-        if ( !mem_area )
-          retres1 = -2;
+        break;
       }
+      mem_area_size = buf->data;
+      mem_area = my_alloc(mem_area_size);
+      if ( !mem_area )
+        retres1 = -2;
       break;
     case 102:
       if ( mem_area )
@@ -390,23 +393,17 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
       retres1 = sceNetcnfifWriteEnv(&env, &data, buf->type);
       if ( retres1 < 0 )
         break;
-      if ( env.root )
+      if ( env.root && env.root->pair_head && env.root->pair_head->ifc )
       {
-        if ( env.root->pair_head )
+        redial_count = 0;
+        for ( i = 0; i < (sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); i += 1 )
         {
-          redial_count = 0;
-          if ( env.root->pair_head->ifc )
-          {
-            for ( i = 0; i < (sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); i += 1 )
-            {
-              if ( env.root->pair_head->ifc->phone_numbers[i] && i < 3 && i >= 0 )
-                ++redial_count;
-            }
-            env.root->pair_head->ifc->redial_count = redial_count - 1;
-            if ( env.root->pair_head->ifc->pppoe != 1 && env.root->pair_head->ifc->type != 2 )
-              env.root->pair_head->ifc->type = env.root->pair_head->dev->type;
-          }
+          if ( env.root->pair_head->ifc->phone_numbers[i] && i < 3 && i >= 0 )
+            ++redial_count;
         }
+        env.root->pair_head->ifc->redial_count = redial_count - 1;
+        if ( env.root->pair_head->ifc->pppoe != 1 && env.root->pair_head->ifc->type != 2 )
+          env.root->pair_head->ifc->type = env.root->pair_head->dev->type;
       }
       buf->addr = (int)&env;
       break;
@@ -534,20 +531,21 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
       }
       for ( i = 0; i < (sizeof(p->phone_numbers)/sizeof(p->phone_numbers[0])); i += 1 )
       {
-        if ( p->phone_numbers[i] )
+        if ( !p->phone_numbers[i] )
         {
-          switch ( i )
-          {
-            case 0:
-              strcpy(data->phone_numbers1, (const char *)p->phone_numbers[i]);
-              break;
-            case 1:
-              strcpy(data->phone_numbers2, (const char *)p->phone_numbers[i]);
-              break;
-            case 2:
-              strcpy(data->phone_numbers3, (const char *)p->phone_numbers[i]);
-              break;
-          }
+          continue;
+        }
+        switch ( i )
+        {
+          case 0:
+            strcpy(data->phone_numbers1, (const char *)p->phone_numbers[i]);
+            break;
+          case 1:
+            strcpy(data->phone_numbers2, (const char *)p->phone_numbers[i]);
+            break;
+          case 2:
+            strcpy(data->phone_numbers3, (const char *)p->phone_numbers[i]);
+            break;
         }
       }
       if ( p->auth_name )
@@ -566,7 +564,6 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
       data->accm_nego = p->want.accm_nego;
       data->mtu = p->mtu;
       data->ifc_idle_timeout = p->idle_timeout;
-      
     }
     case 2:
     {
@@ -706,36 +703,28 @@ int put_gw(sceNetCnfEnv_t *e, char *gw)
   if ( gw )
   {
     retres = sceNetCnfName2Address(&gateway.re.dstaddr, 0);
-    if ( retres >= 0 )
-    {
-      retres = sceNetCnfName2Address(&gateway.re.gateway, gw);
-      if ( retres >= 0 )
-      {
-        retres = sceNetCnfName2Address(&gateway.re.genmask, 0);
-        if ( retres >= 0 )
-        {
-          gateway.re.flags |= 4u;
-          return retres;
-        }
-      }
-    }
+    if ( retres < 0 )
+      return retres;
+    retres = sceNetCnfName2Address(&gateway.re.gateway, gw);
+    if ( retres < 0 )
+      return retres;
+    retres = sceNetCnfName2Address(&gateway.re.genmask, 0);
+    if ( retres < 0 )
+      return retres;
+    gateway.re.flags |= 4u;
   }
   else
   {
     retres = sceNetCnfName2Address(&gateway.re.dstaddr, 0);
-    if ( retres >= 0 )
-    {
-      retres = sceNetCnfName2Address(&gateway.re.gateway, 0);
-      if ( retres >= 0 )
-      {
-        retres = sceNetCnfName2Address(&gateway.re.genmask, 0);
-        if ( retres >= 0 )
-        {
-          gateway.re.flags = 0;
-          return retres;
-        }
-      }
-    }
+    if ( retres < 0 )
+      return retres;
+    retres = sceNetCnfName2Address(&gateway.re.gateway, 0);
+    if ( retres < 0 )
+      return retres;
+    retres = sceNetCnfName2Address(&gateway.re.genmask, 0);
+    if ( retres < 0 )
+      return retres;
+    gateway.re.flags = 0;
   }
   return retres;
 }
@@ -781,22 +770,12 @@ int put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 {
   int retres; // $s0
 
-  retres = 0;
-  if ( !data->dhcp )
+  retres = !data->dhcp ? put_gw(e, ( data->gateway[0] && check_address(data->gateway) ) ? data->gateway : 0) : 0;
+  if ( data->dns1_address[0] && check_address(data->dns1_address) )
   {
-    retres = put_gw(e, ( data->gateway[0] && check_address(data->gateway) ) ? data->gateway : 0);
-  }
-  if ( data->dns1_address[0] )
-  {
-    if ( check_address(data->dns1_address) )
-    {
-      retres = put_ns(e, data->dns1_address, 1);
-      if ( data->dns2_address[0] )
-      {
-        if ( check_address(data->dns2_address) )
-          return put_ns(e, data->dns2_address, 2);
-      }
-    }
+    retres = put_ns(e, data->dns1_address, 1);
+    if ( data->dns2_address[0] && check_address(data->dns2_address) )
+      return put_ns(e, data->dns2_address, 2);
   }
   return retres;
 }
@@ -1042,12 +1021,11 @@ int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
     default:
       break;
   }
-  if ( !init_flag )
+  if ( init_flag )
   {
-    return ( !e->alloc_err ) ? retres : -2;
+    e->ifc = 0;
   }
-  e->ifc = 0;
-  return -100;
+  return ( !init_flag ) ? (( !e->alloc_err ) ? retres : -2) : -100;
 }
 
 //----- (00401AC4) --------------------------------------------------------
@@ -1145,9 +1123,7 @@ int sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int size)
 
   dmat.src = (void *)data;
   dmat.dest = (void *)addr;
-  dmat.size = size & 0xFFFFFFC0;
-  if ( (size & 0x3F) != 0 )
-    dmat.size = (size & 0xFFFFFFC0) + 64;
+  dmat.size = (size & 0xFFFFFFC0) + ((size & 0x3F) ? 64 : 0);
   dmat.attr = 0;
   dmatid = 0;
   while ( !dmatid )
@@ -1211,16 +1187,7 @@ int sce_callback_read(int fd, const char *device, const char *pathname, void *bu
   gbuf[4] = size;
   memcpy(&gbuf[5], device, strlen(device) + 1);
   memcpy((char *)&gbuf[5] + strlen(device) + 1, pathname, strlen(pathname) + 1);
-  if ( sceSifCallRpc(
-         &gcd,
-         13,
-         0,
-         gbuf,
-         (strlen(pathname) + strlen(device) + 1 + 84) & 0xFFFFFFC0,
-         gbuf,
-         (size + 67) & 0xFFFFFFC0,
-         0,
-         0) < 0 )
+  if ( sceSifCallRpc(&gcd, 13, 0, gbuf, (strlen(pathname) + strlen(device) + 1 + 84) & 0xFFFFFFC0, gbuf, (size + 67) & 0xFFFFFFC0, 0, 0) < 0 )
     return -1;
   memcpy(buf, &gbuf[1], size);
   return gbuf[0];
@@ -1231,9 +1198,7 @@ int sce_callback_read(int fd, const char *device, const char *pathname, void *bu
 int sce_callback_close(int fd)
 {
   gbuf[0] = fd;
-  if ( sceSifCallRpc(&gcd, 14, 0, gbuf, 64, gbuf, 64, 0, 0) >= 0 )
-    return gbuf[0];
-  return -1;
+  return (sceSifCallRpc(&gcd, 14, 0, gbuf, 64, gbuf, 64, 0, 0) >= 0) ? gbuf[0] : -1;
 }
 // 405678: using guessed type int gbuf[1024];
 
