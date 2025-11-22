@@ -246,6 +246,8 @@ int module_start(int argc, char *argv[])
 //----- (00400334) --------------------------------------------------------
 int module_stop(int argc, char *argv[])
 {
+  (void)argc;
+  (void)argv;
   sceNetcnfifInterfaceStop();
   TerminateThread(g_tid);
   DeleteThread(g_tid);
@@ -272,6 +274,7 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
   int redial_count; // $a1
   sceNetCnfCallback_t callback; // [sp+18h] [-10h] BYREF
 
+  (void)size;
   retres1 = 0;
   switch ( fno )
   {
@@ -396,7 +399,7 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
       if ( env.root && env.root->pair_head && env.root->pair_head->ifc )
       {
         redial_count = 0;
-        for ( i = 0; i < (sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); i += 1 )
+        for ( i = 0; i < (int)(sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); i += 1 )
         {
           if ( env.root->pair_head->ifc->phone_numbers[i] && i < 3 && i >= 0 )
             ++redial_count;
@@ -529,7 +532,7 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
         if ( cmd < 0 )
           return cmd;
       }
-      for ( i = 0; i < (sizeof(p->phone_numbers)/sizeof(p->phone_numbers[0])); i += 1 )
+      for ( i = 0; i < (int)(sizeof(p->phone_numbers)/sizeof(p->phone_numbers[0])); i += 1 )
       {
         if ( !p->phone_numbers[i] )
         {
@@ -565,6 +568,7 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
       data->mtu = p->mtu;
       data->ifc_idle_timeout = p->idle_timeout;
     }
+    break;
     case 2:
     {
       data->dev_type = p->type;

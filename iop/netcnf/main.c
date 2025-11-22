@@ -83,8 +83,8 @@ void do_some_pair_handling(char *fpath, int type, const char *src, sceNetCnfEnv_
 int do_add_entry_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e, char *icon_value, char *iconsys_value, int no_check_capacity);
 int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2, const char *usrname_bufnew);
 int do_edit_entry_inner(char *fname, int type, char *usr_name, char *new_usr_name, sceNetCnfEnv_t *e, char *icon_value, char *iconsys_value, int no_check_capacity);
-size_t do_delete_entry_inner(char *fname, int type, char *usr_name, char *icon_value, char *iconsys_value, int no_check_capacity);
-size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name);
+int do_delete_entry_inner(char *fname, int type, char *usr_name, char *icon_value, char *iconsys_value, int no_check_capacity);
+int do_set_latest_entry_inner(char *fname, int type, char *usr_name);
 int do_delete_all_inner(const char *dev);
 int do_check_special_provider_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e);
 char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align);
@@ -100,13 +100,13 @@ int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_ar
 void do_init_ifc_inner(sceNetCnfInterface_t *ifc);
 int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list);
 int do_check_other_keywords(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata, struct sceNetCnfUnknownList *unknown_list);
-int do_handle_net_cnf(sceNetCnfEnv_t *e);
-int do_handle_attach_cnf(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc);
-int do_handle_dial_cnf(sceNetCnfEnv_t *e, struct sceNetCnfDial *dial);
-int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), void *userdata);
+int do_handle_net_cnf(sceNetCnfEnv_t *e, void *userdata);
+int do_handle_attach_cnf(sceNetCnfEnv_t *e, void *userdata);
+int do_handle_dial_cnf(sceNetCnfEnv_t *e, void *userdata);
+int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata);
 int do_read_netcnf(sceNetCnfEnv_t *e, const char *netcnf_path, char **netcnf_heap_ptr, int is_attach_cnf);
 char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer);
-int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(), void *userdata);
+int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata);
 int do_netcnf_dial_related(sceNetCnfEnv_t *e);
 int do_netcnf_ifc_related(sceNetCnfEnv_t *e);
 void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *ncis);
@@ -140,8 +140,8 @@ int do_filesize_callback_handles(int in_fd, int in_allocstate);
 void do_clear_callback_handles(int fd, int allocmatch);
 const char *do_colon_callback_handles(const char *netcnf_path, char *device);
 int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode);
-size_t do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size);
-size_t do_readfile_netcnf(int fd, void *ptr, int size);
+int do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size);
+int do_readfile_netcnf(int fd, void *ptr, int size);
 int do_write_netcnf_no_encode(int fd, void *ptr, int size);
 int do_dopen_wrap(const char *fn);
 int do_dread_wrap(int fn, iox_dirent_t *buf);
@@ -616,7 +616,7 @@ int sceNetCnfConvA2S(char *sp_, char *dp_, int len)
   {
     return retres;
   }
-  if ( len < strlen(sp_) + 1 )
+  if ( len < (int)(strlen(sp_) + 1) )
   {
     return -19;
   }
@@ -634,7 +634,7 @@ int sceNetCnfConvS2A(char *sp_, char *dp_, int len)
   {
     return retres;
   }
-  if ( len < strlen(sp_) + 1 )
+  if ( len < (int)(strlen(sp_) + 1) )
   {
     return -19;
   }
@@ -689,7 +689,7 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
   char *netcnf_data; // $s2
   int xorind1; // $s1
   int xoroffs; // $s4
-  size_t readres; // $s0
+  int readres; // $s0
   int xorind2_1; // $s1
   int xorind3_1; // $v1
   int xorind2_2; // $s1
@@ -1608,7 +1608,7 @@ int do_add_entry_inner(
       endbuf[1] = 0;
     }
     fileext = ( type && !e->f_no_decode ) ? ".dat" : ".cnf";
-    for ( i = 0; i < sizeof(g_ifc_buffer); i += 1 )
+    for ( i = 0; i < (int)(sizeof(g_ifc_buffer)); i += 1 )
     {
       if ( !g_ifc_buffer[i] )
       {
@@ -1641,7 +1641,7 @@ int do_add_entry_inner(
       }
     }
     retres2 = -12;
-    if ( i < sizeof(g_ifc_buffer) )
+    if ( i < (int)(sizeof(g_ifc_buffer)) )
     {
       cur_entry_buffer = g_entry_buffer;
       for ( dirname_buf1 = g_dir_name; *dirname_buf1; dirname_buf1 += 1 )
@@ -1872,7 +1872,7 @@ int do_edit_entry_inner(
 // 4032CC: using guessed type char curfilepath1[256];
 
 //----- (004036BC) --------------------------------------------------------
-size_t do_delete_entry_inner(
+int do_delete_entry_inner(
         char *fname,
         int type,
         char *usr_name,
@@ -1881,7 +1881,7 @@ size_t do_delete_entry_inner(
         int no_check_capacity)
 {
   int has_comma; // $s5
-  size_t result; // $v0
+  int result; // $v0
   char *heapmem; // $s3
   char *curentry1; // $s0
   char *heapmem_1; // $s1
@@ -1948,12 +1948,12 @@ size_t do_delete_entry_inner(
 }
 
 //----- (00403998) --------------------------------------------------------
-size_t do_set_latest_entry_inner(char *fname, int type, char *usr_name)
+int do_set_latest_entry_inner(char *fname, int type, char *usr_name)
 {
   int isbeforeend1; // $fp
-  size_t result; // $v0
+  int result; // $v0
   char *heapmem2; // $s4
-  size_t readsz; // $s0
+  int readsz; // $s0
   char *heapmem1; // $s6
   char *heapmem1_1; // $s2
   char *heapmem2_1; // $s1
@@ -2619,7 +2619,7 @@ int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
   int i; // $s0
   struct sceNetCnfUnknown *listtmp; // $s4
   struct sceNetCnfUnknown *cpydst_1; // $s2
-  size_t cpysz; // $v0
+  int cpysz; // $v0
 
   lenx1 = 0;
   for ( i = 0; i < e->ac; i += 1 )
@@ -2899,10 +2899,11 @@ int do_check_other_keywords(
 }
 
 //----- (0040575C) --------------------------------------------------------
-int do_handle_net_cnf(sceNetCnfEnv_t *e)
+int do_handle_net_cnf(sceNetCnfEnv_t *e, void *userdata)
 {
   int wasprefixed; // $s2
 
+  (void)userdata;
   wasprefixed = ( e->av[0][0] == '-' ) ? 1 : 0;
   if ( strcmp("interface", &(e->av[0])[wasprefixed]) )
   {
@@ -2928,11 +2929,13 @@ int do_handle_net_cnf(sceNetCnfEnv_t *e)
 }
 
 //----- (004058E0) --------------------------------------------------------
-int do_handle_attach_cnf(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
+int do_handle_attach_cnf(sceNetCnfEnv_t *e, void *userdata)
 {
   int wasprefixed; // $s2
   int keyasnum; // $s0
+  struct sceNetCnfInterface *ifc;
 
+  ifc = (struct sceNetCnfInterface *)userdata;
   wasprefixed = ( e->av[0][0] == '-' ) ? 1 : 0;
   if ( !strncmp("phone_number", &(e->av[0])[wasprefixed], 12) )
   {
@@ -2979,10 +2982,12 @@ int do_handle_attach_cnf(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 }
 
 //----- (00405B08) --------------------------------------------------------
-int do_handle_dial_cnf(sceNetCnfEnv_t *e, struct sceNetCnfDial *dial)
+int do_handle_dial_cnf(sceNetCnfEnv_t *e, void *userdata)
 {
   int wasprefixed; // $s1
+  struct sceNetCnfDial *dial;
 
+  dial = (struct sceNetCnfDial *)userdata;
   wasprefixed = ( e->av[0][0] == '-' ) ? 1 : 0;
   if ( strcmp("dialing_type_string", &(e->av[0])[wasprefixed]) )
     return do_check_other_keywords(e, g_options_dial_cnf, dial, &dial->unknown_list);
@@ -3003,7 +3008,7 @@ int do_handle_dial_cnf(sceNetCnfEnv_t *e, struct sceNetCnfDial *dial)
 }
 
 //----- (00405C24) --------------------------------------------------------
-int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), void *userdata)
+int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata)
 {
   u8 *i; // $s0
   char *j; // $s0
@@ -3069,7 +3074,7 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(int, int), v
     ++e->ac;
   }
   *j = 0;
-  return ( e->ac <= 0 ) ? 0 : readcb((int)e, (int)userdata);
+  return ( e->ac <= 0 ) ? 0 : readcb(e, userdata);
 }
 
 //----- (00405E88) --------------------------------------------------------
@@ -3093,7 +3098,7 @@ char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer)
 }
 
 //----- (00405F3C) --------------------------------------------------------
-int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(), void *userdata)
+int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata)
 {
   int cur_linelen; // $s4
   char *fullpath; // $s0
@@ -3130,7 +3135,7 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
     printf("\n");
   }
   e->fname = fullpath;
-  read_res1 = do_read_netcnf(e, fullpath, &ptr, readcb == (int (*)())do_handle_attach_cnf);
+  read_res1 = do_read_netcnf(e, fullpath, &ptr, readcb == do_handle_attach_cnf);
   if ( read_res1 < 0 )
   {
     printf("netcnf: can't load %s (%d)\n", e->fname, read_res1);
@@ -3161,7 +3166,7 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
       }
       else
       {
-        cur_linelen += do_check_line_buffer(e, lbuf, (int (*)(int, int))readcb, userdata);
+        cur_linelen += do_check_line_buffer(e, lbuf, readcb, userdata);
         lbuf = e->lbuf;
       }
     }
@@ -3174,7 +3179,7 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(),
     read_res1 -= 1;
   }
   if ( e->lbuf < lbuf )
-    cur_linelen += do_check_line_buffer(e, lbuf, (int (*)(int, int))readcb, userdata);
+    cur_linelen += do_check_line_buffer(e, lbuf, readcb, userdata);
   do_free_heapmem(ptr);
   return cur_linelen;
   
@@ -3190,7 +3195,7 @@ int do_netcnf_dial_related(sceNetCnfEnv_t *e)
   e->root->redial_count = -1;
   e->root->redial_interval = -1;
   e->root->dialing_type = -1;
-  return do_netcnf_read_related(e, e->arg_fname, (int (*)())do_handle_net_cnf, 0);
+  return do_netcnf_read_related(e, e->arg_fname, do_handle_net_cnf, 0);
 }
 
 //----- (004062FC) --------------------------------------------------------
@@ -3200,7 +3205,7 @@ int do_netcnf_ifc_related(sceNetCnfEnv_t *e)
   if ( !e->ifc )
     return -2;
   do_init_ifc_inner(e->ifc);
-  return do_netcnf_read_related(e, e->arg_fname, (int (*)())do_handle_attach_cnf, e->ifc);
+  return do_netcnf_read_related(e, e->arg_fname, do_handle_attach_cnf, e->ifc);
 }
 
 //----- (00406360) --------------------------------------------------------
@@ -3427,7 +3432,7 @@ int do_load_dial_inner(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair)
   if ( !pair->ctl )
     return -1;
   pair->ctl->dial = (sceNetCnfDial_t *)do_alloc_mem_inner(e, sizeof(sceNetCnfDial_t), 2);
-  return pair->ctl->dial ? do_netcnf_read_related(e, e->arg_fname, (int (*)())do_handle_dial_cnf, pair->ctl->dial) : -2;
+  return pair->ctl->dial ? do_netcnf_read_related(e, e->arg_fname, do_handle_dial_cnf, pair->ctl->dial) : -2;
 }
 
 //----- (00406990) --------------------------------------------------------
@@ -4040,6 +4045,7 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
         result = do_netcnf_sprintf_buffer(e, "\n");
         if ( result < 0 )
           return result;
+        break;
       }
       case 4:
       {
@@ -4048,6 +4054,7 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
         result = do_netcnf_sprintf_buffer(e, "route del %s\n", (const char *)e->lbuf);
         if ( result < 0 )
           return result;
+        break;
       }
       default:
         return -1;
@@ -4070,7 +4077,7 @@ int do_netcnf_phone_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
   int i; // $s0
   int result; // $v0
 
-  for ( i = 0; i < (sizeof(ifc->phone_numbers)/sizeof(ifc->phone_numbers[0])); i += 1 )
+  for ( i = 0; i < (int)(sizeof(ifc->phone_numbers)/sizeof(ifc->phone_numbers[0])); i += 1 )
   {
     if ( ifc->phone_numbers[i] )
     {
@@ -4249,7 +4256,7 @@ int do_name_2_address_inner(unsigned int *dst, char *buf)
   int offsbase1; // $a0
   int tmpstk1[3]; // [sp+10h] [-10h] BYREF
 
-  for ( prefixchkn = 0; prefixchkn < sizeof(tmpstk1)/sizeof(tmpstk1[0]); prefixchkn += 1 )
+  for ( prefixchkn = 0; prefixchkn < (int)(sizeof(tmpstk1)/sizeof(tmpstk1[0])); prefixchkn += 1 )
   {
     base = 10;
     if ( *buf == '0' )
@@ -4670,7 +4677,7 @@ void do_init_callback_handles(void)
 {
   int i; // $v1
 
-  for ( i = 0; i < (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); i += 1 )
+  for ( i = 0; i < (int)(sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); i += 1 )
   {
     g_callback_handle_infos[i].m_fd = -1;
     g_callback_handle_infos[i].m_filesize = 0;
@@ -4683,7 +4690,7 @@ int do_get_empty_callback_handle(int in_fd, int in_allocstate)
 {
   int i; // $a3
 
-  for ( i = 0; i < (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); i += 1 )
+  for ( i = 0; i < (int)(sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); i += 1 )
   {
     if ( g_callback_handle_infos[i].m_fd == -1 )
     {
@@ -4702,7 +4709,7 @@ int do_filesize_callback_handles(int in_fd, int in_allocstate)
 {
   int i; // $a2
 
-  for ( i = 0; i < (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); i += 1 )
+  for ( i = 0; i < (int)(sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); i += 1 )
   {
     if ( g_callback_handle_infos[i].m_fd == in_fd && (g_callback_handle_infos[i].m_allocstate == in_allocstate || !in_allocstate) )
     {
@@ -4717,7 +4724,7 @@ void do_clear_callback_handles(int fd, int allocmatch)
 {
   int i; // $a3
 
-  for ( i = 0; i < (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); i += 1 )
+  for ( i = 0; i < (int)(sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])); i += 1 )
   {
     if ( g_callback_handle_infos[i].m_fd == fd && g_callback_handle_infos[i].m_allocstate == allocmatch )
     {
@@ -4758,7 +4765,7 @@ int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode)
 
   if ( !g_callbacks.open || !is_special_file_path(netcnf_path) )
     return open(netcnf_path, file_flags, file_mode);
-  if ( g_open_callback_handle_count >= (sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])) )
+  if ( g_open_callback_handle_count >= (int)(sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])) )
     return -1;
   cbind = do_colon_callback_handles(netcnf_path, pathconcat);
   if ( !cbind )
@@ -4779,7 +4786,7 @@ int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode)
 // 40C7E0: using guessed type int g_open_callback_handle_count;
 
 //----- (00408F8C) --------------------------------------------------------
-size_t do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size)
+int do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size)
 {
   struct netcnf_callback_handle_info *cbh; // $s0
 
@@ -4804,7 +4811,7 @@ size_t do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size)
 // 40C348: using guessed type int (*)(u32, u32, u32, u32, u32, u32);
 
 //----- (0040908C) --------------------------------------------------------
-size_t do_readfile_netcnf(int fd, void *ptr, int size)
+int do_readfile_netcnf(int fd, void *ptr, int size)
 {
   int cbind; // $a0
 

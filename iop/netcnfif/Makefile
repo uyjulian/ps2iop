@@ -4,6 +4,8 @@ IOP_OBJS = imports.o exports.o main.o
 
 IOP_CFLAGS += -I../00common
 
+IOP_WARNFLAGS += -Wall -Wextra
+
 all: $(IOP_BIN)
 
 clean:
