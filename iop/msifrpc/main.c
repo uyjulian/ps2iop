@@ -278,7 +278,7 @@ struct msif_data g_msif_data; // weak
 u32 _start()
 {
   printf("Multi-thread available sifrpc module...\n");
-  return RegisterLibraryEntries(&_exp_msifrpc) != 0;
+  return RegisterLibraryEntries(&_exp_msifrpc) ? 1 : 0;
 }
 
 //----- (00400038) --------------------------------------------------------
@@ -366,7 +366,7 @@ sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd)
 //----- (004002B0) --------------------------------------------------------
 unsigned int alarm_cb_cmd_80000018_1(void *pkt)
 {
-  return ( isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) != 0 ) ? 0 : 0xF000;
+  return isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) ? 0 : 0xF000;
 }
 
 //----- (004002F8) --------------------------------------------------------
@@ -415,7 +415,7 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
 //----- (0040044C) --------------------------------------------------------
 unsigned int alarm_cb_cmd_80000018_2(void *pkt)
 {
-  return ( isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) != 0 ) ? 0 : 0xF000;
+  return isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) ? 0 : 0xF000;
 }
 
 //----- (00400494) --------------------------------------------------------
@@ -464,7 +464,6 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
     alarmdat.lo = 0xF000;
     iSetAlarm(&alarmdat, (unsigned int (*)(void *))alarm_cb_cmd_80000018_2, fpacket);
   }
-  return;
 }
 
 //----- (00400610) --------------------------------------------------------
@@ -613,7 +612,7 @@ void do_msif_exec_request(sceSifMServeData *sd)
   if ( sentry_ret )
     size_extra = sd->rsize;
   CpuSuspendIntr(&state);
-  fpacket2 = ( (sd->rid & 4) != 0 ) ? (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket2(&g_msif_data, (sd->rid >> 16) & 0xFFFF) : (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket(&g_msif_data);
+  fpacket2 = (sd->rid & 4) ? (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket2(&g_msif_data, (sd->rid >> 16) & 0xFFFF) : (SifMRpcRendPkt_t *)sif_mrpc_get_fpacket(&g_msif_data);
   CpuResumeIntr(state);
   fpacket2->cid = 0x8000001A;
   fpacket2->cd = sd->client;
@@ -779,58 +778,61 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
         break;
       }
     }
-    if ( arg->m_in_cmd == 0x80000019 )
+    switch ( arg->m_in_cmd )
     {
-      thparam_1.thread = (void (*)(void *))thread_proc_80000019;
-      thparam_1.attr = 0x2000000;
-      thparam_1.stacksize = arg->m_msg2.m_stacksize;
-      thparam_1.priority = arg->m_msg2.m_priority;
-      thid_1 = CreateThread(&thparam_1);
-      if ( thid_1 < 0 )
-        printf("StartThread() failed.\n");
-      else
-        StartThread(thid_1, arg);
-    }
-    else if ( arg->m_in_cmd == 0x8000001D )
-    {
-      termthread_1 = TerminateThread(arg->m_msg2.m_sd->base->key);
-      if ( termthread_1 )
-        Kprintf("TerminateThread(): ret = %d\n", termthread_1);
-      delthread_1 = DeleteThread(arg->m_msg2.m_sd->base->key);
-      if ( delthread_1 )
-      {
-        if ( delthread_1 == -414 )
-          delthread_1 = 2;
+      case 0x80000019:
+        thparam_1.thread = (void (*)(void *))thread_proc_80000019;
+        thparam_1.attr = 0x2000000;
+        thparam_1.stacksize = arg->m_msg2.m_stacksize;
+        thparam_1.priority = arg->m_msg2.m_priority;
+        thid_1 = CreateThread(&thparam_1);
+        if ( thid_1 < 0 )
+          printf("StartThread() failed.\n");
         else
-          Kprintf("DeleteThread(): ret = %d\n", delthread_1);
-      }
-      else
-      {
-        delthread_1 = 1;
-        do_sif_remove_rpc_queue(arg->m_msg2.m_sd->base);
+          StartThread(thid_1, arg);
+        break;
+      case 0x8000001D:
+        termthread_1 = TerminateThread(arg->m_msg2.m_sd->base->key);
+        if ( termthread_1 )
+          Kprintf("TerminateThread(): ret = %d\n", termthread_1);
+        delthread_1 = DeleteThread(arg->m_msg2.m_sd->base->key);
+        if ( delthread_1 )
+        {
+          if ( delthread_1 == -414 )
+            delthread_1 = 2;
+          else
+            Kprintf("DeleteThread(): ret = %d\n", delthread_1);
+        }
+        else
+        {
+          delthread_1 = 1;
+          do_sif_remove_rpc_queue(arg->m_msg2.m_sd->base);
+          CpuSuspendIntr(&state);
+          FreeSysMemory(arg->m_msg2.m_sd->base);
+          FreeSysMemory(arg->m_msg2.m_sd->func_buff);
+          CpuResumeIntr(state);
+          do_msif_remove_rpc(arg->m_msg2.m_sd);
+          CpuSuspendIntr(&state);
+          FreeSysMemory(arg->m_msg2.m_sd);
+          CpuResumeIntr(state);
+        }
         CpuSuspendIntr(&state);
-        FreeSysMemory(arg->m_msg2.m_sd->base);
-        FreeSysMemory(arg->m_msg2.m_sd->func_buff);
+        fpacket2 = (arg->m_msg2.m_sd->rid & 4) ? (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket2(arg->m_msg2.m_msif_data, (arg->m_msg2.m_sd->rid >> 16) & 0xFFFF) : (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(arg->m_msg2.m_msif_data);
         CpuResumeIntr(state);
-        do_msif_remove_rpc(arg->m_msg2.m_sd);
+        fpacket2->pkt_addr = arg->m_msg2.m_pkt_addr;
+        fpacket2->sid = 0x8000001D;
+        fpacket2->m_eebuf_or_threadstate = delthread_1;
+        fpacket2->m_eeserver = 0;
+        fpacket2->m_toee_unkxb = 0;
+        fpacket2->cd = arg->m_msg2.m_eebuf_cd;
+        while ( !sceSifSendCmd(0x80000018, fpacket2, 64, 0, 0, 0) )
+          DelayThread(0xF000);
         CpuSuspendIntr(&state);
-        FreeSysMemory(arg->m_msg2.m_sd);
+        FreeSysMemory(arg);
         CpuResumeIntr(state);
-      }
-      CpuSuspendIntr(&state);
-      fpacket2 = ( (arg->m_msg2.m_sd->rid & 4) != 0 ) ? (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket2(arg->m_msg2.m_msif_data, (arg->m_msg2.m_sd->rid >> 16) & 0xFFFF) : (SifMRpcBindPkt_t *)sif_mrpc_get_fpacket(arg->m_msg2.m_msif_data);
-      CpuResumeIntr(state);
-      fpacket2->pkt_addr = arg->m_msg2.m_pkt_addr;
-      fpacket2->sid = 0x8000001D;
-      fpacket2->m_eebuf_or_threadstate = delthread_1;
-      fpacket2->m_eeserver = 0;
-      fpacket2->m_toee_unkxb = 0;
-      fpacket2->cd = arg->m_msg2.m_eebuf_cd;
-      while ( !sceSifSendCmd(0x80000018, fpacket2, 64, 0, 0, 0) )
-        DelayThread(0xF000);
-      CpuSuspendIntr(&state);
-      FreeSysMemory(arg);
-      CpuResumeIntr(state);
+        break;
+      default:
+        break;
     }
   }
 }
