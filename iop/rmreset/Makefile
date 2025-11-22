@@ -2,6 +2,8 @@ IOP_BIN = rmreset.irx
 
 IOP_OBJS = imports.o main.o
 
+IOP_WARNFLAGS += -Wall -Wextra
+
 all: $(IOP_BIN)
 
 clean:
