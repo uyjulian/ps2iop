@@ -52,6 +52,7 @@ int FreeScratchPad(void *alloced_addr)
 {
   int state;
 
+  (void)alloced_addr;
   CpuSuspendIntr(&state);
   if ( !g_scrtpad_is_allocated )
   {
