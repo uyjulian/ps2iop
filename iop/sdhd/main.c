@@ -425,33 +425,24 @@ int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *d
   dinfo->m_smpl = 0;
   dinfo->m_vagi = 0;
   dinfo->m_vers = indata;
-  if ( indata->Creator == 0x53434549 && indata->Type == 0x56657273 )
-  {
-    if ( indata->chunkSize >= 0 )
-    {
-      dinfo->m_head = (sceHardSynthHeaderChunk *)((char *)indata + indata->chunkSize);
-      if ( dinfo->m_head->Creator == 0x53434549 && dinfo->m_head->Type == 0x48656164 )
-      {
-        return 0;
-      }
-      else
-      {
-        dinfo->m_vers = 0;
-        dinfo->m_head = 0;
-      }
-    }
-    else
-    {
-      dinfo->m_vers = 0;
-      return 0x8103002F;
-    }
-  }
-  else
+  if ( indata->Creator != 0x53434549 || indata->Type != 0x56657273 )
   {
     dinfo->m_vers = 0;
     return 0x8103000E;
   }
-  return 0x8103002F;
+  if ( indata->chunkSize < 0 )
+  {
+    dinfo->m_vers = 0;
+    return 0x8103002F;
+  }
+  dinfo->m_head = (sceHardSynthHeaderChunk *)((char *)indata + indata->chunkSize);
+  if ( dinfo->m_head->Creator != 0x53434549 || dinfo->m_head->Type != 0x48656164 )
+  {
+    dinfo->m_vers = 0;
+    dinfo->m_head = 0;
+    return 0x8103002F;
+  }
+  return 0;
 }
 
 //----- (004001A0) --------------------------------------------------------
@@ -634,27 +625,19 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, unsigned int *vag
   sceHardSynthVagParam *vagparam; // $v0
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
-  if ( do_get_vers_head_chunk(indata, &dinfo) == 0 )
+  if ( do_get_vers_head_chunk(indata, &dinfo) || do_get_vagi_chunk(indata, &dinfo) )
+    return 0;
+  bodySize = dinfo.m_head->bodySize;
+  for ( i = 0; dinfo.m_vagi->maxVagInfoNumber >= i; i += 1 )
   {
-    if ( do_get_vagi_chunk(indata, &dinfo) == 0 )
+    if ( dinfo.m_vagi->vagInfoOffsetAddr[i] != -1 )
     {
-      bodySize = dinfo.m_head->bodySize;
-      for ( i = 0; dinfo.m_vagi->maxVagInfoNumber >= i; i += 1 )
-      {
-        if ( dinfo.m_vagi->vagInfoOffsetAddr[i] != -1 )
-        {
-          vagparam = (sceHardSynthVagParam *)((char *)(dinfo.m_vagi) + dinfo.m_vagi->vagInfoOffsetAddr[i]);
-          if ( *vagoffsaddr < vagparam->vagOffsetAddr )
-          {
-            if ( vagparam->vagOffsetAddr < bodySize )
-              bodySize = vagparam->vagOffsetAddr;
-          }
-        }
-      }
-      return bodySize - *vagoffsaddr;
+      vagparam = (sceHardSynthVagParam *)((char *)(dinfo.m_vagi) + dinfo.m_vagi->vagInfoOffsetAddr[i]);
+      if ( *vagoffsaddr < vagparam->vagOffsetAddr && vagparam->vagOffsetAddr < bodySize )
+        bodySize = vagparam->vagOffsetAddr;
     }
   }
-  return 0;
+  return bodySize - *vagoffsaddr;
 }
 
 //----- (004007F4) --------------------------------------------------------
@@ -736,7 +719,7 @@ int do_get_common_block_ptr_note(
   sceHardSynthVagParam *p_vagparam; // [sp+1Ch] [-4h] BYREF
 
   idx1 = 0;
-  if ( sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam) != 0 || p_programparam->splitBlockAddr == -1 )
+  if ( sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam) || p_programparam->splitBlockAddr == -1 )
   {
     return 0;
   }
@@ -931,15 +914,13 @@ int do_get_common_block_ptr(
   sceHardSynthVagParam *p_vagparam; // [sp+18h] [-8h] BYREF
 
   idx1 = 0;
-  if ( sceSdHdGetSampleSetParamAddr(buffer, sampleSetNumber, &p_samplesetparam) != 0 )
+  if ( sceSdHdGetSampleSetParamAddr(buffer, sampleSetNumber, &p_samplesetparam) )
     return 0;
   switch ( mode )
   {
     case 0:
       if ( velocity < p_samplesetparam->velLimitLow || velocity > p_samplesetparam->velLimitHigh )
-      {
         return 0;
-      }
       for ( i = 0; i < p_samplesetparam->nSample; i += 1 )
       {
         cursampleindexoffs2 = 2 * i;
@@ -1053,13 +1034,12 @@ int sceSdHdGetMaxProgramNumber(void *buffer)
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
-  {
-    result = do_get_prog_chunk(buffer, &dinfo);
-    if ( !result )
-      return dinfo.m_prog->maxProgramNumber;
-  }
-  return result;
+  if ( result )
+    return result;
+  result = do_get_prog_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  return dinfo.m_prog->maxProgramNumber;
 }
 
 //----- (0040133C) --------------------------------------------------------
@@ -1069,13 +1049,12 @@ int sceSdHdGetMaxSampleSetNumber(void *buffer)
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
-  {
-    result = do_get_sset_chunk(buffer, &dinfo);
-    if ( !result )
-      return dinfo.m_sset->maxSampleSetNumber;
-  }
-  return result;
+  if ( result )
+    return result;
+  result = do_get_sset_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  return dinfo.m_sset->maxSampleSetNumber;
 }
 
 //----- (00401388) --------------------------------------------------------
@@ -1085,13 +1064,12 @@ int sceSdHdGetMaxSampleNumber(void *buffer)
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
-  {
-    result = do_get_smpl_chunk(buffer, &dinfo);
-    if ( !result )
-      return dinfo.m_smpl->maxSampleNumber;
-  }
-  return result;
+  if ( result )
+    return result;
+  result = do_get_smpl_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  return dinfo.m_smpl->maxSampleNumber;
 }
 
 //----- (004013D4) --------------------------------------------------------
@@ -1101,13 +1079,12 @@ int sceSdHdGetMaxVAGInfoNumber(void *buffer)
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
-  {
-    result = do_get_vagi_chunk(buffer, &dinfo);
-    if ( !result )
-      return dinfo.m_vagi->maxVagInfoNumber;
-  }
-  return result;
+  if ( result )
+    return result;
+  result = do_get_vagi_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  return dinfo.m_vagi->maxVagInfoNumber;
 }
 
 //----- (00401420) --------------------------------------------------------
@@ -1117,20 +1094,16 @@ int sceSdHdGetProgramParamAddr(void *buffer, unsigned int programNumber, sceHard
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
-  {
-    result = do_get_prog_chunk(buffer, &dinfo);
-    if ( !result )
-    {
-      result = do_check_chunk_in_bounds(buffer, &dinfo, 0x50726F67u, programNumber);
-      if ( !result )
-      {
-        result = 0;
-        *ptr = (sceHardSynthProgramParam *)((char *)dinfo.m_prog + dinfo.m_prog->programOffsetAddr[programNumber]);
-      }
-    }
-  }
-  return result;
+  if ( result )
+    return result;
+  result = do_get_prog_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  result = do_check_chunk_in_bounds(buffer, &dinfo, 0x50726F67u, programNumber);
+  if ( result )
+    return result;
+  *ptr = (sceHardSynthProgramParam *)((char *)dinfo.m_prog + dinfo.m_prog->programOffsetAddr[programNumber]);
+  return 0;
 }
 
 //----- (004014B0) --------------------------------------------------------
@@ -1140,12 +1113,10 @@ int sceSdHdGetProgramParam(void *buffer, unsigned int programNumber, SceSdHdProg
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam);
-  if ( !result )
-  {
-    do_copy_to_sdhd_program_param(param, p_programparam);
-    return 0;
-  }
-  return result;
+  if ( result )
+    return result;
+  do_copy_to_sdhd_program_param(param, p_programparam);
+  return 0;
 }
 
 //----- (004014F0) --------------------------------------------------------
@@ -1159,25 +1130,16 @@ int sceSdHdGetSplitBlockAddr(
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam);
-  if ( !result )
-  {
-    if ( p_programparam->splitBlockAddr == -1 )
-    {
-      return 0x81039009;
-    }
-    else if ( (unsigned int)p_programparam->nSplit - 1 < splitBlockNumber )
-    {
-      return 0x81039018;
-    }
-    else
-    {
-      result = 0;
-      *theParamPtr = (sceHardSynthSplitBlock *)((char *)p_programparam
-                                              + p_programparam->splitBlockAddr
-                                              + p_programparam->sizeSplitBlock * splitBlockNumber);
-    }
-  }
-  return result;
+  if ( result )
+    return result;
+  if ( p_programparam->splitBlockAddr == -1 )
+    return 0x81039009;
+  if ( (unsigned int)p_programparam->nSplit - 1 < splitBlockNumber )
+    return 0x81039018;
+  *theParamPtr = (sceHardSynthSplitBlock *)((char *)p_programparam
+                                          + p_programparam->splitBlockAddr
+                                          + p_programparam->sizeSplitBlock * splitBlockNumber);
+  return 0;
 }
 
 //----- (0040158C) --------------------------------------------------------
@@ -1191,12 +1153,10 @@ int sceSdHdGetSplitBlock(
   sceHardSynthSplitBlock *p_splitblock; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetSplitBlockAddr(buffer, programNumber, splitBlockNumber, &p_splitblock);
-  if ( !result )
-  {
-    do_copy_to_sdhd_split_block(param, p_splitblock);
-    return 0;
-  }
-  return result;
+  if ( result )
+    return result;
+  do_copy_to_sdhd_split_block(param, p_splitblock);
+  return 0;
 }
 
 //----- (004015CC) --------------------------------------------------------
@@ -1206,20 +1166,16 @@ int sceSdHdGetSampleSetParamAddr(void *buffer, unsigned int sampleSetNumber, sce
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
-  {
-    result = do_get_sset_chunk(buffer, &dinfo);
-    if ( !result )
-    {
-      result = do_check_chunk_in_bounds(buffer, &dinfo, 0x53736574u, sampleSetNumber);
-      if ( !result )
-      {
-        result = 0;
-        *ptr = (sceHardSynthSampleSetParam *)((char *)dinfo.m_sset + dinfo.m_sset->sampleSetOffsetAddr[sampleSetNumber]);
-      }
-    }
-  }
-  return result;
+  if ( result )
+    return result;
+  result = do_get_sset_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  result = do_check_chunk_in_bounds(buffer, &dinfo, 0x53736574u, sampleSetNumber);
+  if ( result )
+    return result;
+  *ptr = (sceHardSynthSampleSetParam *)((char *)dinfo.m_sset + dinfo.m_sset->sampleSetOffsetAddr[sampleSetNumber]);
+  return 0;
 }
 
 //----- (0040165C) --------------------------------------------------------
@@ -1229,12 +1185,10 @@ int sceSdHdGetSampleSetParam(void *buffer, unsigned int sampleSetNumber, SceSdHd
   sceHardSynthSampleSetParam *p_samplesetparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetSampleSetParamAddr(buffer, sampleSetNumber, &p_samplesetparam);
-  if ( !result )
-  {
-    do_copy_to_sdhd_set_param(param, p_samplesetparam);
-    return 0;
-  }
-  return result;
+  if ( result )
+    return result;
+  do_copy_to_sdhd_set_param(param, p_samplesetparam);
+  return 0;
 }
 
 //----- (0040169C) --------------------------------------------------------
@@ -1244,20 +1198,16 @@ int sceSdHdGetSampleParamAddr(void *buffer, unsigned int sampleNumber, sceHardSy
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
-  {
-    result = do_get_smpl_chunk(buffer, &dinfo);
-    if ( !result )
-    {
-      result = do_check_chunk_in_bounds(buffer, &dinfo, 0x536D706Cu, sampleNumber);
-      if ( !result )
-      {
-        result = 0;
-        *ptr = (sceHardSynthSampleParam *)((char *)dinfo.m_smpl + dinfo.m_smpl->sampleOffsetAddr[sampleNumber]);
-      }
-    }
-  }
-  return result;
+  if ( result )
+    return result;
+  result = do_get_smpl_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  result = do_check_chunk_in_bounds(buffer, &dinfo, 0x536D706Cu, sampleNumber);
+  if ( result )
+    return result;
+  *ptr = (sceHardSynthSampleParam *)((char *)dinfo.m_smpl + dinfo.m_smpl->sampleOffsetAddr[sampleNumber]);
+  return 0;
 }
 
 //----- (0040172C) --------------------------------------------------------
@@ -1267,12 +1217,10 @@ int sceSdHdGetSampleParam(void *buffer, unsigned int sampleNumber, SceSdHdSample
   sceHardSynthSampleParam *p_sampleparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetSampleParamAddr(buffer, sampleNumber, &p_sampleparam);
-  if ( !result )
-  {
-    do_copy_to_sdhd_sample_param(param, p_sampleparam);
-    return 0;
-  }
-  return result;
+  if ( result )
+    return result;
+  do_copy_to_sdhd_sample_param(param, p_sampleparam);
+  return 0;
 }
 
 //----- (0040176C) --------------------------------------------------------
@@ -1282,20 +1230,16 @@ int sceSdHdGetVAGInfoParamAddr(void *buffer, unsigned int vagInfoNumber, sceHard
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
-  {
-    result = do_get_vagi_chunk(buffer, &dinfo);
-    if ( !result )
-    {
-      result = do_check_chunk_in_bounds(buffer, &dinfo, 0x56616769u, vagInfoNumber);
-      if ( !result )
-      {
-        result = 0;
-        *ptr = (sceHardSynthVagParam *)((char *)dinfo.m_vagi + dinfo.m_vagi->vagInfoOffsetAddr[vagInfoNumber]);
-      }
-    }
-  }
-  return result;
+  if ( result )
+    return result;
+  result = do_get_vagi_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  result = do_check_chunk_in_bounds(buffer, &dinfo, 0x56616769u, vagInfoNumber);
+  if ( result )
+    return result;
+  *ptr = (sceHardSynthVagParam *)((char *)dinfo.m_vagi + dinfo.m_vagi->vagInfoOffsetAddr[vagInfoNumber]);
+  return 0;
 }
 
 //----- (004017FC) --------------------------------------------------------
@@ -1305,12 +1249,10 @@ int sceSdHdGetVAGInfoParam(void *buffer, unsigned int vagInfoNumber, SceSdHdVAGI
   sceHardSynthVagParam *p_vagparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetVAGInfoParamAddr(buffer, vagInfoNumber, &p_vagparam);
-  if ( !result )
-  {
-    do_copy_to_sdhd_vag_info_param(param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
-    return 0;
-  }
-  return result;
+  if ( result )
+    return result;  
+  do_copy_to_sdhd_vag_info_param(param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
+  return 0;
 }
 
 //----- (00401858) --------------------------------------------------------
@@ -1320,13 +1262,12 @@ int sceSdHdCheckProgramNumber(void *buffer, unsigned int programNumber)
   struct sdhd_info dinfo; // [sp+10h] [-18h] BYREF
 
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
-  {
-    result = do_get_prog_chunk(buffer, &dinfo);
-    if ( !result )
-      return do_check_chunk_in_bounds(buffer, &dinfo, 0x50726F67u, programNumber);
-  }
-  return result;
+  if ( result )
+    return result;
+  result = do_get_prog_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  return do_check_chunk_in_bounds(buffer, &dinfo, 0x50726F67u, programNumber);
 }
 
 //----- (004018B8) --------------------------------------------------------
@@ -1525,14 +1466,11 @@ int sceSdHdGetVAGInfoParamAddrBySampleNumber(
   sceHardSynthSampleParam *p_sampleparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetSampleParamAddr(buffer, sampleNumber, &p_sampleparam);
-  if ( !result )
-  {
-    if ( p_sampleparam->VagIndex == 0xFFFF )
-      return 0x81039019;
-    else
-      return sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, ptr);
-  }
-  return result;
+  if ( result )
+    return result;
+  if ( p_sampleparam->VagIndex == 0xFFFF )
+    return 0x81039019;
+  return sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, ptr);
 }
 
 //----- (00401CE8) --------------------------------------------------------
@@ -1542,12 +1480,10 @@ int sceSdHdGetVAGInfoParamBySampleNumber(void *buffer, unsigned int sampleNumber
   sceHardSynthVagParam *p_vagparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetVAGInfoParamAddrBySampleNumber(buffer, sampleNumber, &p_vagparam);
-  if ( !result )
-  {
-    do_copy_to_sdhd_vag_info_param(param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
-    return 0;
-  }
-  return result;
+  if ( result )
+    return result;
+  do_copy_to_sdhd_vag_info_param(param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
+  return 0;
 }
 
 //----- (00401D44) --------------------------------------------------------
@@ -1559,25 +1495,18 @@ int sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNu
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam);
-  if ( !result )
+  if ( result )
+    return result;
+  if ( p_programparam->splitBlockAddr == -1 )
+    return 0x81039009;
+  splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam + p_programparam->splitBlockAddr);
+  for ( i = 0; i < p_programparam->nSplit; i += 1 )
   {
-    if ( p_programparam->splitBlockAddr == -1 )
-    {
-      return 0x81039009;
-    }
-    else
-    {
-      splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam + p_programparam->splitBlockAddr);
-      for ( i = 0; i < p_programparam->nSplit; i += 1 )
-      {
-        if ( splitNumber == splitblock->splitNumber )
-          return i;
-        splitblock = (sceHardSynthSplitBlock *)((char *)splitblock + p_programparam->sizeSplitBlock);
-      }
-      return 0x81039020;
-    }
+    if ( splitNumber == splitblock->splitNumber )
+      return i;
+    splitblock = (sceHardSynthSplitBlock *)((char *)splitblock + p_programparam->sizeSplitBlock);
   }
-  return result;
+  return 0x81039020;
 }
 
 //----- (00401DD8) --------------------------------------------------------
@@ -1587,9 +1516,9 @@ int sceSdHdGetVAGSize(void *buffer, unsigned int vagInfoNumber)
   sceHardSynthVagParam *p_vagparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetVAGInfoParamAddr(buffer, vagInfoNumber, &p_vagparam);
-  if ( !result )
-    return do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
-  return result;
+  if ( result )
+    return result;
+  return do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
 }
 
 //----- (00401E14) --------------------------------------------------------
@@ -1599,9 +1528,9 @@ int sceSdHdGetSplitBlockCount(void *buffer, unsigned int programNumber)
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetProgramParamAddr(buffer, programNumber, &p_programparam);
-  if ( !result )
-    return p_programparam->nSplit;
-  return result;
+  if ( result )
+    return result;
+  return p_programparam->nSplit;
 }
 
 //----- (00401E48) --------------------------------------------------------
@@ -1627,11 +1556,9 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
         if ( !sceSdHdGetSplitBlockAddr(buffer, i, j, &p_splitblock) )
         {
           curval1 = sceSdHdGetSplitBlockCountByNote(buffer, i, p_splitblock->splitRangeLow & 0x7F);
-          if ( curminval < curval1 )
-            curminval = curval1;
+          curminval = ( curminval < curval1 ) ? curval1 : curminval;
           curval2 = sceSdHdGetSplitBlockCountByNote(buffer, i, p_splitblock->splitRangeHigh & 0x7F);
-          if ( curminval < curval2 )
-            curminval = curval2;
+          curminval = ( curminval < curval2 ) ? curval2 : curminval;
         }
       }
     }
@@ -1662,11 +1589,9 @@ int sceSdHdGetMaxSampleSetParamCount(void *buffer)
         if ( !sceSdHdGetSplitBlockAddr(buffer, i, j, &p_splitblock) )
         {
           curval1 = sceSdHdGetSampleSetParamCountByNote(buffer, i, p_splitblock->splitRangeLow & 0x7F);
-          if ( curminval < curval1 )
-            curminval = curval1;
+          curminval = ( curminval < curval1 ) ? curval1 : curminval;
           curval2 = sceSdHdGetSampleSetParamCountByNote(buffer, i, p_splitblock->splitRangeHigh & 0x7F);
-          if ( curminval < curval2 )
-            curminval = curval2;
+          curminval = ( curminval < curval2 ) ? curval2 : curminval;
         }
       }
     }
@@ -1712,32 +1637,28 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
                           p_splitblock->splitRangeLow & 0x7F,
                           p_sampleparam->velRangeLow & 0x7F,
                           1u);
-              if ( curminval < curval1 )
-                curminval = curval1;
+              curminval = ( curminval < curval1 ) ? curval1 : curminval;
               curval2 = sceSdHdGetSampleParamCountByNoteVelocity(
                           buffer,
                           i,
                           p_splitblock->splitRangeLow & 0x7F,
                           p_sampleparam->velRangeHigh & 0x7F,
                           1u);
-              if ( curminval < curval2 )
-                curminval = curval2;
+              curminval = ( curminval < curval2 ) ? curval2 : curminval;
               curval3 = sceSdHdGetSampleParamCountByNoteVelocity(
                           buffer,
                           i,
                           p_splitblock->splitRangeHigh & 0x7F,
                           p_sampleparam->velRangeLow & 0x7F,
                           1u);
-              if ( curminval < curval3 )
-                curminval = curval3;
+              curminval = ( curminval < curval3 ) ? curval3 : curminval;
               curval4 = sceSdHdGetSampleParamCountByNoteVelocity(
                           buffer,
                           i,
                           p_splitblock->splitRangeHigh & 0x7F,
                           p_sampleparam->velRangeHigh & 0x7F,
                           1u);
-              if ( curminval < curval4 )
-                curminval = curval4;
+              curminval = ( curminval < curval4 ) ? curval4 : curminval;
             }
           }
         }
@@ -1785,32 +1706,28 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
                           p_splitblock->splitRangeLow & 0x7F,
                           p_sampleparam->velRangeLow & 0x7F,
                           1u);
-              if ( curminval < curval1 )
-                curminval = curval1;
+              curminval = ( curminval < curval1 ) ? curval1 : curminval;
               curval2 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
                           buffer,
                           i,
                           p_splitblock->splitRangeLow & 0x7F,
                           p_sampleparam->velRangeHigh & 0x7F,
                           1u);
-              if ( curminval < curval2 )
-                curminval = curval2;
+              curminval = ( curminval < curval2 ) ? curval2 : curminval;
               curval3 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
                           buffer,
                           i,
                           p_splitblock->splitRangeHigh & 0x7F,
                           p_sampleparam->velRangeLow & 0x7F,
                           1u);
-              if ( curminval < curval3 )
-                curminval = curval3;
+              curminval = ( curminval < curval3 ) ? curval3 : curminval;
               curval4 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
                           buffer,
                           i,
                           p_splitblock->splitRangeHigh & 0x7F,
                           p_sampleparam->velRangeHigh & 0x7F,
                           1u);
-              if ( curminval < curval4 )
-                curminval = curval4;
+              curminval = ( curminval < curval4 ) ? curval4 : curminval;
             }
           }
         }
@@ -1823,36 +1740,26 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
 //----- (00402518) --------------------------------------------------------
 int sceSdHdModifyVelocity(unsigned int curveType, int velocity)
 {
-  unsigned int calc4; // $a1
-  unsigned int calc5; // $v0
-  unsigned int calc6; // $a0
-
   switch ( curveType )
   {
     case 1u:
       return 128 - velocity;
     case 2u:
       velocity = velocity * velocity / 0x7Fu;
-      if ( velocity )
-        return velocity;
-      return 1;
+      return velocity ? velocity : 1;
     case 3u:
-      calc4 = velocity * velocity / 0x7Fu;
-      if ( calc4 == 0 )
-        calc4 = 1;
-      return 128 - calc4;
+      velocity = velocity * velocity / 0x7Fu;
+      velocity = velocity ? velocity : 1;
+      return 128 - velocity;
     case 4u:
-      calc5 = (128 - velocity) * (128 - velocity);
-      calc6 = (calc5 / 0x7F) & 0x3FFFFFF;
-      if ( calc6 == 0 )
-        calc6 = 1;
-      return 128 - calc6;
+      velocity = (128 - velocity) * (128 - velocity);
+      velocity = (velocity / 0x7F) & 0x3FFFFFF;
+      velocity = velocity ? velocity : 1;
+      return 128 - velocity;
     case 5u:
       velocity = 128 - velocity;
       velocity = velocity * velocity / 0x7Fu;
-      if ( velocity )
-        return velocity;
-      return 1;
+      return velocity ? velocity : 1;
     default:
       return velocity;
   }
@@ -1876,24 +1783,8 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
   int calcf; // $v0
   int calcg; // $v1
 
-  if ( center >= 0 )
-  {
-    if ( center >= 128 )
-      center = 127;
-  }
-  else
-  {
-    center = 0;
-  }
-  if ( velocity >= 0 )
-  {
-    if ( velocity >= 128 )
-      velocity = 127;
-  }
-  else
-  {
-    velocity = 0;
-  }
+  center = ( center >= 0 ) ? (( center >= 128 ) ? 127 : center) : 0;
+  velocity = ( velocity >= 0 ) ? (( velocity >= 128 ) ? 127 : velocity) : 0;
   calc5 = 0;
   switch ( curveType )
   {
@@ -1915,9 +1806,7 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
     case 2u:
       calc4 = ((velocity - 1) << 15) / 126 * (((velocity - 1) << 15) / 126)
             - ((center - 1) << 15) / 126 * (((center - 1) << 15) / 126);
-      calc5 = calc4 >> 14;
-      if ( calc4 < 0 )
-        calc5 = (calc4 + 0x3FFF) >> 14;
+      calc5 = ( calc4 < 0 ) ? ((calc4 + 0x3FFF) >> 14) : (calc4 >> 14);
       break;
     case 3u:
       calc5 = ((velocity - 1) << 15) / 126 * (((velocity - 1) << 15) / 126) / -16384
@@ -1932,87 +1821,79 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
             - (0x10000 - ((center - 1) << 15) / 126) * (0x10000 - ((center - 1) << 15) / 126) / 0x4000;
       break;
     case 6u:
-      if ( velocity != center )
-      {
-        calc6 = ( center >= velocity ) ? (center - 1) : (127 - center);
-        calc7 = velocity - center;
-        calc8 = calc7 << 16;
-        if ( !calc6 )
-          __builtin_trap();
-        if ( calc6 == -1 && calc8 == 0x80000000 )
-          __builtin_trap();
-        calc5 = calc8 / calc6;
-      }
+      if ( velocity == center )
+        break;
+      calc6 = ( center >= velocity ) ? (center - 1) : (127 - center);
+      calc7 = velocity - center;
+      calc8 = calc7 << 16;
+      if ( !calc6 )
+        __builtin_trap();
+      if ( calc6 == -1 && calc8 == 0x80000000 )
+        __builtin_trap();
+      calc5 = calc8 / calc6;
       break;
     case 7u:
-      if ( velocity != center )
-      {
-        calc6 = ( center >= velocity ) ? (center - 1) : (127 - center);
-        calc7 = center - velocity;
-        calc8 = calc7 << 16;
-        if ( !calc6 )
-          __builtin_trap();
-        if ( calc6 == -1 && calc8 == 0x80000000 )
-          __builtin_trap();
-        calc5 = calc8 / calc6;
-      }
+      if ( velocity == center )
+        break;
+      calc6 = ( center >= velocity ) ? (center - 1) : (127 - center);
+      calc7 = center - velocity;
+      calc8 = calc7 << 16;
+      if ( !calc6 )
+        __builtin_trap();
+      if ( calc6 == -1 && calc8 == 0x80000000 )
+        __builtin_trap();
+      calc5 = calc8 / calc6;
       break;
     case 8u:
-      if ( velocity != center )
+      if ( velocity == center )
+        break;
+      calc9 = (velocity - center) << 15;
+      if ( center >= velocity )
       {
-        calc9 = (velocity - center) << 15;
-        if ( center >= velocity )
-        {
-          if ( center == 1 )
-            __builtin_trap();
-          if ( !center && calc9 == 0x80000000 )
-            __builtin_trap();
-          calc5 = calc9 / (center - 1) * (calc9 / (center - 1)) / -16384;
-        }
-        else
-        {
-          calca = 127 - center;
-          if ( 127 == center )
-            __builtin_trap();
-          if ( calca == -1 && calc9 == 0x80000000 )
-            __builtin_trap();
-          calc4 = calc9 / calca * (calc9 / calca);
-          calc5 = ( calc4 < 0 ) ? ((calc4 + 0x3FFF) >> 14) : (calc4 >> 14);
-        }
+        if ( center == 1 )
+          __builtin_trap();
+        if ( !center && calc9 == 0x80000000 )
+          __builtin_trap();
+        calc5 = calc9 / (center - 1) * (calc9 / (center - 1)) / -16384;
+      }
+      else
+      {
+        calca = 127 - center;
+        if ( 127 == center )
+          __builtin_trap();
+        if ( calca == -1 && calc9 == 0x80000000 )
+          __builtin_trap();
+        calc4 = calc9 / calca * (calc9 / calca);
+        calc5 = ( calc4 < 0 ) ? ((calc4 + 0x3FFF) >> 14) : (calc4 >> 14);
       }
       break;
     case 9u:
-      if ( velocity != center )
+      if ( velocity == center )
+        break;
+      calcb = (velocity - center) << 15;
+      if ( center >= velocity )
       {
-        calcb = (velocity - center) << 15;
-        if ( center >= velocity )
-        {
-          if ( center == 1 )
-            __builtin_trap();
-          if ( !center && calcb == 0x80000000 )
-            __builtin_trap();
-          calc5 = (calcb / (center - 1) + 0x8000) * (calcb / (center - 1) + 0x8000) / 0x4000 - 0x10000;
-        }
-        else
-        {
-          calcc = 127 - center;
-          if ( 127 == center )
-            __builtin_trap();
-          if ( calcc == -1 && calcb == 0x80000000 )
-            __builtin_trap();
-          calcd = (0x8000 - calcb / calcc) * (0x8000 - calcb / calcc);
-          calce = ( calcd < 0 ) ? ((calcd + 0x3FFF) >> 14) : (calcd >> 14);
-          calcf = 0x10000;
-          calc5 = calcf - calce;
-        }
+        if ( center == 1 )
+          __builtin_trap();
+        if ( !center && calcb == 0x80000000 )
+          __builtin_trap();
+        calc5 = (calcb / (center - 1) + 0x8000) * (calcb / (center - 1) + 0x8000) / 0x4000 - 0x10000;
+      }
+      else
+      {
+        calcc = 127 - center;
+        if ( 127 == center )
+          __builtin_trap();
+        if ( calcc == -1 && calcb == 0x80000000 )
+          __builtin_trap();
+        calcd = (0x8000 - calcb / calcc) * (0x8000 - calcb / calcc);
+        calce = ( calcd < 0 ) ? ((calcd + 0x3FFF) >> 14) : (calcd >> 14);
+        calcf = 0x10000;
+        calc5 = calcf - calce;
       }
       break;
   }
-  if ( calc5 < -65536 )
-    return -65536;
-  if ( calc5 > 0xFFFF )
-    return 0xFFFF;
-  return calc5;
+  return ( calc5 < -65536 ) ? -65536 : (( calc5 > 0xFFFF ) ? 0xFFFF : calc5);
 }
 
 //----- (00402AD0) --------------------------------------------------------
@@ -2025,20 +1906,17 @@ int sceSdHdGetValidProgramNumberCount(void *buffer)
 
   validcnt = 0;
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
+  if ( result )
+    return result;
+  result = do_get_prog_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  for ( i = 0; dinfo.m_prog->maxProgramNumber >= i; i += 1 )
   {
-    result = do_get_prog_chunk(buffer, &dinfo);
-    if ( !result )
-    {
-      for ( i = 0; dinfo.m_prog->maxProgramNumber >= i; i += 1 )
-      {
-        if ( dinfo.m_prog->programOffsetAddr[i] != -1 )
-          ++validcnt;
-      }
-      return validcnt;
-    }
+    if ( dinfo.m_prog->programOffsetAddr[i] != -1 )
+      ++validcnt;
   }
-  return result;
+  return validcnt;
 }
 
 //----- (00402B5C) --------------------------------------------------------
@@ -2051,23 +1929,20 @@ int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
 
   validcnt = 0;
   result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
-  if ( !result )
+  if ( result )
+    return result;
+  result = do_get_prog_chunk(buffer, &dinfo);
+  if ( result )
+    return result;
+  for ( i = 0; dinfo.m_prog->maxProgramNumber >= i; i += 1 )
   {
-    result = do_get_prog_chunk(buffer, &dinfo);
-    if ( !result )
+    if ( dinfo.m_prog->programOffsetAddr[i] != -1 )
     {
-      for ( i = 0; dinfo.m_prog->maxProgramNumber >= i; i += 1 )
-      {
-        if ( dinfo.m_prog->programOffsetAddr[i] != -1 )
-        {
-          ptr[validcnt] = i;
-          validcnt += 1;
-        }
-      }
-      return validcnt;
+      ptr[validcnt] = i;
+      validcnt += 1;
     }
   }
-  return result;
+  return validcnt;
 }
 
 //----- (00402C08) --------------------------------------------------------
@@ -2080,34 +1955,26 @@ int sceSdHdGetSampleNumberBySampleIndex(
   sceHardSynthSampleSetParam *p_samplesetparam; // [sp+10h] [-8h] BYREF
 
   result = sceSdHdGetSampleSetParamAddr(buffer, sampleSetNumber, &p_samplesetparam);
-  if ( !result )
-  {
-    result = 0x9006;
-    if ( (unsigned int)p_samplesetparam->nSample - 1 >= sampleIndexNumber )
-      return p_samplesetparam->sampleIndex[sampleIndexNumber];
-  }
-  return result;
+  if ( result )
+    return result;
+  return ( (unsigned int)p_samplesetparam->nSample - 1 < sampleIndexNumber ) ? 0x9006 : p_samplesetparam->sampleIndex[sampleIndexNumber];
 }
 
 //----- (00402C70) --------------------------------------------------------
 int _start(int ac)
 {
-  int unregres; // $s0
   int regres; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
-  if ( ac >= 0 )
+  if ( ac < 0 )
   {
     CpuSuspendIntr(&state);
-    regres = RegisterLibraryEntries(&_exp_sdhd);
+    regres = ReleaseLibraryEntries(&_exp_sdhd);
     CpuResumeIntr(state);
-    return ( !regres ) ? 2 : 1;
+    return ( !regres ) ? 1 : 2;
   }
-  else
-  {
-    CpuSuspendIntr(&state);
-    unregres = ReleaseLibraryEntries(&_exp_sdhd);
-    CpuResumeIntr(state);
-    return ( !unregres ) ? 1 : 2;
-  }
+  CpuSuspendIntr(&state);
+  regres = RegisterLibraryEntries(&_exp_sdhd);
+  CpuResumeIntr(state);
+  return ( !regres ) ? 2 : 1;
 }
