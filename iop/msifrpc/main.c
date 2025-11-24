@@ -255,7 +255,7 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
 void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg);
 void do_set_rpc_queue(sceSifMQueueData *qd, int key);
 void do_msif_remove_rpc(sceSifMServeData *sd);
-void do_sif_remove_rpc_queue(sceSifMQueueData *qd);
+void do_sif_remove_rpc_queue(const sceSifMQueueData *qd);
 struct _sifm_serve_data *do_msif_get_next_request(sceSifMQueueData *qd);
 void do_msif_exec_request(sceSifMServeData *sd);
 void do_msif_rpc_loop(sceSifMQueueData *qd);
@@ -541,7 +541,7 @@ void do_msif_remove_rpc(sceSifMServeData *sd)
   }
   else
   {
-    sceSifMServeData *server2; // $s0
+    const sceSifMServeData *server2; // $s0
 
     server2 = server1;
     while ( server2 )
@@ -559,7 +559,7 @@ void do_msif_remove_rpc(sceSifMServeData *sd)
 }
 
 //----- (00400938) --------------------------------------------------------
-void do_sif_remove_rpc_queue(sceSifMQueueData *qd)
+void do_sif_remove_rpc_queue(const sceSifMQueueData *qd)
 {
   sceSifMQueueData *queue1; // $s0
   sceSifMQueueData *queue2; // $v0
