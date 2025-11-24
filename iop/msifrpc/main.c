@@ -343,7 +343,6 @@ int sif_mrpc_get_fpacket(struct msif_data *rpc_data)
   index_calc = m_rdata_table_idx % m_rdata_table_len;
   if ( m_rdata_table_len == -1 && (unsigned int)m_rdata_table_idx == 0x80000000 )
     __builtin_trap();
-  rpc_data->m_rdata_table_idx = index_calc;
   rpc_data->m_rdata_table_idx = index_calc + 1;
   return rpc_data->m_rdata_table + (index_calc << 6);
 }
@@ -383,7 +382,11 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
   {
     msgdat = (struct msif_msgbox_msg *)AllocSysMemory(0, sizeof(struct msif_msgbox_msg), 0);
     if ( !msgdat )
+    {
       printf("AllocSysMemory() failed.\n");
+      // Unofficial: early return
+      return;
+    }
     msgdat->m_probunused_unkx21 = 0;
     msgdat->m_in_cmd = 0x80000019;
     msgdat->m_msg2.m_pkt_addr = data->m_pkt_addr;
@@ -441,7 +444,11 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
   {
     msgboxdat = (struct msif_msgbox_msg *)AllocSysMemory(0, sizeof(struct msif_msgbox_msg), 0);
     if ( !msgboxdat )
+    {
       printf("AllocSysMemory() failed.\n");
+      // Unofficial: early return
+      return;
+    }
     msgboxdat->m_probunused_unkx21 = 0;
     msgboxdat->m_in_cmd = 0x8000001D;
     msgboxdat->m_msg2.m_pkt_addr = data->m_pkt_addr;
@@ -840,31 +847,30 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
 //----- (00401160) --------------------------------------------------------
 int sceSifMTermRpc(int request, int flags)
 {
-  sceSifMServeEntry *g_mserv_entries_ll; // $s0
+  sceSifMServeEntry *cur_entry; // $s0
   sceSifMServeEntry *tmp_entry; // $s1
   int state; // [sp+10h] [-8h] BYREF
 
   (void)flags;
   CpuSuspendIntr(&state);
-  g_mserv_entries_ll = g_msif_data.g_mserv_entries_ll;
+  cur_entry = g_msif_data.g_mserv_entries_ll;
   tmp_entry = 0;
-  while ( g_mserv_entries_ll )
+  while ( cur_entry && cur_entry->command != request )
   {
-    tmp_entry = g_mserv_entries_ll;
-    g_mserv_entries_ll = g_mserv_entries_ll->next;
-    if ( g_mserv_entries_ll->command == request )
-    {
-      if ( tmp_entry )
-        tmp_entry->next = g_mserv_entries_ll->next;
-      else
-        g_msif_data.g_mserv_entries_ll = g_mserv_entries_ll->next;
-      break;
-    }
+    tmp_entry = cur_entry;
+    cur_entry = cur_entry->next;
+  }
+  if ( cur_entry )
+  {
+    if ( tmp_entry )
+      tmp_entry->next = cur_entry->next;
+    else
+      g_msif_data.g_mserv_entries_ll = cur_entry->next;
   }
   CpuResumeIntr(state);
-  if ( g_mserv_entries_ll )
+  if ( cur_entry )
   {
-    DeleteMbx(g_mserv_entries_ll->mbxid);
+    DeleteMbx(cur_entry->mbxid);
     DelayThread(100000);
   }
   return 0;
