@@ -317,7 +317,7 @@ int do_atapi_cmd_inquiry_12h(s16 dev_nr)
   {
     memset(pkt, 0, sizeof(pkt));
     pkt[0] = 0x12;
-    pkt[4] = 0x38;
+    pkt[4] = sizeof(outbuf);
     retres = sceCdAtapiExecCmd_local(dev_nr, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 2);
     if ( retres )
       continue;
