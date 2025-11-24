@@ -1,8 +1,55 @@
 
+#ifdef _IOP
 #include "irx_imports.h"
+#else
+#include <sys/statvfs.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+typedef int8_t s8;
+typedef int16_t s16;
+typedef int32_t s32;
+typedef intptr_t siptr;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uintptr_t uiptr;
+#define iomanX_rename(old, new) rename(old, new)
+#define iomanX_sync(...) 0
+typedef struct
+{
+  unsigned int mode;
+  unsigned int attr;
+  unsigned int size;
+  unsigned char ctime[8];
+  unsigned char atime[8];
+  unsigned char mtime[8];
+  unsigned int hisize;
+  unsigned int private_0;
+  unsigned int private_1;
+  unsigned int private_2;
+  unsigned int private_3;
+  unsigned int private_4;
+  unsigned int private_5;
+} iox_stat_t;
+typedef struct
+{
+  iox_stat_t stat;
+  char name[256];
+  void *privdata;
+} iox_dirent_t;
+#endif
 #include <netcnf.h>
 
+#ifdef _IOP
 IRX_ID("NET_configuration", 2, 30);
+#endif
 
 struct netcnf_callback_handle_info
 {
@@ -25,7 +72,9 @@ struct netcnf_option
 //-------------------------------------------------------------------------
 // Function declarations
 
+#ifdef _IOP
 int _start(int ac, char **av);
+#endif
 static void do_init_xor_magic(const char *in_id_buf);
 static int magic_shift_write_netcnf_2(int inshft, int buflen);
 static int magic_shift_read_netcnf_2(int inshft, int buflen);
@@ -62,18 +111,24 @@ static int do_remove_wrap(const char *fn);
 static void do_close_netcnf(int fd);
 static void do_dclose_wrap(int fd);
 static int do_filesize_netcnf(int fd);
-static void do_getstat_wrap(const char *fn, iox_stat_t *stat);
+static void do_getstat_wrap(const char *fn, iox_stat_t *stx);
 static void do_chstat_mode_copyprotect_wrap(const char *fn);
 static void do_set_callback_inner(sceNetCnfCallback_t *pcallback);
+#ifdef _IOP
 static int do_init_heap(void);
+#endif
 static void *do_alloc_heapmem(size_t nbytes);
 static void do_free_heapmem(void *ptr); // idb
+#ifdef _IOP
 static void do_delete_heap(void);
+#endif
 
 //-------------------------------------------------------------------------
 // Data declarations
 
+#ifdef _IOP
 extern struct irx_export_table _exp_netcnf;
+#endif
 static int g_null_string = 0; // weak
 static int g_no_check_capacity = 0; // weak
 static int g_no_check_provider = 0; // weak
@@ -184,8 +239,10 @@ static struct netcnf_option g_options_dial_cnf[] =
 static char a0123456789abcd[17] = "0123456789ABCDEF"; // weak
 static char a0123456789abcd_0[17] = "0123456789abcdef"; // weak
 static int g_callbacks_set = 0; // weak
+#ifdef _IOP
 static void *g_netcnf_heap = NULL; // idb
 static int g_semid; // idb
+#endif
 static char g_icon_value[0x100]; // idb
 static char g_iconsys_value[0x100]; // idb
 static char g_id_xorbuf[24]; // weak
@@ -210,6 +267,7 @@ static int get_check_provider_eq_zero(void)
 }
 // 40AC6C: using guessed type int g_no_check_provider;
 
+#ifdef _IOP
 //----- (00400010) --------------------------------------------------------
 static void do_print_usage(void)
 {
@@ -346,15 +404,20 @@ int _start(int ac, char **av)
 {
   return ( ac >= 0 ) ? do_module_load(ac, av) : do_module_unload();
 }
+#endif
 
 //----- (00400364) --------------------------------------------------------
 int sceNetCnfGetCount(const char *fname, int type)
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_get_count_list_inner(fname, type, 0);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 
@@ -363,9 +426,13 @@ int sceNetCnfGetList(const char *fname, int type, sceNetCnfList_t *p)
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_get_count_list_inner(fname, type, p);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 
@@ -374,9 +441,13 @@ int sceNetCnfLoadEntry(const char *fname, int type, const char *usr_name, sceNet
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_load_entry_inner(fname, type, usr_name, e);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 
@@ -385,9 +456,13 @@ int sceNetCnfAddEntry(const char *fname, int type, const char *usr_name, sceNetC
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_add_entry_inner(fname, type, usr_name, e, g_icon_value, g_iconsys_value, g_no_check_capacity);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 // 40AC68: using guessed type int g_no_check_capacity;
@@ -397,9 +472,13 @@ int sceNetCnfEditEntry(const char *fname, int type, const char *usr_name, const 
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_edit_entry_inner(fname, type, usr_name, new_usr_name, e, g_icon_value, g_iconsys_value, g_no_check_capacity);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 // 40AC68: using guessed type int g_no_check_capacity;
@@ -409,9 +488,13 @@ int sceNetCnfDeleteEntry(const char *fname, int type, const char *usr_name)
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_delete_entry_inner(fname, type, usr_name, g_icon_value, g_iconsys_value, g_no_check_capacity);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 // 40AC68: using guessed type int g_no_check_capacity;
@@ -421,9 +504,13 @@ int sceNetCnfSetLatestEntry(const char *fname, int type, const char *usr_name)
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_set_latest_entry_inner(fname, type, usr_name);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 
@@ -504,9 +591,13 @@ int sceNetCnfDeleteAll(const char *dev)
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_delete_all_inner(dev);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 
@@ -515,9 +606,13 @@ int sceNetCnfCheckCapacity(const char *fname)
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_check_capacity_inner(fname);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 
@@ -562,23 +657,32 @@ int sceNetCnfCheckSpecialProvider(const char *fname, int type, const char *usr_n
 {
   int retres; // $s0
 
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   retres = do_check_special_provider_inner(fname, type, usr_name, e);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
   return retres;
 }
 
 //----- (00400C2C) --------------------------------------------------------
 void sceNetCnfSetCallback(sceNetCnfCallback_t *pcallback)
 {
+#ifdef _IOP
   WaitSema(g_semid);
+#endif
   do_set_callback_inner(pcallback);
+#ifdef _IOP
   SignalSema(g_semid);
+#endif
 }
 
 //----- (00400D10) --------------------------------------------------------
 static int do_read_ilink_id(void)
 {
+#ifdef _IOP
   int i; // $s0
 
   for ( i = 0; i < 20; i += 1 )
@@ -592,6 +696,11 @@ static int do_read_ilink_id(void)
     DelayThread(100000);
   }
   return -13;
+#else
+  memset(&g_id_buffer, 0, sizeof(g_id_buffer));
+  g_id_result = 0;
+  return 0;
+#endif
 }
 
 //----- (00400DA8) --------------------------------------------------------
@@ -872,20 +981,27 @@ static void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const 
 static int do_check_capacity_inner2(const char *fpath, int minsize)
 {
   int i; // $t0
-  int zonesz; // kr00_4
   int zonefree; // $t2
   char devname[8]; // [sp+18h] [-8h] BYREF
 
   for ( i = 0; i < 5; i += 1 )
   {
+    devname[i] = fpath[i];
     if ( fpath[i] == ':' )
     {
-      *(u16 *)&devname[i] = fpath[i];
-      zonesz = iomanX_devctl(devname, 0x5001, 0, 0, 0, 0);
-      zonefree = iomanX_devctl(devname, 0x5002, 0, 0, 0, 0) * (zonesz / 1024);
+      devname[i + 1] = 0;
+#ifdef _IOP
+      zonefree = iomanX_devctl(devname, 0x5002, 0, 0, 0, 0) * ((int)iomanX_devctl(devname, 0x5001, 0, 0, 0, 0) / 1024);
+#else
+      {
+        struct statvfs st;
+
+        statvfs(devname, &st);
+        zonefree = st.f_bfree * st.f_frsize;
+      }
+#endif
       return ( zonefree < minsize ) ? -16 : 0;
     }
-    devname[i] = fpath[i];
   }
   return -9;
 }
@@ -2061,7 +2177,7 @@ static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align)
 
   mem_ptr = e->mem_ptr;
   if ( !mem_ptr
-    || (retptrbegin = (char *)(((unsigned int)mem_ptr + (1 << align) - 1) & ~((1 << align) - 1)),
+    || (retptrbegin = (char *)(((uiptr)mem_ptr + (1 << align) - 1) & ~((1 << align) - 1)),
         &retptrbegin[size] >= (char *)e->mem_last) )
   {
     ++e->alloc_err;
@@ -4061,7 +4177,7 @@ static int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, stru
   int result; // $v0
   struct sceNetCnfPair *pair_head; // $s0
 
-  memalign = (void *)(((int)e->mem_base + 3) & 0xFFFFFFFC);
+  memalign = (void *)(((uiptr)e->mem_base + 3) & 0xFFFFFFFC);
   e->mem_base = memalign;
   e->mem_ptr = memalign;
   result = do_netcnf_sprintf_buffer(e, "%s\n\n", "# <Sony Computer Entertainment Inc.>");
@@ -4736,7 +4852,14 @@ static int do_write_netcnf_no_encode(int fd, void *ptr, int size)
 static int do_dopen_wrap(const char *fn)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
+  {
+#ifdef _IOP
     return dopen(fn);
+#else
+    (void)fn;
+    return -1;
+#endif
+  }
   printf("[err] netcnf dopen()\n");
   return -1;
 }
@@ -4747,7 +4870,15 @@ static int do_dopen_wrap(const char *fn)
 static int do_dread_wrap(int fn, iox_dirent_t *buf)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
+  {
+#ifdef _IOP
     return dread(fn, buf);
+#else
+    (void)fn;
+    (void)buf;
+    return -1;
+#endif
+  }
   printf("[err] netcnf dread()\n");
   return -1;
 }
@@ -4794,7 +4925,11 @@ static void do_dclose_wrap(int fd)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
   {
+#ifdef _IOP
     dclose(fd);
+#else
+    (void)fd;
+#endif
     return;
   }
   printf("[err] netcnf dclose()\n");
@@ -4812,11 +4947,20 @@ static int do_filesize_netcnf(int fd)
 }
 
 //----- (004093E4) --------------------------------------------------------
-static void do_getstat_wrap(const char *fn, iox_stat_t *stat)
+static void do_getstat_wrap(const char *fn, iox_stat_t *stx)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
   {
-    getstat(fn, stat);
+#ifdef _IOP
+    getstat(fn, stx);
+#else
+    {
+      struct stat st;
+
+      stat(fn, &st);
+      stx->size = st.st_size;
+    }
+#endif
     return;
   }
   printf("[err] netcnf getstat()\n");
@@ -4827,13 +4971,19 @@ static void do_getstat_wrap(const char *fn, iox_stat_t *stat)
 //----- (0040943C) --------------------------------------------------------
 static void do_chstat_mode_copyprotect_wrap(const char *fn)
 {
+#ifdef _IOP
   iox_stat_t statmode; // [sp+10h] [-40h] BYREF
+#endif
 
   if ( !g_callbacks_set || g_callbacks.type == 2 )
   {
+#ifdef _IOP
     do_getstat_wrap(fn, &statmode);
     statmode.mode |= 8u;
     chstat(fn, &statmode, 1u);
+#else
+    (void)fn;
+#endif
     return;
   }
   printf("[err] netcnf chstat()\n");
@@ -4865,6 +5015,7 @@ static void do_set_callback_inner(sceNetCnfCallback_t *pcallback)
 // 40C348: using guessed type int (*)(u32, u32, u32, u32, u32, u32);
 // 40C34C: using guessed type int (*)(u32);
 
+#ifdef _IOP
 //----- (00409540) --------------------------------------------------------
 static int do_init_heap(void)
 {
@@ -4873,23 +5024,35 @@ static int do_init_heap(void)
   g_netcnf_heap = CreateHeap(1024, 1);
   return g_netcnf_heap ? 0 : -1;
 }
+#endif
 
 //----- (00409590) --------------------------------------------------------
 static void *do_alloc_heapmem(size_t nbytes)
 {
+#ifdef _IOP
   return AllocHeapMemory(g_netcnf_heap, nbytes);
+#else
+  return malloc(nbytes);
+#endif
 }
 
 //----- (004095BC) --------------------------------------------------------
 static void do_free_heapmem(void *ptr)
 {
+#ifdef _IOP
   if ( ptr )
     FreeHeapMemory(g_netcnf_heap, ptr);
+#else
+  if ( ptr )
+    free(ptr);
+#endif
 }
 
+#ifdef _IOP
 //----- (004095EC) --------------------------------------------------------
 static void do_delete_heap(void)
 {
   DeleteHeap(g_netcnf_heap);
   g_netcnf_heap = 0;
 }
+#endif
