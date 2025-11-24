@@ -1937,9 +1937,8 @@ static int do_set_latest_entry_inner(const char *fname, int type, const char *us
 static int do_delete_all_inner(const char *dev)
 {
   int i; // $t0
-  
   int dread_res; // $v0
-  iox_dirent_t v21; // [sp+10h] [-148h] BYREF
+  iox_dirent_t statname; // [sp+10h] [-148h] BYREF
 
   if ( !strncmp(dev, "mc", 2) )
   {
@@ -1957,12 +1956,12 @@ static int do_delete_all_inner(const char *dev)
       return 0;
     while ( 1 )
     {
-      dread_res = do_dread_wrap(dfd1, &v21);
+      dread_res = do_dread_wrap(dfd1, &statname);
       if ( dread_res <= 0 )
         break;
-      if ( strcmp(v21.name, ".") && strcmp(v21.name, "..") )
+      if ( strcmp(statname.name, ".") && strcmp(statname.name, "..") )
       {
-        do_safe_make_pathname(g_dir_name, sizeof(g_dir_name), g_netcnf_file_path, v21.name);
+        do_safe_make_pathname(g_dir_name, sizeof(g_dir_name), g_netcnf_file_path, statname.name);
         if ( do_remove_wrap(g_dir_name) < 0 )
         {
           do_dclose_wrap(dfd1);
@@ -1993,12 +1992,12 @@ static int do_delete_all_inner(const char *dev)
     }
     while ( 1 )
     {
-      dread_res = do_dread_wrap(dfd2, &v21);
+      dread_res = do_dread_wrap(dfd2, &statname);
       if ( dread_res <= 0 )
         break;
-      if ( strcmp(v21.name, ".") && strcmp(v21.name, "..") )
+      if ( strcmp(statname.name, ".") && strcmp(statname.name, "..") )
       {
-        do_safe_make_pathname(g_dir_name, sizeof(g_dir_name), g_netcnf_file_path, v21.name);
+        do_safe_make_pathname(g_dir_name, sizeof(g_dir_name), g_netcnf_file_path, statname.name);
         remove_res2 = do_remove_wrap(g_dir_name);
         if ( remove_res2 < 0 )
         {
