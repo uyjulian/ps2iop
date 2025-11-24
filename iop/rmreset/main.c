@@ -5,28 +5,28 @@ IRX_ID("rmreset", 1, 1);
 
 #include <iop_mmio_hwport.h>
 
-void sio2_ctrl_set(u32 val)
+static void sio2_ctrl_set(u32 val)
 {
   USE_IOP_MMIO_HWPORT();
 
   iop_mmio_hwport->sio2.ctrl = val;
 }
 
-u32 sio2_ctrl_get(void)
+static u32 sio2_ctrl_get(void)
 {
   USE_IOP_MMIO_HWPORT();
 
   return iop_mmio_hwport->sio2.ctrl;
 }
 
-u32 sio2_stat6c_get(void)
+static u32 sio2_stat6c_get(void)
 {
   USE_IOP_MMIO_HWPORT();
 
   return iop_mmio_hwport->sio2.recv1;
 }
 
-void sio2_portN_ctrl1_set(int N, u32 val)
+static void sio2_portN_ctrl1_set(int N, u32 val)
 {
   USE_IOP_MMIO_HWPORT();
 
@@ -35,7 +35,7 @@ void sio2_portN_ctrl1_set(int N, u32 val)
 
 // Ununsed func removed
 
-void sio2_portN_ctrl2_set(int N, u32 val)
+static void sio2_portN_ctrl2_set(int N, u32 val)
 {
   USE_IOP_MMIO_HWPORT();
 
@@ -46,7 +46,7 @@ void sio2_portN_ctrl2_set(int N, u32 val)
 
 // Ununsed func removed
 
-void sio2_regN_set(int N, u32 val)
+static void sio2_regN_set(int N, u32 val)
 {
   USE_IOP_MMIO_HWPORT();
 
@@ -65,14 +65,14 @@ void sio2_regN_set(int N, u32 val)
 
 // Ununsed func removed
 
-void sio2_data_out(u8 val)
+static void sio2_data_out(u8 val)
 {
   USE_IOP_MMIO_HWPORT();
 
   iop_mmio_hwport->sio2.out_fifo = val;
 }
 
-u8 sio2_data_in(void)
+static u8 sio2_data_in(void)
 {
   USE_IOP_MMIO_HWPORT();
 
