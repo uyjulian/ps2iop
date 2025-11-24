@@ -152,7 +152,7 @@ s64 xatapi_nulldev0_64bit(void);
 int xatapi_dev_init(void);
 int xatapi_dev_deinit(void);
 int xatapi_2_terminate(int with_quit);
-int xatapi_dev_devctl(iop_file_t *f, const char *name, int cmd, void *args, unsigned int arglen, void *buf, unsigned int buflen);
+int xatapi_dev_devctl(const iop_file_t *f, const char *name, int cmd, void *args, unsigned int arglen, void *buf, unsigned int buflen);
 int _start(int ac, char **av);
 int expbay_get_has_power(void);
 void speedRegisterIntrCb(int intr, void *cb);
@@ -1164,7 +1164,7 @@ int xatapi_2_terminate(int with_quit)
 
 //----- (00401F60) --------------------------------------------------------
 int xatapi_dev_devctl(
-        iop_file_t *f,
+        const iop_file_t *f,
         const char *name,
         int cmd,
         void *args,
@@ -3899,7 +3899,7 @@ int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscra
 {
   int bufchk; // $s0
   char *bufoffs1; // $a0
-  char *bufoffs2; // $v1
+  const char *bufoffs2; // $v1
   int i; // $v0
 
   bufchk = 0;
@@ -3954,7 +3954,7 @@ int Mpeg2CheckScramble(char *buf, unsigned int bufsize)
   int restmp; // $s1
   signed int i; // $a2
   char *bufcur; // $a0
-  char *bufbuf; // $v1
+  const char *bufbuf; // $v1
   int buf3; // $v0
 
   restmp = 0;
