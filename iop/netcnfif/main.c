@@ -149,14 +149,14 @@ int module_start(int argc, char *argv[])
   int bp; // $s0
   int retres1; // $v0
   int retres2; // $v0
-  int retres3; // $v0
   iop_thread_t th_param; // [sp+10h] [-18h] BYREF
-  int xflg;
 
   thpri = 123;
   thstack = 4096;
   for ( i = 1; i < argc; i += 1 )
   {
+    int xflg;
+
     xflg = 1;
     if ( !strncmp("thpri=", argv[i], 6) )
     {
@@ -222,6 +222,8 @@ int module_start(int argc, char *argv[])
     g_tid = CreateThread(&th_param);
     if ( g_tid >= 0 )
     {
+      int retres3; // $v0
+
       retres3 = StartThread(g_tid, 0);
       if ( retres3 >= 0 )
         return 2;
@@ -269,9 +271,7 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
   sceNetCnfList_t *list_iop; // $s3
   sceNetcnfifList_t *list_ee; // $s4
   int i; // $a0
-  int dmatid1; // $s0
   int dmatid2; // $s0
-  int redial_count; // $a1
   sceNetCnfCallback_t callback; // [sp+18h] [-10h] BYREF
 
   (void)size;
@@ -295,6 +295,8 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
         retres1 = sceNetCnfGetList(buf->fname, buf->type, list_iop);
         if ( retres1 >= 0 )
         {
+          int dmatid1; // $s0
+
           for ( i = 0; i < buf->data && i < retres1; i += 1 )
           {
             // The following memcpy was inlined
@@ -398,6 +400,8 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
         break;
       if ( env.root && env.root->pair_head && env.root->pair_head->ifc )
       {
+        int redial_count; // $a1
+
         redial_count = 0;
         for ( i = 0; i < (int)(sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); i += 1 )
         {
@@ -477,12 +481,12 @@ void sceNetcnfifEnvInit(sceNetCnfEnv_t *env, void *mem_area, int size, int f_no_
 //----- (00400BE0) --------------------------------------------------------
 int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count)
 {
-  int retres; // $a1
-
   switch ( p->code )
   {
     case 1:
     {
+      int retres; // $a1
+
       switch ( *ns_count )
       {
         case 0:
@@ -510,13 +514,14 @@ int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
 {
   int cmd; // $s4
   struct sceNetCnfCommand *cmd_head; // $s0
-  int i; // $s0
 
   cmd = 0;
   switch ( type )
   {
     case 1:
     {
+      int i; // $s0
+
       data->ifc_type = p->type;
       data->dhcp = p->dhcp;
       if ( p->dhcp_host_name )

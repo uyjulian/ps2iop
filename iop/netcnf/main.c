@@ -311,8 +311,6 @@ int do_module_load(int ac, char **av)
 {
   int semid; // $v0
   int i; // $s1
-  int heap_inited; // $v0
-  int regres; // $v0
   iop_sema_t semaparam; // [sp+10h] [-10h] BYREF
   int err;
 
@@ -365,6 +363,8 @@ int do_module_load(int ac, char **av)
   }
   if ( !err )
   {
+    int heap_inited; // $v0
+
     heap_inited = do_init_heap();
     if ( heap_inited < 0 )
     {
@@ -372,6 +372,8 @@ int do_module_load(int ac, char **av)
     }
     else
     {
+      int regres; // $v0
+
       regres = RegisterLibraryEntries(&_exp_netcnf);
       if ( !regres )
         return 2;
@@ -1023,7 +1025,6 @@ int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2)
   int fd2; // $s2
   int fd1; // $s1
   int readres; // $v0
-  int writeres; // $v0
   char tmpbuf[512]; // [sp+10h] [-200h] BYREF
 
   fd2 = do_open_netcnf(netcnf_path_2, 1538, 511);
@@ -1037,6 +1038,8 @@ int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2)
   }
   while ( 1 )
   {
+    int writeres; // $v0
+
     readres = do_readfile_netcnf(fd1, tmpbuf, sizeof(tmpbuf));
     if ( readres <= 0 )
       break;
@@ -1050,9 +1053,7 @@ int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2)
   }
   do_close_netcnf(fd2);
   do_close_netcnf(fd1);
-  if ( readres < 0 )
-    return -4;
-  return 0;
+  return ( readres < 0 ) ? -4 : 0;
 }
 
 //----- (00401994) --------------------------------------------------------
@@ -1161,7 +1162,6 @@ int do_remove_old_config(
   iox_dirent_t statname; // [sp+210h] [-190h] BYREF
   iox_stat_t statsize; // [sp+358h] [-48h] BYREF
   int iconsysflag; // [sp+398h] [-8h]
-  int sizeflag;
 
   sysneticoflag = 1;
   iconsysflag = 1;
@@ -1174,6 +1174,8 @@ int do_remove_old_config(
   }
   while ( 1 )
   {
+    int sizeflag;
+
     fileop_res = do_dread_wrap(dfd, &statname);
     if ( fileop_res <= 0 )
       break;
@@ -1404,7 +1406,6 @@ void do_some_pair_handling(char *fpath, int type, const char *src, sceNetCnfEnv_
   sceNetCnfEnv_t *heapmem; // $s1
   int conf_inner; // $v1
   struct sceNetCnfPair *i; // $s0
-  const char *attach_ifc; // $a0
 
   if ( do_split_str_comma_index(g_arg_fname, src, 2) )
     return;
@@ -1428,15 +1429,14 @@ void do_some_pair_handling(char *fpath, int type, const char *src, sceNetCnfEnv_
       switch ( type )
       {
         case 1:
-          attach_ifc = (const char *)i->attach_ifc;
+          do_some_ifc_handling_hoge((char *)i->attach_ifc);
           break;
         case 2:
-          attach_ifc = (const char *)i->attach_dev;
+          do_some_ifc_handling_hoge((char *)i->attach_dev);
           break;
         default:
           continue;
       }
-      do_some_ifc_handling_hoge(attach_ifc);
     }
   }
   do_free_heapmem(heapmem);
@@ -1458,13 +1458,7 @@ int do_add_entry_inner(
   int i; // $s2
   char *curentry2; // $s0
   char *k; // $s0
-  char *endbuf; // $s0
-  const char *fileext; // $s1
   int fd; // $v0
-  char *dirname_buf1; // $s0
-  char *cur_entry_buffer; // $s2
-  int strlenx; // $s0
-  int writeres; // $s1
   char atomicrenamepath[256]; // [sp+18h] [-108h] BYREF
   int retres1; // [sp+118h] [-8h]
   int maxflag;
@@ -1575,6 +1569,9 @@ int do_add_entry_inner(
   }
   if ( maxflag )
   {
+    char *endbuf; // $s0
+    const char *fileext; // $s1
+
     do_safe_strcpy(g_arg_fname, sizeof(g_arg_fname), g_dir_name, 740);
     for ( endbuf = &g_arg_fname[strlen(g_arg_fname) - 1]; endbuf >= g_arg_fname && *endbuf != ':' && *endbuf != '/' && *endbuf != '\\'; endbuf -= 1 );
     if ( *endbuf != ':' && *endbuf != '/' && *endbuf != '\\' )
@@ -1621,6 +1618,9 @@ int do_add_entry_inner(
     retres2 = -12;
     if ( i < (int)(sizeof(g_ifc_buffer)) )
     {
+      char *dirname_buf1; // $s0
+      char *cur_entry_buffer; // $s2
+
       cur_entry_buffer = g_entry_buffer;
       for ( dirname_buf1 = g_dir_name; *dirname_buf1; dirname_buf1 += 1 )
       {
@@ -1658,6 +1658,9 @@ int do_add_entry_inner(
           }
           else
           {
+            int strlenx; // $s0
+            int writeres; // $s1
+
             strlenx = sprintf(g_entry_buffer, "%d,%d,%s,%s\n", type, 1, &g_netcnf_file_path[strlen(g_arg_fname)], g_combination_buf1);
             writeres = do_write_netcnf_no_encode(fd, g_entry_buffer, strlenx);
             retres2 = ( strlenx == writeres && (writeres = do_write_netcnf_no_encode(fd, g_add_entry_heapptr, retres1), retres1 == writeres) ) ? 0 : (( writeres == -5 ) ? -18 : -5);
@@ -1751,10 +1754,8 @@ int do_edit_entry_inner(
   int result; // $v0
   int rmoldcfgres; // $s1
   char *curentry1; // $s0
-  char *curfilepath1end; // $s0
   char curentrybuf1[256]; // [sp+18h] [-200h] BYREF
   char curfilepath1[256]; // [sp+118h] [-100h] BYREF
-  int flg;
 
   if ( get_check_provider_eq_zero() )
   {
@@ -1782,6 +1783,8 @@ int do_edit_entry_inner(
   rmoldcfgres = do_remove_old_config(g_dir_name, g_edit_entry_heapptr, icon_value, iconsys_value);
   if ( rmoldcfgres >= 0 )
   {
+    int flg;
+
     rmoldcfgres = 0;
     for ( curentry1 = g_edit_entry_heapptr; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
     {
@@ -1822,6 +1825,8 @@ int do_edit_entry_inner(
       }
       else
       {
+        char *curfilepath1end; // $s0
+
         do_safe_strcpy(curfilepath1, sizeof(curfilepath1), g_dir_name, 1010);
         for ( curfilepath1end = &curfilepath1[strlen(curfilepath1)]; curfilepath1end != curfilepath1; curfilepath1end -= 1 )
         {
@@ -1863,7 +1868,6 @@ int do_delete_entry_inner(
   int result; // $v0
   char *heapmem; // $s3
   char *curentry1; // $s0
-  char *heapmem_1; // $s1
 
   has_comma = 0;
   g_delete_entry_heapptr = 0;
@@ -1893,6 +1897,8 @@ int do_delete_entry_inner(
   result = do_remove_old_config(g_dir_name, g_delete_entry_heapptr, icon_value, iconsys_value);
   if ( result >= 0 )
   {
+    char *heapmem_1; // $s1
+
     curentry1 = g_delete_entry_heapptr;
     heapmem_1 = heapmem;
     while ( *curentry1 )
@@ -1935,7 +1941,6 @@ int do_set_latest_entry_inner(char *fname, int type, char *usr_name)
   int readsz; // $s0
   char *heapmem1; // $s6
   char *heapmem1_1; // $s2
-  char *heapmem2_1; // $s1
   char *curentry1; // $s0
 
   isbeforeend1 = 0;
@@ -1962,6 +1967,8 @@ int do_set_latest_entry_inner(char *fname, int type, char *usr_name)
   heapmem1_1 = heapmem1;
   if ( heapmem1 )
   {
+    char *heapmem2_1; // $s1
+
     heapmem2 = (char *)do_alloc_heapmem(readsz);
     heapmem2_1 = heapmem2;
     if ( heapmem2 )
@@ -2015,15 +2022,14 @@ int do_set_latest_entry_inner(char *fname, int type, char *usr_name)
 int do_delete_all_inner(const char *dev)
 {
   int i; // $t0
-  int dfd1; // $s1
-  int dfd2; // $s1
+  
   int dread_res; // $v0
-  int remove_res2; // $s0
-  int rmdir_res1; // $s0
   iox_dirent_t v21; // [sp+10h] [-148h] BYREF
 
   if ( !strncmp(dev, "mc", 2) )
   {
+    int dfd1; // $s1
+
     for ( i = 0; dev[i] != ':'; i += 1 )
     {
       g_netcnf_file_path[i] = dev[i];
@@ -2054,6 +2060,10 @@ int do_delete_all_inner(const char *dev)
   }
   else if ( !strncmp(dev, "pfs", 3) )
   {
+    int dfd2; // $s1
+    int remove_res2; // $s0
+    int rmdir_res1; // $s0
+
     for ( i = 0; dev[i] != ':'; i += 1 )
     {
       g_netcnf_file_path[i] = dev[i];
@@ -2153,7 +2163,6 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
 {
   u8 *dbuf; // $s3
   const char *argbegin; // $s0
-  int argchr_1; // $s1
   int i; // $s2
   int hexnum; // $v0
   int err;
@@ -2164,6 +2173,8 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
   err = 0;
   for ( argbegin = e_arg + 1; *argbegin && *argbegin != '"' && (char *)(dbuf + 1) < (char *)&(e->dbuf[1023]); )
   {
+    int argchr_1; // $s1
+
     argchr_1 = *(u8 *)argbegin++;
     if ( argchr_1 == '\\' )
     {
@@ -2315,7 +2326,6 @@ int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
   const char *e_arg_1; // $a0
   int curbasex; // $a3
   int curnum; // $a1
-  int e_arg_1_num; // $v1
 
   e_arg_1 = e_arg;
   curbasex = 10;
@@ -2334,6 +2344,8 @@ int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
   {
     while ( 1 )
     {
+      int e_arg_1_num; // $v1
+
       if ( *(u8 *)e_arg_1 - (unsigned int)'0' >= 0xA )
       {
         if ( *(u8 *)e_arg_1 - (unsigned int)'a' >= 6 )
@@ -2597,7 +2609,6 @@ int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
   int i; // $s0
   struct sceNetCnfUnknown *listtmp; // $s4
   struct sceNetCnfUnknown *cpydst_1; // $s2
-  int cpysz; // $v0
 
   lenx1 = 0;
   for ( i = 0; i < e->ac; i += 1 )
@@ -2610,6 +2621,8 @@ int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
   cpydst_1 = listtmp + 1;
   for ( i = 0; i < e->ac; i += 1 )
   {
+    int cpysz; // $v0
+
     cpysz = strlen(e->av[i]);
     bcopy(e->av[i], cpydst_1, cpysz);
     ((char *)cpydst_1)[cpysz] = 32 * (i < e->ac - 1);
@@ -2910,13 +2923,14 @@ int do_handle_net_cnf(sceNetCnfEnv_t *e, void *userdata)
 int do_handle_attach_cnf(sceNetCnfEnv_t *e, void *userdata)
 {
   int wasprefixed; // $s2
-  int keyasnum; // $s0
   struct sceNetCnfInterface *ifc;
 
   ifc = (struct sceNetCnfInterface *)userdata;
   wasprefixed = ( e->av[0][0] == '-' ) ? 1 : 0;
   if ( !strncmp("phone_number", &(e->av[0])[wasprefixed], 12) )
   {
+    int keyasnum; // $s0
+
     keyasnum = 0;
     if ( e->av[0][wasprefixed + 12] )
     {
@@ -2990,7 +3004,6 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNetCnfEnv
 {
   u8 *i; // $s0
   char *j; // $s0
-  u32 condtmp1; // $s1
 
   for ( i = lbuf; e->lbuf < i && *(i - 1) < 0x21u; i -= 1 );
   *i = 0;
@@ -2998,6 +3011,8 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNetCnfEnv
   e->ac = 0;
   while ( *j && e->ac < '\n' && (u8)*j != '#' )
   {
+    u32 condtmp1; // $s1
+
     e->av[e->ac] = j;
     condtmp1 = 0;
     if ( *j == '#' )
@@ -3069,7 +3084,6 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(sc
   char *fullpath; // $s0
   int read_res1; // $v0
   u8 *lbuf; // $s0
-  int i; // $s0
   char *ptr; // [sp+10h] [-8h] BYREF
 
   cur_linelen = 0;
@@ -3109,6 +3123,8 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(sc
   e->lno = 0;
   if ( !e->f_no_check_magic && (read_res1 < 36 || strncmp(ptr, "# <Sony Computer Entertainment Inc.>", 36)) )
   {
+    int i; // $s0
+
     printf("netcnf: decoding error (magic=\"");
     for ( i = 0; i < read_res1 && i < 36; i += 1 )
     {
@@ -3270,7 +3286,6 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
 int do_merge_conf_inner(sceNetCnfEnv_t *e)
 {
   struct sceNetCnfPair *pair_head; // $s2
-  int type; // $s0
 
   if ( !e->root )
   {
@@ -3278,6 +3293,8 @@ int do_merge_conf_inner(sceNetCnfEnv_t *e)
   }
   for ( pair_head = e->root->pair_head; pair_head; pair_head = pair_head->forw )
   {
+    int type; // $s0
+
     if ( !pair_head->ctl )
     {
       pair_head->ctl = (sceNetCnfCtl_t *)do_alloc_mem_inner(e, sizeof(sceNetCnfCtl_t), 2);
@@ -3316,7 +3333,6 @@ int do_merge_conf_inner(sceNetCnfEnv_t *e)
 int do_load_conf_inner(sceNetCnfEnv_t *e)
 {
   int retres1; // $s3
-  int ifcres1_1; // $s1
   struct sceNetCnfPair *pair_head; // $s0
 
   retres1 = 0;
@@ -3324,6 +3340,8 @@ int do_load_conf_inner(sceNetCnfEnv_t *e)
   {
     case 1:
     {
+      int ifcres1_1; // $s1
+
       ifcres1_1 = do_netcnf_dial_related(e);
       if ( ifcres1_1 )
         return ifcres1_1;
@@ -3684,7 +3702,6 @@ int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...)
 //----- (00406F5C) --------------------------------------------------------
 int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata)
 {
-  int result; // $v0
   int offsptr3; // $s1
   const char *lbuf; // $s0
   char *offsptr1; // $v0
@@ -3694,6 +3711,8 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
 
   for ( ; options->m_key; options += 1 )
   {
+    int result; // $v0
+
     result = 0;
     lbuf = (const char *)e->lbuf;
     switch ( options->m_type )
@@ -3968,11 +3987,12 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
 int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 {
   struct sceNetCnfCommand *cmd_head; // $s2
-  int nameserverflag; // $s0
   int result; // $v0
 
   for ( cmd_head = ifc->cmd_head; cmd_head; cmd_head = cmd_head->forw )
   {
+    int nameserverflag; // $s0
+
     nameserverflag = -1;
     switch ( cmd_head->code )
     {
@@ -4056,10 +4076,11 @@ int do_netcnf_phone_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 int do_netcnf_unknown_write(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
 {
   struct sceNetCnfUnknown *head; // $s0
-  int result; // $v0
 
   for ( head = unknown_list->head; head; head = head->forw )
   {
+    int result; // $v0
+
     result = do_netcnf_sprintf_buffer(e, "%s\n", (const char *)&head[1]);
     if ( result < 0 )
       return result;
@@ -4072,8 +4093,6 @@ int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
 {
   int memsize; // $s3
   char *fullpath; // $s0
-  int fd; // $v0
-  int writeres; // $s0
 
   memsize = e->mem_ptr - e->mem_base;
   if ( e->f_verbose )
@@ -4092,6 +4111,9 @@ int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
   }
   if ( !is_attach_cnf || e->f_no_decode )
   {
+    int fd; // $v0
+    int writeres; // $s0
+
     fd = do_open_netcnf(fullpath, 1538, 511);
     if ( fd < 0 )
     {
@@ -4214,13 +4236,14 @@ void do_address_to_string_inner(char *dst, unsigned int srcint)
 int do_name_2_address_inner(unsigned int *dst, char *buf)
 {
   int prefixchkn; // $s4
-  int base; // $s2
   unsigned int i; // $s3
   int offsbase1; // $a0
   int tmpstk1[4]; // [sp+10h] [-10h] BYREF
 
   for ( prefixchkn = 0; prefixchkn < (int)(sizeof(tmpstk1)/sizeof(tmpstk1[0])); prefixchkn += 1 )
   {
+    int base; // $s2
+
     base = 10;
     if ( *buf == '0' )
     {
@@ -4432,13 +4455,14 @@ int do_check_authnet(char *argst, char *arged)
 {
   char *i; // $s0
   char *j; // $s0
-  int result; // $v0
 
   for ( i = arged; argst < i && *(i - 1) < '!'; i -= 1 );
   *i = 0;
   for ( j = argst; *j && isspace(*j); j += 1 );
   if ( !strncmp(j, "auth_name", 9) )
   {
+    int result; // $v0
+
     for ( ; *j && !isspace(*j); j += 1 );
     for ( ; *j && isspace(*j); j += 1 );
     if ( *j == '"' )
@@ -4458,7 +4482,6 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
   int errretres; // $s2
   char *curheapptr1; // $s4
   char *heapmem_2; // $s0
-  int i; // $s0
 
   switch ( type )
   {
@@ -4484,6 +4507,8 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
   heapmem_2 = heapmem;
   if ( no_check_magic && (read_res2 < 36 || strncmp(g_read_check_netcnf_heapptr, "# <Sony Computer Entertainment Inc.>", 36)) )
   {
+    int i; // $s0
+
     printf("netcnf: decoding error (magic=\"");
     for ( i = 0; i < read_res2 && i < 36; i += 1 )
     {
@@ -4530,8 +4555,6 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
 //----- (004088DC) --------------------------------------------------------
 int do_check_provider_inner(sceNetCnfEnv_t *e, int type)
 {
-  int result; // $v0
-
   switch ( type )
   {
     case 0:
@@ -4543,6 +4566,8 @@ int do_check_provider_inner(sceNetCnfEnv_t *e, int type)
         return -14;
       if ( e->ifc->auth_name )
       {
+        int result; // $v0
+
         result = do_check_aolnet((const char *)e->ifc->auth_name);
         if ( result < 0 )
           return result;
