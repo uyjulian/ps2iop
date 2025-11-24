@@ -3075,7 +3075,7 @@ static int sceAtaWaitResult(void)
         {
           break;
         }
-        atad_cmd_state.blkcount--;
+        atad_cmd_state.blkcount -= 1;
         if ( atad_cmd_state.blkcount == 0xFFFFFFFF )
         {
           suc = 1;
@@ -3888,7 +3888,7 @@ static int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *
           && (u8)bufoffs2[3] != 0xBF
           && (bufoffs2[6] & 0x60) )
         {
-          ++*pesscramblingpackptr;
+          *pesscramblingpackptr += 1;
         }
       }
     }
