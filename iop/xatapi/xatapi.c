@@ -2140,7 +2140,7 @@ int sceAtaExecCmd(
     return -506;
   atad_cmd_state.buf = buf;
   atad_cmd_state.blkcount = blkcount;
-  if ( !(dev5_speed_regs.r_spd_ata_control & 0x40) && ((command < 0x92u && command < 0x90u && command != 8) || (command >= 0xA2u || command < 0xA0u)) )
+  if ( !(dev5_speed_regs.r_spd_ata_control & 0x40) && ((command < 0x90u && command != 8) || (command >= 0xA2u || command < 0xA0u)) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("DEV5 ATA: error: device not ready\n");
@@ -2901,6 +2901,7 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   FpgaLayer1On();
   FpgaXfrenOn();
   blkremainder = (blkcount * blksize) & 0x1FF;
+  extransres = 0;
   for ( blksectors = (unsigned int)(blkcount * blksize) >> 9; blksectors; blksectors -= fpga_unk8148 )
   {
     for ( i = 0; ; i += 1 )
