@@ -190,7 +190,7 @@ int _start(int ac, char **av)
     }
   }
   if ( g_param_debug > 0 )
-    printf("allocsize(for ring buffer) : %d\n", sizeof(USBDEV_t *) * g_param_rbsize);
+    printf("allocsize(for ring buffer) : %d\n", (int)(sizeof(USBDEV_t *) * g_param_rbsize));
   CpuSuspendIntr(&state);
   g_rb_entries = (USBDEV_t **)AllocSysMemory(0, sizeof(USBDEV_t *) * g_param_rbsize, 0);
   CpuResumeIntr(state);
@@ -759,7 +759,7 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
     ++splitfound;
     if ( curbuf_1[i] != '"' )
     {
-      for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != ' ' && curbuf_1[i] == '\t'; i += 1 )
+      for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != ' ' && curbuf_1[i] != '\t'; i += 1 )
       {
         ++curbuf_2;
       }
@@ -836,11 +836,11 @@ void sanitize_devicename(char *buf)
     curchr_2 = (u8)buf[0];
     curchr_3 = (u8)buf[1];
     if ( curchr_2 < 0x80
-      || curchr_2 - 0xA0 < 0x40
-      || curchr_2 - 0xF0 < 0x10
+      || (char)curchr_2 - 0xA0 < 0x40
+      || (char)curchr_2 - 0xF0 < 0x10
       || curchr_3 < 0x40
       || curchr_3 == 0x7F
-      || curchr_3 - 253 < 3 )
+      || curchr_3 - 0xFD < 3 )
     {
       ++buf;
     }
