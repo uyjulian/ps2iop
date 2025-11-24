@@ -323,7 +323,7 @@ static int do_parse_config_file(const char *fn)
   {
     int tokencnt; // $s1
 
-    ++lineind;
+    lineind += 1;
     if ( g_param_debug >= 2 )
     {
       strcpy(g_config_device_name_tmp, g_config_line_buf);
@@ -487,7 +487,7 @@ static int do_parse_config_file(const char *fn)
               break;
             }
             strcpy(devstr->argv[devstr->argc], p[1]);
-            ++devstr->argc;
+            devstr->argc += 1;
           }
           else
           {
@@ -577,7 +577,7 @@ static int usbmload_drv_probe(int dev_id)
       if ( g_param_debug > 0 )
         printf("push_devinfo : %s\n", devinfo->path);
       do_push_device_rb(devinfo);
-      ++found_info_count;
+      found_info_count += 1;
     }
   }
   if ( found_info_count )
@@ -690,10 +690,11 @@ static void do_push_device_rb(USBDEV_t *devinfo)
   CpuSuspendIntr(&state);
   if ( g_rb_count < g_param_rbsize )
   {
-    g_rb_entries[g_rb_offset_write++] = devinfo;
+    g_rb_entries[g_rb_offset_write] = devinfo;
+    g_rb_offset_write += 1;
     if ( g_rb_offset_write >= g_param_rbsize )
       g_rb_offset_write = 0;
-    ++g_rb_count;
+    g_rb_count += 1;
   }
   CpuResumeIntr(state);
 }
@@ -711,10 +712,11 @@ static USBDEV_t *is_rb_ok_callback(void)
   devinfo = NULL;
   if ( g_rb_count )
   {
-    devinfo = g_rb_entries[g_rb_offset_read++];
+    devinfo = g_rb_entries[g_rb_offset_read];
+    g_rb_offset_read += 1;
     if ( g_rb_offset_read >= g_param_rbsize )
       g_rb_offset_read = 0;
-    --g_rb_count;
+    g_rb_count -= 1;
   }
   CpuResumeIntr(state);
   return devinfo;
@@ -758,20 +760,21 @@ static int split_config_line(char *curbuf, int cursplitind, char **dstptr)
       curbuf_1[i] = 0;
       break;
     }
-    *dstptr_1++ = curbuf_2;
-    ++splitfound;
+    *dstptr_1 = curbuf_2;
+    dstptr_1 += 1;
+    splitfound += 1;
     if ( curbuf_1[i] != '"' )
     {
       for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != ' ' && curbuf_1[i] != '\t'; i += 1 )
       {
-        ++curbuf_2;
+        curbuf_2 += 1;
       }
     }
     else
     {
-      ++i;
+      i += 1;
       *(dstptr_1 - 1) = curbuf_2 + 1;
-      ++curbuf_2;
+      curbuf_2 += 1;
       if ( !curbuf_1[i] )
       {
         curbuf_1[i] = 0;
@@ -779,7 +782,7 @@ static int split_config_line(char *curbuf, int cursplitind, char **dstptr)
       }
       for ( ; curbuf_1[i] && curbuf_1[i] != '\r' && curbuf_1[i] != '\n' && curbuf_1[i] != '"'; i += 1 )
       {
-        ++curbuf_2;
+        curbuf_2 += 1;
       }
     }
     if ( !curbuf_1[i] || curbuf_1[i] == '\r' || curbuf_1[i] == '\n' )
@@ -787,7 +790,7 @@ static int split_config_line(char *curbuf, int cursplitind, char **dstptr)
       curbuf_1[i] = 0;
       break;
     }
-    ++curbuf_2;
+    curbuf_2 += 1;
     curbuf_1[i] = 0;
     curbuf_1 = curbuf_2;
   }
@@ -845,7 +848,7 @@ static void sanitize_devicename(char *buf)
       || curchr_3 == 0x7F
       || curchr_3 - 0xFD < 3 )
     {
-      ++buf;
+      buf += 1;
     }
     else
     {
@@ -911,7 +914,7 @@ int sceUsbmlActivateCategory(const char *category)
     if ( !strcmp(devinfo->category, category) )
     {
       devinfo->activate_flag = 1;
-      ++i;
+      i += 1;
     }
   }
   if ( g_usbmload_enabled == 1 )
@@ -932,7 +935,7 @@ int sceUsbmlInactivateCategory(const char *category)
     if ( !strcmp(devinfo->category, category) )
     {
       devinfo->activate_flag = 0;
-      ++i;
+      i += 1;
     }
   }
   if ( g_usbmload_enabled == 1 )
@@ -1070,12 +1073,16 @@ static void init_config_pos(void)
 //----- (00401E40) --------------------------------------------------------
 static char read_config_byte(int fd)
 {
+  char tmpret;
+
   if ( g_config_chr_pos == sizeof(g_config_chr_buf) )
   {
     read(fd, g_config_chr_buf, sizeof(g_config_chr_buf));
     g_config_chr_pos = 0;
   }
-  return g_config_chr_buf[g_config_chr_pos++];
+  tmpret = g_config_chr_buf[g_config_chr_pos];
+  g_config_chr_pos += 1;
+  return tmpret;
 }
 // 4026F8: using guessed type int g_config_chr_pos;
 
