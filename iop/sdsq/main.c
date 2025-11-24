@@ -145,7 +145,7 @@ int sceSdSqReadSongData(SceSdSqSongData *songData);
 int sceSdSqGetMaxCompTableIndex(void *addr, u32 midiNumber);
 int sceSdSqGetCompTableOffset(void *addr, u32 midiNumber, u32 *offset);
 int sceSdSqGetCompTableDataByIndex(void *addr, u32 midiNumber, u32 compTableIndex, SceSdSqCompTableData *data);
-int sceSdSqGetNoteOnEventByPolyKeyPress(void *addr, u32 midiNumber, SceSdSqPolyKeyData *pData, SceSdSqCompTableNoteOnEvent *kData);
+int sceSdSqGetNoteOnEventByPolyKeyPress(void *addr, u32 midiNumber, const SceSdSqPolyKeyData *pData, SceSdSqCompTableNoteOnEvent *kData);
 int sceSdSqCopyMidiData(SceSdSqMidiData *to, const SceSdSqMidiData *from);
 int sceSdSqCopySongData(SceSdSqSongData *to, const SceSdSqSongData *from);
 int _start(int ac);
@@ -306,10 +306,9 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   u32 nextOffset; // $v0
   u8 lastStatus; // $t0
   u8 *midiData_offs; // $a1
-  
   int midiData_curval1_1; // $a0
   u8 midiData_curval2; // $a0
-  u8 *midiData_offs_plusone; // $a1
+  const u8 *midiData_offs_plusone; // $a1
   u32 nextMessageLength; // $v1
   u8 *currofssplusone; // $a1
   u8 *someaddoffsone; // $a1
@@ -336,7 +335,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   if ( !(cur_message & 0x80) || lastStatus == 255 )
   {
     u8 midiData_curval1; // $v1
-  
+
     midiData_curval1 = *midiData_offs;
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
     ++midiData->originalMessageLength;
@@ -503,7 +502,7 @@ int sceSdSqInitSongData(void *addr, u32 songNumber, SceSdSqSongData *songData)
 //----- (004008F0) --------------------------------------------------------
 int sceSdSqReadSongData(SceSdSqSongData *songData)
 {
-  u8 *curOffset; // $a1
+  const u8 *curOffset; // $a1
 
   if ( songData->readStatus )
     return 0x81048001;
@@ -579,7 +578,7 @@ int sceSdSqGetCompTableDataByIndex(
 int sceSdSqGetNoteOnEventByPolyKeyPress(
         void *addr,
         u32 midiNumber,
-        SceSdSqPolyKeyData *pData,
+        const SceSdSqPolyKeyData *pData,
         SceSdSqCompTableNoteOnEvent *kData)
 {
   u32 compTableIndex; // $a2
