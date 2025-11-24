@@ -222,25 +222,25 @@ typedef struct nameserver
   sceNetCnfAddress_t address;
 } nameserver_t;
 
-extern int sceNetCnfGetCount(char *fname, int type);
-extern int sceNetCnfGetList(char *fname, int type, sceNetCnfList_t *p);
-extern int sceNetCnfLoadEntry(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e);
-extern int sceNetCnfAddEntry(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e);
-extern int sceNetCnfDeleteEntry(char *fname, int type, char *usr_name);
-extern int sceNetCnfSetLatestEntry(char *fname, int type, char *usr_name);
+extern int sceNetCnfGetCount(const char *fname, int type);
+extern int sceNetCnfGetList(const char *fname, int type, sceNetCnfList_t *p);
+extern int sceNetCnfLoadEntry(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
+extern int sceNetCnfAddEntry(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
+extern int sceNetCnfDeleteEntry(const char *fname, int type, const char *usr_name);
+extern int sceNetCnfSetLatestEntry(const char *fname, int type, const char *usr_name);
 extern void *sceNetCnfAllocMem(sceNetCnfEnv_t *e, int size, int align);
 extern int sceNetCnfInitIFC(sceNetCnfInterface_t *ifc);
 extern int sceNetCnfLoadConf(sceNetCnfEnv_t *e);
 extern int sceNetCnfLoadDial(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair);
 extern int sceNetCnfMergeConf(sceNetCnfEnv_t *e);
-extern int sceNetCnfName2Address(sceNetCnfAddress_t *paddr, char *buf);
-extern int sceNetCnfAddress2String(char *buf, int len, sceNetCnfAddress_t *paddr);
-extern int sceNetCnfEditEntry(char *fname, int type, char *usr_name, char *new_usr_name, sceNetCnfEnv_t *e);
-extern int sceNetCnfDeleteAll(char *dev);
-extern int sceNetCnfCheckCapacity(char *fname);
+extern int sceNetCnfName2Address(sceNetCnfAddress_t *paddr, const char *buf);
+extern int sceNetCnfAddress2String(char *buf, int len, const sceNetCnfAddress_t *paddr);
+extern int sceNetCnfEditEntry(const char *fname, int type, const char *usr_name, const char *new_usr_name, sceNetCnfEnv_t *e);
+extern int sceNetCnfDeleteAll(const char *dev);
+extern int sceNetCnfCheckCapacity(const char *fname);
 extern int sceNetCnfConvA2S(char *sp_, char *dp_, int len);
 extern int sceNetCnfConvS2A(char *sp_, char *dp_, int len);
-extern int sceNetCnfCheckSpecialProvider(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e);
+extern int sceNetCnfCheckSpecialProvider(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
 extern void sceNetCnfSetCallback(sceNetCnfCallback_t *pcallback);
 
 #define netcnf_IMPORTS_start DECLARE_IMPORT_TABLE(netcnf, 1, 32)

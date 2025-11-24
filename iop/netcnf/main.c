@@ -53,7 +53,7 @@ int do_read_ilink_id();
 int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr);
 int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len);
 int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_ptr);
-void do_init_xor_magic(char *in_id_buf);
+void do_init_xor_magic(const char *in_id_buf);
 int magic_shift_write_netcnf_2(int inshft, int buflen);
 int magic_shift_read_netcnf_2(int inshft, int buflen);
 int magic_shift_write_netcnf_1(int inshft, int buflen);
@@ -64,29 +64,29 @@ void do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const c
 void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *src2);
 int do_check_capacity_inner2(const char *fpath, int minsize);
 int do_check_capacity_inner(const char *fpath);
-int do_handle_combination_path(int type, const char *fpath, char *dst, size_t maxlen, char *usr_name);
+int do_handle_combination_path(int type, const char *fpath, char *dst, size_t maxlen, const char *usr_name);
 int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2);
 char *do_write_memcard_pathcopy(char *dst, size_t maxlen, const char *src);
 int do_write_memcard_files(const char *fpath, const char *icon_value, const char *iconsys_value);
 int do_handle_fname(char *fpath, size_t maxlen, const char *fname);
 char *do_check_hoge_newline(char *buf);
 int do_split_str_comma_index(char *dst, const char *src, int commaind);
-int do_remove_old_config(const char *fpath, const char *netcnf_heap_buf, char *icon_value, char *iconsys_value);
+int do_remove_old_config(const char *fpath, const char *netcnf_heap_buf, const char *icon_value, const char *iconsys_value);
 int do_type_check(int type, const char *buf);
 int do_read_current_netcnf_nodecode(const char *fpath, char **netcnf_heap_ptr);
 int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int size);
 int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer);
-int do_get_count_list_inner(char *fname, int type, sceNetCnfList_t *p);
-int do_load_entry_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e);
+int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t *p);
+int do_load_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
 void do_some_ifc_handling_hoge(const char *arg_fname);
-void do_some_pair_handling(char *fpath, int type, const char *src, sceNetCnfEnv_t *e);
-int do_add_entry_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e, char *icon_value, char *iconsys_value, int no_check_capacity);
+void do_some_pair_handling(char *fpath, int type, const char *src, const sceNetCnfEnv_t *e);
+int do_add_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e, const char *icon_value, const char *iconsys_value, int no_check_capacity);
 int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2, const char *usrname_bufnew);
-int do_edit_entry_inner(char *fname, int type, char *usr_name, char *new_usr_name, sceNetCnfEnv_t *e, char *icon_value, char *iconsys_value, int no_check_capacity);
-int do_delete_entry_inner(char *fname, int type, char *usr_name, char *icon_value, char *iconsys_value, int no_check_capacity);
-int do_set_latest_entry_inner(char *fname, int type, char *usr_name);
+int do_edit_entry_inner(const char *fname, int type, const char *usr_name, const char *new_usr_name, sceNetCnfEnv_t *e, const char *icon_value, const char *iconsys_value, int no_check_capacity);
+int do_delete_entry_inner(const char *fname, int type, const char *usr_name, const char *icon_value, const char *iconsys_value, int no_check_capacity);
+int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name);
 int do_delete_all_inner(const char *dev);
-int do_check_special_provider_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e);
+int do_check_special_provider_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
 char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align);
 const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg);
 char *do_alloc_mem_for_write(sceNetCnfEnv_t *e, const char *str);
@@ -124,13 +124,13 @@ int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceN
 int do_export_netcnf(sceNetCnfEnv_t *e);
 char *do_address_to_string_inner_element(char *dst, int srcbyte);
 void do_address_to_string_inner(char *dst, unsigned int srcint);
-int do_name_2_address_inner(unsigned int *dst, char *buf);
+int do_name_2_address_inner(unsigned int *dst, const char *buf);
 int do_conv_a2s_inner(char *sp_, char *dp_, int len);
 int do_conv_s2a_inner(char *sp_, char *dp_, int len);
 int do_check_aolnet(const char *auth_name);
 int do_check_authnet(char *argst, char *arged);
 int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, int no_decode);
-int do_check_provider_inner(sceNetCnfEnv_t *e, int type);
+int do_check_provider_inner(const sceNetCnfEnv_t *e, int type);
 char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netcnf_file_path);
 int do_get_filesize_inner(int fd);
 int is_special_file_path(const char *netcnf_path);
@@ -435,7 +435,7 @@ int _start(int ac, char **av)
 }
 
 //----- (00400364) --------------------------------------------------------
-int sceNetCnfGetCount(char *fname, int type)
+int sceNetCnfGetCount(const char *fname, int type)
 {
   int retres; // $s0
 
@@ -446,7 +446,7 @@ int sceNetCnfGetCount(char *fname, int type)
 }
 
 //----- (004003DC) --------------------------------------------------------
-int sceNetCnfGetList(char *fname, int type, sceNetCnfList_t *p)
+int sceNetCnfGetList(const char *fname, int type, sceNetCnfList_t *p)
 {
   int retres; // $s0
 
@@ -457,7 +457,7 @@ int sceNetCnfGetList(char *fname, int type, sceNetCnfList_t *p)
 }
 
 //----- (00400460) --------------------------------------------------------
-int sceNetCnfLoadEntry(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e)
+int sceNetCnfLoadEntry(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
 {
   int retres; // $s0
 
@@ -468,7 +468,7 @@ int sceNetCnfLoadEntry(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e)
 }
 
 //----- (004004F4) --------------------------------------------------------
-int sceNetCnfAddEntry(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e)
+int sceNetCnfAddEntry(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
 {
   int retres; // $s0
 
@@ -480,7 +480,7 @@ int sceNetCnfAddEntry(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e)
 // 40AC68: using guessed type int g_no_check_capacity;
 
 //----- (004005AC) --------------------------------------------------------
-int sceNetCnfEditEntry(char *fname, int type, char *usr_name, char *new_usr_name, sceNetCnfEnv_t *e)
+int sceNetCnfEditEntry(const char *fname, int type, const char *usr_name, const char *new_usr_name, sceNetCnfEnv_t *e)
 {
   int retres; // $s0
 
@@ -492,7 +492,7 @@ int sceNetCnfEditEntry(char *fname, int type, char *usr_name, char *new_usr_name
 // 40AC68: using guessed type int g_no_check_capacity;
 
 //----- (00400674) --------------------------------------------------------
-int sceNetCnfDeleteEntry(char *fname, int type, char *usr_name)
+int sceNetCnfDeleteEntry(const char *fname, int type, const char *usr_name)
 {
   int retres; // $s0
 
@@ -504,7 +504,7 @@ int sceNetCnfDeleteEntry(char *fname, int type, char *usr_name)
 // 40AC68: using guessed type int g_no_check_capacity;
 
 //----- (00400718) --------------------------------------------------------
-int sceNetCnfSetLatestEntry(char *fname, int type, char *usr_name)
+int sceNetCnfSetLatestEntry(const char *fname, int type, const char *usr_name)
 {
   int retres; // $s0
 
@@ -550,7 +550,7 @@ int sceNetCnfMergeConf(sceNetCnfEnv_t *e)
 }
 
 //----- (004008C0) --------------------------------------------------------
-int sceNetCnfName2Address(sceNetCnfAddress_t *paddr, char *buf)
+int sceNetCnfName2Address(sceNetCnfAddress_t *paddr, const char *buf)
 {
   unsigned int paddr_tmp; // [sp+10h] [-8h] BYREF
 
@@ -565,7 +565,7 @@ int sceNetCnfName2Address(sceNetCnfAddress_t *paddr, char *buf)
 }
 
 //----- (00400940) --------------------------------------------------------
-int sceNetCnfAddress2String(char *buf, int len, sceNetCnfAddress_t *paddr)
+int sceNetCnfAddress2String(char *buf, int len, const sceNetCnfAddress_t *paddr)
 {
   int buflen; // $a2
   char buf_tmp[24]; // [sp+10h] [-20h] BYREF
@@ -587,7 +587,7 @@ int sceNetCnfAddress2String(char *buf, int len, sceNetCnfAddress_t *paddr)
 }
 
 //----- (004009E0) --------------------------------------------------------
-int sceNetCnfDeleteAll(char *dev)
+int sceNetCnfDeleteAll(const char *dev)
 {
   int retres; // $s0
 
@@ -598,7 +598,7 @@ int sceNetCnfDeleteAll(char *dev)
 }
 
 //----- (00400A44) --------------------------------------------------------
-int sceNetCnfCheckCapacity(char *fname)
+int sceNetCnfCheckCapacity(const char *fname)
 {
   int retres; // $s0
 
@@ -645,7 +645,7 @@ int sceNetCnfConvS2A(char *sp_, char *dp_, int len)
 }
 
 //----- (00400B98) --------------------------------------------------------
-int sceNetCnfCheckSpecialProvider(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e)
+int sceNetCnfCheckSpecialProvider(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
 {
   int retres; // $s0
 
@@ -864,7 +864,7 @@ int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_ptr)
 }
 
 //----- (0040127C) --------------------------------------------------------
-void do_init_xor_magic(char *in_id_buf)
+void do_init_xor_magic(const char *in_id_buf)
 {
   int i; // $a2
 
@@ -991,7 +991,7 @@ int do_check_capacity_inner(const char *fpath)
 }
 
 //----- (00401758) --------------------------------------------------------
-int do_handle_combination_path(int type, const char *fpath, char *dst, size_t maxlen, char *usr_name)
+int do_handle_combination_path(int type, const char *fpath, char *dst, size_t maxlen, const char *usr_name)
 {
   char *i; // $s0
   int j; // $s1
@@ -1150,8 +1150,8 @@ int do_split_str_comma_index(char *dst, const char *src, int commaind)
 int do_remove_old_config(
         const char *fpath,
         const char *netcnf_heap_buf,
-        char *icon_value,
-        char *iconsys_value)
+        const char *icon_value,
+        const char *iconsys_value)
 {
   int sysneticoflag; // $fp
   int dfd; // $s4
@@ -1299,7 +1299,7 @@ int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int size)
 //----- (00402230) --------------------------------------------------------
 int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer)
 {
-  char *p_dirname; // $v0
+  const char *p_dirname; // $v0
   int remove_res_1; // $a0
 
   p_dirname = do_handle_netcnf_dirname(dirpath, entry_buffer, g_netcnf_file_path);
@@ -1310,7 +1310,7 @@ int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer)
 }
 
 //----- (00402290) --------------------------------------------------------
-int do_get_count_list_inner(char *fname, int type, sceNetCnfList_t *p)
+int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t *p)
 {
   int result; // $v0
   char *curheapbuf1; // $s0
@@ -1343,7 +1343,7 @@ int do_get_count_list_inner(char *fname, int type, sceNetCnfList_t *p)
 }
 
 //----- (004023F0) --------------------------------------------------------
-int do_load_entry_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e)
+int do_load_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
 {
   int result; // $v0
   char *curheapbuf1; // $s0
@@ -1401,7 +1401,7 @@ void do_some_ifc_handling_hoge(const char *arg_fname)
 }
 
 //----- (004026B0) --------------------------------------------------------
-void do_some_pair_handling(char *fpath, int type, const char *src, sceNetCnfEnv_t *e)
+void do_some_pair_handling(char *fpath, int type, const char *src, const sceNetCnfEnv_t *e)
 {
   sceNetCnfEnv_t *heapmem; // $s1
   int conf_inner; // $v1
@@ -1444,12 +1444,12 @@ void do_some_pair_handling(char *fpath, int type, const char *src, sceNetCnfEnv_
 
 //----- (004027F4) --------------------------------------------------------
 int do_add_entry_inner(
-        char *fname,
+        const char *fname,
         int type,
-        char *usr_name,
+        const char *usr_name,
         sceNetCnfEnv_t *e,
-        char *icon_value,
-        char *iconsys_value,
+        const char *icon_value,
+        const char *iconsys_value,
         int no_check_capacity)
 {
   int result; // $v0
@@ -1742,13 +1742,13 @@ int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2,
 
 //----- (004032CC) --------------------------------------------------------
 int do_edit_entry_inner(
-        char *fname,
+        const char *fname,
         int type,
-        char *usr_name,
-        char *new_usr_name,
+        const char *usr_name,
+        const char *new_usr_name,
         sceNetCnfEnv_t *e,
-        char *icon_value,
-        char *iconsys_value,
+        const char *icon_value,
+        const char *iconsys_value,
         int no_check_capacity)
 {
   int result; // $v0
@@ -1857,11 +1857,11 @@ int do_edit_entry_inner(
 
 //----- (004036BC) --------------------------------------------------------
 int do_delete_entry_inner(
-        char *fname,
+        const char *fname,
         int type,
-        char *usr_name,
-        char *icon_value,
-        char *iconsys_value,
+        const char *usr_name,
+        const char *icon_value,
+        const char *iconsys_value,
         int no_check_capacity)
 {
   int has_comma; // $s5
@@ -1933,7 +1933,7 @@ int do_delete_entry_inner(
 }
 
 //----- (00403998) --------------------------------------------------------
-int do_set_latest_entry_inner(char *fname, int type, char *usr_name)
+int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name)
 {
   int isbeforeend1; // $fp
   int result; // $v0
@@ -2105,7 +2105,7 @@ int do_delete_all_inner(const char *dev)
 }
 
 //----- (00403FA8) --------------------------------------------------------
-int do_check_special_provider_inner(char *fname, int type, char *usr_name, sceNetCnfEnv_t *e)
+int do_check_special_provider_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
 {
   int result; // $v0
   char *curentry1; // $s1
@@ -3433,7 +3433,7 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list va)
   unsigned int strpad1; // $a2
   int cur_va1; // $a1
   int valmod1; // $hi
-  char *curnumvals; // $a0
+  const char *curnumvals; // $a0
   int strlencalc; // $s3
   char *mem_ptr_02; // $v1
   char *mem_ptr_04; // $v1
@@ -3703,7 +3703,6 @@ int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...)
 int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata)
 {
   int offsptr3; // $s1
-  const char *lbuf; // $s0
   char *offsptr1; // $v0
   int offsptr6; // $s0
   int offsptr4; // $s1
@@ -3712,6 +3711,7 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
   for ( ; options->m_key; options += 1 )
   {
     int result; // $v0
+    const char *lbuf; // $s0
 
     result = 0;
     lbuf = (const char *)e->lbuf;
@@ -4233,7 +4233,7 @@ void do_address_to_string_inner(char *dst, unsigned int srcint)
 }
 
 //----- (00407E50) --------------------------------------------------------
-int do_name_2_address_inner(unsigned int *dst, char *buf)
+int do_name_2_address_inner(unsigned int *dst, const char *buf)
 {
   int prefixchkn; // $s4
   unsigned int i; // $s3
@@ -4553,7 +4553,7 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
 }
 
 //----- (004088DC) --------------------------------------------------------
-int do_check_provider_inner(sceNetCnfEnv_t *e, int type)
+int do_check_provider_inner(const sceNetCnfEnv_t *e, int type)
 {
   switch ( type )
   {
@@ -4585,7 +4585,7 @@ char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netc
   const char *entry_buffer_1; // $v1
   char *fpath_1; // $a3
   char *fpath_1_minus_1; // $a3
-  char *fpath_2; // $v1
+  const char *fpath_2; // $v1
   char *i; // $t0
   const char *entry_buffer_2; // $v1
 

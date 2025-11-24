@@ -88,8 +88,8 @@ int sceNetcnfifReadEnv(sceNetcnfifData_t *data, sceNetCnfEnv_t *e, int type);
 u8 *dup_string(sceNetCnfEnv_t *e, u8 *str);
 void init_usrntcnf(sceNetCnfInterface_t *ifc);
 int check_address(char *str);
-int put_gw(sceNetCnfEnv_t *e, char *gw);
-int put_ns(sceNetCnfEnv_t *e, char *ns, int ns_count);
+int put_gw(sceNetCnfEnv_t *e, const char *gw);
+int put_ns(sceNetCnfEnv_t *e, const char *ns, int ns_count);
 int put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data);
 int root_link(sceNetCnfEnv_t *e, int type);
 int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type);
@@ -696,7 +696,7 @@ int check_address(char *str)
 }
 
 //----- (004011F0) --------------------------------------------------------
-int put_gw(sceNetCnfEnv_t *e, char *gw)
+int put_gw(sceNetCnfEnv_t *e, const char *gw)
 {
   int retres; // $v1
 
@@ -740,7 +740,7 @@ int put_gw(sceNetCnfEnv_t *e, char *gw)
 // 4055A0: using guessed type route_t gateway;
 
 //----- (0040131C) --------------------------------------------------------
-int put_ns(sceNetCnfEnv_t *e, char *ns, int ns_count)
+int put_ns(sceNetCnfEnv_t *e, const char *ns, int ns_count)
 {
   nameserver_t *ns1; // $s0
   nameserver_t *ns2; // $a0
