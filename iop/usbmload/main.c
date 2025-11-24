@@ -552,7 +552,7 @@ void do_print_device_config_info(USBDEV_t *devinfo)
 int usbmload_drv_probe(int dev_id)
 {
   UsbDeviceDescriptor *devdesc; // $v0
-  UsbInterfaceDescriptor *intfdesc; // $v0
+  const UsbInterfaceDescriptor *intfdesc; // $v0
   int found_info_count; // $s2
   USBDEV_t *devinfo; // $s0
 
