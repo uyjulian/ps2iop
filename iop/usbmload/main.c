@@ -253,7 +253,6 @@ int module_unload()
 {
   USBDEV_t *listent_1; // $s2
   int i; // $s1
-  USBDEV_t *listent_3; // $a0
   int stopres; // [sp+10h] [-8h] BYREF
   int state; // [sp+14h] [-4h] BYREF
 
@@ -268,6 +267,8 @@ int module_unload()
   listent_1 = g_usbm_entry_list_end;
   while ( listent_1 )
   {
+    USBDEV_t *listent_3; // $a0
+
     if ( StopModule(listent_1->modid, 0, 0, &stopres) >= 0 )
     {
       if ( g_param_debug > 0 )
@@ -302,7 +303,6 @@ int do_parse_config_file(const char *fn)
   int has_encountered; // $s6
   int fd; // $s4
   int lineind; // $s2
-  int tokencnt; // $s1
   char *p[2]; // [sp+10h] [-18h] BYREF
   int state; // [sp+20h] [-8h] BYREF
   int err;
@@ -322,6 +322,8 @@ int do_parse_config_file(const char *fn)
   }
   while ( read_config_line(g_config_line_buf, sizeof(g_config_line_buf), fd) )
   {
+    int tokencnt; // $s1
+
     ++lineind;
     if ( g_param_debug >= 2 )
     {
@@ -629,7 +631,6 @@ void ldd_loader_thread()
 void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
 {
   int modid; // $s0
-  USBDEV_t *curdev; // $s3
   int i; // $s4
   unsigned int cur_argv_len; // $s1
   unsigned int cur_argv_len_1; // $s0
@@ -642,6 +643,8 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
     printf("Entering default_loadfunc()\n");
   while ( 1 )
   {
+    USBDEV_t *curdev; // $s3
+
     curdev = pop_devinfo();
     if ( !curdev )
       break;
@@ -828,11 +831,11 @@ void clean_config_line(char *buf)
 //----- (004017E0) --------------------------------------------------------
 void sanitize_devicename(char *buf)
 {
-  unsigned int curchr_2; // $a1
-  unsigned int curchr_3; // $v1
-
   while ( *buf && *buf != '\n' && *buf != '\r' )
   {
+    unsigned int curchr_2; // $a1
+    unsigned int curchr_3; // $v1
+
     curchr_2 = (u8)buf[0];
     curchr_3 = (u8)buf[1];
     if ( curchr_2 < 0x80
@@ -966,7 +969,6 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
 {
   USBDEV_t *devinfo; // $s3
   int i; // $s2
-  int j; // $s1
   int state; // [sp+10h] [-8h] BYREF
   int failed;
 
@@ -1024,6 +1026,8 @@ int sceUsbmlRegisterDevice(USBDEV_t *device)
       CpuSuspendIntr(&state);
     if ( failed >= 4 )
     {
+      int j; // $s1
+
       for ( j = 0; j < i; j += 1 )
       {
         FreeSysMemory(devinfo->argv[j]);
