@@ -711,10 +711,6 @@ int do_get_common_block_ptr_note(
   int i; // $s6
   sceHardSynthSplitBlock *p_splitblock; // $a1
   int j; // $s2
-  int cursampleindexoffs1; // $v0
-  char *cursampleindex1; // $v1
-  int cursampleindexoffs2; // $v0
-  char *cursampleindex2; // $v1
   sceHardSynthProgramParam *p_programparam; // [sp+10h] [-10h] BYREF
   sceHardSynthSampleSetParam *p_samplesetparam; // [sp+14h] [-Ch] BYREF
   sceHardSynthSampleParam *p_sampleparam; // [sp+18h] [-8h] BYREF
@@ -780,10 +776,8 @@ int do_get_common_block_ptr_note(
                 }
                 for ( j = 0; j < p_samplesetparam->nSample; j += 1 )
                 {
-                  cursampleindexoffs1 = 2 * j;
-                  cursampleindex1 = (char *)p_samplesetparam + cursampleindexoffs1;
-                  if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
-                    && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
+                  if ( p_samplesetparam->sampleIndex[j] != 0xFFFF
+                    && !sceSdHdGetSampleParamAddr(buffer, p_samplesetparam->sampleIndex[j], &p_sampleparam)
                     && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
                     && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
                   {
@@ -834,10 +828,8 @@ int do_get_common_block_ptr_note(
               case 1:
                 for ( j = 0; j < p_samplesetparam->nSample; j += 1 )
                 {
-                  cursampleindexoffs2 = 2 * j;
-                  cursampleindex2 = (char *)p_samplesetparam + cursampleindexoffs2;
-                  if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
-                    && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
+                  if ( p_samplesetparam->sampleIndex[j] != 0xFFFF
+                    && !sceSdHdGetSampleParamAddr(buffer, p_samplesetparam->sampleIndex[j], &p_sampleparam)
                     && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
                     && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
                   {
@@ -907,10 +899,6 @@ int do_get_common_block_ptr(
 {
   int idx1; // $s0
   int i; // $s3
-  int cursampleindexoffs2; // $v0
-  char *cursampleindex2; // $v1
-  int cursampleindexoffs1; // $v0
-  char *cursampleindex1; // $v1
   sceHardSynthSampleSetParam *p_samplesetparam; // [sp+10h] [-10h] BYREF
   sceHardSynthSampleParam *p_sampleparam; // [sp+14h] [-Ch] BYREF
   sceHardSynthVagParam *p_vagparam; // [sp+18h] [-8h] BYREF
@@ -925,10 +913,8 @@ int do_get_common_block_ptr(
         return 0;
       for ( i = 0; i < p_samplesetparam->nSample; i += 1 )
       {
-        cursampleindexoffs2 = 2 * i;
-        cursampleindex2 = (char *)p_samplesetparam + cursampleindexoffs2;
-        if ( *((u16 *)cursampleindex2 + 2) != 0xFFFF
-          && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex2 + 2), &p_sampleparam)
+        if ( p_samplesetparam->sampleIndex[i] != 0xFFFF
+          && !sceSdHdGetSampleParamAddr(buffer, p_samplesetparam->sampleIndex[i], &p_sampleparam)
           && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
           && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
         {
@@ -976,10 +962,8 @@ int do_get_common_block_ptr(
     case 1:
       for ( i = 0; i < p_samplesetparam->nSample; i += 1 )
       {
-        cursampleindexoffs1 = 2 * i;
-        cursampleindex1 = (char *)p_samplesetparam + cursampleindexoffs1;
-        if ( *((u16 *)cursampleindex1 + 2) != 0xFFFF
-          && !sceSdHdGetSampleParamAddr(buffer, *((u16 *)cursampleindex1 + 2), &p_sampleparam)
+        if ( p_samplesetparam->sampleIndex[i] != 0xFFFF
+          && !sceSdHdGetSampleParamAddr(buffer, p_samplesetparam->sampleIndex[i], &p_sampleparam)
           && velocity >= (p_sampleparam->velRangeLow & 0x7Fu)
           && (p_sampleparam->velRangeHigh & 0x7Fu) >= velocity )
         {
@@ -1770,20 +1754,8 @@ int sceSdHdModifyVelocity(unsigned int curveType, int velocity)
 //----- (0040261C) --------------------------------------------------------
 int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
 {
-  int calc3; // $v1
-  int calc4; // $v0
   int calc5; // $v1
-  int calc6; // $v1
-  int calc7; // $v0
-  int calc8; // $v0
-  int calc9; // $v1
-  int calca; // $v0
   int calcb; // $v1
-  int calcc; // $v0
-  int calcd; // $lo
-  int calce; // $v1
-  int calcf; // $v0
-  int calcg; // $v1
 
   center = ( center >= 0 ) ? (( center >= 128 ) ? 127 : center) : 0;
   velocity = ( velocity >= 0 ) ? (( velocity >= 128 ) ? 127 : velocity) : 0;
@@ -1792,23 +1764,17 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
   {
     case 0u:
     default:
-      calc3 = velocity - center;
-      calcg = calc3 << 16;
-      calcf = calcg / 126;
-      calce = (unsigned int)calcg >> 31;
-      calc5 = calcf - calce;
+      calc5 = (velocity - center) << 16;
+      calc5 = (calc5 / 126) - (int)((unsigned int)calc5 >> 31);
       break;
     case 1u:
-      calc3 = center - velocity;
-      calcg = calc3 << 16;
-      calcf = calcg / 126;
-      calce = (unsigned int)calcg >> 31;
-      calc5 = calcf - calce;
+      calc5 = (center - velocity) << 16;
+      calc5 = (calc5 / 126) - (int)((unsigned int)calc5 >> 31);
       break;
     case 2u:
-      calc4 = ((velocity - 1) << 15) / 126 * (((velocity - 1) << 15) / 126)
+      calc5 = ((velocity - 1) << 15) / 126 * (((velocity - 1) << 15) / 126)
             - ((center - 1) << 15) / 126 * (((center - 1) << 15) / 126);
-      calc5 = ( calc4 < 0 ) ? ((calc4 + 0x3FFF) >> 14) : (calc4 >> 14);
+      calc5 = ( calc5 < 0 ) ? ((calc5 + 0x3FFF) >> 14) : (calc5 >> 14);
       break;
     case 3u:
       calc5 = ((velocity - 1) << 15) / 126 * (((velocity - 1) << 15) / 126) / -16384
@@ -1825,48 +1791,46 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
     case 6u:
       if ( velocity == center )
         break;
-      calc6 = ( center >= velocity ) ? (center - 1) : (127 - center);
-      calc7 = velocity - center;
-      calc8 = calc7 << 16;
-      if ( !calc6 )
+      calc5 = ( center >= velocity ) ? (center - 1) : (127 - center);
+      calcb = (velocity - center) << 16;
+      if ( !calc5 )
         __builtin_trap();
-      if ( calc6 == -1 && (unsigned int)calc8 == 0x80000000 )
+      if ( calc5 == -1 && (unsigned int)calcb == 0x80000000 )
         __builtin_trap();
-      calc5 = calc8 / calc6;
+      calc5 = calcb / calc5;
       break;
     case 7u:
       if ( velocity == center )
         break;
-      calc6 = ( center >= velocity ) ? (center - 1) : (127 - center);
-      calc7 = center - velocity;
-      calc8 = calc7 << 16;
-      if ( !calc6 )
+      calc5 = ( center >= velocity ) ? (center - 1) : (127 - center);
+      calcb = (center - velocity) << 16;
+      if ( !calc5 )
         __builtin_trap();
-      if ( calc6 == -1 && (unsigned int)calc8 == 0x80000000 )
+      if ( calc5 == -1 && (unsigned int)calcb == 0x80000000 )
         __builtin_trap();
-      calc5 = calc8 / calc6;
+      calc5 = calcb / calc5;
       break;
     case 8u:
       if ( velocity == center )
         break;
-      calc9 = (velocity - center) << 15;
+      calcb = (velocity - center) << 15;
       if ( center >= velocity )
       {
         if ( center == 1 )
           __builtin_trap();
-        if ( !center && (unsigned int)calc9 == 0x80000000 )
+        if ( !center && (unsigned int)calcb == 0x80000000 )
           __builtin_trap();
-        calc5 = calc9 / (center - 1) * (calc9 / (center - 1)) / -16384;
+        calc5 = calcb / (center - 1) * (calcb / (center - 1)) / -16384;
       }
       else
       {
-        calca = 127 - center;
+        calc5 = 127 - center;
         if ( 127 == center )
           __builtin_trap();
-        if ( calca == -1 && (unsigned int)calc9 == 0x80000000 )
+        if ( calc5 == -1 && (unsigned int)calcb == 0x80000000 )
           __builtin_trap();
-        calc4 = calc9 / calca * (calc9 / calca);
-        calc5 = ( calc4 < 0 ) ? ((calc4 + 0x3FFF) >> 14) : (calc4 >> 14);
+        calc5 = calcb / calc5 * (calcb / calc5);
+        calc5 = ( calc5 < 0 ) ? ((calc5 + 0x3FFF) >> 14) : (calc5 >> 14);
       }
       break;
     case 9u:
@@ -1883,15 +1847,13 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center)
       }
       else
       {
-        calcc = 127 - center;
+        calc5 = 127 - center;
         if ( 127 == center )
           __builtin_trap();
-        if ( calcc == -1 && (unsigned int)calcb == 0x80000000 )
+        if ( calc5 == -1 && (unsigned int)calcb == 0x80000000 )
           __builtin_trap();
-        calcd = (0x8000 - calcb / calcc) * (0x8000 - calcb / calcc);
-        calce = ( calcd < 0 ) ? ((calcd + 0x3FFF) >> 14) : (calcd >> 14);
-        calcf = 0x10000;
-        calc5 = calcf - calce;
+        calc5 = (0x8000 - calcb / calc5) * (0x8000 - calcb / calc5);
+        calc5 = 0x10000 - (( calc5 < 0 ) ? ((calc5 + 0x3FFF) >> 14) : (calc5 >> 14));
       }
       break;
   }

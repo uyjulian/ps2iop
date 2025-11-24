@@ -306,18 +306,13 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   u32 nextOffset; // $v0
   u8 lastStatus; // $t0
   u8 *midiData_offs; // $a1
-  u8 midiData_curval1; // $v1
+  
   int midiData_curval1_1; // $a0
   u8 midiData_curval2; // $a0
   u8 *midiData_offs_plusone; // $a1
   u32 nextMessageLength; // $v1
-  u8 midiData_curval4; // $v1
   u8 *currofssplusone; // $a1
-  int someoffsx; // $v1
   u8 *someaddoffsone; // $a1
-  int i; // $a3
-  u8 midiData_curval7; // $a0
-  int msg2ew; // $v1
   int endflg;
 
   endflg = 3;
@@ -340,6 +335,8 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   midiData_curval1_1 = 0;
   if ( !(cur_message & 0x80) || lastStatus == 255 )
   {
+    u8 midiData_curval1; // $v1
+  
     midiData_curval1 = *midiData_offs;
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
     ++midiData->originalMessageLength;
@@ -389,6 +386,8 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
       }
       else
       {
+        int someoffsx; // $v1
+
         midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
         midiData->message[1] = midiData->originalMessage[midiData->originalMessageLength];
         midiData->message[2] = 8 * (midiData->originalMessage[midiData->originalMessageLength] & 0xF);
@@ -405,6 +404,10 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
     }
     case 0xF0:
     {
+      int i; // $a3
+      u8 midiData_curval7; // $a0
+      int msg2ew; // $v1
+
       if ( midiData_curval2 != 255 )
       {
         midiData->readStatus = 2;
@@ -445,9 +448,8 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   }
   if ( endflg >= 4 )
   {
-    midiData_curval4 = *midiData_offs;
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
-    midiData->message[1] = midiData_curval4;
+    midiData->message[1] = *midiData_offs;
     midiData->originalMessageLength = midiData->originalMessageLength + 1;
     currofssplusone = midiData_offs + 1;
     midiData->originalMessage[midiData->originalMessageLength] = *currofssplusone;
