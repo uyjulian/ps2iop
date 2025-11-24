@@ -735,15 +735,15 @@ static int do_get_common_block_ptr_note(
     switch ( swcase )
     {
       case 0:
-        ++idx1;
+        idx1 += 1;
         break;
       case 1:
-        ++idx1;
+        idx1 += 1;
         *ptr = p_splitblock;
         ptr = (void **)(((char *)ptr) + sizeof(void *));
         break;
       case 2:
-        ++idx1;
+        idx1 += 1;
         do_copy_to_sdhd_split_block((SceSdHdSplitBlock *)ptr, p_splitblock);
         ptr = (void **)(((char *)ptr) + sizeof(SceSdHdSplitBlock));
         break;
@@ -756,15 +756,15 @@ static int do_get_common_block_ptr_note(
         switch ( swcase )
         {
           case 3:
-            ++idx1;
+            idx1 += 1;
             break;
           case 4:
-            ++idx1;
+            idx1 += 1;
             *ptr = p_samplesetparam;
             ptr = (void **)(((char *)ptr) + sizeof(void *));
             break;
           case 5:
-            ++idx1;
+            idx1 += 1;
             do_copy_to_sdhd_set_param((SceSdHdSampleSetParam *)ptr, p_samplesetparam);
             ptr = (void **)(((char *)ptr) + sizeof(SceSdHdSampleSetParam));
             break;
@@ -786,15 +786,15 @@ static int do_get_common_block_ptr_note(
                       switch ( swcase )
                       {
                         case 6:
-                          ++idx1;
+                          idx1 += 1;
                           break;
                         case 7:
-                          ++idx1;
+                          idx1 += 1;
                           *ptr = p_sampleparam;
                           ptr = (void **)(((char *)ptr) + sizeof(void *));
                           break;
                         case 8:
-                          ++idx1;
+                          idx1 += 1;
                           do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr, p_sampleparam);
                           ptr = (void **)(((char *)ptr) + sizeof(SceSdHdSampleParam));
                           break;
@@ -807,15 +807,15 @@ static int do_get_common_block_ptr_note(
                           switch ( swcase )
                           {
                             case 9:
-                              ++idx1;
+                              idx1 += 1;
                               break;
                             case 10:
-                              ++idx1;
+                              idx1 += 1;
                               *ptr = p_vagparam;
                               ptr = (void **)(((char *)ptr) + sizeof(void *));
                               break;
                             case 11:
-                              ++idx1;
+                              idx1 += 1;
                               do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                               ptr = (void **)(((char *)ptr) + sizeof(SceSdHdVAGInfoParam));
                               break;
@@ -838,15 +838,15 @@ static int do_get_common_block_ptr_note(
                     switch ( swcase )
                     {
                       case 6:
-                        ++idx1;
+                        idx1 += 1;
                         break;
                       case 7:
-                        ++idx1;
+                        idx1 += 1;
                         *ptr = p_sampleparam;
                         ptr = (void **)(((char *)ptr) + sizeof(void *));
                         break;
                       case 8:
-                        ++idx1;
+                        idx1 += 1;
                         do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)ptr, p_sampleparam);
                         ptr = (void **)(((char *)ptr) + sizeof(SceSdHdSampleParam));
                         break;
@@ -859,15 +859,15 @@ static int do_get_common_block_ptr_note(
                         switch ( swcase )
                         {
                           case 9:
-                            ++idx1;
+                            idx1 += 1;
                             break;
                           case 10:
-                            ++idx1;
+                            idx1 += 1;
                             *ptr = p_vagparam;
                             ptr = (void **)(((char *)ptr) + sizeof(void *));
                             break;
                           case 11:
-                            ++idx1;
+                            idx1 += 1;
                             do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                             ptr = (void **)(((char *)ptr) + sizeof(SceSdHdVAGInfoParam));
                             break;
@@ -923,15 +923,15 @@ static int do_get_common_block_ptr(
           switch ( swcase )
           {
             case 6:
-              ++idx1;
+              idx1 += 1;
               break;
             case 7:
-              ++idx1;
+              idx1 += 1;
               *param = p_sampleparam;
               param = (void **)(((char *)param) + sizeof(void *));
               break;
             case 8:
-              ++idx1;
+              idx1 += 1;
               do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param, p_sampleparam);
               param = (void **)(((char *)param) + sizeof(SceSdHdSampleParam));
               break;
@@ -944,15 +944,15 @@ static int do_get_common_block_ptr(
               switch ( swcase )
               {
                 case 9:
-                  ++idx1;
+                  idx1 += 1;
                   break;
                 case 10:
-                  ++idx1;
+                  idx1 += 1;
                   *param = p_vagparam;
                   param = (void **)(((char *)param) + sizeof(void *));
                   break;
                 case 11:
-                  ++idx1;
+                  idx1 += 1;
                   do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                   param = (void **)(((char *)param) + sizeof(SceSdHdVAGInfoParam));
                   break;
@@ -972,15 +972,15 @@ static int do_get_common_block_ptr(
           switch ( swcase )
           {
             case 6:
-              ++idx1;
+              idx1 += 1;
               break;
             case 7:
-              ++idx1;
+              idx1 += 1;
               *param = p_sampleparam;
               param = (void **)(((char *)param) + sizeof(void *));
               break;
             case 8:
-              ++idx1;
+              idx1 += 1;
               do_copy_to_sdhd_sample_param((SceSdHdSampleParam *)param, p_sampleparam);
               param = (void **)(((char *)param) + sizeof(SceSdHdSampleParam));
               break;
@@ -990,15 +990,15 @@ static int do_get_common_block_ptr(
               switch ( swcase )
               {
                 case 9:
-                  ++idx1;
+                  idx1 += 1;
                   break;
                 case 10:
-                  ++idx1;
+                  idx1 += 1;
                   *param = p_vagparam;
                   param = (void **)(((char *)param) + sizeof(void *));
                   break;
                 case 11:
-                  ++idx1;
+                  idx1 += 1;
                   do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                   param = (void **)(((char *)param) + sizeof(SceSdHdVAGInfoParam));
                   break;
@@ -1880,7 +1880,7 @@ int sceSdHdGetValidProgramNumberCount(void *buffer)
   for ( i = 0; dinfo.m_prog->maxProgramNumber >= i; i += 1 )
   {
     if ( dinfo.m_prog->programOffsetAddr[i] != 0xFFFFFFFF )
-      ++validcnt;
+      validcnt += 1;
   }
   return validcnt;
 }

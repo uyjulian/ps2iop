@@ -351,13 +351,15 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
 
     midiData_curval1 = *midiData_offs;
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
-    ++midiData->originalMessageLength;
-    ++midiData_offs;
+    midiData->originalMessageLength += 1;
+    midiData_offs += 1;
     midiData_curval1_1 = midiData_curval1 & 0x7F;
     while ( midiData_curval1 & 0x80 )
     {
-      midiData_curval1 = *midiData_offs++;
-      midiData->originalMessage[midiData->originalMessageLength++] = midiData_curval1;
+      midiData_curval1 = *midiData_offs;
+      midiData_offs += 1;
+      midiData->originalMessage[midiData->originalMessageLength] = midiData_curval1;
+      midiData->originalMessageLength += 1;
       midiData_curval1_1 = (midiData_curval1_1 << 7) + (midiData_curval1 & 0x7F);
     }
   }
@@ -366,8 +368,8 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
   if ( (midiData_curval2 & 0x80) )
   {
-    ++midiData_offs;
-    ++midiData->originalMessageLength;
+    midiData_offs += 1;
+    midiData->originalMessageLength += 1;
   }
   else
   {
@@ -436,15 +438,16 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
       midiData->message[2] = midiData->originalMessage[midiData->originalMessageLength];
       midiData->messageLength = midiData->messageLength + 1;
       midiData_offs_plusone = someaddoffsone + 1;
-      ++midiData->originalMessageLength;
+      midiData->originalMessageLength += 1;
       msg2ew = midiData_curval7;
       for ( i = 1; msg2ew >= i; i += 1 )
       {
-        midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs_plusone++;
+        midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs_plusone;
+        midiData_offs_plusone += 1;
         *(((char *)midiData + i) + 46) = midiData->originalMessage[midiData->originalMessageLength];
         msg2ew = midiData->message[2];
-        ++midiData->messageLength;
-        ++midiData->originalMessageLength;
+        midiData->messageLength += 1;
+        midiData->originalMessageLength += 1;
       }
       niceflag = 1;
       if ( (*(u32 *)midiData->message & 0xFFFFFF) == 0x2FFF )
