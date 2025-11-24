@@ -132,10 +132,6 @@ struct sdsq_info
 //-------------------------------------------------------------------------
 // Function declarations
 
-int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo);
-int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo);
-int do_get_song_chunk(void *indata, struct sdsq_info *dinfo);
-int do_get_midi_data_block(void *indata, unsigned int idx, sceSeqMidiDataBlock **datablk);
 int sceSdSqGetMaxMidiNumber(void *addr);
 int sceSdSqGetMaxSongNumber(void *addr);
 int sceSdSqInitMidiData(void *addr, u32 midiNumber, SceSdSqMidiData *midiData);
@@ -148,7 +144,7 @@ int sceSdSqGetCompTableDataByIndex(void *addr, u32 midiNumber, u32 compTableInde
 int sceSdSqGetNoteOnEventByPolyKeyPress(void *addr, u32 midiNumber, const SceSdSqPolyKeyData *pData, SceSdSqCompTableNoteOnEvent *kData);
 int sceSdSqCopyMidiData(SceSdSqMidiData *to, const SceSdSqMidiData *from);
 int sceSdSqCopySongData(SceSdSqSongData *to, const SceSdSqSongData *from);
-int _start(int ac);
+int _start(int ac, char **av);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -156,7 +152,7 @@ int _start(int ac);
 extern struct irx_export_table _exp_sdsq;
 
 //----- (00400060) --------------------------------------------------------
-int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
+static int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
 {
   dinfo->m_vers = 0;
   dinfo->m_sequ = 0;
@@ -184,7 +180,7 @@ int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
 }
 
 //----- (00400108) --------------------------------------------------------
-int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo)
+static int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo)
 {
   if ( dinfo->m_sequ->midiChunkAddr == 0xFFFFFFFF )
     return 0x81049024;
@@ -200,7 +196,7 @@ int do_get_midi_chunk(void *indata, struct sdsq_info *dinfo)
 }
 
 //----- (00400174) --------------------------------------------------------
-int do_get_song_chunk(void *indata, struct sdsq_info *dinfo)
+static int do_get_song_chunk(void *indata, struct sdsq_info *dinfo)
 {
   if ( dinfo->m_sequ->songChunkAddr == 0xFFFFFFFF )
     return 0x81049025;
@@ -216,7 +212,7 @@ int do_get_song_chunk(void *indata, struct sdsq_info *dinfo)
 }
 
 //----- (004001E0) --------------------------------------------------------
-int do_get_midi_data_block(void *indata, unsigned int idx, sceSeqMidiDataBlock **datablk)
+static int do_get_midi_data_block(void *indata, unsigned int idx, sceSeqMidiDataBlock **datablk)
 {
   int result; // $v0
   struct sdsq_info dinfo; // [sp+10h] [-10h] BYREF
@@ -616,11 +612,12 @@ int sceSdSqCopySongData(SceSdSqSongData *to, const SceSdSqSongData *from)
 }
 
 //----- (00400C40) --------------------------------------------------------
-int _start(int ac)
+int _start(int ac, char **av)
 {
   int regres; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)av;
   if ( ac < 0 )
   {
     CpuSuspendIntr(&state);

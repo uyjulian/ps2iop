@@ -347,20 +347,6 @@ typedef struct sceHardSynthVagParam_
 //-------------------------------------------------------------------------
 // Function declarations
 
-int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo);
-int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo);
-int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo);
-int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo);
-int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo);
-void do_copy_to_sdhd_program_param(SceSdHdProgramParam *dst, const sceHardSynthProgramParam *src);
-void do_copy_to_sdhd_split_block(SceSdHdSplitBlock *dst, const sceHardSynthSplitBlock *src);
-void do_copy_to_sdhd_set_param(SceSdHdSampleSetParam *dst, const sceHardSynthSampleSetParam *src);
-void do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, const sceHardSynthSampleParam *src);
-void do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, const sceHardSynthVagParam *src);
-unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, const unsigned int *vagoffsaddr);
-unsigned int do_check_chunk_in_bounds(void *indata, const struct sdhd_info *dinfo, unsigned int hdrmagic, unsigned int idx);
-int do_get_common_block_ptr_note(void *buffer, unsigned int programNumber, unsigned int swcase, unsigned int noteNumber, unsigned int velocity, int mode, void **ptr);
-int do_get_common_block_ptr(void *buffer, unsigned int sampleSetNumber, unsigned int swcase, unsigned int velocity, int mode, void **param);
 int sceSdHdGetMaxProgramNumber(void *buffer);
 int sceSdHdGetMaxSampleSetNumber(void *buffer);
 int sceSdHdGetMaxSampleNumber(void *buffer);
@@ -408,7 +394,7 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center);
 int sceSdHdGetValidProgramNumberCount(void *buffer);
 int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr);
 int sceSdHdGetSampleNumberBySampleIndex(void *buffer, unsigned int sampleSetNumber, unsigned int sampleIndexNumber);
-int _start(int ac);
+int _start(int ac, char **av);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -416,7 +402,7 @@ int _start(int ac);
 extern struct irx_export_table _exp_sdhd;
 
 //----- (004000F0) --------------------------------------------------------
-int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
+static int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
 {
   dinfo->m_vers = 0;
   dinfo->m_head = 0;
@@ -446,7 +432,7 @@ int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *d
 }
 
 //----- (004001A0) --------------------------------------------------------
-int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
+static int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
 {
   if ( dinfo->m_head->programChunkAddr == 0xFFFFFFFF )
     return 0x81039005;
@@ -462,7 +448,7 @@ int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
 }
 
 //----- (0040020C) --------------------------------------------------------
-int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
+static int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
 {
   if ( dinfo->m_head->sampleSetChunkAddr == 0xFFFFFFFF )
     return 0x81039006;
@@ -478,7 +464,7 @@ int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
 }
 
 //----- (00400278) --------------------------------------------------------
-int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
+static int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
 {
   if ( dinfo->m_head->sampleChunkAddr == 0xFFFFFFFF )
     return 0x81039007;
@@ -494,7 +480,7 @@ int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
 }
 
 //----- (004002E4) --------------------------------------------------------
-int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
+static int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
 {
   if ( dinfo->m_head->vagInfoChunkAddr == 0xFFFFFFFF )
     return 0x81039008;
@@ -510,7 +496,7 @@ int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
 }
 
 //----- (00400350) --------------------------------------------------------
-void do_copy_to_sdhd_program_param(SceSdHdProgramParam *dst, const sceHardSynthProgramParam *src)
+static void do_copy_to_sdhd_program_param(SceSdHdProgramParam *dst, const sceHardSynthProgramParam *src)
 {
   dst->nSplit = src->nSplit;
   dst->progAttr = src->progAttr;
@@ -539,7 +525,7 @@ void do_copy_to_sdhd_program_param(SceSdHdProgramParam *dst, const sceHardSynthP
 }
 
 //----- (00400470) --------------------------------------------------------
-void do_copy_to_sdhd_split_block(SceSdHdSplitBlock *dst, const sceHardSynthSplitBlock *src)
+static void do_copy_to_sdhd_split_block(SceSdHdSplitBlock *dst, const sceHardSynthSplitBlock *src)
 {
   dst->sampleSetIndex = src->sampleSetIndex;
   dst->splitNumber = src->splitNumber;
@@ -561,7 +547,7 @@ void do_copy_to_sdhd_split_block(SceSdHdSplitBlock *dst, const sceHardSynthSplit
 }
 
 //----- (0040053C) --------------------------------------------------------
-void do_copy_to_sdhd_set_param(SceSdHdSampleSetParam *dst, const sceHardSynthSampleSetParam *src)
+static void do_copy_to_sdhd_set_param(SceSdHdSampleSetParam *dst, const sceHardSynthSampleSetParam *src)
 {
   dst->velCurve = src->velCurve;
   dst->velLimitLow = src->velLimitLow;
@@ -570,7 +556,7 @@ void do_copy_to_sdhd_set_param(SceSdHdSampleSetParam *dst, const sceHardSynthSam
 }
 
 //----- (0040056C) --------------------------------------------------------
-void do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, const sceHardSynthSampleParam *src)
+static void do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, const sceHardSynthSampleParam *src)
 {
   dst->vagIndex = src->VagIndex;
   dst->spuAttr = src->sampleSpuAttr;
@@ -609,7 +595,7 @@ void do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, const sceHardSynthSam
 }
 
 //----- (00400704) --------------------------------------------------------
-void do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, const sceHardSynthVagParam *src)
+static void do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, const sceHardSynthVagParam *src)
 {
   dst->vagOffsetAddr = src->vagOffsetAddr;
   dst->vagSampleRate = src->vagSampleRate;
@@ -618,7 +604,7 @@ void do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, const sceH
 }
 
 //----- (0040072C) --------------------------------------------------------
-unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, const unsigned int *vagoffsaddr)
+static unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, const unsigned int *vagoffsaddr)
 {
   unsigned int i; // $a0
   unsigned int bodySize; // $a1
@@ -641,7 +627,7 @@ unsigned int do_get_vag_size(sceHardSynthVersionChunk *indata, const unsigned in
 }
 
 //----- (004007F4) --------------------------------------------------------
-unsigned int do_check_chunk_in_bounds(
+static unsigned int do_check_chunk_in_bounds(
         void *indata,
         const struct sdhd_info *dinfo,
         unsigned int hdrmagic,
@@ -698,7 +684,7 @@ unsigned int do_check_chunk_in_bounds(
 }
 
 //----- (004009A0) --------------------------------------------------------
-int do_get_common_block_ptr_note(
+static int do_get_common_block_ptr_note(
         void *buffer,
         unsigned int programNumber,
         unsigned int swcase,
@@ -889,7 +875,7 @@ int do_get_common_block_ptr_note(
 // 400B10: conditional instruction was optimized away because $s3.4==3
 
 //----- (00400F08) --------------------------------------------------------
-int do_get_common_block_ptr(
+static int do_get_common_block_ptr(
         void *buffer,
         unsigned int sampleSetNumber,
         unsigned int swcase,
@@ -1925,11 +1911,12 @@ int sceSdHdGetSampleNumberBySampleIndex(
 }
 
 //----- (00402C70) --------------------------------------------------------
-int _start(int ac)
+int _start(int ac, char **av)
 {
   int regres; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)av;
   if ( ac < 0 )
   {
     CpuSuspendIntr(&state);
