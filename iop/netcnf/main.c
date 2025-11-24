@@ -25,154 +25,67 @@ struct netcnf_option
 //-------------------------------------------------------------------------
 // Function declarations
 
-u32 get_check_provider_eq_zero(void);
-void do_print_usage(void);
-int do_module_load(int ac, char **av);
-int do_module_unload();
 int _start(int ac, char **av);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int do_read_ilink_id();
-int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr);
-int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len);
-int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_ptr);
-void do_init_xor_magic(const char *in_id_buf);
-int magic_shift_write_netcnf_2(int inshft, int buflen);
-int magic_shift_read_netcnf_2(int inshft, int buflen);
-int magic_shift_write_netcnf_1(int inshft, int buflen);
-int magic_shift_read_netcnf_1(int inshft, int buflen);
-void do_safe_strcpy(char *dst, size_t maxlen, const char *src, int linenum);
-void do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum);
-void do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const char *srcbase);
-void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *src2);
-int do_check_capacity_inner2(const char *fpath, int minsize);
-int do_check_capacity_inner(const char *fpath);
-int do_handle_combination_path(int type, const char *fpath, char *dst, size_t maxlen, const char *usr_name);
-int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2);
-char *do_write_memcard_pathcopy(char *dst, size_t maxlen, const char *src);
-int do_write_memcard_files(const char *fpath, const char *icon_value, const char *iconsys_value);
-int do_handle_fname(char *fpath, size_t maxlen, const char *fname);
-char *do_check_hoge_newline(char *buf);
-int do_split_str_comma_index(char *dst, const char *src, int commaind);
-int do_remove_old_config(const char *fpath, const char *netcnf_heap_buf, const char *icon_value, const char *iconsys_value);
-int do_type_check(int type, const char *buf);
-int do_read_current_netcnf_nodecode(const char *fpath, char **netcnf_heap_ptr);
-int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int size);
-int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer);
-int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t *p);
-int do_load_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
-void do_some_ifc_handling_hoge(const char *arg_fname);
-void do_some_pair_handling(char *fpath, int type, const char *src, const sceNetCnfEnv_t *e);
-int do_add_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e, const char *icon_value, const char *iconsys_value, int no_check_capacity);
-int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2, const char *usrname_bufnew);
-int do_edit_entry_inner(const char *fname, int type, const char *usr_name, const char *new_usr_name, sceNetCnfEnv_t *e, const char *icon_value, const char *iconsys_value, int no_check_capacity);
-int do_delete_entry_inner(const char *fname, int type, const char *usr_name, const char *icon_value, const char *iconsys_value, int no_check_capacity);
-int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name);
-int do_delete_all_inner(const char *dev);
-int do_check_special_provider_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
-char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align);
-const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg);
-char *do_alloc_mem_for_write(sceNetCnfEnv_t *e, const char *str);
-char *do_check_e_arg(sceNetCnfEnv_t *e, const char *e_arg);
-int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result);
-int do_netcnfname2address_wrap(sceNetCnfEnv_t *e, char *buf, sceNetCnfAddress_t *paddr);
-int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv, int *p_result);
-int do_check_interface_keyword(sceNetCnfEnv_t *e, const char *display_name_arg, const char *attach_ifc_arg, const char *attach_dev_arg);
-int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv);
-int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv);
-void do_init_ifc_inner(sceNetCnfInterface_t *ifc);
-int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list);
-int do_check_other_keywords(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata, struct sceNetCnfUnknownList *unknown_list);
-int do_handle_net_cnf(sceNetCnfEnv_t *e, void *userdata);
-int do_handle_attach_cnf(sceNetCnfEnv_t *e, void *userdata);
-int do_handle_dial_cnf(sceNetCnfEnv_t *e, void *userdata);
-int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata);
-int do_read_netcnf(sceNetCnfEnv_t *e, const char *netcnf_path, char **netcnf_heap_ptr, int is_attach_cnf);
-char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer);
-int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata);
-int do_netcnf_dial_related(sceNetCnfEnv_t *e);
-int do_netcnf_ifc_related(sceNetCnfEnv_t *e);
-void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *ncis);
-int do_merge_conf_inner(sceNetCnfEnv_t *e);
-int do_load_conf_inner(sceNetCnfEnv_t *e);
-int do_load_dial_inner(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair);
-int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list va);
-int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...);
-int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata);
-int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc);
-int do_netcnf_phone_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc);
-int do_netcnf_unknown_write(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list);
-int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf);
-int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceNetCnfInterface *ifc);
-int do_export_netcnf(sceNetCnfEnv_t *e);
-char *do_address_to_string_inner_element(char *dst, int srcbyte);
-void do_address_to_string_inner(char *dst, unsigned int srcint);
-int do_name_2_address_inner(unsigned int *dst, const char *buf);
-int do_conv_a2s_inner(char *sp_, char *dp_, int len);
-int do_conv_s2a_inner(char *sp_, char *dp_, int len);
-int do_check_aolnet(const char *auth_name);
-int do_check_authnet(char *argst, char *arged);
-int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, int no_decode);
-int do_check_provider_inner(const sceNetCnfEnv_t *e, int type);
-char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netcnf_file_path);
-int do_get_filesize_inner(int fd);
-int is_special_file_path(const char *netcnf_path);
-void do_init_callback_handles(void);
-int do_get_empty_callback_handle(int in_fd, int in_allocstate);
-int do_filesize_callback_handles(int in_fd, int in_allocstate);
-void do_clear_callback_handles(int fd, int allocmatch);
-const char *do_colon_callback_handles(const char *netcnf_path, char *device);
-int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode);
-int do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size);
-int do_readfile_netcnf(int fd, void *ptr, int size);
-int do_write_netcnf_no_encode(int fd, void *ptr, int size);
-int do_dopen_wrap(const char *fn);
-int do_dread_wrap(int fn, iox_dirent_t *buf);
-int do_remove_wrap(const char *fn);
-void do_close_netcnf(int fd);
-void do_dclose_wrap(int fd);
-int do_filesize_netcnf(int fd);
-void do_getstat_wrap(const char *fn, iox_stat_t *stat);
-void do_chstat_mode_copyprotect_wrap(const char *fn);
-void do_set_callback_inner(sceNetCnfCallback_t *pcallback);
-int do_init_heap(void);
-void *do_alloc_heapmem(size_t nbytes);
-void do_free_heapmem(void *ptr); // idb
-void do_delete_heap(void);
+static void do_init_xor_magic(const char *in_id_buf);
+static int magic_shift_write_netcnf_2(int inshft, int buflen);
+static int magic_shift_read_netcnf_2(int inshft, int buflen);
+static int magic_shift_write_netcnf_1(int inshft, int buflen);
+static int magic_shift_read_netcnf_1(int inshft, int buflen);
+static int do_check_capacity_inner(const char *fpath);
+static int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t *p);
+static int do_load_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
+static int do_add_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e, const char *icon_value, const char *iconsys_value, int no_check_capacity);
+static int do_edit_entry_inner(const char *fname, int type, const char *usr_name, const char *new_usr_name, sceNetCnfEnv_t *e, const char *icon_value, const char *iconsys_value, int no_check_capacity);
+static int do_delete_entry_inner(const char *fname, int type, const char *usr_name, const char *icon_value, const char *iconsys_value, int no_check_capacity);
+static int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name);
+static int do_delete_all_inner(const char *dev);
+static int do_check_special_provider_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
+static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align);
+static void do_init_ifc_inner(sceNetCnfInterface_t *ifc);
+static int do_merge_conf_inner(sceNetCnfEnv_t *e);
+static int do_load_conf_inner(sceNetCnfEnv_t *e);
+static int do_load_dial_inner(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair);
+static int do_export_netcnf(sceNetCnfEnv_t *e);
+static void do_address_to_string_inner(char *dst, unsigned int srcint);
+static int do_name_2_address_inner(unsigned int *dst, const char *buf);
+static int do_conv_a2s_inner(char *sp_, char *dp_, int len);
+static int do_conv_s2a_inner(char *sp_, char *dp_, int len);
+static int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, int no_decode);
+static int do_check_provider_inner(const sceNetCnfEnv_t *e, int type);
+static char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netcnf_file_path);
+static int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode);
+static int do_readfile_netcnf(int fd, void *ptr, int size);
+static int do_write_netcnf_no_encode(int fd, void *ptr, int size);
+static int do_dopen_wrap(const char *fn);
+static int do_dread_wrap(int fn, iox_dirent_t *buf);
+static int do_remove_wrap(const char *fn);
+static void do_close_netcnf(int fd);
+static void do_dclose_wrap(int fd);
+static int do_filesize_netcnf(int fd);
+static void do_getstat_wrap(const char *fn, iox_stat_t *stat);
+static void do_chstat_mode_copyprotect_wrap(const char *fn);
+static void do_set_callback_inner(sceNetCnfCallback_t *pcallback);
+static int do_init_heap(void);
+static void *do_alloc_heapmem(size_t nbytes);
+static void do_free_heapmem(void *ptr); // idb
+static void do_delete_heap(void);
 
 //-------------------------------------------------------------------------
 // Data declarations
 
 extern struct irx_export_table _exp_netcnf;
-int g_null_string = 0; // weak
-int g_no_check_capacity = 0; // weak
-int g_no_check_provider = 0; // weak
-u32 g_id_result = 0u; // idb
-char *g_count_list_heapptr = NULL;
-char *g_load_entry_heapptr = NULL;
-char *g_add_entry_heapptr = NULL;
-char *g_edit_entry_heapptr = NULL;
-char *g_delete_entry_heapptr = NULL;
-char *g_set_latest_entry_heapptr = NULL;
-char *g_check_special_provider_heapptr = NULL;
-struct netcnf_option g_options_net_cnf[7] =
+static int g_null_string = 0; // weak
+static int g_no_check_capacity = 0; // weak
+static int g_no_check_provider = 0; // weak
+static u32 g_id_result = 0u; // idb
+static char *g_count_list_heapptr = NULL;
+static char *g_load_entry_heapptr = NULL;
+static char *g_add_entry_heapptr = NULL;
+static char *g_edit_entry_heapptr = NULL;
+static char *g_delete_entry_heapptr = NULL;
+static char *g_set_latest_entry_heapptr = NULL;
+static char *g_check_special_provider_heapptr = NULL;
+static struct netcnf_option g_options_net_cnf[] =
 {
   { 112, 12, "chat_additional" },
   { 52, 16, "redial_count" },
@@ -182,7 +95,7 @@ struct netcnf_option g_options_net_cnf[7] =
   { 68, 32, "dialing_type" },
   { 0, 0, NULL }
 }; // weak
-struct netcnf_option g_options_attach_cnf[75] =
+static struct netcnf_option g_options_attach_cnf[] =
 {
   { 84, 0, "type" },
   { 112, 4, "vendor" },
@@ -260,7 +173,7 @@ struct netcnf_option g_options_attach_cnf[75] =
   { 49, 325, "auth_max_failure" },
   { 0, 0, NULL }
 }; // weak
-struct netcnf_option g_options_dial_cnf[5] =
+static struct netcnf_option g_options_dial_cnf[] =
 {
   { 112, 12, "chat_init" },
   { 112, 16, "chat_dial" },
@@ -268,37 +181,37 @@ struct netcnf_option g_options_dial_cnf[5] =
   { 112, 24, "redial_string" },
   { 0, 0, NULL }
 }; // weak
-char a0123456789abcd[17] = "0123456789ABCDEF"; // weak
-char a0123456789abcd_0[17] = "0123456789abcdef"; // weak
-int g_callbacks_set = 0; // weak
-void *g_netcnf_heap = NULL; // idb
-int g_semid; // idb
-char g_icon_value[0x100]; // idb
-char g_iconsys_value[0x100]; // idb
-char g_id_xorbuf[24]; // weak
-char g_id_buffer[8]; // weak
-char g_ifc_buffer[0x3e8]; // weak
-char g_arg_fname[0x400]; // idb
-char g_entry_buffer[0x400]; // weak
-char g_netcnf_file_path[0x100]; // idb
-char g_dir_name[0x100]; // idb
-char g_combination_buf1[0x100]; // idb
-char g_combination_buf2[0x100]; // idb
-char *g_read_check_netcnf_heapptr;
-sceNetCnfCallback_t g_callbacks; // weak
-struct netcnf_callback_handle_info g_callback_handle_infos[4]; // weak
-int g_open_callback_handle_count; // weak
+static char a0123456789abcd[17] = "0123456789ABCDEF"; // weak
+static char a0123456789abcd_0[17] = "0123456789abcdef"; // weak
+static int g_callbacks_set = 0; // weak
+static void *g_netcnf_heap = NULL; // idb
+static int g_semid; // idb
+static char g_icon_value[0x100]; // idb
+static char g_iconsys_value[0x100]; // idb
+static char g_id_xorbuf[24]; // weak
+static char g_id_buffer[8]; // weak
+static char g_ifc_buffer[0x3e8]; // weak
+static char g_arg_fname[0x400]; // idb
+static char g_entry_buffer[0x400]; // weak
+static char g_netcnf_file_path[0x100]; // idb
+static char g_dir_name[0x100]; // idb
+static char g_combination_buf1[0x100]; // idb
+static char g_combination_buf2[0x100]; // idb
+static char *g_read_check_netcnf_heapptr;
+static sceNetCnfCallback_t g_callbacks; // weak
+static struct netcnf_callback_handle_info g_callback_handle_infos[4]; // weak
+static int g_open_callback_handle_count; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-u32 get_check_provider_eq_zero(void)
+static int get_check_provider_eq_zero(void)
 {
   return !g_no_check_provider;
 }
 // 40AC6C: using guessed type int g_no_check_provider;
 
 //----- (00400010) --------------------------------------------------------
-void do_print_usage(void)
+static void do_print_usage(void)
 {
   printf("Usage: netcnf [<option>] icon=<icon-path> iconsys=<iconsys-path>\n");
   printf("  <option>:\n");
@@ -307,7 +220,7 @@ void do_print_usage(void)
 }
 
 //----- (00400068) --------------------------------------------------------
-int do_module_load(int ac, char **av)
+static int do_module_load(int ac, char **av)
 {
   int semid; // $v0
   int i; // $s1
@@ -392,7 +305,7 @@ int do_module_load(int ac, char **av)
 // 40AC6C: using guessed type int g_no_check_provider;
 
 //----- (00400288) --------------------------------------------------------
-int do_module_unload()
+static int do_module_unload(void)
 {
   int relres; // $v0
   int errstate; // $s0
@@ -664,7 +577,7 @@ void sceNetCnfSetCallback(sceNetCnfCallback_t *pcallback)
 }
 
 //----- (00400D10) --------------------------------------------------------
-int do_read_ilink_id()
+static int do_read_ilink_id(void)
 {
   int i; // $s0
 
@@ -682,7 +595,7 @@ int do_read_ilink_id()
 }
 
 //----- (00400DA8) --------------------------------------------------------
-int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
+static int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
 {
   int result; // $v0
   int fd; // $s5
@@ -762,7 +675,7 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
 }
 
 //----- (00400FD4) --------------------------------------------------------
-int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
+static int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
 {
   int result; // $v0
   int fd; // $s3
@@ -825,7 +738,7 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
 // 400FD4: using guessed type char bufflipx2[6];
 
 //----- (00401188) --------------------------------------------------------
-int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_ptr)
+static int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_ptr)
 {
   int fd; // $v0
   int netcnf_size; // $v0
@@ -864,7 +777,7 @@ int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_ptr)
 }
 
 //----- (0040127C) --------------------------------------------------------
-void do_init_xor_magic(const char *in_id_buf)
+static void do_init_xor_magic(const char *in_id_buf)
 {
   int i; // $a2
 
@@ -877,7 +790,7 @@ void do_init_xor_magic(const char *in_id_buf)
 }
 
 //----- (004012F4) --------------------------------------------------------
-int magic_shift_write_netcnf_2(int inshft, int buflen)
+static int magic_shift_write_netcnf_2(int inshft, int buflen)
 {
   for ( ; buflen; buflen -= 1 )
     inshft = ((u8)inshft >> 7) | (inshft << 1);
@@ -885,7 +798,7 @@ int magic_shift_write_netcnf_2(int inshft, int buflen)
 }
 
 //----- (0040131C) --------------------------------------------------------
-int magic_shift_read_netcnf_2(int inshft, int buflen)
+static int magic_shift_read_netcnf_2(int inshft, int buflen)
 {
   for ( ; buflen; buflen -= 1 )
     inshft = ((u8)inshft >> 1) | (inshft << 7);
@@ -893,7 +806,7 @@ int magic_shift_read_netcnf_2(int inshft, int buflen)
 }
 
 //----- (00401344) --------------------------------------------------------
-int magic_shift_write_netcnf_1(int inshft, int buflen)
+static int magic_shift_write_netcnf_1(int inshft, int buflen)
 {
   for ( ; buflen; buflen -= 1 )
     inshft = ((u16)inshft >> 15) | (inshft << 1);
@@ -901,7 +814,7 @@ int magic_shift_write_netcnf_1(int inshft, int buflen)
 }
 
 //----- (0040136C) --------------------------------------------------------
-int magic_shift_read_netcnf_1(int inshft, int buflen)
+static int magic_shift_read_netcnf_1(int inshft, int buflen)
 {
   for ( ; buflen; buflen -= 1 )
     inshft = ((u16)inshft >> 1) | (inshft << 15);
@@ -909,33 +822,34 @@ int magic_shift_read_netcnf_1(int inshft, int buflen)
 }
 
 //----- (004013A0) --------------------------------------------------------
-void do_safe_strcpy(char *dst, size_t maxlen, const char *src, int linenum)
+static void do_safe_strcpy(char *dst, size_t maxlen, const char *src, int linenum)
 {
   if ( strlen(src) >= maxlen )
   {
     printf("[netcnf] strcpy failed(%d)\n", linenum);
     return;
-    
   }
   strcpy(dst, src);
 }
 
 //----- (0040141C) --------------------------------------------------------
-void do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum)
+static void do_safe_strcat(char *dst, size_t maxlen, const char *src, int linenum)
 {
   if ( strlen(dst) + strlen(src) >= maxlen )
   {
     printf("[netcnf] strcat failed(%d)\n", linenum);
+    return;
   }
   strcat(dst, src);
 }
 
 //----- (004014AC) --------------------------------------------------------
-void do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const char *srcbase)
+static void do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const char *srcbase)
 {
   if ( strlen(srcdir) + strlen(srcbase) + 1 >= maxlen )
   {
     printf("[netcnf] make_pathname failed\n");
+    return;
   }
   strcpy(dst, srcdir);
   strcat(dst, "/");
@@ -943,18 +857,19 @@ void do_safe_make_pathname(char *dst, size_t maxlen, const char *srcdir, const c
 }
 
 //----- (00401560) --------------------------------------------------------
-void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *src2)
+static void do_safe_make_name(char *dst, size_t maxlen, const char *src1, const char *src2)
 {
   if ( strlen(src1) + strlen(src2) >= maxlen )
   {
     printf("[netcnf] make_name failed\n");
+    return;
   }
   strcpy(dst, src1);
   strcat(dst, src2);
 }
 
 //----- (00401600) --------------------------------------------------------
-int do_check_capacity_inner2(const char *fpath, int minsize)
+static int do_check_capacity_inner2(const char *fpath, int minsize)
 {
   int i; // $t0
   int zonesz; // kr00_4
@@ -977,7 +892,7 @@ int do_check_capacity_inner2(const char *fpath, int minsize)
 // 401600: using guessed type char devname[8];
 
 //----- (004016F0) --------------------------------------------------------
-int do_check_capacity_inner(const char *fpath)
+static int do_check_capacity_inner(const char *fpath)
 {
   int minsize; // $a1
 
@@ -991,7 +906,7 @@ int do_check_capacity_inner(const char *fpath)
 }
 
 //----- (00401758) --------------------------------------------------------
-int do_handle_combination_path(int type, const char *fpath, char *dst, size_t maxlen, const char *usr_name)
+static int do_handle_combination_path(int type, const char *fpath, char *dst, size_t maxlen, const char *usr_name)
 {
   char *i; // $s0
   int j; // $s1
@@ -1020,7 +935,7 @@ int do_handle_combination_path(int type, const char *fpath, char *dst, size_t ma
 // 401758: using guessed type char devnum[8];
 
 //----- (004018B8) --------------------------------------------------------
-int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2)
+static int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2)
 {
   int fd2; // $s2
   int fd1; // $s1
@@ -1057,7 +972,7 @@ int do_copy_netcnf_path(const char *netcnf_path_1, const char *netcnf_path_2)
 }
 
 //----- (00401994) --------------------------------------------------------
-char *do_write_memcard_pathcopy(char *dst, size_t maxlen, const char *src)
+static char *do_write_memcard_pathcopy(char *dst, size_t maxlen, const char *src)
 {
   char *dst_end_slash; // $a0
 
@@ -1071,7 +986,7 @@ char *do_write_memcard_pathcopy(char *dst, size_t maxlen, const char *src)
 }
 
 //----- (00401A30) --------------------------------------------------------
-int do_write_memcard_files(const char *fpath, const char *icon_value, const char *iconsys_value)
+static int do_write_memcard_files(const char *fpath, const char *icon_value, const char *iconsys_value)
 {
   int result; // $v0
   char cur_basepath[256]; // [sp+10h] [-200h] BYREF
@@ -1091,7 +1006,7 @@ int do_write_memcard_files(const char *fpath, const char *icon_value, const char
 }
 
 //----- (00401AE8) --------------------------------------------------------
-int do_handle_fname(char *fpath, size_t maxlen, const char *fname)
+static int do_handle_fname(char *fpath, size_t maxlen, const char *fname)
 {
   char *index_res; // $s0
   const char *pathname; // $a2
@@ -1120,14 +1035,14 @@ int do_handle_fname(char *fpath, size_t maxlen, const char *fname)
 }
 
 //----- (00401BB0) --------------------------------------------------------
-char *do_check_hoge_newline(char *buf)
+static char *do_check_hoge_newline(char *buf)
 {
   for ( ; *buf && *buf != '\n'; buf += 1 );
   return &buf[*buf == '\n'];
 }
 
 //----- (00401BFC) --------------------------------------------------------
-int do_split_str_comma_index(char *dst, const char *src, int commaind)
+static int do_split_str_comma_index(char *dst, const char *src, int commaind)
 {
   int i; // $a2
 
@@ -1147,7 +1062,7 @@ int do_split_str_comma_index(char *dst, const char *src, int commaind)
 }
 
 //----- (00401CE4) --------------------------------------------------------
-int do_remove_old_config(
+static int do_remove_old_config(
         const char *fpath,
         const char *netcnf_heap_buf,
         const char *icon_value,
@@ -1258,13 +1173,13 @@ int do_remove_old_config(
 }
 
 //----- (00402060) --------------------------------------------------------
-int do_type_check(int type, const char *buf)
+static int do_type_check(int type, const char *buf)
 {
   return ( do_split_str_comma_index(g_arg_fname, buf, 0) ) ? -1 : (strtol(g_arg_fname, 0, 10) == type);
 }
 
 //----- (004020C0) --------------------------------------------------------
-int do_read_current_netcnf_nodecode(const char *fpath, char **netcnf_heap_ptr)
+static int do_read_current_netcnf_nodecode(const char *fpath, char **netcnf_heap_ptr)
 {
   int retres; // $a0
 
@@ -1275,7 +1190,7 @@ int do_read_current_netcnf_nodecode(const char *fpath, char **netcnf_heap_ptr)
 }
 
 //----- (00402104) --------------------------------------------------------
-int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int size)
+static int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int size)
 {
   int fd; // $s0
   int writeres; // $s1
@@ -1297,7 +1212,7 @@ int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int size)
 // 402104: using guessed type char fpath_comb[256];
 
 //----- (00402230) --------------------------------------------------------
-int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer)
+static int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer)
 {
   const char *p_dirname; // $v0
   int remove_res_1; // $a0
@@ -1310,7 +1225,7 @@ int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer)
 }
 
 //----- (00402290) --------------------------------------------------------
-int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t *p)
+static int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t *p)
 {
   int result; // $v0
   char *curheapbuf1; // $s0
@@ -1343,7 +1258,7 @@ int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t *p)
 }
 
 //----- (004023F0) --------------------------------------------------------
-int do_load_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
+static int do_load_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
 {
   int result; // $v0
   char *curheapbuf1; // $s0
@@ -1376,7 +1291,7 @@ int do_load_entry_inner(const char *fname, int type, const char *usr_name, sceNe
 }
 
 //----- (00402590) --------------------------------------------------------
-void do_some_ifc_handling_hoge(const char *arg_fname)
+static void do_some_ifc_handling_hoge(const char *arg_fname)
 {
   const char *i; // $s0
   char *curptr1; // $s0
@@ -1401,7 +1316,7 @@ void do_some_ifc_handling_hoge(const char *arg_fname)
 }
 
 //----- (004026B0) --------------------------------------------------------
-void do_some_pair_handling(char *fpath, int type, const char *src, const sceNetCnfEnv_t *e)
+static void do_some_pair_handling(char *fpath, int type, const char *src, const sceNetCnfEnv_t *e)
 {
   sceNetCnfEnv_t *heapmem; // $s1
   int conf_inner; // $v1
@@ -1443,7 +1358,7 @@ void do_some_pair_handling(char *fpath, int type, const char *src, const sceNetC
 }
 
 //----- (004027F4) --------------------------------------------------------
-int do_add_entry_inner(
+static int do_add_entry_inner(
         const char *fname,
         int type,
         const char *usr_name,
@@ -1678,7 +1593,7 @@ int do_add_entry_inner(
 // 4027F4: using guessed type char atomicrenamepath[256];
 
 //----- (00403070) --------------------------------------------------------
-int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2, const char *usrname_bufnew)
+static int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2, const char *usrname_bufnew)
 {
   int result; // $v0
   int retres1; // $s0
@@ -1741,7 +1656,7 @@ int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2,
 }
 
 //----- (004032CC) --------------------------------------------------------
-int do_edit_entry_inner(
+static int do_edit_entry_inner(
         const char *fname,
         int type,
         const char *usr_name,
@@ -1856,7 +1771,7 @@ int do_edit_entry_inner(
 // 4032CC: using guessed type char curfilepath1[256];
 
 //----- (004036BC) --------------------------------------------------------
-int do_delete_entry_inner(
+static int do_delete_entry_inner(
         const char *fname,
         int type,
         const char *usr_name,
@@ -1933,7 +1848,7 @@ int do_delete_entry_inner(
 }
 
 //----- (00403998) --------------------------------------------------------
-int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name)
+static int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name)
 {
   int isbeforeend1; // $fp
   int result; // $v0
@@ -2019,7 +1934,7 @@ int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name)
 }
 
 //----- (00403C5C) --------------------------------------------------------
-int do_delete_all_inner(const char *dev)
+static int do_delete_all_inner(const char *dev)
 {
   int i; // $t0
   
@@ -2105,7 +2020,7 @@ int do_delete_all_inner(const char *dev)
 }
 
 //----- (00403FA8) --------------------------------------------------------
-int do_check_special_provider_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
+static int do_check_special_provider_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
 {
   int result; // $v0
   char *curentry1; // $s1
@@ -2140,7 +2055,7 @@ int do_check_special_provider_inner(const char *fname, int type, const char *usr
 }
 
 //----- (00404160) --------------------------------------------------------
-char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align)
+static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align)
 {
   void *mem_ptr; // $v1
   char *retptrbegin; // $s0
@@ -2159,7 +2074,7 @@ char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align)
 }
 
 //----- (004041D8) --------------------------------------------------------
-const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
+static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
 {
   u8 *dbuf; // $s3
   const char *argbegin; // $s0
@@ -2300,7 +2215,7 @@ const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
 }
 
 //----- (00404568) --------------------------------------------------------
-char *do_alloc_mem_for_write(sceNetCnfEnv_t *e, const char *str)
+static char *do_alloc_mem_for_write(sceNetCnfEnv_t *e, const char *str)
 {
   char *strptr; // $s0
 
@@ -2312,7 +2227,7 @@ char *do_alloc_mem_for_write(sceNetCnfEnv_t *e, const char *str)
 }
 
 //----- (004045CC) --------------------------------------------------------
-char *do_check_e_arg(sceNetCnfEnv_t *e, const char *e_arg)
+static char *do_check_e_arg(sceNetCnfEnv_t *e, const char *e_arg)
 {
   const char *strptr; // $v0
 
@@ -2321,7 +2236,7 @@ char *do_check_e_arg(sceNetCnfEnv_t *e, const char *e_arg)
 }
 
 //----- (0040460C) --------------------------------------------------------
-int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
+static int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
 {
   const char *e_arg_1; // $a0
   int curbasex; // $a3
@@ -2375,7 +2290,7 @@ int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
 }
 
 //----- (00404738) --------------------------------------------------------
-int do_netcnfname2address_wrap(sceNetCnfEnv_t *e, char *buf, sceNetCnfAddress_t *paddr)
+static int do_netcnfname2address_wrap(sceNetCnfEnv_t *e, char *buf, sceNetCnfAddress_t *paddr)
 {
   int errret; // $s0
 
@@ -2392,7 +2307,7 @@ int do_netcnfname2address_wrap(sceNetCnfEnv_t *e, char *buf, sceNetCnfAddress_t 
 }
 
 //----- (004047CC) --------------------------------------------------------
-int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv, int *p_result)
+static int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv, int *p_result)
 {
   int i; // $s2
   int bitflags1; // $s0
@@ -2445,7 +2360,7 @@ int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv,
 }
 
 //----- (0040498C) --------------------------------------------------------
-int do_check_interface_keyword(
+static int do_check_interface_keyword(
         sceNetCnfEnv_t *e,
         const char *display_name_arg,
         const char *attach_ifc_arg,
@@ -2480,7 +2395,7 @@ int do_check_interface_keyword(
 }
 
 //----- (00404A78) --------------------------------------------------------
-int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv)
+static int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv)
 {
   int addordel; // $s1
   nameserver_t *nameservermem_1; // $v0
@@ -2511,7 +2426,7 @@ int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int o
 }
 
 //----- (00404B6C) --------------------------------------------------------
-int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv)
+static int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv)
 {
   int addordel; // $s0
   route_t *route_mem_1; // $v0
@@ -2576,7 +2491,7 @@ int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_ar
 }
 
 //----- (00404DE0) --------------------------------------------------------
-void do_init_ifc_inner(sceNetCnfInterface_t *ifc)
+static void do_init_ifc_inner(sceNetCnfInterface_t *ifc)
 {
   struct netcnf_option *curentry1; // $a2
 
@@ -2603,7 +2518,7 @@ void do_init_ifc_inner(sceNetCnfInterface_t *ifc)
 }
 
 //----- (00404E74) --------------------------------------------------------
-int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
+static int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
 {
   int lenx1; // $s1
   int i; // $s0
@@ -2639,7 +2554,7 @@ int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
 }
 
 //----- (00404FC0) --------------------------------------------------------
-int do_check_other_keywords(
+static int do_check_other_keywords(
         sceNetCnfEnv_t *e,
         struct netcnf_option *options,
         void *cnfdata,
@@ -2890,7 +2805,7 @@ int do_check_other_keywords(
 }
 
 //----- (0040575C) --------------------------------------------------------
-int do_handle_net_cnf(sceNetCnfEnv_t *e, void *userdata)
+static int do_handle_net_cnf(sceNetCnfEnv_t *e, void *userdata)
 {
   int wasprefixed; // $s2
 
@@ -2920,7 +2835,7 @@ int do_handle_net_cnf(sceNetCnfEnv_t *e, void *userdata)
 }
 
 //----- (004058E0) --------------------------------------------------------
-int do_handle_attach_cnf(sceNetCnfEnv_t *e, void *userdata)
+static int do_handle_attach_cnf(sceNetCnfEnv_t *e, void *userdata)
 {
   int wasprefixed; // $s2
   struct sceNetCnfInterface *ifc;
@@ -2974,7 +2889,7 @@ int do_handle_attach_cnf(sceNetCnfEnv_t *e, void *userdata)
 }
 
 //----- (00405B08) --------------------------------------------------------
-int do_handle_dial_cnf(sceNetCnfEnv_t *e, void *userdata)
+static int do_handle_dial_cnf(sceNetCnfEnv_t *e, void *userdata)
 {
   int wasprefixed; // $s1
   struct sceNetCnfDial *dial;
@@ -3000,7 +2915,7 @@ int do_handle_dial_cnf(sceNetCnfEnv_t *e, void *userdata)
 }
 
 //----- (00405C24) --------------------------------------------------------
-int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata)
+static int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata)
 {
   u8 *i; // $s0
   char *j; // $s0
@@ -3058,7 +2973,7 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNetCnfEnv
 }
 
 //----- (00405E88) --------------------------------------------------------
-int do_read_netcnf(sceNetCnfEnv_t *e, const char *netcnf_path, char **netcnf_heap_ptr, int is_attach_cnf)
+static int do_read_netcnf(sceNetCnfEnv_t *e, const char *netcnf_path, char **netcnf_heap_ptr, int is_attach_cnf)
 {
   int result; // $v0
 
@@ -3069,7 +2984,7 @@ int do_read_netcnf(sceNetCnfEnv_t *e, const char *netcnf_path, char **netcnf_hea
 }
 
 //----- (00405EF4) --------------------------------------------------------
-char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer)
+static char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer)
 {
   char *result; // $v0
 
@@ -3078,7 +2993,7 @@ char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer)
 }
 
 //----- (00405F3C) --------------------------------------------------------
-int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata)
+static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata)
 {
   int cur_linelen; // $s4
   char *fullpath; // $s0
@@ -3167,7 +3082,7 @@ int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(sc
 }
 
 //----- (0040627C) --------------------------------------------------------
-int do_netcnf_dial_related(sceNetCnfEnv_t *e)
+static int do_netcnf_dial_related(sceNetCnfEnv_t *e)
 {
   e->root = (sceNetCnfRoot_t *)do_alloc_mem_inner(e, sizeof(sceNetCnfRoot_t), 2);
   if ( !e->root )
@@ -3180,7 +3095,7 @@ int do_netcnf_dial_related(sceNetCnfEnv_t *e)
 }
 
 //----- (004062FC) --------------------------------------------------------
-int do_netcnf_ifc_related(sceNetCnfEnv_t *e)
+static int do_netcnf_ifc_related(sceNetCnfEnv_t *e)
 {
   e->ifc = (sceNetCnfInterface_t *)do_alloc_mem_inner(e, sizeof(sceNetCnfInterface_t), 2);
   if ( !e->ifc )
@@ -3190,7 +3105,7 @@ int do_netcnf_ifc_related(sceNetCnfEnv_t *e)
 }
 
 //----- (00406360) --------------------------------------------------------
-void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *ncis)
+static void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *ncis)
 {
   int i; // $a2
   int typadd1_1; // $v1
@@ -3283,7 +3198,7 @@ void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *
 }
 
 //----- (004065CC) --------------------------------------------------------
-int do_merge_conf_inner(sceNetCnfEnv_t *e)
+static int do_merge_conf_inner(sceNetCnfEnv_t *e)
 {
   struct sceNetCnfPair *pair_head; // $s2
 
@@ -3330,7 +3245,7 @@ int do_merge_conf_inner(sceNetCnfEnv_t *e)
 }
 
 //----- (00406750) --------------------------------------------------------
-int do_load_conf_inner(sceNetCnfEnv_t *e)
+static int do_load_conf_inner(sceNetCnfEnv_t *e)
 {
   int retres1; // $s3
   struct sceNetCnfPair *pair_head; // $s0
@@ -3410,7 +3325,7 @@ int do_load_conf_inner(sceNetCnfEnv_t *e)
 }
 
 //----- (0040690C) --------------------------------------------------------
-int do_load_dial_inner(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair)
+static int do_load_dial_inner(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair)
 {
   if ( !pair->ctl )
     return -1;
@@ -3419,7 +3334,7 @@ int do_load_dial_inner(sceNetCnfEnv_t *e, sceNetCnfPair_t *pair)
 }
 
 //----- (00406990) --------------------------------------------------------
-int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list va)
+static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list va)
 {
   char *mem_ptr_03; // $v1
   void *mem_ptr_rval_04; // $v0
@@ -3688,7 +3603,7 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list va)
 // 406C54: conditional instruction was optimized away because $s7.4==0
 
 //----- (00406F30) --------------------------------------------------------
-int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...)
+static int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...)
 {
   va_list va; // [sp+20h] [+10h] BYREF
   int retval;
@@ -3700,7 +3615,7 @@ int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...)
 }
 
 //----- (00406F5C) --------------------------------------------------------
-int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata)
+static int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata)
 {
   int offsptr3; // $s1
   char *offsptr1; // $v0
@@ -3984,7 +3899,7 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
 // 40A728: using guessed type int g_null_string;
 
 //----- (00407688) --------------------------------------------------------
-int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
+static int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 {
   struct sceNetCnfCommand *cmd_head; // $s2
   int result; // $v0
@@ -4055,7 +3970,7 @@ int do_netcnf_net_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 }
 
 //----- (004078CC) --------------------------------------------------------
-int do_netcnf_phone_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
+static int do_netcnf_phone_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 {
   int i; // $s0
   int result; // $v0
@@ -4073,7 +3988,7 @@ int do_netcnf_phone_write(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc)
 }
 
 //----- (00407940) --------------------------------------------------------
-int do_netcnf_unknown_write(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
+static int do_netcnf_unknown_write(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
 {
   struct sceNetCnfUnknown *head; // $s0
 
@@ -4089,7 +4004,7 @@ int do_netcnf_unknown_write(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unkn
 }
 
 //----- (004079A4) --------------------------------------------------------
-int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
+static int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
 {
   int memsize; // $s3
   char *fullpath; // $s0
@@ -4141,7 +4056,7 @@ int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
 }
 
 //----- (00407B70) --------------------------------------------------------
-int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceNetCnfInterface *ifc)
+static int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceNetCnfInterface *ifc)
 {
   void *memalign; // $v0
   int result; // $v0
@@ -4190,13 +4105,13 @@ int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, struct sceN
 }
 
 //----- (00407CCC) --------------------------------------------------------
-int do_export_netcnf(sceNetCnfEnv_t *e)
+static int do_export_netcnf(sceNetCnfEnv_t *e)
 {
   return ( (e->req != 1 && e->req != 2) || do_export_netcnf_inner(e, e->arg_fname, ( e->req == 1 ) ? 0 : e->ifc) ) ? -1 : 0;
 }
 
 //----- (00407D40) --------------------------------------------------------
-char *do_address_to_string_inner_element(char *dst, int srcbyte)
+static char *do_address_to_string_inner_element(char *dst, int srcbyte)
 {
   u8 *tmpstk_ptr; // $a2
   u8 tmpstk[16]; // [sp+0h] [-10h] BYREF
@@ -4218,7 +4133,7 @@ char *do_address_to_string_inner_element(char *dst, int srcbyte)
 }
 
 //----- (00407DD0) --------------------------------------------------------
-void do_address_to_string_inner(char *dst, unsigned int srcint)
+static void do_address_to_string_inner(char *dst, unsigned int srcint)
 {
   char *elm1; // $v0
 
@@ -4233,7 +4148,7 @@ void do_address_to_string_inner(char *dst, unsigned int srcint)
 }
 
 //----- (00407E50) --------------------------------------------------------
-int do_name_2_address_inner(unsigned int *dst, const char *buf)
+static int do_name_2_address_inner(unsigned int *dst, const char *buf)
 {
   int prefixchkn; // $s4
   unsigned int i; // $s3
@@ -4304,7 +4219,7 @@ int do_name_2_address_inner(unsigned int *dst, const char *buf)
 }
 
 //----- (00408080) --------------------------------------------------------
-int do_conv_a2s_inner(char *sp_, char *dp_, int len)
+static int do_conv_a2s_inner(char *sp_, char *dp_, int len)
 {
   int len_minus_three; // $a2
   int curindx1; // $t2
@@ -4362,7 +4277,7 @@ int do_conv_a2s_inner(char *sp_, char *dp_, int len)
 // 408134: conditional instruction was optimized away because $a3.4 is in (==41|==61)
 
 //----- (0040822C) --------------------------------------------------------
-int do_conv_s2a_inner(char *sp_, char *dp_, int len)
+static int do_conv_s2a_inner(char *sp_, char *dp_, int len)
 {
   int curindx1; // $t2
   char *sp_minus_one1; // $a0
@@ -4433,7 +4348,7 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
 }
 
 //----- (004084A0) --------------------------------------------------------
-int do_check_aolnet(const char *auth_name)
+static int do_check_aolnet(const char *auth_name)
 {
   int i; // $s1
   const char *periodpos; // $v0
@@ -4451,7 +4366,7 @@ int do_check_aolnet(const char *auth_name)
 }
 
 //----- (00408514) --------------------------------------------------------
-int do_check_authnet(char *argst, char *arged)
+static int do_check_authnet(char *argst, char *arged)
 {
   char *i; // $s0
   char *j; // $s0
@@ -4475,7 +4390,7 @@ int do_check_authnet(char *argst, char *arged)
 }
 
 //----- (00408644) --------------------------------------------------------
-int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, int no_decode)
+static int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, int no_decode)
 {
   int read_res2; // $s1
   char *heapmem; // $v0
@@ -4553,7 +4468,7 @@ int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, 
 }
 
 //----- (004088DC) --------------------------------------------------------
-int do_check_provider_inner(const sceNetCnfEnv_t *e, int type)
+static int do_check_provider_inner(const sceNetCnfEnv_t *e, int type)
 {
   switch ( type )
   {
@@ -4580,7 +4495,7 @@ int do_check_provider_inner(const sceNetCnfEnv_t *e, int type)
 }
 
 //----- (00408970) --------------------------------------------------------
-char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netcnf_file_path)
+static char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netcnf_file_path)
 {
   const char *entry_buffer_1; // $v1
   char *fpath_1; // $a3
@@ -4630,7 +4545,7 @@ char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netc
 }
 
 //----- (00408B20) --------------------------------------------------------
-int do_get_filesize_inner(int fd)
+static int do_get_filesize_inner(int fd)
 {
   int lseek_end_res; // $s0
   int lseek_start_res; // $a0
@@ -4643,7 +4558,7 @@ int do_get_filesize_inner(int fd)
 }
 
 //----- (00408B9C) --------------------------------------------------------
-int is_special_file_path(const char *netcnf_path)
+static int is_special_file_path(const char *netcnf_path)
 {
   switch ( g_callbacks.type )
   {
@@ -4658,7 +4573,7 @@ int is_special_file_path(const char *netcnf_path)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (00408C18) --------------------------------------------------------
-void do_init_callback_handles(void)
+static void do_init_callback_handles(void)
 {
   int i; // $v1
 
@@ -4671,7 +4586,7 @@ void do_init_callback_handles(void)
 }
 
 //----- (00408C60) --------------------------------------------------------
-int do_get_empty_callback_handle(int in_fd, int in_allocstate)
+static int do_get_empty_callback_handle(int in_fd, int in_allocstate)
 {
   int i; // $a3
 
@@ -4690,7 +4605,7 @@ int do_get_empty_callback_handle(int in_fd, int in_allocstate)
 // 40C7E0: using guessed type int g_open_callback_handle_count;
 
 //----- (00408CCC) --------------------------------------------------------
-int do_filesize_callback_handles(int in_fd, int in_allocstate)
+static int do_filesize_callback_handles(int in_fd, int in_allocstate)
 {
   int i; // $a2
 
@@ -4705,7 +4620,7 @@ int do_filesize_callback_handles(int in_fd, int in_allocstate)
 }
 
 //----- (00408D2C) --------------------------------------------------------
-void do_clear_callback_handles(int fd, int allocmatch)
+static void do_clear_callback_handles(int fd, int allocmatch)
 {
   int i; // $a3
 
@@ -4723,7 +4638,7 @@ void do_clear_callback_handles(int fd, int allocmatch)
 // 40C7E0: using guessed type int g_open_callback_handle_count;
 
 //----- (00408DA0) --------------------------------------------------------
-const char *do_colon_callback_handles(const char *netcnf_path, char *device)
+static const char *do_colon_callback_handles(const char *netcnf_path, char *device)
 {
   char *index_res; // $s1
   int devnameend; // $s0
@@ -4740,7 +4655,7 @@ const char *do_colon_callback_handles(const char *netcnf_path, char *device)
 }
 
 //----- (00408E40) --------------------------------------------------------
-int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode)
+static int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode)
 {
   const char *cbind; // $v0
   int openret1; // $s2
@@ -4771,7 +4686,7 @@ int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode)
 // 40C7E0: using guessed type int g_open_callback_handle_count;
 
 //----- (00408F8C) --------------------------------------------------------
-int do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size)
+static int do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size)
 {
   struct netcnf_callback_handle_info *cbh; // $s0
 
@@ -4796,7 +4711,7 @@ int do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size)
 // 40C348: using guessed type int (*)(u32, u32, u32, u32, u32, u32);
 
 //----- (0040908C) --------------------------------------------------------
-int do_readfile_netcnf(int fd, void *ptr, int size)
+static int do_readfile_netcnf(int fd, void *ptr, int size)
 {
   int cbind; // $a0
 
@@ -4808,7 +4723,7 @@ int do_readfile_netcnf(int fd, void *ptr, int size)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (0040910C) --------------------------------------------------------
-int do_write_netcnf_no_encode(int fd, void *ptr, int size)
+static int do_write_netcnf_no_encode(int fd, void *ptr, int size)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
     return write(fd, ptr, size);
@@ -4819,7 +4734,7 @@ int do_write_netcnf_no_encode(int fd, void *ptr, int size)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (00409164) --------------------------------------------------------
-int do_dopen_wrap(const char *fn)
+static int do_dopen_wrap(const char *fn)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
     return dopen(fn);
@@ -4830,7 +4745,7 @@ int do_dopen_wrap(const char *fn)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (004091BC) --------------------------------------------------------
-int do_dread_wrap(int fn, iox_dirent_t *buf)
+static int do_dread_wrap(int fn, iox_dirent_t *buf)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
     return dread(fn, buf);
@@ -4841,7 +4756,7 @@ int do_dread_wrap(int fn, iox_dirent_t *buf)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (00409214) --------------------------------------------------------
-int do_remove_wrap(const char *fn)
+static int do_remove_wrap(const char *fn)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
     return remove(fn);
@@ -4852,7 +4767,7 @@ int do_remove_wrap(const char *fn)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (0040926C) --------------------------------------------------------
-void do_close_netcnf(int fd)
+static void do_close_netcnf(int fd)
 {
   int cbind; // $s1
 
@@ -4876,7 +4791,7 @@ void do_close_netcnf(int fd)
 // 40C34C: using guessed type int (*)(u32);
 
 //----- (00409328) --------------------------------------------------------
-void do_dclose_wrap(int fd)
+static void do_dclose_wrap(int fd)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
   {
@@ -4889,7 +4804,7 @@ void do_dclose_wrap(int fd)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (00409380) --------------------------------------------------------
-int do_filesize_netcnf(int fd)
+static int do_filesize_netcnf(int fd)
 {
   int cbind; // $v1
 
@@ -4898,7 +4813,7 @@ int do_filesize_netcnf(int fd)
 }
 
 //----- (004093E4) --------------------------------------------------------
-void do_getstat_wrap(const char *fn, iox_stat_t *stat)
+static void do_getstat_wrap(const char *fn, iox_stat_t *stat)
 {
   if ( !g_callbacks_set || g_callbacks.type == 2 )
   {
@@ -4911,7 +4826,7 @@ void do_getstat_wrap(const char *fn, iox_stat_t *stat)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (0040943C) --------------------------------------------------------
-void do_chstat_mode_copyprotect_wrap(const char *fn)
+static void do_chstat_mode_copyprotect_wrap(const char *fn)
 {
   iox_stat_t statmode; // [sp+10h] [-40h] BYREF
 
@@ -4928,7 +4843,7 @@ void do_chstat_mode_copyprotect_wrap(const char *fn)
 // 40C340: using guessed type sceNetCnfCallback_t g_callbacks;
 
 //----- (004094C0) --------------------------------------------------------
-void do_set_callback_inner(sceNetCnfCallback_t *pcallback)
+static void do_set_callback_inner(sceNetCnfCallback_t *pcallback)
 {
   if ( pcallback )
   {
@@ -4952,7 +4867,7 @@ void do_set_callback_inner(sceNetCnfCallback_t *pcallback)
 // 40C34C: using guessed type int (*)(u32);
 
 //----- (00409540) --------------------------------------------------------
-int do_init_heap(void)
+static int do_init_heap(void)
 {
   if ( g_netcnf_heap )
     return -2;
@@ -4961,20 +4876,20 @@ int do_init_heap(void)
 }
 
 //----- (00409590) --------------------------------------------------------
-void *do_alloc_heapmem(size_t nbytes)
+static void *do_alloc_heapmem(size_t nbytes)
 {
   return AllocHeapMemory(g_netcnf_heap, nbytes);
 }
 
 //----- (004095BC) --------------------------------------------------------
-void do_free_heapmem(void *ptr)
+static void do_free_heapmem(void *ptr)
 {
   if ( ptr )
     FreeHeapMemory(g_netcnf_heap, ptr);
 }
 
 //----- (004095EC) --------------------------------------------------------
-void do_delete_heap(void)
+static void do_delete_heap(void)
 {
   DeleteHeap(g_netcnf_heap);
   g_netcnf_heap = 0;
