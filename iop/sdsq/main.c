@@ -1,7 +1,20 @@
 
+#ifdef _IOP
 #include "irx_imports.h"
+#else
+#include <string.h>
+#include <stdint.h>
+typedef int8_t s8;
+typedef int16_t s16;
+typedef int32_t s32;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+#endif
 
+#ifdef _IOP
 IRX_ID("Sound_Data_SQ", 2, 1);
+#endif
 
 struct sceHardSynthVersionChunk_
 {
@@ -144,12 +157,16 @@ int sceSdSqGetCompTableDataByIndex(void *addr, u32 midiNumber, u32 compTableInde
 int sceSdSqGetNoteOnEventByPolyKeyPress(void *addr, u32 midiNumber, const SceSdSqPolyKeyData *pData, SceSdSqCompTableNoteOnEvent *kData);
 int sceSdSqCopyMidiData(SceSdSqMidiData *to, const SceSdSqMidiData *from);
 int sceSdSqCopySongData(SceSdSqSongData *to, const SceSdSqSongData *from);
+#ifdef _IOP
 int _start(int ac, char **av);
+#endif
 
 //-------------------------------------------------------------------------
 // Data declarations
 
+#ifdef _IOP
 extern struct irx_export_table _exp_sdsq;
+#endif
 
 //----- (00400060) --------------------------------------------------------
 static int do_get_vers_sequ_chunk(sceSeqVersionChunk *indata, struct sdsq_info *dinfo)
@@ -611,6 +628,7 @@ int sceSdSqCopySongData(SceSdSqSongData *to, const SceSdSqSongData *from)
   return 0;
 }
 
+#ifdef _IOP
 //----- (00400C40) --------------------------------------------------------
 int _start(int ac, char **av)
 {
@@ -630,3 +648,4 @@ int _start(int ac, char **av)
   CpuResumeIntr(state);
   return ( !regres ) ? 2 : 1;
 }
+#endif

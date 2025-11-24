@@ -1,7 +1,19 @@
 
+#ifdef _IOP
 #include "irx_imports.h"
+#else
+#include <stdint.h>
+typedef int8_t s8;
+typedef int16_t s16;
+typedef int32_t s32;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+#endif
 
+#ifdef _IOP
 IRX_ID("Sound_Data_HD", 2, 2);
+#endif
 
 struct sceHardSynthVersionChunk_
 {
@@ -394,12 +406,16 @@ int sceSdHdModifyVelocityLFO(unsigned int curveType, int velocity, int center);
 int sceSdHdGetValidProgramNumberCount(void *buffer);
 int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr);
 int sceSdHdGetSampleNumberBySampleIndex(void *buffer, unsigned int sampleSetNumber, unsigned int sampleIndexNumber);
+#ifdef _IOP
 int _start(int ac, char **av);
+#endif
 
 //-------------------------------------------------------------------------
 // Data declarations
 
+#ifdef _IOP
 extern struct irx_export_table _exp_sdhd;
+#endif
 
 //----- (004000F0) --------------------------------------------------------
 static int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
@@ -1910,6 +1926,7 @@ int sceSdHdGetSampleNumberBySampleIndex(
   return ( (unsigned int)p_samplesetparam->nSample - 1 < sampleIndexNumber ) ? 0x9006 : p_samplesetparam->sampleIndex[sampleIndexNumber];
 }
 
+#ifdef _IOP
 //----- (00402C70) --------------------------------------------------------
 int _start(int ac, char **av)
 {
@@ -1929,3 +1946,4 @@ int _start(int ac, char **av)
   CpuResumeIntr(state);
   return ( !regres ) ? 2 : 1;
 }
+#endif
