@@ -64,21 +64,21 @@ struct usbm_load_entry
 // Function declarations
 
 int _start(int ac, char **av);
-int module_unload();
-int do_parse_config_file(const char *fn);
-void do_print_device_config_info(USBDEV_t *devinfo);
-int usbmload_drv_probe(int dev_id);
-int usbmload_drv_connect(int dev_id);
-int usbmload_drv_disconenct(int dev_id);
-void ldd_loader_thread(); // weak
-void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo);
-void do_push_device_rb(USBDEV_t *a1);
-USBDEV_t *is_rb_ok_callback();
-void do_clear_rb(void);
-int split_config_line(char *curbuf, int cursplitind, char **dstptr);
-int do_parse_cmd_int(const char *buf);
-void clean_config_line(char *buf);
-void sanitize_devicename(char *buf);
+static int module_unload(void);
+static int do_parse_config_file(const char *fn);
+static void do_print_device_config_info(USBDEV_t *devinfo);
+static int usbmload_drv_probe(int dev_id);
+static int usbmload_drv_connect(int dev_id);
+static int usbmload_drv_disconenct(int dev_id);
+static void ldd_loader_thread(void *userdata); // weak
+static void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo);
+static void do_push_device_rb(USBDEV_t *devinfo);
+static USBDEV_t *is_rb_ok_callback(void);
+static void do_clear_rb(void);
+static int split_config_line(char *curbuf, int cursplitind, char **dstptr);
+static int do_parse_cmd_int(const char *buf);
+static void clean_config_line(char *buf);
+static void sanitize_devicename(char *buf);
 int sceUsbmlDisable(void);
 int sceUsbmlEnable(void);
 int sceUsbmlActivateCategory(const char *category);
@@ -88,15 +88,14 @@ void sceUsbmlUnregisterLoadFunc(void);
 int sceUsbmlLoadConffile(const char *conffile);
 int sceUsbmlRegisterDevice(USBDEV_t *device);
 int sceUsbmlChangeThreadPriority(int prio1);
-void init_config_pos(void);
-char read_config_byte(int fd);
-char *read_config_line(char *dstbuf, int maxlen, int fd);
+static void init_config_pos(void);
+static char *read_config_line(char *dstbuf, int maxlen, int fd);
 
 //-------------------------------------------------------------------------
 // Data declarations
 
 extern struct irx_export_table _exp_usbmload;
-sceUsbdLddOps g_usbmload_drv =
+static sceUsbdLddOps g_usbmload_drv =
 {
   NULL,
   NULL,
@@ -111,23 +110,23 @@ sceUsbdLddOps g_usbmload_drv =
   0u,
   NULL
 }; // idb
-int g_config_chr_pos = 2048; // weak
-int g_param_conffile[128]; // weak
-char g_config_line_buf[256]; // weak
-char g_config_device_name_tmp[256]; // idb
-int g_param_debug; // weak
-int g_usbmload_enabled; // weak
-int g_param_rbsize; // weak
-int g_rb_offset_read; // weak
-int g_rb_offset_write; // weak
-int g_rb_count; // weak
-USBDEV_t **g_rb_entries;
-USBDEV_t *g_usbm_entry_list_end;
-USBDEV_t *g_usbm_entry_list_cur;
-int g_ef; // weak
-int g_thid; // idb
-sceUsbmlLoadFunc g_loadfunc_cb;
-char g_config_chr_buf[2048]; // weak
+static int g_config_chr_pos = 2048; // weak
+static int g_param_conffile[128]; // weak
+static char g_config_line_buf[256]; // weak
+static char g_config_device_name_tmp[256]; // idb
+static int g_param_debug; // weak
+static int g_usbmload_enabled; // weak
+static int g_param_rbsize; // weak
+static int g_rb_offset_read; // weak
+static int g_rb_offset_write; // weak
+static int g_rb_count; // weak
+static USBDEV_t **g_rb_entries;
+static USBDEV_t *g_usbm_entry_list_end;
+static USBDEV_t *g_usbm_entry_list_cur;
+static int g_ef; // weak
+static int g_thid; // idb
+static sceUsbmlLoadFunc g_loadfunc_cb;
+static char g_config_chr_buf[2048]; // weak
 
 //----- (00400060) --------------------------------------------------------
 int _start(int ac, char **av)
@@ -145,7 +144,7 @@ int _start(int ac, char **av)
     return module_unload();
   printf("----- USB auto module loader %s -----\n", "0.4.0");
   g_param_rbsize = 32;
-  g_loadfunc_cb = (sceUsbmlLoadFunc)default_loadfunc;
+  g_loadfunc_cb = default_loadfunc;
   g_param_debug = 0;
   g_usbmload_enabled = 0;
   g_rb_offset_read = 0;
@@ -221,7 +220,7 @@ int _start(int ac, char **av)
     return 1;
   }
   thparam.attr = 0x2000000;
-  thparam.thread = (void (*)(void *))ldd_loader_thread;
+  thparam.thread = ldd_loader_thread;
   thparam.priority = 88;
   thparam.stacksize = 4096;
   thparam.option = 0;
@@ -249,7 +248,7 @@ int _start(int ac, char **av)
 // 402B24: using guessed type int g_ef;
 
 //----- (00400480) --------------------------------------------------------
-int module_unload()
+static int module_unload(void)
 {
   USBDEV_t *listent_1; // $s2
   int i; // $s1
@@ -297,7 +296,7 @@ int module_unload()
 // 402B24: using guessed type int g_ef;
 
 //----- (00400600) --------------------------------------------------------
-int do_parse_config_file(const char *fn)
+static int do_parse_config_file(const char *fn)
 {
   USBDEV_t *devstr; // $s0
   int has_encountered; // $s6
@@ -525,7 +524,7 @@ int do_parse_config_file(const char *fn)
 // 402B00: using guessed type int g_param_debug;
 
 //----- (00400D4C) --------------------------------------------------------
-void do_print_device_config_info(USBDEV_t *devinfo)
+static void do_print_device_config_info(USBDEV_t *devinfo)
 {
   int i; // $s0
   char dispname_tmp[256]; // [sp+10h] [-100h] BYREF
@@ -549,7 +548,7 @@ void do_print_device_config_info(USBDEV_t *devinfo)
 }
 
 //----- (00400E8C) --------------------------------------------------------
-int usbmload_drv_probe(int dev_id)
+static int usbmload_drv_probe(int dev_id)
 {
   UsbDeviceDescriptor *devdesc; // $v0
   const UsbInterfaceDescriptor *intfdesc; // $v0
@@ -593,7 +592,7 @@ int usbmload_drv_probe(int dev_id)
 // 402B24: using guessed type int g_ef;
 
 //----- (004010B4) --------------------------------------------------------
-int usbmload_drv_connect(int dev_id)
+static int usbmload_drv_connect(int dev_id)
 {
   (void)dev_id;
 
@@ -601,7 +600,7 @@ int usbmload_drv_connect(int dev_id)
 }
 
 //----- (004010BC) --------------------------------------------------------
-int usbmload_drv_disconenct(int dev_id)
+static int usbmload_drv_disconenct(int dev_id)
 {
   (void)dev_id;
 
@@ -609,10 +608,11 @@ int usbmload_drv_disconenct(int dev_id)
 }
 
 //----- (004010C4) --------------------------------------------------------
-void ldd_loader_thread()
+static void ldd_loader_thread(void *userdata)
 {
   u32 efres; // [sp+10h] [-8h] BYREF
 
+  (void)userdata;
   while ( 1 )
   {
     WaitEventFlag(g_ef, 1u, 17, &efres);
@@ -628,7 +628,7 @@ void ldd_loader_thread()
 // 4010C4: using guessed type u32 efres[2];
 
 //----- (00401130) --------------------------------------------------------
-void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
+static void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
 {
   int modid; // $s0
   int i; // $s4
@@ -683,14 +683,14 @@ void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
 // 401130: using guessed type char modarg[256];
 
 //----- (0040135C) --------------------------------------------------------
-void do_push_device_rb(USBDEV_t *a1)
+static void do_push_device_rb(USBDEV_t *devinfo)
 {
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
   if ( g_rb_count < g_param_rbsize )
   {
-    g_rb_entries[g_rb_offset_write++] = a1;
+    g_rb_entries[g_rb_offset_write++] = devinfo;
     if ( g_rb_offset_write >= g_param_rbsize )
       g_rb_offset_write = 0;
     ++g_rb_count;
@@ -702,7 +702,7 @@ void do_push_device_rb(USBDEV_t *a1)
 // 402B14: using guessed type int g_rb_count;
 
 //----- (0040140C) --------------------------------------------------------
-USBDEV_t *is_rb_ok_callback()
+static USBDEV_t *is_rb_ok_callback(void)
 {
   USBDEV_t *devinfo; // $s0
   int state; // [sp+10h] [-8h] BYREF
@@ -724,7 +724,7 @@ USBDEV_t *is_rb_ok_callback()
 // 402B14: using guessed type int g_rb_count;
 
 //----- (004014AC) --------------------------------------------------------
-void do_clear_rb(void)
+static void do_clear_rb(void)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -735,7 +735,7 @@ void do_clear_rb(void)
 // 402B14: using guessed type int g_rb_count;
 
 //----- (004014E0) --------------------------------------------------------
-int split_config_line(char *curbuf, int cursplitind, char **dstptr)
+static int split_config_line(char *curbuf, int cursplitind, char **dstptr)
 {
   char *curbuf_1; // $s1
   char *curbuf_2; // $s0
@@ -795,7 +795,7 @@ int split_config_line(char *curbuf, int cursplitind, char **dstptr)
 }
 
 //----- (004016E0) --------------------------------------------------------
-int do_parse_cmd_int(const char *buf)
+static int do_parse_cmd_int(const char *buf)
 {
   int hexval; // $a2
   const char *i; // $a0
@@ -813,7 +813,7 @@ int do_parse_cmd_int(const char *buf)
 }
 
 //----- (00401780) --------------------------------------------------------
-void clean_config_line(char *buf)
+static void clean_config_line(char *buf)
 {
   int in_quotes; // $v1
 
@@ -829,7 +829,7 @@ void clean_config_line(char *buf)
 }
 
 //----- (004017E0) --------------------------------------------------------
-void sanitize_devicename(char *buf)
+static void sanitize_devicename(char *buf)
 {
   while ( *buf && *buf != '\n' && *buf != '\r' )
   {
@@ -944,7 +944,7 @@ int sceUsbmlInactivateCategory(const char *category)
 //----- (00401AD4) --------------------------------------------------------
 int sceUsbmlRegisterLoadFunc(sceUsbmlLoadFunc loadfunc)
 {
-  if ( (char *)g_loadfunc_cb == (char *)default_loadfunc )
+  if ( g_loadfunc_cb == default_loadfunc )
   {
     g_loadfunc_cb = loadfunc;
     return 0;
@@ -955,7 +955,7 @@ int sceUsbmlRegisterLoadFunc(sceUsbmlLoadFunc loadfunc)
 //----- (00401B04) --------------------------------------------------------
 void sceUsbmlUnregisterLoadFunc(void)
 {
-  g_loadfunc_cb = (sceUsbmlLoadFunc)default_loadfunc;
+  g_loadfunc_cb = default_loadfunc;
 }
 
 //----- (00401B1C) --------------------------------------------------------
@@ -1061,14 +1061,14 @@ int sceUsbmlChangeThreadPriority(int prio1)
 }
 
 //----- (00401E2C) --------------------------------------------------------
-void init_config_pos(void)
+static void init_config_pos(void)
 {
   g_config_chr_pos = sizeof(g_config_chr_buf);
 }
 // 4026F8: using guessed type int g_config_chr_pos;
 
 //----- (00401E40) --------------------------------------------------------
-char read_config_byte(int fd)
+static char read_config_byte(int fd)
 {
   if ( g_config_chr_pos == sizeof(g_config_chr_buf) )
   {
@@ -1080,7 +1080,7 @@ char read_config_byte(int fd)
 // 4026F8: using guessed type int g_config_chr_pos;
 
 //----- (00401EA4) --------------------------------------------------------
-char *read_config_line(char *dstbuf, int maxlen, int fd)
+static char *read_config_line(char *dstbuf, int maxlen, int fd)
 {
   int i; // $s1
 
