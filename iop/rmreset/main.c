@@ -87,7 +87,8 @@ int _start(int ac, char **av)
 {
   u32 ctrl_save; // $s3
   int i; // $s0
-  char inoutbuf[32]; // [sp+10h] [-20h] BYREF
+  // Unofficial: shrink buffer
+  char inoutbuf[7]; // [sp+10h] [-20h] BYREF
 
   (void)ac;
   (void)av;
@@ -105,14 +106,14 @@ int _start(int ac, char **av)
   inoutbuf[0] = 0x61;
   inoutbuf[1] = 6;
   inoutbuf[2] = 3;
-  for ( i = 3; i < 12; i += 1 )
+  for ( i = 3; i < (int)(sizeof(inoutbuf)); i += 1 )
     inoutbuf[i] = 0;
-  for ( i = 0; i < 7; i += 1 )
+  for ( i = 0; i < (int)(sizeof(inoutbuf)); i += 1 )
     sio2_data_out(inoutbuf[i]);
   sio2_ctrl_set(0xB1u);
   while ( !((sio2_stat6c_get() >> 12) & 1) );
   for ( i = 0; i < 7; i += 1 )
-    inoutbuf[i + 16] = sio2_data_in();
+    sio2_data_in();
   sio2_ctrl_set(0xCu);
   for ( i = 0; i < 4; i += 1 )
   {
@@ -124,14 +125,14 @@ int _start(int ac, char **av)
   inoutbuf[0] = 0x61;
   inoutbuf[1] = 6;
   inoutbuf[2] = 3;
-  for ( i = 3; i < 12; i += 1 )
+  for ( i = 3; i < (int)(sizeof(inoutbuf)); i += 1 )
     inoutbuf[i] = 0;
-  for ( i = 0; i < 7; i += 1 )
+  for ( i = 0; i < (int)(sizeof(inoutbuf)); i += 1 )
     sio2_data_out(inoutbuf[i]);
   sio2_ctrl_set(0xB1u);
   while ( !((sio2_stat6c_get() >> 12) & 1) );
   for ( i = 0; i < 7; i += 1 )
-    inoutbuf[i + 16] = sio2_data_in();
+    sio2_data_in();
   sio2_ctrl_set(0xCu);
   sio2_ctrl_set(ctrl_save & 0xFFFFFFFE);
   printf("rmreset end\n");
