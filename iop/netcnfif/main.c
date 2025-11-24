@@ -390,7 +390,7 @@ static void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size
         for ( i = 0; i < (int)(sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); i += 1 )
         {
           if ( i < 3 && i >= 0 && env.root->pair_head->ifc->phone_numbers[i] )
-            ++redial_count;
+            redial_count += 1;
         }
         env.root->pair_head->ifc->redial_count = redial_count - 1;
         if ( env.root->pair_head->ifc->pppoe != 1 && env.root->pair_head->ifc->type != 2 )
@@ -484,7 +484,7 @@ static int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count
         default:
           return 0;
       }
-      ++*ns_count;
+      *ns_count += 1;
       return retres;
     }
     case 3:

@@ -766,8 +766,8 @@ static int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr
       {
         *netcnf_data = ~*netcnf_data;
         *netcnf_data = magic_shift_read_netcnf_2(*netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
-        --netcnf_size;
-        ++xoroffs;
+        netcnf_size -= 1;
+        xoroffs += 1;
       }
     }
     if ( !netcnf_size )
@@ -819,7 +819,7 @@ static int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf
       xorind1 = ( xorind1 != sizeof(g_id_xorbuf) ) ? xorind1 : 0;
       bufflipx1 = ~bufflipx1;
       writeres = do_write_netcnf_no_encode(fd, &bufflipx1, sizeof(bufflipx1));
-      ++buf_1;
+      buf_1 += 1;
       if ( writeres < 0 )
         break;
       netcnf_len_1 -= 2;
@@ -837,8 +837,8 @@ static int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf
       xorind1 = ( xorind1 != sizeof(g_id_xorbuf) ) ? xorind1 : 0;
       bufflipx2 = ~bufflipx2;
       writeres = do_write_netcnf_no_encode(fd, &bufflipx2, sizeof(bufflipx2));
-      --netcnf_len_1;
-      ++xoroffs;
+      netcnf_len_1 -= 1;
+      xoroffs += 1;
     }    
   }
   do_close_netcnf(fd);
@@ -1165,13 +1165,14 @@ static int do_split_str_comma_index(char *dst, const char *src, int commaind)
   for ( i = 0; i < commaind; i += 1 )
   {
     for ( ; *src && *src != '\n' && *src != ','; src += 1 );
-    if ( *src++ != ',' )
+    if ( *src != ',' )
       return -1;
+    src += 1;
   }
   for ( ; *src && *src != ',' && *src != '\n' && *src != '\r'; src += 1 )
   {
     *dst = *src;
-    ++dst;
+    dst += 1;
   }
   *dst = 0;
   return 0;
@@ -1358,7 +1359,7 @@ static int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t 
   {
     if ( do_type_check(type, curheapbuf1) <= 0 )
       continue;
-    ++curind1;
+    curind1 += 1;
     if ( !p )
       continue;
     p->type = type;
@@ -1367,7 +1368,7 @@ static int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t 
     p->stat = strtol(g_arg_fname, 0, 10);
     if ( do_split_str_comma_index(p->sys_name, curheapbuf1, 2) || do_split_str_comma_index(p->usr_name, curheapbuf1, 3) )
       continue;
-    ++p;
+    p += 1;
   }
   do_free_heapmem(g_count_list_heapptr);
   return curind1;
@@ -1532,7 +1533,7 @@ static int do_add_entry_inner(
         for ( curentry1 = g_add_entry_heapptr; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
         {
           if ( do_type_check(type, curentry1) == 1 )
-            ++i;
+            i += 1;
         }
         switch ( type )
         {
@@ -1557,7 +1558,7 @@ static int do_add_entry_inner(
         for ( curentry2 = g_add_entry_heapptr; *curentry2; curentry2 = do_check_hoge_newline(curentry2) )
         {
           if ( do_type_check(type, curentry2) == 1 )
-            ++i;
+            i += 1;
         }
         switch ( type )
         {
@@ -1671,7 +1672,7 @@ static int do_add_entry_inner(
           retres2 = -18;
         }
         *cur_entry_buffer = *dirname_buf1;
-        ++cur_entry_buffer;
+        cur_entry_buffer += 1;
       }
       if ( *dirname_buf1 )
       {
@@ -1758,11 +1759,14 @@ static int do_handle_set_usrname(const char *fpath, int type, const char *usrnam
     }
     for ( ; *ptr_1 && *ptr_1 != '\n'; ptr_1 += 1 )
     {
-      *heapmem_1++ = *ptr_1;
+      *heapmem_1 = *ptr_1;
+      heapmem_1 += 1;
     }
     if ( *ptr_1 == '\n' )
     {
-      *heapmem_1++ = *ptr_1++;
+      *heapmem_1 = *ptr_1;
+      heapmem_1 += 1;
+      ptr_1 += 1;
     }
   }
   do_free_heapmem(ptr);
@@ -1824,7 +1828,7 @@ static int do_edit_entry_inner(
         && !strcmp(g_arg_fname, g_combination_buf2)
         && !do_split_str_comma_index(curentrybuf1, curentry1, 2) )
       {
-        ++rmoldcfgres;
+        rmoldcfgres += 1;
       }
     }
     flg = 0;
@@ -1940,11 +1944,14 @@ static int do_delete_entry_inner(
       {
         for ( ; *curentry1 && *curentry1 != '\n'; curentry1 += 1 )
         {
-          *heapmem_1++ = *curentry1;
+          *heapmem_1 = *curentry1;
+          heapmem_1 += 1;
         }
         if ( *curentry1 == '\n' )
         {
-          *heapmem_1++ = *curentry1++;
+          *heapmem_1 = *curentry1;
+          heapmem_1 += 1;
+          curentry1 += 1;
         }
       }
       else
@@ -2014,13 +2021,16 @@ static int do_set_latest_entry_inner(const char *fname, int type, const char *us
         {
           for ( ; *curentry1 && *curentry1 != '\n'; curentry1 += 1 )
           {
-            *heapmem1_1++ = *curentry1;
+            *heapmem1_1 = *curentry1;
+            heapmem1_1 += 1;
           }
           if ( *curentry1 == '\n' )
           {
-            *heapmem1_1++ = *curentry1++;
+            *heapmem1_1 = *curentry1;
+            heapmem1_1 += 1;
+            curentry1 += 1;
           }
-          ++result;
+          result += 1;
           if ( heapmem2 < heapmem2_1 )
             isbeforeend1 = 1;
         }
@@ -2028,11 +2038,14 @@ static int do_set_latest_entry_inner(const char *fname, int type, const char *us
         {
           for ( ; *curentry1 && *curentry1 != '\n'; curentry1 += 1 )
           {
-            *heapmem2_1++ = *curentry1;
+            *heapmem2_1 = *curentry1;
+            heapmem2_1 += 1;
           }
           if ( *curentry1 == '\n' )
           {
-            *heapmem2_1++ = *curentry1++;
+            *heapmem2_1 = *curentry1;
+            heapmem2_1 += 1;
+            curentry1 += 1;
           }
         }
       }
@@ -2161,7 +2174,7 @@ static int do_check_special_provider_inner(const char *fname, int type, const ch
       && !strcmp(g_arg_fname, g_combination_buf2)
       && !do_split_str_comma_index((char *)e->lbuf, curentry1, 2) )
     {
-      ++curentcount;
+      curentcount += 1;
     }
   }
   retres = curentcount ? (( do_handle_netcnf_dirname(g_dir_name, (const char *)e->lbuf, (char *)e->dbuf) ) ? do_read_check_netcnf((const char *)e->dbuf, type, e->f_no_check_magic, e->f_no_decode) : -11) : -8;
@@ -2180,7 +2193,7 @@ static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align)
     || (retptrbegin = (char *)(((uiptr)mem_ptr + (1 << align) - 1) & ~((1 << align) - 1)),
         &retptrbegin[size] >= (char *)e->mem_last) )
   {
-    ++e->alloc_err;
+    e->alloc_err += 1;
     return 0;
   }
   e->mem_ptr = &retptrbegin[size];
@@ -2205,7 +2218,8 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
   {
     int argchr_1; // $s1
 
-    argchr_1 = *(u8 *)argbegin++;
+    argchr_1 = *(u8 *)argbegin;
+    argbegin += 1;
     if ( argchr_1 == '\\' )
     {
       if ( !*(u8 *)argbegin )
@@ -2218,7 +2232,7 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
       {
         if ( *(u8 *)argbegin == 'x' || *(u8 *)argbegin == 'X' )
         {
-          ++argbegin;
+          argbegin += 1;
           argchr_1 = 0;
           if ( !isxdigit(*argbegin) )
           {
@@ -2236,12 +2250,13 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
               hexnum = 16 * argchr_1;
               argchr_1 = (!islower(*argbegin)) ? hexnum + *(u8 *)argbegin - '7' : hexnum + *(u8 *)argbegin - 'W';
             }
-            argbegin++;
+            argbegin += 1;
           }
         }
         else
         {
-          argchr_1 = *(u8 *)argbegin++;
+          argchr_1 = *(u8 *)argbegin;
+          argbegin += 1;
           switch ( argchr_1 )
           {
             case 'a':
@@ -2275,7 +2290,7 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
         for ( i = 0; i < 3 && ( *(u8 *)argbegin - (unsigned int)'0' < 8 ); i += 1 )
         {
           argchr_1 = 8 * argchr_1 + *argbegin - '0';
-          argbegin++;
+          argbegin += 1;
         }
       }
     }
@@ -2283,12 +2298,14 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
     {
       if ( (u8)(*(u8 *)argbegin - 64) < 0xBDu && *(u8 *)argbegin != 127 )
       {
-        *dbuf++ = argchr_1;
-        argchr_1 = *argbegin++;
+        *dbuf = argchr_1;
+        dbuf += 1;
+        argchr_1 = *argbegin;
+        argbegin += 1;
       }
     }
     *dbuf = argchr_1;
-    ++dbuf;
+    dbuf += 1;
   }
   if ( !err )
   {
@@ -2322,7 +2339,7 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
         break;
     }
     printf("\n");
-    ++e->syntax_err;
+    e->syntax_err += 1;
     return 0;
   }
   *dbuf = 0;
@@ -2388,7 +2405,7 @@ static int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
       }
       if ( e_arg_1_num >= curbasex )
         break;
-      ++e_arg_1;
+      e_arg_1 += 1;
       curnum = curnum * curbasex + e_arg_1_num;
       if ( !*e_arg_1 )
       {
@@ -2400,7 +2417,7 @@ static int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
   printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
   printf("invalid digit (%s)", e_arg);
   printf("\n");
-  ++e->syntax_err;
+  e->syntax_err += 1;
   return -1;
 }
 
@@ -2415,7 +2432,7 @@ static int do_netcnfname2address_wrap(sceNetCnfEnv_t *e, char *buf, sceNetCnfAdd
     printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
     printf("sceNetCnfName2Address(%s) -> %d\n", buf, errret);
     printf("\n");
-    ++e->syntax_err;
+    e->syntax_err += 1;
     return -1;
   }
   return 0;
@@ -2915,7 +2932,7 @@ static int do_check_other_keywords(
   printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
   printf("ac=%d", e->ac);
   printf("\n");
-  ++e->syntax_err;
+  e->syntax_err += 1;
   return -1;
 }
 
@@ -2933,7 +2950,7 @@ static int do_handle_net_cnf(sceNetCnfEnv_t *e, void *userdata)
     printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
     printf("obsoleted keyword (%s)", &(e->av[0])[wasprefixed]);
     printf("\n");
-    ++e->syntax_err;
+    e->syntax_err += 1;
     return 0;
   }
   if ( wasprefixed )
@@ -2943,7 +2960,7 @@ static int do_handle_net_cnf(sceNetCnfEnv_t *e, void *userdata)
     printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
     printf("ac=%d", e->ac);
     printf("\n");
-    ++e->syntax_err;
+    e->syntax_err += 1;
     return -1;
   }
   return !do_check_interface_keyword(e, e->av[1], e->av[2], ( e->ac >= 4 ) ? e->av[3] : 0) ? 0 : -1;
@@ -2994,7 +3011,7 @@ static int do_handle_attach_cnf(sceNetCnfEnv_t *e, void *userdata)
     printf("netcnf: \"%s\" line %d: ", e->fname, e->lno);
     printf("obsoleted keyword (%s)", &(e->av[0])[wasprefixed]);
     printf("\n");
-    ++e->syntax_err;
+    e->syntax_err += 1;
   }
   else
   {
@@ -3057,13 +3074,13 @@ static int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNe
         if ( *j == '\\' )
         {
           if ( j[1] )
-            ++j;
+            j += 1;
         }
         else
         {
           condtmp1 = (*j == '"') ? (condtmp1 ? 0 : 1) : (condtmp1 ? 1 : 0);
         }
-        j++;
+        j += 1;
         if ( !condtmp1 && (*j == '#' || isspace(*j)) )
         {
           break;
@@ -3078,10 +3095,10 @@ static int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNe
     if ( *j )
     {
       *j = 0;
-      ++j;
+      j += 1;
     }
     for ( ; *j && isspace(*j); j += 1 );
-    ++e->ac;
+    e->ac += 1;
   }
   *j = 0;
   return ( e->ac <= 0 ) ? 0 : readcb(e, userdata);
@@ -3094,7 +3111,7 @@ static int do_read_netcnf(sceNetCnfEnv_t *e, const char *netcnf_path, char **net
 
   result = ( !is_attach_cnf || e->f_no_decode ) ? do_read_netcnf_no_decode(netcnf_path, netcnf_heap_ptr) : do_read_netcnf_decode(netcnf_path, netcnf_heap_ptr);
   if ( result < 0 )
-    ++e->file_err;
+    e->file_err += 1;
   return result;
 }
 
@@ -3170,10 +3187,10 @@ static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*rea
   {
     if ( *ptr == '\n' )
     {
-      ++e->lno;
+      e->lno += 1;
       if ( e->lbuf < lbuf && *(lbuf - 1) == '\\' )
       {
-        --lbuf;
+        lbuf -= 1;
       }
       else
       {
@@ -3184,9 +3201,12 @@ static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*rea
     else
     {
       if ( lbuf < &e->lbuf[1023] && *ptr != '\r' )
-        *lbuf++ = *ptr;
+      {
+        *lbuf = *ptr;
+        lbuf += 1;
+      }
     }
-    ptr++;
+    ptr += 1;
     read_res1 -= 1;
   }
   if ( e->lbuf < lbuf )
@@ -3486,18 +3506,18 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
   {
     if ( *fmt == '%' )
     {
-      ++fmt;
+      fmt += 1;
       has_negative = 0;
       if ( *fmt == '-' )
       {
-        ++fmt;
+        fmt += 1;
         has_negative = 1;
       }
       has_sero = ' ';
       if ( *fmt == '0' )
       {
         has_sero = '0';
-        ++fmt;
+        fmt += 1;
       }
       strlened = 0;
       for ( ; isdigit(*fmt); fmt += 1 )
@@ -3505,7 +3525,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
         strlened = 10 * strlened - '0' + *fmt;
       }
       if ( *fmt == 'l' )
-        ++fmt;
+        fmt += 1;
       fmt_flag_str = -1;
       strpad1 = 0;
       switch ( *fmt )
@@ -3517,7 +3537,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
             return -2;
           *mem_ptr_01 = va_arg(va, int);
           e->mem_ptr = mem_ptr_rval_04;
-          ++fmt;
+          fmt += 1;
           continue;
         case 'p':
           has_sero = '0';
@@ -3549,7 +3569,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
             return -2;
           *mem_ptr_03 = *fmt;
           e->mem_ptr = mem_ptr_rval_04;
-          ++fmt;
+          fmt += 1;
           continue;
       }
       if ( fmt_flag_str != -1 )
@@ -3573,7 +3593,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
         while ( 1 )
         {
           valmod1 = cur_va1 % strpad1;
-          --strptr1;
+          strptr1 -= 1;
           curnumvals = ( *fmt == 'X' ) ? &a0123456789abcd[valmod1] : &a0123456789abcd_0[valmod1];
           *strptr1 = *curnumvals;
           cur_va1 /= strpad1;
@@ -3682,7 +3702,8 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
                 return -2;
               *mem_ptr_0a = (u8)*i;
               e->mem_ptr = mem_ptr_rval_02;
-              i_curchr2 = *i++;
+              i_curchr2 = *i;
+              i += 1;
               if ( (char *)mem_ptr_rval_02 >= (char *)e->mem_last )
                 return -2;
               mem_ptr_rval_03 = mem_ptr_0a + 2;
@@ -3710,7 +3731,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
       *mem_ptr_03 = *fmt;
       e->mem_ptr = mem_ptr_rval_04;
     }
-    ++fmt;
+    fmt += 1;
   }
   return 0;
 }
@@ -4147,13 +4168,13 @@ static int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cn
     fd = do_open_netcnf(fullpath, 1538, 511);
     if ( fd < 0 )
     {
-      ++e->file_err;
+      e->file_err += 1;
       return ( fd == -5 ) ? -18 : -3;
     }
     writeres = do_write_netcnf_no_encode(fd, e->mem_base, memsize);
     if ( memsize != writeres )
     {
-      ++e->file_err;
+      e->file_err += 1;
       do_close_netcnf(fd);
       return ( writeres == -5 ) ? -18 : -5;
     }
@@ -4163,7 +4184,7 @@ static int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cn
   {
     if ( do_write_netcnf_encode(fullpath, e->mem_base, memsize) < 0 )
     {
-      ++e->file_err;
+      e->file_err += 1;
       return -1;
     }
   }
@@ -4234,16 +4255,20 @@ static char *do_address_to_string_inner_element(char *dst, int srcbyte)
   tmpstk_ptr = tmpstk;
   if ( srcbyte < 0 )
   {
-    *dst++ = '-';
+    *dst = '-';
+    dst += 1;
     srcbyte = -srcbyte;
   }
   for ( ; srcbyte > 0; srcbyte /= 10 )
   {
     *tmpstk_ptr = srcbyte % 10 + '0';
-    ++tmpstk_ptr;
+    tmpstk_ptr += 1;
   }
   for ( ; tmpstk < tmpstk_ptr; tmpstk_ptr -= 1 )
-    *dst++ = *(tmpstk_ptr - 1);
+  {
+    *dst = *(tmpstk_ptr - 1);
+    dst += 1;
+  }
   return dst;
 }
 
@@ -4278,10 +4303,10 @@ static int do_name_2_address_inner(unsigned int *dst, const char *buf)
     if ( *buf == '0' )
     {
       base = 8;
-      buf++;
+      buf += 1;
       if ( *buf == 'x' || *buf == 'X' )
       {
-        buf++;
+        buf += 1;
         base = 16;
       }
     }
@@ -4296,14 +4321,14 @@ static int do_name_2_address_inner(unsigned int *dst, const char *buf)
       }
       if ( offsbase1 >= base )
         break;
-      ++buf;
+      buf += 1;
     }
     if ( prefixchkn > 0 && (unsigned int)tmpstk1[prefixchkn - 1] >= 0x100 )
       return 0;
     tmpstk1[prefixchkn] = i;
     if ( *buf != '.' )
       break;
-    ++buf;
+    buf += 1;
   }
   if ( *buf && *buf != ' ' )
     return 0;
@@ -4348,7 +4373,8 @@ static int do_conv_a2s_inner(char *sp_, char *dp_, int len)
     return -19;
   *dp_ = '"';
   dp_ptroffs1 = dp_ + 1;
-  *dp_ptroffs1++ = '"';
+  *dp_ptroffs1 = '"';
+  dp_ptroffs1 += 1;
   *dp_ptroffs1 = ' ';
   dp_ptroffs2 = dp_ptroffs1 + 1;
   while ( 1 )
@@ -4360,27 +4386,32 @@ static int do_conv_a2s_inner(char *sp_, char *dp_, int len)
       return 0;
     for ( ; *sp_ && *sp_ != ' ' && *sp_ != '\t'; sp_ += 1 )
     {
-      if ( --len_minus_three <= 0 )
+      len_minus_three -= 1;
+      if ( len_minus_three <= 0 )
         return -19;
       if ( *sp_ == '-' || *sp_ == '\\' || *sp_ == '"' || *sp_ == '^' )
       {
-        --len_minus_three;
+        len_minus_three -= 1;
         if ( len_minus_three <= 0 )
           return -19;
-        *dp_ptroffs2++ = '\\';
+        *dp_ptroffs2 = '\\';
+        dp_ptroffs2 += 1;
       }
-      *dp_ptroffs2++ = *sp_;
+      *dp_ptroffs2 = *sp_;
+      dp_ptroffs2 += 1;
     }
     len_minus_three -= 4;
     if ( len_minus_three <= 0 )
       return -19;
     *dp_ptroffs2 = ' ';
     dp_ptroffs3 = dp_ptroffs2 + 1;
-    *dp_ptroffs3++ = 'O';
-    *dp_ptroffs3++ = 'K';
+    *dp_ptroffs3 = 'O';
+    dp_ptroffs3 += 1;
+    *dp_ptroffs3 = 'K';
+    dp_ptroffs3 += 1;
     *dp_ptroffs3 = ' ';
     dp_ptroffs2 = dp_ptroffs3 + 1;
-    ++curindx1;
+    curindx1 += 1;
   }
   if ( curindx1 <= 0 )
     return 0;
@@ -4430,25 +4461,30 @@ static int do_conv_s2a_inner(char *sp_, char *dp_, int len)
       return 0;
     if ( curindx1 > 0 )
     {
-      if ( --len <= 0 )
+      len -= 1;
+      if ( len <= 0 )
         return -19;
-      *dp_++ = ' ';
+      *dp_ = ' ';
+      dp_ += 1;
     }
-    ++sp_ptroffs2;
+    sp_ptroffs2 += 1;
     if ( (*(sp_ptroffs2 - 1)) != ' ' )
     {
-      --sp_ptroffs2;
+      sp_ptroffs2 -= 1;
       while ( *sp_ptroffs2 != '\t' )
       {
-        if ( --len <= 0 )
+        len -= 1;
+        if ( len <= 0 )
           return -19;
         if ( *sp_ptroffs2 == '\\' )
         {
           if ( sp_ptroffs2[1] != '-' && sp_ptroffs2[1] != '\\' && sp_ptroffs2[1] != '"' && sp_ptroffs2[1] != '^' )
             return 0;
-          ++sp_ptroffs2;
+          sp_ptroffs2 += 1;
         }
-        *dp_++ = *sp_ptroffs2++;
+        *dp_ = *sp_ptroffs2;
+        dp_ += 1;
+        sp_ptroffs2 += 1;
         if ( !*sp_ptroffs2 || *sp_ptroffs2 == ' ' )
           break;
       }
@@ -4458,7 +4494,7 @@ static int do_conv_s2a_inner(char *sp_, char *dp_, int len)
     if ( *sp_ptroffs3 != 'O' || sp_ptroffs3[1] != 'K' || (sp_ptroffs3[2] != ' ' && sp_ptroffs3[2] != '\t') )
       return 0;
     sp_ptroffs1 = sp_ptroffs3 + 3;
-    ++curindx1;
+    curindx1 += 1;
   }
 }
 
@@ -4496,7 +4532,7 @@ static int do_check_authnet(char *argst, char *arged)
     for ( ; *j && !isspace(*j); j += 1 );
     for ( ; *j && isspace(*j); j += 1 );
     if ( *j == '"' )
-      ++j;
+      j += 1;
     result = do_check_aolnet(j);
     if ( result < 0 )
       return result;
@@ -4549,14 +4585,14 @@ static int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_
   }
   if ( !errretres && read_res2 > 0 )
   {
-    read_res2--;
+    read_res2 -= 1;
     for ( ; read_res2 > 0; read_res2 -= 1 )
     {
       if ( *curheapptr1 == '\n' )
       {
         if ( heapmem < heapmem_2 && *(heapmem_2 - 1) == '\\' )
         {
-          --heapmem_2;
+          heapmem_2 -= 1;
         }
         else
         {
@@ -4570,9 +4606,12 @@ static int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_
       else
       {
         if ( heapmem_2 < &heapmem[1023] && *curheapptr1 != '\r' )
-          *heapmem_2++ = *curheapptr1;
+        {
+          *heapmem_2 = *curheapptr1;
+          heapmem_2 += 1;
+        }
       }
-      curheapptr1++;
+      curheapptr1 += 1;
     }
   }
   if ( !errretres && heapmem < heapmem_2 )
@@ -4635,7 +4674,7 @@ static char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, cha
     for ( ; fpath < fpath_1_minus_1 && *fpath_1_minus_1 != ':'; fpath_1_minus_1 -= 1 );
     if ( *fpath_1_minus_1 == ':' || *fpath_1_minus_1 == '/' || *fpath_1_minus_1 == '\\' )
     {
-      ++fpath_1_minus_1;
+      fpath_1_minus_1 += 1;
     }
   }
   else if ( *fpath_1_minus_1 != ':' )
@@ -4643,17 +4682,19 @@ static char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, cha
     for ( ; fpath < fpath_1_minus_1 && *fpath_1_minus_1 != ':' && *fpath_1_minus_1 != '/' && *fpath_1_minus_1 != '\\'; fpath_1_minus_1 -= 1 );
     if ( *fpath_1_minus_1 == ':' || *fpath_1_minus_1 == '/' || *fpath_1_minus_1 == '\\' )
     {
-      ++fpath_1_minus_1;
+      fpath_1_minus_1 += 1;
     }
   }
   fpath_2 = fpath;
   for ( i = netcnf_file_path; fpath_2 < fpath_1_minus_1; i += 1 )
   {
-    *i = *fpath_2++;
+    *i = *fpath_2;
+    fpath_2 += 1;
   }
   for ( entry_buffer_2 = entry_buffer; *entry_buffer_2; entry_buffer_2 += 1 )
   {
-    *i++ = *entry_buffer_2;
+    *i = *entry_buffer_2;
+    i += 1;
   }
   *i = 0;
   return netcnf_file_path;
