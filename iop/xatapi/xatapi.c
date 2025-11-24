@@ -129,124 +129,66 @@ struct dev5_fpga_regs_
 //-------------------------------------------------------------------------
 // Function declarations
 
-int do_atapi_cmd_inquiry_12h(s16 dev_nr);
-int do_atapi_request_test_unit_ready(s16 dev_nr, int *errptr, int *ctrlptr);
-int atapi_req_sense_get(s16 dev_nr, int *retptr);
-int atapi_exec_cmd_request_sense_03h_unused(s16 dev_nr, int *retptr);
-int do_start_stop_unit_1bh_unused(void);
-int chgsys_callback_cb(int *mediaptr, int want_atapi);
-int sceCdAtapi_SC(void);
 int xatapi_15_exec_f6_f9_scsi(void);
-int sceCdAtapi_BC(void);
-int atapi_spin_status_get(int unused_arg1, void *buf);
-int atapi_check_if_drive_ready(int check_nowait);
-int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int secsize, int rwtype);
-void expbay_device_reset(void);
-int cd_atapi_intr_callback_cb(int cbarg);
-void speedRegisterIntrDispatchCb(void *callback);
-void sceDev5Init(void);
-int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2);
-int xatapi_do_init(void);
-int xatapi_nulldev0(void);
-s64 xatapi_nulldev0_64bit(void);
-int xatapi_dev_init(void);
-int xatapi_dev_deinit(void);
+static int xatapi_nulldev0(void);
+static s64 xatapi_nulldev0_64bit(void);
+static int xatapi_dev_init(void);
+static int xatapi_dev_deinit(void);
 int xatapi_2_terminate(int with_quit);
-int xatapi_dev_devctl(const iop_file_t *f, const char *name, int cmd, void *args, unsigned int arglen, void *buf, unsigned int buflen);
+static int xatapi_dev_devctl(const iop_file_t *f, const char *name, int cmd, void *args, unsigned int arglen, void *buf, unsigned int buflen);
 int _start(int ac, char **av);
-int expbay_get_has_power(void);
-void speedRegisterIntrCb(int intr, void *cb);
-void speedRegisterPreDmaCb(int ctrl, void *cb);
-void speedRegisterPostDmaCb(int ctrl, void *cb);
-int speed_intr_dispatch(int flag);
-void speedIntrEnable(s16 mask);
-void speedIntrDisable(s16 mask);
-int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir);
-int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir);
-int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, int dir);
-int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, int dir);
-void speedLEDCtl(int ctl);
-void speed_init(void);
-void speed_device_init(void);
-void do_hex_dump(void *ptr, int len);
-void ata_pre_dma_cb(void);
-void ata_post_dma_cb(void);
-int vReferEventFlagStatus(int ef, iop_event_info_t *info);
+static void speed_init(void);
+static void speed_device_init(void);
+static void do_hex_dump(void *ptr, int len);
 void xatapi_9_sceCdSpdAtaDmaStart(int dir);
 void xatapi_10_sceCdSpdAtaDmaEnd(void);
-void ata_pio_mode(int mode);
-void ata_multiword_dma_mode(int mode);
-void ata_ultra_dma_mode(int mode);
-int ata_intr_cb(int flag);
-void AtaEjectIntrHandle(void);
-unsigned int AtaAlarmrHandle(void *usrdat);
+static void ata_pio_mode(int mode);
+static void ata_multiword_dma_mode(int mode);
+static void ata_ultra_dma_mode(int mode);
+static void AtaEjectIntrHandle(void);
 int xatapi_14_set_speed_reg(int regaddr, u16 regval);
 int xatapi_13_get_speed_reg(int regaddr);
 int xatapi_11_sceAtaGetError(void);
 int xatapi_12_get_ata_control(void);
-int sceAtaGetError(void);
-int ata_wait_busy1_busy(void);
-int ata_wait_busy2_busy(void);
-int ata_wait_bus_busy_busbusy(void);
-int ata_device_select(int device);
-int sceAtaExecCmd(void *buf, u32 blkcount, u16 feature, u16 nsector, u16 sector, u16 lcyl, u16 hcyl, u16 select, u16 command, u32 unk10);
 int xatapi_5_sceAtaExecCmd(void *buf, u32 blkcount, u16 feature, u16 nsector, u16 sector, u16 lcyl, u16 hcyl, u16 select, u16 command, u32 unk10);
-int sceCdAtapiExecCmd_local(s16 n, void *buf, int nsec, int secsize, void *pkt, unsigned int pkt_len, int proto);
-int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto);
+static int sceCdAtapiExecCmd_local(s16 n, void *buf, int nsec, int secsize, void *pkt, unsigned int pkt_len, int proto);
+static int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto);
 int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto);
-int ata_pio_transfer(ata_cmd_state_t *cmd_state);
-int IoRun_atapi(ata_cmd_state_t *cmd_state);
-int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir);
-int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir);
-int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir);
-int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir);
-void DmaRun_spck(char *buf, unsigned int secsize);
-int sceAtaWaitResult(void);
+static void DmaRun_spck(char *buf, unsigned int secsize);
 int xatapi_6_sceAtaWaitResult(void);
-int sceCdAtapiWaitResult_local(void);
+static int sceCdAtapiWaitResult_local(void);
 int xatapi_8_sceCdAtapiWaitResult(void);
-void ata_bus_reset_inner(void);
-int ata_bus_reset(void);
 int xatapi_4_sceAtaSoftReset(void);
-int sceAtaFlushCache(int device);
-int ata_device_identify(int device, void *info);
-int ata_device_pkt_identify(int device, void *info);
-int atapi_device_set_transfer_mode(int device, int type, int mode);
-int ata_device_set_transfer_mode(int device, int type, int mode);
-void ata_device_probe(ata_devinfo_t *devinfo);
-void atapi_device_set_transfer_mode_outer(int device);
-void ata_device_set_transfer_mode_outer(int device);
-void ata_init_devices(ata_devinfo_t *devinfo);
-void sceAtapiInit(int device);
-void sceAtInterInit(void);
-int create_event_flags(void);
-void FpgaLayer1On(void);
-void FpgaLayer1Off(void);
-void FpgaLayer2On(void);
-void FpgaLayer2Off(void);
-void FpgaXfrenOn(void);
-void FpgaXfrenOff(void);
-void FpgaSpckmodeOn(void);
-void FpgaSpckmodeOff(void);
-void FpgaXfdir(int dir);
-int FpgaGetRevision(void);
-unsigned int do_fpga_add_unused8120(void);
-int do_fpga_check_unk8148(void);
-void FpgaCheckWriteBuffer(void);
-void FpgaCheckWriteBuffer2(void);
-void FpgaClearBuffer(void);
-int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscramblingpackptr);
-int Mpeg2CheckScramble(char *buf, unsigned int bufsize);
+static void atapi_device_set_transfer_mode_outer(int device);
+static void ata_device_set_transfer_mode_outer(int device);
+static void sceAtapiInit(int device);
+static void sceAtInterInit(void);
+static int create_event_flags(void);
+static void FpgaLayer1On(void);
+static void FpgaLayer1Off(void);
+static void FpgaLayer2Off(void);
+static void FpgaXfrenOn(void);
+static void FpgaXfrenOff(void);
+static void FpgaSpckmodeOn(void);
+static void FpgaSpckmodeOff(void);
+static void FpgaXfdir(int dir);
+static int FpgaGetRevision(void);
+static int do_fpga_check_unk8148(void);
+static void FpgaCheckWriteBuffer(void);
+static void FpgaCheckWriteBuffer2(void);
+static void FpgaClearBuffer(void);
+static int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscramblingpackptr);
+static int Mpeg2CheckScramble(char *buf, unsigned int bufsize);
 
 //-------------------------------------------------------------------------
 // Data declarations
 
 extern struct irx_export_table _exp_xatapi;
-int g_devctl_retonly_unset = 0; // weak
-vu16 *g_dev9_reg_1460 = (vu16 *)0xBF801460;
-vu16 *g_dev9_reg_power = (vu16 *)0xBF80146C;
-int (*p_dev5_intr_cb)(u32) = NULL; // weak
-iop_device_ops_t ata_ioman_devops =
+static int g_devctl_retonly_unset = 0; // weak
+static vu16 *g_dev9_reg_1460 = (vu16 *)0xBF801460;
+static vu16 *g_dev9_reg_power = (vu16 *)0xBF80146C;
+static int (*p_dev5_intr_cb)(u32) = NULL; // weak
+static iop_device_ops_t ata_ioman_devops =
 {
   (void *)&xatapi_dev_init,
   (void *)&xatapi_dev_deinit,
@@ -276,36 +218,36 @@ iop_device_ops_t ata_ioman_devops =
   (void *)&xatapi_nulldev0,
   (void *)&xatapi_nulldev0
 };
-iop_device_t ata_ioman_device = { "xatapi", 268435472u, 1u, "CD-ROM_ATAPI", &ata_ioman_devops }; // idb
-int g_reset_scrambling_pack = 0; // weak
-int g_pes_scrambling_control_pack = 0; // idb
-int g_dma_mode_value = 1; // weak
-int g_dma_speed_value = 2; // idb
-int g_should_wait_for_dma_flag = 0; // weak
-int g_is_wait_busy = 0; // weak
-int g_xatapi_verbose = 0; // weak
-int g_ata_devinfo_init = 0; // weak
-int g_bf40200a_is_set_ptr; // weak
-u32 *g_cd_sc_ffffffd9_ptr;
-int g_is_in_read_info; // weak
-int g_io_event_flag; // idb
-int g_adma_evfid; // idb
-int g_acmd_evfid; // idb
-int g_dma_lock_sema; // idb
-void (*g_dev5_intr_cbs[16])(int);
-void (*g_dev5_predma_cbs[4])(u32, int);
-void (*g_dev5_postdma_cbs[4])(u32, int);
-int g_atapi_event_flag; // idb
-ata_devinfo_t atad_devinfo[2]; // weak
-ata_cmd_state_t atad_cmd_state; // weak
-int ata_param[128]; // weak
-int g_atapi_xfer_buf[130]; // weak
+static iop_device_t ata_ioman_device = { "xatapi", 268435472u, 1u, "CD-ROM_ATAPI", &ata_ioman_devops }; // idb
+static int g_reset_scrambling_pack = 0; // weak
+static int g_pes_scrambling_control_pack = 0; // idb
+static int g_dma_mode_value = 1; // weak
+static int g_dma_speed_value = 2; // idb
+static int g_should_wait_for_dma_flag = 0; // weak
+static int g_is_wait_busy = 0; // weak
+static int g_xatapi_verbose = 0; // weak
+static int g_ata_devinfo_init = 0; // weak
+static int g_bf40200a_is_set_ptr; // weak
+static u32 *g_cd_sc_ffffffd9_ptr;
+static int g_is_in_read_info; // weak
+static int g_io_event_flag; // idb
+static int g_adma_evfid; // idb
+static int g_acmd_evfid; // idb
+static int g_dma_lock_sema; // idb
+static void (*g_dev5_intr_cbs[16])(int);
+static void (*g_dev5_predma_cbs[4])(u32, int);
+static void (*g_dev5_postdma_cbs[4])(u32, int);
+static int g_atapi_event_flag; // idb
+static ata_devinfo_t atad_devinfo[2]; // weak
+static ata_cmd_state_t atad_cmd_state; // weak
+static int ata_param[128]; // weak
+static int g_atapi_xfer_buf[130]; // weak
 static struct dev5_speed_regs_ *const dev5_speed_regs = (void *)0xBF410000; // weak
 static struct dev5_fpga_regs_  *const dev5_fpga_regs = (void *)0xBF414000; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-int do_atapi_cmd_inquiry_12h(s16 dev_nr)
+static int do_atapi_cmd_inquiry_12h(s16 dev_nr)
 {
   int i; // $s1
   int retres; // $s0
@@ -337,7 +279,7 @@ int do_atapi_cmd_inquiry_12h(s16 dev_nr)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (0040013C) --------------------------------------------------------
-int do_atapi_request_test_unit_ready(s16 dev_nr, int *errptr, int *ctrlptr)
+static int do_atapi_request_test_unit_ready(s16 dev_nr, int *errptr, int *ctrlptr)
 {
   int retres; // $s0
   char pkt[12]; // [sp+20h] [-10h] BYREF
@@ -356,7 +298,7 @@ int do_atapi_request_test_unit_ready(s16 dev_nr, int *errptr, int *ctrlptr)
 }
 
 //----- (004001F0) --------------------------------------------------------
-int atapi_req_sense_get(s16 dev_nr, int *retptr)
+static int atapi_req_sense_get(s16 dev_nr, int *retptr)
 {
   int result; // $v0
   char pkt[12]; // [sp+20h] [-50h] BYREF
@@ -376,8 +318,9 @@ int atapi_req_sense_get(s16 dev_nr, int *retptr)
   return 0;
 }
 
+#ifdef UNUSED_FUNC
 //----- (004002AC) --------------------------------------------------------
-int atapi_exec_cmd_request_sense_03h_unused(s16 dev_nr, int *retptr)
+static int atapi_exec_cmd_request_sense_03h_unused(s16 dev_nr, int *retptr)
 {
   int result; // $v0
   char pkt[12]; // [sp+20h] [-50h] BYREF
@@ -396,9 +339,11 @@ int atapi_exec_cmd_request_sense_03h_unused(s16 dev_nr, int *retptr)
   *retptr = ((outbuf[2] & 0xF) << 16) | ((u8)outbuf[12] << 8) | (u8)outbuf[13];
   return 0;
 }
+#endif
 
+#ifdef UNUSED_FUNC
 //----- (00400368) --------------------------------------------------------
-int do_start_stop_unit_1bh_unused(void)
+static int do_start_stop_unit_1bh_unused(void)
 {
   int i; // $s1
   int retres; // $s0
@@ -454,9 +399,10 @@ int do_start_stop_unit_1bh_unused(void)
   return retres;
 }
 // 40A648: using guessed type int g_xatapi_verbose;
+#endif
 
 //----- (004005C8) --------------------------------------------------------
-int chgsys_callback_cb(int *mediaptr, int want_atapi)
+static int chgsys_callback_cb(int *mediaptr, int want_atapi)
 {
   int i; // $s1
   int tryres1; // $s0
@@ -599,7 +545,7 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00400BB4) --------------------------------------------------------
-int sceCdAtapi_SC(void)
+static int sceCdAtapi_SC(void)
 {
   int i; // $s1
   int retres; // $s0
@@ -671,7 +617,7 @@ int xatapi_15_exec_f6_f9_scsi(void)
 }
 
 //----- (00400E74) --------------------------------------------------------
-int sceCdAtapi_BC(void)
+static int sceCdAtapi_BC(void)
 {
   int i; // $s1
   int retres1; // $s0
@@ -862,7 +808,7 @@ int sceCdAtapi_BC(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00401514) --------------------------------------------------------
-int atapi_spin_status_get(int unused_arg1, void *buf)
+static int atapi_spin_status_get(int unused_arg1, void *buf)
 {
   int result; // $v0
   char pkt[12]; // [sp+20h] [-10h] BYREF
@@ -877,7 +823,7 @@ int atapi_spin_status_get(int unused_arg1, void *buf)
 }
 
 //----- (00401598) --------------------------------------------------------
-int atapi_check_if_drive_ready(int check_nowait)
+static int atapi_check_if_drive_ready(int check_nowait)
 {
   u8 ata_control; // $v0
   int drive_err; // [sp+18h] [-10h] BYREF
@@ -933,7 +879,7 @@ int atapi_check_if_drive_ready(int check_nowait)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004017A8) --------------------------------------------------------
-int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int secsize, int rwtype)
+static int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int secsize, int rwtype)
 {
   char *rwbuf_tmp; // $s3
   unsigned int nsec_tmp; // $s4
@@ -980,7 +926,7 @@ int sceFsDevctlBlkIO(s16 dev_nr, void *buf, void *rwbuf, unsigned int nsec, int 
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00401958) --------------------------------------------------------
-void expbay_device_reset(void)
+static void expbay_device_reset(void)
 {
   if ( (*g_dev9_reg_power & 4) )
   {
@@ -997,7 +943,7 @@ void expbay_device_reset(void)
 }
 
 //----- (00401A38) --------------------------------------------------------
-int cd_atapi_intr_callback_cb(int cbarg)
+static int cd_atapi_intr_callback_cb(int cbarg)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("dev5 interrupt\n");
@@ -1011,14 +957,14 @@ int cd_atapi_intr_callback_cb(int cbarg)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00401AB8) --------------------------------------------------------
-void speedRegisterIntrDispatchCb(void *callback)
+static void speedRegisterIntrDispatchCb(void *callback)
 {
   p_dev5_intr_cb = (int (*)(u32))callback;
 }
 // 40A5A8: using guessed type int (*p_dev5_intr_cb)(u32);
 
 //----- (00401AC8) --------------------------------------------------------
-void sceDev5Init(void)
+static void sceDev5Init(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("dev5 atapi Init start\n");
@@ -1031,7 +977,7 @@ void sceDev5Init(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00401B48) --------------------------------------------------------
-int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2)
+static int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2)
 {
   u32 buzzerres; // [sp+10h] [-8h] BYREF
 
@@ -1045,7 +991,7 @@ int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00401B94) --------------------------------------------------------
-int xatapi_do_init(void)
+static int xatapi_do_init(void)
 {
   int (*oldcb)(int, void *); // $s0
   u32 *sc_tmp; // [sp+10h] [-10h] BYREF
@@ -1121,27 +1067,27 @@ int xatapi_do_init(void)
 // 40A650: using guessed type int g_bf40200a_is_set_ptr;
 
 //----- (00401E88) --------------------------------------------------------
-int xatapi_nulldev0(void)
+static int xatapi_nulldev0(void)
 {
   printf("nulldev0 call\n");
   return -5;
 }
 
 //----- (00401EB0) --------------------------------------------------------
-s64 xatapi_nulldev0_64bit(void)
+static s64 xatapi_nulldev0_64bit(void)
 {
   printf("nulldev0 call\n");
   return -5LL;
 }
 
 //----- (00401EDC) --------------------------------------------------------
-int xatapi_dev_init(void)
+static int xatapi_dev_init(void)
 {
   return 0;
 }
 
 //----- (00401EE4) --------------------------------------------------------
-int xatapi_dev_deinit(void)
+static int xatapi_dev_deinit(void)
 {
   return 0;
 }
@@ -1163,7 +1109,7 @@ int xatapi_2_terminate(int with_quit)
 }
 
 //----- (00401F60) --------------------------------------------------------
-int xatapi_dev_devctl(
+static int xatapi_dev_devctl(
         const iop_file_t *f,
         const char *name,
         int cmd,
@@ -1328,31 +1274,31 @@ int _start(int ac, char **av)
 }
 
 //----- (00402554) --------------------------------------------------------
-int expbay_get_has_power(void)
+static int expbay_get_has_power(void)
 {
   return *g_dev9_reg_power & 4;
 }
 
 //----- (00402570) --------------------------------------------------------
-void speedRegisterIntrCb(int intr, void *cb)
+static void speedRegisterIntrCb(int intr, void *cb)
 {
   g_dev5_intr_cbs[intr] = cb;
 }
 
 //----- (00402588) --------------------------------------------------------
-void speedRegisterPreDmaCb(int ctrl, void *cb)
+static void speedRegisterPreDmaCb(int ctrl, void *cb)
 {
   g_dev5_predma_cbs[ctrl] = cb;
 }
 
 //----- (004025A0) --------------------------------------------------------
-void speedRegisterPostDmaCb(int ctrl, void *cb)
+static void speedRegisterPostDmaCb(int ctrl, void *cb)
 {
   g_dev5_postdma_cbs[ctrl] = cb;
 }
 
 //----- (004025B8) --------------------------------------------------------
-int speed_intr_dispatch(int flag)
+static int speed_intr_dispatch(int flag)
 {
   int i; // $s2
   int j; // $s0
@@ -1381,7 +1327,7 @@ int speed_intr_dispatch(int flag)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00402714) --------------------------------------------------------
-void speedIntrEnable(s16 mask)
+static void speedIntrEnable(s16 mask)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -1392,7 +1338,7 @@ void speedIntrEnable(s16 mask)
 }
 
 //----- (00402774) --------------------------------------------------------
-void speedIntrDisable(s16 mask)
+static void speedIntrDisable(s16 mask)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -1402,7 +1348,7 @@ void speedIntrDisable(s16 mask)
 }
 
 //----- (004027C4) --------------------------------------------------------
-int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
+static int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
   int result; // $v0
 
@@ -1441,7 +1387,7 @@ int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00402A6C) --------------------------------------------------------
-int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir)
+static int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
   int result; // $v0
 
@@ -1487,7 +1433,7 @@ int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00402D4C) --------------------------------------------------------
-int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, int dir)
+static int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
   int result; // $v0
 
@@ -1521,7 +1467,7 @@ int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, int dir
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00402F68) --------------------------------------------------------
-int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, int dir)
+static int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
   int result; // $v0
 
@@ -1560,14 +1506,14 @@ int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, int dir
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004031AC) --------------------------------------------------------
-void speedLEDCtl(int ctl)
+static void speedLEDCtl(int ctl)
 {
   // Unofficial: was 8 bit access
   dev5_speed_regs->r_spd_pio_data = !ctl;
 }
 
 //----- (004031C4) --------------------------------------------------------
-void speed_init(void)
+static void speed_init(void)
 {
   int i; // $v1
   iop_sema_t semaparam; // [sp+10h] [-10h] BYREF
@@ -1595,7 +1541,7 @@ void speed_init(void)
 }
 
 //----- (00403284) --------------------------------------------------------
-void speed_device_init(void)
+static void speed_device_init(void)
 {
   int idx; // $v1
   char *revtypes[8]; // [sp+0h] [-20h] BYREF
@@ -1635,7 +1581,7 @@ void speed_device_init(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004033A0) --------------------------------------------------------
-void do_hex_dump(void *ptr, int len)
+static void do_hex_dump(void *ptr, int len)
 {
   int i; // $fp
   int charbuf_offs; // $s5
@@ -1674,7 +1620,7 @@ void do_hex_dump(void *ptr, int len)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00403554) --------------------------------------------------------
-void ata_pre_dma_cb(void)
+static void ata_pre_dma_cb(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("ata_pre_dma_handler:old %x\n", dev5_speed_regs->r_spd_xfr_ctrl);
@@ -1685,7 +1631,7 @@ void ata_pre_dma_cb(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004035CC) --------------------------------------------------------
-void ata_post_dma_cb(void)
+static void ata_post_dma_cb(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("ata_post_dma_handler:old %x\n", dev5_speed_regs->r_spd_xfr_ctrl);
@@ -1696,7 +1642,7 @@ void ata_post_dma_cb(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00403644) --------------------------------------------------------
-int vReferEventFlagStatus(int ef, iop_event_info_t *info)
+static int vReferEventFlagStatus(int ef, iop_event_info_t *info)
 {
   return ( QueryIntrContext() ) ? iReferEventFlagStatus(ef, info) : ReferEventFlagStatus(ef, info);
 }
@@ -1764,7 +1710,7 @@ void xatapi_10_sceCdSpdAtaDmaEnd(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00403918) --------------------------------------------------------
-void ata_pio_mode(int mode)
+static void ata_pio_mode(int mode)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("SpdAtaSetPioTiming %d\n", mode);
@@ -1791,7 +1737,7 @@ void ata_pio_mode(int mode)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004039D0) --------------------------------------------------------
-void ata_multiword_dma_mode(int mode)
+static void ata_multiword_dma_mode(int mode)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("SpdAtaSetMdmaTiming %d\n", mode);
@@ -1813,7 +1759,7 @@ void ata_multiword_dma_mode(int mode)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00403A64) --------------------------------------------------------
-void ata_ultra_dma_mode(int mode)
+static void ata_ultra_dma_mode(int mode)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("SpdAtaSetUdmaTiming %d\n", mode);
@@ -1841,7 +1787,7 @@ void ata_ultra_dma_mode(int mode)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00403B34) --------------------------------------------------------
-int ata_intr_cb(int flag)
+static int ata_intr_cb(int flag)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("call AtaIntrHandle %d\n", flag);
@@ -1852,7 +1798,7 @@ int ata_intr_cb(int flag)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00403B84) --------------------------------------------------------
-void AtaEjectIntrHandle(void)
+static void AtaEjectIntrHandle(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("call AtaEjectIntrHandle\n");
@@ -1863,7 +1809,7 @@ void AtaEjectIntrHandle(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00403BD8) --------------------------------------------------------
-unsigned int AtaAlarmrHandle(void *usrdat)
+static unsigned int AtaAlarmrHandle(void *usrdat)
 {
   (void)usrdat;
 
@@ -1927,13 +1873,13 @@ int xatapi_12_get_ata_control(void)
 }
 
 //----- (00403DB0) --------------------------------------------------------
-int sceAtaGetError(void)
+static int sceAtaGetError(void)
 {
   return (u8)dev5_speed_regs->r_spd_ata_error;
 }
 
 //----- (00403DC4) --------------------------------------------------------
-int ata_wait_busy1_busy(void)
+static int ata_wait_busy1_busy(void)
 {
   unsigned int i; // $s0
 
@@ -1985,7 +1931,7 @@ int ata_wait_busy1_busy(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00403F3C) --------------------------------------------------------
-int ata_wait_busy2_busy(void)
+static int ata_wait_busy2_busy(void)
 {
   unsigned int i; // $s0
 
@@ -2037,7 +1983,7 @@ int ata_wait_busy2_busy(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004040B4) --------------------------------------------------------
-int ata_wait_bus_busy_busbusy(void)
+static int ata_wait_bus_busy_busbusy(void)
 {
   unsigned int i; // $s0
 
@@ -2089,7 +2035,7 @@ int ata_wait_bus_busy_busbusy(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (0040422C) --------------------------------------------------------
-int ata_device_select(int device)
+static int ata_device_select(int device)
 {
   int result; // $v0
 
@@ -2107,7 +2053,7 @@ int ata_device_select(int device)
 }
 
 //----- (0040429C) --------------------------------------------------------
-int sceAtaExecCmd(
+static int sceAtaExecCmd(
         void *buf,
         u32 blkcount,
         u16 feature,
@@ -2222,7 +2168,7 @@ int xatapi_5_sceAtaExecCmd(
 }
 
 //----- (004046A4) --------------------------------------------------------
-int sceCdAtapiExecCmd_local(
+static int sceCdAtapiExecCmd_local(
         s16 n,
         void *buf,
         int nsec,
@@ -2402,7 +2348,7 @@ int sceCdAtapiExecCmd_local(
 // 40A710: using guessed type ata_cmd_state_t atad_cmd_state;
 
 //----- (00404CEC) --------------------------------------------------------
-int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto)
+static int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto)
 {
   if ( pkt_len )
   {
@@ -2437,7 +2383,7 @@ int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pk
 }
 
 //----- (00404ECC) --------------------------------------------------------
-int ata_pio_transfer(ata_cmd_state_t *cmd_state)
+static int ata_pio_transfer(ata_cmd_state_t *cmd_state)
 {
   char r_spd_ata_status; // $s0
 
@@ -2499,7 +2445,7 @@ int ata_pio_transfer(ata_cmd_state_t *cmd_state)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (0040505C) --------------------------------------------------------
-int IoRun_atapi(ata_cmd_state_t *cmd_state)
+static int IoRun_atapi(ata_cmd_state_t *cmd_state)
 {
   int result; // $v0
   u32 blktotal; // $s3
@@ -2569,7 +2515,7 @@ int IoRun_atapi(ata_cmd_state_t *cmd_state)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004052FC) --------------------------------------------------------
-int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
+static int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
 {
   unsigned int blkcount_tmp; // $s2
   int i; // $v1
@@ -2646,7 +2592,7 @@ int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004055B0) --------------------------------------------------------
-int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
+static int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
 {
   unsigned int blkremainder; // $a1
   unsigned int blksectors; // $s3
@@ -2745,7 +2691,7 @@ int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
 // 40A938: using guessed type int g_atapi_xfer_buf[130];
 
 //----- (0040594C) --------------------------------------------------------
-int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
+static int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
 {
   unsigned int blksectors; // $s2
   int blkremainder; // $s6
@@ -2847,7 +2793,7 @@ int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
 // 40A938: using guessed type int g_atapi_xfer_buf[130];
 
 //----- (00405D04) --------------------------------------------------------
-int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
+static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
 {
   int result; // $v0
   unsigned int blksectors; // $s2
@@ -3007,7 +2953,7 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
 // 40A938: using guessed type int g_atapi_xfer_buf[130];
 
 //----- (004062F4) --------------------------------------------------------
-void DmaRun_spck(char *buf, unsigned int secsize)
+static void DmaRun_spck(char *buf, unsigned int secsize)
 {
   unsigned int secsize_sectors; // $s2
   unsigned int unk8148_val; // $s1
@@ -3056,7 +3002,7 @@ void DmaRun_spck(char *buf, unsigned int secsize)
 // 40A938: using guessed type int g_atapi_xfer_buf[130];
 
 //----- (004064D4) --------------------------------------------------------
-int sceAtaWaitResult(void)
+static int sceAtaWaitResult(void)
 {
   int res; // $s0
   int i; // $v1
@@ -3194,7 +3140,7 @@ int xatapi_6_sceAtaWaitResult(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (0040694C) --------------------------------------------------------
-int sceCdAtapiWaitResult_local(void)
+static int sceCdAtapiWaitResult_local(void)
 {
   int res; // $s2
   int i; // $v1
@@ -3357,7 +3303,7 @@ int xatapi_8_sceCdAtapiWaitResult(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00406F2C) --------------------------------------------------------
-void ata_bus_reset_inner(void)
+static void ata_bus_reset_inner(void)
 {
   dev5_speed_regs->r_spd_if_ctrl = 128;
   DelayThread(100);
@@ -3370,7 +3316,7 @@ void ata_bus_reset_inner(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00406F9C) --------------------------------------------------------
-int ata_bus_reset(void)
+static int ata_bus_reset(void)
 {
   if ( !(dev5_speed_regs->r_spd_if_ctrl & 0x40) )
     ata_bus_reset_inner();
@@ -3392,17 +3338,19 @@ int xatapi_4_sceAtaSoftReset(void)
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 
+#ifdef UNUSED_FUNC
 //----- (0040706C) --------------------------------------------------------
-int sceAtaFlushCache(int device)
+static int sceAtaFlushCache(int device)
 {
   int result; // $v0
 
   result = xatapi_5_sceAtaExecCmd(0, 1u, 0, 0, 0, 0, 0, device << 4, 0xE7u, 1u);
   return result ? result : xatapi_6_sceAtaWaitResult();
 }
+#endif
 
 //----- (004070D0) --------------------------------------------------------
-int ata_device_identify(int device, void *info)
+static int ata_device_identify(int device, void *info)
 {
   int result; // $v0
 
@@ -3411,7 +3359,7 @@ int ata_device_identify(int device, void *info)
 }
 
 //----- (00407134) --------------------------------------------------------
-int ata_device_pkt_identify(int device, void *info)
+static int ata_device_pkt_identify(int device, void *info)
 {
   int result; // $v0
 
@@ -3420,7 +3368,7 @@ int ata_device_pkt_identify(int device, void *info)
 }
 
 //----- (00407198) --------------------------------------------------------
-int atapi_device_set_transfer_mode(int device, int type, int mode)
+static int atapi_device_set_transfer_mode(int device, int type, int mode)
 {
   int result; // $v0
 
@@ -3448,7 +3396,7 @@ int atapi_device_set_transfer_mode(int device, int type, int mode)
 }
 
 //----- (00407284) --------------------------------------------------------
-int ata_device_set_transfer_mode(int device, int type, int mode)
+static int ata_device_set_transfer_mode(int device, int type, int mode)
 {
   int result; // $v0
 
@@ -3476,7 +3424,7 @@ int ata_device_set_transfer_mode(int device, int type, int mode)
 }
 
 //----- (00407370) --------------------------------------------------------
-void ata_device_probe(ata_devinfo_t *devinfo)
+static void ata_device_probe(ata_devinfo_t *devinfo)
 {
   char r_spd_ata_lcyl; // $a1
   u8 r_spd_ata_hcyl; // $v1
@@ -3511,7 +3459,7 @@ void ata_device_probe(ata_devinfo_t *devinfo)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004074C8) --------------------------------------------------------
-void atapi_device_set_transfer_mode_outer(int device)
+static void atapi_device_set_transfer_mode_outer(int device)
 {
   if ( g_dma_mode_value )
   {
@@ -3536,7 +3484,7 @@ void atapi_device_set_transfer_mode_outer(int device)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00407594) --------------------------------------------------------
-void ata_device_set_transfer_mode_outer(int device)
+static void ata_device_set_transfer_mode_outer(int device)
 {
   int i; // $s0
 
@@ -3563,7 +3511,7 @@ void ata_device_set_transfer_mode_outer(int device)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004076A0) --------------------------------------------------------
-void ata_init_devices(ata_devinfo_t *devinfo)
+static void ata_init_devices(ata_devinfo_t *devinfo)
 {
   int i; // $s1
 
@@ -3621,7 +3569,7 @@ void ata_init_devices(ata_devinfo_t *devinfo)
 // 40A738: using guessed type int ata_param[128];
 
 //----- (00407898) --------------------------------------------------------
-void sceAtapiInit(int device)
+static void sceAtapiInit(int device)
 {
   int resetval; // $v0
 
@@ -3649,7 +3597,7 @@ void sceAtapiInit(int device)
 // 40A6E8: using guessed type ata_devinfo_t atad_devinfo[2];
 
 //----- (00407968) --------------------------------------------------------
-void sceAtInterInit(void)
+static void sceAtInterInit(void)
 {
   int sc_tmp; // [sp+10h] [-8h] BYREF
 
@@ -3662,7 +3610,7 @@ void sceAtInterInit(void)
 }
 
 //----- (004079E4) --------------------------------------------------------
-int create_event_flags(void)
+static int create_event_flags(void)
 {
   iop_event_t efparam; // [sp+10h] [-10h] BYREF
 
@@ -3701,7 +3649,7 @@ int create_event_flags(void)
 }
 
 //----- (00407B20) --------------------------------------------------------
-void FpgaLayer1On(void)
+static void FpgaLayer1On(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER1 %x\n", "FpgaLayer1On", dev5_fpga_regs->r_fpga_layer1);
@@ -3713,7 +3661,7 @@ void FpgaLayer1On(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00407BC4) --------------------------------------------------------
-void FpgaLayer1Off(void)
+static void FpgaLayer1Off(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER1 %x\n", "FpgaLayer1Off", dev5_fpga_regs->r_fpga_layer1);
@@ -3723,8 +3671,9 @@ void FpgaLayer1Off(void)
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 
+#ifdef UNUSED_FUNC
 //----- (00407C54) --------------------------------------------------------
-void FpgaLayer2On(void)
+static void FpgaLayer2On(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER2 %x\n", "FpgaLayer2On", dev5_fpga_regs->r_fpga_layer2);
@@ -3734,9 +3683,10 @@ void FpgaLayer2On(void)
     Kprintf("%s():new:FPGA_LAYER2 %x\n", "FpgaLayer2On", dev5_fpga_regs->r_fpga_layer2);
 }
 // 40A648: using guessed type int g_xatapi_verbose;
+#endif
 
 //----- (00407CF8) --------------------------------------------------------
-void FpgaLayer2Off(void)
+static void FpgaLayer2Off(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER2 %x\n", "FpgaLayer2Off", dev5_fpga_regs->r_fpga_layer2);
@@ -3747,7 +3697,7 @@ void FpgaLayer2Off(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00407D88) --------------------------------------------------------
-void FpgaXfrenOn(void)
+static void FpgaXfrenOn(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_XFREN %x\n", "FpgaXfrenOn", dev5_fpga_regs->r_fpga_xfren);
@@ -3759,7 +3709,7 @@ void FpgaXfrenOn(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00407E2C) --------------------------------------------------------
-void FpgaXfrenOff(void)
+static void FpgaXfrenOff(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_XFREN %x\n", "FpgaXfrenOff", dev5_fpga_regs->r_fpga_xfren);
@@ -3770,7 +3720,7 @@ void FpgaXfrenOff(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00407EBC) --------------------------------------------------------
-void FpgaSpckmodeOn(void)
+static void FpgaSpckmodeOn(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs->r_fpga_unk32);
@@ -3782,7 +3732,7 @@ void FpgaSpckmodeOn(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00407F60) --------------------------------------------------------
-void FpgaSpckmodeOff(void)
+static void FpgaSpckmodeOff(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs->r_fpga_unk32);
@@ -3793,7 +3743,7 @@ void FpgaSpckmodeOff(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00407FF0) --------------------------------------------------------
-void FpgaXfdir(int dir)
+static void FpgaXfdir(int dir)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_XFRDIR %x\n", "FpgaXfrdir", dev5_fpga_regs->r_fpga_xfrdir);
@@ -3808,7 +3758,7 @@ void FpgaXfdir(int dir)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004080CC) --------------------------------------------------------
-int FpgaGetRevision(void)
+static int FpgaGetRevision(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():FPGA_REVISION %x\n", "FpgaGetRevision", dev5_fpga_regs->r_fpga_revision);
@@ -3816,20 +3766,22 @@ int FpgaGetRevision(void)
 }
 // 40A648: using guessed type int g_xatapi_verbose;
 
+#ifdef UNUSED_FUNC
 //----- (00408120) --------------------------------------------------------
-unsigned int do_fpga_add_unused8120(void)
+static unsigned int do_fpga_add_unused8120(void)
 {
   return (dev5_fpga_regs->r_fpga_sl3bufd + (unsigned int)dev5_fpga_regs->r_fpga_exbufd) >> 7;
 }
+#endif
 
 //----- (00408148) --------------------------------------------------------
-int do_fpga_check_unk8148(void)
+static int do_fpga_check_unk8148(void)
 {
   return (u16)dev5_fpga_regs->r_fpga_unk34;
 }
 
 //----- (0040815C) --------------------------------------------------------
-void FpgaCheckWriteBuffer(void)
+static void FpgaCheckWriteBuffer(void)
 {
   int i; // $v1
 
@@ -3847,7 +3799,7 @@ void FpgaCheckWriteBuffer(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00408250) --------------------------------------------------------
-void FpgaCheckWriteBuffer2(void)
+static void FpgaCheckWriteBuffer2(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():in ...\n", "FpgaCheckWriteBuffer2");
@@ -3868,7 +3820,7 @@ void FpgaCheckWriteBuffer2(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (004083C8) --------------------------------------------------------
-void FpgaClearBuffer(void)
+static void FpgaClearBuffer(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_SL3BUFD %x\n", "FpgaClearBuffer", dev5_fpga_regs->r_fpga_sl3bufd);
@@ -3895,7 +3847,7 @@ void FpgaClearBuffer(void)
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00408600) --------------------------------------------------------
-int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscramblingpackptr)
+static int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscramblingpackptr)
 {
   int bufchk; // $s0
   char *bufoffs1; // $a0
@@ -3949,7 +3901,7 @@ int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *pesscra
 // 40A648: using guessed type int g_xatapi_verbose;
 
 //----- (00408884) --------------------------------------------------------
-int Mpeg2CheckScramble(char *buf, unsigned int bufsize)
+static int Mpeg2CheckScramble(char *buf, unsigned int bufsize)
 {
   int restmp; // $s1
   signed int i; // $a2
