@@ -243,24 +243,11 @@ struct msif_cmd_callrpc_8000001A
 //-------------------------------------------------------------------------
 // Function declarations
 
-u32 _start();
+int _start(int ac, char **av);
 void sceSifMInitRpc(unsigned int mode);
-int sif_mrpc_get_fpacket(struct msif_data *rpc_data);
-int sif_mrpc_get_fpacket2(struct msif_data *rpc_data, int rid);
-sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd);
-unsigned int alarm_cb_cmd_80000018_1(void *pkt);
-void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data, struct msif_data *harg);
-unsigned int alarm_cb_cmd_80000018_2(void *pkt);
-void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struct msif_data *harg);
-void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg);
-void do_set_rpc_queue(sceSifMQueueData *qd, int key);
-void do_msif_remove_rpc(sceSifMServeData *sd);
-void do_sif_remove_rpc_queue(const sceSifMQueueData *qd);
-struct _sifm_serve_data *do_msif_get_next_request(sceSifMQueueData *qd);
-void do_msif_exec_request(sceSifMServeData *sd);
-void do_msif_rpc_loop(sceSifMQueueData *qd);
-void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat);
-void unusedsub_400DC4(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
+static void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data, struct msif_data *harg);
+static void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struct msif_data *harg);
+static void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg);
 void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, sceSifMRpcFunc cfunc);
 int sceSifMTermRpc(int request, int flags);
 
@@ -268,15 +255,17 @@ int sceSifMTermRpc(int request, int flags);
 // Data declarations
 
 extern struct irx_export_table _exp_msifrpc;
-int g_first_inited = 0; // weak
-int g_pkt_table[512]; // weak
-int g_client_table[512]; // weak
-struct msif_data g_msif_data; // weak
+static int g_first_inited = 0; // weak
+static int g_pkt_table[512]; // weak
+static int g_client_table[512]; // weak
+static struct msif_data g_msif_data; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-u32 _start()
+int _start(int ac, char **av)
 {
+  (void)ac;
+  (void)av;
   printf("Multi-thread available sifrpc module...\n");
   return RegisterLibraryEntries(&_exp_msifrpc) ? 1 : 0;
 }
@@ -334,7 +323,7 @@ void sceSifMInitRpc(unsigned int mode)
 // 4025A0: using guessed type msif_data g_msif_data;
 
 //----- (004001D4) --------------------------------------------------------
-int sif_mrpc_get_fpacket(struct msif_data *rpc_data)
+static int sif_mrpc_get_fpacket(struct msif_data *rpc_data)
 {
   int m_rdata_table_idx; // $v1
   int m_rdata_table_len; // $v0
@@ -351,13 +340,13 @@ int sif_mrpc_get_fpacket(struct msif_data *rpc_data)
 // 4001E0: conditional instruction was optimized away because $v0.4!=0
 
 //----- (00400224) --------------------------------------------------------
-int sif_mrpc_get_fpacket2(struct msif_data *rpc_data, int rid)
+static int sif_mrpc_get_fpacket2(struct msif_data *rpc_data, int rid)
 {
   return ( rid >= 0 && rid < rpc_data->m_client_table_len ) ? (rpc_data->m_client_table + (rid << 6)) : sif_mrpc_get_fpacket(rpc_data);
 }
 
 //----- (00400270) --------------------------------------------------------
-sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd)
+static sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd)
 {
   sceSifMServeEntry *g_mserv_entries_ll; // $v1
 
@@ -366,13 +355,13 @@ sceSifMServeEntry *do_get_mserve_entry(int cmd, struct msif_data *msd)
 }
 
 //----- (004002B0) --------------------------------------------------------
-unsigned int alarm_cb_cmd_80000018_1(void *pkt)
+static unsigned int alarm_cb_cmd_80000018_1(void *pkt)
 {
   return isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) ? 0 : 0xF000;
 }
 
 //----- (004002F8) --------------------------------------------------------
-void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data, struct msif_data *harg)
+static void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data, struct msif_data *harg)
 {
   sceSifMServeEntry *mserve_entry; // $s2
   SifMRpcBindPkt_t *fpacket; // $s0
@@ -420,13 +409,13 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
 }
 
 //----- (0040044C) --------------------------------------------------------
-unsigned int alarm_cb_cmd_80000018_2(void *pkt)
+static unsigned int alarm_cb_cmd_80000018_2(void *pkt)
 {
   return isceSifSendCmd(0x80000018, pkt, 64, 0, 0, 0) ? 0 : 0xF000;
 }
 
 //----- (00400494) --------------------------------------------------------
-void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struct msif_data *harg)
+static void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struct msif_data *harg)
 {
   sceSifMServeEntry *mserve_entry; // $s1
   int threadstate_tmp; // $s1
@@ -479,7 +468,7 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
 }
 
 //----- (00400610) --------------------------------------------------------
-void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg)
+static void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg)
 {
   (void)harg;
   if ( data->m_sd->base->start )
@@ -500,7 +489,7 @@ void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct ms
 }
 
 //----- (004006E8) --------------------------------------------------------
-void do_set_rpc_queue(sceSifMQueueData *qd, int key)
+static void do_set_rpc_queue(sceSifMQueueData *qd, int key)
 {
   sceSifMQueueData *i; // $v1
   int state; // [sp+10h] [-8h] BYREF
@@ -528,7 +517,7 @@ void do_set_rpc_queue(sceSifMQueueData *qd, int key)
 // Removed unused func
 
 //----- (00400884) --------------------------------------------------------
-void do_msif_remove_rpc(sceSifMServeData *sd)
+static void do_msif_remove_rpc(sceSifMServeData *sd)
 {
   sceSifMServeData *server1; // $v1
   int state; // [sp+10h] [-8h] BYREF
@@ -559,7 +548,7 @@ void do_msif_remove_rpc(sceSifMServeData *sd)
 }
 
 //----- (00400938) --------------------------------------------------------
-void do_sif_remove_rpc_queue(const sceSifMQueueData *qd)
+static void do_sif_remove_rpc_queue(const sceSifMQueueData *qd)
 {
   sceSifMQueueData *queue1; // $s0
   sceSifMQueueData *queue2; // $v0
@@ -590,7 +579,7 @@ void do_sif_remove_rpc_queue(const sceSifMQueueData *qd)
 // 4025A0: using guessed type msif_data g_msif_data;
 
 //----- (004009CC) --------------------------------------------------------
-struct _sifm_serve_data *do_msif_get_next_request(sceSifMQueueData *qd)
+static struct _sifm_serve_data *do_msif_get_next_request(sceSifMQueueData *qd)
 {
   sceSifMServeData *start; // $s0
   int state; // [sp+10h] [-8h] BYREF
@@ -607,7 +596,7 @@ struct _sifm_serve_data *do_msif_get_next_request(sceSifMQueueData *qd)
 }
 
 //----- (00400A34) --------------------------------------------------------
-void do_msif_exec_request(sceSifMServeData *sd)
+static void do_msif_exec_request(sceSifMServeData *sd)
 {
   int size_extra; // $s3
   void *sentry_ret; // $s4
@@ -666,7 +655,7 @@ void do_msif_exec_request(sceSifMServeData *sd)
 // 400A34: using guessed type SifDmaTransfer_t dmat[2];
 
 //----- (00400BE0) --------------------------------------------------------
-void do_msif_rpc_loop(sceSifMQueueData *qd)
+static void do_msif_rpc_loop(sceSifMQueueData *qd)
 {
   while ( 1 )
   {
@@ -687,7 +676,7 @@ void do_msif_rpc_loop(sceSifMQueueData *qd)
 }
 
 //----- (00400C28) --------------------------------------------------------
-void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
+static void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
 {
   sceSifMServeData *sd; // $s1
   sceSifMQueueData *qd; // $s3
