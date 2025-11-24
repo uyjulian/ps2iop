@@ -284,8 +284,6 @@ u32 _start()
 //----- (00400038) --------------------------------------------------------
 void sceSifMInitRpc(unsigned int mode)
 {
-  int delayth_1; // $v0
-  int delayth_2; // $v0
   int state; // [sp+18h] [-8h] BYREF
 
   (void)mode;
@@ -295,6 +293,8 @@ void sceSifMInitRpc(unsigned int mode)
     CpuResumeIntr(state);
     while ( !sceSifGetSreg(1) )
     {
+      int delayth_1; // $v0
+
       delayth_1 = DelayThread(10000);
       if ( delayth_1 )
         printf("return value of DelayThread() is %d\n", delayth_1);
@@ -320,6 +320,8 @@ void sceSifMInitRpc(unsigned int mode)
       DelayThread(0xF000);
     while ( !sceSifGetSreg(1) )
     {
+      int delayth_2; // $v0
+
       delayth_2 = DelayThread(10000);
       if ( delayth_2 )
         printf("return value of DelayThread() is %d\n", delayth_2);
@@ -374,12 +376,13 @@ void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data,
 {
   sceSifMServeEntry *mserve_entry; // $s2
   SifMRpcBindPkt_t *fpacket; // $s0
-  struct msif_msgbox_msg *msgdat; // $s0
   iop_sys_clock_t sysclks; // [sp+18h] [-8h] BYREF
 
   mserve_entry = do_get_mserve_entry(data->m_fromee_cmd, harg);
   if ( mserve_entry )
   {
+    struct msif_msgbox_msg *msgdat; // $s0
+
     msgdat = (struct msif_msgbox_msg *)AllocSysMemory(0, sizeof(struct msif_msgbox_msg), 0);
     if ( !msgdat )
     {
@@ -427,7 +430,6 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
 {
   sceSifMServeEntry *mserve_entry; // $s1
   int threadstate_tmp; // $s1
-  struct msif_msgbox_msg *msgboxdat; // $s0
   SifMRpcBindPkt_t *fpacket; // $s0
   iop_sys_clock_t alarmdat; // [sp+18h] [-8h] BYREF
 
@@ -442,6 +444,8 @@ void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struc
   }
   else
   {
+    struct msif_msgbox_msg *msgboxdat; // $s0
+
     msgboxdat = (struct msif_msgbox_msg *)AllocSysMemory(0, sizeof(struct msif_msgbox_msg), 0);
     if ( !msgboxdat )
     {
@@ -526,7 +530,6 @@ void do_set_rpc_queue(sceSifMQueueData *qd, int key)
 //----- (00400884) --------------------------------------------------------
 void do_msif_remove_rpc(sceSifMServeData *sd)
 {
-  sceSifMServeData *server2; // $s0
   sceSifMServeData *server1; // $v1
   int state; // [sp+10h] [-8h] BYREF
 
@@ -538,6 +541,8 @@ void do_msif_remove_rpc(sceSifMServeData *sd)
   }
   else
   {
+    sceSifMServeData *server2; // $s0
+
     server2 = server1;
     while ( server2 )
     {
@@ -608,9 +613,6 @@ void do_msif_exec_request(sceSifMServeData *sd)
   void *sentry_ret; // $s4
   SifMRpcRendPkt_t *fpacket2; // $v0
   int adddmat; // $s1
-  int dmaid; // $s0
-  int i; // $v0
-  SifDmaTransfer_t dmat[2]; // [sp+18h] [-28h] BYREF
   int state; // [sp+38h] [-8h] BYREF
 
   size_extra = 0;
@@ -629,6 +631,8 @@ void do_msif_exec_request(sceSifMServeData *sd)
   }
   else
   {
+    SifDmaTransfer_t dmat[2]; // [sp+18h] [-28h] BYREF
+
     fpacket2->rpc_id = 0;
     fpacket2->rec_id = 0;
     if ( size_extra > 0 )
@@ -645,6 +649,9 @@ void do_msif_exec_request(sceSifMServeData *sd)
     dmat[adddmat].dest = sd->paddr;
     while ( 1 )
     {
+      int dmaid; // $s0
+      int i; // $v0
+
       CpuSuspendIntr(&state);
       dmaid = sceSifSetDma(dmat, adddmat + 1);
       CpuResumeIntr(state);
@@ -661,10 +668,10 @@ void do_msif_exec_request(sceSifMServeData *sd)
 //----- (00400BE0) --------------------------------------------------------
 void do_msif_rpc_loop(sceSifMQueueData *qd)
 {
-  sceSifMServeData *next_request; // $v0
-
   while ( 1 )
   {
+    sceSifMServeData *next_request; // $v0
+
     next_request = do_msif_get_next_request(qd);
     if ( next_request )
     {
@@ -729,7 +736,6 @@ void thread_proc_80000019(struct msif_msgbox_msg *msgboxdat)
 void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, sceSifMRpcFunc cfunc)
 {
   sceSifMServeEntry *g_mserv_entries_ll; // $v1
-  int mbxrecv; // $s1
   int thid_1; // $v0
   int termthread_1; // $v0
   int delthread_1; // $s1
@@ -770,6 +776,8 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
   CpuResumeIntr(state);
   while ( 1 )
   {
+    int mbxrecv; // $s1
+
     mbxrecv = ReceiveMbx((void **)&arg, se->mbxid);
     if ( mbxrecv )
     {
