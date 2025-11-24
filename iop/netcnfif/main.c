@@ -401,7 +401,7 @@ void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
         redial_count = 0;
         for ( i = 0; i < (int)(sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); i += 1 )
         {
-          if ( env.root->pair_head->ifc->phone_numbers[i] && i < 3 && i >= 0 )
+          if ( i < 3 && i >= 0 && env.root->pair_head->ifc->phone_numbers[i] )
             ++redial_count;
         }
         env.root->pair_head->ifc->redial_count = redial_count - 1;

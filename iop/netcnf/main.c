@@ -690,10 +690,6 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
   int xorind1; // $s1
   int xoroffs; // $s4
   int readres; // $s0
-  int xorind2_1; // $s1
-  int xorind3_1; // $v1
-  int xorind2_2; // $s1
-  int xorind3_2; // $v1
 
   *netcnf_heap_ptr = 0;
   result = do_read_ilink_id();
@@ -729,11 +725,8 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
       break;
     *(u16 *)netcnf_data = ~*(u16 *)netcnf_data;
     *(u16 *)netcnf_data = magic_shift_read_netcnf_1(*(u16 *)netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
-    xorind2_1 = xorind1 + 1;
-    xorind3_1 = 0;
-    if ( xorind2_1 != sizeof(g_id_xorbuf) )
-      xorind3_1 = xorind2_1;
-    xorind1 = xorind3_1;
+    xorind1 += 1;
+    xorind1 = ( xorind1 != sizeof(g_id_xorbuf) ) ? xorind1 : 0;
     netcnf_data += 2;
     netcnf_size -= 2;
     xoroffs += 2;
@@ -749,11 +742,6 @@ int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr)
       {
         *netcnf_data = ~*netcnf_data;
         *netcnf_data = magic_shift_read_netcnf_2(*netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
-        xorind2_2 = xorind1 + 1;
-        xorind3_2 = 0;
-        if ( xorind2_2 != sizeof(g_id_xorbuf) )
-          xorind3_2 = xorind2_2;
-        xorind1 = xorind3_2;
         --netcnf_size;
         ++xoroffs;
       }
@@ -780,11 +768,7 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
   int netcnf_len_1; // $s2
   int xorind1; // $s1
   int xoroffs; // $s4
-  int xorind2_1; // $s1
-  int xorind3_1; // $v1
   int writeres; // $s0
-  int xorind2_2; // $s1
-  int xorind3_2; // $v1
   u16 bufflipx1; // [sp+10h] [-8h] BYREF
   char bufflipx2; // [sp+12h] [-6h] BYREF
 
@@ -806,12 +790,9 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
   {
     while ( netcnf_len_1 >= 2 )
     {
-      xorind2_1 = xorind1 + 1;
-      xorind3_1 = 0;
       bufflipx1 = magic_shift_write_netcnf_1(*buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
-      if ( xorind2_1 != sizeof(g_id_xorbuf) )
-        xorind3_1 = xorind2_1;
-      xorind1 = xorind3_1;
+      xorind1 += 1;
+      xorind1 = ( xorind1 != sizeof(g_id_xorbuf) ) ? xorind1 : 0;
       bufflipx1 = ~bufflipx1;
       writeres = do_write_netcnf_no_encode(fd, &bufflipx1, sizeof(bufflipx1));
       ++buf_1;
@@ -827,12 +808,9 @@ int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
     }
     if ( writeres >= 0 )
     {
-      xorind2_2 = xorind1 + 1;
-      xorind3_2 = 0;
       bufflipx2 = magic_shift_write_netcnf_2(*(u8 *)buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
-      if ( xorind2_2 != sizeof(g_id_xorbuf) )
-        xorind3_2 = xorind2_2;
-      xorind1 = xorind3_2;
+      xorind1 += 1;
+      xorind1 = ( xorind1 != sizeof(g_id_xorbuf) ) ? xorind1 : 0;
       bufflipx2 = ~bufflipx2;
       writeres = do_write_netcnf_no_encode(fd, &bufflipx2, sizeof(bufflipx2));
       --netcnf_len_1;
@@ -1598,7 +1576,7 @@ int do_add_entry_inner(
   if ( maxflag )
   {
     do_safe_strcpy(g_arg_fname, sizeof(g_arg_fname), g_dir_name, 740);
-    for ( endbuf = &g_ifc_buffer[strlen(g_arg_fname) + 999]; endbuf >= g_arg_fname && *endbuf != ':' && *endbuf != '/' && *endbuf != '\\'; endbuf -= 1 );
+    for ( endbuf = &g_arg_fname[strlen(g_arg_fname) - 1]; endbuf >= g_arg_fname && *endbuf != ':' && *endbuf != '/' && *endbuf != '\\'; endbuf -= 1 );
     if ( *endbuf != ':' && *endbuf != '/' && *endbuf != '\\' )
     {
       *endbuf = 0;
@@ -1835,6 +1813,7 @@ int do_edit_entry_inner(
     {
       do_safe_make_name(curfilepath1, sizeof(curfilepath1), curentrybuf1, ".tmp");
       e->dir_name = g_dir_name;
+      // cppcheck-suppress autoVariables
       e->arg_fname = curfilepath1;
       e->req = type ? 2 : 1;
       if ( do_export_netcnf(e) )
@@ -1965,7 +1944,6 @@ int do_set_latest_entry_inner(char *fname, int type, char *usr_name)
   {
     return result;
   }
-  return result;
   result = do_handle_combination_path(type, g_dir_name, g_combination_buf1, sizeof(g_combination_buf1), usr_name);
   heapmem2 = 0;
   if ( result < 0 )
@@ -2627,9 +2605,9 @@ int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
     lenx1 += 3 + strlen(e->av[i]);
   }
   listtmp = (sceNetCnfUnknown_t *)do_alloc_mem_inner(e, sizeof(sceNetCnfUnknown_t) + lenx1, 2);
-  cpydst_1 = listtmp + 1;
   if ( !listtmp )
     return -1;
+  cpydst_1 = listtmp + 1;
   for ( i = 0; i < e->ac; i += 1 )
   {
     cpysz = strlen(e->av[i]);
@@ -3022,41 +3000,28 @@ int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNetCnfEnv
   {
     e->av[e->ac] = j;
     condtmp1 = 0;
-    if ( *j )
+    if ( *j == '#' )
     {
-      if ( *j == '#' )
+      *j = 0;
+      break;
+    }
+    if ( !isspace(*j) )
+    {
+      while ( *j )
       {
-        *j = 0;
-        break;
-      }
-      if ( !isspace(*j) )
-      {
-        while ( *j )
+        if ( *j == '\\' )
         {
-          if ( *j == '\\' )
-          {
-            if ( j[1] )
-              ++j;
-          }
-          else if ( condtmp1 )
-          {
-            if ( *j == '"' )
-              condtmp1 = 0;
-          }
-          else
-          {
-            condtmp1 = *j == '"';
-          }
-          j++;
-          if ( !condtmp1 )
-          {
-            if ( *j != '#' )
-            {
-              if ( !isspace(*j) )
-                continue;
-            }
-            break;
-          }
+          if ( j[1] )
+            ++j;
+        }
+        else
+        {
+          condtmp1 = (*j == '"') ? (condtmp1 ? 0 : 1) : (condtmp1 ? 1 : 0);
+        }
+        j++;
+        if ( !condtmp1 && (*j == '#' || isspace(*j)) )
+        {
+          break;
         }
       }
     }
@@ -3559,8 +3524,6 @@ int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list va)
         }
         while ( 1 )
         {
-          if ( !strpad1 )
-            __builtin_trap();
           valmod1 = cur_va1 % strpad1;
           --strptr1;
           curnumvals = ( *fmt == 'X' ) ? &a0123456789abcd[valmod1] : &a0123456789abcd_0[valmod1];
@@ -3824,7 +3787,7 @@ int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void
         for ( i = 0; i < 32; i += 1 )
         {
           lbuf = 0;
-          switch ( (1 << i) & offsptr4 )
+          switch ( ((u32)1 << i) & offsptr4 )
           {
             case 1u:
               lbuf = "phase";
@@ -4254,7 +4217,7 @@ int do_name_2_address_inner(unsigned int *dst, char *buf)
   int base; // $s2
   unsigned int i; // $s3
   int offsbase1; // $a0
-  int tmpstk1[3]; // [sp+10h] [-10h] BYREF
+  int tmpstk1[4]; // [sp+10h] [-10h] BYREF
 
   for ( prefixchkn = 0; prefixchkn < (int)(sizeof(tmpstk1)/sizeof(tmpstk1[0])); prefixchkn += 1 )
   {
@@ -4284,7 +4247,7 @@ int do_name_2_address_inner(unsigned int *dst, char *buf)
     }
     if ( prefixchkn > 0 && (unsigned int)tmpstk1[prefixchkn - 1] >= 0x100 )
       return 0;
-    tmpstk1[prefixchkn - 1] = i;
+    tmpstk1[prefixchkn] = i;
     if ( *buf != '.' )
       break;
     ++buf;
@@ -4293,19 +4256,19 @@ int do_name_2_address_inner(unsigned int *dst, char *buf)
     return 0;
   switch ( prefixchkn )
   {
-    case 1:
+    case 0:
       break;
-    case 2:
+    case 1:
       if ( (i >> 24) )
         return 0;
       i |= tmpstk1[0] << 24;
       break;
-    case 3:
+    case 2:
       if ( (i >> 16) )
         return 0;
       i |= (tmpstk1[0] << 24) | (tmpstk1[1] << 16);
       break;
-    case 4:
+    case 3:
       if ( (i >> 8) )
         return 0;
       i |= (tmpstk1[0] << 24) | (tmpstk1[1] << 16) | (tmpstk1[2] << 8);
@@ -4418,26 +4381,23 @@ int do_conv_s2a_inner(char *sp_, char *dp_, int len)
         return -19;
       *dp_++ = ' ';
     }
-    if ( *sp_ptroffs2 )
+    ++sp_ptroffs2;
+    if ( (*(sp_ptroffs2 - 1)) != ' ' )
     {
-      ++sp_ptroffs2;
-      if ( (*(sp_ptroffs2 - 1)) != ' ' )
+      --sp_ptroffs2;
+      while ( *sp_ptroffs2 != '\t' )
       {
-        --sp_ptroffs2;
-        while ( *sp_ptroffs2 != '\t' )
+        if ( --len <= 0 )
+          return -19;
+        if ( *sp_ptroffs2 == '\\' )
         {
-          if ( --len <= 0 )
-            return -19;
-          if ( *sp_ptroffs2 == '\\' )
-          {
-            if ( sp_ptroffs2[1] != '-' && sp_ptroffs2[1] != '\\' && sp_ptroffs2[1] != '"' && sp_ptroffs2[1] != '^' )
-              return 0;
-            ++sp_ptroffs2;
-          }
-          *dp_++ = *sp_ptroffs2++;
-          if ( !*sp_ptroffs2 || *sp_ptroffs2 == ' ' )
-            break;
+          if ( sp_ptroffs2[1] != '-' && sp_ptroffs2[1] != '\\' && sp_ptroffs2[1] != '"' && sp_ptroffs2[1] != '^' )
+            return 0;
+          ++sp_ptroffs2;
         }
+        *dp_++ = *sp_ptroffs2++;
+        if ( !*sp_ptroffs2 || *sp_ptroffs2 == ' ' )
+          break;
       }
     }
     for ( ; *sp_ptroffs2 == ' ' || *sp_ptroffs2 == '\t'; sp_ptroffs2 += 1 );
