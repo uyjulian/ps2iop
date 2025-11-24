@@ -460,7 +460,6 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
 {
   int i; // $s1
   int tryres1; // $s0
-  int maskchk; // $s0
   int retres; // $s0
   char pkt[12]; // [sp+20h] [-20h] BYREF
   char outbuf1[6]; // [sp+30h] [-10h] BYREF
@@ -515,6 +514,8 @@ int chgsys_callback_cb(int *mediaptr, int want_atapi)
   }
   if ( !tryres1 )
   {
+    int maskchk; // $s0
+
     maskchk = (((u8)outbuf1[5] >> 1) ^ 1) & 1;
     if ( (outbuf1[3] & 0x10) )
     {
@@ -879,8 +880,6 @@ int atapi_spin_status_get(int unused_arg1, void *buf)
 int atapi_check_if_drive_ready(int check_nowait)
 {
   u8 ata_control; // $v0
-  int req_test_unit_ready_tmp1; // $s1
-  char spinstatus_tmp[6]; // [sp+10h] [-18h] BYREF
   int drive_err; // [sp+18h] [-10h] BYREF
   int unitreadyctrl; // [sp+1Ch] [-Ch] BYREF
   int senseret; // [sp+20h] [-8h] BYREF
@@ -893,9 +892,13 @@ int atapi_check_if_drive_ready(int check_nowait)
     Kprintf("Atapi Drive Ready %04x\n", ata_control);
   if ( !check_nowait )
   {
+    int req_test_unit_ready_tmp1; // $s1
+
     req_test_unit_ready_tmp1 = -1;
     while ( req_test_unit_ready_tmp1 < 0 )
     {
+      char spinstatus_tmp[6]; // [sp+10h] [-18h] BYREF
+
       while ( (ata_control & 0xC0) != 64 )
       {
         if ( g_xatapi_verbose > 0 )
@@ -2233,7 +2236,6 @@ int sceCdAtapiExecCmd_local(
   int using_timeout; // $s1
   int retres1; // $s0
   char ata_status_1; // $s0
-  int ata_status_2; // $a1
   unsigned int i; // $s0
   iop_sys_clock_t sysclk; // [sp+28h] [-8h] BYREF
 
@@ -2334,6 +2336,8 @@ int sceCdAtapiExecCmd_local(
   ata_status_1 = 0;
   while ( (ata_status_1 & 0x88) != 8 )
   {
+    int ata_status_2; // $a1
+
     DelayThread(10000);
     ata_status_1 = dev5_speed_regs.r_spd_ata_status;
     ata_status_2 = dev5_speed_regs.r_spd_ata_status;
@@ -2400,10 +2404,10 @@ int sceCdAtapiExecCmd_local(
 //----- (00404CEC) --------------------------------------------------------
 int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto)
 {
-  int pkt_scsi_cmd_2; // $a1
-
   if ( pkt_len )
   {
+    int pkt_scsi_cmd_2; // $a1
+
     pkt_scsi_cmd_2 = *(u8 *)pkt;
     if ( g_xatapi_verbose > 0 )
       Kprintf("sceCdAtapiExecCmd %08x\n", pkt_scsi_cmd_2);
@@ -2436,7 +2440,6 @@ int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pk
 int ata_pio_transfer(ata_cmd_state_t *cmd_state)
 {
   char r_spd_ata_status; // $s0
-  int i; // $a1
 
   r_spd_ata_status = dev5_speed_regs.r_spd_ata_status;
   if ( (r_spd_ata_status & 1) )
@@ -2447,6 +2450,8 @@ int ata_pio_transfer(ata_cmd_state_t *cmd_state)
   }
   else if ( (r_spd_ata_status & 8) )
   {
+    int i; // $a1
+
     switch ( cmd_state->type )
     {
       case 2:
@@ -2498,7 +2503,6 @@ int IoRun_atapi(ata_cmd_state_t *cmd_state)
 {
   int result; // $v0
   u32 blktotal; // $s3
-  char r_spd_ata_status; // $s0
   unsigned int lhcyl; // $s0
   unsigned int i; // $a1
 
@@ -2510,6 +2514,8 @@ int IoRun_atapi(ata_cmd_state_t *cmd_state)
   result = 0;
   for ( blktotal = cmd_state->blkcount_atapi * cmd_state->blksize_atapi; result >= 0 && blktotal; blktotal -= lhcyl )
   {
+    char r_spd_ata_status; // $s0
+
     r_spd_ata_status = dev5_speed_regs.r_spd_ata_status;
     if ( (r_spd_ata_status & 1) )
     {
@@ -2849,7 +2855,6 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   int i; // $s1
   unsigned int fpga_unk8148; // $s0
   u8 Error; // $v0
-  unsigned int unk8148_bytes; // $s3
   int extransres; // $s1
   iop_sys_clock_t sysclk; // [sp+18h] [-10h] BYREF
   u32 efbits; // [sp+20h] [-8h] BYREF
@@ -2904,6 +2909,8 @@ int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   extransres = 0;
   for ( blksectors = (unsigned int)(blkcount * blksize) >> 9; blksectors; blksectors -= fpga_unk8148 )
   {
+    unsigned int unk8148_bytes; // $s3
+
     for ( i = 0; ; i += 1 )
     {
       fpga_unk8148 = do_fpga_check_unk8148();
@@ -3004,7 +3011,6 @@ void DmaRun_spck(char *buf, unsigned int secsize)
 {
   unsigned int secsize_sectors; // $s2
   unsigned int unk8148_val; // $s1
-  unsigned int unk8148_bytes; // $s3
 
   if ( g_xatapi_verbose > 0 )
     Kprintf("DmaRun_spck start\n");
@@ -3014,6 +3020,8 @@ void DmaRun_spck(char *buf, unsigned int secsize)
   FpgaXfdir(0);
   for ( secsize_sectors = secsize >> 9; secsize_sectors; secsize_sectors -= unk8148_val )
   {
+    unsigned int unk8148_bytes; // $s3
+
     for ( unk8148_val = 0; unk8148_val < 4; unk8148_val = do_fpga_check_unk8148() );
     if ( secsize_sectors < unk8148_val )
     {
@@ -3052,9 +3060,7 @@ int sceAtaWaitResult(void)
 {
   int res; // $s0
   int i; // $v1
-  u8 Error; // $v0
   int intr_stat_msk; // [sp+10h] [-8h]
-  char status_tmp; // [sp+10h] [-8h]
   u32 efbits; // [sp+14h] [-4h] BYREF
   int suc;
 
@@ -3139,6 +3145,8 @@ int sceAtaWaitResult(void)
   }
   if ( suc && !res )
   {
+    char status_tmp; // [sp+10h] [-8h]
+
     status_tmp = dev5_speed_regs.r_spd_ata_status;
     if ( (status_tmp & 0x80) )
     {
@@ -3147,6 +3155,8 @@ int sceAtaWaitResult(void)
     }
     if ( (status_tmp & 1) )
     {
+      u8 Error; // $v0
+
       Error = sceAtaGetError();
       if ( g_xatapi_verbose > 0 )
         Kprintf("DEV5 ATA: error: cmd err 0x%02x, 0x%02x\n", status_tmp, Error);
@@ -3187,13 +3197,8 @@ int xatapi_6_sceAtaWaitResult(void)
 int sceCdAtapiWaitResult_local(void)
 {
   int res; // $s2
-  int blktotal1; // $s3
-  int blkoffs; // $s0
-  int padres; // $v0
   int i; // $v1
-  u8 Error; // $v0
   int intr_stat_msk; // [sp+10h] [-10h]
-  char ata_status_tmp; // [sp+10h] [-10h]
   u32 efbits; // [sp+14h] [-Ch] BYREF
   int padinfo; // [sp+18h] [-8h] BYREF
 
@@ -3229,9 +3234,14 @@ int sceCdAtapiWaitResult_local(void)
       }
       else if ( atad_cmd_state.dir_atapi )
       {
+        int blktotal1; // $s3
+        int blkoffs; // $s0
+
         blktotal1 = atad_cmd_state.blkcount_atapi * atad_cmd_state.blksize_atapi;
         for ( blkoffs = 0; blkoffs < blktotal1; blkoffs += atad_cmd_state.blkcount_atapi * atad_cmd_state.blksize_atapi )
         {
+          int padres; // $v0
+
           padres = Mpeg2CheckPadding(
                      (char *)atad_cmd_state.buf_atapi + blkoffs,
                      blktotal1 - blkoffs,
@@ -3295,6 +3305,8 @@ int sceCdAtapiWaitResult_local(void)
   }
   if ( !res )
   {
+    char ata_status_tmp; // [sp+10h] [-10h]
+
     ata_status_tmp = dev5_speed_regs.r_spd_ata_status;
     if ( (ata_status_tmp & 0x80) )
     {
@@ -3303,6 +3315,8 @@ int sceCdAtapiWaitResult_local(void)
     }
     if ( (ata_status_tmp & 1) )
     {
+      u8 Error; // $v0
+
       Error = sceAtaGetError();
       if ( g_xatapi_verbose > 0 )
         Kprintf("DEV5 ATA: error: cmd status 0x%02x, error 0x%02x\n", ata_status_tmp, Error);
