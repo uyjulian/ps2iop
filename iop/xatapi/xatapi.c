@@ -1,5 +1,6 @@
 
 #include "irx_imports.h"
+#include <xatapi.h>
 
 IRX_ID("cdvd_xatapi_driver", 2, 3);
 
@@ -126,36 +127,23 @@ struct dev5_fpga_regs_
   vu16 r_fpga_revision;
 };
 
-int xatapi_15_exec_f6_f9_scsi(void);
 static int xatapi_nulldev0(void);
 static s64 xatapi_nulldev0_64bit(void);
 static int xatapi_dev_init(void);
 static int xatapi_dev_deinit(void);
-int xatapi_2_terminate(int with_quit);
 static int xatapi_dev_devctl(const iop_file_t *f, const char *name, int cmd, void *args, unsigned int arglen, void *buf, unsigned int buflen);
 int _start(int ac, char **av);
 static void speed_init(void);
 static void speed_device_init(void);
 static void do_hex_dump(void *ptr, int len);
-void xatapi_9_sceCdSpdAtaDmaStart(int dir);
-void xatapi_10_sceCdSpdAtaDmaEnd(void);
 static void ata_pio_mode(int mode);
 static void ata_multiword_dma_mode(int mode);
 static void ata_ultra_dma_mode(int mode);
 static void AtaEjectIntrHandle(void);
-int xatapi_14_set_speed_reg(int regaddr, u16 regval);
-int xatapi_13_get_speed_reg(int regaddr);
-int xatapi_11_sceAtaGetError(void);
-int xatapi_12_get_ata_control(void);
-int xatapi_5_sceAtaExecCmd(void *buf, u32 blkcount, u16 feature, u16 nsector, u16 sector, u16 lcyl, u16 hcyl, u16 select, u16 command, u32 unk10);
 static int sceCdAtapiExecCmd_local(s16 n, void *buf, int nsec, int secsize, void *pkt, unsigned int pkt_len, int proto);
 static int sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto);
-int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pkt, int pkt_len, int proto);
 static void DmaRun_spck(char *buf, unsigned int secsize);
-int xatapi_6_sceAtaWaitResult(void);
 static int sceCdAtapiWaitResult_local(void);
-int xatapi_8_sceCdAtapiWaitResult(void);
-int xatapi_4_sceAtaSoftReset(void);
 static void atapi_device_set_transfer_mode_outer(int device);
 static void ata_device_set_transfer_mode_outer(int device);
 static void sceAtapiInit(int device);
