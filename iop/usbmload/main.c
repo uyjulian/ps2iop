@@ -1,31 +1,8 @@
 
 #include "irx_imports.h"
+#include <usbmload.h>
 
 IRX_ID("USB_module_loader", 2, 1);
-
-typedef struct _USBDEV_t
-{
-  struct _USBDEV_t *forw;
-  char *dispname;
-  int vendor;
-  int product;
-  int release;
-  int class_;
-  int subclass;
-  int protocol;
-  char *category;
-  char *path;
-  char *argv[8];
-  int argc;
-  char activate_flag;
-  int modid;
-  char modname[56];
-  int load_result;
-} USBDEV_t;
-
-typedef USBDEV_t *(*sceUsbmlPopDevinfo)(void);
-
-typedef void (*sceUsbmlLoadFunc)(sceUsbmlPopDevinfo pop_devinfo);
 
 struct usbm_load_entry
 {
@@ -41,23 +18,9 @@ struct usbm_load_entry
   char *m_driverpath;
   char *m_driverargs[8];
   int m_driverargs_len;
-  int m_x20;
+  int m_pad1[1];
   int m_ldd_module_id;
-  int m_x22;
-  int m_x23;
-  int m_x24;
-  int m_x25;
-  int m_x26;
-  int m_x27;
-  int m_x28;
-  int m_x29;
-  int m_x30;
-  int m_x31;
-  int m_x32;
-  int m_x33;
-  int m_x34;
-  int m_x35;
-  int m_x36;
+  int m_pad2[15];
 };
 
 int _start(int ac, char **av);
@@ -76,15 +39,6 @@ static int split_config_line(char *curbuf, int cursplitind, char **dstptr);
 static int do_parse_cmd_int(const char *buf);
 static void clean_config_line(char *buf);
 static void sanitize_devicename(char *buf);
-int sceUsbmlDisable(void);
-int sceUsbmlEnable(void);
-int sceUsbmlActivateCategory(const char *category);
-int sceUsbmlInactivateCategory(const char *category);
-int sceUsbmlRegisterLoadFunc(sceUsbmlLoadFunc loadfunc);
-void sceUsbmlUnregisterLoadFunc(void);
-int sceUsbmlLoadConffile(const char *conffile);
-int sceUsbmlRegisterDevice(USBDEV_t *device);
-int sceUsbmlChangeThreadPriority(int prio1);
 static void init_config_pos(void);
 static char *read_config_line(char *dstbuf, int maxlen, int fd);
 
