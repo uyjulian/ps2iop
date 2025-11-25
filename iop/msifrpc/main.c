@@ -1,88 +1,16 @@
 
 #include "irx_imports.h"
+#include <msifrpc.h>
 
 IRX_ID("IOP_MSIF_rpc_interface", 2, 7);
 
-struct _sifm_rpc_data
+typedef struct _sifm_receive_data
 {
-  void *paddr;
-  unsigned int pid;
-  int tid;
-  unsigned int mode;
-};
-
-typedef struct _sifm_rpc_data sceSifMRpcData;
-
-typedef void (*sceSifMEndFunc)(void *);
-
-struct _sifm_client_data
-{
-  struct _sifm_rpc_data rpcd;
-  int command;
-  void *buff;
-  void *cbuff;
-  sceSifMEndFunc func;
-  void *para;
-  struct _sifm_serve_data *serve;
-};
-
-typedef struct _sifm_client_data sceSifMClientData;
-
-struct _sifm_serve_data
-{
-  void *func_buff;
-  int size;
-  void *cfunc_buff;
-  int csize;
-  sceSifMClientData *client;
-  void *paddr;
-  unsigned int fno;
-  void *receive;
-  int rsize;
-  int rmode;
-  unsigned int rid;
-  struct _sifm_serve_data *link;
-  struct _sifm_serve_data *next;
-  struct _sifm_queue_data *base;
-  struct _sifm_serve_entry *sentry;
-};
-
-struct _sifm_queue_data
-{
-  int key;
-  int active;
-  int sleep;
-  struct _sifm_serve_data *link;
-  struct _sifm_serve_data *start;
-  struct _sifm_serve_data *end;
-  struct _sifm_queue_data *next;
-};
-
-typedef void *(*sceSifMRpcFunc)(unsigned int, void *, int);
-
-typedef struct _sifm_serve_data sceSifMServeData;
-
-struct _sifm_serve_entry
-{
-  unsigned int mbxid;
-  int command;
-  sceSifMRpcFunc func;
-  sceSifMRpcFunc cfunc;
-  sceSifMServeData *serve_list;
-  struct _sifm_serve_entry *next;
-};
-
-struct _sifm_receive_data
-{
-  struct _sifm_rpc_data rpcd;
+  sceSifMRpcData rpcd;
   void *src;
   void *dest;
   int size;
-};
-
-typedef struct _sifm_receive_data sceSifMReceiveData;
-
-typedef struct _sifm_serve_entry sceSifMServeEntry;
+} sceSifMReceiveData;
 
 struct _sifm_smsg_data
 {
@@ -96,7 +24,16 @@ struct _sifm_smsg_data
   sceSifMServeData *sd;
 };
 
-typedef struct _sifm_queue_data sceSifMQueueData;
+typedef struct _sifm_queue_data
+{
+  int key;
+  int active;
+  int sleep;
+  struct _sifm_serve_data *link;
+  struct _sifm_serve_data *start;
+  struct _sifm_serve_data *end;
+  struct _sifm_queue_data *next;
+} sceSifMQueueData;
 
 struct msif_data
 {
@@ -134,7 +71,7 @@ struct msif_msgbox_msg
   struct msif_msgbox_msg2 m_msg2;
 };
 
-struct t_SifMRpcRendPkt
+typedef struct t_SifMRpcRendPkt
 {
   struct t_SifCmdHeader sifcmd;
   int rec_id;
@@ -145,11 +82,9 @@ struct t_SifMRpcRendPkt
   sceSifMServeData *sd;
   void *buf;
   void *cbuf;
-};
+} SifMRpcRendPkt_t;
 
-typedef struct t_SifMRpcRendPkt SifMRpcRendPkt_t;
-
-struct t_SifMRpcBindPkt
+typedef struct t_SifMRpcBindPkt
 {
   struct t_SifCmdHeader sifcmd;
   int rec_id;
@@ -160,11 +95,9 @@ struct t_SifMRpcBindPkt
   int m_eebuf_or_threadstate;
   int m_eeserver;
   int m_toee_unkxb;
-};
+} SifMRpcBindPkt_t;
 
-typedef struct t_SifMRpcBindPkt SifMRpcBindPkt_t;
-
-struct t_SifMRpcCallPkt
+typedef struct t_SifMRpcCallPkt
 {
   struct t_SifCmdHeader sifcmd;
   int rec_id;
@@ -176,9 +109,7 @@ struct t_SifMRpcCallPkt
   void *recvbuf;
   int recv_size;
   int rmode;
-};
-
-typedef struct t_SifMRpcCallPkt SifMRpcCallPkt_t;
+} SifMRpcCallPkt_t;
 
 struct msif_cmd_bindrpcparam_80000019
 {
@@ -241,12 +172,9 @@ struct msif_cmd_callrpc_8000001A
 };
 
 int _start(int ac, char **av);
-void sceSifMInitRpc(unsigned int mode);
 static void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data, struct msif_data *harg);
 static void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struct msif_data *harg);
 static void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg);
-void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, sceSifMRpcFunc cfunc);
-int sceSifMTermRpc(int request, int flags);
 
 extern struct irx_export_table _exp_msifrpc;
 // Unofficial: move to bss
