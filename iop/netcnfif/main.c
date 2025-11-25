@@ -69,9 +69,6 @@ typedef struct sceNetcnfifArg
   char new_usr_name[256];
 } sceNetcnfifArg_t;
 
-//-------------------------------------------------------------------------
-// Function declarations
-
 int _start(int argc, char *argv[]);
 static void sceNetcnfifInterfaceStart(void *userdata);
 static void sceNetcnfifInterfaceStop(void);
@@ -90,30 +87,26 @@ static void *my_alloc(int size);
 static void my_free(void *ptr);
 static void my_delete_heap(void);
 
-//-------------------------------------------------------------------------
-// Data declarations
-
 extern struct irx_export_table _exp_netcnfif;
-static void *mem_area = NULL; // idb
-static int mem_area_size = 0; // idb
-static void *g_heap = NULL; // idb
-static int g_tid; // idb
-static sceNetCnfEnv_t env; // weak
-static sceNetcnfifData_t data; // idb
-static char dp[0x100]; // idb
-static int rpc_buf[1024]; // weak
-static SifRpcServerData_t sd; // idb
-static SifRpcDataQueue_t qd; // weak
-static int ns_count; // idb
-static route_t gateway; // weak
-static nameserver_t dns1; // weak
-static nameserver_t dns2; // weak
-static int oldstat; // idb
-static SifRpcClientData_t gcd; // idb
-static int gbuf[1024]; // weak
+static void *mem_area = NULL;
+static int mem_area_size = 0;
+static void *g_heap = NULL;
+static int g_tid;
+static sceNetCnfEnv_t env;
+static sceNetcnfifData_t data;
+static char dp[0x100];
+static int rpc_buf[1024];
+static SifRpcServerData_t sd;
+static SifRpcDataQueue_t qd;
+static int ns_count;
+static route_t gateway;
+static nameserver_t dns1;
+static nameserver_t dns2;
+static int oldstat;
+static SifRpcClientData_t gcd;
+static int gbuf[1024];
 
 
-//----- (00400000) --------------------------------------------------------
 static void usage(void)
 {
   printf("Usage: netcnfif <option>\n");
@@ -124,16 +117,15 @@ static void usage(void)
   printf("    -help             - print usage\n");
 }
 
-//----- (00400064) --------------------------------------------------------
 static int module_start(int argc, char *argv[])
 {
-  int thpri; // $s5
-  int thstack; // $s4
-  int i; // $s3
-  int bp; // $s0
-  int retres1; // $v0
-  int retres2; // $v0
-  iop_thread_t th_param; // [sp+10h] [-18h] BYREF
+  int thpri;
+  int thstack;
+  int i;
+  int bp;
+  int retres1;
+  int retres2;
+  iop_thread_t th_param;
 
   thpri = 123;
   thstack = 4096;
@@ -206,7 +198,7 @@ static int module_start(int argc, char *argv[])
     g_tid = CreateThread(&th_param);
     if ( g_tid >= 0 )
     {
-      int retres3; // $v0
+      int retres3;
 
       retres3 = StartThread(g_tid, 0);
       if ( retres3 >= 0 )
@@ -229,7 +221,6 @@ static int module_start(int argc, char *argv[])
   return 1;
 }
 
-//----- (00400334) --------------------------------------------------------
 static int module_stop(int argc, char *argv[])
 {
   (void)argc;
@@ -242,21 +233,19 @@ static int module_stop(int argc, char *argv[])
   return 1;
 }
 
-//----- (0040038C) --------------------------------------------------------
 int _start(int argc, char *argv[])
 {
   return ( argc >= 0 ) ? module_start(argc, argv) : module_stop(-argc, argv);
 }
 
-//----- (004003F0) --------------------------------------------------------
 static void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
 {
-  int retres1; // $s1
-  sceNetCnfList_t *list_iop; // $s3
-  sceNetcnfifList_t *list_ee; // $s4
-  int i; // $a0
-  int dmatid2; // $s0
-  sceNetCnfCallback_t callback; // [sp+18h] [-10h] BYREF
+  int retres1;
+  sceNetCnfList_t *list_iop;
+  sceNetcnfifList_t *list_ee;
+  int i;
+  int dmatid2;
+  sceNetCnfCallback_t callback;
 
   (void)size;
   retres1 = 0;
@@ -279,7 +268,7 @@ static void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size
         retres1 = sceNetCnfGetList(buf->fname, buf->type, list_iop);
         if ( retres1 >= 0 )
         {
-          int dmatid1; // $s0
+          int dmatid1;
 
           for ( i = 0; i < buf->data && i < retres1; i += 1 )
           {
@@ -384,7 +373,7 @@ static void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size
         break;
       if ( env.root && env.root->pair_head && env.root->pair_head->ifc )
       {
-        int redial_count; // $a1
+        int redial_count;
 
         redial_count = 0;
         for ( i = 0; i < (int)(sizeof(env.root->pair_head->ifc->phone_numbers)/sizeof(env.root->pair_head->ifc->phone_numbers[0])); i += 1 )
@@ -404,9 +393,7 @@ static void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size
   buf->data = retres1;
   return buf;
 }
-// 402880: using guessed type sceNetCnfEnv_t env;
 
-//----- (00400A10) --------------------------------------------------------
 static void sceNetcnfifInterfaceStart(void *userdata)
 {
   (void)userdata;
@@ -416,10 +403,7 @@ static void sceNetcnfifInterfaceStart(void *userdata)
   sceSifRegisterRpc(&sd, 0x80001101, (SifRpcFunc_t)sceNetcnfifInterfaceServer, rpc_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
 }
-// 404530: using guessed type int rpc_buf[1024];
-// 405578: using guessed type SifRpcDataQueue_t qd;
 
-//----- (00400A88) --------------------------------------------------------
 static void sceNetcnfifInterfaceStop(void)
 {
   if ( mem_area )
@@ -431,9 +415,7 @@ static void sceNetcnfifInterfaceStop(void)
   sceSifRemoveRpc(&sd, &qd);
   sceSifRemoveRpcQueue(&qd);
 }
-// 405578: using guessed type SifRpcDataQueue_t qd;
 
-//----- (00400AF0) --------------------------------------------------------
 static void sceNetcnfifDataInit(sceNetcnfifData_t *data)
 {
   memset(data, 0, sizeof(sceNetcnfifData_t));
@@ -454,7 +436,6 @@ static void sceNetcnfifDataInit(sceNetcnfifData_t *data)
   data->accm_nego = -1;
 }
 
-//----- (00400B70) --------------------------------------------------------
 static void sceNetcnfifEnvInit(sceNetCnfEnv_t *env, void *mem_area, int size, int f_no_decode)
 {
   memset(env, 0, sizeof(sceNetCnfEnv_t));
@@ -464,14 +445,13 @@ static void sceNetcnfifEnvInit(sceNetCnfEnv_t *env, void *mem_area, int size, in
   env->f_no_decode = f_no_decode;
 }
 
-//----- (00400BE0) --------------------------------------------------------
 static int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count)
 {
   switch ( p->code )
   {
     case 1:
     {
-      int retres; // $a1
+      int retres;
 
       switch ( *ns_count )
       {
@@ -495,18 +475,17 @@ static int get_cmd(sceNetcnfifData_t *data, sceNetCnfCommand_t *p, int *ns_count
   return 0;
 }
 
-//----- (00400C80) --------------------------------------------------------
 static int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type)
 {
-  int cmd; // $s4
-  struct sceNetCnfCommand *cmd_head; // $s0
+  int cmd;
+  struct sceNetCnfCommand *cmd_head;
 
   cmd = 0;
   switch ( type )
   {
     case 1:
     {
-      int i; // $s0
+      int i;
 
       data->ifc_type = p->type;
       data->dhcp = p->dhcp;
@@ -586,11 +565,10 @@ static int get_attach(sceNetcnfifData_t *data, sceNetCnfInterface_t *p, int type
   return cmd;
 }
 
-//----- (00400F7C) --------------------------------------------------------
 static int get_net(sceNetcnfifData_t *data, sceNetCnfRoot_t *p)
 {
-  struct sceNetCnfPair *pair; // $s0
-  int i; // $s1
+  struct sceNetCnfPair *pair;
+  int i;
 
   i = 0;
   for ( pair = p->pair_head; pair; pair = pair->forw )
@@ -606,7 +584,6 @@ static int get_net(sceNetcnfifData_t *data, sceNetCnfRoot_t *p)
   return i;
 }
 
-//----- (00401028) --------------------------------------------------------
 static int sceNetcnfifReadEnv(sceNetcnfifData_t *data, sceNetCnfEnv_t *e, int type)
 {
   if ( !type )
@@ -617,10 +594,9 @@ static int sceNetcnfifReadEnv(sceNetcnfifData_t *data, sceNetCnfEnv_t *e, int ty
   return 0;
 }
 
-//----- (004010A0) --------------------------------------------------------
 static u8 *dup_string(sceNetCnfEnv_t *e, u8 *str)
 {
-  char *retval; // $s0
+  char *retval;
 
   retval = (char *)sceNetCnfAllocMem(e, strlen((const char *)str) + 1, 0);
   if ( !retval )
@@ -629,10 +605,9 @@ static u8 *dup_string(sceNetCnfEnv_t *e, u8 *str)
   return (u8 *)retval;
 }
 
-//----- (00401104) --------------------------------------------------------
 static void init_usrntcnf(sceNetCnfInterface_t *ifc)
 {
-  int i; // $a1
+  int i;
 
   ifc->type = -1;
   ifc->dhcp = -1;
@@ -667,10 +642,9 @@ static void init_usrntcnf(sceNetCnfInterface_t *ifc)
   ifc->idle_timeout = -1;
 }
 
-//----- (004011A0) --------------------------------------------------------
 static int check_address(char *str)
 {
-  int retres; // $a1
+  int retres;
 
   retres = 0;
   for ( ; *str; str += 1 )
@@ -681,10 +655,9 @@ static int check_address(char *str)
   return retres;
 }
 
-//----- (004011F0) --------------------------------------------------------
 static int put_gw(sceNetCnfEnv_t *e, const char *gw)
 {
-  int retres; // $v1
+  int retres;
 
   bzero(&gateway, sizeof(gateway));
   gateway.cmd.code = 3;
@@ -723,13 +696,11 @@ static int put_gw(sceNetCnfEnv_t *e, const char *gw)
   }
   return retres;
 }
-// 4055A0: using guessed type route_t gateway;
 
-//----- (0040131C) --------------------------------------------------------
 static int put_ns(sceNetCnfEnv_t *e, const char *ns, int ns_count)
 {
-  nameserver_t *ns1; // $s0
-  nameserver_t *ns2; // $a0
+  nameserver_t *ns1;
+  nameserver_t *ns2;
 
   ns1 = 0;
   switch ( ns_count )
@@ -757,13 +728,10 @@ static int put_ns(sceNetCnfEnv_t *e, const char *ns, int ns_count)
   e->ifc->cmd_tail = &ns1->cmd;
   return sceNetCnfName2Address(&ns1->address, ns);
 }
-// 405600: using guessed type nameserver_t dns1;
-// 405620: using guessed type nameserver_t dns2;
 
-//----- (004013E4) --------------------------------------------------------
 static int put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 {
-  int retres; // $s0
+  int retres;
 
   retres = !data->dhcp ? put_gw(e, ( data->gateway[0] && check_address(data->gateway) ) ? data->gateway : 0) : 0;
   if ( data->dns1_address[0] && check_address(data->dns1_address) )
@@ -775,12 +743,11 @@ static int put_cmd(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
   return retres;
 }
 
-//----- (004014D0) --------------------------------------------------------
 static int root_link(sceNetCnfEnv_t *e, int type)
 {
-  struct sceNetCnfRoot *root; // $v0
-  struct sceNetCnfPair *p; // $v1
-  struct sceNetCnfPair *pair_tail; // $v0
+  struct sceNetCnfRoot *root;
+  struct sceNetCnfPair *p;
+  struct sceNetCnfPair *pair_tail;
 
   if ( !e->ifc )
     return 0;
@@ -834,12 +801,11 @@ static int root_link(sceNetCnfEnv_t *e, int type)
   return 0;
 }
 
-//----- (00401628) --------------------------------------------------------
 static int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
 {
-  int retres; // $s3
-  int init_flag; // $s0
-  char chat_additional[256]; // [sp+10h] [-100h] BYREF
+  int retres;
+  int init_flag;
+  char chat_additional[256];
 
   retres = 0;
   if ( !e->ifc )
@@ -1023,14 +989,13 @@ static int put_attach(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
   return ( !init_flag ) ? (( !e->alloc_err ) ? retres : -2) : -100;
 }
 
-//----- (00401AC4) --------------------------------------------------------
 static int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
 {
-  struct sceNetCnfPair *p; // $s1
-  struct sceNetCnfPair *pair_tail; // $v0
-  int i; // $s0
-  int attachres1; // $v0
-  char display_name[256]; // [sp+10h] [-100h] BYREF
+  struct sceNetCnfPair *p;
+  struct sceNetCnfPair *pair_tail;
+  int i;
+  int attachres1;
+  char display_name[256];
 
   if ( !data->attach_ifc[0] || !data->attach_dev[0] )
     return -100;
@@ -1077,10 +1042,9 @@ static int put_net(sceNetCnfEnv_t *e, sceNetcnfifData_t *data)
   return ( !e->alloc_err ) ? attachres1 : -2;
 }
 
-//----- (00401CB4) --------------------------------------------------------
 static int sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int type)
 {
-  int retres1; // $s0
+  int retres1;
 
   retres1 = 0;
   switch ( type )
@@ -1110,11 +1074,10 @@ static int sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int t
   return retres1;
 }
 
-//----- (00401D70) --------------------------------------------------------
 static int sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int size)
 {
-  int dmatid; // $s0
-  SifDmaTransfer_t dmat; // [sp+10h] [-10h] BYREF
+  int dmatid;
+  SifDmaTransfer_t dmat;
 
   dmat.src = (void *)data;
   dmat.dest = (void *)addr;
@@ -1130,16 +1093,14 @@ static int sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int 
   return dmatid;
 }
 
-//----- (00401DE4) --------------------------------------------------------
 static int sceNetcnfifDmaCheck(int id)
 {
   return sceSifDmaStat(id) >= 0;
 }
 
-//----- (00401E10) --------------------------------------------------------
 static void sce_callback_initialize(void)
 {
-  int i; // $v0
+  int i;
 
   while ( 1 )
   {
@@ -1154,7 +1115,6 @@ static void sce_callback_initialize(void)
   }
 }
 
-//----- (00401E94) --------------------------------------------------------
 static int sce_callback_open(const char *device, const char *pathname, int flags, int mode, int *filesize)
 {
   gbuf[0] = flags;
@@ -1170,9 +1130,7 @@ static int sce_callback_open(const char *device, const char *pathname, int flags
   }
   return -1;
 }
-// 405678: using guessed type int gbuf[1024];
 
-//----- (00401F88) --------------------------------------------------------
 static int sce_callback_read(int fd, const char *device, const char *pathname, void *buf, int offset, int size)
 {
   gbuf[0] = fd;
@@ -1187,17 +1145,13 @@ static int sce_callback_read(int fd, const char *device, const char *pathname, v
   memcpy(buf, &gbuf[1], size);
   return gbuf[0];
 }
-// 405678: using guessed type int gbuf[1024];
 
-//----- (004020B4) --------------------------------------------------------
 static int sce_callback_close(int fd)
 {
   gbuf[0] = fd;
   return (sceSifCallRpc(&gcd, 14, 0, gbuf, 64, gbuf, 64, 0, 0) >= 0) ? gbuf[0] : -1;
 }
-// 405678: using guessed type int gbuf[1024];
 
-//----- (00402120) --------------------------------------------------------
 static int my_create_heap(void)
 {
   if ( g_heap )
@@ -1206,20 +1160,17 @@ static int my_create_heap(void)
   return g_heap ? 0 : -1;
 }
 
-//----- (00402170) --------------------------------------------------------
 static void *my_alloc(int size)
 {
   return AllocHeapMemory(g_heap, size);
 }
 
-//----- (0040219C) --------------------------------------------------------
 static void my_free(void *ptr)
 {
   if ( ptr )
     FreeHeapMemory(g_heap, ptr);
 }
 
-//----- (004021CC) --------------------------------------------------------
 static void my_delete_heap(void)
 {
   DeleteHeap(g_heap);
