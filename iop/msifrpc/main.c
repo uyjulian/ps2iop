@@ -249,7 +249,8 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
 int sceSifMTermRpc(int request, int flags);
 
 extern struct irx_export_table _exp_msifrpc;
-static int g_first_inited = 0;
+// Unofficial: move to bss
+static int g_first_inited;
 static int g_pkt_table[512];
 static int g_client_table[512];
 static struct msif_data g_msif_data;
