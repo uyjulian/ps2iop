@@ -104,7 +104,8 @@ static sceUsbdLddOps g_usbmload_drv =
   0u,
   NULL
 };
-static int g_config_chr_pos = 2048;
+// Unofficial: move to bss
+static int g_config_chr_pos;
 static int g_param_conffile[128];
 static char g_config_line_buf[256];
 static char g_config_device_name_tmp[256];
