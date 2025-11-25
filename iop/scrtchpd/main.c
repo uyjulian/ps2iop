@@ -1,5 +1,6 @@
 
 #include "irx_imports.h"
+#include <scrtpad.h>
 
 IRX_ID("ScratchPad_service", 1, 1);
 
