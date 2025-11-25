@@ -178,10 +178,12 @@ static int Mpeg2CheckPadding(char *buf, unsigned int bufsize, int *retptr, int *
 static int Mpeg2CheckScramble(char *buf, unsigned int bufsize);
 
 extern struct irx_export_table _exp_xatapi;
-static int g_devctl_retonly_unset = 0;
-static vu16 *g_dev9_reg_1460 = (vu16 *)0xBF801460;
-static vu16 *g_dev9_reg_power = (vu16 *)0xBF80146C;
-static int (*p_dev5_intr_cb)(u32) = NULL;
+// Unofficial: move to bss
+static int g_devctl_retonly_unset;
+static vu16 *const g_dev9_reg_1460 = (void *)0xBF801460;
+static vu16 *const g_dev9_reg_power = (void *)0xBF80146C;
+// Unofficial: move to bss
+static int (*p_dev5_intr_cb)(u32);
 static iop_device_ops_t ata_ioman_devops =
 {
   (void *)&xatapi_dev_init,
@@ -213,14 +215,20 @@ static iop_device_ops_t ata_ioman_devops =
   (void *)&xatapi_nulldev0
 };
 static iop_device_t ata_ioman_device = { "xatapi", 268435472u, 1u, "CD-ROM_ATAPI", &ata_ioman_devops };
-static int g_reset_scrambling_pack = 0;
-static int g_pes_scrambling_control_pack = 0;
+// Unofficial: move to bss
+static int g_reset_scrambling_pack;
+// Unofficial: move to bss
+static int g_pes_scrambling_control_pack;
 static int g_dma_mode_value = 1;
 static int g_dma_speed_value = 2;
-static int g_should_wait_for_dma_flag = 0;
-static int g_is_wait_busy = 0;
-static int g_xatapi_verbose = 0;
-static int g_ata_devinfo_init = 0;
+// Unofficial: move to bss
+static int g_should_wait_for_dma_flag;
+// Unofficial: move to bss
+static int g_is_wait_busy;
+// Unofficial: move to bss
+static int g_xatapi_verbose;
+// Unofficial: move to bss
+static int g_ata_devinfo_init;
 static int g_bf40200a_is_set_ptr;
 static u32 *g_cd_sc_ffffffd9_ptr;
 static int g_is_in_read_info;
