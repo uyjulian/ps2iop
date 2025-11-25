@@ -88,9 +88,12 @@ static void my_free(void *ptr);
 static void my_delete_heap(void);
 
 extern struct irx_export_table _exp_netcnfif;
-static void *mem_area = NULL;
-static int mem_area_size = 0;
-static void *g_heap = NULL;
+// Unofficial: move to bss
+static void *mem_area;
+// Unofficial: move to bss
+static int mem_area_size;
+// Unofficial: move to bss
+static void *g_heap;
 static int g_tid;
 static sceNetCnfEnv_t env;
 static sceNetcnfifData_t data;

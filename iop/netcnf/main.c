@@ -123,18 +123,27 @@ static void do_delete_heap(void);
 #ifdef _IOP
 extern struct irx_export_table _exp_netcnf;
 #endif
-static int g_null_string = 0;
-static int g_no_check_capacity = 0;
-static int g_no_check_provider = 0;
-static u32 g_id_result = 0u;
-static char *g_count_list_heapptr = NULL;
-static char *g_load_entry_heapptr = NULL;
-static char *g_add_entry_heapptr = NULL;
-static char *g_edit_entry_heapptr = NULL;
-static char *g_delete_entry_heapptr = NULL;
-static char *g_set_latest_entry_heapptr = NULL;
-static char *g_check_special_provider_heapptr = NULL;
-static struct netcnf_option g_options_net_cnf[] =
+// Unofficial: move to bss
+static int g_no_check_capacity;
+// Unofficial: move to bss
+static int g_no_check_provider;
+// Unofficial: move to bss
+static u32 g_id_result;
+// Unofficial: move to bss
+static char *g_count_list_heapptr;
+// Unofficial: move to bss
+static char *g_load_entry_heapptr;
+// Unofficial: move to bss
+static char *g_add_entry_heapptr;
+// Unofficial: move to bss
+static char *g_edit_entry_heapptr;
+// Unofficial: move to bss
+static char *g_delete_entry_heapptr;
+// Unofficial: move to bss
+static char *g_set_latest_entry_heapptr;
+// Unofficial: move to bss
+static char *g_check_special_provider_heapptr;
+static const struct netcnf_option g_options_net_cnf[] =
 {
   { 112, 12, "chat_additional" },
   { 52, 16, "redial_count" },
@@ -144,7 +153,7 @@ static struct netcnf_option g_options_net_cnf[] =
   { 68, 32, "dialing_type" },
   { 0, 0, NULL }
 };
-static struct netcnf_option g_options_attach_cnf[] =
+static const struct netcnf_option g_options_attach_cnf[] =
 {
   { 84, 0, "type" },
   { 112, 4, "vendor" },
@@ -222,7 +231,7 @@ static struct netcnf_option g_options_attach_cnf[] =
   { 49, 325, "auth_max_failure" },
   { 0, 0, NULL }
 };
-static struct netcnf_option g_options_dial_cnf[] =
+static const struct netcnf_option g_options_dial_cnf[] =
 {
   { 112, 12, "chat_init" },
   { 112, 16, "chat_dial" },
@@ -230,11 +239,12 @@ static struct netcnf_option g_options_dial_cnf[] =
   { 112, 24, "redial_string" },
   { 0, 0, NULL }
 };
-static char a0123456789abcd[17] = "0123456789ABCDEF";
-static char a0123456789abcd_0[17] = "0123456789abcdef";
-static int g_callbacks_set = 0;
+static const char *a0123456789abcd = "0123456789ABCDEF";
+static const char *a0123456789abcd_0 = "0123456789abcdef";
+static int g_callbacks_set;
 #ifdef _IOP
-static void *g_netcnf_heap = NULL;
+// Unofficial: move to bss
+static void *g_netcnf_heap;
 static int g_semid;
 #endif
 static char g_icon_value[0x100];
@@ -2533,7 +2543,7 @@ static int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int
 
 static void do_init_ifc_inner(sceNetCnfInterface_t *ifc)
 {
-  struct netcnf_option *curentry1;
+  const struct netcnf_option *curentry1;
 
   for ( curentry1 = g_options_attach_cnf; curentry1->m_key; curentry1 += 1 )
   {
@@ -2594,7 +2604,7 @@ static int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown
 
 static int do_check_other_keywords(
         sceNetCnfEnv_t *e,
-        struct netcnf_option *options,
+        const struct netcnf_option *options,
         void *cnfdata,
         struct sceNetCnfUnknownList *unknown_list)
 {
@@ -3639,7 +3649,7 @@ static int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...)
   return retval;
 }
 
-static int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *options, void *cnfdata)
+static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *options, void *cnfdata)
 {
   int offsptr3;
   char *offsptr1;
@@ -3868,7 +3878,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, struct netcnf_option *option
           lbuf = 0;
           break;
         }
-        result = do_netcnf_sprintf_buffer(e, "%s%s\n", *((u8 *)cnfdata + options->m_offset) ? &g_null_string : (int *)"-", options->m_key);
+        result = do_netcnf_sprintf_buffer(e, "%s%s\n", *((u8 *)cnfdata + options->m_offset) ? "" : "-", options->m_key);
         lbuf = 0;
         break;
       case 'c':
