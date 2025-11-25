@@ -11,6 +11,7 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 #endif
+#include <sdsq.h>
 
 #ifdef _IOP
 IRX_ID("Sound_Data_SQ", 2, 1);
@@ -57,67 +58,6 @@ typedef struct sceSeqSongChunk_
   unsigned int maxSongNumber;
   unsigned int songOffsetAddr[];
 } sceSeqSongChunk;
-
-typedef struct sceSeqMidiCompBlock_
-{
-  u16 compOption;
-  u16 compTableSize;
-  u8 compTable[];
-} sceSeqMidiCompBlock;
-
-typedef struct sceSeqMidiDataBlock_
-{
-  unsigned int sequenceDataOffset;
-  u16 Division;
-  sceSeqMidiCompBlock compBlock[];
-} sceSeqMidiDataBlock;
-
-typedef struct SceSdSqMidiData_
-{
-  u32 readStatus;
-  u32 midiNumber;
-  sceSeqMidiDataBlock *midiData;
-  u32 offset;
-  u32 nextOffset;
-  u32 division;
-  u32 compMode;
-  u32 compTableSize;
-  u32 deltaTime;
-  u8 lastStatus;
-  u8 reserve[3];
-  u32 messageLength;
-  u8 message[8];
-  u32 originalMessageLength;
-  u8 originalMessage[12];
-} SceSdSqMidiData;
-
-typedef struct SceSdSqSongData_
-{
-  u32 readStatus;
-  u32 songNumber;
-  void *topAddr;
-  u32 offset;
-  u32 nextOffset;
-  u8 message[3];
-  u8 reserve;
-} SceSdSqSongData;
-
-struct SceSdSqCompTableData_
-{
-  u8 status;
-  u8 data;
-};
-
-typedef struct SceSdSqCompTableData_ SceSdSqCompTableData;
-typedef struct SceSdSqCompTableData_ SceSdSqPolyKeyData;
-
-typedef struct SceSdSqCompTableNoteOnEvent_
-{
-  u8 status;
-  u8 note;
-  u8 velocity;
-  u8 reserve;
-} SceSdSqCompTableNoteOnEvent;
 
 typedef struct sceSeqSeSequenceChunk_
 {
