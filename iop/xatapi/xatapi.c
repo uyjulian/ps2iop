@@ -2373,7 +2373,7 @@ static int IoRun_atapi(ata_cmd_state_t *cmd_state)
   return result;
 }
 
-static int atapi_some_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
+static int atapi_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
 {
   unsigned int blkcount_tmp;
   int i;
@@ -2876,7 +2876,7 @@ static int sceAtaWaitResult(void)
     case 4:
     case 5:
     case 6:
-      res = atapi_some_transfer_wrapper((char *)atad_cmd_state.buf, atad_cmd_state.blkcount, atad_cmd_state.dir);
+      res = atapi_transfer_wrapper((char *)atad_cmd_state.buf, atad_cmd_state.blkcount, atad_cmd_state.dir);
       if ( res )
       {
         break;
