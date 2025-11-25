@@ -1100,7 +1100,7 @@ static int do_handle_fname(char *fpath, size_t maxlen, const char *fname)
   return 0;
 }
 
-static char *do_check_hoge_newline(char *buf)
+static char *do_get_str_line(char *buf)
 {
   for ( ; *buf && *buf != '\n'; buf += 1 );
   return &buf[*buf == '\n'];
@@ -1163,7 +1163,7 @@ static int do_remove_old_config(
     {
       if ( !strncmp(&statname.name[6], ".cnf", 4) || !strncmp(&statname.name[6], ".dat", 4) )
       {
-        for ( curheapbuf1 = (char *)netcnf_heap_buf; curheapbuf1 && *curheapbuf1; curheapbuf1 = do_check_hoge_newline(curheapbuf1) )
+        for ( curheapbuf1 = (char *)netcnf_heap_buf; curheapbuf1 && *curheapbuf1; curheapbuf1 = do_get_str_line(curheapbuf1) )
         {
           do_split_str_comma_index(cur_combpath, curheapbuf1, 2);
           if ( !strcmp(statname.name, cur_combpath) )
@@ -1296,7 +1296,7 @@ static int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t 
   if ( result <= 0 )
     return result;
   curind1 = 0;
-  for ( curheapbuf1 = g_count_list_heapptr; *curheapbuf1; curheapbuf1 = do_check_hoge_newline(curheapbuf1) )
+  for ( curheapbuf1 = g_count_list_heapptr; *curheapbuf1; curheapbuf1 = do_get_str_line(curheapbuf1) )
   {
     if ( do_type_check(type, curheapbuf1) <= 0 )
       continue;
@@ -1329,7 +1329,7 @@ static int do_load_entry_inner(const char *fname, int type, const char *usr_name
   result = do_read_current_netcnf_nodecode(g_dir_name, &g_load_entry_heapptr);
   if ( result <= 0 )
     return !result ? -8 : result;
-  for ( curheapbuf1 = g_load_entry_heapptr; *curheapbuf1; curheapbuf1 = do_check_hoge_newline(curheapbuf1) )
+  for ( curheapbuf1 = g_load_entry_heapptr; *curheapbuf1; curheapbuf1 = do_get_str_line(curheapbuf1) )
   {
     if ( do_type_check(type, curheapbuf1) >= 0
        && !do_split_str_comma_index(g_arg_fname, curheapbuf1, 3)
@@ -1347,7 +1347,7 @@ static int do_load_entry_inner(const char *fname, int type, const char *usr_name
   return -8;
 }
 
-static void do_some_ifc_handling_hoge(const char *arg_fname)
+static void do_extra_ifc_handling(const char *arg_fname)
 {
   const char *i;
   char *curptr1;
@@ -1371,7 +1371,7 @@ static void do_some_ifc_handling_hoge(const char *arg_fname)
     g_ifc_buffer[curbufsz1] = 1;
 }
 
-static void do_some_pair_handling(char *fpath, int type, const char *src, const sceNetCnfEnv_t *e)
+static void do_extra_pair_handling(char *fpath, int type, const char *src, const sceNetCnfEnv_t *e)
 {
   sceNetCnfEnv_t *heapmem;
   int conf_inner;
@@ -1399,10 +1399,10 @@ static void do_some_pair_handling(char *fpath, int type, const char *src, const 
       switch ( type )
       {
         case 1:
-          do_some_ifc_handling_hoge((char *)i->attach_ifc);
+          do_extra_ifc_handling((char *)i->attach_ifc);
           break;
         case 2:
-          do_some_ifc_handling_hoge((char *)i->attach_dev);
+          do_extra_ifc_handling((char *)i->attach_dev);
           break;
         default:
           continue;
@@ -1467,7 +1467,7 @@ static int do_add_entry_inner(
       if ( !strncmp(g_dir_name, "mc", 2) )
       {
         i = 0;
-        for ( curentry1 = g_add_entry_heapptr; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
+        for ( curentry1 = g_add_entry_heapptr; *curentry1; curentry1 = do_get_str_line(curentry1) )
         {
           if ( do_type_check(type, curentry1) == 1 )
             i += 1;
@@ -1492,7 +1492,7 @@ static int do_add_entry_inner(
       else if ( !strncmp(g_dir_name, "pfs", 3) )
       {
         i = 0;
-        for ( curentry2 = g_add_entry_heapptr; *curentry2; curentry2 = do_check_hoge_newline(curentry2) )
+        for ( curentry2 = g_add_entry_heapptr; *curentry2; curentry2 = do_get_str_line(curentry2) )
         {
           if ( do_type_check(type, curentry2) == 1 )
             i += 1;
@@ -1516,16 +1516,16 @@ static int do_add_entry_inner(
       }
       if ( maxflag )
       {
-        for ( k = g_add_entry_heapptr; *k; k = do_check_hoge_newline(k) )
+        for ( k = g_add_entry_heapptr; *k; k = do_get_str_line(k) )
         {
           if ( (unsigned int)(type - 1) < 2 && do_type_check(0, k) > 0 )
-            do_some_pair_handling(g_dir_name, type, k, e);
+            do_extra_pair_handling(g_dir_name, type, k, e);
           if ( do_type_check(type, k) > 0
             && !do_split_str_comma_index(g_arg_fname, k, 1)
             && strtol(g_arg_fname, 0, 10) == 1
             && !do_split_str_comma_index(g_arg_fname, k, 2) )
           {
-            do_some_ifc_handling_hoge(g_arg_fname);
+            do_extra_ifc_handling(g_arg_fname);
             if ( !do_split_str_comma_index(g_arg_fname, k, 3) && !strcmp(g_combination_buf1, g_arg_fname) )
             {
               do_free_heapmem(g_add_entry_heapptr);
@@ -1681,7 +1681,7 @@ static int do_handle_set_usrname(const char *fpath, int type, const char *usrnam
         if ( !do_split_str_comma_index(g_arg_fname, ptr_1, 2) )
         {
           heapmem_1 += sprintf(heapmem_1, "%d,%d,%s,%s\n", type, 1, g_arg_fname, g_combination_buf1);
-          ptr_1 = do_check_hoge_newline(ptr_1);
+          ptr_1 = do_get_str_line(ptr_1);
           continue;
         }
       }
@@ -1755,7 +1755,7 @@ static int do_edit_entry_inner(
     int flg;
 
     rmoldcfgres = 0;
-    for ( curentry1 = g_edit_entry_heapptr; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
+    for ( curentry1 = g_edit_entry_heapptr; *curentry1; curentry1 = do_get_str_line(curentry1) )
     {
       if ( do_type_check(type, curentry1) > 0
         && !do_split_str_comma_index(g_arg_fname, curentry1, 3)
@@ -1890,7 +1890,7 @@ static int do_delete_entry_inner(
       {
         if ( !do_split_str_comma_index(g_entry_buffer, curentry1, 2) )
           has_comma = 1;
-        curentry1 = do_check_hoge_newline(curentry1);
+        curentry1 = do_get_str_line(curentry1);
       }
     }
     result = do_write_noencode_netcnf_atomic(g_dir_name, heapmem, heapmem_1 - heapmem);
@@ -2096,7 +2096,7 @@ static int do_check_special_provider_inner(const char *fname, int type, const ch
     return !result ? -3 : result;
   }
   curentcount = 0;
-  for ( curentry1 = g_check_special_provider_heapptr; *curentry1; curentry1 = do_check_hoge_newline(curentry1) )
+  for ( curentry1 = g_check_special_provider_heapptr; *curentry1; curentry1 = do_get_str_line(curentry1) )
   {
     if ( do_type_check(type, curentry1) > 0
       && !do_split_str_comma_index(g_arg_fname, curentry1, 3)
@@ -2361,7 +2361,7 @@ static int do_netcnfname2address_wrap(sceNetCnfEnv_t *e, char *buf, sceNetCnfAdd
   return 0;
 }
 
-static int do_parse_phone_stuff(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv, int *p_result)
+static int do_parse_phone_argument(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv, int *p_result)
 {
   int i;
   int bitflags1;
@@ -2706,7 +2706,7 @@ static int do_check_other_keywords(
         return 0;
       case 'L':
         numval = -1;
-        if ( !wasprefixed && do_parse_phone_stuff(e, e->ac - 1, (const char **)&e->av[1], &numval) )
+        if ( !wasprefixed && do_parse_phone_argument(e, e->ac - 1, (const char **)&e->av[1], &numval) )
           return -1;
         *(u32 *)((char *)cnfdata + options->m_offset) = numval;
         return 0;
