@@ -1556,11 +1556,11 @@ int _start(int ac, char **av)
     CpuSuspendIntr(&state);
     regres = ReleaseLibraryEntries(&_exp_sdhd);
     CpuResumeIntr(state);
-    return ( !regres ) ? 1 : 2;
+    return ( !regres ) ? MODULE_NO_RESIDENT_END : MODULE_REMOVABLE_END;
   }
   CpuSuspendIntr(&state);
   regres = RegisterLibraryEntries(&_exp_sdhd);
   CpuResumeIntr(state);
-  return ( !regres ) ? 2 : 1;
+  return ( !regres ) ? MODULE_REMOVABLE_END : MODULE_NO_RESIDENT_END;
 }
 #endif
