@@ -46,6 +46,7 @@ typedef struct
 } iox_dirent_t;
 #endif
 #include <netcnf.h>
+#include <errno.h>
 
 #ifdef _IOP
 IRX_ID("NET_configuration", 2, 30);
@@ -289,10 +290,10 @@ static int do_module_load(int ac, char **av)
   if ( ac < 3 )
   {
     do_print_usage();
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   err = 0;
-  semaparam.attr = 1;
+  semaparam.attr = SA_THPRI;
   semaparam.initial = 1;
   semaparam.max = 1;
   semaparam.option = 0;
@@ -301,7 +302,7 @@ static int do_module_load(int ac, char **av)
   if ( semid <= 0 )
   {
     printf("netcnf: CreateSema (%d)\n", semid);
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   g_icon_value[0] = 0;
   g_iconsys_value[0] = 0;
@@ -348,7 +349,7 @@ static int do_module_load(int ac, char **av)
 
       regres = RegisterLibraryEntries(&_exp_netcnf);
       if ( !regres )
-        return 2;
+        return MODULE_REMOVABLE_END;
       printf("netcnf: RegisterLibraryEntries(%d)\n", regres);
       do_delete_heap();
     }
@@ -358,7 +359,7 @@ static int do_module_load(int ac, char **av)
     do_print_usage();
   }
   DeleteSema(g_semid);
-  return 1;
+  return MODULE_NO_RESIDENT_END;
 }
 
 static int do_module_unload(void)
@@ -388,13 +389,13 @@ static int do_module_unload(void)
   if ( errstate == 2 )
   {
     do_delete_heap();
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   if ( errstate == 1 )
   {
     RegisterLibraryEntries(&_exp_netcnf);
   }
-  return 2;
+  return MODULE_REMOVABLE_END;
 }
 
 int _start(int ac, char **av)
@@ -696,7 +697,7 @@ static int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr
   fd = do_open_netcnf(netcnf_path, 1, 0);
   if ( fd < 0 )
   {
-    return ( fd == -5 ) ? -18 : -3;
+    return ( fd == -EIO ) ? -18 : -3;
   }
   netcnf_size = do_filesize_netcnf(fd);
   if ( netcnf_size < 0 )
@@ -753,7 +754,7 @@ static int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr
   do_free_heapmem(netcnf_data);
   *netcnf_heap_ptr = 0;
   do_close_netcnf(fd);
-  return ( readres != -5 ) ? -4 : -18;
+  return ( readres != -EIO ) ? -4 : -18;
 }
 
 static int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf_len)
@@ -777,7 +778,7 @@ static int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf
   buf_1 = (u16 *)buf;
   if ( fd < 0 )
   {
-    return ( fd == -5 ) ? -18 : -3;
+    return ( fd == -EIO ) ? -18 : -3;
   }
   netcnf_len_1 = netcnf_len;
   xorind1 = 0;
@@ -815,7 +816,7 @@ static int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf
     }    
   }
   do_close_netcnf(fd);
-  return ( writeres != -5 ) ? -5 : -18;
+  return ( writeres != -EIO ) ? -5 : -18;
 }
 
 static int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_ptr)
@@ -828,7 +829,7 @@ static int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_
   fd = do_open_netcnf(netcnf_path, 1, 0);
   if ( fd < 0 )
   {
-    return ( fd != -5 ) ? -3 : -18;
+    return ( fd != -EIO ) ? -3 : -18;
   }
   netcnf_size = do_filesize_netcnf(fd);
   if ( netcnf_size < 0 )
@@ -849,7 +850,7 @@ static int do_read_netcnf_no_decode(const char *netcnf_path, char **netcnf_heap_
     do_free_heapmem(*netcnf_heap_ptr);
     *netcnf_heap_ptr = 0;
     do_close_netcnf(fd);
-    return ( netcnf_size != -5 ) ? -4 : -18;
+    return ( netcnf_size != -EIO ) ? -4 : -18;
   }
   netcnf_data[netcnf_size] = 0;
   do_close_netcnf(fd);
@@ -1154,7 +1155,7 @@ static int do_remove_old_config(
   if ( dfd < 0 )
   {
     // cppcheck-suppress knownConditionTrueFalse
-    return ( dfd == -5 ) ? -18 : 0;
+    return ( dfd == -EIO ) ? -18 : 0;
   }
   while ( 1 )
   {
@@ -1223,11 +1224,11 @@ static int do_remove_old_config(
     if ( !sizeflag )
     {
       fileop_res = do_remove_wrap(cur_combpath);
-      if ( fileop_res == -5 )
+      if ( fileop_res == -EIO )
         break;
     }
   }
-  if ( fileop_res == -5 )
+  if ( fileop_res == -EIO )
   {
     do_dclose_wrap(dfd);
     return -18;
@@ -1269,12 +1270,12 @@ static int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int siz
   fd = do_open_netcnf(fpath_comb, 1538, 511);
   if ( fd < 0 )
   {
-    return ( fd == -5 ) ? -18 : -3;
+    return ( fd == -EIO ) ? -18 : -3;
   }
   writeres = do_write_netcnf_no_encode(fd, ptr, size);
   do_close_netcnf(fd);
   // Unofficial: dead code removed
-  return ( size != writeres ) ? (( writeres != -5 ) ? -5 : -18) : (( iomanX_rename(fpath_comb, fpath) == -5 ) ? -18 : 0);
+  return ( size != writeres ) ? (( writeres != -EIO ) ? -5 : -18) : (( iomanX_rename(fpath_comb, fpath) == -EIO ) ? -18 : 0);
 }
 
 static int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer)
@@ -1286,7 +1287,7 @@ static int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer)
   if ( !p_dirname )
     return -7;
   remove_res_1 = do_remove_wrap(p_dirname);
-  return ( remove_res_1 < 0 ) ? (( remove_res_1 == -5 ) ? -18 : -7) : 0;
+  return ( remove_res_1 < 0 ) ? (( remove_res_1 == -EIO ) ? -18 : -7) : 0;
 }
 
 static int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t *p)
@@ -1439,7 +1440,7 @@ static int do_add_entry_inner(
   int maxflag;
 
   maxflag = 1;
-  fd = -1;
+  fd = -EPERM;
   if ( get_check_provider_eq_zero() )
   {
     result = do_check_provider_inner(e, type);
@@ -1583,7 +1584,7 @@ static int do_add_entry_inner(
         fd = do_open_netcnf(g_netcnf_file_path, 1, 0);
         if ( fd < 0 )
         {
-          if ( fd == -5 )
+          if ( fd == -EIO )
             return -18;
           break;
         }
@@ -1629,7 +1630,7 @@ static int do_add_entry_inner(
           fd = do_open_netcnf(atomicrenamepath, 1538, 511);
           if ( fd < 0 )
           {
-            retres2 = ( fd == -5 ) ? -18 : -3;
+            retres2 = ( fd == -EIO ) ? -18 : -3;
           }
           else
           {
@@ -1638,7 +1639,7 @@ static int do_add_entry_inner(
 
             strlenx = sprintf(g_entry_buffer, "%d,%d,%s,%s\n", type, 1, &g_netcnf_file_path[strlen(g_arg_fname)], g_combination_buf1);
             writeres = do_write_netcnf_no_encode(fd, g_entry_buffer, strlenx);
-            retres2 = ( strlenx == writeres && (writeres = do_write_netcnf_no_encode(fd, g_add_entry_heapptr, retres1), retres1 == writeres) ) ? 0 : (( writeres == -5 ) ? -18 : -5);
+            retres2 = ( strlenx == writeres && (writeres = do_write_netcnf_no_encode(fd, g_add_entry_heapptr, retres1), retres1 == writeres) ) ? 0 : (( writeres == -EIO ) ? -18 : -5);
           }
         }
       }
@@ -1648,7 +1649,7 @@ static int do_add_entry_inner(
   if ( fd >= 0 )
     do_close_netcnf(fd);
   // Unofficial: dead code removed
-  return (atomicrenamepath[0] && iomanX_rename(atomicrenamepath, g_dir_name) == -5) ? -18 : ((strncmp(g_dir_name, "pfs", 3) || iomanX_sync(g_dir_name, 0) != -5) ? retres2 : -18);
+  return (atomicrenamepath[0] && iomanX_rename(atomicrenamepath, g_dir_name) == -EIO) ? -18 : ((strncmp(g_dir_name, "pfs", 3) || iomanX_sync(g_dir_name, 0) != -EIO) ? retres2 : -18);
 }
 
 static int do_handle_set_usrname(const char *fpath, int type, const char *usrname_buf2, const char *usrname_bufnew)
@@ -1814,7 +1815,7 @@ static int do_edit_entry_inner(
         do_safe_strcat(curfilepath1, sizeof(curfilepath1), curentrybuf1, 1017);
         do_safe_strcpy(curentrybuf1, sizeof(curentrybuf1), curfilepath1, 1018);
         do_safe_strcat(curfilepath1, sizeof(curfilepath1), ".tmp", 1019);
-        if ( iomanX_rename(curfilepath1, curentrybuf1) == -5 )
+        if ( iomanX_rename(curfilepath1, curentrybuf1) == -EIO )
           rmoldcfgres = -18;
       }
     }
@@ -1826,7 +1827,7 @@ static int do_edit_entry_inner(
     if ( new_usr_name )
       rmoldcfgres = do_handle_set_usrname(g_dir_name, type, g_combination_buf2, new_usr_name);
   }
-  return (!strncmp(g_dir_name, "pfs", 3) && iomanX_sync(g_dir_name, 0) == -5) ? -18 : rmoldcfgres;
+  return (!strncmp(g_dir_name, "pfs", 3) && iomanX_sync(g_dir_name, 0) == -EIO) ? -18 : rmoldcfgres;
 }
 
 static int do_delete_entry_inner(
@@ -1905,7 +1906,7 @@ static int do_delete_entry_inner(
   }
   do_free_heapmem(g_delete_entry_heapptr);
   do_free_heapmem(heapmem);
-  return (!strncmp(g_dir_name, "pfs", 3) && iomanX_sync(g_dir_name, 0) == -5) ? -18 : result;
+  return (!strncmp(g_dir_name, "pfs", 3) && iomanX_sync(g_dir_name, 0) == -EIO) ? -18 : result;
 }
 
 static int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name)
@@ -1996,7 +1997,7 @@ static int do_set_latest_entry_inner(const char *fname, int type, const char *us
   do_free_heapmem(g_set_latest_entry_heapptr);
   do_free_heapmem(heapmem1);
   do_free_heapmem(heapmem2);
-  return (!strncmp(g_dir_name, "pfs", 3) && iomanX_sync(g_dir_name, 0) == -5) ? -18 : result;
+  return (!strncmp(g_dir_name, "pfs", 3) && iomanX_sync(g_dir_name, 0) == -EIO) ? -18 : result;
 }
 
 static int do_delete_all_inner(const char *dev)
@@ -2057,7 +2058,7 @@ static int do_delete_all_inner(const char *dev)
     if ( dfd2 < 0 )
     {
       // cppcheck-suppress knownConditionTrueFalse
-      return ( dfd2 == -5 ) ? -18 : 0;
+      return ( dfd2 == -EIO ) ? -18 : 0;
     }
     while ( 1 )
     {
@@ -2072,18 +2073,18 @@ static int do_delete_all_inner(const char *dev)
         if ( remove_res2 < 0 )
         {
           do_dclose_wrap(dfd2);
-          return ( remove_res2 == -5 ) ? -18 : -7;
+          return ( remove_res2 == -EIO ) ? -18 : -7;
         }
       }
     }
-    if ( dread_res == -5 )
+    if ( dread_res == -EIO )
     {
       do_dclose_wrap(dfd2);
       return -18;
     }
     do_dclose_wrap(dfd2);
     rmdir_res1 = rmdir(g_netcnf_file_path);
-    return ( rmdir_res1 >= 0 ) ? (( iomanX_sync(g_netcnf_file_path, 0) != -5 ) ? 0 : -18) : (( rmdir_res1 == -5 ) ? -18 : -7);
+    return ( rmdir_res1 >= 0 ) ? (( iomanX_sync(g_netcnf_file_path, 0) != -EIO ) ? 0 : -18) : (( rmdir_res1 == -EIO ) ? -18 : -7);
   }
   return -17;
 }
@@ -4073,14 +4074,14 @@ static int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cn
     if ( fd < 0 )
     {
       e->file_err += 1;
-      return ( fd == -5 ) ? -18 : -3;
+      return ( fd == -EIO ) ? -18 : -3;
     }
     writeres = do_write_netcnf_no_encode(fd, e->mem_base, memsize);
     if ( memsize != writeres )
     {
       e->file_err += 1;
       do_close_netcnf(fd);
-      return ( writeres == -5 ) ? -18 : -5;
+      return ( writeres == -EIO ) ? -18 : -5;
     }
     do_close_netcnf(fd);
   }
@@ -4598,9 +4599,9 @@ static int do_get_filesize_inner(int fd)
 
   lseek_end_res = lseek(fd, 0, 2);
   if ( lseek_end_res < 0 )
-    return ( lseek_end_res != -5 ) ? -6 : -18;
+    return ( lseek_end_res != -EIO ) ? -6 : -18;
   lseek_start_res = lseek(fd, 0, 0);
-  return ( lseek_start_res < 0 ) ? (( lseek_start_res != -5 ) ? -6 : -18) : lseek_end_res;
+  return ( lseek_start_res < 0 ) ? (( lseek_start_res != -EIO ) ? -6 : -18) : lseek_end_res;
 }
 
 static int is_special_file_path(const char *netcnf_path)
@@ -4702,10 +4703,10 @@ static int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode
   if ( !g_callbacks.open || !is_special_file_path(netcnf_path) )
     return open(netcnf_path, file_flags, file_mode);
   if ( g_open_callback_handle_count >= (int)(sizeof(g_callback_handle_infos)/sizeof(g_callback_handle_infos[0])) )
-    return -1;
+    return -EPERM;
   cbind = do_colon_callback_handles(netcnf_path, pathconcat);
   if ( !cbind )
-    return -1;
+    return -EPERM;
   openret1 = ((int (*)(char *, const char *, int, int, int *))g_callbacks.open)(pathconcat, cbind, file_flags, file_mode, &filesz1);
   if ( openret1 < 0 )
     return openret1;
@@ -4727,12 +4728,12 @@ static int do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size
   {
     cbh->m_buf = do_alloc_heapmem(cbh->m_filesize);
     if ( !cbh->m_buf )
-      return -1;
+      return -EPERM;
     if ( ((int (*)(int, char *, char *, void *, u32, int))g_callbacks.read)(fd, cbh->m_device, cbh->m_pathname, cbh->m_buf, 0, cbh->m_filesize) != cbh->m_filesize )
     {
       do_free_heapmem(cbh->m_buf);
       cbh->m_buf = 0;
-      return -1;
+      return -EPERM;
     }
   }
   memcpy(ptr, (char *)cbh->m_buf + cbh->m_bufpos, size);
@@ -4755,7 +4756,7 @@ static int do_write_netcnf_no_encode(int fd, void *ptr, int size)
   if ( !g_callbacks_set || g_callbacks.type == 2 )
     return write(fd, ptr, size);
   printf("[err] netcnf write()\n");
-  return -1;
+  return -EPERM;
 }
 
 static int do_dopen_wrap(const char *fn)
@@ -4766,11 +4767,11 @@ static int do_dopen_wrap(const char *fn)
     return dopen(fn);
 #else
     (void)fn;
-    return -1;
+    return -EPERM;
 #endif
   }
   printf("[err] netcnf dopen()\n");
-  return -1;
+  return -EPERM;
 }
 
 static int do_dread_wrap(int fn, iox_dirent_t *buf)
@@ -4782,11 +4783,11 @@ static int do_dread_wrap(int fn, iox_dirent_t *buf)
 #else
     (void)fn;
     (void)buf;
-    return -1;
+    return -EPERM;
 #endif
   }
   printf("[err] netcnf dread()\n");
-  return -1;
+  return -EPERM;
 }
 
 static int do_remove_wrap(const char *fn)
@@ -4794,7 +4795,7 @@ static int do_remove_wrap(const char *fn)
   if ( !g_callbacks_set || g_callbacks.type == 2 )
     return remove(fn);
   printf("[err] netcnf remove()\n");
-  return -1;
+  return -EPERM;
 }
 
 static void do_close_netcnf(int fd)

@@ -146,13 +146,13 @@ static int module_start(int argc, char **argv)
       if ( !isdigit(argv[i][bp]) )
       {
         usage();
-        return 1;
+        return MODULE_NO_RESIDENT_END;
       }
       thpri = strtol(&argv[i][bp], 0, 10);
       if ( (unsigned int)(thpri - 9) >= 0x73 )
       {
         usage();
-        return 1;
+        return MODULE_NO_RESIDENT_END;
       }
       for ( ; argv[i][bp] && isdigit(argv[i][bp]); bp += 1 );
       if ( !argv[i][bp] )
@@ -166,7 +166,7 @@ static int module_start(int argc, char **argv)
       if ( !isdigit(argv[i][bp]) )
       {
         usage();
-        return 1;
+        return MODULE_NO_RESIDENT_END;
       }
       thstack = strtol(&argv[i][bp], 0, 10);
       for ( ; argv[i][bp] && isdigit(argv[i][bp]); bp += 1 );
@@ -179,24 +179,24 @@ static int module_start(int argc, char **argv)
     else
     {
       usage();
-      return 1;
+      return MODULE_NO_RESIDENT_END;
     }
     if ( xflg && argv[i][bp] )
     {
       usage();
-      return 1;
+      return MODULE_NO_RESIDENT_END;
     }
   }
   retres1 = RegisterLibraryEntries(&_exp_netcnfif);
   if ( retres1 )
   {
     printf("netcnfif: RegisterLibraryEntries(%d)\n", retres1);
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   retres2 = my_create_heap();
   if ( retres2 >= 0 )
   {
-    th_param.attr = 0x2000000;
+    th_param.attr = TH_C;
     th_param.thread = sceNetcnfifInterfaceStart;
     th_param.priority = thpri;
     th_param.stacksize = thstack;
@@ -208,7 +208,7 @@ static int module_start(int argc, char **argv)
 
       retres3 = StartThread(g_tid, 0);
       if ( retres3 >= 0 )
-        return 2;
+        return MODULE_REMOVABLE_END;
       printf("netcnfif: s_thread(%d)\n", retres3);
       TerminateThread(g_tid);
       DeleteThread(g_tid);
@@ -224,7 +224,7 @@ static int module_start(int argc, char **argv)
     printf("netcnfif: c_heap(%d)\n", retres2);
   }
   ReleaseLibraryEntries(&_exp_netcnfif);
-  return 1;
+  return MODULE_NO_RESIDENT_END;
 }
 
 static int module_stop(int argc, char **argv)
@@ -236,7 +236,7 @@ static int module_stop(int argc, char **argv)
   DeleteThread(g_tid);
   my_delete_heap();
   ReleaseLibraryEntries(&_exp_netcnfif);
-  return 1;
+  return MODULE_NO_RESIDENT_END;
 }
 
 int _start(int argc, char **argv)
@@ -1117,7 +1117,7 @@ static void sce_callback_initialize(void)
     while ( sceSifCheckStatRpc(&gcd) );
     if ( gcd.server )
       break;
-    for ( i = 0xFFFE; i != -1; i -= 1 );
+    for ( i = 0xFFFF; i != 0; i -= 1 );
   }
 }
 
