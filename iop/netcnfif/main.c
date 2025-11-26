@@ -69,7 +69,7 @@ typedef struct sceNetcnfifArg
   char new_usr_name[256];
 } sceNetcnfifArg_t;
 
-int _start(int argc, char *argv[]);
+int _start(int argc, char **argv);
 static void sceNetcnfifInterfaceStart(void *userdata);
 static void sceNetcnfifInterfaceStop(void);
 static void sceNetcnfifDataInit(sceNetcnfifData_t *data);
@@ -120,7 +120,7 @@ static void usage(void)
   printf("    -help             - print usage\n");
 }
 
-static int module_start(int argc, char *argv[])
+static int module_start(int argc, char **argv)
 {
   int thpri;
   int thstack;
@@ -224,7 +224,7 @@ static int module_start(int argc, char *argv[])
   return 1;
 }
 
-static int module_stop(int argc, char *argv[])
+static int module_stop(int argc, char **argv)
 {
   (void)argc;
   (void)argv;
@@ -236,7 +236,7 @@ static int module_stop(int argc, char *argv[])
   return 1;
 }
 
-int _start(int argc, char *argv[])
+int _start(int argc, char **argv)
 {
   return ( argc >= 0 ) ? module_start(argc, argv) : module_stop(-argc, argv);
 }
