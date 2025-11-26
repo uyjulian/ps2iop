@@ -2,7 +2,10 @@
 #include "irx_imports.h"
 #include <scrtpad.h>
 
+#ifdef _IOP
 IRX_ID("ScratchPad_service", 1, 1);
+#endif
+// Based on the module from SCE SDK 3.1.0.
 
 struct scratchpad_internal_data
 {
