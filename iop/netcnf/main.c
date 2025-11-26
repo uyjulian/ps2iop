@@ -50,6 +50,7 @@ typedef struct
 #ifdef _IOP
 IRX_ID("NET_configuration", 2, 30);
 #endif
+// Based on the module from SCE SDK 3.1.0.
 
 struct netcnf_callback_handle_info
 {

@@ -1,7 +1,10 @@
 
 #include "irx_imports.h"
 
+#ifdef _IOP
 IRX_ID("Netcnf_Interface", 2, 30);
+#endif
+// Based on the module from SCE SDK 3.1.0.
 
 // TODO EE alignment 64
 typedef struct __attribute__((aligned(16))) sceNetcnfifList
