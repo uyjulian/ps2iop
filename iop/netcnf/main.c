@@ -2510,7 +2510,7 @@ static int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int
   if ( !strcmp("-net", opt_argv[i]) )
   {
     i += 1;
-    route_mem_1->re.flags &= 0xFFFFFFFD;
+    route_mem_1->re.flags &= ~2;
   }
   else if ( !strcmp("-host", opt_argv[i]) )
   {
@@ -4101,7 +4101,7 @@ static int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, stru
   int result;
   struct sceNetCnfPair *pair_head;
 
-  memalign = (void *)(((uiptr)e->mem_base + 3) & 0xFFFFFFFC);
+  memalign = (void *)(((uiptr)e->mem_base + 3) & ~3);
   e->mem_base = memalign;
   e->mem_ptr = memalign;
   result = do_netcnf_sprintf_buffer(e, "%s\n\n", "# <Sony Computer Entertainment Inc.>");

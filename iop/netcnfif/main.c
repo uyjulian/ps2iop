@@ -316,7 +316,7 @@ static void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size
       retres1 = sceNetCnfLoadEntry(buf->fname, buf->type, buf->usr_name, &env);
       if ( retres1 >= 0 )
       {
-        env.mem_ptr = (void *)(((int)env.mem_ptr + 3) & 0xFFFFFFFC);
+        env.mem_ptr = (void *)(((int)env.mem_ptr + 3) & ~3);
         env.mem_base = env.mem_ptr;
         retres1 = sceNetcnfifWriteEnv(&env, &data, buf->type);
         if ( retres1 >= 0 )
@@ -1074,7 +1074,7 @@ static int sceNetcnfifWriteEnv(sceNetCnfEnv_t *e, sceNetcnfifData_t *data, int t
   }
   if ( retres1 >= 0 )
   {
-    e->mem_ptr = (void *)(((int)e->mem_ptr + 3) & 0xFFFFFFFC);
+    e->mem_ptr = (void *)(((int)e->mem_ptr + 3) & ~3);
     e->mem_base = e->mem_ptr;
   }
   return retres1;
@@ -1087,7 +1087,7 @@ static int sceNetcnfifSendEE(unsigned int data, unsigned int addr, unsigned int 
 
   dmat.src = (void *)data;
   dmat.dest = (void *)addr;
-  dmat.size = (size & 0xFFFFFFC0) + ((size & 0x3F) ? 64 : 0);
+  dmat.size = (size & ~0x3F) + ((size & 0x3F) ? 64 : 0);
   dmat.attr = 0;
   dmatid = 0;
   while ( !dmatid )
@@ -1129,7 +1129,7 @@ static int sce_callback_open(const char *device, const char *pathname, int flags
   gbuf[3] = strlen(pathname) + 1;
   memcpy(&gbuf[4], device, strlen(device) + 1);
   memcpy((char *)&gbuf[4] + strlen(device) + 1, pathname, strlen(pathname) + 1);
-  if ( sceSifCallRpc(&gcd, 12, 0, gbuf, (strlen(pathname) + strlen(device) + 1 + 80) & 0xFFFFFFC0, gbuf, 64, 0, 0) >= 0 )
+  if ( sceSifCallRpc(&gcd, 12, 0, gbuf, (strlen(pathname) + strlen(device) + 1 + 80) & ~0x3F, gbuf, 64, 0, 0) >= 0 )
   {
     *filesize = gbuf[1];
     return gbuf[0];
@@ -1146,7 +1146,7 @@ static int sce_callback_read(int fd, const char *device, const char *pathname, v
   gbuf[4] = size;
   memcpy(&gbuf[5], device, strlen(device) + 1);
   memcpy((char *)&gbuf[5] + strlen(device) + 1, pathname, strlen(pathname) + 1);
-  if ( sceSifCallRpc(&gcd, 13, 0, gbuf, (strlen(pathname) + strlen(device) + 1 + 84) & 0xFFFFFFC0, gbuf, (size + 67) & 0xFFFFFFC0, 0, 0) < 0 )
+  if ( sceSifCallRpc(&gcd, 13, 0, gbuf, (strlen(pathname) + strlen(device) + 1 + 84) & ~0x3F, gbuf, (size + 67) & ~0x3F, 0, 0) < 0 )
     return -1;
   memcpy(buf, &gbuf[1], size);
   return gbuf[0];
