@@ -1,9 +1,11 @@
 
 #include "irx_imports.h"
-
-IRX_ID("rmreset", 1, 1);
-
 #include <iop_mmio_hwport.h>
+
+#ifdef _IOP
+IRX_ID("rmreset", 1, 1);
+#endif
+// Based on the module from ROM 1.20+.
 
 static void sio2_ctrl_set(u32 val)
 {
