@@ -1257,7 +1257,7 @@ static int speed_intr_dispatch(int flag)
   }
   for ( i = 0; i < 3 && (u16)(dev5_speed_regs->r_spd_intr_stat & dev5_speed_regs->r_spd_intr_mask); i += 1 )
   {
-    for ( j = 0; j < 16; j += 1 )
+    for ( j = 0; j < (int)(sizeof(g_dev5_intr_cbs)/sizeof(g_dev5_intr_cbs[0])); j += 1 )
     {
       if ( g_dev5_intr_cbs[j] && (((int)(u16)(dev5_speed_regs->r_spd_intr_stat & dev5_speed_regs->r_spd_intr_mask) >> j) & 1) )
         g_dev5_intr_cbs[j](flag);
@@ -1455,13 +1455,16 @@ static void speed_init(void)
     return;
   speedIntrDisable(0xFFFF);
   speedRegisterIntrDispatchCb(speed_intr_dispatch);
-  for ( i = 15; i >= 0; i -= 1 )
+  for ( i = 0; i < (int)(sizeof(g_dev5_intr_cbs)/sizeof(g_dev5_intr_cbs[0])); i += 1 )
   {
     g_dev5_intr_cbs[i] = 0;
   }
-  for ( i = 0; i < 4; i += 1 )
+  for ( i = 0; i < (int)(sizeof(g_dev5_predma_cbs)/sizeof(g_dev5_predma_cbs[0])); i += 1 )
   {
     g_dev5_predma_cbs[i] = 0;
+  }
+  for ( i = 0; i < (int)(sizeof(g_dev5_postdma_cbs)/sizeof(g_dev5_postdma_cbs[0])); i += 1 )
+  {
     g_dev5_postdma_cbs[i] = 0;
   }
   speedLEDCtl(0);
@@ -1471,12 +1474,12 @@ static void speed_init(void)
 static void speed_device_init(void)
 {
   int idx;
-  char *revtypes[8];
+  const char *revtypes[4];
 
-  revtypes[4] = "unknown";
-  revtypes[5] = "TS";
-  revtypes[6] = "ES1";
-  revtypes[7] = "ES2";
+  revtypes[0] = "unknown";
+  revtypes[1] = "TS";
+  revtypes[2] = "ES1";
+  revtypes[3] = "ES2";
   switch ( dev5_speed_regs->r_spd_rev_1 )
   {
   case 9:
@@ -1495,7 +1498,7 @@ static void speed_device_init(void)
   if ( idx )
   {
     if ( g_xatapi_verbose > 0 )
-      Kprintf("Speed chip: %s\n", revtypes[idx + 4]);
+      Kprintf("Speed chip: %s\n", revtypes[idx]);
   }
   else
   {
