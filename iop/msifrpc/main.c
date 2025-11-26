@@ -1,6 +1,7 @@
 
 #include "irx_imports.h"
 #include <msifrpc.h>
+#include <kerr.h>
 
 #ifdef _IOP
 IRX_ID("IOP_MSIF_rpc_interface", 2, 7);
@@ -192,7 +193,7 @@ int _start(int ac, char **av)
   (void)ac;
   (void)av;
   printf("Multi-thread available sifrpc module...\n");
-  return RegisterLibraryEntries(&_exp_msifrpc) ? 1 : 0;
+  return RegisterLibraryEntries(&_exp_msifrpc) ? MODULE_NO_RESIDENT_END : MODULE_RESIDENT_END;
 }
 
 void sceSifMInitRpc(unsigned int mode)
@@ -550,7 +551,7 @@ static void do_msif_exec_request(sceSifMServeData *sd)
       CpuResumeIntr(state);
       if ( dmaid )
         break;
-      for ( i = 0xFFFE; i != -1; i -= 1 );
+      for ( i = 0xFFFF; i != 0; i -= 1 );
     }
   }
 }
@@ -640,7 +641,7 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
   se->cfunc = cfunc;
   se->next = 0;
   se->serve_list = 0;
-  mbxparam.attr = 0;
+  mbxparam.attr = MBA_THFIFO;
   while ( 1 )
   {
     se->mbxid = CreateMbx(&mbxparam);
@@ -668,7 +669,7 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
     mbxrecv = ReceiveMbx((void **)&arg, se->mbxid);
     if ( mbxrecv )
     {
-      if ( mbxrecv != -425 )
+      if ( mbxrecv != KE_WAIT_DELETE )
       {
         printf("ReceiveMbx() failed.\n");
       }
@@ -683,7 +684,7 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
     {
       case 0x80000019:
         thparam_1.thread = (void (*)(void *))thread_proc_80000019;
-        thparam_1.attr = 0x2000000;
+        thparam_1.attr = TH_C;
         thparam_1.stacksize = arg->m_msg2.m_stacksize;
         thparam_1.priority = arg->m_msg2.m_priority;
         thid_1 = CreateThread(&thparam_1);
@@ -699,7 +700,7 @@ void sceSifMEntryLoop(sceSifMServeEntry *se, int request, sceSifMRpcFunc func, s
         delthread_1 = DeleteThread(arg->m_msg2.m_sd->base->key);
         if ( delthread_1 )
         {
-          if ( delthread_1 == -414 )
+          if ( delthread_1 == KE_NOT_DORMANT )
             delthread_1 = 2;
           else
             Kprintf("DeleteThread(): ret = %d\n", delthread_1);
