@@ -136,7 +136,7 @@ int _start(int ac, char **av)
   for ( i = 0; i < 7; i += 1 )
     sio2_data_in();
   sio2_ctrl_set(0xCu);
-  sio2_ctrl_set(ctrl_save & 0xFFFFFFFE);
+  sio2_ctrl_set(ctrl_save & ~1);
   printf("rmreset end\n");
   return 1;
 }
