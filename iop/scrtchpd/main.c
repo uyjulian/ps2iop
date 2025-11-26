@@ -1,6 +1,7 @@
 
 #include "irx_imports.h"
 #include <scrtpad.h>
+#include <kerr.h>
 
 #ifdef _IOP
 IRX_ID("ScratchPad_service", 1, 1);
@@ -28,12 +29,11 @@ int _start(int ac, char **av)
   libreg_res = RegisterLibraryEntries(&_exp_scrtpad);
   CpuResumeIntr(state);
   if ( libreg_res )
-  {
-    return 1;
-  }
+    return MODULE_NO_RESIDENT_END;
   g_scrtpad_internal_data.m_scrtpad_is_allocated = 0;
   g_scrtpad_internal_data.m_scrtpad_alloc_count = 0;
-  return 2;
+  // Unofficial: use MODULE_RESIDENT_END (not unloadable)
+  return MODULE_RESIDENT_END;
 }
 
 void *AllocScratchPad(int mode)
@@ -42,12 +42,12 @@ void *AllocScratchPad(int mode)
   int state;
 
   if ( mode )
-    return (void *)-405;
+    return (void *)KE_ILLEGAL_MODE;
   CpuSuspendIntr(&state);
   if ( g_scrtpad_internal_data.m_scrtpad_is_allocated )
   {
     CpuResumeIntr(state);
-    return (void *)-429;
+    return (void *)KE_SPAD_INUSE;
   }
   g_scrtpad_internal_data.m_scrtpad_is_allocated = 1;
   g_scrtpad_internal_data.m_scrtpad_alloc_count += 1;
@@ -66,12 +66,12 @@ int FreeScratchPad(void *alloced_addr)
   if ( !g_scrtpad_internal_data.m_scrtpad_is_allocated )
   {
     CpuResumeIntr(state);
-    return -430;
+    return KE_SPAD_NOT_INUSE;
   }
   if ( *((vu32 *)0xFFFE0144) != ((g_scrtpad_internal_data.m_scrtpad_alloc_count & 1) ? 0x1F800800 : 0x1F800C00) )
   {
     CpuResumeIntr(state);
-    return -428;
+    return KE_ILLEGAL_SPADADDR;
   }
   *((vu32 *)0xFFFE0144) = 0x1F800000;
   g_scrtpad_internal_data.m_scrtpad_is_allocated = 0;
