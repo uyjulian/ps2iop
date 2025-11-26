@@ -2,7 +2,10 @@
 #include "irx_imports.h"
 #include <usbmload.h>
 
+#ifdef _IOP
 IRX_ID("USB_module_loader", 2, 1);
+#endif
+// Based on the module from SCE SDK 3.1.0.
 
 struct usbm_load_entry
 {
