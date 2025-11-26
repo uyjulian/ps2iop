@@ -147,10 +147,10 @@ int _start(int ac, char **av)
   if ( !g_rb_entries )
   {
     printf("Ring buffer Initialize Error!!\n");
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   if ( RegisterLibraryEntries(&_exp_usbmload) )
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   if ( has_conffile == 1 )
   {
     if ( do_parse_config_file((const char *)g_param_conffile) == -1 )
@@ -168,9 +168,9 @@ int _start(int ac, char **av)
   if ( g_ef < 0 )
   {
     printf("usbmload :  CreateEventFlag NG\n");
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
-  thparam.attr = 0x2000000;
+  thparam.attr = TH_C;
   thparam.thread = ldd_loader_thread;
   thparam.priority = 88;
   thparam.stacksize = 4096;
@@ -180,13 +180,13 @@ int _start(int ac, char **av)
   {
     printf("usbmload : CreateThread NG\n");
     DeleteEventFlag(g_ef);
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   if ( g_param_debug > 0 )
     printf("usbmload : CreateThread ID = %d\n", thid1);
   StartThread(thid1, 0);
   g_thid = thid1;
-  return 2;
+  return MODULE_REMOVABLE_END;
 }
 
 static int module_unload(void)
@@ -198,7 +198,7 @@ static int module_unload(void)
 
   if ( ReleaseLibraryEntries(&_exp_usbmload) )
   {
-    return 2;
+    return MODULE_REMOVABLE_END;
   }
   sceUsbmlDisable();
   TerminateThread(g_thid);
@@ -231,7 +231,7 @@ static int module_unload(void)
   CpuSuspendIntr(&state);
   FreeSysMemory(g_rb_entries);
   CpuResumeIntr(state);
-  return 1;
+  return MODULE_NO_RESIDENT_END;
 }
 
 static int do_parse_config_file(const char *fn)
@@ -545,7 +545,7 @@ static void ldd_loader_thread(void *userdata)
   (void)userdata;
   while ( 1 )
   {
-    WaitEventFlag(g_ef, 1u, 17, &efres);
+    WaitEventFlag(g_ef, 1u, WEF_OR | WEF_CLEAR, &efres);
     if ( g_param_debug > 0 )
       printf("ldd_loader_thread : get event!\n");
     g_loadfunc_cb(is_rb_ok_callback);
