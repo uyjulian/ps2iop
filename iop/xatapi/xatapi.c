@@ -907,7 +907,7 @@ static void expbay_device_reset(void)
     return;
   }
   Kprintf("xatapi Power On Start\n");
-  *g_dev9_reg_power = (*g_dev9_reg_power & 0xFFFA) | 4;
+  *g_dev9_reg_power = (*g_dev9_reg_power & ~5) | 4;
   DelayThread(500000);
   *g_dev9_reg_1460 |= 2u;
   *g_dev9_reg_power |= 1u;
@@ -1561,7 +1561,7 @@ static void ata_post_dma_cb(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("ata_post_dma_handler:old %x\n", dev5_speed_regs->r_spd_xfr_ctrl);
-  dev5_speed_regs->r_spd_xfr_ctrl &= 0xFF7F;
+  dev5_speed_regs->r_spd_xfr_ctrl &= ~0x80;
   if ( g_xatapi_verbose > 0 )
     Kprintf("ata_post_dma_handler:new %x\n", dev5_speed_regs->r_spd_xfr_ctrl);
 }
@@ -1667,7 +1667,7 @@ static void ata_multiword_dma_mode(int mode)
       dev5_speed_regs->r_spd_mwdma_mode = 36;
       break;
   }
-  dev5_speed_regs->r_spd_if_ctrl = (dev5_speed_regs->r_spd_if_ctrl & 0xFFB6) | 0x48;
+  dev5_speed_regs->r_spd_if_ctrl = (dev5_speed_regs->r_spd_if_ctrl & ~0x49) | 0x48;
 }
 
 static void ata_ultra_dma_mode(int mode)
@@ -3462,7 +3462,7 @@ static void FpgaLayer1On(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER1 %x\n", "FpgaLayer1On", dev5_fpga_regs->r_fpga_layer1);
-  dev5_fpga_regs->r_fpga_layer1 &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_layer1 &= ~1;
   dev5_fpga_regs->r_fpga_layer1 |= 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_LAYER1 %x\n", "FpgaLayer1On", dev5_fpga_regs->r_fpga_layer1);
@@ -3472,7 +3472,7 @@ static void FpgaLayer1Off(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER1 %x\n", "FpgaLayer1Off", dev5_fpga_regs->r_fpga_layer1);
-  dev5_fpga_regs->r_fpga_layer1 &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_layer1 &= ~1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_LAYER1 %x\n", "FpgaLayer1Off", dev5_fpga_regs->r_fpga_layer1);
 }
@@ -3482,7 +3482,7 @@ static void FpgaLayer2On(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER2 %x\n", "FpgaLayer2On", dev5_fpga_regs->r_fpga_layer2);
-  dev5_fpga_regs->r_fpga_layer2 &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_layer2 &= ~1;
   dev5_fpga_regs->r_fpga_layer2 |= 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_LAYER2 %x\n", "FpgaLayer2On", dev5_fpga_regs->r_fpga_layer2);
@@ -3493,7 +3493,7 @@ static void FpgaLayer2Off(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_LAYER2 %x\n", "FpgaLayer2Off", dev5_fpga_regs->r_fpga_layer2);
-  dev5_fpga_regs->r_fpga_layer2 &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_layer2 &= ~1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_LAYER2 %x\n", "FpgaLayer2Off", dev5_fpga_regs->r_fpga_layer2);
 }
@@ -3502,7 +3502,7 @@ static void FpgaXfrenOn(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_XFREN %x\n", "FpgaXfrenOn", dev5_fpga_regs->r_fpga_xfren);
-  dev5_fpga_regs->r_fpga_xfren &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_xfren &= ~1;
   dev5_fpga_regs->r_fpga_xfren |= 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_XFREN %x\n", "FpgaXfrenOn", dev5_fpga_regs->r_fpga_xfren);
@@ -3512,7 +3512,7 @@ static void FpgaXfrenOff(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_XFREN %x\n", "FpgaXfrenOff", dev5_fpga_regs->r_fpga_xfren);
-  dev5_fpga_regs->r_fpga_xfren &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_xfren &= ~1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_XFREN %x\n", "FpgaXfrenOff", dev5_fpga_regs->r_fpga_xfren);
 }
@@ -3521,7 +3521,7 @@ static void FpgaSpckmodeOn(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs->r_fpga_spckmode);
-  dev5_fpga_regs->r_fpga_spckmode &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_spckmode &= ~1;
   dev5_fpga_regs->r_fpga_spckmode |= 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs->r_fpga_spckmode);
@@ -3531,7 +3531,7 @@ static void FpgaSpckmodeOff(void)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs->r_fpga_spckmode);
-  dev5_fpga_regs->r_fpga_spckmode &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_spckmode &= ~1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs->r_fpga_spckmode);
 }
@@ -3540,7 +3540,7 @@ static void FpgaXfdir(int dir)
 {
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_XFRDIR %x\n", "FpgaXfrdir", dev5_fpga_regs->r_fpga_xfrdir);
-  dev5_fpga_regs->r_fpga_xfrdir &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_xfrdir &= ~1;
   if ( dir )
   {
     dev5_fpga_regs->r_fpga_xfrdir |= 1;
@@ -3613,11 +3613,11 @@ static void FpgaClearBuffer(void)
     Kprintf("%s():old:FPGA_EXBUFD %x\n", "FpgaClearBuffer", dev5_fpga_regs->r_fpga_exbufd);
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():old:FPGA_EXBUFE %x\n", "FpgaClearBuffer", dev5_fpga_regs->r_fpga_exbufe);
-  dev5_fpga_regs->r_fpga_unk30 &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_unk30 &= ~1;
   dev5_fpga_regs->r_fpga_unk30 |= 1;
   while ( (u16)(dev5_fpga_regs->r_fpga_exbufd) || dev5_fpga_regs->r_fpga_sl3bufd );
   while ( dev5_fpga_regs->r_fpga_exbufe || dev5_fpga_regs->r_fpga_sl3bufe );
-  dev5_fpga_regs->r_fpga_unk30 &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_unk30 &= ~1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("%s():new:FPGA_SL3BUFD %x\n", "FpgaClearBuffer", dev5_fpga_regs->r_fpga_sl3bufd);
   if ( g_xatapi_verbose > 0 )
