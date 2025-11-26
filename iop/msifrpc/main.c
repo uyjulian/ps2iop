@@ -2,7 +2,10 @@
 #include "irx_imports.h"
 #include <msifrpc.h>
 
+#ifdef _IOP
 IRX_ID("IOP_MSIF_rpc_interface", 2, 7);
+#endif
+// Based on the module from SCE SDK 3.1.0.
 
 typedef struct _sifm_receive_data
 {
