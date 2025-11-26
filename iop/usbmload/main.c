@@ -583,7 +583,7 @@ static void default_loadfunc(sceUsbmlPopDevinfo pop_devinfo)
       for ( i = 0; i < curdev->argc; i += 1 )
       {
         cur_argv_len_1 = cur_argv_len + strlen(curdev->argv[i]) + 1;
-        if ( cur_argv_len_1 >= 0xF1 )
+        if ( cur_argv_len_1 > (int)(sizeof(modarg) - 16) )
           break;
         cur_argv_len = cur_argv_len_1;
         strcpy(&modarg[cur_argv_len], curdev->argv[i]);
