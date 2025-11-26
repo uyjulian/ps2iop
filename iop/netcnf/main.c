@@ -688,6 +688,7 @@ static int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr
 
   *netcnf_heap_ptr = 0;
   result = do_read_ilink_id();
+  // cppcheck-suppress knownConditionTrueFalse
   if ( result < 0 )
     return result;
   do_init_xor_magic(g_id_buffer);
@@ -767,6 +768,7 @@ static int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf
   char bufflipx2;
 
   result = do_read_ilink_id();
+  // cppcheck-suppress knownConditionTrueFalse
   if ( result < 0 )
     return result;
   do_init_xor_magic(g_id_buffer);
@@ -1147,8 +1149,10 @@ static int do_remove_old_config(
   if ( !do_write_memcard_pathcopy(cur_basepath, sizeof(cur_basepath), fpath) )
     return 0;
   dfd = do_dopen_wrap(cur_basepath);
+  // cppcheck-suppress knownConditionTrueFalse
   if ( dfd < 0 )
   {
+    // cppcheck-suppress knownConditionTrueFalse
     return ( dfd == -5 ) ? -18 : 0;
   }
   while ( 1 )
@@ -1156,6 +1160,7 @@ static int do_remove_old_config(
     int sizeflag;
 
     fileop_res = do_dread_wrap(dfd, &statname);
+    // cppcheck-suppress knownConditionTrueFalse
     if ( fileop_res <= 0 )
       break;
     sizeflag = 1;
@@ -2011,11 +2016,13 @@ static int do_delete_all_inner(const char *dev)
     g_netcnf_file_path[i + 1] = 0;
     do_safe_strcat(g_netcnf_file_path, sizeof(g_netcnf_file_path), "/BWNETCNF", 1199);
     dfd1 = do_dopen_wrap(g_netcnf_file_path);
+    // cppcheck-suppress knownConditionTrueFalse
     if ( dfd1 < 0 )
       return 0;
     while ( 1 )
     {
       dread_res = do_dread_wrap(dfd1, &statname);
+      // cppcheck-suppress knownConditionTrueFalse
       if ( dread_res <= 0 )
         break;
       if ( strcmp(statname.name, ".") && strcmp(statname.name, "..") )
@@ -2045,13 +2052,16 @@ static int do_delete_all_inner(const char *dev)
     g_netcnf_file_path[i + 1] = 0;
     do_safe_strcat(g_netcnf_file_path, sizeof(g_netcnf_file_path), "/etc/network", 1229);
     dfd2 = do_dopen_wrap(g_netcnf_file_path);
+    // cppcheck-suppress knownConditionTrueFalse
     if ( dfd2 < 0 )
     {
+      // cppcheck-suppress knownConditionTrueFalse
       return ( dfd2 == -5 ) ? -18 : 0;
     }
     while ( 1 )
     {
       dread_res = do_dread_wrap(dfd2, &statname);
+      // cppcheck-suppress knownConditionTrueFalse
       if ( dread_res <= 0 )
         break;
       if ( strcmp(statname.name, ".") && strcmp(statname.name, "..") )
