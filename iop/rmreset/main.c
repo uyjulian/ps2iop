@@ -1,5 +1,6 @@
 
 #include "irx_imports.h"
+#include <loadcore.h>
 #include <iop_mmio_hwport.h>
 
 #ifdef _IOP
@@ -138,5 +139,5 @@ int _start(int ac, char **av)
   sio2_ctrl_set(0xCu);
   sio2_ctrl_set(ctrl_save & ~1);
   printf("rmreset end\n");
-  return 1;
+  return MODULE_NO_RESIDENT_END;
 }
