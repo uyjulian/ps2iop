@@ -121,8 +121,8 @@ struct dev5_fpga_regs_
   vu16 unv2c;
   vu16 unv2e;
   vu16 r_fpga_unk30;
-  vu16 r_fpga_unk32;
-  vu16 r_fpga_unk34;
+  vu16 r_fpga_spckmode;
+  vu16 r_fpga_spckcnt;
   vu16 unvpad[2013];
   vu16 r_fpga_revision;
 };
@@ -158,7 +158,7 @@ static void FpgaSpckmodeOn(void);
 static void FpgaSpckmodeOff(void);
 static void FpgaXfdir(int dir);
 static int FpgaGetRevision(void);
-static int do_fpga_check_unk8148(void);
+static int do_fpga_check_spckcnt(void);
 static void FpgaCheckWriteBuffer(void);
 static void FpgaCheckWriteBuffer2(void);
 static void FpgaClearBuffer(void);
@@ -2650,7 +2650,7 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   unsigned int blksectors;
   int blkremainder;
   int i;
-  unsigned int fpga_unk8148;
+  unsigned int fpga_spckcnt;
   u8 Error;
   int extransres;
   iop_sys_clock_t sysclk;
@@ -2704,14 +2704,14 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   FpgaXfrenOn();
   blkremainder = (blkcount * blksize) & 0x1FF;
   extransres = 0;
-  for ( blksectors = (unsigned int)(blkcount * blksize) >> 9; blksectors; blksectors -= fpga_unk8148 )
+  for ( blksectors = (unsigned int)(blkcount * blksize) >> 9; blksectors; blksectors -= fpga_spckcnt )
   {
-    unsigned int unk8148_bytes;
+    unsigned int fpga_spckcnt_bytes;
 
     for ( i = 0; ; i += 1 )
     {
-      fpga_unk8148 = do_fpga_check_unk8148();
-      if ( fpga_unk8148 >= 3 || fpga_unk8148 >= blksectors )
+      fpga_spckcnt = do_fpga_check_spckcnt();
+      if ( fpga_spckcnt >= 3 || fpga_spckcnt >= blksectors )
         break;
       switch ( i / 500 )
       {
@@ -2751,17 +2751,17 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
         return -550;
       }
     }
-    if ( blksectors < fpga_unk8148 )
+    if ( blksectors < fpga_spckcnt )
     {
-      fpga_unk8148 = blksectors;
+      fpga_spckcnt = blksectors;
     }
-    unk8148_bytes = fpga_unk8148 << 9;
+    fpga_spckcnt_bytes = fpga_spckcnt << 9;
     if ( g_xatapi_verbose > 0 )
-      Kprintf("DmaRun_atapi_extrans  cnt %d nblk %d secsize %d bcr %08x\n", fpga_unk8148, blksectors, blksize, (unk8148_bytes << 9) | 0x20);
-    extransres = SpdDmaTransfer_extrans_2(0, buf, (unk8148_bytes << 9) | 0x20, dir);
+      Kprintf("DmaRun_atapi_extrans  cnt %d nblk %d secsize %d bcr %08x\n", fpga_spckcnt, blksectors, blksize, (fpga_spckcnt_bytes << 9) | 0x20);
+    extransres = SpdDmaTransfer_extrans_2(0, buf, (fpga_spckcnt_bytes << 9) | 0x20, dir);
     if ( extransres < 0 )
       break;
-    buf += unk8148_bytes;
+    buf += fpga_spckcnt_bytes;
   }
   FpgaXfrenOff();
   FpgaLayer1Off();
@@ -2804,7 +2804,7 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
 static void DmaRun_spck(char *buf, unsigned int secsize)
 {
   unsigned int secsize_sectors;
-  unsigned int unk8148_val;
+  unsigned int fpga_spckcnt;
 
   if ( g_xatapi_verbose > 0 )
     Kprintf("DmaRun_spck start\n");
@@ -2812,24 +2812,24 @@ static void DmaRun_spck(char *buf, unsigned int secsize)
   FpgaLayer2Off();
   FpgaClearBuffer();
   FpgaXfdir(0);
-  for ( secsize_sectors = secsize >> 9; secsize_sectors; secsize_sectors -= unk8148_val )
+  for ( secsize_sectors = secsize >> 9; secsize_sectors; secsize_sectors -= fpga_spckcnt )
   {
-    unsigned int unk8148_bytes;
+    unsigned int fpga_spckcnt_bytes;
 
-    for ( unk8148_val = 0; unk8148_val < 4; unk8148_val = do_fpga_check_unk8148() );
-    if ( secsize_sectors < unk8148_val )
+    for ( fpga_spckcnt = 0; fpga_spckcnt < 4; fpga_spckcnt = do_fpga_check_spckcnt() );
+    if ( secsize_sectors < fpga_spckcnt )
     {
-      unk8148_val = secsize_sectors;
+      fpga_spckcnt = secsize_sectors;
     }
-    unk8148_bytes = unk8148_val << 9;
+    fpga_spckcnt_bytes = fpga_spckcnt << 9;
     if ( g_xatapi_verbose > 0 )
-      Kprintf("DmaRun_spck  cnt %d nblk %d secsize %d bcr %08x\n", unk8148_val, secsize_sectors, secsize, (unk8148_bytes << 9) | 0x20);
-    if ( SpdDmaTransfer_extrans_3(0, buf, (unk8148_bytes << 9) | 0x20, 1) < 0 )
+      Kprintf("DmaRun_spck  cnt %d nblk %d secsize %d bcr %08x\n", fpga_spckcnt, secsize_sectors, secsize, (fpga_spckcnt_bytes << 9) | 0x20);
+    if ( SpdDmaTransfer_extrans_3(0, buf, (fpga_spckcnt_bytes << 9) | 0x20, 1) < 0 )
     {
       FpgaSpckmodeOff();
       return;
     }
-    buf += unk8148_bytes;
+    buf += fpga_spckcnt_bytes;
   }
   if ( (secsize & 0x1FF) )
   {
@@ -3517,20 +3517,20 @@ static void FpgaXfrenOff(void)
 static void FpgaSpckmodeOn(void)
 {
   if ( g_xatapi_verbose > 0 )
-    Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs->r_fpga_unk32);
-  dev5_fpga_regs->r_fpga_unk32 &= 0xFFFE;
-  dev5_fpga_regs->r_fpga_unk32 |= 1;
+    Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs->r_fpga_spckmode);
+  dev5_fpga_regs->r_fpga_spckmode &= 0xFFFE;
+  dev5_fpga_regs->r_fpga_spckmode |= 1;
   if ( g_xatapi_verbose > 0 )
-    Kprintf("%s():new:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs->r_fpga_unk32);
+    Kprintf("%s():new:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs->r_fpga_spckmode);
 }
 
 static void FpgaSpckmodeOff(void)
 {
   if ( g_xatapi_verbose > 0 )
-    Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs->r_fpga_unk32);
-  dev5_fpga_regs->r_fpga_unk32 &= 0xFFFE;
+    Kprintf("%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs->r_fpga_spckmode);
+  dev5_fpga_regs->r_fpga_spckmode &= 0xFFFE;
   if ( g_xatapi_verbose > 0 )
-    Kprintf("%s():new:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs->r_fpga_unk32);
+    Kprintf("%s():new:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs->r_fpga_spckmode);
 }
 
 static void FpgaXfdir(int dir)
@@ -3560,9 +3560,9 @@ static unsigned int do_fpga_add_unused8120(void)
 }
 #endif
 
-static int do_fpga_check_unk8148(void)
+static int do_fpga_check_spckcnt(void)
 {
-  return (u16)dev5_fpga_regs->r_fpga_unk34;
+  return (u16)dev5_fpga_regs->r_fpga_spckcnt;
 }
 
 static void FpgaCheckWriteBuffer(void)
