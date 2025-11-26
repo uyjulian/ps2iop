@@ -2,7 +2,10 @@
 #include "irx_imports.h"
 #include <xatapi.h>
 
+#ifdef _IOP
 IRX_ID("cdvd_xatapi_driver", 2, 3);
+#endif
+// Based off of DESR / PSX DVR system software version 2.11.
 
 typedef struct _ata_cmd_state
 {
