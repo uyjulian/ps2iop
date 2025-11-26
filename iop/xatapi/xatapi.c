@@ -1,6 +1,8 @@
 
 #include "irx_imports.h"
 #include <xatapi.h>
+#include <errno.h>
+#include <kerr.h>
 
 #ifdef _IOP
 IRX_ID("cdvd_xatapi_driver", 2, 3);
@@ -731,9 +733,9 @@ static int sceCdAtapi_BC(void)
         char outbuf[16];
 
         if ( g_should_wait_for_dma_flag )
-          WaitEventFlag(g_adma_evfid, 1u, 16, &efbits);
+          WaitEventFlag(g_adma_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
         retres4 = 1;
-        WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
+        WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
         memset(pkt, 0, sizeof(pkt));
         pkt[0] = 0xF9;
         pkt[2] = 0xB0;
@@ -760,8 +762,8 @@ static int sceCdAtapi_BC(void)
     if ( !flg )
     {
       if ( g_should_wait_for_dma_flag )
-        WaitEventFlag(g_adma_evfid, 1u, 16, &efbits);
-      WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
+        WaitEventFlag(g_adma_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+      WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
     }
   }
   {
@@ -1029,13 +1031,13 @@ static int xatapi_do_init(void)
 static int xatapi_nulldev0(void)
 {
   printf("nulldev0 call\n");
-  return -5;
+  return -EIO;
 }
 
 static s64 xatapi_nulldev0_64bit(void)
 {
   printf("nulldev0 call\n");
-  return -5LL;
+  return -EIO;
 }
 
 static int xatapi_dev_init(void)
@@ -1079,21 +1081,21 @@ static int xatapi_dev_devctl(
   retres1 = 0;
   if ( g_xatapi_verbose > 0 )
     Kprintf("xatapi devctl: cmd:%08x arg:%d\n", cmd, *(u32 *)args);
-  if ( cmd == 0x439B && PollEventFlag(g_io_event_flag, 1u, 0, &efbits) == -421 && *(u32 *)args == 1 )
+  if ( cmd == 0x439B && PollEventFlag(g_io_event_flag, 1u, 0, &efbits) == KE_EVF_COND && *(u32 *)args == 1 )
   {
     *(u32 *)buf = 6;
     return 0;
   }
-  WaitEventFlag(g_io_event_flag, 1u, 16, &efbits);
+  WaitEventFlag(g_io_event_flag, 1u, WEF_AND | WEF_CLEAR, &efbits);
   if ( g_devctl_retonly_unset )
   {
     SetEventFlag(g_io_event_flag, 1u);
-    return -5;
+    return -EIO;
   }
   switch ( cmd )
   {
     case 0x4332:
-      retres1 = -22;
+      retres1 = -EINVAL;
       if ( *(u32 *)args )
       {
         switch ( *((u32 *)args + 1) )
@@ -1102,7 +1104,7 @@ static int xatapi_dev_devctl(
           case 5:
             if ( !buflen )
             {
-              retres1 = -22;
+              retres1 = -EINVAL;
               break;
             }
             retres1 = xatapi_7_sceCdAtapiExecCmd(f->unit, buf, 1, buflen, (char *)args + 8, *(u32 *)args, *((u32 *)args + 1));
@@ -1115,7 +1117,7 @@ static int xatapi_dev_devctl(
             }
             else
             {
-              retres1 = -22;
+              retres1 = -EINVAL;
             }
             break;
           default:
@@ -1187,7 +1189,7 @@ static int xatapi_dev_devctl(
     case 0x4601:
       if ( *((u32 *)args + 3) != 2048 )
       {
-        retres1 = -22;
+        retres1 = -EINVAL;
         break;
       }
       if ( g_xatapi_verbose > 0 )
@@ -1196,7 +1198,7 @@ static int xatapi_dev_devctl(
       break;
     default:
       Kprintf("Un-support devctl %08x\n", cmd);
-      retres1 = -5;
+      retres1 = -EIO;
       break;
   }
   SetEventFlag(g_io_event_flag, 1u);
@@ -1212,14 +1214,14 @@ int _start(int ac, char **av)
 
   Kprintf("xatapi_init Call\n");
   if ( RegisterLibraryEntries(&_exp_xatapi) )
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   DelDrv("xatapi");
   if ( AddDrv(&ata_ioman_device) )
   {
     xatapi_dev_deinit();
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
-  return !xatapi_do_init();
+  return !xatapi_do_init() ? MODULE_NO_RESIDENT_END : MODULE_RESIDENT_END;
 }
 
 static int expbay_get_has_power(void)
@@ -1449,7 +1451,7 @@ static void speed_init(void)
   int i;
   iop_sema_t semaparam;
 
-  semaparam.attr = 1;
+  semaparam.attr = SA_THPRI;
   semaparam.initial = 1;
   semaparam.max = 1;
   semaparam.option = 0;
@@ -1577,7 +1579,7 @@ void xatapi_9_sceCdSpdAtaDmaStart(int dir)
   u32 efbits;
 
   g_is_wait_busy = 0;
-  WaitEventFlag(g_adma_evfid, 1u, 16, &efbits);
+  WaitEventFlag(g_adma_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
   g_should_wait_for_dma_flag = 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("sceCdSpdAtaDmaStart Call %d :Read 0:Write 1\n", dir);
@@ -1729,7 +1731,7 @@ int xatapi_14_set_speed_reg(int regaddr, u16 regval)
 
   if ( (unsigned int)(regaddr - 64) < 0x1D )
   {
-    WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
+    WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
     *(vu16 *)((char *)&dev5_speed_regs->unv00 + regaddr) = regval;
     SetEventFlag(g_acmd_evfid, 1u);
   }
@@ -1743,7 +1745,7 @@ int xatapi_13_get_speed_reg(int regaddr)
 
   if ( (unsigned int)(regaddr - 64) >= 0x1D )
     return 0;
-  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
   tmpval = *(u16 *)((char *)&dev5_speed_regs->unv00 + regaddr);
   SetEventFlag(g_acmd_evfid, 1u);
   return tmpval;
@@ -1754,7 +1756,7 @@ int xatapi_11_sceAtaGetError(void)
   u8 r_spd_ata_error;
   u32 efbits;
 
-  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
   r_spd_ata_error = dev5_speed_regs->r_spd_ata_error;
   SetEventFlag(g_acmd_evfid, 1u);
   return r_spd_ata_error;
@@ -1765,7 +1767,7 @@ int xatapi_12_get_ata_control(void)
   u8 r_spd_ata_control;
   u32 efbits;
 
-  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
   r_spd_ata_control = dev5_speed_regs->r_spd_ata_control;
   SetEventFlag(g_acmd_evfid, 1u);
   return r_spd_ata_control;
@@ -2037,7 +2039,7 @@ int xatapi_5_sceAtaExecCmd(
   int retres;
   u32 efbits;
 
-  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
   retres = sceAtaExecCmd(buf, blkcount, feature, nsector, sector, lcyl, hcyl, select, command, unk10);
   if ( retres )
   {
@@ -2242,7 +2244,7 @@ int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pk
   int retres;
   u32 efbits;
 
-  WaitEventFlag(g_acmd_evfid, 1u, 16, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
   retres = sceCdAtapiExecCmd(n, buf, nsec, secsize, pkt, pkt_len, proto);
   if ( retres )
   {
@@ -2407,7 +2409,7 @@ static int atapi_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
       speedIntrEnable(3);
       if ( g_xatapi_verbose > 0 )
         Kprintf("Wait Event\n");
-      WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
       if ( g_xatapi_verbose > 0 )
         Kprintf("Event come\n");
       if ( (efbits & 1) )
@@ -2479,7 +2481,7 @@ static int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
     if ( !dbuf_stat_mask )
     {
       speedIntrEnable(3);
-      WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         if ( g_xatapi_verbose > 0 )
@@ -2577,7 +2579,7 @@ static int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
     if ( !dbuf_stat_mask )
     {
       speedIntrEnable(3);
-      WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         if ( g_xatapi_verbose > 0 )
@@ -2674,7 +2676,7 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   while ( 1 )
   {
     speedIntrEnable(3);
-    WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+    WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
     if ( (efbits & 1) )
     {
       if ( g_xatapi_verbose > 0 )
@@ -2864,7 +2866,7 @@ static int sceAtaWaitResult(void)
   {
     case 1:
     case 8:
-      WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         res = -502;
@@ -2895,7 +2897,7 @@ static int sceAtaWaitResult(void)
       if ( !intr_stat_msk )
       {
         speedIntrEnable(1);
-        WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+        WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
         if ( (efbits & 1) )
         {
           if ( g_xatapi_verbose > 0 )
@@ -2998,7 +3000,7 @@ static int sceCdAtapiWaitResult_local(void)
     case 8:
       if ( g_xatapi_verbose > 0 )
         Kprintf("waitresult\n");
-      WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         res = -502;
@@ -3070,7 +3072,7 @@ static int sceCdAtapiWaitResult_local(void)
       if ( g_xatapi_verbose > 0 )
         Kprintf("ata command not finished yet\n");
       speedIntrEnable(1);
-      WaitEventFlag(g_atapi_event_flag, 7u, 17, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         if ( g_xatapi_verbose > 0 )
@@ -3424,12 +3426,12 @@ static int create_event_flags(void)
 {
   iop_event_t efparam;
 
-  efparam.attr = 0;
+  efparam.attr = EA_SINGLE;
   efparam.bits = 0;
   g_atapi_event_flag = CreateEventFlag(&efparam);
   if ( g_atapi_event_flag < 0 )
     return 1;
-  efparam.attr = 2;
+  efparam.attr = EA_MULTI;
   efparam.option = 0;
   efparam.bits = 1;
   g_acmd_evfid = CreateEventFlag(&efparam);
