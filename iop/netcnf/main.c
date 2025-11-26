@@ -1154,7 +1154,6 @@ static int do_remove_old_config(
   // cppcheck-suppress knownConditionTrueFalse
   if ( dfd < 0 )
   {
-    // cppcheck-suppress knownConditionTrueFalse
     return ( dfd == -EIO ) ? -18 : 0;
   }
   while ( 1 )
@@ -2057,7 +2056,6 @@ static int do_delete_all_inner(const char *dev)
     // cppcheck-suppress knownConditionTrueFalse
     if ( dfd2 < 0 )
     {
-      // cppcheck-suppress knownConditionTrueFalse
       return ( dfd2 == -EIO ) ? -18 : 0;
     }
     while ( 1 )
@@ -2157,19 +2155,19 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
   {
     int argchr_1;
 
-    argchr_1 = *(u8 *)argbegin;
+    argchr_1 = (u8)*argbegin;
     argbegin += 1;
     if ( argchr_1 == '\\' )
     {
-      if ( !*(u8 *)argbegin )
+      if ( !*argbegin )
       {
         err = 1;
         break;
       }
       argchr_1 = 0;
-      if ( (unsigned int)(*(u8 *)argbegin - '0') >= 8 )
+      if ( (unsigned int)(((u8)*argbegin) - '0') >= 8 )
       {
-        if ( *(u8 *)argbegin == 'x' || *(u8 *)argbegin == 'X' )
+        if ( ((u8)*argbegin) == 'x' || ((u8)*argbegin) == 'X' )
         {
           argbegin += 1;
           argchr_1 = 0;
@@ -2182,19 +2180,19 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
           {
             if ( isdigit(*argbegin) )
             {
-              argchr_1 = 16 * argchr_1 + *(u8 *)argbegin - '0';
+              argchr_1 = 16 * argchr_1 + ((u8)*argbegin) - '0';
             }
             else
             {
               hexnum = 16 * argchr_1;
-              argchr_1 = (!islower(*argbegin)) ? hexnum + *(u8 *)argbegin - '7' : hexnum + *(u8 *)argbegin - 'W';
+              argchr_1 = (!islower(*argbegin)) ? hexnum + ((u8)*argbegin) - '7' : hexnum + ((u8)*argbegin) - 'W';
             }
             argbegin += 1;
           }
         }
         else
         {
-          argchr_1 = *(u8 *)argbegin;
+          argchr_1 = ((u8)*argbegin);
           argbegin += 1;
           switch ( argchr_1 )
           {
@@ -2226,7 +2224,7 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
       }
       else
       {
-        for ( i = 0; i < 3 && ( *(u8 *)argbegin - (unsigned int)'0' < 8 ); i += 1 )
+        for ( i = 0; i < 3 && ( ((u8)*argbegin) - (unsigned int)'0' < 8 ); i += 1 )
         {
           argchr_1 = 8 * argchr_1 + *argbegin - '0';
           argbegin += 1;
@@ -2235,7 +2233,7 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
     }
     else if ( (unsigned int)(argchr_1 - 129) < 0x1F || (unsigned int)(argchr_1 - 224) < 0x1D )
     {
-      if ( (u8)(*(u8 *)argbegin - 64) < 0xBDu && *(u8 *)argbegin != 127 )
+      if ( (u8)(((u8)*argbegin) - 64) < 0xBDu && ((u8)*argbegin) != 127 )
       {
         *dbuf = argchr_1;
         dbuf += 1;
@@ -2248,7 +2246,7 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
   }
   if ( !err )
   {
-    if ( *(u8 *)argbegin != '"' )
+    if ( ((u8)*argbegin) != '"' )
     {
       err = 3;    
     }
@@ -2329,15 +2327,15 @@ static int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
     {
       int e_arg_1_num;
 
-      if ( *(u8 *)e_arg_1 - (unsigned int)'0' >= 0xA )
+      if ( ((u8)*e_arg_1) - (unsigned int)'0' >= 0xA )
       {
-        if ( *(u8 *)e_arg_1 - (unsigned int)'a' >= 6 )
+        if ( ((u8)*e_arg_1) - (unsigned int)'a' >= 6 )
           break;
-        e_arg_1_num = (char)(*(u8 *)e_arg_1) - 'W';
+        e_arg_1_num = (char)(((u8)*e_arg_1)) - 'W';
       }
       else
       {
-        e_arg_1_num = (char)(*(u8 *)e_arg_1) - '0';
+        e_arg_1_num = (char)(((u8)*e_arg_1)) - '0';
       }
       if ( e_arg_1_num >= curbasex )
         break;
@@ -2976,7 +2974,7 @@ static int do_check_line_buffer(sceNetCnfEnv_t *e, u8 *lbuf, int (*readcb)(sceNe
   u8 *i;
   char *j;
 
-  for ( i = lbuf; e->lbuf < i && *(i - 1) < 0x21u; i -= 1 );
+  for ( i = lbuf; e->lbuf < i && i[-1] < 0x21u; i -= 1 );
   *i = 0;
   for ( j = (char *)e->lbuf; *j && isspace(*j); j += 1 );
   e->ac = 0;
@@ -3109,7 +3107,7 @@ static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*rea
     if ( *ptr == '\n' )
     {
       e->lno += 1;
-      if ( e->lbuf < lbuf && *(lbuf - 1) == '\\' )
+      if ( e->lbuf < lbuf && lbuf[-1] == '\\' )
       {
         lbuf -= 1;
       }
@@ -4168,7 +4166,7 @@ static char *do_address_to_string_inner_element(char *dst, int srcbyte)
   }
   for ( ; tmpstk < tmpstk_ptr; tmpstk_ptr -= 1 )
   {
-    *dst = *(tmpstk_ptr - 1);
+    *dst = tmpstk_ptr[-1];
     dst += 1;
   }
   return dst;
@@ -4365,7 +4363,7 @@ static int do_conv_s2a_inner(char *sp_, char *dp_, int len)
       dp_ += 1;
     }
     sp_ptroffs2 += 1;
-    if ( (*(sp_ptroffs2 - 1)) != ' ' )
+    if ( (sp_ptroffs2[-1]) != ' ' )
     {
       sp_ptroffs2 -= 1;
       while ( *sp_ptroffs2 != '\t' )
@@ -4417,7 +4415,7 @@ static int do_check_authnet(char *argst, char *arged)
   char *i;
   char *j;
 
-  for ( i = arged; argst < i && *(i - 1) < '!'; i -= 1 );
+  for ( i = arged; argst < i && i[-1] < '!'; i -= 1 );
   *i = 0;
   for ( j = argst; *j && isspace(*j); j += 1 );
   if ( !strncmp(j, "auth_name", 9) )
@@ -4484,7 +4482,7 @@ static int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_
     {
       if ( *curheapptr1 == '\n' )
       {
-        if ( heapmem < heapmem_2 && *(heapmem_2 - 1) == '\\' )
+        if ( heapmem < heapmem_2 && heapmem_2[-1] == '\\' )
         {
           heapmem_2 -= 1;
         }

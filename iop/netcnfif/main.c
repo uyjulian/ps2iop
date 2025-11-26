@@ -434,7 +434,8 @@ static void sceNetcnfifDataInit(sceNetcnfifData_t *data)
   data->dev_idle_timeout = -1;
   data->dhcp = -1;
   data->dns1_nego = -1;
-  *(u16 *)&data->dns2_nego = 255;
+  data->dns2_nego = -1;
+  data->f_auth = 0;
   data->auth = 4;
   data->pppoe = -1;
   data->prc_nego = -1;
