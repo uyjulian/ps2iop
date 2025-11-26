@@ -371,13 +371,13 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
       {
         midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs_plusone;
         midiData_offs_plusone += 1;
-        *(((char *)midiData + i) + 46) = midiData->originalMessage[midiData->originalMessageLength];
+        midiData->message[i + 2] = midiData->originalMessage[midiData->originalMessageLength];
         msg2ew = midiData->message[2];
         midiData->messageLength += 1;
         midiData->originalMessageLength += 1;
       }
       niceflag = 1;
-      if ( (*(u32 *)midiData->message & 0xFFFFFF) == 0x2FFF )
+      if ( midiData->message[0] == 0xFF && midiData->message[1] == 0x2F && midiData->message[2] == 0x00 )
         midiData->readStatus = 1;
       endflg = 1;
       break;
@@ -457,7 +457,7 @@ int sceSdSqReadSongData(SceSdSqSongData *songData)
   songData->message[0] = *curOffset;
   songData->message[1] = curOffset[1];
   songData->message[2] = curOffset[2];
-  if ( (*(u32 *)songData->message & 0xFFFFFF) == 0x7F7FA0 )
+  if ( songData->message[0] == 0xA0 && songData->message[1] == 0x7F && songData->message[2] == 0x7F )
     songData->readStatus = 1;
   else
     songData->nextOffset += 3;
