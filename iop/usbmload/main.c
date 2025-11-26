@@ -673,7 +673,6 @@ static int split_config_line(char *curbuf, int cursplitind, char **dstptr)
       break;
     }
     *dstptr_1 = curbuf_2;
-    dstptr_1 += 1;
     splitfound += 1;
     if ( curbuf_1[i] != '"' )
     {
@@ -685,8 +684,8 @@ static int split_config_line(char *curbuf, int cursplitind, char **dstptr)
     else
     {
       i += 1;
-      *(dstptr_1 - 1) = curbuf_2 + 1;
       curbuf_2 += 1;
+      *dstptr_1 = curbuf_2;
       if ( !curbuf_1[i] )
       {
         curbuf_1[i] = 0;
@@ -697,6 +696,7 @@ static int split_config_line(char *curbuf, int cursplitind, char **dstptr)
         curbuf_2 += 1;
       }
     }
+    dstptr_1 += 1;
     if ( !curbuf_1[i] || curbuf_1[i] == '\r' || curbuf_1[i] == '\n' )
     {
       curbuf_1[i] = 0;
