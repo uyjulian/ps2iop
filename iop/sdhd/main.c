@@ -15,6 +15,7 @@ typedef uint32_t u32;
 #ifdef _IOP
 IRX_ID("Sound_Data_HD", 2, 2);
 #endif
+// Based on the module from SCE SDK 3.1.0.
 
 struct sceHardSynthVersionChunk_
 {
