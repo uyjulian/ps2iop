@@ -33,7 +33,7 @@ static void sio2_portN_ctrl1_set(int N, u32 val)
   iop_mmio_hwport->sio2.send1_2_buf[N * 2] = val;
 }
 
-// Ununsed func removed
+// Unused func removed
 
 static void sio2_portN_ctrl2_set(int N, u32 val)
 {
@@ -42,9 +42,9 @@ static void sio2_portN_ctrl2_set(int N, u32 val)
   iop_mmio_hwport->sio2.send1_2_buf[(N * 2) + 1] = val;
 }
 
-// Ununsed func removed
+// Unused func removed
 
-// Ununsed func removed
+// Unused func removed
 
 static void sio2_regN_set(int N, u32 val)
 {
@@ -53,17 +53,17 @@ static void sio2_regN_set(int N, u32 val)
   iop_mmio_hwport->sio2.send3_buf[N] = val;
 }
 
-// Ununsed func removed
+// Unused func removed
 
-// Ununsed func removed
+// Unused func removed
 
-// Ununsed func removed
+// Unused func removed
 
-// Ununsed func removed
+// Unused func removed
 
-// Ununsed func removed
+// Unused func removed
 
-// Ununsed func removed
+// Unused func removed
 
 static void sio2_data_out(u8 val)
 {
@@ -79,16 +79,16 @@ static u8 sio2_data_in(void)
   return iop_mmio_hwport->sio2.in_fifo;
 }
 
-// Ununsed func removed
+// Unused func removed
 
-// Ununsed func removed
+// Unused func removed
 
 int _start(int ac, char **av)
 {
-  u32 ctrl_save; // $s3
-  int i; // $s0
+  u32 ctrl_save;
+  int i;
   // Unofficial: shrink buffer
-  char inoutbuf[7]; // [sp+10h] [-20h] BYREF
+  char inoutbuf[7];
 
   (void)ac;
   (void)av;
