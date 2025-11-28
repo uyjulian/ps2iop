@@ -5,5 +5,4 @@ DECLARE_EXPORT_TABLE(netcnfif, 1, 1)
     DECLARE_EXPORT(_retonly)
 END_EXPORT_TABLE
 
-
 void _retonly() {}

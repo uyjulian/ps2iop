@@ -72,7 +72,6 @@ typedef struct sceNetcnfifArg
   char new_usr_name[256];
 } sceNetcnfifArg_t;
 
-int _start(int argc, char **argv);
 static void sceNetcnfifInterfaceStart(void *userdata);
 static void sceNetcnfifInterfaceStop(void);
 static void sceNetcnfifDataInit(sceNetcnfifData_t *data);

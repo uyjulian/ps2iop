@@ -71,9 +71,6 @@ struct netcnf_option
   const char *m_key;
 };
 
-#ifdef _IOP
-int _start(int ac, char **av);
-#endif
 static void do_init_xor_magic(const char *in_id_buf);
 static int magic_shift_write_netcnf_2(int inshft, int buflen);
 static int magic_shift_read_netcnf_2(int inshft, int buflen);

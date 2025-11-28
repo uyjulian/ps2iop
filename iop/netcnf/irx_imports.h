@@ -2,15 +2,15 @@
 #ifndef IOP_IRX_IMPORTS_H
 #define IOP_IRX_IMPORTS_H
 
-#include "irx.h"
+#include <irx.h>
 
+#include <cdvdman.h>
 #include <heaplib.h>
+#include <iomanX.h>
 #include <loadcore.h>
+#include <stdio.h>
+#include <sysclib.h>
 #include <thbase.h>
 #include <thsemap.h>
-#include <sysclib.h>
-#include <iomanX.h>
-#include <stdio.h>
-#include <cdvdman.h>
 
 #endif /* IOP_IRX_IMPORTS_H */
