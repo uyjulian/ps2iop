@@ -26,7 +26,6 @@ struct usbm_load_entry
   int m_pad2[15];
 };
 
-int _start(int ac, char **av);
 static int module_unload(void);
 static int do_parse_config_file(const char *fn);
 static void do_print_device_config_info(USBDEV_t *devinfo);
