@@ -535,6 +535,8 @@ static int do_get_common_block_ptr_note(
                             do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)ptr, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                             ptr = (void **)(((char *)ptr) + sizeof(SceSdHdVAGInfoParam));
                             break;
+                          default:
+                            break;
                         }
                         break;
                     }
@@ -616,6 +618,8 @@ static int do_get_common_block_ptr(
                   idx1 += 1;
                   do_copy_to_sdhd_vag_info_param((SceSdHdVAGInfoParam *)param, do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr), p_vagparam);
                   param = (void **)(((char *)param) + sizeof(SceSdHdVAGInfoParam));
+                  break;
+                default:
                   break;
               }
           }
