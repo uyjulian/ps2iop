@@ -4697,7 +4697,7 @@ static int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode
   cbind = do_colon_callback_handles(netcnf_path, pathconcat);
   if ( !cbind )
     return -EPERM;
-  openret1 = ((int (*)(char *, const char *, int, int, int *))g_callbacks.open)(pathconcat, cbind, file_flags, file_mode, &filesz1);
+  openret1 = g_callbacks.open(pathconcat, cbind, file_flags, file_mode, &filesz1);
   if ( openret1 < 0 )
     return openret1;
   empty_callback_handle = do_get_empty_callback_handle(openret1, 1);
@@ -4719,7 +4719,7 @@ static int do_read_callback_handles(int handlefd, int fd, void *ptr, int size)
     cbh->m_buf = do_alloc_heapmem(cbh->m_filesize);
     if ( !cbh->m_buf )
       return -EPERM;
-    if ( ((int (*)(int, char *, char *, void *, u32, int))g_callbacks.read)(fd, cbh->m_device, cbh->m_pathname, cbh->m_buf, 0, cbh->m_filesize) != cbh->m_filesize )
+    if ( g_callbacks.read(fd, cbh->m_device, cbh->m_pathname, cbh->m_buf, 0, cbh->m_filesize) != cbh->m_filesize )
     {
       do_free_heapmem(cbh->m_buf);
       cbh->m_buf = 0;
@@ -4803,7 +4803,7 @@ static void do_close_netcnf(int fd)
     close(fd);
     return;
   }
-  ((int (*)(int))g_callbacks.close)(fd);
+  g_callbacks.close(fd);
   do_free_heapmem(g_callback_handle_infos[cbind].m_buf);
   g_callback_handle_infos[cbind].m_buf = 0;
   do_clear_callback_handles(fd, 1);
