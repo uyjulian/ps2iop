@@ -175,7 +175,6 @@ struct msif_cmd_callrpc_8000001A
   int m_x16;
 };
 
-int _start(int ac, char **av);
 static void sif_cmdh_bindrpcparam_80000019(struct msif_cmd_bindrpcparam_80000019 *data, struct msif_data *harg);
 static void sif_cmdh_unbindrpc_8000001D(struct msif_cmd_unbindrpc_8000001D *data, struct msif_data *harg);
 static void sif_cmdh_callrpc_8000001A(struct msif_cmd_callrpc_8000001A *data, struct msif_data *harg);
