@@ -400,7 +400,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   }
   if ( !niceflag )
     midiData->reserve[midiData->messageLength + 6] &= ~0x80u;
-  midiData->nextOffset = midiData_offs_plusone - (u8 *)midiData->midiData;
+  midiData->nextOffset = (u32)(midiData_offs_plusone - (u8 *)midiData->midiData);
   return 0;
 }
 
@@ -473,7 +473,7 @@ int sceSdSqGetCompTableOffset(void *addr, u32 midiNumber, u32 *offset)
     return result;
   if ( dblk->sequenceDataOffset == 6 )
     return (int)0x81049028;
-  *offset = (char *)dblk - ((char *)addr - 10);
+  *offset = (u32)((char *)dblk - (char *)addr) - 10;
   return 0;
 }
 
