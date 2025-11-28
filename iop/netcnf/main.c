@@ -85,7 +85,7 @@ static int do_delete_entry_inner(const char *fname, int type, const char *usr_na
 static int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name);
 static int do_delete_all_inner(const char *dev);
 static int do_check_special_provider_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
-static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, unsigned int size, char align);
+static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, unsigned int size, int align);
 static void do_init_ifc_inner(sceNetCnfInterface_t *ifc);
 static int do_merge_conf_inner(sceNetCnfEnv_t *e);
 static int do_load_conf_inner(sceNetCnfEnv_t *e);
@@ -718,8 +718,8 @@ static int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr
     readres = do_readfile_netcnf(fd, netcnf_data, 2);
     if ( readres < 0 )
       break;
-    *(u16 *)netcnf_data = ~*(u16 *)netcnf_data;
-    *(u16 *)netcnf_data = magic_shift_read_netcnf_1(*(u16 *)netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
+    *(u16 *)netcnf_data ^= 0xFFFF;
+    *(u16 *)netcnf_data = (u16)magic_shift_read_netcnf_1(*(u16 *)netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
     xorind1 += 1;
     xorind1 = ( xorind1 != sizeof(g_id_xorbuf) ) ? xorind1 : 0;
     netcnf_data += 2;
@@ -735,8 +735,8 @@ static int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr
       readres = do_readfile_netcnf(fd, netcnf_data, 1);
       if ( readres >= 0 )
       {
-        *netcnf_data = ~*netcnf_data;
-        *netcnf_data = magic_shift_read_netcnf_2(*netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
+        *netcnf_data ^= 0xFF;
+        *netcnf_data = (char)magic_shift_read_netcnf_2(*netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
         netcnf_size -= 1;
         xoroffs += 1;
       }
@@ -785,10 +785,10 @@ static int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf
   {
     while ( netcnf_len_1 >= 2 )
     {
-      bufflipx1 = magic_shift_write_netcnf_1(*buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
+      bufflipx1 = (u16)magic_shift_write_netcnf_1(*buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
       xorind1 += 1;
       xorind1 = ( xorind1 != sizeof(g_id_xorbuf) ) ? xorind1 : 0;
-      bufflipx1 = ~bufflipx1;
+      bufflipx1 ^= 0xFFFF;
       writeres = do_write_netcnf_no_encode(fd, &bufflipx1, sizeof(bufflipx1));
       buf_1 += 1;
       if ( writeres < 0 )
@@ -803,10 +803,10 @@ static int do_write_netcnf_encode(const char *netcnf_path, void *buf, int netcnf
     }
     if ( writeres >= 0 )
     {
-      bufflipx2 = magic_shift_write_netcnf_2(*(u8 *)buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
+      bufflipx2 = (char)magic_shift_write_netcnf_2(*(u8 *)buf_1, (u8)g_id_xorbuf[xorind1 + 2]);
       xorind1 += 1;
       xorind1 = ( xorind1 != sizeof(g_id_xorbuf) ) ? xorind1 : 0;
-      bufflipx2 = ~bufflipx2;
+      bufflipx2 ^= 0xFF;
       writeres = do_write_netcnf_no_encode(fd, &bufflipx2, sizeof(bufflipx2));
       netcnf_len_1 -= 1;
       xoroffs += 1;
@@ -1679,7 +1679,7 @@ static int do_handle_set_usrname(const char *fpath, int type, const char *usrnam
   retres1 = do_read_current_netcnf_nodecode(fpath, &ptr);
   if ( retres1 <= 0 )
     return ( !retres1 ) ? -3 : retres1;
-  heapmem = (char *)do_alloc_heapmem((unsigned int)((unsigned int)retres1 + strlen(usrname_bufnew) + 1));
+  heapmem = (char *)do_alloc_heapmem((int)((unsigned int)retres1 + strlen(usrname_bufnew) + 1));
   if ( !heapmem )
   {
     do_free_heapmem(ptr);
@@ -2130,7 +2130,7 @@ static int do_check_special_provider_inner(const char *fname, int type, const ch
   return retres;
 }
 
-static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, unsigned int size, char align)
+static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, unsigned int size, int align)
 {
   void *mem_ptr;
   char *retptrbegin;
@@ -2166,9 +2166,9 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
   err = 0;
   for ( argbegin = e_arg + 1; *argbegin && *argbegin != '"' && (char *)(dbuf + 1) < (char *)&(e->dbuf[1023]); )
   {
-    int argchr_1;
+    char argchr_1;
 
-    argchr_1 = (u8)*argbegin;
+    argchr_1 = *argbegin;
     argbegin += 1;
     if ( argchr_1 == '\\' )
     {
@@ -2191,21 +2191,14 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
           }
           for ( i = 0; i < 2 && isxdigit(*argbegin); i += 1 )
           {
-            if ( isdigit(*argbegin) )
-            {
-              argchr_1 = 16 * argchr_1 + ((u8)*argbegin) - '0';
-            }
-            else
-            {
-              hexnum = 16 * argchr_1;
-              argchr_1 = (!islower(*argbegin)) ? hexnum + ((u8)*argbegin) - '7' : hexnum + ((u8)*argbegin) - 'W';
-            }
+            hexnum = 16 * argchr_1;
+            argchr_1 = (char)(hexnum + (isdigit(*argbegin) ? (((u8)*argbegin) - '0') : ((!islower(*argbegin)) ? ((u8)*argbegin) - '7' : ((u8)*argbegin) - 'W')));
             argbegin += 1;
           }
         }
         else
         {
-          argchr_1 = ((u8)*argbegin);
+          argchr_1 = *argbegin;
           argbegin += 1;
           switch ( argchr_1 )
           {
@@ -2248,13 +2241,13 @@ static const char *do_netcnf_parse_string(sceNetCnfEnv_t *e, const char *e_arg)
     {
       if ( (u8)(((u8)*argbegin) - 64) < 0xBDu && ((u8)*argbegin) != 127 )
       {
-        *dbuf = argchr_1;
+        *dbuf = (u8)argchr_1;
         dbuf += 1;
         argchr_1 = *argbegin;
         argbegin += 1;
       }
     }
-    *dbuf = argchr_1;
+    *dbuf = (u8)argchr_1;
     dbuf += 1;
   }
   if ( !err )
@@ -2643,7 +2636,7 @@ static int do_check_other_keywords(
         numval = 0xFF;
         if ( !wasprefixed && (e->ac < 2 || do_parse_number(e, e->av[1], &numval)) )
           break;
-        *((u8 *)cnfdata + options->m_offset) = numval;
+        *((u8 *)cnfdata + options->m_offset) = (u8)numval;
         return 0;
       case '4':
         numval = 0xFFFFFFFF;
@@ -2680,7 +2673,7 @@ static int do_check_other_keywords(
           {
             return -1;
           }
-          *((u8 *)cnfdata + options->m_offset) = numval;
+          *((u8 *)cnfdata + options->m_offset) = (u8)numval;
         }
         if ( !strcmp("want.auth", (const char *)e->av[0]) )
           *((u8 *)cnfdata + 171) = !wasprefixed;
@@ -2735,7 +2728,7 @@ static int do_check_other_keywords(
         {
           if ( e->ac < 2 || do_parse_number(e, e->av[1], &numval) )
             break;
-          *(u16 *)((char *)cnfdata + options->m_offset) = numval;
+          *(u16 *)((char *)cnfdata + options->m_offset) = (u16)numval;
         }
         if ( !strcmp("want.mru", (const char *)e->av[0]) )
           *((u8 *)cnfdata + 169) = !wasprefixed;
@@ -2814,7 +2807,7 @@ static int do_check_other_keywords(
         return 0;
       case 'b':
         numval = !wasprefixed;
-        *((u8 *)cnfdata + options->m_offset) = numval;
+        *((u8 *)cnfdata + options->m_offset) = (u8)numval;
         return 0;
       case 'c':
         numval = 255;
@@ -2847,7 +2840,7 @@ static int do_check_other_keywords(
             return -1;
           }
         }
-        *((u8 *)cnfdata + options->m_offset) = numval;
+        *((u8 *)cnfdata + options->m_offset) = (u8)numval;
         return 0;
       case 'p':
         if ( !wasprefixed )
@@ -3169,9 +3162,9 @@ static int do_netcnf_ifc_related(sceNetCnfEnv_t *e)
 static void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInterface *ncis)
 {
   int i;
-  int typadd1_1;
-  int typadd1_3;
-  int typadd1;
+  u32 typadd1_1;
+  u32 typadd1_3;
+  u8 typadd1;
 
   if ( !ncis )
   {
@@ -3185,7 +3178,7 @@ static void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInte
       case 'b':
       case 'c':
         typadd1 = *((u8 *)&ncis->type + g_options_attach_cnf[i].m_offset);
-        if ( typadd1 != 255 )
+        if ( typadd1 != 0xFF )
           *((u8 *)&ncid->type + g_options_attach_cnf[i].m_offset) = typadd1;
         break;
       case '4':
@@ -3193,9 +3186,9 @@ static void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInte
       case 'L':
       case 'P':
       case 'T':
-        typadd1_1 = *(int *)((char *)&ncis->type + g_options_attach_cnf[i].m_offset);
-        if ( typadd1_1 != -1 )
-          *(int *)((char *)&ncid->type + g_options_attach_cnf[i].m_offset) = typadd1_1;
+        typadd1_1 = *(u32 *)((char *)&ncis->type + g_options_attach_cnf[i].m_offset);
+        if ( typadd1_1 != 0xFFFFFFFF )
+          *(u32 *)((char *)&ncid->type + g_options_attach_cnf[i].m_offset) = typadd1_1;
         break;
       case 'A':
         if ( !strcmp("want.auth", g_options_attach_cnf[i].m_key) )
@@ -3243,9 +3236,9 @@ static void do_dialauth_related(sceNetCnfInterface_t *ncid, struct sceNetCnfInte
         }
         break;
       case 'p':
-        typadd1_3 = *(int *)((char *)&ncis->type + g_options_attach_cnf[i].m_offset);
+        typadd1_3 = *(u32 *)((char *)&ncis->type + g_options_attach_cnf[i].m_offset);
         if ( typadd1_3 )
-          *(int *)((char *)&ncid->type + g_options_attach_cnf[i].m_offset) = typadd1_3;
+          *(u32 *)((char *)&ncid->type + g_options_attach_cnf[i].m_offset) = typadd1_3;
         break;
       default:
         break;
@@ -3396,7 +3389,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
   char *mem_ptr_03;
   void *mem_ptr_rval_04;
   int has_negative;
-  int has_sero;
+  char has_sero;
   int strlened;
   int fmt_flag_str;
   char *mem_ptr_01;
@@ -3457,7 +3450,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
           mem_ptr_rval_04 = mem_ptr_01 + 1;
           if ( mem_ptr_01 >= (char *)e->mem_last )
             return -2;
-          *mem_ptr_01 = va_arg(va, int);
+          *mem_ptr_01 = (char)va_arg(va, int);
           e->mem_ptr = mem_ptr_rval_04;
           fmt += 1;
           continue;
@@ -3669,7 +3662,6 @@ static int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...)
 
 static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *options, void *cnfdata)
 {
-  unsigned int offsptr3;
   char *offsptr1;
   unsigned int offsptr6;
   unsigned int offsptr4;
@@ -3677,6 +3669,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
 
   for ( ; options->m_key; options += 1 )
   {
+    unsigned int offsptr3;
     int result;
     const char *lbuf;
 
