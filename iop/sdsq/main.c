@@ -83,22 +83,6 @@ struct sdsq_info
   sceSeqSongChunk *m_song;
 };
 
-int sceSdSqGetMaxMidiNumber(void *addr);
-int sceSdSqGetMaxSongNumber(void *addr);
-int sceSdSqInitMidiData(void *addr, u32 midiNumber, SceSdSqMidiData *midiData);
-int sceSdSqReadMidiData(SceSdSqMidiData *midiData);
-int sceSdSqInitSongData(void *addr, u32 songNumber, SceSdSqSongData *songData);
-int sceSdSqReadSongData(SceSdSqSongData *songData);
-int sceSdSqGetMaxCompTableIndex(void *addr, u32 midiNumber);
-int sceSdSqGetCompTableOffset(void *addr, u32 midiNumber, u32 *offset);
-int sceSdSqGetCompTableDataByIndex(void *addr, u32 midiNumber, u32 compTableIndex, SceSdSqCompTableData *data);
-int sceSdSqGetNoteOnEventByPolyKeyPress(void *addr, u32 midiNumber, const SceSdSqPolyKeyData *pData, SceSdSqCompTableNoteOnEvent *kData);
-int sceSdSqCopyMidiData(SceSdSqMidiData *to, const SceSdSqMidiData *from);
-int sceSdSqCopySongData(SceSdSqSongData *to, const SceSdSqSongData *from);
-#ifdef _IOP
-int _start(int ac, char **av);
-#endif
-
 #ifdef _IOP
 extern struct irx_export_table _exp_sdsq;
 #endif

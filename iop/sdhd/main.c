@@ -91,10 +91,6 @@ struct sdhd_info
 };
 
 #ifdef _IOP
-int _start(int ac, char **av);
-#endif
-
-#ifdef _IOP
 extern struct irx_export_table _exp_sdhd;
 #endif
 
