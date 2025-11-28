@@ -191,12 +191,12 @@ typedef struct sceNetCnfEnv
   int file_err;
   int alloc_err;
   int syntax_err;
-  char *fname;
+  const char *fname;
   int lno;
   unsigned char lbuf[1024];
   unsigned char dbuf[1024];
   int ac;
-  char *av[11];
+  const char *av[11];
 } sceNetCnfEnv_t;
 
 typedef struct sceNetCnfRoutingEntry

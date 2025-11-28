@@ -97,7 +97,7 @@ static int do_conv_a2s_inner(char *sp_, char *dp_, int len);
 static int do_conv_s2a_inner(char *sp_, char *dp_, int len);
 static int do_read_check_netcnf(const char *netcnf_path, int type, int no_check_magic, int no_decode);
 static int do_check_provider_inner(const sceNetCnfEnv_t *e, int type);
-static char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netcnf_file_path);
+static const char *do_handle_netcnf_dirname(const char *fpath, const char *entry_buffer, char *netcnf_file_path);
 static int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode);
 static int do_readfile_netcnf(int fd, void *ptr, int size);
 static int do_write_netcnf_no_encode(int fd, void *ptr, int size);
@@ -1101,7 +1101,7 @@ static int do_handle_fname(char *fpath, size_t maxlen, const char *fname)
   return 0;
 }
 
-static char *do_get_str_line(char *buf)
+static const char *do_get_str_line(const char *buf)
 {
   for ( ; *buf && *buf != '\n'; buf += 1 );
   return &buf[*buf == '\n'];
@@ -1136,7 +1136,7 @@ static int do_remove_old_config(
   int sysneticoflag;
   int dfd;
   int fileop_res;
-  char *curheapbuf1;
+  const char *curheapbuf1;
   char cur_basepath[256];
   char cur_combpath[256];
   iox_dirent_t statname;
@@ -1166,7 +1166,7 @@ static int do_remove_old_config(
     {
       if ( !strncmp(&statname.name[6], ".cnf", 4) || !strncmp(&statname.name[6], ".dat", 4) )
       {
-        for ( curheapbuf1 = (char *)netcnf_heap_buf; curheapbuf1 && *curheapbuf1; curheapbuf1 = do_get_str_line(curheapbuf1) )
+        for ( curheapbuf1 = netcnf_heap_buf; curheapbuf1 && *curheapbuf1; curheapbuf1 = do_get_str_line(curheapbuf1) )
         {
           do_split_str_comma_index(cur_combpath, curheapbuf1, 2);
           if ( !strcmp(statname.name, cur_combpath) )
@@ -1274,7 +1274,7 @@ static int do_write_noencode_netcnf_atomic(const char *fpath, void *ptr, int siz
   return ( size != writeres ) ? (( writeres != -EIO ) ? -5 : -18) : (( iomanX_rename(fpath_comb, fpath) == -EIO ) ? -18 : 0);
 }
 
-static int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer)
+static int do_remove_netcnf_dirname(const char *dirpath, const char *entry_buffer)
 {
   const char *p_dirname;
   int remove_res_1;
@@ -1289,7 +1289,7 @@ static int do_remove_netcnf_dirname(char *dirpath, const char *entry_buffer)
 static int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t *p)
 {
   int result;
-  char *curheapbuf1;
+  const char *curheapbuf1;
   int curind1;
 
   result = do_handle_fname(g_dir_name, sizeof(g_dir_name), fname);
@@ -1321,7 +1321,7 @@ static int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t 
 static int do_load_entry_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
 {
   int result;
-  char *curheapbuf1;
+  const char *curheapbuf1;
 
   result = do_handle_fname(g_dir_name, sizeof(g_dir_name), fname);
   if ( result < 0 )
@@ -1353,14 +1353,14 @@ static int do_load_entry_inner(const char *fname, int type, const char *usr_name
 static void do_extra_ifc_handling(const char *arg_fname)
 {
   const char *i;
-  char *curptr1;
+  const char *curptr1;
   unsigned int curbufsz1;
   unsigned int curindx;
 
   if ( !arg_fname || !*arg_fname )
     return;
   for ( i = &arg_fname[strlen(arg_fname) - 1]; i >= arg_fname && *i != '.'; i -= 1 );
-  curptr1 = (char *)(i - 1);
+  curptr1 = i - 1;
   if ( *i != '.' || curptr1 < arg_fname || !isdigit(*curptr1) )
     return;
   curbufsz1 = 0;
@@ -1426,10 +1426,10 @@ static int do_add_entry_inner(
 {
   int result;
   int retres2;
-  char *curentry1;
+  const char *curentry1;
   int i;
-  char *curentry2;
-  char *k;
+  const char *curentry2;
+  const char *k;
   int fd;
   char atomicrenamepath[256];
   int retres1;
@@ -1665,7 +1665,7 @@ static int do_handle_set_usrname(const char *fpath, int type, const char *usrnam
   int result;
   int retres1;
   char *heapmem;
-  char *ptr_1;
+  const char *ptr_1;
   char *heapmem_1;
   int writeres1;
   char *ptr;
@@ -1673,7 +1673,7 @@ static int do_handle_set_usrname(const char *fpath, int type, const char *usrnam
   ptr = 0;
   if ( !usrname_buf2 )
     return -11;
-  result = do_handle_combination_path(type, g_dir_name, g_combination_buf1, sizeof(g_combination_buf1), (char *)usrname_bufnew);
+  result = do_handle_combination_path(type, g_dir_name, g_combination_buf1, sizeof(g_combination_buf1), usrname_bufnew);
   if ( result < 0 )
     return result;
   retres1 = do_read_current_netcnf_nodecode(fpath, &ptr);
@@ -1737,7 +1737,7 @@ static int do_edit_entry_inner(
 {
   int result;
   int rmoldcfgres;
-  char *curentry1;
+  const char *curentry1;
   char curentrybuf1[256];
   char curfilepath1[256];
 
@@ -1849,7 +1849,7 @@ static int do_delete_entry_inner(
   int has_comma;
   int result;
   char *heapmem;
-  char *curentry1;
+  const char *curentry1;
 
   has_comma = 0;
   g_delete_entry_heapptr = 0;
@@ -2099,7 +2099,7 @@ static int do_delete_all_inner(const char *dev)
 static int do_check_special_provider_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e)
 {
   int result;
-  char *curentry1;
+  const char *curentry1;
   int curentcount;
   int retres;
 
@@ -2365,7 +2365,7 @@ static int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, unsigned int *n
   return -1;
 }
 
-static int do_netcnfname2address_wrap(sceNetCnfEnv_t *e, char *buf, sceNetCnfAddress_t *paddr)
+static int do_netcnfname2address_wrap(sceNetCnfEnv_t *e, const char *buf, sceNetCnfAddress_t *paddr)
 {
   int errret;
 
@@ -2467,7 +2467,7 @@ static int do_check_interface_keyword(
   return 0;
 }
 
-static int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv)
+static int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, const char **opt_argv)
 {
   int addordel;
   nameserver_t *nameservermem_1;
@@ -2497,7 +2497,7 @@ static int do_check_nameserver(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc
   return 0;
 }
 
-static int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, char **opt_argv)
+static int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int opt_argc, const char **opt_argv)
 {
   int addordel;
   route_t *route_mem_1;
@@ -2534,7 +2534,7 @@ static int do_check_route(sceNetCnfEnv_t *e, struct sceNetCnfInterface *ifc, int
     return -1;
   if ( do_netcnfname2address_wrap(e, 0, &route_mem_1->re.genmask) )
     return -1;
-  if ( (strcmp("default", opt_argv[i]) && do_netcnfname2address_wrap(e, (char *)opt_argv[i], &route_mem_1->re.dstaddr)) )
+  if ( (strcmp("default", opt_argv[i]) && do_netcnfname2address_wrap(e, (const char *)opt_argv[i], &route_mem_1->re.dstaddr)) )
     return -1;
   i += 1;
   for ( ; i < opt_argc; i += 2 )
@@ -2933,12 +2933,12 @@ static int do_handle_attach_cnf(sceNetCnfEnv_t *e, void *userdata)
   else if ( !strcmp("nameserver", &(e->av[0])[wasprefixed]) )
   {
     if ( !wasprefixed )
-      return do_check_nameserver(e, ifc, e->ac, (char **)e->av);
+      return do_check_nameserver(e, ifc, e->ac, &e->av[0]);
   }
   else if ( !strcmp("route", &(e->av[0])[wasprefixed]) )
   {
     if ( !wasprefixed )
-      return do_check_route(e, ifc, e->ac, (char **)e->av);
+      return do_check_route(e, ifc, e->ac, &e->av[0]);
   }
   else if ( !strcmp("zero_prefix", &(e->av[0])[wasprefixed]) || !strcmp("dial_cnf", &(e->av[0])[wasprefixed]) )
   {
@@ -3046,18 +3046,18 @@ static int do_read_netcnf(sceNetCnfEnv_t *e, const char *netcnf_path, char **net
   return result;
 }
 
-static char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer)
+static const char *do_handle_netcnf_prerw(sceNetCnfEnv_t *e, const char *entry_buffer)
 {
-  char *result;
+  const char *result;
 
   result = do_handle_netcnf_dirname(e->dir_name, entry_buffer, (char *)e->lbuf);
-  return ( result == (char *)e->lbuf ) ? do_alloc_mem_for_write(e, result) : result;
+  return ( result == (const char *)e->lbuf ) ? do_alloc_mem_for_write(e, result) : result;
 }
 
 static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*readcb)(sceNetCnfEnv_t *e, void *userdata), void *userdata)
 {
   int cur_linelen;
-  char *fullpath;
+  const char *fullpath;
   int read_res1;
   u8 *lbuf;
   char *ptr;
@@ -3937,7 +3937,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
     }
     if ( lbuf )
     {
-      if ( (char *)e->lbuf == (char *)lbuf )
+      if ( (const char *)e->lbuf == (const char *)lbuf )
       {
         sprintf((char *)e->lbuf, "0x%x", offsptr3);
       }
@@ -4054,7 +4054,7 @@ static int do_netcnf_unknown_write(sceNetCnfEnv_t *e, struct sceNetCnfUnknownLis
 static int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cnf)
 {
   int memsize;
-  char *fullpath;
+  const char *fullpath;
 
   memsize = e->mem_ptr - e->mem_base;
   if ( e->f_verbose )
@@ -4547,11 +4547,11 @@ static int do_check_provider_inner(const sceNetCnfEnv_t *e, int type)
   }
 }
 
-static char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, char *netcnf_file_path)
+static const char *do_handle_netcnf_dirname(const char *fpath, const char *entry_buffer, char *netcnf_file_path)
 {
   const char *entry_buffer_1;
-  char *fpath_1;
-  char *fpath_1_minus_1;
+  const char *fpath_1;
+  const char *fpath_1_minus_1;
   const char *fpath_2;
   char *i;
   const char *entry_buffer_2;
@@ -4561,10 +4561,10 @@ static char *do_handle_netcnf_dirname(char *fpath, const char *entry_buffer, cha
   for ( entry_buffer_1 = entry_buffer; *entry_buffer_1; entry_buffer_1 += 1 )
   {
     if ( *entry_buffer_1 == ':' )
-      return (char *)entry_buffer;
+      return entry_buffer;
   }
   if ( !fpath || !*fpath )
-    return (char *)entry_buffer;
+    return entry_buffer;
   for ( fpath_1 = fpath; fpath_1[1]; fpath_1 += 1 );
   fpath_1_minus_1 = fpath_1 - 1;
   if ( fpath < fpath_1_minus_1 || *entry_buffer == '/' || *entry_buffer == '\\' )
