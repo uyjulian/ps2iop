@@ -85,7 +85,7 @@ static int do_delete_entry_inner(const char *fname, int type, const char *usr_na
 static int do_set_latest_entry_inner(const char *fname, int type, const char *usr_name);
 static int do_delete_all_inner(const char *dev);
 static int do_check_special_provider_inner(const char *fname, int type, const char *usr_name, sceNetCnfEnv_t *e);
-static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align);
+static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, unsigned int size, char align);
 static void do_init_ifc_inner(sceNetCnfInterface_t *ifc);
 static int do_merge_conf_inner(sceNetCnfEnv_t *e);
 static int do_load_conf_inner(sceNetCnfEnv_t *e);
@@ -113,7 +113,7 @@ static void do_set_callback_inner(sceNetCnfCallback_t *pcallback);
 #ifdef _IOP
 static int do_init_heap(void);
 #endif
-static void *do_alloc_heapmem(size_t nbytes);
+static void *do_alloc_heapmem(int nbytes);
 static void do_free_heapmem(void *ptr);
 #ifdef _IOP
 static void do_delete_heap(void);
@@ -501,7 +501,7 @@ int sceNetCnfSetLatestEntry(const char *fname, int type, const char *usr_name)
 
 void *sceNetCnfAllocMem(sceNetCnfEnv_t *e, int size, int align)
 {
-  return do_alloc_mem_inner(e, size, align);
+  return do_alloc_mem_inner(e, (unsigned int)size, align);
 }
 
 int sceNetCnfInitIFC(sceNetCnfInterface_t *ifc)
@@ -545,7 +545,7 @@ int sceNetCnfName2Address(sceNetCnfAddress_t *paddr, const char *buf)
 
 int sceNetCnfAddress2String(char *buf, int len, const sceNetCnfAddress_t *paddr)
 {
-  int buflen;
+  unsigned int buflen;
   char buf_tmp[24];
   unsigned int srcintx;
 
@@ -556,7 +556,7 @@ int sceNetCnfAddress2String(char *buf, int len, const sceNetCnfAddress_t *paddr)
   bcopy(paddr->data, &srcintx, sizeof(srcintx));
   do_address_to_string_inner(buf_tmp, srcintx);
   buflen = strlen(buf_tmp) + 1;
-  if ( len < buflen )
+  if ( (unsigned int)len < buflen )
   {
     return -1;
   }
@@ -1355,7 +1355,7 @@ static void do_extra_ifc_handling(const char *arg_fname)
   const char *i;
   char *curptr1;
   unsigned int curbufsz1;
-  int curindx;
+  unsigned int curindx;
 
   if ( !arg_fname || !*arg_fname )
     return;
@@ -1367,7 +1367,7 @@ static void do_extra_ifc_handling(const char *arg_fname)
   curindx = 1;
   for ( ; curptr1 >= arg_fname && isdigit(*curptr1); curptr1 -= 1 )
   {
-    curbufsz1 += curindx * (*curptr1 - '0');
+    curbufsz1 += curindx * (u8)(*curptr1 - '0');
     curindx *= 10;
   }
   if ( curbufsz1 < sizeof(g_ifc_buffer) )
@@ -1667,7 +1667,7 @@ static int do_handle_set_usrname(const char *fpath, int type, const char *usrnam
   retres1 = do_read_current_netcnf_nodecode(fpath, &ptr);
   if ( retres1 <= 0 )
     return ( !retres1 ) ? -3 : retres1;
-  heapmem = (char *)do_alloc_heapmem(retres1 + strlen(usrname_bufnew) + 1);
+  heapmem = (char *)do_alloc_heapmem((unsigned int)retres1 + strlen(usrname_bufnew) + 1);
   if ( !heapmem )
   {
     do_free_heapmem(ptr);
@@ -1985,7 +1985,7 @@ static int do_set_latest_entry_inner(const char *fname, int type, const char *us
       }
       if ( isbeforeend1 )
       {
-        bcopy(heapmem2, heapmem1_1, heapmem2_1 - heapmem2);
+        bcopy(heapmem2, heapmem1_1, (u32)(heapmem2_1 - heapmem2));
         result = do_write_noencode_netcnf_atomic(g_dir_name, heapmem1, heapmem1_1 - heapmem1 + heapmem2_1 - heapmem2);
       }
     }
@@ -2118,14 +2118,14 @@ static int do_check_special_provider_inner(const char *fname, int type, const ch
   return retres;
 }
 
-static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, size_t size, char align)
+static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, unsigned int size, char align)
 {
   void *mem_ptr;
   char *retptrbegin;
 
   mem_ptr = e->mem_ptr;
   if ( !mem_ptr
-    || (retptrbegin = (char *)(((uiptr)mem_ptr + (1 << align) - 1) & ~((1 << align) - 1)),
+    || (retptrbegin = (char *)(((uiptr)mem_ptr + (1 << align) - 1) & (uiptr)~((1 << align) - 1)),
         &retptrbegin[size] >= (char *)e->mem_last) )
   {
     e->alloc_err += 1;
@@ -2299,11 +2299,11 @@ static char *do_check_e_arg(sceNetCnfEnv_t *e, const char *e_arg)
   return strptr ? do_alloc_mem_for_write(e, strptr) : 0;
 }
 
-static int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
+static int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, unsigned int *n_result)
 {
   const char *e_arg_1;
-  int curbasex;
-  int curnum;
+  unsigned int curbasex;
+  unsigned int curnum;
 
   e_arg_1 = e_arg;
   curbasex = 10;
@@ -2322,17 +2322,14 @@ static int do_parse_number(sceNetCnfEnv_t *e, const char *e_arg, int *n_result)
   {
     while ( 1 )
     {
-      int e_arg_1_num;
+      u32 e_arg_1_num;
 
+      e_arg_1_num = (((u8)*e_arg_1)) - '0';
       if ( ((u8)*e_arg_1) - (unsigned int)'0' >= 0xA )
       {
+        e_arg_1_num = (((u8)*e_arg_1)) - 'W';
         if ( ((u8)*e_arg_1) - (unsigned int)'a' >= 6 )
           break;
-        e_arg_1_num = (char)(((u8)*e_arg_1)) - 'W';
-      }
-      else
-      {
-        e_arg_1_num = (char)(((u8)*e_arg_1)) - '0';
       }
       if ( e_arg_1_num >= curbasex )
         break;
@@ -2368,42 +2365,42 @@ static int do_netcnfname2address_wrap(sceNetCnfEnv_t *e, char *buf, sceNetCnfAdd
   return 0;
 }
 
-static int do_parse_phone_argument(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv, int *p_result)
+static int do_parse_phone_argument(sceNetCnfEnv_t *e, int opt_argc, const char **opt_argv, unsigned int *p_result)
 {
   int i;
-  int bitflags1;
-  int numval;
+  unsigned int bitflags1;
+  unsigned int numval;
 
   bitflags1 = 0;
   for ( i = 0; i < opt_argc; i += 1 )
   {
     if ( !strcmp("phase", opt_argv[i]) )
     {
-      bitflags1 |= 1u;
+      bitflags1 |= 1;
     }
     else if ( !strcmp("cp", opt_argv[i]) )
     {
-      bitflags1 |= 2u;
+      bitflags1 |= 2;
     }
     else if ( !strcmp("auth", opt_argv[i]) )
     {
-      bitflags1 |= 4u;
+      bitflags1 |= 4;
     }
     else if ( !strcmp("chat", opt_argv[i]) )
     {
-      bitflags1 |= 8u;
+      bitflags1 |= 8;
     }
     else if ( !strcmp("private", opt_argv[i]) )
     {
-      bitflags1 |= 0x10u;
+      bitflags1 |= 0x10;
     }
     else if ( !strcmp("dll", opt_argv[i]) )
     {
-      bitflags1 |= 0x20u;
+      bitflags1 |= 0x20;
     }
     else if ( !strcmp("dump", opt_argv[i]) )
     {
-      bitflags1 |= 0x40u;
+      bitflags1 |= 0x40;
     }
     else if ( !strcmp("timer", opt_argv[i]) )
     {
@@ -2559,14 +2556,14 @@ static void do_init_ifc_inner(sceNetCnfInterface_t *ifc)
       case '1':
       case 'b':
       case 'c':
-        *((char *)ifc + curentry1->m_offset) = -1;
+        *((char *)ifc + curentry1->m_offset) = 0xFF;
         break;
       case '4':
       case 'D':
       case 'L':
       case 'P':
       case 'T':
-        *(u32 *)((char *)ifc + curentry1->m_offset) = -1;
+        *(u32 *)((char *)ifc + curentry1->m_offset) = 0xFFFFFFFF;
         break;
       default:
         break;
@@ -2576,7 +2573,7 @@ static void do_init_ifc_inner(sceNetCnfInterface_t *ifc)
 
 static int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown_list)
 {
-  int lenx1;
+  unsigned int lenx1;
   int i;
   struct sceNetCnfUnknown *listtmp;
   struct sceNetCnfUnknown *cpydst_1;
@@ -2592,7 +2589,7 @@ static int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown
   cpydst_1 = listtmp + 1;
   for ( i = 0; i < e->ac; i += 1 )
   {
-    int cpysz;
+    unsigned int cpysz;
 
     cpysz = strlen(e->av[i]);
     bcopy(e->av[i], cpydst_1, cpysz);
@@ -2616,7 +2613,7 @@ static int do_check_other_keywords(
         struct sceNetCnfUnknownList *unknown_list)
 {
   int wasprefixed;
-  int numval;
+  unsigned int numval;
 
   wasprefixed = ( e->av[0][0] == '-' ) ? 1 : 0;
   if ( e->av[0][wasprefixed] )
@@ -2627,13 +2624,13 @@ static int do_check_other_keywords(
     switch ( options->m_type )
     {
       case '1':
-        numval = 255;
+        numval = 0xFF;
         if ( !wasprefixed && (e->ac < 2 || do_parse_number(e, e->av[1], &numval)) )
           break;
         *((u8 *)cnfdata + options->m_offset) = numval;
         return 0;
       case '4':
-        numval = -1;
+        numval = 0xFFFFFFFF;
         if ( !wasprefixed && (e->ac < 2 || do_parse_number(e, e->av[1], &numval)) )
           break;
         *(u32 *)((char *)cnfdata + options->m_offset) = numval;
@@ -2687,7 +2684,7 @@ static int do_check_other_keywords(
           *((u8 *)cnfdata + 246) = !wasprefixed;
         return 0;
       case 'D':
-        numval = -1;
+        numval = 0xFFFFFFFF;
         if ( !wasprefixed )
         {
           if ( e->ac < 2 )
@@ -2712,7 +2709,7 @@ static int do_check_other_keywords(
         *(u32 *)((char *)cnfdata + options->m_offset) = numval;
         return 0;
       case 'L':
-        numval = -1;
+        numval = 0xFFFFFFFF;
         if ( !wasprefixed && do_parse_phone_argument(e, e->ac - 1, (const char **)&e->av[1], &numval) )
           return -1;
         *(u32 *)((char *)cnfdata + options->m_offset) = numval;
@@ -2730,7 +2727,7 @@ static int do_check_other_keywords(
           *((u8 *)cnfdata + 245) = !wasprefixed;
         return 0;
       case 'P':
-        numval = -1;
+        numval = 0xFFFFFFFF;
         if ( !wasprefixed )
         {
           if ( e->ac < 2 )
@@ -2771,7 +2768,7 @@ static int do_check_other_keywords(
         *(u32 *)((char *)cnfdata + options->m_offset) = numval;
         return 0;
       case 'T':
-        numval = -1;
+        numval = 0xFFFFFFFF;
         if ( !wasprefixed )
         {
           if ( e->ac < 2 )
@@ -3118,7 +3115,7 @@ static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*rea
     {
       if ( lbuf < &e->lbuf[1023] && *ptr != '\r' )
       {
-        *lbuf = *ptr;
+        *lbuf = (u8)*ptr;
         lbuf += 1;
       }
     }
@@ -3389,9 +3386,8 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
   char *mem_ptr_01;
   char *strptr1;
   int strlenmax;
-  unsigned int strpad1;
+  int strpad1;
   int cur_va1;
-  int valmod1;
   const char *curnumvals;
   int strlencalc;
   char *mem_ptr_02;
@@ -3501,9 +3497,8 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
         }
         while ( 1 )
         {
-          valmod1 = cur_va1 % strpad1;
           strptr1 -= 1;
-          curnumvals = ( *fmt == 'X' ) ? &a0123456789abcd[valmod1] : &a0123456789abcd_0[valmod1];
+          curnumvals = (( *fmt == 'X' ) ? &a0123456789abcd : &a0123456789abcd_0)[cur_va1 % strpad1];
           *strptr1 = *curnumvals;
           cur_va1 /= strpad1;
           if ( !cur_va1 )
@@ -3571,7 +3566,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
                 mem_ptr_rval_03 = mem_ptr_07 + 2;
                 if ( mem_ptr_07 + 1 >= (char *)e->mem_last )
                   return -2;
-                mem_ptr_07[1] = (u8)*i;
+                mem_ptr_07[1] = *i;
               }
               else if ( (u8)*i - ' ' < '_' )
               {
@@ -3579,7 +3574,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
                 mem_ptr_rval_03 = mem_ptr_08 + 1;
                 if ( mem_ptr_08 >= (char *)e->mem_last )
                   return -2;
-                *mem_ptr_08 = (u8)*i;
+                *mem_ptr_08 = *i;
               }
               else
               {
@@ -3609,7 +3604,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
               mem_ptr_rval_02 = mem_ptr_0a + 1;
               if ( mem_ptr_0a >= (char *)e->mem_last )
                 return -2;
-              *mem_ptr_0a = (u8)*i;
+              *mem_ptr_0a = *i;
               e->mem_ptr = mem_ptr_rval_02;
               i_curchr2 = *i;
               i += 1;
@@ -3658,10 +3653,10 @@ static int do_netcnf_sprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, ...)
 
 static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *options, void *cnfdata)
 {
-  int offsptr3;
+  unsigned int offsptr3;
   char *offsptr1;
-  int offsptr6;
-  int offsptr4;
+  unsigned int offsptr6;
+  unsigned int offsptr4;
   int i;
 
   for ( ; options->m_key; options += 1 )
@@ -3698,7 +3693,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
           lbuf = 0;
           break;
         }
-        offsptr3 = (u8)*((char *)cnfdata + options->m_offset);
+        offsptr3 = (u32)(s32)*((char *)cnfdata + options->m_offset);
         switch ( offsptr3 )
         {
           case 0:
@@ -3733,7 +3728,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
         offsptr3 = *(u32 *)((char *)cnfdata + options->m_offset);
         switch ( offsptr3 )
         {
-          case -1:
+          case 0xFFFFFFFF:
             lbuf = 0;
             break;
           case 0:
@@ -3751,7 +3746,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
         break;
       case 'L':
         offsptr4 = *(u32 *)((char *)cnfdata + options->m_offset);
-        if ( offsptr4 == -1 )
+        if ( offsptr4 == 0xFFFFFFFF )
         {
           lbuf = 0;
           break;
@@ -3796,7 +3791,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
           }
           if ( lbuf )
           {
-            offsptr4 &= ~(1 << i);
+            offsptr4 &= ~((u32)1 << i);
             result = do_netcnf_sprintf_buffer(e, " %s", lbuf);
             if ( result < 0 )
               return result;
@@ -3828,7 +3823,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
         offsptr3 = *(u32 *)((char *)cnfdata + options->m_offset);
         switch ( offsptr3 )
         {
-          case -1:
+          case 0xFFFFFFFF:
             lbuf = 0;
             break;
           case 1:
@@ -3860,7 +3855,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
         offsptr3 = *(u32 *)((char *)cnfdata + options->m_offset);
         switch ( offsptr3 )
         {
-          case -1:
+          case 0xFFFFFFFF:
             lbuf = 0;
             break;
           case 0:
@@ -3889,10 +3884,10 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
         lbuf = 0;
         break;
       case 'c':
-        offsptr3 = *((u8 *)cnfdata + options->m_offset);
+        offsptr3 = (u32)(s32)*((char *)cnfdata + options->m_offset);
         switch ( offsptr3 )
         {
-          case 255:
+          case 0xFFFFFFFF:
             lbuf = 0;
             break;
           case 0:
@@ -4097,7 +4092,7 @@ static int do_export_netcnf_inner(sceNetCnfEnv_t *e, const char *arg_fname, stru
   int result;
   struct sceNetCnfPair *pair_head;
 
-  memalign = (void *)(((uiptr)e->mem_base + 3) & ~3);
+  memalign = (void *)(((uiptr)e->mem_base + 3) & (uiptr)~3);
   e->mem_base = memalign;
   e->mem_ptr = memalign;
   result = do_netcnf_sprintf_buffer(e, "%s\n\n", "# <Sony Computer Entertainment Inc.>");
@@ -4146,8 +4141,8 @@ static int do_export_netcnf(sceNetCnfEnv_t *e)
 
 static char *do_address_to_string_inner_element(char *dst, int srcbyte)
 {
-  u8 *tmpstk_ptr;
-  u8 tmpstk[16];
+  char *tmpstk_ptr;
+  char tmpstk[16];
 
   tmpstk_ptr = tmpstk;
   if ( srcbyte < 0 )
@@ -4188,11 +4183,11 @@ static int do_name_2_address_inner(unsigned int *dst, const char *buf)
   int prefixchkn;
   unsigned int i;
   int offsbase1;
-  int tmpstk1[4];
+  unsigned int tmpstk1[4];
 
   for ( prefixchkn = 0; prefixchkn < (int)(sizeof(tmpstk1)/sizeof(tmpstk1[0])); prefixchkn += 1 )
   {
-    int base;
+    unsigned int base;
 
     base = 10;
     if ( *buf == '0' )
@@ -4205,7 +4200,7 @@ static int do_name_2_address_inner(unsigned int *dst, const char *buf)
         base = 16;
       }
     }
-    for ( i = 0; isxdigit(*buf); i = i * base + offsbase1 )
+    for ( i = 0; isxdigit(*buf); i = i * base + (unsigned int)offsbase1 )
     {
       offsbase1 = *buf - '0';
       if ( !isdigit(*buf) )
@@ -4214,7 +4209,7 @@ static int do_name_2_address_inner(unsigned int *dst, const char *buf)
         if ( !isupper(*buf) )
           offsbase1 = *buf - 'W';
       }
-      if ( offsbase1 >= base )
+      if ( offsbase1 >= (int)base )
         break;
       buf += 1;
     }
@@ -4682,7 +4677,7 @@ static const char *do_colon_callback_handles(const char *netcnf_path, char *devi
   devnameend = index_res - netcnf_path + 1;
   if ( devnameend >= 17 )
     return 0;
-  memcpy(device, netcnf_path, index_res - netcnf_path + 1);
+  memcpy(device, netcnf_path, (u32)devnameend);
   device[devnameend] = 0;
   return ( strlen(index_res + 1) + 1 < 257 ) ? (index_res + 1) : 0;
 }
@@ -4714,7 +4709,7 @@ static int do_open_netcnf(const char *netcnf_path, int file_flags, int file_mode
   return openret1;
 }
 
-static int do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size)
+static int do_read_callback_handles(int handlefd, int fd, void *ptr, int size)
 {
   struct netcnf_callback_handle_info *cbh;
 
@@ -4731,7 +4726,7 @@ static int do_read_callback_handles(int handlefd, int fd, void *ptr, size_t size
       return -EPERM;
     }
   }
-  memcpy(ptr, (char *)cbh->m_buf + cbh->m_bufpos, size);
+  memcpy(ptr, (char *)cbh->m_buf + cbh->m_bufpos, (u32)size);
   cbh->m_bufpos += size;
   return size;
 }
@@ -4903,12 +4898,12 @@ static int do_init_heap(void)
 }
 #endif
 
-static void *do_alloc_heapmem(size_t nbytes)
+static void *do_alloc_heapmem(int nbytes)
 {
 #ifdef _IOP
   return AllocHeapMemory(g_netcnf_heap, nbytes);
 #else
-  return malloc(nbytes);
+  return malloc((size_t)nbytes);
 #endif
 }
 
