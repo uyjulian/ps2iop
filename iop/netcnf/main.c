@@ -4057,7 +4057,7 @@ static int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cn
   int memsize;
   const char *fullpath;
 
-  memsize = e->mem_ptr - e->mem_base;
+  memsize = (char *)e->mem_ptr - (char *)e->mem_base;
   if ( e->f_verbose )
     printf("netcnf: dir=%s path=%s\n", e->dir_name ? e->dir_name : "NULL", path ? path : "NULL");
   fullpath = do_handle_netcnf_prerw(e, path);
