@@ -1,4 +1,4 @@
-IOP_BIN = scrtpad.irx
+IOP_BIN = scrtchpd.irx
 
 IOP_OBJS = imports.o exports.o main.o
 
