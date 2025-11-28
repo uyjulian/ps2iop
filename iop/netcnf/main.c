@@ -3422,6 +3422,8 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
   char *mem_ptr_06;
   char stkstr1;
 
+  strptr1 = 0;
+  strlenmax = 0;
   while ( *fmt )
   {
     if ( *fmt == '%' )
@@ -3678,6 +3680,7 @@ static int do_netcnf_other_write(sceNetCnfEnv_t *e, const struct netcnf_option *
     int result;
     const char *lbuf;
 
+    offsptr3 = 0;
     result = 0;
     lbuf = (const char *)e->lbuf;
     switch ( options->m_type )
@@ -4199,6 +4202,7 @@ static int do_name_2_address_inner(unsigned int *dst, const char *buf)
   int offsbase1;
   unsigned int tmpstk1[4];
 
+  i = 0;
   for ( prefixchkn = 0; prefixchkn < (int)(sizeof(tmpstk1)/sizeof(tmpstk1[0])); prefixchkn += 1 )
   {
     unsigned int base;
