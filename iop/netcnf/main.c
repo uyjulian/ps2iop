@@ -1635,7 +1635,19 @@ static int do_add_entry_inner(
 
             strlenx = sprintf(g_entry_buffer, "%d,%d,%s,%s\n", type, 1, &g_netcnf_file_path[strlen(g_arg_fname)], g_combination_buf1);
             writeres = do_write_netcnf_no_encode(fd, g_entry_buffer, strlenx);
-            retres2 = ( strlenx == writeres && (writeres = do_write_netcnf_no_encode(fd, g_add_entry_heapptr, retres1), retres1 == writeres) ) ? 0 : (( writeres == -EIO ) ? -18 : -5);
+            retres2 = 0;
+            if ( strlenx != writeres )
+            {
+              retres2 = ( writeres == -EIO ) ? -18 : -5;
+            }
+            else
+            {
+              writeres = do_write_netcnf_no_encode(fd, g_add_entry_heapptr, retres1);
+              if ( retres1 != writeres )
+              {
+                retres2 = ( writeres == -EIO ) ? -18 : -5;
+              }
+            }
           }
         }
       }
@@ -2124,9 +2136,13 @@ static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, unsigned int size, char align
   char *retptrbegin;
 
   mem_ptr = e->mem_ptr;
-  if ( !mem_ptr
-    || (retptrbegin = (char *)(((uiptr)mem_ptr + (1 << align) - 1) & (uiptr)~((1 << align) - 1)),
-        &retptrbegin[size] >= (char *)e->mem_last) )
+  if ( !mem_ptr )
+  {
+    e->alloc_err += 1;
+    return 0;
+  }
+  retptrbegin = (char *)(((uiptr)mem_ptr + (1 << align) - 1) & (uiptr)~((1 << align) - 1));
+  if ( &retptrbegin[size] >= (char *)e->mem_last )
   {
     e->alloc_err += 1;
     return 0;
