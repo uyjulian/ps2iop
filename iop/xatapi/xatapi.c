@@ -137,7 +137,6 @@ static s64 xatapi_nulldev0_64bit(void);
 static int xatapi_dev_init(void);
 static int xatapi_dev_deinit(void);
 static int xatapi_dev_devctl(const iop_file_t *f, const char *name, int cmd, void *args, unsigned int arglen, void *buf, unsigned int buflen);
-int _start(int ac, char **av);
 static void speed_init(void);
 static void speed_device_init(void);
 static void do_hex_dump(void *ptr, int len);
