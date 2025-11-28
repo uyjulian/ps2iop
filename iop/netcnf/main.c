@@ -3420,7 +3420,6 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
   char *mem_ptr_08;
   char strptr_curchr1;
   char *mem_ptr_06;
-  char *mem_ptr_0b;
   char stkstr1;
 
   while ( *fmt )
@@ -3452,7 +3451,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
       switch ( *fmt )
       {
         case 'c':
-          mem_ptr_01 = e->mem_ptr;
+          mem_ptr_01 = (char *)e->mem_ptr;
           mem_ptr_rval_04 = mem_ptr_01 + 1;
           if ( mem_ptr_01 >= (char *)e->mem_last )
             return -2;
@@ -3527,7 +3526,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
         strlencalc -= strlen(strptr1);
         if ( has_sero == '0' && strlenmax )
         {
-          mem_ptr_02 = e->mem_ptr;
+          mem_ptr_02 = (char *)e->mem_ptr;
           if ( mem_ptr_02 >= (char *)e->mem_last )
             return -2;
           *mem_ptr_02 = '-';
@@ -3537,7 +3536,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
         {
           for ( ; strlencalc > 0; strlencalc -= 1 )
           {
-            mem_ptr_04 = e->mem_ptr;
+            mem_ptr_04 = (char *)e->mem_ptr;
             if ( mem_ptr_04 >= (char *)e->mem_last )
               return -2;
             *mem_ptr_04 = has_sero;
@@ -3546,7 +3545,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
         }
         if ( has_sero != '0' && strlenmax )
         {
-          mem_ptr_05 = e->mem_ptr;
+          mem_ptr_05 = (char *)e->mem_ptr;
           if ( mem_ptr_05 >= (char *)e->mem_last )
             return -2;
           *mem_ptr_05 = '-';
@@ -3574,7 +3573,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
             {
               if ( (u8)*i == '"' || (u8)*i == '\\' )
               {
-                mem_ptr_07 = e->mem_ptr;
+                mem_ptr_07 = (char *)e->mem_ptr;
                 if ( mem_ptr_07 >= (char *)e->mem_last )
                   return -2;
                 *mem_ptr_07 = '\\';
@@ -3586,7 +3585,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
               }
               else if ( (u8)*i - ' ' < '_' )
               {
-                mem_ptr_08 = e->mem_ptr;
+                mem_ptr_08 = (char *)e->mem_ptr;
                 mem_ptr_rval_03 = mem_ptr_08 + 1;
                 if ( mem_ptr_08 >= (char *)e->mem_last )
                   return -2;
@@ -3594,7 +3593,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
               }
               else
               {
-                mem_ptr_09 = e->mem_ptr;
+                mem_ptr_09 = (char *)e->mem_ptr;
                 if ( mem_ptr_09 >= (char *)e->mem_last )
                   return -2;
                 *mem_ptr_09 = '\\';
@@ -3616,7 +3615,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
             }
             else
             {
-              mem_ptr_0a = e->mem_ptr;
+              mem_ptr_0a = (char *)e->mem_ptr;
               mem_ptr_rval_02 = mem_ptr_0a + 1;
               if ( mem_ptr_0a >= (char *)e->mem_last )
                 return -2;
@@ -3634,11 +3633,10 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
         }
         for ( ; has_negative && strlencalc > 0; strlencalc -= 1 )
         {
-          mem_ptr_0b = e->mem_ptr;
-          if ( mem_ptr_0b >= (char *)e->mem_last )
+          if ( (char *)e->mem_ptr >= (char *)e->mem_last )
             return -2;
-          *mem_ptr_0b = ' ';
-          e->mem_ptr = mem_ptr_0b + 1;
+          *((char *)e->mem_ptr) = ' ';
+          e->mem_ptr = ((char *)e->mem_ptr) + 1;
         }
       }
     }
