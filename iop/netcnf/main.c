@@ -555,7 +555,7 @@ int sceNetCnfAddress2String(char *buf, int len, const sceNetCnfAddress_t *paddr)
   }
   bcopy(paddr->data, &srcintx, sizeof(srcintx));
   do_address_to_string_inner(buf_tmp, srcintx);
-  buflen = strlen(buf_tmp) + 1;
+  buflen = (u32)strlen(buf_tmp) + 1;
   if ( (unsigned int)len < buflen )
   {
     return -1;
@@ -956,7 +956,7 @@ static int do_check_capacity_inner2(const char *fpath, int minsize)
         struct statvfs st;
 
         statvfs(devname, &st);
-        zonefree = st.f_bfree * st.f_frsize;
+        zonefree = (int)(u32)(st.f_bfree * st.f_frsize);
       }
 #endif
       return ( zonefree < minsize ) ? -16 : 0;
@@ -998,7 +998,7 @@ static int do_handle_combination_path(int type, const char *fpath, char *dst, si
   if ( j >= 4 )
     return -11;
   devnum[j] = 0;
-  devnr = strtol(devnum, 0, 10);
+  devnr = (int)strtol(devnum, 0, 10);
   if ( !strncmp(fpath, "mc", 2) ? ((unsigned int)(devnr - 1) >= 6) : (!strncmp(fpath, "pfs", 3) ? (unsigned int)(devnr - 1) >= 0xA : (unsigned int)(devnr - 1) >= sizeof(g_ifc_buffer)) )
     return -11;
   do_safe_make_name(dst, maxlen, "Combination", devnum);
@@ -1309,7 +1309,7 @@ static int do_get_count_list_inner(const char *fname, int type, sceNetCnfList_t 
     p->type = type;
     if ( do_split_str_comma_index(g_arg_fname, curheapbuf1, 1) )
       continue;
-    p->stat = strtol(g_arg_fname, 0, 10);
+    p->stat = (int)strtol(g_arg_fname, 0, 10);
     if ( do_split_str_comma_index(p->sys_name, curheapbuf1, 2) || do_split_str_comma_index(p->usr_name, curheapbuf1, 3) )
       continue;
     p += 1;
@@ -1679,7 +1679,7 @@ static int do_handle_set_usrname(const char *fpath, int type, const char *usrnam
   retres1 = do_read_current_netcnf_nodecode(fpath, &ptr);
   if ( retres1 <= 0 )
     return ( !retres1 ) ? -3 : retres1;
-  heapmem = (char *)do_alloc_heapmem((unsigned int)retres1 + strlen(usrname_bufnew) + 1);
+  heapmem = (char *)do_alloc_heapmem((unsigned int)((unsigned int)retres1 + strlen(usrname_bufnew) + 1));
   if ( !heapmem )
   {
     do_free_heapmem(ptr);
@@ -1720,7 +1720,7 @@ static int do_handle_set_usrname(const char *fpath, int type, const char *usrnam
     }
   }
   do_free_heapmem(ptr);
-  writeres1 = do_write_noencode_netcnf_atomic(fpath, heapmem, heapmem_1 - heapmem);
+  writeres1 = do_write_noencode_netcnf_atomic(fpath, heapmem, (int)(heapmem_1 - heapmem));
   do_free_heapmem(heapmem);
   return writeres1;
 }
@@ -1908,7 +1908,7 @@ static int do_delete_entry_inner(
         curentry1 = do_get_str_line(curentry1);
       }
     }
-    result = do_write_noencode_netcnf_atomic(g_dir_name, heapmem, heapmem_1 - heapmem);
+    result = do_write_noencode_netcnf_atomic(g_dir_name, heapmem, (int)(heapmem_1 - heapmem));
     if ( result >= 0 && has_comma )
       result = do_remove_netcnf_dirname(g_dir_name, g_entry_buffer);
   }
@@ -1998,7 +1998,7 @@ static int do_set_latest_entry_inner(const char *fname, int type, const char *us
       if ( isbeforeend1 )
       {
         bcopy(heapmem2, heapmem1_1, (u32)(heapmem2_1 - heapmem2));
-        result = do_write_noencode_netcnf_atomic(g_dir_name, heapmem1, heapmem1_1 - heapmem1 + heapmem2_1 - heapmem2);
+        result = do_write_noencode_netcnf_atomic(g_dir_name, heapmem1, (int)(heapmem1_1 - heapmem1 + heapmem2_1 - heapmem2));
       }
     }
   }
@@ -2300,7 +2300,7 @@ static char *do_alloc_mem_for_write(sceNetCnfEnv_t *e, const char *str)
 {
   char *strptr;
 
-  strptr = do_alloc_mem_inner(e, strlen(str) + 1, 0);
+  strptr = do_alloc_mem_inner(e, (unsigned int)strlen(str) + 1, 0);
   if ( !strptr )
     return 0;
   strcpy(strptr, str);
@@ -2607,7 +2607,7 @@ static int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown
   {
     unsigned int cpysz;
 
-    cpysz = strlen(e->av[i]);
+    cpysz = (unsigned int)strlen(e->av[i]);
     bcopy(e->av[i], cpydst_1, cpysz);
     ((char *)cpydst_1)[cpysz] = 32 * (i < e->ac - 1);
     cpydst_1 = (struct sceNetCnfUnknown *)&((char *)cpydst_1)[cpysz + 1];
@@ -4057,7 +4057,7 @@ static int do_write_netcnf(sceNetCnfEnv_t *e, const char *path, int is_attach_cn
   int memsize;
   const char *fullpath;
 
-  memsize = (char *)e->mem_ptr - (char *)e->mem_base;
+  memsize = (int)((char *)e->mem_ptr - (char *)e->mem_base);
   if ( e->f_verbose )
     printf("netcnf: dir=%s path=%s\n", e->dir_name ? e->dir_name : "NULL", path ? path : "NULL");
   fullpath = do_handle_netcnf_prerw(e, path);
@@ -4687,12 +4687,12 @@ static void do_clear_callback_handles(int fd, int allocmatch)
 static const char *do_colon_callback_handles(const char *netcnf_path, char *device)
 {
   char *index_res;
-  int devnameend;
+  u32 devnameend;
 
   index_res = index(netcnf_path, ':');
   if ( !index_res )
     return 0;
-  devnameend = index_res - netcnf_path + 1;
+  devnameend = (u32)(int)(index_res - netcnf_path) + 1;
   if ( devnameend >= 17 )
     return 0;
   memcpy(device, netcnf_path, (u32)devnameend);
@@ -4860,7 +4860,7 @@ static void do_getstat_wrap(const char *fn, iox_stat_t *stx)
       struct stat st;
 
       stat(fn, &st);
-      stx->size = st.st_size;
+      stx->size = (unsigned int)(int)st.st_size;
     }
 #endif
     return;
