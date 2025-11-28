@@ -288,6 +288,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
   }
   midiData->message[0] = midiData_curval2;
   midiData->lastStatus = midiData_curval2;
+  midiData_offs_plusone = 0;
   switch ( midiData_curval2 & 0xF0 )
   {
     case 0x90:
@@ -372,6 +373,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
       return (int)0x8104002F;
     }
   }
+  nextMessageLength = 0;
   if ( endflg >= 4 )
   {
     midiData->originalMessage[midiData->originalMessageLength] = *midiData_offs;
