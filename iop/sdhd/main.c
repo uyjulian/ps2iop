@@ -94,7 +94,7 @@ struct sdhd_info
 extern struct irx_export_table _exp_sdhd;
 #endif
 
-static int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
+static unsigned int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_info *dinfo)
 {
   dinfo->m_vers = 0;
   dinfo->m_head = 0;
@@ -123,7 +123,7 @@ static int do_get_vers_head_chunk(sceHardSynthVersionChunk *indata, struct sdhd_
   return 0;
 }
 
-static int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
+static unsigned int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
 {
   if ( dinfo->m_head->programChunkAddr == 0xFFFFFFFF )
     return 0x81039005;
@@ -138,7 +138,7 @@ static int do_get_prog_chunk(void *indata, struct sdhd_info *dinfo)
   return 0;
 }
 
-static int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
+static unsigned int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
 {
   if ( dinfo->m_head->sampleSetChunkAddr == 0xFFFFFFFF )
     return 0x81039006;
@@ -153,7 +153,7 @@ static int do_get_sset_chunk(void *indata, struct sdhd_info *dinfo)
   return 0;
 }
 
-static int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
+static unsigned int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
 {
   if ( dinfo->m_head->sampleChunkAddr == 0xFFFFFFFF )
     return 0x81039007;
@@ -168,7 +168,7 @@ static int do_get_smpl_chunk(void *indata, struct sdhd_info *dinfo)
   return 0;
 }
 
-static int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
+static unsigned int do_get_vagi_chunk(void *indata, struct sdhd_info *dinfo)
 {
   if ( dinfo->m_head->vagInfoChunkAddr == 0xFFFFFFFF )
     return 0x81039008;
@@ -278,7 +278,7 @@ static void do_copy_to_sdhd_sample_param(SceSdHdSampleParam *dst, const sceHardS
   dst->LFO.ampLFOFade = src->sampleAmpLfoFade;
 }
 
-static void do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, int sz, const sceHardSynthVagParam *src)
+static void do_copy_to_sdhd_vag_info_param(SceSdHdVAGInfoParam *dst, unsigned int sz, const sceHardSynthVagParam *src)
 {
   dst->vagOffsetAddr = src->vagOffsetAddr;
   dst->vagSampleRate = src->vagSampleRate;
@@ -370,7 +370,7 @@ static int do_get_common_block_ptr_note(
         unsigned int swcase,
         unsigned int noteNumber,
         unsigned int velocity,
-        int mode,
+        unsigned int mode,
         void **ptr)
 {
   int idx1;
@@ -557,7 +557,7 @@ static int do_get_common_block_ptr(
         unsigned int sampleSetNumber,
         unsigned int swcase,
         unsigned int velocity,
-        int mode,
+        unsigned int mode,
         void **param)
 {
   int idx1;
@@ -681,13 +681,13 @@ int sceSdHdGetMaxProgramNumber(void *buffer)
   int result;
   struct sdhd_info dinfo;
 
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_prog_chunk(buffer, &dinfo);
+  result = (int)do_get_prog_chunk(buffer, &dinfo);
   if ( result )
     return result;
-  return dinfo.m_prog->maxProgramNumber;
+  return (int)dinfo.m_prog->maxProgramNumber;
 }
 
 int sceSdHdGetMaxSampleSetNumber(void *buffer)
@@ -695,13 +695,13 @@ int sceSdHdGetMaxSampleSetNumber(void *buffer)
   int result;
   struct sdhd_info dinfo;
 
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_sset_chunk(buffer, &dinfo);
+  result = (int)do_get_sset_chunk(buffer, &dinfo);
   if ( result )
     return result;
-  return dinfo.m_sset->maxSampleSetNumber;
+  return (int)dinfo.m_sset->maxSampleSetNumber;
 }
 
 int sceSdHdGetMaxSampleNumber(void *buffer)
@@ -709,13 +709,13 @@ int sceSdHdGetMaxSampleNumber(void *buffer)
   int result;
   struct sdhd_info dinfo;
 
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_smpl_chunk(buffer, &dinfo);
+  result = (int)do_get_smpl_chunk(buffer, &dinfo);
   if ( result )
     return result;
-  return dinfo.m_smpl->maxSampleNumber;
+  return (int)dinfo.m_smpl->maxSampleNumber;
 }
 
 int sceSdHdGetMaxVAGInfoNumber(void *buffer)
@@ -723,13 +723,13 @@ int sceSdHdGetMaxVAGInfoNumber(void *buffer)
   int result;
   struct sdhd_info dinfo;
 
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_vagi_chunk(buffer, &dinfo);
+  result = (int)do_get_vagi_chunk(buffer, &dinfo);
   if ( result )
     return result;
-  return dinfo.m_vagi->maxVagInfoNumber;
+  return (int)dinfo.m_vagi->maxVagInfoNumber;
 }
 
 int sceSdHdGetProgramParamAddr(void *buffer, unsigned int programNumber, sceHardSynthProgramParam **ptr)
@@ -737,13 +737,13 @@ int sceSdHdGetProgramParamAddr(void *buffer, unsigned int programNumber, sceHard
   int result;
   struct sdhd_info dinfo;
 
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_prog_chunk(buffer, &dinfo);
+  result = (int)do_get_prog_chunk(buffer, &dinfo);
   if ( result )
     return result;
-  result = do_check_chunk_in_bounds(buffer, &dinfo, 0x50726F67u, programNumber);
+  result = (int)do_check_chunk_in_bounds(buffer, &dinfo, 0x50726F67u, programNumber);
   if ( result )
     return result;
   *ptr = (sceHardSynthProgramParam *)((char *)dinfo.m_prog + dinfo.m_prog->programOffsetAddr[programNumber]);
@@ -775,9 +775,9 @@ int sceSdHdGetSplitBlockAddr(
   if ( result )
     return result;
   if ( p_programparam->splitBlockAddr == 0xFFFFFFFF )
-    return 0x81039009;
+    return (int)0x81039009;
   if ( (unsigned int)p_programparam->nSplit - 1 < splitBlockNumber )
-    return 0x81039018;
+    return (int)0x81039018;
   *theParamPtr = (sceHardSynthSplitBlock *)((char *)p_programparam
                                           + p_programparam->splitBlockAddr
                                           + p_programparam->sizeSplitBlock * splitBlockNumber);
@@ -805,13 +805,13 @@ int sceSdHdGetSampleSetParamAddr(void *buffer, unsigned int sampleSetNumber, sce
   int result;
   struct sdhd_info dinfo;
 
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_sset_chunk(buffer, &dinfo);
+  result = (int)do_get_sset_chunk(buffer, &dinfo);
   if ( result )
     return result;
-  result = do_check_chunk_in_bounds(buffer, &dinfo, 0x53736574u, sampleSetNumber);
+  result = (int)do_check_chunk_in_bounds(buffer, &dinfo, 0x53736574, sampleSetNumber);
   if ( result )
     return result;
   *ptr = (sceHardSynthSampleSetParam *)((char *)dinfo.m_sset + dinfo.m_sset->sampleSetOffsetAddr[sampleSetNumber]);
@@ -835,13 +835,13 @@ int sceSdHdGetSampleParamAddr(void *buffer, unsigned int sampleNumber, sceHardSy
   int result;
   struct sdhd_info dinfo;
 
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_smpl_chunk(buffer, &dinfo);
+  result = (int)do_get_smpl_chunk(buffer, &dinfo);
   if ( result )
     return result;
-  result = do_check_chunk_in_bounds(buffer, &dinfo, 0x536D706Cu, sampleNumber);
+  result = (int)do_check_chunk_in_bounds(buffer, &dinfo, 0x536D706C, sampleNumber);
   if ( result )
     return result;
   *ptr = (sceHardSynthSampleParam *)((char *)dinfo.m_smpl + dinfo.m_smpl->sampleOffsetAddr[sampleNumber]);
@@ -865,13 +865,13 @@ int sceSdHdGetVAGInfoParamAddr(void *buffer, unsigned int vagInfoNumber, sceHard
   int result;
   struct sdhd_info dinfo;
 
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_vagi_chunk(buffer, &dinfo);
+  result = (int)do_get_vagi_chunk(buffer, &dinfo);
   if ( result )
     return result;
-  result = do_check_chunk_in_bounds(buffer, &dinfo, 0x56616769u, vagInfoNumber);
+  result = (int)do_check_chunk_in_bounds(buffer, &dinfo, 0x56616769, vagInfoNumber);
   if ( result )
     return result;
   *ptr = (sceHardSynthVagParam *)((char *)dinfo.m_vagi + dinfo.m_vagi->vagInfoOffsetAddr[vagInfoNumber]);
@@ -895,13 +895,13 @@ int sceSdHdCheckProgramNumber(void *buffer, unsigned int programNumber)
   int result;
   struct sdhd_info dinfo;
 
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_prog_chunk(buffer, &dinfo);
+  result = (int)do_get_prog_chunk(buffer, &dinfo);
   if ( result )
     return result;
-  return do_check_chunk_in_bounds(buffer, &dinfo, 0x50726F67u, programNumber);
+  return (int)do_check_chunk_in_bounds(buffer, &dinfo, 0x50726F67, programNumber);
 }
 
 int sceSdHdGetSplitBlockCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber)
@@ -915,7 +915,7 @@ int sceSdHdGetSplitBlockAddrByNote(
         unsigned int noteNumber,
         sceHardSynthSplitBlock **ptr)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 1u, noteNumber, 0, 0, (void **)ptr);
+  return do_get_common_block_ptr_note(buffer, programNumber, 1, noteNumber, 0, 0, (void **)ptr);
 }
 
 int sceSdHdGetSplitBlockByNote(
@@ -924,12 +924,12 @@ int sceSdHdGetSplitBlockByNote(
         unsigned int noteNumber,
         SceSdHdSplitBlock *param)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 2u, noteNumber, 0, 0, (void **)param);
+  return do_get_common_block_ptr_note(buffer, programNumber, 2, noteNumber, 0, 0, (void **)param);
 }
 
 int sceSdHdGetSampleSetParamCountByNote(void *buffer, unsigned int programNumber, unsigned int noteNumber)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 3u, noteNumber, 0, 0, 0);
+  return do_get_common_block_ptr_note(buffer, programNumber, 3, noteNumber, 0, 0, 0);
 }
 
 int sceSdHdGetSampleSetParamAddrByNote(
@@ -938,7 +938,7 @@ int sceSdHdGetSampleSetParamAddrByNote(
         unsigned int noteNumber,
         sceHardSynthSampleSetParam **ptr)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 4u, noteNumber, 0, 0, (void **)ptr);
+  return do_get_common_block_ptr_note(buffer, programNumber, 4, noteNumber, 0, 0, (void **)ptr);
 }
 
 int sceSdHdGetSampleSetParamByNote(
@@ -947,7 +947,7 @@ int sceSdHdGetSampleSetParamByNote(
         unsigned int noteNumber,
         SceSdHdSampleSetParam *param)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 5u, noteNumber, 0, 0, (void **)param);
+  return do_get_common_block_ptr_note(buffer, programNumber, 5, noteNumber, 0, 0, (void **)param);
 }
 
 int sceSdHdGetSampleParamCountByNoteVelocity(
@@ -957,7 +957,7 @@ int sceSdHdGetSampleParamCountByNoteVelocity(
         unsigned int velocity,
         unsigned int mode)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 6u, noteNumber, velocity, mode, 0);
+  return do_get_common_block_ptr_note(buffer, programNumber, 6, noteNumber, velocity, mode, 0);
 }
 
 int sceSdHdGetSampleParamAddrByNoteVelocity(
@@ -968,7 +968,7 @@ int sceSdHdGetSampleParamAddrByNoteVelocity(
         unsigned int mode,
         sceHardSynthSampleParam **ptr)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 7u, noteNumber, velocity, mode, (void **)ptr);
+  return do_get_common_block_ptr_note(buffer, programNumber, 7, noteNumber, velocity, mode, (void **)ptr);
 }
 
 int sceSdHdGetSampleParamByNoteVelocity(
@@ -979,7 +979,7 @@ int sceSdHdGetSampleParamByNoteVelocity(
         unsigned int mode,
         SceSdHdSampleParam *param)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 8u, noteNumber, velocity, mode, (void **)param);
+  return do_get_common_block_ptr_note(buffer, programNumber, 8, noteNumber, velocity, mode, (void **)param);
 }
 
 int sceSdHdGetVAGInfoParamCountByNoteVelocity(
@@ -989,7 +989,7 @@ int sceSdHdGetVAGInfoParamCountByNoteVelocity(
         unsigned int velocity,
         unsigned int mode)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 9u, noteNumber, velocity, mode, 0);
+  return do_get_common_block_ptr_note(buffer, programNumber, 9, noteNumber, velocity, mode, 0);
 }
 
 int sceSdHdGetVAGInfoParamAddrByNoteVelocity(
@@ -1000,7 +1000,7 @@ int sceSdHdGetVAGInfoParamAddrByNoteVelocity(
         unsigned int mode,
         sceHardSynthVagParam **ptr)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 0xAu, noteNumber, velocity, mode, (void **)ptr);
+  return do_get_common_block_ptr_note(buffer, programNumber, 0xA, noteNumber, velocity, mode, (void **)ptr);
 }
 
 int sceSdHdGetVAGInfoParamByNoteVelocity(
@@ -1011,7 +1011,7 @@ int sceSdHdGetVAGInfoParamByNoteVelocity(
         unsigned int mode,
         SceSdHdVAGInfoParam *param)
 {
-  return do_get_common_block_ptr_note(buffer, programNumber, 0xBu, noteNumber, velocity, mode, (void **)param);
+  return do_get_common_block_ptr_note(buffer, programNumber, 0xB, noteNumber, velocity, mode, (void **)param);
 }
 
 int sceSdHdGetSampleParamCountByVelocity(
@@ -1020,7 +1020,7 @@ int sceSdHdGetSampleParamCountByVelocity(
         unsigned int velocity,
         unsigned int mode)
 {
-  return do_get_common_block_ptr(buffer, sampleSetNumber, 6u, velocity, mode, 0);
+  return do_get_common_block_ptr(buffer, sampleSetNumber, 6, velocity, mode, 0);
 }
 
 int sceSdHdGetSampleParamAddrByVelocity(
@@ -1030,7 +1030,7 @@ int sceSdHdGetSampleParamAddrByVelocity(
         unsigned int mode,
         sceHardSynthSampleParam **ptr)
 {
-  return do_get_common_block_ptr(buffer, sampleSetNumber, 7u, velocity, mode, (void **)ptr);
+  return do_get_common_block_ptr(buffer, sampleSetNumber, 7, velocity, mode, (void **)ptr);
 }
 
 int sceSdHdGetSampleParamByVelocity(
@@ -1040,7 +1040,7 @@ int sceSdHdGetSampleParamByVelocity(
         unsigned int mode,
         SceSdHdSampleParam *param)
 {
-  return do_get_common_block_ptr(buffer, sampleSetNumber, 8u, velocity, mode, (void **)param);
+  return do_get_common_block_ptr(buffer, sampleSetNumber, 8, velocity, mode, (void **)param);
 }
 
 int sceSdHdGetVAGInfoParamCountByVelocity(
@@ -1049,7 +1049,7 @@ int sceSdHdGetVAGInfoParamCountByVelocity(
         unsigned int velocity,
         unsigned int mode)
 {
-  return do_get_common_block_ptr(buffer, sampleSetNumber, 9u, velocity, mode, 0);
+  return do_get_common_block_ptr(buffer, sampleSetNumber, 9, velocity, mode, 0);
 }
 
 int sceSdHdGetVAGInfoParamAddrByVelocity(
@@ -1059,7 +1059,7 @@ int sceSdHdGetVAGInfoParamAddrByVelocity(
         unsigned int mode,
         sceHardSynthVagParam **ptr)
 {
-  return do_get_common_block_ptr(buffer, sampleSetNumber, 0xAu, velocity, mode, (void **)ptr);
+  return do_get_common_block_ptr(buffer, sampleSetNumber, 0xA, velocity, mode, (void **)ptr);
 }
 
 int sceSdHdGetVAGInfoParamByVelocity(
@@ -1069,7 +1069,7 @@ int sceSdHdGetVAGInfoParamByVelocity(
         unsigned int mode,
         SceSdHdVAGInfoParam *param)
 {
-  return do_get_common_block_ptr(buffer, sampleSetNumber, 0xBu, velocity, mode, (void **)param);
+  return do_get_common_block_ptr(buffer, sampleSetNumber, 0xB, velocity, mode, (void **)param);
 }
 
 int sceSdHdGetVAGInfoParamAddrBySampleNumber(
@@ -1084,7 +1084,7 @@ int sceSdHdGetVAGInfoParamAddrBySampleNumber(
   if ( result )
     return result;
   if ( p_sampleparam->VagIndex == 0xFFFF )
-    return 0x81039019;
+    return (int)0x81039019;
   return sceSdHdGetVAGInfoParamAddr(buffer, p_sampleparam->VagIndex, ptr);
 }
 
@@ -1111,7 +1111,7 @@ int sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNu
   if ( result )
     return result;
   if ( p_programparam->splitBlockAddr == 0xFFFFFFFF )
-    return 0x81039009;
+    return (int)0x81039009;
   splitblock = (sceHardSynthSplitBlock *)((char *)p_programparam + p_programparam->splitBlockAddr);
   for ( i = 0; i < p_programparam->nSplit; i += 1 )
   {
@@ -1119,7 +1119,7 @@ int sceSdHdGetSplitBlockNumberBySplitNumber(void *buffer, unsigned int programNu
       return i;
     splitblock = (sceHardSynthSplitBlock *)((char *)splitblock + p_programparam->sizeSplitBlock);
   }
-  return 0x81039020;
+  return (int)0x81039020;
 }
 
 int sceSdHdGetVAGSize(void *buffer, unsigned int vagInfoNumber)
@@ -1130,7 +1130,7 @@ int sceSdHdGetVAGSize(void *buffer, unsigned int vagInfoNumber)
   result = sceSdHdGetVAGInfoParamAddr(buffer, vagInfoNumber, &p_vagparam);
   if ( result )
     return result;
-  return do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
+  return (int)do_get_vag_size((sceHardSynthVersionChunk *)buffer, &p_vagparam->vagOffsetAddr);
 }
 
 int sceSdHdGetSplitBlockCount(void *buffer, unsigned int programNumber)
@@ -1147,17 +1147,19 @@ int sceSdHdGetSplitBlockCount(void *buffer, unsigned int programNumber)
 int sceSdHdGetMaxSplitBlockCount(void *buffer)
 {
   int curminval;
-  int retres;
-  signed int i;
-  signed int j;
+  unsigned int retres;
+  unsigned int i;
+  unsigned int j;
   int curval1;
   int curval2;
   sceHardSynthProgramParam *p_programparam;
   sceHardSynthSplitBlock *p_splitblock;
 
   curminval = 0;
-  retres = sceSdHdGetMaxProgramNumber(buffer);
-  for ( i = 0; retres >= i; i += 1 )
+  retres = (unsigned int)sceSdHdGetMaxProgramNumber(buffer);
+  if ( (retres & 0x80000000) != 0 )
+    return 0;
+  for ( i = 0; i < retres; i += 1 )
   {
     if ( !sceSdHdGetProgramParamAddr(buffer, i, &p_programparam) )
     {
@@ -1179,17 +1181,19 @@ int sceSdHdGetMaxSplitBlockCount(void *buffer)
 int sceSdHdGetMaxSampleSetParamCount(void *buffer)
 {
   int curminval;
-  int retres;
-  signed int i;
-  signed int j;
+  unsigned int retres;
+  unsigned int i;
+  unsigned int j;
   int curval1;
   int curval2;
   sceHardSynthProgramParam *p_programparam;
   sceHardSynthSplitBlock *p_splitblock;
 
   curminval = 0;
-  retres = sceSdHdGetMaxProgramNumber(buffer);
-  for ( i = 0; retres >= i; i += 1 )
+  retres = (unsigned int)sceSdHdGetMaxProgramNumber(buffer);
+  if ( (retres & 0x80000000) != 0 )
+    return 0;
+  for ( i = 0; i < retres; i += 1 )
   {
     if ( !sceSdHdGetProgramParamAddr(buffer, i, &p_programparam) )
     {
@@ -1211,10 +1215,10 @@ int sceSdHdGetMaxSampleSetParamCount(void *buffer)
 int sceSdHdGetMaxSampleParamCount(void *buffer)
 {
   int curminval;
-  int retres;
-  signed int i;
-  signed int j;
-  signed int k;
+  unsigned int retres;
+  unsigned int i;
+  unsigned int j;
+  unsigned int k;
   int curval1;
   int curval2;
   int curval3;
@@ -1225,8 +1229,10 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
   sceHardSynthSampleParam *p_sampleparam;
 
   curminval = 0;
-  retres = sceSdHdGetMaxProgramNumber(buffer);
-  for ( i = 0; retres >= i; i += 1 )
+  retres = (unsigned int)sceSdHdGetMaxProgramNumber(buffer);
+  if ( (retres & 0x80000000) != 0 )
+    return 0;
+  for ( i = 0; i < retres; i += 1 )
   {
     if ( !sceSdHdGetProgramParamAddr(buffer, i, &p_programparam) )
     {
@@ -1237,7 +1243,7 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
         {
           for ( k = 0; k < p_samplesetparam->nSample; k += 1 )
           {
-            if ( !sceSdHdGetSampleParamAddr(buffer, sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, k), &p_sampleparam) )
+            if ( !sceSdHdGetSampleParamAddr(buffer, (unsigned int)sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, k), &p_sampleparam) )
             {
               curval1 = sceSdHdGetSampleParamCountByNoteVelocity(
                           buffer,
@@ -1279,10 +1285,10 @@ int sceSdHdGetMaxSampleParamCount(void *buffer)
 int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
 {
   int curminval;
-  int retres;
-  signed int i;
-  signed int j;
-  signed int k;
+  unsigned int retres;
+  unsigned int i;
+  unsigned int j;
+  unsigned int k;
   int curval1;
   int curval2;
   int curval3;
@@ -1293,8 +1299,10 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
   sceHardSynthSampleParam *p_sampleparam;
 
   curminval = 0;
-  retres = sceSdHdGetMaxProgramNumber(buffer);
-  for ( i = 0; retres >= i; i += 1 )
+  retres = (unsigned int)sceSdHdGetMaxProgramNumber(buffer);
+  if ( (retres & 0x80000000) != 0 )
+    return 0;
+  for ( i = 0; i < retres; i += 1 )
   {
     if ( !sceSdHdGetProgramParamAddr(buffer, i, &p_programparam) )
     {
@@ -1305,7 +1313,7 @@ int sceSdHdGetMaxVAGInfoParamCount(void *buffer)
         {
           for ( k = 0; k < p_samplesetparam->nSample; k += 1 )
           {
-            if ( !sceSdHdGetSampleParamAddr(buffer, sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, k), &p_sampleparam) )
+            if ( !sceSdHdGetSampleParamAddr(buffer, (unsigned int)sceSdHdGetSampleNumberBySampleIndex(buffer, p_splitblock->sampleSetIndex, k), &p_sampleparam) )
             {
               curval1 = sceSdHdGetVAGInfoParamCountByNoteVelocity(
                           buffer,
@@ -1351,10 +1359,10 @@ int sceSdHdModifyVelocity(unsigned int curveType, int velocity)
     case 1u:
       return 128 - velocity;
     case 2u:
-      velocity = velocity * velocity / 0x7Fu;
+      velocity = velocity * velocity / 0x7F;
       return velocity ? velocity : 1;
     case 3u:
-      velocity = velocity * velocity / 0x7Fu;
+      velocity = velocity * velocity / 0x7F;
       velocity = velocity ? velocity : 1;
       return 128 - velocity;
     case 4u:
@@ -1364,7 +1372,7 @@ int sceSdHdModifyVelocity(unsigned int curveType, int velocity)
       return 128 - velocity;
     case 5u:
       velocity = 128 - velocity;
-      velocity = velocity * velocity / 0x7Fu;
+      velocity = velocity * velocity / 0x7F;
       return velocity ? velocity : 1;
     default:
       return velocity;
@@ -1487,10 +1495,10 @@ int sceSdHdGetValidProgramNumberCount(void *buffer)
   struct sdhd_info dinfo;
 
   validcnt = 0;
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_prog_chunk(buffer, &dinfo);
+  result = (int)do_get_prog_chunk(buffer, &dinfo);
   if ( result )
     return result;
   for ( i = 0; dinfo.m_prog->maxProgramNumber >= i; i += 1 )
@@ -1509,10 +1517,10 @@ int sceSdHdGetValidProgramNumber(void *buffer, unsigned int *ptr)
   struct sdhd_info dinfo;
 
   validcnt = 0;
-  result = do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
+  result = (int)do_get_vers_head_chunk((sceHardSynthVersionChunk *)buffer, &dinfo);
   if ( result )
     return result;
-  result = do_get_prog_chunk(buffer, &dinfo);
+  result = (int)do_get_prog_chunk(buffer, &dinfo);
   if ( result )
     return result;
   for ( i = 0; dinfo.m_prog->maxProgramNumber >= i; i += 1 )
