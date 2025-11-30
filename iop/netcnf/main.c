@@ -680,10 +680,9 @@ static int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr
   int fd;
   int netcnf_size;
   char *heapmem;
-  char *netcnf_data;
   int xorind1;
-  int xoroffs;
   int readres;
+  int i;
 
   *netcnf_heap_ptr = 0;
   result = do_read_ilink_id();
@@ -709,46 +708,37 @@ static int do_read_netcnf_decode(const char *netcnf_path, char **netcnf_heap_ptr
     do_close_netcnf(fd);
     return -2;
   }
-  netcnf_data = heapmem;
   xorind1 = 0;
-  xoroffs = 0;
   readres = 0;
-  while ( netcnf_size >= 2 )
+  for ( i = 0; i < netcnf_size; i += 2 )
   {
-    readres = do_readfile_netcnf(fd, netcnf_data, 2);
+    readres = do_readfile_netcnf(fd, &heapmem[i], 2);
     if ( readres < 0 )
       break;
-    *(u16 *)netcnf_data ^= 0xFFFF;
-    *(u16 *)netcnf_data = (u16)magic_shift_read_netcnf_1(*(u16 *)netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
+    *((u16 *)&heapmem[i]) ^= 0xFFFF;
+    *((u16 *)&heapmem[i]) = (u16)magic_shift_read_netcnf_1(*((u16 *)&heapmem[i]), (u8)g_id_xorbuf[xorind1 + 2]);
     xorind1 += 1;
     xorind1 = ( xorind1 != sizeof(g_id_xorbuf) ) ? xorind1 : 0;
-    netcnf_data += 2;
-    netcnf_size -= 2;
-    xoroffs += 2;
-    if ( !netcnf_size )
-      break;
   }
   if ( readres >= 0 )
   {
-    if ( netcnf_size )
+    if ( (netcnf_size & 1) != 0 )
     {
-      readres = do_readfile_netcnf(fd, netcnf_data, 1);
+      readres = do_readfile_netcnf(fd, &heapmem[netcnf_size - 1], 1);
       if ( readres >= 0 )
       {
-        *netcnf_data ^= 0xFF;
-        *netcnf_data = (char)magic_shift_read_netcnf_2(*netcnf_data, (u8)g_id_xorbuf[xorind1 + 2]);
-        netcnf_size -= 1;
-        xoroffs += 1;
+        heapmem[netcnf_size - 1] ^= 0xFF;
+        heapmem[netcnf_size - 1] = (char)magic_shift_read_netcnf_2(heapmem[netcnf_size - 1], (u8)g_id_xorbuf[xorind1 + 2]);
       }
     }
-    if ( !netcnf_size )
+    if ( readres >= 0 )
     {
-      netcnf_data[xoroffs] = 0;
+      heapmem[netcnf_size] = 0;
       do_close_netcnf(fd);
-      return xoroffs;
+      return netcnf_size;
     }
   }
-  do_free_heapmem(netcnf_data);
+  do_free_heapmem(heapmem);
   *netcnf_heap_ptr = 0;
   do_close_netcnf(fd);
   return ( readres != -EIO ) ? -4 : -18;
@@ -3054,6 +3044,7 @@ static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*rea
   int read_res1;
   u8 *lbuf;
   char *ptr;
+  int i;
 
   cur_linelen = 0;
   if ( e->f_verbose )
@@ -3104,10 +3095,9 @@ static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*rea
     return -15;
   }
   lbuf = e->lbuf;
-  read_res1 -= 1;
-  while ( (read_res1 + 1) > 0 )
+  for ( i = 0; i < read_res1; i += 1 )
   {
-    if ( *ptr == '\n' )
+    if ( ptr[i] == '\n' )
     {
       e->lno += 1;
       if ( e->lbuf < lbuf && lbuf[-1] == '\\' )
@@ -3122,14 +3112,12 @@ static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*rea
     }
     else
     {
-      if ( lbuf < &e->lbuf[1023] && *ptr != '\r' )
+      if ( lbuf < &e->lbuf[1023] && ptr[i] != '\r' )
       {
-        *lbuf = (u8)*ptr;
+        *lbuf = (u8)ptr[i];
         lbuf += 1;
       }
     }
-    ptr += 1;
-    read_res1 -= 1;
   }
   if ( e->lbuf < lbuf )
     cur_linelen += do_check_line_buffer(e, lbuf, readcb, userdata);
