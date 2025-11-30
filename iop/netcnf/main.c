@@ -238,8 +238,6 @@ static const struct netcnf_option g_options_dial_cnf[] =
   { 112, 24, "redial_string" },
   { 0, 0, NULL }
 };
-static const char *a0123456789abcd = "0123456789ABCDEF";
-static const char *a0123456789abcd_0 = "0123456789abcdef";
 static int g_callbacks_set;
 #ifdef _IOP
 // Unofficial: move to bss
@@ -1351,7 +1349,7 @@ static void do_extra_ifc_handling(const char *arg_fname)
     return;
   for ( i = &arg_fname[strlen(arg_fname) - 1]; i >= arg_fname && *i != '.'; i -= 1 );
   curptr1 = i - 1;
-  if ( *i != '.' || curptr1 < arg_fname || !isdigit(*curptr1) )
+  if ( curptr1 < arg_fname || *i != '.' || !isdigit(*curptr1) )
     return;
   curbufsz1 = 0;
   curindx = 1;
@@ -1536,7 +1534,7 @@ static int do_add_entry_inner(
 
     do_safe_strcpy(g_arg_fname, sizeof(g_arg_fname), g_dir_name, 740);
     for ( endbuf = &g_arg_fname[strlen(g_arg_fname) - 1]; endbuf >= g_arg_fname && *endbuf != ':' && *endbuf != '/' && *endbuf != '\\'; endbuf -= 1 );
-    if ( *endbuf != ':' && *endbuf != '/' && *endbuf != '\\' )
+    if ( endbuf >= g_arg_fname && *endbuf != ':' && *endbuf != '/' && *endbuf != '\\' )
     {
       *endbuf = 0;
     }
@@ -1937,7 +1935,7 @@ static int do_set_latest_entry_inner(const char *fname, int type, const char *us
     return !result ? -3 : result;
   }
   result = -2;
-  heapmem1 = (char *)do_alloc_heapmem(result);
+  heapmem1 = (char *)do_alloc_heapmem(readsz);
   heapmem1_1 = heapmem1;
   if ( heapmem1 )
   {
@@ -3083,8 +3081,6 @@ static int do_netcnf_read_related(sceNetCnfEnv_t *e, const char *path, int (*rea
   e->lno = 0;
   if ( !e->f_no_check_magic && (read_res1 < 36 || strncmp(ptr, "# <Sony Computer Entertainment Inc.>", 36)) )
   {
-    int i;
-
     printf("netcnf: decoding error (magic=\"");
     for ( i = 0; i < read_res1 && i < 36; i += 1 )
     {
@@ -3385,7 +3381,6 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
   int strlenmax;
   int strpad1;
   int cur_va1;
-  const char *curnumvals;
   int strlencalc;
   char *mem_ptr_02;
   char *mem_ptr_04;
@@ -3401,7 +3396,6 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
   char *mem_ptr_08;
   char strptr_curchr1;
   char *mem_ptr_06;
-  char stkstr1;
 
   strptr1 = 0;
   strlenmax = 0;
@@ -3485,8 +3479,9 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
       if ( strpad1 )
       {
         cur_va1 = va_arg(va, int);
-        stkstr1 = 0;
-        strptr1 = &stkstr1;
+        strptr1 = __builtin_alloca(strpad1 + 1);
+        strptr1[strpad1] = 0;
+        strptr1 += strpad1;
         strlenmax = 0;
         if ( *fmt == 'd' && cur_va1 < 0 )
         {
@@ -3496,8 +3491,7 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
         while ( 1 )
         {
           strptr1 -= 1;
-          curnumvals = (( *fmt == 'X' ) ? &a0123456789abcd : &a0123456789abcd_0)[cur_va1 % strpad1];
-          *strptr1 = *curnumvals;
+          *strptr1 = (( *fmt == 'X' ) ? "0123456789ABCDEF" : "0123456789abcdef")[cur_va1 % strpad1];
           cur_va1 /= strpad1;
           if ( !cur_va1 )
             break;
@@ -3588,12 +3582,12 @@ static int do_netcnf_vsprintf_buffer(sceNetCnfEnv_t *e, const char *fmt, va_list
                 mem_ptr_rval_01 = mem_ptr_09 + 3;
                 if ( mem_ptr_09 + 2 >= (char *)e->mem_last )
                   return -2;
-                mem_ptr_09[2] = a0123456789abcd_0[(u8)*i >> 4];
+                mem_ptr_09[2] = ("0123456789abcdef")[(u8)*i >> 4];
                 e->mem_ptr = mem_ptr_rval_01;
                 mem_ptr_rval_03 = mem_ptr_09 + 4;
                 if ( (char *)mem_ptr_rval_01 >= (char *)e->mem_last )
                   return -2;
-                mem_ptr_09[3] = a0123456789abcd_0[(u8)*i & 0xF];
+                mem_ptr_09[3] = ("0123456789abcdef")[(u8)*i & 0xF];
               }
             }
             else
@@ -4553,12 +4547,12 @@ static const char *do_handle_netcnf_dirname(const char *fpath, const char *entry
   if ( fpath < fpath_1_minus_1 || *entry_buffer == '/' || *entry_buffer == '\\' )
   {
     for ( ; fpath < fpath_1_minus_1 && *fpath_1_minus_1 != ':'; fpath_1_minus_1 -= 1 );
-    if ( *fpath_1_minus_1 == ':' || *fpath_1_minus_1 == '/' || *fpath_1_minus_1 == '\\' )
+    if ( fpath <= fpath_1_minus_1 && (*fpath_1_minus_1 == ':' || *fpath_1_minus_1 == '/' || *fpath_1_minus_1 == '\\') )
     {
       fpath_1_minus_1 += 1;
     }
   }
-  else if ( *fpath_1_minus_1 != ':' )
+  else if ( fpath <= fpath_1_minus_1 && *fpath_1_minus_1 != ':' )
   {
     for ( ; fpath < fpath_1_minus_1 && *fpath_1_minus_1 != ':' && *fpath_1_minus_1 != '/' && *fpath_1_minus_1 != '\\'; fpath_1_minus_1 -= 1 );
     if ( *fpath_1_minus_1 == ':' || *fpath_1_minus_1 == '/' || *fpath_1_minus_1 == '\\' )
