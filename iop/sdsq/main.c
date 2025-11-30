@@ -247,7 +247,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
     midiData->readStatus = 2;
     return (int)0x8104002F;
   }
-  cur_message = midiData->message[midiData->originalMessageLength + 11];
+  cur_message = midiData->originalMessage[midiData->originalMessageLength - 1];
   midiData_1 = midiData->midiData;
   nextOffset = midiData->nextOffset;
   lastStatus = midiData->lastStatus;
@@ -399,7 +399,7 @@ int sceSdSqReadMidiData(SceSdSqMidiData *midiData)
     midiData->originalMessageLength = midiData->originalMessageLength + 1;
   }
   if ( !niceflag )
-    midiData->reserve[midiData->messageLength + 6] &= ~0x80u;
+    midiData->message[midiData->messageLength - 1] &= ~0x80u;
   midiData->nextOffset = (u32)(midiData_offs_plusone - (u8 *)midiData->midiData);
   return 0;
 }
