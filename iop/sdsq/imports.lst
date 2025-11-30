@@ -10,6 +10,5 @@ I_ReleaseLibraryEntries
 loadcore_IMPORTS_end
 
 sysclib_IMPORTS_start
-I_memset
 I_memcpy
 sysclib_IMPORTS_end

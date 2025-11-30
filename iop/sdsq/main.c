@@ -2,7 +2,6 @@
 #ifdef _IOP
 #include "irx_imports.h"
 #else
-#include <string.h>
 #include <stdint.h>
 typedef int8_t s8;
 typedef int16_t s16;
@@ -194,7 +193,6 @@ int sceSdSqGetMaxSongNumber(void *addr)
 int sceSdSqInitMidiData(void *addr, u32 midiNumber, SceSdSqMidiData *midiData)
 {
   int result;
-  sceSeqMidiDataBlock *dblk;
   struct sdsq_info dinfo;
 
   result = (int)do_get_vers_sequ_chunk((sceSeqVersionChunk *)addr, &dinfo);
@@ -207,18 +205,41 @@ int sceSdSqInitMidiData(void *addr, u32 midiNumber, SceSdSqMidiData *midiData)
     return (int)0x81049026;
   if ( dinfo.m_midi->midiOffsetAddr[midiNumber] == 0xFFFFFFFF )
     return (int)0x81049026;
-  dblk = (sceSeqMidiDataBlock *)((char *)dinfo.m_midi + dinfo.m_midi->midiOffsetAddr[midiNumber]);
-  // Unofficial: the following call was inlined
-  memset(midiData, 0, sizeof(SceSdSqMidiData));
-  midiData->midiData = dblk;
-  midiData->midiNumber = midiNumber;
-  midiData->nextOffset = dblk->sequenceDataOffset;
-  midiData->messageLength = 1;
-  midiData->originalMessageLength = 1;
-  midiData->division = dblk->Division;
-  midiData->compMode = ( midiData->nextOffset == 6 ) ? 0 : 1;
-  midiData->compTableSize = ( midiData->nextOffset == 6 ) ? 0 : dblk->compBlock[0].compTableSize;
   midiData->readStatus = 0;
+  midiData->midiNumber = midiNumber;
+  midiData->midiData = (sceSeqMidiDataBlock *)((char *)dinfo.m_midi + dinfo.m_midi->midiOffsetAddr[midiNumber]);
+  midiData->offset = 0;
+  midiData->nextOffset = midiData->midiData->sequenceDataOffset;
+  midiData->division = midiData->midiData->Division;
+  midiData->compMode = ( midiData->nextOffset == 6 ) ? 0 : 1;
+  midiData->compTableSize = ( midiData->nextOffset == 6 ) ? 0 : midiData->midiData->compBlock[0].compTableSize;
+  midiData->deltaTime = 0;
+  midiData->lastStatus = 0;
+  midiData->reserve[0] = 0;
+  midiData->reserve[1] = 0;
+  midiData->reserve[2] = 0;
+  midiData->messageLength = 1;
+  midiData->message[0] = 0;
+  midiData->message[1] = 0;
+  midiData->message[2] = 0;
+  midiData->message[3] = 0;
+  midiData->message[4] = 0;
+  midiData->message[5] = 0;
+  midiData->message[6] = 0;
+  midiData->message[7] = 0;
+  midiData->originalMessageLength = 1;
+  midiData->originalMessage[0] = 0;
+  midiData->originalMessage[1] = 0;
+  midiData->originalMessage[2] = 0;
+  midiData->originalMessage[3] = 0;
+  midiData->originalMessage[4] = 0;
+  midiData->originalMessage[5] = 0;
+  midiData->originalMessage[6] = 0;
+  midiData->originalMessage[7] = 0;
+  midiData->originalMessage[8] = 0;
+  midiData->originalMessage[9] = 0;
+  midiData->originalMessage[10] = 0;
+  midiData->originalMessage[11] = 0;
   return 0;
 }
 
@@ -419,11 +440,15 @@ int sceSdSqInitSongData(void *addr, u32 songNumber, SceSdSqSongData *songData)
     return (int)0x81049027;
   if ( dinfo.m_song->songOffsetAddr[songNumber] == 0xFFFFFFFF )
     return (int)0x81049027;
-  // Unofficial: the following call was inlined
-  memset(songData, 0, sizeof(SceSdSqSongData));
-  songData->songNumber = songNumber;
   songData->readStatus = 0;
+  songData->songNumber = songNumber;
   songData->topAddr = (char *)(dinfo.m_song) + dinfo.m_song->songOffsetAddr[songNumber];
+  songData->offset = 0;
+  songData->nextOffset = 0;
+  songData->message[0] = 0;
+  songData->message[1] = 0;
+  songData->message[2] = 0;
+  songData->reserve = 0;
   return 0;
 }
 
@@ -524,15 +549,15 @@ int sceSdSqGetNoteOnEventByPolyKeyPress(
 
 int sceSdSqCopyMidiData(SceSdSqMidiData *to, const SceSdSqMidiData *from)
 {
-  // The following memcpy was inlined
-  memcpy(to, from, sizeof(SceSdSqMidiData));
+  // The following structure copy was inlined
+  *to = *from;
   return 0;
 }
 
 int sceSdSqCopySongData(SceSdSqSongData *to, const SceSdSqSongData *from)
 {
-  // The following memcpy was inlined
-  memcpy(to, from, sizeof(SceSdSqSongData));
+  // The following structure copy was inlined
+  *to = *from;
   return 0;
 }
 
