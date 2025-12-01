@@ -275,13 +275,14 @@ static void do_print_usage(void)
   printf("    -no_check_provider        do not check special provider\n");
 }
 
-static int do_module_load(int ac, char **av)
+static int do_module_load(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 {
   int semid;
   int i;
   iop_sema_t semaparam;
   int err;
 
+  (void)startaddr;
   if ( ac < 3 )
   {
     do_print_usage();
@@ -344,7 +345,15 @@ static int do_module_load(int ac, char **av)
 
       regres = RegisterLibraryEntries(&_exp_netcnf);
       if ( !regres )
+      {
+#if 0
         return MODULE_REMOVABLE_END;
+#else
+        if ( mi && ((mi->newflags & 2) != 0) )
+          mi->newflags |= 0x10;
+        return MODULE_RESIDENT_END;
+#endif
+      }
       printf("netcnf: RegisterLibraryEntries(%d)\n", regres);
       do_delete_heap();
     }
@@ -393,9 +402,9 @@ static int do_module_unload(void)
   return MODULE_REMOVABLE_END;
 }
 
-int _start(int ac, char **av)
+int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 {
-  return ( ac >= 0 ) ? do_module_load(ac, av) : do_module_unload();
+  return ( ac >= 0 ) ? do_module_load(ac, av, startaddr, mi) : do_module_unload();
 }
 #endif
 

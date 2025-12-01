@@ -122,7 +122,7 @@ static void usage(void)
   printf("    -help             - print usage\n");
 }
 
-static int module_start(int argc, char **argv)
+static int module_start(int argc, char *argv[], void *startaddr, ModuleInfo_t *mi)
 {
   int thpri;
   int thstack;
@@ -132,6 +132,7 @@ static int module_start(int argc, char **argv)
   int retres2;
   iop_thread_t th_param;
 
+  (void)startaddr;
   thpri = 123;
   thstack = 4096;
   for ( i = 1; i < argc; i += 1 )
@@ -207,7 +208,15 @@ static int module_start(int argc, char **argv)
 
       retres3 = StartThread(g_tid, 0);
       if ( retres3 >= 0 )
+      {
+#if 0
         return MODULE_REMOVABLE_END;
+#else
+        if ( mi && ((mi->newflags & 2) != 0) )
+          mi->newflags |= 0x10;
+        return MODULE_RESIDENT_END;
+#endif
+      }
       printf("netcnfif: s_thread(%d)\n", retres3);
       TerminateThread(g_tid);
       DeleteThread(g_tid);
@@ -226,10 +235,8 @@ static int module_start(int argc, char **argv)
   return MODULE_NO_RESIDENT_END;
 }
 
-static int module_stop(int argc, char **argv)
+static int module_stop(void)
 {
-  (void)argc;
-  (void)argv;
   sceNetcnfifInterfaceStop();
   TerminateThread(g_tid);
   DeleteThread(g_tid);
@@ -238,9 +245,9 @@ static int module_stop(int argc, char **argv)
   return MODULE_NO_RESIDENT_END;
 }
 
-int _start(int argc, char **argv)
+int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 {
-  return ( argc >= 0 ) ? module_start(argc, argv) : module_stop(-argc, argv);
+  return ( ac >= 0 ) ? module_start(ac, av, startaddr, mi) : module_stop();
 }
 
 static void *sceNetcnfifInterfaceServer(int fno, sceNetcnfifArg_t *buf, int size)
