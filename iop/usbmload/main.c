@@ -79,7 +79,7 @@ static int g_thid;
 static sceUsbmlLoadFunc g_loadfunc_cb;
 static char g_config_chr_buf[2048];
 
-int _start(int ac, char **av)
+int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 {
   int has_conffile;
   int i;
@@ -89,6 +89,7 @@ int _start(int ac, char **av)
   iop_thread_t thparam;
   int state;
 
+  (void)startaddr;
   has_conffile = 0;
   if ( ac < 0 )
     return module_unload();
@@ -185,7 +186,13 @@ int _start(int ac, char **av)
     printf("usbmload : CreateThread ID = %d\n", thid1);
   StartThread(thid1, 0);
   g_thid = thid1;
+#if 0
   return MODULE_REMOVABLE_END;
+#else
+  if ( mi && ((mi->newflags & 2) != 0) )
+    mi->newflags |= 0x10;
+  return MODULE_RESIDENT_END;
+#endif
 }
 
 static int module_unload(void)
