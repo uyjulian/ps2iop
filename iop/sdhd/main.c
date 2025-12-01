@@ -1553,12 +1553,13 @@ int sceSdHdGetSampleNumberBySampleIndex(
 }
 
 #ifdef _IOP
-int _start(int ac, char **av)
+int _start(int ac, char *av[], void *startaddr, ModuleInfo_t *mi)
 {
   int regres;
   int state;
 
   (void)av;
+  (void)startaddr;
   if ( ac < 0 )
   {
     CpuSuspendIntr(&state);
@@ -1569,6 +1570,14 @@ int _start(int ac, char **av)
   CpuSuspendIntr(&state);
   regres = RegisterLibraryEntries(&_exp_sdhd);
   CpuResumeIntr(state);
-  return ( !regres ) ? MODULE_REMOVABLE_END : MODULE_NO_RESIDENT_END;
+  if ( regres )
+    return MODULE_NO_RESIDENT_END;
+#if 0
+  return MODULE_REMOVABLE_END;
+#else
+  if ( mi && ((mi->newflags & 2) != 0) )
+    mi->newflags |= 0x10;
+  return MODULE_RESIDENT_END;
+#endif
 }
 #endif
