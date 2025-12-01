@@ -26,8 +26,6 @@ sysclib_IMPORTS_start
 I_look_ctype_table
 I_memcpy
 I_memset
-I_bcopy
-I_bzero
 I_sprintf
 I_strcat
 I_strchr

@@ -54,7 +54,6 @@ sysclib_IMPORTS_start
 I_look_ctype_table
 I_memcpy
 I_memset
-I_bzero
 I_strcat
 I_strcmp
 I_strcpy

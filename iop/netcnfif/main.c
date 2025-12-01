@@ -665,7 +665,7 @@ static int put_gw(sceNetCnfEnv_t *e, const char *gw)
 {
   int retres;
 
-  bzero(&gateway, sizeof(gateway));
+  memset(&gateway, 0, sizeof(gateway));
   gateway.cmd.code = 3;
   gateway.cmd.back = e->ifc->cmd_tail;
   if ( gateway.cmd.back )
@@ -723,7 +723,7 @@ static int put_ns(sceNetCnfEnv_t *e, const char *ns, int ns_count)
       // Unofficial: return error instead of writing 1 to 0x00000008
       return -1;
   }
-  bzero(ns2, sizeof(nameserver_t));
+  memset(ns2, 0, sizeof(nameserver_t));
   ns1->cmd.code = 1;
   ns1->cmd.back = e->ifc->cmd_tail;
   if ( e->ifc->cmd_tail )

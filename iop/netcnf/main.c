@@ -506,7 +506,7 @@ int sceNetCnfInitIFC(sceNetCnfInterface_t *ifc)
 {
   if ( ifc )
   {
-    bzero(ifc, sizeof(sceNetCnfInterface_t));
+    memset(ifc, 0, sizeof(sceNetCnfInterface_t));
     do_init_ifc_inner(ifc);
   }
   return 0;
@@ -536,8 +536,8 @@ int sceNetCnfName2Address(sceNetCnfAddress_t *paddr, const char *buf)
   {
     return -1;
   }
-  bzero(paddr, sizeof(sceNetCnfAddress_t));
-  bcopy(&paddr_tmp, paddr->data, sizeof(paddr_tmp));
+  memset(paddr, 0, sizeof(sceNetCnfAddress_t));
+  memcpy(paddr->data, &paddr_tmp, sizeof(paddr_tmp));
   return 0;
 }
 
@@ -551,14 +551,14 @@ int sceNetCnfAddress2String(char *buf, int len, const sceNetCnfAddress_t *paddr)
   {
     return -1;
   }
-  bcopy(paddr->data, &srcintx, sizeof(srcintx));
+  memcpy(&srcintx, paddr->data, sizeof(srcintx));
   do_address_to_string_inner(buf_tmp, srcintx);
   buflen = (u32)strlen(buf_tmp) + 1;
   if ( (unsigned int)len < buflen )
   {
     return -1;
   }
-  bcopy(buf_tmp, buf, buflen);
+  memcpy(buf, buf_tmp, buflen);
   return 0;  
 }
 
@@ -1452,7 +1452,7 @@ static int do_add_entry_inner(
     maxflag = 0;
   if ( maxflag )
   {
-    bzero(g_ifc_buffer, sizeof(g_ifc_buffer));
+    memset(g_ifc_buffer, 0, sizeof(g_ifc_buffer));
     if ( retres1 )
     {
       if ( !strncmp(g_dir_name, "mc", 2) )
@@ -1985,7 +1985,7 @@ static int do_set_latest_entry_inner(const char *fname, int type, const char *us
       }
       if ( isbeforeend1 )
       {
-        bcopy(heapmem2, heapmem1_1, (u32)(heapmem2_1 - heapmem2));
+        memcpy(heapmem1_1, heapmem2, (u32)(heapmem2_1 - heapmem2));
         result = do_write_noencode_netcnf_atomic(g_dir_name, heapmem1, (int)(heapmem1_1 - heapmem1 + heapmem2_1 - heapmem2));
       }
     }
@@ -2136,7 +2136,7 @@ static char *do_alloc_mem_inner(sceNetCnfEnv_t *e, unsigned int size, int align)
     return 0;
   }
   e->mem_ptr = &retptrbegin[size];
-  bzero(retptrbegin, size);
+  memset(retptrbegin, 0, size);
   return retptrbegin;
 }
 
@@ -2589,7 +2589,7 @@ static int do_check_args(sceNetCnfEnv_t *e, struct sceNetCnfUnknownList *unknown
     unsigned int cpysz;
 
     cpysz = (unsigned int)strlen(e->av[i]);
-    bcopy(e->av[i], cpydst_1, cpysz);
+    memcpy(cpydst_1, e->av[i], cpysz);
     ((char *)cpydst_1)[cpysz] = 32 * (i < e->ac - 1);
     cpydst_1 = (struct sceNetCnfUnknown *)&((char *)cpydst_1)[cpysz + 1];
   }
