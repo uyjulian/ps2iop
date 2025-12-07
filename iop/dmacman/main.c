@@ -83,23 +83,23 @@ u32 dmac_get_dicr2(void) {
 	return 0;
 }
 
-int dmac_request(u32 channel, void * addr, u32 size, u32 count, int dir) {
+int sceSetSliceDMA(u32 channel, void * addr, u32 size, u32 count, int dir) {
 	// FIXME: stub
 	return 0;
 }
 
-void dmac_transfer(u32 channel) {
+void sceStartDMA(u32 channel) {
 	// FIXME: stub
 }
 
-void dmac_ch_set_dpcr(u32 channel, u32 val) {
+void sceSetDMAPriority(u32 channel, u32 val) {
 	// FIXME: stub
 }
 
-void dmac_enable(u32 channel) {
+void sceEnableDMAChannel(u32 channel) {
 	// FIXME: stub
 }
 
-void dmac_disable(u32 channel) {
+void sceDisableDMAChannel(u32 channel) {
 	// FIXME: stub
 }

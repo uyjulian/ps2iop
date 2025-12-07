@@ -101,7 +101,7 @@ int sceCdReadClock(sceCdCLOCK *clock) {
 	return 0;
 }
 
-int sceCdWriteClock(const sceCdCLOCK *clock) {
+int sceCdWriteClock(sceCdCLOCK *clock) {
 	//FIXME: stub
 	return 0;
 }
@@ -123,7 +123,7 @@ int sceCdSetHDMode(u32 mode) {
 	return 0;
 }
 
-int sceCdOpenConfig(int block, int mode, int NumBlocks) {
+int sceCdOpenConfig(int block, int mode, int NumBlocks, u32 *status) {
 	//FIXME: stub
 	return 0;
 }
@@ -238,7 +238,7 @@ int sceCdReadSUBQ(void *buffer, u32 *status) {
 	return 0;
 }
 
-int sceCdApplyNCmd(u8 cmdNum, const void* inBuff, u16 inBuffSize, void* outBuff) {
+int sceCdApplyNCmd(u8 cmdNum, const void* inBuff, u16 inBuffSize) {
 	//FIXME: stub
 	return 0;
 }

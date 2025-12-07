@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "*"
+    tags:
+      - v*
+  pull_request:
+  repository_dispatch:
+    types: [run_build]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/ps2dev/ps2sdk:latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Install dependencies
+        run: |
+          apk add build-base git
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile project
+        run: |
+          make -j $(getconf _NPROCESSORS_ONLN) clean 
+          make -j $(getconf _NPROCESSORS_ONLN)
+
+      - name: Get short SHA
+        id: slug
+        run: |
+          printf '%s\n' "sha8=$(printf '%s\n' ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ps2iop-${{ steps.slug.outputs.sha8 }}
+          path: iop/**/*.irx

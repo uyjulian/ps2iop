@@ -63,7 +63,7 @@ int QueryIntrContext(void) {
 	return 0;
 }
 
-int QueryIntrStack(void) {
+int QueryIntrStack(void *sp) {
 	// FIXME: stub
 	return 0;
 }

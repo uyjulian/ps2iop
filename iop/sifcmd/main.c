@@ -10,8 +10,9 @@ void sceSifExitCmd(void) {
 	// FIXME: stub
 }
 
-void sceSifGetSreg(int index) {
+unsigned int sceSifGetSreg(int index) {
 	// FIXME: stub
+	return 0;
 }
 
 void sceSifSetSreg(int index, unsigned int value) {
@@ -22,7 +23,7 @@ void sceSifSetCmdBuffer(SifCmdHandlerData_t *cmdBuffer, int size) {
 	// FIXME: stub
 }
 
-void sceSifSetSysCmdBuffer(SifCmdHandlerData_t *sysCmdBuffer, int size) {
+void sceSifSetSysCmdBuffer(SifCmdSysHandlerData_t *sysCmdBuffer, int size) {
 	// FIXME: stub
 }
 
@@ -68,9 +69,8 @@ int sceSifCheckStatRpc(SifRpcClientData_t * cd) {
 	return 0;
 }
 
-SifRpcDataQueue_t * sceSifSetRpcQueue(SifRpcDataQueue_t *q, int thread_id) {
+void sceSifSetRpcQueue(SifRpcDataQueue_t *q, int thread_id) {
 	// FIXME: stub
-	return NULL;
 }
 
 SifRpcServerData_t *sceSifGetNextRequest(SifRpcDataQueue_t * qd) {
@@ -99,7 +99,7 @@ SifRpcDataQueue_t *sceSifRemoveRpcQueue(SifRpcDataQueue_t *qd) {
 	// FIXME: stub
 }
 
-void sceSifSetSif1CB(void *func, int param) {
+void sceSifSetSif1CB(void (*func)(void *userdata), void *userdata) {
 	// FIXME: stub
 }
 
@@ -107,12 +107,12 @@ void sceSifClearSif1CB(void) {
 	// FIXME: stub
 }
 
-unsigned int sceSifSendCmdIntr(unsigned int a, void * b, int c, void * d, void * e, int f, void (*g)(), void * h) {
+unsigned int sceSifSendCmdIntr(int cid, void * packet, int packet_size, void * src_extra, void * dest_extra, int size_extra, void (*completioncb)(void *userdata), void * userdata) {
 	// FIXME: stub
 	return 0;
 }
 
-unsigned int isceSifSendCmdIntr(unsigned int a, void * b, int c, void * d, void * e, int f, void (*g)(), void * h) {
+unsigned int isceSifSendCmdIntr(int cid, void * packet, int packet_size, void * src_extra, void * dest_extra, int size_extra, void (*completioncb)(void *userdata), void * userdata) {
 	// FIXME: stub
 	return 0;
 }

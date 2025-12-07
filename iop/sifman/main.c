@@ -119,7 +119,7 @@ void sceSifResetDmaIntrHandler() {
 	// FIXME: stub
 }
 
-unsigned int sceSifSetDmaIntr(SifDmaTransfer_t *dmat, int len, void (*func)(), void *data) {
+unsigned int sceSifSetDmaIntr(SifDmaTransfer_t *dmat, int count, void (*completioncb)(void *userdata), void *userdata) {
 	// FIXME: stub
 }
 

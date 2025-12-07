@@ -57,17 +57,17 @@ int dclose(int fd) {
 	return 0;
 }
 
-int dread(int fd, fio_dirent_t *buf) {
+int dread(int fd, io_dirent_t *buf) {
 	// FIXME: stub
 	return 0;
 }
 
-int getstat(const char *name, fio_stat_t *stat) {
+int getstat(const char *name, io_stat_t *stat) {
 	// FIXME: stub
 	return 0;
 }
 
-int chstat(const char *name, fio_stat_t *stat, unsigned int statmask) {
+int chstat(const char *name, io_stat_t *stat, unsigned int statmask) {
 	// FIXME: stub
 	return 0;
 }

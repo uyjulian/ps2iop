@@ -2,10 +2,11 @@
 #ifndef IOP_IRX_IMPORTS_H
 #define IOP_IRX_IMPORTS_H
 
-#include "irx.h"
+#include <irx.h>
 
-#include "loadcore.h"
-#include "intrman.h"
-#include "stdio.h"
+/* Please keep these in alphabetical order!  */
+#include <loadcore.h>
+#include <intrman.h>
+#include <stdio.h>
 
 #endif /* IOP_IRX_IMPORTS_H */

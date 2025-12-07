@@ -2,9 +2,8 @@
 #include "irx_imports.h"
 #include "modload.h"
 
-void *GetModloadInternalData(void **pInternalData) {
+void GetModloadInternalData(void **pInternalData) {
 	// FIXME: stub
-	return NULL;
 }
 
 int ReBootStart(const char *command, unsigned int flags) {
@@ -12,7 +11,7 @@ int ReBootStart(const char *command, unsigned int flags) {
 	return 0;
 }
 
-int LoadModuleAddress(const char *name, int x, int y) {
+int LoadModuleAddress(const char *name, void *addr, int offset) {
 	// FIXME: stub
 	return 0;
 }
@@ -32,7 +31,7 @@ int StartModule(int x, const char *name, int arglen, const char *args, int *resu
 	return 0;
 }
 
-int LoadModuleBufferAddress(void *buffer, int x, int y) {
+int LoadModuleBufferAddress(void *buffer, void *addr, int offset) {
 	// FIXME: stub
 	return 0;
 }
@@ -42,11 +41,11 @@ int LoadModuleBuffer(void *buffer) {
 	return 0;
 }
 
-void SetSecrmanCallbacks(void *SecrCardBootFile_fnc, void *SecrDiskBootFile_fnc, void *SetLoadfileCallbacks_fnc) {
+void SetSecrmanCallbacks(SecrCardBootFile_callback_t SecrCardBootFile_fnc, SecrDiskBootFile_callback_t SecrDiskBootFile_fnc, SetLoadfileCallbacks_callback_t SetLoadfileCallbacks_fnc) {
 	// FIXME: stub
 }
 
-void SetCheckKelfPathCallback(void *CheckKelfPath_fnc) {
+void SetCheckKelfPathCallback(CheckKelfPath_callback_t CheckKelfPath_fnc) {
 	// FIXME: stub
 }
 

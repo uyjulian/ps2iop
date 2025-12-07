@@ -6,5 +6,5 @@ sifman_IMPORTS_end
 loadcore_IMPORTS_start
 I_RegisterLibraryEntries
 I_QueryBootMode
-I_RegisterBootCallback
+I_RegisterPostBootCallback
 loadcore_IMPORTS_end

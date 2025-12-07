@@ -7,7 +7,7 @@ int McDetectCard(int port, int slot) {
 	return 0;
 }
 
-int McOpen(int port, int slot, char *filename, int flags) {
+int McOpen(int port, int slot, const char *filename, int flags) {
 	// FIXME: stub
 	return 0;
 }
@@ -37,12 +37,12 @@ int McFormat(int port, int slot) {
 	return 0;
 }
 
-int McGetDir(int port, int slot, char *dirname, int flags, int maxent, sceMcTblGetDir *info) {
+int McGetDir(int port, int slot, const char *dirname, int flags, int maxent, sceMcTblGetDir *info) {
 	// FIXME: stub
 	return 0;
 }
 
-int McDelete(int port, int slot, char *filename, int flags) {
+int McDelete(int port, int slot, const char *filename, int flags) {
 	// FIXME: stub
 	return 0;
 }
@@ -52,12 +52,12 @@ int McFlush(int fd) {
 	return 0;
 }
 
-int McChDir(int port, int slot, char *newdir, char *currentdir) {
+int McChDir(int port, int slot, const char *newdir, char *currentdir) {
 	// FIXME: stub
 	return 0;
 }
 
-int McSetFileInfo(int port, int slot, char *filename, sceMcTblGetDir *info, int flags) {
+int McSetFileInfo(int port, int slot, const char *filename, sceMcTblGetDir *info, int flags) {
 	// FIXME: stub
 	return 0;
 }
@@ -87,7 +87,7 @@ int McGetFormat(int port, int slot) {
 	return 0;
 }
 
-int McGetEntSpace(int port, int slot, char *dirname) {
+int McGetEntSpace(int port, int slot, const char *dirname) {
 	// FIXME: stub
 	return 0;
 }

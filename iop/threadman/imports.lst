@@ -11,7 +11,7 @@ loadcore_IMPORTS_start
 I_RegisterLibraryEntries
 I_RegisterNonAutoLinkEntries
 I_QueryBootMode
-I_RegisterBootCallback
+I_RegisterPostBootCallback
 //24
 loadcore_IMPORTS_end
 
