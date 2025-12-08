@@ -844,41 +844,49 @@ void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length)
       *(_BYTE *)buffer = m_unk00;
       *((_DWORD *)buffer + 1) = 0;
       result = buffer;
+      break;
     case 1:
       m_led = s147_dev9_mem_mmio.m_led;
       *(_BYTE *)buffer = m_led;
       *((_DWORD *)buffer + 1) = 0;
       result = buffer;
+      break;
     case 2:
       m_security_unlock_unlock = s147_dev9_mem_mmio.m_security_unlock_unlock;
       *(_BYTE *)buffer = m_security_unlock_unlock;
       *((_DWORD *)buffer + 1) = 0;
       result = buffer;
+      break;
     case 3:
       m_unk03 = s147_dev9_mem_mmio.m_unk03;
       *(_BYTE *)buffer = m_unk03;
       *((_DWORD *)buffer + 1) = 0;
       result = buffer;
+      break;
     case 4:
       m_rtc_flag = s147_dev9_mem_mmio.m_rtc_flag;
       *(_BYTE *)buffer = m_rtc_flag;
       *((_DWORD *)buffer + 1) = 0;
       result = buffer;
+      break;
     case 5:
       m_watchdog_flag2 = s147_dev9_mem_mmio.m_watchdog_flag2;
       *(_BYTE *)buffer = m_watchdog_flag2;
       *((_DWORD *)buffer + 1) = 0;
       result = buffer;
+      break;
     case 6:
       m_unk06 = s147_dev9_mem_mmio.m_unk06;
       *(_BYTE *)buffer = m_unk06;
       *((_DWORD *)buffer + 1) = 0;
       result = buffer;
+      break;
     case 12:
       m_security_unlock_set1 = s147_dev9_mem_mmio.m_security_unlock_set1;
       *(_BYTE *)buffer = m_security_unlock_set1;
       *((_DWORD *)buffer + 1) = 0;
       result = buffer;
+      break;
     case 13:
       m_security_unlock_set2 = s147_dev9_mem_mmio.m_security_unlock_set2;
       *(_BYTE *)buffer = m_security_unlock_set2;
