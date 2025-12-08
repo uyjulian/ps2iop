@@ -575,17 +575,17 @@ int __fastcall ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
   xval = inflg & flgmsk;
   for ( i = 0; i < flgcnt; ++i )
   {
-    s147_dev9_mem_mmio.m_rtc_flag = xval & 1 | 0xC;
+    s147_dev9_mem_mmio.m_rtc_flag = (xval & 1) | 0xC;
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
       ;
     g_max_timer_counter += 0x40;
-    s147_dev9_mem_mmio.m_rtc_flag = xval & 1 | 0xE;
+    s147_dev9_mem_mmio.m_rtc_flag = (xval & 1) | 0xE;
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
       ;
     g_max_timer_counter += 0x40;
     xval >>= 1;
   }
-  s147_dev9_mem_mmio.m_rtc_flag = xval & 1 | 0xC;
+  s147_dev9_mem_mmio.m_rtc_flag = (xval & 1) | 0xC;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   result = g_max_timer_counter;
