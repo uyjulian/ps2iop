@@ -572,7 +572,7 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
   int packs0; // [sp+1Ch] [+1Ch]
   int packs1; // [sp+20h] [+20h]
 
-  if ( cl_info.T_remain < count )
+  if ( cl_info.T_remain < (unsigned int)count )
     return 0;
   if ( count >= 0x101 )
     return 0;
@@ -588,7 +588,7 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
     j += 0x40;
   }
   CpuSuspendIntr(&state);
-  if ( cl_info.T_remain >= count )
+  if ( cl_info.T_remain >= (unsigned int)count )
   {
     packs1 = cl_info.T_in + count - 0x100;
     if ( packs1 > 0 )
@@ -894,7 +894,7 @@ void *__fastcall dispatch(unsigned int fno, void *buf, int size)
   int state; // [sp+14h] [+14h] BYREF
   int node; // [sp+18h] [+18h]
   int sizea; // [sp+1Ch] [+1Ch]
-  int i; // [sp+20h] [+20h]
+  unsigned int i; // [sp+20h] [+20h]
   int j; // [sp+24h] [+24h]
 
   FlushDcache();

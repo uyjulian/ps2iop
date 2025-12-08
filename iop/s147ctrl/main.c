@@ -164,7 +164,7 @@ iop_device_ops_t g_ops_ctrl_ioman =
 int g_rpc_started = 0; // weak
 int g_watchdog_count_1 = 0; // weak
 char g_watchdog_flag_1 = '\x01'; // weak
-int g_max_timer_counter = 0; // weak
+u32 g_max_timer_counter = 0; // weak
 iop_device_ops_t g_ops_sram_ioman =
 {
   &sram_drv_op_init,
