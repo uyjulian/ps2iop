@@ -114,7 +114,7 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count);
 int __fastcall InitS147link(int maxnode, int mynode, int priority);
 void __fastcall reset_circlink();
 u_int __fastcall alarm_handler(CL_COM *io_pCommon);
-int __fastcall s147link_loop();
+void s147link_loop(void *userdata);
 void *__fastcall dispatch(unsigned int fno, void *buf, int size);
 
 //-------------------------------------------------------------------------
@@ -723,7 +723,7 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   EnableIntr(13);
   sceSifInitRpc(0);
   param.attr = 0x2000000;
-  param.thread = (void (__fastcall *)(void *))s147link_loop;
+  param.thread = s147link_loop;
   param.priority = priority;
   param.stacksize = 0x800;
   param.option = 0;
@@ -874,17 +874,17 @@ u_int __fastcall alarm_handler(CL_COM *io_pCommon)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00403018) --------------------------------------------------------
-int __fastcall s147link_loop()
+void s147link_loop(void *userdata)
 {
   int ThreadId; // $v0
   SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
   SifRpcServerData_t sd; // [sp+38h] [+38h] BYREF
 
+  (void)userdata;
   ThreadId = GetThreadId();
   sceSifSetRpcQueue(&qd, ThreadId);
   sceSifRegisterRpc(&sd, 0x14799, (SifRpcFunc_t)dispatch, rpc_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
-  return 0;
 }
 
 //----- (004030A8) --------------------------------------------------------

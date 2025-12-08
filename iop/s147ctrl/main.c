@@ -128,13 +128,13 @@ int __cdecl sram_drv_op_read(iop_file_t *f, void *ptr, int size);
 int __cdecl sram_drv_op_write(iop_file_t *f, void *ptr, int size);
 int __cdecl sram_drv_op_lseek(iop_file_t *f, int offset, int mode);
 int do_rpc_start1();
-int rpc_thread1();
+void rpc_thread1(void *userdata);
 void *__fastcall rpc_1470000_handler(int fno, void *buffer, int length);
 void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length);
 void *__fastcall rpc_1470002_handler(int fno, void *buffer, int length);
 void *__fastcall rpc_1470003_handler(int fno, void *buffer, int length);
 int do_rpc_start2();
-int rpc_thread2();
+void rpc_thread2(void *userdata);
 void *__fastcall rpc_1470200_handler(int fno, void *buffer, int length);
 void *__fastcall rpc_1470201_handler(int fno, void *buffer, int length);
 
@@ -735,7 +735,7 @@ int do_rpc_start1()
   int thid; // [sp+28h] [+28h]
 
   thparam.attr = 0x2000000;
-  thparam.thread = (void (__cdecl *)(void *))rpc_thread1;
+  thparam.thread = rpc_thread1;
   thparam.priority = 10;
   thparam.stacksize = 0x800;
   thparam.option = 0;
@@ -747,7 +747,7 @@ int do_rpc_start1()
 }
 
 //----- (0040191C) --------------------------------------------------------
-int rpc_thread1()
+void rpc_thread1(void *userdata)
 {
   int ThreadId; // $v0
   SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
@@ -756,6 +756,7 @@ int rpc_thread1()
   SifRpcServerData_t sd3; // [sp+C8h] [+C8h] BYREF
   SifRpcServerData_t sd4; // [sp+110h] [+110h] BYREF
 
+  (void)userdata;
   sceSifInitRpc(0);
   ThreadId = GetThreadId();
   sceSifSetRpcQueue(&qd, ThreadId);
@@ -764,7 +765,6 @@ int rpc_thread1()
   sceSifRegisterRpc(&sd3, 0x1470002, (SifRpcFunc_t)rpc_1470002_handler, g_rpc1_buf, 0, 0, &qd);
   sceSifRegisterRpc(&sd4, 0x1470003, (SifRpcFunc_t)rpc_1470003_handler, g_rpc1_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
-  return 0;
 }
 // 402A40: using guessed type int g_rpc1_buf[8];
 // 40191C: using guessed type SifRpcServerData_t sd1;
@@ -941,7 +941,7 @@ int do_rpc_start2()
   int thid; // [sp+28h] [+28h]
 
   thparam.attr = 0x2000000;
-  thparam.thread = (void (__cdecl *)(void *))rpc_thread2;
+  thparam.thread = rpc_thread2;
   thparam.priority = 10;
   thparam.stacksize = 0x800;
   thparam.option = 0;
@@ -953,20 +953,20 @@ int do_rpc_start2()
 }
 
 //----- (00401F3C) --------------------------------------------------------
-int rpc_thread2()
+void rpc_thread2(void *userdata)
 {
   int ThreadId; // $v0
   SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
   SifRpcServerData_t sd1; // [sp+38h] [+38h] BYREF
   SifRpcServerData_t sd2; // [sp+80h] [+80h] BYREF
 
+  (void)userdata;
   sceSifInitRpc(0);
   ThreadId = GetThreadId();
   sceSifSetRpcQueue(&qd, ThreadId);
   sceSifRegisterRpc(&sd1, 0x1470200, (SifRpcFunc_t)rpc_1470200_handler, g_rpc2_buf, 0, 0, &qd);
   sceSifRegisterRpc(&sd2, 0x1470201, (SifRpcFunc_t)rpc_1470201_handler, g_rpc2_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
-  return 0;
 }
 // 402A60: using guessed type int g_rpc2_buf[260];
 // 401F3C: using guessed type SifRpcServerData_t sd1;
