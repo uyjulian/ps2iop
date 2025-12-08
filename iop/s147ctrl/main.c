@@ -683,10 +683,12 @@ static int sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
     default:
       return -22;
   }
-  if ( (s32)privdata->m_maxpos >= (s32)privdata->m_curpos )
-    return privdata->m_curpos;
-  privdata->m_curpos = privdata->m_maxpos;
-  return -22;
+  if ( (s32)privdata->m_maxpos < (s32)privdata->m_curpos )
+  {
+    privdata->m_curpos = privdata->m_maxpos;
+    return -22;
+  }
+  return privdata->m_curpos;
 }
 
 //----- (00401890) --------------------------------------------------------
