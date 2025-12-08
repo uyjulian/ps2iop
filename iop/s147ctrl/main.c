@@ -153,10 +153,14 @@ static iop_device_ops_t g_ops_ctrl_ioman =
   (void *)&ctrl_drv_op_nulldev,
   (void *)&ctrl_drv_op_nulldev
 }; // weak
-static int g_rpc_started = 0; // weak
-static int g_watchdog_count_1 = 0; // weak
-static char g_watchdog_flag_1 = 1; // weak
-static u32 g_max_timer_counter = 0; // weak
+// Unofficial: move to bss
+static int g_rpc_started; // weak
+// Unofficial: move to bss
+static int g_watchdog_count_1; // weak
+// Unofficial: move to bss
+static char g_watchdog_flag_1; // weak
+// Unofficial: move to bss
+static u32 g_max_timer_counter; // weak
 static iop_device_ops_t g_ops_sram_ioman =
 {
   &sram_drv_op_init,
@@ -258,8 +262,9 @@ static unsigned int watchdog_alarm_cb(void *userdata)
   if ( unk34_tmp == 0x3E )
   {
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
-    s147_dev9_mem_mmio.m_led = g_watchdog_flag_1;
-    g_watchdog_flag_1 = ( (((unsigned int)g_watchdog_count_1 >> 3) & 1) != 0 ) ? 2 : 1;
+    // Unofficial: add 1 here
+    s147_dev9_mem_mmio.m_led = g_watchdog_flag_1 + 1;
+    g_watchdog_flag_1 = ( (((unsigned int)g_watchdog_count_1 >> 3) & 1) != 0 ) ? 1 : 0;
     ++g_watchdog_count_1;
   }
   return wdi->g_watchdog_clock.lo;
