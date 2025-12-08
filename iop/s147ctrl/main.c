@@ -117,7 +117,7 @@ int create_ctrl_sema();
 int __fastcall ctrl_do_rtc_read(_DWORD *rtcbuf);
 int __fastcall ctrl_do_rtc_read_inner(int flgcnt, int flgmsk);
 int __fastcall ctrl_do_rtc_write(_DWORD *rtcbuf);
-int __fastcall ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk);
+void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk);
 int __fastcall setup_sram_ioman_drv(const char *devpfx, const char *devname);
 int sram_drv_op_nulldev();
 int __cdecl sram_drv_op_init(iop_device_t *dev);
@@ -247,8 +247,6 @@ int __fastcall setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
 //----- (004001EC) --------------------------------------------------------
 u32 __fastcall watchdog_alarm_cb(struct watchdog_info_ *userdata)
 {
-  vu8 m_watchdog_flag_unk34; // $v0
-  char v2; // $v0
   int state; // [sp+14h] [+14h] BYREF
   vu8 v6; // [sp+18h] [+18h]
 
@@ -259,15 +257,13 @@ u32 __fastcall watchdog_alarm_cb(struct watchdog_info_ *userdata)
   }
   CpuSuspendIntr(&state);
   s147link_dev9_mem_mmio.m_watchdog_flag_unk34 = 0;
-  m_watchdog_flag_unk34 = s147link_dev9_mem_mmio.m_watchdog_flag_unk34;
-  v6 = m_watchdog_flag_unk34;
+  v6 = s147link_dev9_mem_mmio.m_watchdog_flag_unk34;
   CpuResumeIntr(state);
   if ( v6 == 0x3E )
   {
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
     s147_dev9_mem_mmio.m_led = g_watchdog_flag_1;
-    v2 = ( (((unsigned int)g_watchdog_count_1 >> 3) & 1) != 0 ) ? 2 : 1;
-    g_watchdog_flag_1 = v2;
+    g_watchdog_flag_1 = ( (((unsigned int)g_watchdog_count_1 >> 3) & 1) != 0 ) ? 2 : 1;
     ++g_watchdog_count_1;
   }
   return userdata->g_watchdog_clock.lo;
@@ -300,7 +296,7 @@ int __cdecl ctrl_drv_op_deinit(iop_device_t *dev)
 //----- (00400380) --------------------------------------------------------
 int __cdecl ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
 {
-  int state[2]; // [sp+10h] [+10h] BYREF
+  int state; // [sp+10h] [+10h] BYREF
 
   (void)flags;
   if ( f->unit != 99 )
@@ -308,16 +304,16 @@ int __cdecl ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
   if ( !strcmp(name, "watchdog-start") )
   {
     Kprintf("s147ctrl.irx: wdt-start\n");
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     g_watchdog_info.g_watchdog_started = 1;
-    CpuResumeIntr(state[0]);
+    CpuResumeIntr(state);
   }
   else if ( !strcmp(name, "watchdog-stop") )
   {
     Kprintf("s147ctrl.irx: wdt-stop\n");
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     g_watchdog_info.g_watchdog_started = 0;
-    CpuResumeIntr(state[0]);
+    CpuResumeIntr(state);
   }
   else if ( !strcmp(name, "rpcserv-start") )
   {
@@ -326,9 +322,9 @@ int __cdecl ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
     {
       do_rpc_start1();
       do_rpc_start2();
-      CpuSuspendIntr(state);
+      CpuSuspendIntr(&state);
       g_rpc_started = 1;
-      CpuResumeIntr(state[0]);
+      CpuResumeIntr(state);
     }
   }
   return 0;
@@ -346,8 +342,6 @@ int __cdecl ctrl_drv_op_close(iop_file_t *f)
 //----- (004004FC) --------------------------------------------------------
 int __cdecl ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
 {
-  vu8 m_security_unlock_set1; // $v1
-  vu8 m_security_unlock_set2; // $v1
   int unit; // [sp+10h] [+10h]
   int retres; // [sp+14h] [+14h]
 
@@ -364,10 +358,8 @@ int __cdecl ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
     case 12:
       if ( size != 2 )
         return -22;
-      m_security_unlock_set1 = s147_dev9_mem_mmio.m_security_unlock_set1;
-      *(_BYTE *)ptr = m_security_unlock_set1;
-      m_security_unlock_set2 = s147_dev9_mem_mmio.m_security_unlock_set2;
-      *((_BYTE *)ptr + 1) = m_security_unlock_set2;
+      *(_BYTE *)ptr = s147_dev9_mem_mmio.m_security_unlock_set1;
+      *((_BYTE *)ptr + 1) = s147_dev9_mem_mmio.m_security_unlock_set2;
       return 2;
     default:
       if ( size != 1 )
@@ -481,7 +473,6 @@ int __fastcall ctrl_do_rtc_read(_DWORD *rtcbuf)
 //----- (00400C40) --------------------------------------------------------
 int __fastcall ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
 {
-  vu8 m_rtc_flag; // $v0
   int i; // [sp+10h] [+10h]
 
   g_rtc_flag = 0;
@@ -491,8 +482,7 @@ int __fastcall ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
       ;
     g_max_timer_counter += 0x40;
-    m_rtc_flag = s147_dev9_mem_mmio.m_rtc_flag;
-    g_rtc_flag |= (m_rtc_flag & 1) << i;
+    g_rtc_flag |= (s147_dev9_mem_mmio.m_rtc_flag & 1) << i;
     s147_dev9_mem_mmio.m_rtc_flag = 9;
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
       ;
@@ -550,9 +540,8 @@ int __fastcall ctrl_do_rtc_write(_DWORD *rtcbuf)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (0040110C) --------------------------------------------------------
-int __fastcall ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
+void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
 {
-  int result; // $v0
   int i; // [sp+10h] [+10h]
   unsigned int xval; // [sp+20h] [+20h]
 
@@ -572,9 +561,7 @@ int __fastcall ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
   s147_dev9_mem_mmio.m_rtc_flag = (xval & 1) | 0xC;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
-  result = g_max_timer_counter;
   g_max_timer_counter += 0x40;
-  return result;
 }
 // 402950: using guessed type int g_max_timer_counter;
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
@@ -622,7 +609,7 @@ int __cdecl sram_drv_op_open(iop_file_t *f, const char *name, int flags)
   (void)name;
   (void)flags;
   CpuSuspendIntr(&state);
-  f->privdata = AllocSysMemory(0, 8, 0);
+  f->privdata = AllocSysMemory(0, sizeof(struct sram_drv_privdata_), 0);
   CpuResumeIntr(state);
   privdata = (struct sram_drv_privdata_ *)f->privdata;
   privdata->m_curpos = 0;
@@ -649,16 +636,14 @@ int __cdecl sram_drv_op_read(iop_file_t *f, void *ptr, int size)
 {
   int sizeb; // $v0
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
-  int sizea; // [sp+18h] [+18h]
 
   privdata = (struct sram_drv_privdata_ *)f->privdata;
   if ( (signed __int32)privdata->m_curpos >= (signed __int32)privdata->m_maxpos )
     return 0;
   sizeb = ( (signed __int32)privdata->m_maxpos < (signed __int32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
-  sizea = sizeb;
   memcpy(ptr, (const void *)(privdata->m_curpos + 0xB0C00000), sizeb);
-  privdata->m_curpos += sizea;
-  return sizea;
+  privdata->m_curpos += sizeb;
+  return sizeb;
 }
 
 //----- (00401620) --------------------------------------------------------
@@ -666,18 +651,16 @@ int __cdecl sram_drv_op_write(iop_file_t *f, void *ptr, int size)
 {
   int sizeb; // $v0
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
-  int sizea; // [sp+18h] [+18h]
 
   privdata = (struct sram_drv_privdata_ *)f->privdata;
   if ( (signed __int32)privdata->m_curpos >= (signed __int32)privdata->m_maxpos )
     return 0;
   sizeb = ( (signed __int32)privdata->m_maxpos < (signed __int32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
-  sizea = sizeb;
   s147_dev9_mem_mmio.m_sram_write_flag = 1;
   memcpy((void *)(privdata->m_curpos + 0xB0C00000), ptr, sizeb);
   s147_dev9_mem_mmio.m_sram_write_flag = 0;
-  privdata->m_curpos += sizea;
-  return sizea;
+  privdata->m_curpos += sizeb;
+  return sizeb;
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
@@ -728,21 +711,16 @@ int do_rpc_start1()
 //----- (0040191C) --------------------------------------------------------
 void rpc_thread1(void *userdata)
 {
-  int ThreadId; // $v0
   SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
-  SifRpcServerData_t sd1; // [sp+38h] [+38h] BYREF
-  SifRpcServerData_t sd2; // [sp+80h] [+80h] BYREF
-  SifRpcServerData_t sd3; // [sp+C8h] [+C8h] BYREF
-  SifRpcServerData_t sd4; // [sp+110h] [+110h] BYREF
+  SifRpcServerData_t sd[4];
 
   (void)userdata;
   sceSifInitRpc(0);
-  ThreadId = GetThreadId();
-  sceSifSetRpcQueue(&qd, ThreadId);
-  sceSifRegisterRpc(&sd1, 0x1470000, (SifRpcFunc_t)rpc_1470000_handler, g_rpc1_buf, 0, 0, &qd);
-  sceSifRegisterRpc(&sd2, 0x1470001, (SifRpcFunc_t)rpc_1470001_handler, g_rpc1_buf, 0, 0, &qd);
-  sceSifRegisterRpc(&sd3, 0x1470002, (SifRpcFunc_t)rpc_1470002_handler, g_rpc1_buf, 0, 0, &qd);
-  sceSifRegisterRpc(&sd4, 0x1470003, (SifRpcFunc_t)rpc_1470003_handler, g_rpc1_buf, 0, 0, &qd);
+  sceSifSetRpcQueue(&qd, GetThreadId());
+  sceSifRegisterRpc(&sd[0], 0x1470000, (SifRpcFunc_t)rpc_1470000_handler, g_rpc1_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[1], 0x1470001, (SifRpcFunc_t)rpc_1470001_handler, g_rpc1_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[2], 0x1470002, (SifRpcFunc_t)rpc_1470002_handler, g_rpc1_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[3], 0x1470003, (SifRpcFunc_t)rpc_1470003_handler, g_rpc1_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
 }
 // 402A40: using guessed type int g_rpc1_buf[8];
@@ -754,133 +732,93 @@ void rpc_thread1(void *userdata)
 //----- (00401A48) --------------------------------------------------------
 void *__fastcall rpc_1470000_handler(int fno, void *buffer, int length)
 {
-  void *result; // $v0
-
   (void)length;
   switch ( fno )
   {
     case 1:
       s147_dev9_mem_mmio.m_led = *(_BYTE *)buffer;
       *(_DWORD *)buffer = 0;
-      result = buffer;
       break;
     case 2:
       s147_dev9_mem_mmio.m_security_unlock_unlock = *(_BYTE *)buffer;
       *(_DWORD *)buffer = 0;
-      result = buffer;
       break;
     case 3:
       s147_dev9_mem_mmio.m_unk03 = *(_BYTE *)buffer;
       *(_DWORD *)buffer = 0;
-      result = buffer;
       break;
     case 4:
       s147_dev9_mem_mmio.m_rtc_flag = *(_BYTE *)buffer;
       *(_DWORD *)buffer = 0;
-      result = buffer;
       break;
     case 5:
       s147_dev9_mem_mmio.m_watchdog_flag2 = *(_BYTE *)buffer;
       *(_DWORD *)buffer = 0;
-      result = buffer;
       break;
     case 12:
       s147_dev9_mem_mmio.m_security_unlock_set1 = *(_BYTE *)buffer;
       *(_DWORD *)buffer = 0;
-      result = buffer;
       break;
     case 13:
       s147_dev9_mem_mmio.m_security_unlock_set2 = *(_BYTE *)buffer;
       *(_DWORD *)buffer = 0;
-      result = buffer;
       break;
     default:
       *(_DWORD *)buffer = -22;
-      result = buffer;
       break;
   }
-  return result;
+  return buffer;
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00401BA0) --------------------------------------------------------
 void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length)
 {
-  vu8 m_unk00; // $v1
-  vu8 m_led; // $v1
-  vu8 m_security_unlock_unlock; // $v1
-  vu8 m_unk03; // $v1
-  vu8 m_rtc_flag; // $v1
-  vu8 m_watchdog_flag2; // $v1
-  vu8 m_unk06; // $v1
-  vu8 m_security_unlock_set1; // $v1
-  vu8 m_security_unlock_set2; // $v1
-  void *result; // $v0
-
   (void)length;
   switch ( fno )
   {
     case 0:
-      m_unk00 = s147_dev9_mem_mmio.m_unk00;
-      *(_BYTE *)buffer = m_unk00;
+      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_unk00;
       *((_DWORD *)buffer + 1) = 0;
-      result = buffer;
       break;
     case 1:
-      m_led = s147_dev9_mem_mmio.m_led;
-      *(_BYTE *)buffer = m_led;
+      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_led;
       *((_DWORD *)buffer + 1) = 0;
-      result = buffer;
       break;
     case 2:
-      m_security_unlock_unlock = s147_dev9_mem_mmio.m_security_unlock_unlock;
-      *(_BYTE *)buffer = m_security_unlock_unlock;
+      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_security_unlock_unlock;
       *((_DWORD *)buffer + 1) = 0;
-      result = buffer;
       break;
     case 3:
-      m_unk03 = s147_dev9_mem_mmio.m_unk03;
-      *(_BYTE *)buffer = m_unk03;
+      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_unk03;
       *((_DWORD *)buffer + 1) = 0;
-      result = buffer;
       break;
     case 4:
-      m_rtc_flag = s147_dev9_mem_mmio.m_rtc_flag;
-      *(_BYTE *)buffer = m_rtc_flag;
+      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_rtc_flag;
       *((_DWORD *)buffer + 1) = 0;
-      result = buffer;
       break;
     case 5:
-      m_watchdog_flag2 = s147_dev9_mem_mmio.m_watchdog_flag2;
-      *(_BYTE *)buffer = m_watchdog_flag2;
+      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_watchdog_flag2;
       *((_DWORD *)buffer + 1) = 0;
-      result = buffer;
       break;
     case 6:
-      m_unk06 = s147_dev9_mem_mmio.m_unk06;
-      *(_BYTE *)buffer = m_unk06;
+      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_unk06;
       *((_DWORD *)buffer + 1) = 0;
-      result = buffer;
       break;
     case 12:
-      m_security_unlock_set1 = s147_dev9_mem_mmio.m_security_unlock_set1;
-      *(_BYTE *)buffer = m_security_unlock_set1;
+      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_security_unlock_set1;
       *((_DWORD *)buffer + 1) = 0;
-      result = buffer;
       break;
     case 13:
-      m_security_unlock_set2 = s147_dev9_mem_mmio.m_security_unlock_set2;
-      *(_BYTE *)buffer = m_security_unlock_set2;
+      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_security_unlock_set2;
       *((_DWORD *)buffer + 1) = 0;
-      result = buffer;
       break;
     default:
       *(_BYTE *)buffer = 0;
       *((_DWORD *)buffer + 1) = -22;
-      result = buffer;
       break;
   }
-  return result;
+  return buffer;
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
@@ -933,17 +871,14 @@ int do_rpc_start2()
 //----- (00401F3C) --------------------------------------------------------
 void rpc_thread2(void *userdata)
 {
-  int ThreadId; // $v0
   SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
-  SifRpcServerData_t sd1; // [sp+38h] [+38h] BYREF
-  SifRpcServerData_t sd2; // [sp+80h] [+80h] BYREF
+  SifRpcServerData_t sd[2];
 
   (void)userdata;
   sceSifInitRpc(0);
-  ThreadId = GetThreadId();
-  sceSifSetRpcQueue(&qd, ThreadId);
-  sceSifRegisterRpc(&sd1, 0x1470200, (SifRpcFunc_t)rpc_1470200_handler, g_rpc2_buf, 0, 0, &qd);
-  sceSifRegisterRpc(&sd2, 0x1470201, (SifRpcFunc_t)rpc_1470201_handler, g_rpc2_buf, 0, 0, &qd);
+  sceSifSetRpcQueue(&qd, GetThreadId());
+  sceSifRegisterRpc(&sd[0], 0x1470200, (SifRpcFunc_t)rpc_1470200_handler, g_rpc2_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[1], 0x1470201, (SifRpcFunc_t)rpc_1470201_handler, g_rpc2_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
 }
 // 402A60: using guessed type int g_rpc2_buf[260];

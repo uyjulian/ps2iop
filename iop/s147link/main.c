@@ -183,27 +183,11 @@ void __fastcall T_fix(CL_COM *io_pCommon)
 //----- (00400458) --------------------------------------------------------
 int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
 {
-  unsigned __int8 m_stsH_unk12; // $v0
-  unsigned __int8 m_stsL_unk13; // $v0
-  vu8 m_unk03; // $v0
-  vu8 m_unk01; // $v0
-  vu8 m_rxfc_hi_unk1E; // $v0
-  vu8 m_rxfc_lo_unk1F; // $v1
   vu8 m_unk09; // $v0
-  vu8 v8; // $v0
-  unsigned __int8 v10; // $v0
   unsigned __int8 v11; // $v0
   unsigned __int8 *bufptr; // $s4
-  vu8 v15; // $v0
   vu8 v16; // $v0
   unsigned __int8 *bufptr_v2; // $s4
-  vu8 v18; // $v0
-  vu8 v19; // $v0
-  vu8 v20; // $v0
-  vu8 v21; // $v0
-  vu8 v22; // $v0
-  unsigned __int8 v23; // $v0
-  vu8 v24; // $v0
   unsigned __int8 *bufptr_v3; // $s4
   unsigned int i_v5; // [sp+10h] [+10h]
   unsigned int j_v6; // [sp+14h] [+14h]
@@ -216,20 +200,16 @@ int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
   unsigned int tflag; // [sp+28h] [+28h]
   int state; // [sp+2Ch] [+2Ch] BYREF
 
-  m_stsH_unk12 = s147link_dev9_mem_mmio.m_stsH_unk12;
-  stsH = m_stsH_unk12;
-  m_stsL_unk13 = s147link_dev9_mem_mmio.m_stsL_unk13;
-  stsL = m_stsL_unk13;
-  if ( (m_stsL_unk13 & 8) != 0 )
+  stsH = s147link_dev9_mem_mmio.m_stsH_unk12;
+  stsL = s147link_dev9_mem_mmio.m_stsL_unk13;
+  if ( (stsL & 8) != 0 )
   {
-    m_unk03 = s147link_dev9_mem_mmio.m_unk03;
-    if ( (m_unk03 & 8) != 0 )
+    if ( (s147link_dev9_mem_mmio.m_unk03 & 8) != 0 )
     {
       s147link_dev9_mem_mmio.m_unk17 = 1;
       s147link_dev9_mem_mmio.m_unk17 = 0xE;
     }
-    m_unk01 = s147link_dev9_mem_mmio.m_unk01;
-    if ( (m_unk01 & 4) != 0 )
+    if ( (s147link_dev9_mem_mmio.m_unk01 & 4) != 0 )
     {
       s147link_dev9_mem_mmio.m_unk17 = 0x16;
       if ( !io_pCommon->ontimer )
@@ -238,9 +218,7 @@ int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
     }
   }
   rxfc = 0;
-  m_rxfc_hi_unk1E = s147link_dev9_mem_mmio.m_rxfc_hi_unk1E;
-  m_rxfc_lo_unk1F = s147link_dev9_mem_mmio.m_rxfc_lo_unk1F;
-  rxfs = ((m_rxfc_hi_unk1E << 8) | m_rxfc_lo_unk1F) & io_pCommon->nodemask;
+  rxfs = ((s147link_dev9_mem_mmio.m_rxfc_hi_unk1E << 8) | s147link_dev9_mem_mmio.m_rxfc_lo_unk1F) & io_pCommon->nodemask;
   if ( rxfs )
   {
     for ( j_v6 = 1; io_pCommon->maxnode >= j_v6; ++j_v6 )
@@ -256,8 +234,7 @@ int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
         m_unk09 = s147link_dev9_mem_mmio.m_unk09;
         if ( m_unk09 == io_pCommon->mynode )
         {
-          v8 = s147link_dev9_mem_mmio.m_unk09;
-          if ( v8 == 4 )
+          if ( s147link_dev9_mem_mmio.m_unk09 == 4 )
           {
             if ( s147link_dev9_mem_mmio.m_unk09 )
             {
@@ -265,9 +242,8 @@ int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
             }
             else
             {
-              v10 = s147link_dev9_mem_mmio.m_unk09;
-              rnum = v10;
-              if ( io_pCommon->R_number[j_v6] == v10 )
+              rnum = s147link_dev9_mem_mmio.m_unk09;
+              if ( io_pCommon->R_number[j_v6] == rnum )
               {
                 rxfc |= 1 << j_v6;
               }
@@ -311,8 +287,7 @@ int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
         }
         else
         {
-          v15 = s147link_dev9_mem_mmio.m_unk09;
-          if ( v15 == 0x38 )
+          if ( s147link_dev9_mem_mmio.m_unk09 == 0x38 )
           {
             s147link_dev9_mem_mmio.m_node_unk05 = j_v6 | 0xC0;
             s147link_dev9_mem_mmio.m_unk07 = 0x38;
@@ -327,20 +302,13 @@ int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
                 *bufptr_v2 = 56;
                 bufptr_v2 += 54;
                 *bufptr_v2++ = v16;
-                v18 = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2++ = v18;
-                v19 = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2++ = v19;
-                v20 = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2++ = v20;
-                v21 = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2++ = v21;
-                v22 = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2++ = v22;
-                v23 = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2 = v23;
-                v24 = s147link_dev9_mem_mmio.m_unk09;
-                bufptr_v2[1] = v24;
+                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr_v2 = s147link_dev9_mem_mmio.m_unk09;
+                bufptr_v2[1] = s147link_dev9_mem_mmio.m_unk09;
                 --io_pCommon->R_remain;
                 ++io_pCommon->R_in;
                 io_pCommon->R_in &= 0x1FFu;
@@ -485,9 +453,7 @@ int __fastcall cl_mread(void *dstptr, int count)
 int __fastcall cl_write(int node, unsigned __int8 *srcptr, int size)
 {
   int state; // [sp+10h] [+10h] BYREF
-  unsigned __int8 node_tmp; // [sp+20h] [+20h]
 
-  node_tmp = node;
   CpuSuspendIntr(&state);
   if ( !cl_info.T_remain || size >= 0x41 )
   {
@@ -496,10 +462,11 @@ int __fastcall cl_write(int node, unsigned __int8 *srcptr, int size)
   }
   memcpy(tx_buff[cl_info.T_in], srcptr, size);
   tx_buff[cl_info.T_in][0] = cl_info.mynode;
-  tx_buff[cl_info.T_in][1] = node_tmp;
+  tx_buff[cl_info.T_in][1] = node & 0xFF;
   tx_buff[cl_info.T_in][2] = 4;
   tx_buff[cl_info.T_in][3] = 0;
-  tx_buff[cl_info.T_in][4] = ++cl_info.T_number;
+  cl_info.T_number += 1;
+  tx_buff[cl_info.T_in][4] = cl_info.T_number;
   --cl_info.T_remain;
   ++cl_info.T_in;
   cl_info.T_in = (cl_info.T_in & 0xFF);
@@ -514,11 +481,7 @@ int __fastcall cl_write(int node, unsigned __int8 *srcptr, int size)
 int __fastcall cl_write_custom(int node, unsigned __int8 *srcptr, int cpVal)
 {
   int state; // [sp+10h] [+10h] BYREF
-  unsigned __int8 node_tmp; // [sp+20h] [+20h]
-  unsigned __int8 cpVal_tmp; // [sp+28h] [+28h]
 
-  node_tmp = node;
-  cpVal_tmp = cpVal;
   CpuSuspendIntr(&state);
   if ( !cl_info.T_remain )
   {
@@ -527,8 +490,8 @@ int __fastcall cl_write_custom(int node, unsigned __int8 *srcptr, int cpVal)
   }
   memcpy(tx_buff[cl_info.T_in], srcptr, sizeof(unsigned __int8[64]));
   tx_buff[cl_info.T_in][0] = cl_info.mynode;
-  tx_buff[cl_info.T_in][1] = node_tmp;
-  tx_buff[cl_info.T_in][2] = cpVal_tmp;
+  tx_buff[cl_info.T_in][1] = node & 0xFF;
+  tx_buff[cl_info.T_in][2] = cpVal & 0xFF;
   --cl_info.T_remain;
   ++cl_info.T_in;
   cl_info.T_in = (cl_info.T_in & 0xFF);
@@ -544,7 +507,6 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
 {
   int state; // [sp+10h] [+10h] BYREF
   int i; // [sp+14h] [+14h]
-  int packs0; // [sp+1Ch] [+1Ch]
   int packs1; // [sp+20h] [+20h]
 
   if ( cl_info.T_remain < (unsigned int)count )
@@ -558,6 +520,7 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
     srcptr[(i * 0x40) + 3] = 0;
     srcptr[(i * 0x40) + 4] = cl_info.T_number + i + 1;
   }
+  cl_info.T_number += i;
   CpuSuspendIntr(&state);
   if ( cl_info.T_remain < (unsigned int)count )
   {
@@ -567,9 +530,8 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
   packs1 = cl_info.T_in + count - 0x100;
   if ( packs1 > 0 )
   {
-    packs0 = count - packs1;
     memcpy(tx_buff[cl_info.T_in], srcptr, (count - packs1) << 6);
-    memcpy(tx_buff, &srcptr[0x40 * packs0], packs1 << 6);
+    memcpy(tx_buff, &srcptr[0x40 * (count - packs1)], packs1 << 6);
   }
   else
   {
@@ -588,23 +550,15 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
 //----- (00401F3C) --------------------------------------------------------
 int __fastcall InitS147link(int maxnode, int mynode, int priority)
 {
-  vu8 m_unk0D; // $v0
-  vu8 v4; // $v0
-  vu8 m_unk22; // $v0
-  int i_tmp1; // $v0
-  int i_tmp2; // $v0
-  unsigned int *cl_info_tmp; // $v1
-  unsigned __int8 m_stsH_unk12; // $v0
-  unsigned __int8 m_stsL_unk13; // $v0
   iop_thread_t param; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]
   int i; // [sp+2Ch] [+2Ch]
   int j; // [sp+30h] [+30h]
   int state; // [sp+34h] [+34h] BYREF
-  unsigned __int8 stsH; // [sp+38h] [+38h]
+  unsigned __int8 stsH;
+  unsigned __int8 stsL;
 
-  m_unk0D = s147link_dev9_mem_mmio.m_unk0D;
-  s147link_dev9_mem_mmio.m_unk0D = m_unk0D | 0x80;
+  s147link_dev9_mem_mmio.m_unk0D |= 0x80;
   s147link_dev9_mem_mmio.m_unk22 = 2;
   s147link_dev9_mem_mmio.m_unk23 = gbBRE ? 0x51 : 0x11;
   s147link_dev9_mem_mmio.m_maxnode_unk2B = maxnode;
@@ -623,10 +577,8 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   s147link_dev9_mem_mmio.m_unk21 = 0;
   s147link_dev9_mem_mmio.m_unk24 = 0;
   s147link_dev9_mem_mmio.m_unk25 = 0xFF;
-  v4 = s147link_dev9_mem_mmio.m_unk0D;
-  s147link_dev9_mem_mmio.m_unk0D = v4 & 0x7F;
-  m_unk22 = s147link_dev9_mem_mmio.m_unk22;
-  s147link_dev9_mem_mmio.m_unk22 = m_unk22 | 1;
+  s147link_dev9_mem_mmio.m_unk0D &= 0x7F;
+  s147link_dev9_mem_mmio.m_unk22 |= 1;
   s147link_dev9_mem_mmio.m_node_unk05 = mynode | 0x40;
   s147link_dev9_mem_mmio.m_unk07 = 0;
   s147link_dev9_mem_mmio.m_unk09 = mynode;
@@ -647,13 +599,10 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   for ( i = 0; i < 16; ++i )
   {
     cl_info.R_number[i] = 0;
-    i_tmp1 = i;
     cl_info.T_error[i] = 0;
-    cl_info.R_lost[i_tmp1] = 0;
-    i_tmp2 = i;
-    cl_info_tmp = &cl_info.mynode + i;
-    cl_info_tmp[65] = 1;
-    cl_info.R_pd[i_tmp2] = cl_info_tmp[65];
+    cl_info.R_lost[i] = 0;
+    cl_info.T_pd[i] = 1;
+    cl_info.R_pd[i] = 1;
     cl_info.T_time[i] = 2;
   }
   cl_info.T_top = tx_buff[0];
@@ -677,11 +626,10 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   s147link_dev9_mem_mmio.m_unk1D = 0xFF;
   s147link_dev9_mem_mmio.m_rxfc_hi_unk1E = 0xFF;
   s147link_dev9_mem_mmio.m_rxfc_lo_unk1F = 0xFF;
-  m_stsH_unk12 = s147link_dev9_mem_mmio.m_stsH_unk12;
-  stsH = m_stsH_unk12;
-  m_stsL_unk13 = s147link_dev9_mem_mmio.m_stsL_unk13;
+  stsH = s147link_dev9_mem_mmio.m_stsH_unk12;
+  stsL = s147link_dev9_mem_mmio.m_stsL_unk13;
   s147link_dev9_mem_mmio.m_stsH_unk12 = stsH;
-  s147link_dev9_mem_mmio.m_stsL_unk13 = m_stsL_unk13;
+  s147link_dev9_mem_mmio.m_stsL_unk13 = stsL;
   CpuResumeIntr(state);
   EnableIntr(13);
   sceSifInitRpc(0);
@@ -716,17 +664,12 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
 //----- (0040281C) --------------------------------------------------------
 void __fastcall reset_circlink()
 {
-  vu8 m_unk0D; // $v0
-  vu8 v1; // $v0
-  vu8 m_unk22; // $v0
   vu8 m_stsH_unk12; // $v0
   vu8 m_stsL_unk13; // $v0
   int i; // [sp+0h] [+0h]
   int j; // [sp+4h] [+4h]
-  vu8 v7; // [sp+8h] [+8h]
 
-  m_unk0D = s147link_dev9_mem_mmio.m_unk0D;
-  s147link_dev9_mem_mmio.m_unk0D = m_unk0D | 0x80;
+  s147link_dev9_mem_mmio.m_unk0D |= 0x80;
   s147link_dev9_mem_mmio.m_unk22 = 2;
   s147link_dev9_mem_mmio.m_unk23 = gbBRE ? 0x51 : 0x11;
   s147link_dev9_mem_mmio.m_maxnode_unk2B = cl_info.maxnode;
@@ -745,10 +688,8 @@ void __fastcall reset_circlink()
   s147link_dev9_mem_mmio.m_unk21 = 0;
   s147link_dev9_mem_mmio.m_unk24 = 0;
   s147link_dev9_mem_mmio.m_unk25 = 0xFF;
-  v1 = s147link_dev9_mem_mmio.m_unk0D;
-  s147link_dev9_mem_mmio.m_unk0D = v1 & 0x7F;
-  m_unk22 = s147link_dev9_mem_mmio.m_unk22;
-  s147link_dev9_mem_mmio.m_unk22 = m_unk22 | 1;
+  s147link_dev9_mem_mmio.m_unk0D &= 0x7F;
+  s147link_dev9_mem_mmio.m_unk22 |= 1;
   s147link_dev9_mem_mmio.m_node_unk05 = (cl_info.mynode & 0xFF) | 0x40;
   s147link_dev9_mem_mmio.m_unk07 = 0;
   s147link_dev9_mem_mmio.m_unk09 = cl_info.mynode;
@@ -762,9 +703,8 @@ void __fastcall reset_circlink()
   s147link_dev9_mem_mmio.m_rxfc_hi_unk1E = 0xFF;
   s147link_dev9_mem_mmio.m_rxfc_lo_unk1F = 0xFF;
   m_stsH_unk12 = s147link_dev9_mem_mmio.m_stsH_unk12;
-  v7 = m_stsH_unk12;
   m_stsL_unk13 = s147link_dev9_mem_mmio.m_stsL_unk13;
-  s147link_dev9_mem_mmio.m_stsH_unk12 = v7;
+  s147link_dev9_mem_mmio.m_stsH_unk12 = m_stsH_unk12;
   s147link_dev9_mem_mmio.m_stsL_unk13 = m_stsL_unk13;
 }
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
@@ -827,13 +767,11 @@ u_int __fastcall alarm_handler(CL_COM *io_pCommon)
 //----- (00403018) --------------------------------------------------------
 void s147link_loop(void *userdata)
 {
-  int ThreadId; // $v0
   SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
   SifRpcServerData_t sd; // [sp+38h] [+38h] BYREF
 
   (void)userdata;
-  ThreadId = GetThreadId();
-  sceSifSetRpcQueue(&qd, ThreadId);
+  sceSifSetRpcQueue(&qd, GetThreadId());
   sceSifRegisterRpc(&sd, 0x14799, (SifRpcFunc_t)dispatch, rpc_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
 }
@@ -841,7 +779,6 @@ void s147link_loop(void *userdata)
 //----- (004030A8) --------------------------------------------------------
 void *__fastcall dispatch(unsigned int fno, void *buf, int size)
 {
-  int tmp_online; // $v1
   int state; // [sp+14h] [+14h] BYREF
   int node; // [sp+18h] [+18h]
   int sizea; // [sp+1Ch] [+1Ch]
@@ -939,8 +876,7 @@ void *__fastcall dispatch(unsigned int fno, void *buf, int size)
       printf("S147LINK: Unknown RPC command (%X)\n", fno);
       break;
   }
-  tmp_online = *(_DWORD *)buf | (cl_info.online ? 0x10000 : 0);
-  *(_DWORD *)buf = tmp_online;
+  *(_DWORD *)buf |= (cl_info.online ? 0x10000 : 0);
   for ( i = 1; i < cl_info.maxnode; i += 1 )
   {
     if ( cl_info.T_error[i] )
