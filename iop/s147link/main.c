@@ -135,14 +135,17 @@ int __fastcall _start(int argc, char **argv)
   int mynode; // [sp+14h] [+14h]
   int priority; // [sp+18h] [+18h]
 
+  maxnode = 0;
   if ( argc >= 2 )
     maxnode = strtol(argv[1], 0, 10);
   if ( maxnode < 2 || maxnode >= 16 )
     maxnode = 2;
+  mynode = 0;
   if ( argc >= 3 )
     mynode = strtol(argv[2], 0, 10);
   if ( mynode <= 0 || maxnode < mynode )
     mynode = 1;
+  priority = 0;
   if ( argc >= 4 )
     priority = strtol(argv[3], 0, 10);
   if ( priority < 9 || priority >= 124 )

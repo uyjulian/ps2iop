@@ -122,6 +122,7 @@ int __fastcall s147mdev_5_delfs(int unit10)
 
   if ( unit10 >= 0 && unit10 < 100 )
   {
+    retval = 0;
     if ( g_atfile_unit_info[unit10 / 10] )
       retval = ((int (__fastcall *)(iop_device_t *))g_atfile_unit_info[unit10 / 10]->ops->deinit)(g_atfile_unit_info[unit10 / 10]);
     if ( retval >= 0 )
