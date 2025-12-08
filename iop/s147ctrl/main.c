@@ -433,9 +433,8 @@ static int ctrl_do_rtc_read(u32 *rtcbuf)
   g_timer_id = AllocHardTimer(1, 0x20, 1);
   if ( g_timer_id < 0 )
     return g_timer_id;
-  SetupHardTimer(g_timer_id, 1, 0, 1);
+  // Unofficial: omit SetupHardTimer/StartHardTimer
   g_max_timer_counter = 0x40;
-  StartHardTimer(g_timer_id);
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
@@ -462,7 +461,7 @@ static int ctrl_do_rtc_read(u32 *rtcbuf)
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
-  StopHardTimer(g_timer_id);
+  // Unofficial: omit StopHardTimer
   FreeHardTimer(g_timer_id);
   g_max_timer_counter = 0;
   SignalSema(g_ctrl_sema_id);
@@ -502,9 +501,8 @@ static int ctrl_do_rtc_write(u32 *rtcbuf)
   g_timer_id = AllocHardTimer(1, 0x20, 1);
   if ( g_timer_id < 0 )
     return g_timer_id;
-  SetupHardTimer(g_timer_id, 1, 0, 1);
+  // Unofficial: omit SetupHardTimer/StartHardTimer
   g_max_timer_counter = 0x40;
-  StartHardTimer(g_timer_id);
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
@@ -531,7 +529,7 @@ static int ctrl_do_rtc_write(u32 *rtcbuf)
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
-  StopHardTimer(g_timer_id);
+  // Unofficial: omit StopHardTimer
   FreeHardTimer(g_timer_id);
   g_max_timer_counter = 0;
   SignalSema(g_ctrl_sema_id);

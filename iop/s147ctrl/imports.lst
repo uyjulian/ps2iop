@@ -53,9 +53,6 @@ timrman_IMPORTS_start
 I_AllocHardTimer
 I_FreeHardTimer
 I_GetTimerCounter
-I_SetupHardTimer
-I_StartHardTimer
-I_StopHardTimer
 timrman_IMPORTS_end
 
 acdev_IMPORTS_start

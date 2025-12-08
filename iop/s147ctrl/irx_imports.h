@@ -14,6 +14,6 @@
 #include <sysmem.h>
 #include <thbase.h>
 #include <thsemap.h>
-#include <xtimrman.h>
+#include <timrman.h>
 
 #endif /* IOP_IRX_IMPORTS_H */
