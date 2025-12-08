@@ -2,6 +2,8 @@ IOP_BIN = s147mdev.irx
 
 IOP_OBJS = imports.o exports.o main.o
 
+IOP_CFLAGS += -Wall -Wextra
+
 all: $(IOP_BIN)
 
 clean:
