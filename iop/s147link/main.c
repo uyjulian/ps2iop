@@ -568,7 +568,6 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
 {
   int state; // [sp+10h] [+10h] BYREF
   int i; // [sp+14h] [+14h]
-  int j; // [sp+18h] [+18h]
   int packs0; // [sp+1Ch] [+1Ch]
   int packs1; // [sp+20h] [+20h]
 
@@ -576,16 +575,12 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
     return 0;
   if ( count >= 0x101 )
     return 0;
-  j = 0;
-  i = 0;
-  while ( i < count )
+  for ( i = 0; i < count; i += 1 )
   {
-    srcptr[j] = cl_info.mynode;
-    srcptr[j + 2] = 4;
-    srcptr[j + 3] = 0;
-    srcptr[j + 4] = ++cl_info.T_number;
-    ++i;
-    j += 0x40;
+    srcptr[(i * 0x40)] = cl_info.mynode;
+    srcptr[(i * 0x40) + 2] = 4;
+    srcptr[(i * 0x40) + 3] = 0;
+    srcptr[(i * 0x40) + 4] = ++cl_info.T_number;
   }
   CpuSuspendIntr(&state);
   if ( cl_info.T_remain >= (unsigned int)count )
@@ -669,12 +664,10 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   s147link_dev9_mem_mmio.m_unk09 = 4;
   cl_info.mynode = mynode;
   cl_info.maxnode = maxnode;
-  i = 0;
   j = 1;
-  while ( i < maxnode )
+  for ( i = 0; i < maxnode; i += 1 )
   {
-    j = (2 * j) | 1;
-    ++i;
+    j = (j << 1) | 1;
   }
   cl_info.nodemask = j;
   cl_info.R_top = rx_buff[0];
@@ -895,7 +888,6 @@ void *__fastcall dispatch(unsigned int fno, void *buf, int size)
   int node; // [sp+18h] [+18h]
   int sizea; // [sp+1Ch] [+1Ch]
   unsigned int i; // [sp+20h] [+20h]
-  int j; // [sp+24h] [+24h]
 
   (void)size;
   FlushDcache();
@@ -994,16 +986,12 @@ void *__fastcall dispatch(unsigned int fno, void *buf, int size)
   else
     tmp_online = *(_DWORD *)buf;
   *(_DWORD *)buf = tmp_online;
-  i = 1;
-  j = 0x20000;
-  while ( i < cl_info.maxnode )
+  for ( i = 1; i < cl_info.maxnode; i += 1 )
   {
     if ( cl_info.T_error[i] )
-      *(_DWORD *)buf |= j;
+      *(_DWORD *)buf |= 0x10000 << i;
     if ( cl_info.R_lost[i] )
-      *(_DWORD *)buf |= j;
-    ++i;
-    j *= 2;
+      *(_DWORD *)buf |= 0x10000 << i;
   }
   FlushDcache();
   return buf;
