@@ -6,18 +6,17 @@ IRX_ID("S147MDEV", 2, 1);
 //-------------------------------------------------------------------------
 // Function declarations
 
-int _start(int ac, char **av);
-int register_atfile_ioman_device(const char *atfile_name, const char *atfile_desc);
+static int register_atfile_ioman_device(const char *atfile_name, const char *atfile_desc);
 int s147mdev_4_addfs(iop_device_t *drv, int unit10);
 int s147mdev_5_delfs(int unit10);
-int atfile_drv_op_nulldev(iop_file_t *f);
-int atfile_drv_op_init(iop_device_t *dev);
-int atfile_drv_op_deinit(iop_device_t *dev);
-int atfile_drv_op_open(iop_file_t *f, const char *name, int flags);
-int atfile_drv_op_close(iop_file_t *f);
-int atfile_drv_op_read(iop_file_t *f, void *ptr, int size);
-int atfile_drv_op_write(iop_file_t *f, void *ptr, int size);
-int atfile_drv_op_lseek(iop_file_t *f, int offset, int mode);
+static int atfile_drv_op_nulldev(iop_file_t *f);
+static int atfile_drv_op_init(iop_device_t *dev);
+static int atfile_drv_op_deinit(iop_device_t *dev);
+static int atfile_drv_op_open(iop_file_t *f, const char *name, int flags);
+static int atfile_drv_op_close(iop_file_t *f);
+static int atfile_drv_op_read(iop_file_t *f, void *ptr, int size);
+static int atfile_drv_op_write(iop_file_t *f, void *ptr, int size);
+static int atfile_drv_op_lseek(iop_file_t *f, int offset, int mode);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -63,7 +62,7 @@ int _start(int ac, char **av)
 }
 
 //----- (004000A0) --------------------------------------------------------
-int register_atfile_ioman_device(const char *atfile_name, const char *atfile_desc)
+static int register_atfile_ioman_device(const char *atfile_name, const char *atfile_desc)
 {
   int i; // [sp+10h] [+10h]
 
@@ -119,7 +118,7 @@ int s147mdev_5_delfs(int unit10)
 // 4003C0: variable 'retval' is possibly undefined
 
 //----- (00400430) --------------------------------------------------------
-int atfile_drv_op_nulldev(iop_file_t *f)
+static int atfile_drv_op_nulldev(iop_file_t *f)
 {
   int unit; // [sp+10h] [+10h]
 
@@ -133,21 +132,21 @@ int atfile_drv_op_nulldev(iop_file_t *f)
 }
 
 //----- (004004D8) --------------------------------------------------------
-int atfile_drv_op_init(iop_device_t *dev)
+static int atfile_drv_op_init(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (00400500) --------------------------------------------------------
-int atfile_drv_op_deinit(iop_device_t *dev)
+static int atfile_drv_op_deinit(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (00400528) --------------------------------------------------------
-int atfile_drv_op_open(iop_file_t *f, const char *name, int flags)
+static int atfile_drv_op_open(iop_file_t *f, const char *name, int flags)
 {
   iop_file_t fstk; // [sp+10h] [+10h] BYREF
   int unit; // [sp+20h] [+20h]
@@ -173,7 +172,7 @@ int atfile_drv_op_open(iop_file_t *f, const char *name, int flags)
 }
 
 //----- (004006F0) --------------------------------------------------------
-int atfile_drv_op_close(iop_file_t *f)
+static int atfile_drv_op_close(iop_file_t *f)
 {
   iop_file_t fstk; // [sp+10h] [+10h] BYREF
   int unit; // [sp+20h] [+20h]
@@ -197,7 +196,7 @@ int atfile_drv_op_close(iop_file_t *f)
 }
 
 //----- (004008AC) --------------------------------------------------------
-int atfile_drv_op_read(iop_file_t *f, void *ptr, int size)
+static int atfile_drv_op_read(iop_file_t *f, void *ptr, int size)
 {
   iop_file_t fstk; // [sp+10h] [+10h] BYREF
   int unit; // [sp+20h] [+20h]
@@ -221,7 +220,7 @@ int atfile_drv_op_read(iop_file_t *f, void *ptr, int size)
 }
 
 //----- (00400A78) --------------------------------------------------------
-int atfile_drv_op_write(iop_file_t *f, void *ptr, int size)
+static int atfile_drv_op_write(iop_file_t *f, void *ptr, int size)
 {
   iop_file_t fstk; // [sp+10h] [+10h] BYREF
   int unit; // [sp+20h] [+20h]
@@ -245,7 +244,7 @@ int atfile_drv_op_write(iop_file_t *f, void *ptr, int size)
 }
 
 //----- (00400C44) --------------------------------------------------------
-int atfile_drv_op_lseek(iop_file_t *f, int offset, int mode)
+static int atfile_drv_op_lseek(iop_file_t *f, int offset, int mode)
 {
   iop_file_t fstk; // [sp+10h] [+10h] BYREF
   int unit; // [sp+20h] [+20h]

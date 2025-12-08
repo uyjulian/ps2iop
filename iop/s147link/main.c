@@ -94,18 +94,10 @@ typedef struct __anon_struct_35
 //-------------------------------------------------------------------------
 // Function declarations
 
-int _start(int argc, char **argv);
-void T_fix(CL_COM *io_pCommon);
-int clink_InterruptHandler(void *userdata);
-int cl_mread(void *dstptr, int count);
-int cl_write(int node, u8 *srcptr, int size);
-int cl_write_custom(int node, u8 *srcptr, int cpVal);
-int cl_mwrite(u8 *srcptr, int count);
-int InitS147link(int maxnode, int mynode, int priority);
-void reset_circlink(void);
-unsigned int alarm_handler(void *userdata);
-void s147link_loop(void *userdata);
-void *dispatch(int fno, void *buf, int size);
+static int InitS147link(int maxnode, int mynode, int priority);
+static unsigned int alarm_handler(void *userdata);
+static void s147link_loop(void *userdata);
+static void *dispatch(int fno, void *buf, int size);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -151,7 +143,7 @@ int _start(int argc, char **argv)
 // 40013C: variable 'priority' is possibly undefined
 
 //----- (00400300) --------------------------------------------------------
-void T_fix(CL_COM *io_pCommon)
+static void T_fix(CL_COM *io_pCommon)
 {
   if ( io_pCommon->T_remain >= 0x101 )
   {
@@ -171,7 +163,7 @@ void T_fix(CL_COM *io_pCommon)
 }
 
 //----- (00400458) --------------------------------------------------------
-int clink_InterruptHandler(void *userdata)
+static int clink_InterruptHandler(void *userdata)
 {
   vu8 m_unk09; // $v0
   u8 v11; // $v0
@@ -388,7 +380,7 @@ int clink_InterruptHandler(void *userdata)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00401520) --------------------------------------------------------
-int cl_mread(void *dstptr, int count)
+static int cl_mread(void *dstptr, int count)
 {
   int state; // [sp+10h] [+10h] BYREF
   size_t size; // [sp+14h] [+14h]
@@ -442,7 +434,7 @@ int cl_mread(void *dstptr, int count)
 }
 
 //----- (00401864) --------------------------------------------------------
-int cl_write(int node, u8 *srcptr, int size)
+static int cl_write(int node, u8 *srcptr, int size)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -470,7 +462,7 @@ int cl_write(int node, u8 *srcptr, int size)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00401A84) --------------------------------------------------------
-int cl_write_custom(int node, u8 *srcptr, int cpVal)
+static int cl_write_custom(int node, u8 *srcptr, int cpVal)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -495,7 +487,7 @@ int cl_write_custom(int node, u8 *srcptr, int cpVal)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00401C10) --------------------------------------------------------
-int cl_mwrite(u8 *srcptr, int count)
+static int cl_mwrite(u8 *srcptr, int count)
 {
   int state; // [sp+10h] [+10h] BYREF
   int i; // [sp+14h] [+14h]
@@ -540,7 +532,7 @@ int cl_mwrite(u8 *srcptr, int count)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00401F3C) --------------------------------------------------------
-int InitS147link(int maxnode, int mynode, int priority)
+static int InitS147link(int maxnode, int mynode, int priority)
 {
   iop_thread_t param; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]
@@ -653,8 +645,9 @@ int InitS147link(int maxnode, int mynode, int priority)
 }
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
+#ifdef UNUSED_FUNC
 //----- (0040281C) --------------------------------------------------------
-void reset_circlink(void)
+static void reset_circlink(void)
 {
   vu8 m_stsH_unk12; // $v0
   vu8 m_stsL_unk13; // $v0
@@ -700,9 +693,10 @@ void reset_circlink(void)
   s147link_dev9_mem_mmio.m_stsL_unk13 = m_stsL_unk13;
 }
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
+#endif
 
 //----- (00402D58) --------------------------------------------------------
-unsigned int alarm_handler(void *userdata)
+static unsigned int alarm_handler(void *userdata)
 {
   int state; // [sp+10h] [+10h] BYREF
   CL_COM *io_pCommon;
@@ -759,7 +753,7 @@ unsigned int alarm_handler(void *userdata)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00403018) --------------------------------------------------------
-void s147link_loop(void *userdata)
+static void s147link_loop(void *userdata)
 {
   SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
   SifRpcServerData_t sd; // [sp+38h] [+38h] BYREF
@@ -771,7 +765,7 @@ void s147link_loop(void *userdata)
 }
 
 //----- (004030A8) --------------------------------------------------------
-void *dispatch(int fno, void *buf, int size)
+static void *dispatch(int fno, void *buf, int size)
 {
   int state; // [sp+14h] [+14h] BYREF
   int node; // [sp+18h] [+18h]

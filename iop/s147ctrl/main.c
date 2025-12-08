@@ -94,42 +94,41 @@ struct sram_drv_privdata_
 //-------------------------------------------------------------------------
 // Function declarations
 
-int _start(int ac, char **av);
-void setup_ac_delay_regs(void);
-int setup_ctrl_ioman_drv(const char *devpfx, const char *devname);
-unsigned int watchdog_alarm_cb(void *userdata);
-int ctrl_drv_op_nulldev(void);
-int ctrl_drv_op_init(iop_device_t *dev);
-int ctrl_drv_op_deinit(iop_device_t *dev);
-int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags);
-int ctrl_drv_op_close(iop_file_t *f);
-int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size);
-int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size);
-int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode);
-int create_ctrl_sema(void);
-int ctrl_do_rtc_read(u32 *rtcbuf);
-int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk);
-int ctrl_do_rtc_write(u32 *rtcbuf);
-void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk);
-int setup_sram_ioman_drv(const char *devpfx, const char *devname);
-int sram_drv_op_nulldev(void);
-int sram_drv_op_init(iop_device_t *dev);
-int sram_drv_op_deinit(iop_device_t *dev);
-int sram_drv_op_open(iop_file_t *f, const char *name, int flags);
-int sram_drv_op_close(iop_file_t *f);
-int sram_drv_op_read(iop_file_t *f, void *ptr, int size);
-int sram_drv_op_write(iop_file_t *f, void *ptr, int size);
-int sram_drv_op_lseek(iop_file_t *f, int offset, int mode);
-int do_rpc_start1(void);
-void rpc_thread1(void *userdata);
-void *rpc_1470000_handler(int fno, void *buffer, int length);
-void *rpc_1470001_handler(int fno, void *buffer, int length);
-void *rpc_1470002_handler(int fno, void *buffer, int length);
-void *rpc_1470003_handler(int fno, void *buffer, int length);
-int do_rpc_start2(void);
-void rpc_thread2(void *userdata);
-void *rpc_1470200_handler(int fno, void *buffer, int length);
-void *rpc_1470201_handler(int fno, void *buffer, int length);
+static void setup_ac_delay_regs(void);
+static int setup_ctrl_ioman_drv(const char *devpfx, const char *devname);
+static unsigned int watchdog_alarm_cb(void *userdata);
+static int ctrl_drv_op_nulldev(void);
+static int ctrl_drv_op_init(iop_device_t *dev);
+static int ctrl_drv_op_deinit(iop_device_t *dev);
+static int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags);
+static int ctrl_drv_op_close(iop_file_t *f);
+static int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size);
+static int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size);
+static int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode);
+static int create_ctrl_sema(void);
+static int ctrl_do_rtc_read(u32 *rtcbuf);
+static int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk);
+static int ctrl_do_rtc_write(u32 *rtcbuf);
+static void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk);
+static int setup_sram_ioman_drv(const char *devpfx, const char *devname);
+static int sram_drv_op_nulldev(void);
+static int sram_drv_op_init(iop_device_t *dev);
+static int sram_drv_op_deinit(iop_device_t *dev);
+static int sram_drv_op_open(iop_file_t *f, const char *name, int flags);
+static int sram_drv_op_close(iop_file_t *f);
+static int sram_drv_op_read(iop_file_t *f, void *ptr, int size);
+static int sram_drv_op_write(iop_file_t *f, void *ptr, int size);
+static int sram_drv_op_lseek(iop_file_t *f, int offset, int mode);
+static int do_rpc_start1(void);
+static void rpc_thread1(void *userdata);
+static void *rpc_1470000_handler(int fno, void *buffer, int length);
+static void *rpc_1470001_handler(int fno, void *buffer, int length);
+static void *rpc_1470002_handler(int fno, void *buffer, int length);
+static void *rpc_1470003_handler(int fno, void *buffer, int length);
+static int do_rpc_start2(void);
+static void rpc_thread2(void *userdata);
+static void *rpc_1470200_handler(int fno, void *buffer, int length);
+static void *rpc_1470201_handler(int fno, void *buffer, int length);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -213,14 +212,14 @@ int _start(int ac, char **av)
 }
 
 //----- (004000C0) --------------------------------------------------------
-void setup_ac_delay_regs(void)
+static void setup_ac_delay_regs(void)
 {
   SetAcMemDelayReg(0x261A2122u);
   SetAcIoDelayReg(0xA61A0166);
 }
 
 //----- (00400100) --------------------------------------------------------
-int setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
+static int setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
 {
   g_watchdog_info.g_watchdog_started = 1;
   USec2SysClock(0x4E20u, &g_watchdog_info.g_watchdog_clock);
@@ -240,7 +239,7 @@ int setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
 // 402F70: using guessed type watchdog_info_ g_watchdog_info;
 
 //----- (004001EC) --------------------------------------------------------
-unsigned int watchdog_alarm_cb(void *userdata)
+static unsigned int watchdog_alarm_cb(void *userdata)
 {
   int state; // [sp+14h] [+14h] BYREF
   vu8 v6; // [sp+18h] [+18h]
@@ -271,27 +270,27 @@ unsigned int watchdog_alarm_cb(void *userdata)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (0040030C) --------------------------------------------------------
-int ctrl_drv_op_nulldev(void)
+static int ctrl_drv_op_nulldev(void)
 {
   return 0;
 }
 
 //----- (00400330) --------------------------------------------------------
-int ctrl_drv_op_init(iop_device_t *dev)
+static int ctrl_drv_op_init(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (00400358) --------------------------------------------------------
-int ctrl_drv_op_deinit(iop_device_t *dev)
+static int ctrl_drv_op_deinit(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (00400380) --------------------------------------------------------
-int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
+static int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -330,14 +329,14 @@ int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
 // 402F70: using guessed type watchdog_info_ g_watchdog_info;
 
 //----- (004004D4) --------------------------------------------------------
-int ctrl_drv_op_close(iop_file_t *f)
+static int ctrl_drv_op_close(iop_file_t *f)
 {
   (void)f;
   return 0;
 }
 
 //----- (004004FC) --------------------------------------------------------
-int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
+static int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
 {
   int unit; // [sp+10h] [+10h]
   int retres; // [sp+14h] [+14h]
@@ -368,7 +367,7 @@ int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400690) --------------------------------------------------------
-int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size)
+static int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size)
 {
   int unit; // [sp+10h] [+10h]
   int retres; // [sp+14h] [+14h]
@@ -399,7 +398,7 @@ int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400820) --------------------------------------------------------
-int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode)
+static int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode)
 {
   (void)f;
   (void)offset;
@@ -408,7 +407,7 @@ int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode)
 }
 
 //----- (00400850) --------------------------------------------------------
-int create_ctrl_sema(void)
+static int create_ctrl_sema(void)
 {
   g_ctrl_sema_param.initial = 1;
   g_ctrl_sema_param.max = 1;
@@ -423,7 +422,7 @@ int create_ctrl_sema(void)
 }
 
 //----- (004008EC) --------------------------------------------------------
-int ctrl_do_rtc_read(u32 *rtcbuf)
+static int ctrl_do_rtc_read(u32 *rtcbuf)
 {
   WaitSema(g_ctrl_sema_id);
   g_timer_id = AllocHardTimer(1, 0x20, 1);
@@ -468,7 +467,7 @@ int ctrl_do_rtc_read(u32 *rtcbuf)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400C40) --------------------------------------------------------
-int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
+static int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
 {
   int i; // [sp+10h] [+10h]
 
@@ -492,7 +491,7 @@ int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400DB8) --------------------------------------------------------
-int ctrl_do_rtc_write(u32 *rtcbuf)
+static int ctrl_do_rtc_write(u32 *rtcbuf)
 {
   WaitSema(g_ctrl_sema_id);
   g_timer_id = AllocHardTimer(1, 0x20, 1);
@@ -537,7 +536,7 @@ int ctrl_do_rtc_write(u32 *rtcbuf)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (0040110C) --------------------------------------------------------
-void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
+static void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
 {
   int i; // [sp+10h] [+10h]
   unsigned int xval; // [sp+20h] [+20h]
@@ -564,7 +563,7 @@ void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (004012E0) --------------------------------------------------------
-int setup_sram_ioman_drv(const char *devpfx, const char *devname)
+static int setup_sram_ioman_drv(const char *devpfx, const char *devname)
 {
   g_drv_sram_ioman.name = devpfx;
   g_drv_sram_ioman.type = 0x10;
@@ -578,27 +577,27 @@ int setup_sram_ioman_drv(const char *devpfx, const char *devname)
 // 402960: using guessed type int (*g_ops_sram_ioman[17])();
 
 //----- (00401374) --------------------------------------------------------
-int sram_drv_op_nulldev(void)
+static int sram_drv_op_nulldev(void)
 {
   return 0;
 }
 
 //----- (00401398) --------------------------------------------------------
-int sram_drv_op_init(iop_device_t *dev)
+static int sram_drv_op_init(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (004013C0) --------------------------------------------------------
-int sram_drv_op_deinit(iop_device_t *dev)
+static int sram_drv_op_deinit(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (004013E8) --------------------------------------------------------
-int sram_drv_op_open(iop_file_t *f, const char *name, int flags)
+static int sram_drv_op_open(iop_file_t *f, const char *name, int flags)
 {
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
   int state; // [sp+14h] [+14h] BYREF
@@ -615,7 +614,7 @@ int sram_drv_op_open(iop_file_t *f, const char *name, int flags)
 }
 
 //----- (00401480) --------------------------------------------------------
-int sram_drv_op_close(iop_file_t *f)
+static int sram_drv_op_close(iop_file_t *f)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -629,7 +628,7 @@ int sram_drv_op_close(iop_file_t *f)
 }
 
 //----- (004014FC) --------------------------------------------------------
-int sram_drv_op_read(iop_file_t *f, void *ptr, int size)
+static int sram_drv_op_read(iop_file_t *f, void *ptr, int size)
 {
   int sizeb; // $v0
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
@@ -644,7 +643,7 @@ int sram_drv_op_read(iop_file_t *f, void *ptr, int size)
 }
 
 //----- (00401620) --------------------------------------------------------
-int sram_drv_op_write(iop_file_t *f, void *ptr, int size)
+static int sram_drv_op_write(iop_file_t *f, void *ptr, int size)
 {
   int sizeb; // $v0
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
@@ -662,7 +661,7 @@ int sram_drv_op_write(iop_file_t *f, void *ptr, int size)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00401758) --------------------------------------------------------
-int sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
+static int sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
 {
   struct sram_drv_privdata_ *privdata; // [sp+0h] [+0h]
 
@@ -688,7 +687,7 @@ int sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
 }
 
 //----- (00401890) --------------------------------------------------------
-int do_rpc_start1(void)
+static int do_rpc_start1(void)
 {
   iop_thread_t thparam; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]
@@ -706,7 +705,7 @@ int do_rpc_start1(void)
 }
 
 //----- (0040191C) --------------------------------------------------------
-void rpc_thread1(void *userdata)
+static void rpc_thread1(void *userdata)
 {
   SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
   SifRpcServerData_t sd[4];
@@ -727,7 +726,7 @@ void rpc_thread1(void *userdata)
 // 40191C: using guessed type SifRpcServerData_t sd4;
 
 //----- (00401A48) --------------------------------------------------------
-void *rpc_1470000_handler(int fno, void *buffer, int length)
+static void *rpc_1470000_handler(int fno, void *buffer, int length)
 {
   (void)length;
   switch ( fno )
@@ -769,7 +768,7 @@ void *rpc_1470000_handler(int fno, void *buffer, int length)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00401BA0) --------------------------------------------------------
-void *rpc_1470001_handler(int fno, void *buffer, int length)
+static void *rpc_1470001_handler(int fno, void *buffer, int length)
 {
   (void)length;
   switch ( fno )
@@ -820,7 +819,7 @@ void *rpc_1470001_handler(int fno, void *buffer, int length)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00401D30) --------------------------------------------------------
-void *rpc_1470002_handler(int fno, void *buffer, int length)
+static void *rpc_1470002_handler(int fno, void *buffer, int length)
 {
   (void)length;
   *(u32 *)buffer = ( fno == 4 ) ? ctrl_do_rtc_write(buffer) : -22;
@@ -828,7 +827,7 @@ void *rpc_1470002_handler(int fno, void *buffer, int length)
 }
 
 //----- (00401DCC) --------------------------------------------------------
-void *rpc_1470003_handler(int fno, void *buffer, int length)
+static void *rpc_1470003_handler(int fno, void *buffer, int length)
 {
   (void)length;
   if ( fno != 4 )
@@ -848,7 +847,7 @@ void *rpc_1470003_handler(int fno, void *buffer, int length)
 }
 
 //----- (00401EB0) --------------------------------------------------------
-int do_rpc_start2(void)
+static int do_rpc_start2(void)
 {
   iop_thread_t thparam; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]
@@ -866,7 +865,7 @@ int do_rpc_start2(void)
 }
 
 //----- (00401F3C) --------------------------------------------------------
-void rpc_thread2(void *userdata)
+static void rpc_thread2(void *userdata)
 {
   SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
   SifRpcServerData_t sd[2];
@@ -883,7 +882,7 @@ void rpc_thread2(void *userdata)
 // 401F3C: using guessed type SifRpcServerData_t sd2;
 
 //----- (00401FFC) --------------------------------------------------------
-void *rpc_1470200_handler(int fno, void *buffer, int length)
+static void *rpc_1470200_handler(int fno, void *buffer, int length)
 {
   (void)length;
   if ( (unsigned int)fno >= 3 )
@@ -900,7 +899,7 @@ void *rpc_1470200_handler(int fno, void *buffer, int length)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (004020E0) --------------------------------------------------------
-void *rpc_1470201_handler(int fno, void *buffer, int length)
+static void *rpc_1470201_handler(int fno, void *buffer, int length)
 {
   (void)length;
   if ( (unsigned int)fno >= 3 )
