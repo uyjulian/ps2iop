@@ -634,11 +634,8 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   int j; // [sp+30h] [+30h]
   int state; // [sp+34h] [+34h] BYREF
   unsigned __int8 stsH; // [sp+38h] [+38h]
-  unsigned __int8 stsL; // [sp+39h] [+39h]
-  unsigned __int8 cTmp; // [sp+3Ah] [+3Ah]
 
   m_unk0D = s147link_dev9_mem_mmio.m_unk0D;
-  cTmp = m_unk0D | 0x80;
   s147link_dev9_mem_mmio.m_unk0D = m_unk0D | 0x80;
   s147link_dev9_mem_mmio.m_unk22 = 2;
   if ( gbBRE )
@@ -664,7 +661,6 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   v4 = s147link_dev9_mem_mmio.m_unk0D;
   s147link_dev9_mem_mmio.m_unk0D = v4 & 0x7F;
   m_unk22 = s147link_dev9_mem_mmio.m_unk22;
-  cTmp = m_unk22 | 1;
   s147link_dev9_mem_mmio.m_unk22 = m_unk22 | 1;
   s147link_dev9_mem_mmio.m_node_unk05 = mynode | 0x40;
   s147link_dev9_mem_mmio.m_unk07 = 0;
@@ -721,7 +717,6 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   m_stsH_unk12 = s147link_dev9_mem_mmio.m_stsH_unk12;
   stsH = m_stsH_unk12;
   m_stsL_unk13 = s147link_dev9_mem_mmio.m_stsL_unk13;
-  stsL = m_stsL_unk13;
   s147link_dev9_mem_mmio.m_stsH_unk12 = stsH;
   s147link_dev9_mem_mmio.m_stsL_unk13 = m_stsL_unk13;
   CpuResumeIntr(state);
@@ -826,9 +821,7 @@ void __fastcall reset_circlink()
 //----- (00402D58) --------------------------------------------------------
 u_int __fastcall alarm_handler(CL_COM *io_pCommon)
 {
-  unsigned __int8 m_stsL_unk13; // $v0
   int state; // [sp+10h] [+10h] BYREF
-  unsigned __int8 stsL; // [sp+14h] [+14h]
 
   if ( io_pCommon->timeout )
   {
@@ -841,8 +834,7 @@ u_int __fastcall alarm_handler(CL_COM *io_pCommon)
       else
       {
         CpuSuspendIntr(&state);
-        m_stsL_unk13 = s147link_dev9_mem_mmio.m_stsL_unk13;
-        stsL = m_stsL_unk13;
+        (void)s147link_dev9_mem_mmio.m_stsL_unk13;
         io_pCommon->timeout = 0;
         s147link_dev9_mem_mmio.m_unk17 = 1;
         s147link_dev9_mem_mmio.m_unk17 = 0xE;
