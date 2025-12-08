@@ -100,7 +100,7 @@ int __fastcall s147mdev_4_addfs(iop_device_t *drv, int unit10)
     Kprintf("s147mdev.irx: Invalid device table\n");
     return -1;
   }
-  retval = ((int (__fastcall *)(iop_device_t *))drv->ops->init)(drv);
+  retval = drv->ops->init(drv);
   if ( retval >= 0 )
     g_atfile_unit_info[unit10 / 10] = drv;
   return retval;
@@ -116,7 +116,7 @@ int __fastcall s147mdev_5_delfs(int unit10)
     Kprintf("s147mdev.irx: Invalid unit number\n");
     return -1;
   }
-  retval = ( g_atfile_unit_info[unit10 / 10] ) ? ((int (__fastcall *)(iop_device_t *))g_atfile_unit_info[unit10 / 10]->ops->deinit)(g_atfile_unit_info[unit10 / 10]) : 0;
+  retval = ( g_atfile_unit_info[unit10 / 10] ) ? g_atfile_unit_info[unit10 / 10]->ops->deinit(g_atfile_unit_info[unit10 / 10]) : 0;
   if ( retval >= 0 )
     g_atfile_unit_info[unit10 / 10] = 0;
   return retval;
@@ -172,10 +172,7 @@ int __cdecl atfile_drv_op_open(iop_file_t *f, const char *name, int flags)
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
     return -19;
   }
-  retres = ((int (__fastcall *)(iop_file_t *, const char *, int))g_atfile_unit_info[unit / 10]->ops->open)(
-             &fstk,
-             name,
-             flags);
+  retres = g_atfile_unit_info[unit / 10]->ops->open(&fstk, name, flags);
   f->privdata = fstk.privdata;
   return retres;
 }
@@ -201,7 +198,7 @@ int __cdecl atfile_drv_op_close(iop_file_t *f)
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
     return -19;
   }
-  return ((int (__fastcall *)(iop_file_t *))g_atfile_unit_info[unit / 10]->ops->close)(&fstk);
+  return g_atfile_unit_info[unit / 10]->ops->close(&fstk);
 }
 
 //----- (004008AC) --------------------------------------------------------
@@ -225,7 +222,7 @@ int __cdecl atfile_drv_op_read(iop_file_t *f, void *ptr, int size)
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
     return -19;
   }
-  return ((int (__fastcall *)(iop_file_t *, void *, int))g_atfile_unit_info[unit / 10]->ops->read)(&fstk, ptr, size);
+  return g_atfile_unit_info[unit / 10]->ops->read(&fstk, ptr, size);
 }
 
 //----- (00400A78) --------------------------------------------------------
@@ -249,10 +246,7 @@ int __cdecl atfile_drv_op_write(iop_file_t *f, void *ptr, int size)
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
     return -19;
   }
-  return ((int (__fastcall *)(iop_file_t *, void *, int))g_atfile_unit_info[unit / 10]->ops->write)(
-           &fstk,
-           ptr,
-           size);
+  return g_atfile_unit_info[unit / 10]->ops->write(&fstk, ptr, size);
 }
 
 //----- (00400C44) --------------------------------------------------------
@@ -276,8 +270,5 @@ int __cdecl atfile_drv_op_lseek(iop_file_t *f, int offset, int mode)
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
     return -19;
   }
-  return ((int (__fastcall *)(iop_file_t *, int, int))g_atfile_unit_info[unit / 10]->ops->lseek)(
-           &fstk,
-           offset,
-           mode);
+  return g_atfile_unit_info[unit / 10]->ops->lseek(&fstk, offset, mode);
 }

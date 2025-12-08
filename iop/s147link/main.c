@@ -106,16 +106,16 @@ typedef struct __anon_struct_35
 
 int __fastcall _start(int argc, char **argv);
 void __fastcall T_fix(CL_COM *io_pCommon);
-int __fastcall clink_InterruptHandler(CL_COM *io_pCommon);
+int clink_InterruptHandler(void *userdata);
 int __fastcall cl_mread(void *dstptr, int count);
 int __fastcall cl_write(int node, unsigned __int8 *srcptr, int size);
 int __fastcall cl_write_custom(int node, unsigned __int8 *srcptr, int cpVal);
 int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count);
 int __fastcall InitS147link(int maxnode, int mynode, int priority);
 void __fastcall reset_circlink();
-u_int __fastcall alarm_handler(CL_COM *io_pCommon);
+unsigned int alarm_handler(void *userdata);
 void s147link_loop(void *userdata);
-void *__fastcall dispatch(unsigned int fno, void *buf, int size);
+void *dispatch(int fno, void *buf, int size);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -181,7 +181,7 @@ void __fastcall T_fix(CL_COM *io_pCommon)
 }
 
 //----- (00400458) --------------------------------------------------------
-int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
+int clink_InterruptHandler(void *userdata)
 {
   vu8 m_unk09; // $v0
   unsigned __int8 v11; // $v0
@@ -199,7 +199,9 @@ int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
   unsigned int rxfc; // [sp+24h] [+24h]
   unsigned int tflag; // [sp+28h] [+28h]
   int state; // [sp+2Ch] [+2Ch] BYREF
+  CL_COM *io_pCommon;
 
+  io_pCommon = (CL_COM *)userdata;
   stsH = s147link_dev9_mem_mmio.m_stsH_unk12;
   stsL = s147link_dev9_mem_mmio.m_stsL_unk13;
   if ( (stsL & 8) != 0 )
@@ -618,7 +620,7 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   cl_info.rbfix = 0;
   CpuSuspendIntr(&state);
   ReleaseIntrHandler(13);
-  RegisterIntrHandler(13, 1, (int (__fastcall *)(void *))clink_InterruptHandler, &cl_info);
+  RegisterIntrHandler(13, 1, clink_InterruptHandler, &cl_info);
   s147link_dev9_mem_mmio.m_unk01 = 0xC;
   s147link_dev9_mem_mmio.m_unk14 = 0x8E;
   s147link_dev9_mem_mmio.m_unk15 = 0x1A;
@@ -651,7 +653,7 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
     return -2;
   }
   USec2SysClock(0x7D0u, &cl_info.sys_clock);
-  if ( SetAlarm(&cl_info.sys_clock, (unsigned int (__fastcall *)(void *))alarm_handler, &cl_info) )
+  if ( SetAlarm(&cl_info.sys_clock, alarm_handler, &cl_info) )
   {
     printf("S147LINK: Cannot set alarm handler ...\n");
     DeleteThread(thid);
@@ -710,10 +712,12 @@ void __fastcall reset_circlink()
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00402D58) --------------------------------------------------------
-u_int __fastcall alarm_handler(CL_COM *io_pCommon)
+unsigned int alarm_handler(void *userdata)
 {
   int state; // [sp+10h] [+10h] BYREF
+  CL_COM *io_pCommon;
 
+  io_pCommon = (CL_COM *)userdata;
   if ( io_pCommon->timeout )
   {
     if ( io_pCommon->T_time[io_pCommon->T_node] )
@@ -772,12 +776,12 @@ void s147link_loop(void *userdata)
 
   (void)userdata;
   sceSifSetRpcQueue(&qd, GetThreadId());
-  sceSifRegisterRpc(&sd, 0x14799, (SifRpcFunc_t)dispatch, rpc_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd, 0x14799, dispatch, rpc_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
 }
 
 //----- (004030A8) --------------------------------------------------------
-void *__fastcall dispatch(unsigned int fno, void *buf, int size)
+void *dispatch(int fno, void *buf, int size)
 {
   int state; // [sp+14h] [+14h] BYREF
   int node; // [sp+18h] [+18h]

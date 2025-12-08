@@ -717,10 +717,10 @@ void rpc_thread1(void *userdata)
   (void)userdata;
   sceSifInitRpc(0);
   sceSifSetRpcQueue(&qd, GetThreadId());
-  sceSifRegisterRpc(&sd[0], 0x1470000, (SifRpcFunc_t)rpc_1470000_handler, g_rpc1_buf, 0, 0, &qd);
-  sceSifRegisterRpc(&sd[1], 0x1470001, (SifRpcFunc_t)rpc_1470001_handler, g_rpc1_buf, 0, 0, &qd);
-  sceSifRegisterRpc(&sd[2], 0x1470002, (SifRpcFunc_t)rpc_1470002_handler, g_rpc1_buf, 0, 0, &qd);
-  sceSifRegisterRpc(&sd[3], 0x1470003, (SifRpcFunc_t)rpc_1470003_handler, g_rpc1_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[0], 0x1470000, rpc_1470000_handler, g_rpc1_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[1], 0x1470001, rpc_1470001_handler, g_rpc1_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[2], 0x1470002, rpc_1470002_handler, g_rpc1_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[3], 0x1470003, rpc_1470003_handler, g_rpc1_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
 }
 // 402A40: using guessed type int g_rpc1_buf[8];
@@ -877,8 +877,8 @@ void rpc_thread2(void *userdata)
   (void)userdata;
   sceSifInitRpc(0);
   sceSifSetRpcQueue(&qd, GetThreadId());
-  sceSifRegisterRpc(&sd[0], 0x1470200, (SifRpcFunc_t)rpc_1470200_handler, g_rpc2_buf, 0, 0, &qd);
-  sceSifRegisterRpc(&sd[1], 0x1470201, (SifRpcFunc_t)rpc_1470201_handler, g_rpc2_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[0], 0x1470200, rpc_1470200_handler, g_rpc2_buf, 0, 0, &qd);
+  sceSifRegisterRpc(&sd[1], 0x1470201, rpc_1470201_handler, g_rpc2_buf, 0, 0, &qd);
   sceSifRpcLoop(&qd);
 }
 // 402A60: using guessed type int g_rpc2_buf[260];
