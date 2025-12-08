@@ -135,32 +135,26 @@ int __fastcall _start(int argc, char **argv)
   int mynode; // [sp+14h] [+14h]
   int priority; // [sp+18h] [+18h]
 
-  maxnode = 0;
-  if ( argc >= 2 )
-    maxnode = strtol(argv[1], 0, 10);
+  maxnode = ( argc >= 2 ) ? strtol(argv[1], 0, 10) : 0;
   if ( maxnode < 2 || maxnode >= 16 )
     maxnode = 2;
-  mynode = 0;
-  if ( argc >= 3 )
-    mynode = strtol(argv[2], 0, 10);
+  mynode = ( argc >= 3 ) ? strtol(argv[2], 0, 10) : 0;
   if ( mynode <= 0 || maxnode < mynode )
     mynode = 1;
-  priority = 0;
-  if ( argc >= 4 )
-    priority = strtol(argv[3], 0, 10);
+  priority = ( argc >= 4 ) ? strtol(argv[3], 0, 10) : 0;
   if ( priority < 9 || priority >= 124 )
     priority = 28;
-  gbBRE = 1;
-  if ( argc >= 5 && toupper(*argv[4]) == 'N' && toupper(argv[4][1]) == 'B' && toupper(argv[4][2]) == 'R' )
-    gbBRE = 0;
+  gbBRE = ( argc >= 5 && toupper(*argv[4]) == 'N' && toupper(argv[4][1]) == 'B' && toupper(argv[4][2]) == 'R' ) ? 0 : 1;
   printf("== S147LINK (%d/%d)@%d ", mynode, maxnode, priority);
   if ( !gbBRE )
     printf("NBR ");
   printf("v2.07 ==\n");
-  if ( !InitS147link(maxnode, mynode, priority) )
-    return 0;
-  printf("S147LINK: Can't Initialize driver thread.\n");
-  return 1;
+  if ( InitS147link(maxnode, mynode, priority) )
+  {
+    printf("S147LINK: Can't Initialize driver thread.\n");
+    return 1;
+  }
+  return 0;
 }
 // 40005C: variable 'maxnode' is possibly undefined
 // 4000C8: variable 'mynode' is possibly undefined
@@ -456,47 +450,44 @@ int __fastcall cl_mread(void *dstptr, int count)
     CpuResumeIntr(state);
     return 0;
   }
+  if ( count >= (int)size )
+    count = size;
+  else
+    size = count;
+  packs1 = cl_info.R_out + size - 0x200;
+  if ( packs1 > 0 )
+  {
+    size -= packs1;
+    size <<= 6;
+    memcpy(dstptr, rx_buff[cl_info.R_out], size);
+    memcpy((char *)dstptr + size, rx_buff, packs1 << 6);
+  }
   else
   {
-    if ( count >= (int)size )
-      count = size;
-    else
-      size = count;
-    packs1 = cl_info.R_out + size - 0x200;
-    if ( packs1 > 0 )
-    {
-      size -= packs1;
-      size <<= 6;
-      memcpy(dstptr, rx_buff[cl_info.R_out], size);
-      memcpy((char *)dstptr + size, rx_buff, packs1 << 6);
-    }
-    else
-    {
-      memcpy(dstptr, rx_buff[cl_info.R_out], size << 6);
-    }
-    cl_info.R_remain += count;
-    cl_info.R_out += count;
-    cl_info.R_out = cl_info.R_out & 0x1FF;
-    if ( cl_info.R_remain >= 0x201 )
-    {
-      cl_info.R_remain = 0x200;
-      cl_info.R_out = 0;
-      cl_info.R_in = 0;
-      if ( !++cl_info.rbfix )
-        --cl_info.rbfix;
-      count = 0;
-    }
-    if ( cl_info.R_remain == 512 && cl_info.R_in != cl_info.R_out )
-    {
-      cl_info.R_out = 0;
-      cl_info.R_in = 0;
-      if ( !++cl_info.rbfix )
-        --cl_info.rbfix;
-      count = 0;
-    }
-    CpuResumeIntr(state);
-    return count;
+    memcpy(dstptr, rx_buff[cl_info.R_out], size << 6);
   }
+  cl_info.R_remain += count;
+  cl_info.R_out += count;
+  cl_info.R_out = cl_info.R_out & 0x1FF;
+  if ( cl_info.R_remain >= 0x201 )
+  {
+    cl_info.R_remain = 0x200;
+    cl_info.R_out = 0;
+    cl_info.R_in = 0;
+    if ( !++cl_info.rbfix )
+      --cl_info.rbfix;
+    count = 0;
+  }
+  if ( cl_info.R_remain == 512 && cl_info.R_in != cl_info.R_out )
+  {
+    cl_info.R_out = 0;
+    cl_info.R_in = 0;
+    if ( !++cl_info.rbfix )
+      --cl_info.rbfix;
+    count = 0;
+  }
+  CpuResumeIntr(state);
+  return count;
 }
 
 //----- (00401864) --------------------------------------------------------
@@ -507,27 +498,24 @@ int __fastcall cl_write(int node, unsigned __int8 *srcptr, int size)
 
   node_tmp = node;
   CpuSuspendIntr(&state);
-  if ( cl_info.T_remain && size < 0x41 )
-  {
-    memcpy(tx_buff[cl_info.T_in], srcptr, size);
-    tx_buff[cl_info.T_in][0] = cl_info.mynode;
-    tx_buff[cl_info.T_in][1] = node_tmp;
-    tx_buff[cl_info.T_in][2] = 4;
-    tx_buff[cl_info.T_in][3] = 0;
-    tx_buff[cl_info.T_in][4] = ++cl_info.T_number;
-    --cl_info.T_remain;
-    ++cl_info.T_in;
-    cl_info.T_in = (cl_info.T_in & 0xFF);
-    s147link_dev9_mem_mmio.m_unk15 = 0x1B;
-    clink_InterruptHandler(&cl_info);
-    CpuResumeIntr(state);
-    return size;
-  }
-  else
+  if ( !cl_info.T_remain || size >= 0x41 )
   {
     CpuResumeIntr(state);
     return 0;
   }
+  memcpy(tx_buff[cl_info.T_in], srcptr, size);
+  tx_buff[cl_info.T_in][0] = cl_info.mynode;
+  tx_buff[cl_info.T_in][1] = node_tmp;
+  tx_buff[cl_info.T_in][2] = 4;
+  tx_buff[cl_info.T_in][3] = 0;
+  tx_buff[cl_info.T_in][4] = ++cl_info.T_number;
+  --cl_info.T_remain;
+  ++cl_info.T_in;
+  cl_info.T_in = (cl_info.T_in & 0xFF);
+  s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+  clink_InterruptHandler(&cl_info);
+  CpuResumeIntr(state);
+  return size;
 }
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
@@ -541,25 +529,22 @@ int __fastcall cl_write_custom(int node, unsigned __int8 *srcptr, int cpVal)
   node_tmp = node;
   cpVal_tmp = cpVal;
   CpuSuspendIntr(&state);
-  if ( cl_info.T_remain )
-  {
-    memcpy(tx_buff[cl_info.T_in], srcptr, sizeof(unsigned __int8[64]));
-    tx_buff[cl_info.T_in][0] = cl_info.mynode;
-    tx_buff[cl_info.T_in][1] = node_tmp;
-    tx_buff[cl_info.T_in][2] = cpVal_tmp;
-    --cl_info.T_remain;
-    ++cl_info.T_in;
-    cl_info.T_in = (cl_info.T_in & 0xFF);
-    s147link_dev9_mem_mmio.m_unk15 = 0x1B;
-    clink_InterruptHandler(&cl_info);
-    CpuResumeIntr(state);
-    return 64;
-  }
-  else
+  if ( !cl_info.T_remain )
   {
     CpuResumeIntr(state);
     return 0;
   }
+  memcpy(tx_buff[cl_info.T_in], srcptr, sizeof(unsigned __int8[64]));
+  tx_buff[cl_info.T_in][0] = cl_info.mynode;
+  tx_buff[cl_info.T_in][1] = node_tmp;
+  tx_buff[cl_info.T_in][2] = cpVal_tmp;
+  --cl_info.T_remain;
+  ++cl_info.T_in;
+  cl_info.T_in = (cl_info.T_in & 0xFF);
+  s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+  clink_InterruptHandler(&cl_info);
+  CpuResumeIntr(state);
+  return 64;
 }
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
@@ -583,32 +568,29 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
     srcptr[(i * 0x40) + 4] = ++cl_info.T_number;
   }
   CpuSuspendIntr(&state);
-  if ( cl_info.T_remain >= (unsigned int)count )
-  {
-    packs1 = cl_info.T_in + count - 0x100;
-    if ( packs1 > 0 )
-    {
-      packs0 = count - packs1;
-      memcpy(tx_buff[cl_info.T_in], srcptr, (count - packs1) << 6);
-      memcpy(tx_buff, &srcptr[0x40 * packs0], packs1 << 6);
-    }
-    else
-    {
-      memcpy(tx_buff[cl_info.T_in], srcptr, count << 6);
-    }
-    cl_info.T_remain -= count;
-    cl_info.T_in += count;
-    cl_info.T_in = (cl_info.T_in & 0xFF);
-    s147link_dev9_mem_mmio.m_unk15 = 0x1B;
-    clink_InterruptHandler(&cl_info);
-    CpuResumeIntr(state);
-    return count;
-  }
-  else
+  if ( cl_info.T_remain < (unsigned int)count )
   {
     CpuResumeIntr(state);
     return 0;
   }
+  packs1 = cl_info.T_in + count - 0x100;
+  if ( packs1 > 0 )
+  {
+    packs0 = count - packs1;
+    memcpy(tx_buff[cl_info.T_in], srcptr, (count - packs1) << 6);
+    memcpy(tx_buff, &srcptr[0x40 * packs0], packs1 << 6);
+  }
+  else
+  {
+    memcpy(tx_buff[cl_info.T_in], srcptr, count << 6);
+  }
+  cl_info.T_remain -= count;
+  cl_info.T_in += count;
+  cl_info.T_in = (cl_info.T_in & 0xFF);
+  s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+  clink_InterruptHandler(&cl_info);
+  CpuResumeIntr(state);
+  return count;
 }
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
@@ -633,10 +615,7 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   m_unk0D = s147link_dev9_mem_mmio.m_unk0D;
   s147link_dev9_mem_mmio.m_unk0D = m_unk0D | 0x80;
   s147link_dev9_mem_mmio.m_unk22 = 2;
-  if ( gbBRE )
-    s147link_dev9_mem_mmio.m_unk23 = 0x51;
-  else
-    s147link_dev9_mem_mmio.m_unk23 = 0x11;
+  s147link_dev9_mem_mmio.m_unk23 = gbBRE ? 0x51 : 0x11;
   s147link_dev9_mem_mmio.m_maxnode_unk2B = maxnode;
   s147link_dev9_mem_mmio.m_mynode_unk2D = mynode;
   s147link_dev9_mem_mmio.m_unk31 = 0;
@@ -721,34 +700,25 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
   param.stacksize = 0x800;
   param.option = 0;
   thid = CreateThread(&param);
-  if ( thid > 0 )
-  {
-    if ( StartThread(thid, 0) )
-    {
-      printf("S147LINK: Cannot start RPC server thread ...\n");
-      DeleteThread(thid);
-      return -2;
-    }
-    else
-    {
-      USec2SysClock(0x7D0u, &cl_info.sys_clock);
-      if ( SetAlarm(&cl_info.sys_clock, (unsigned int (__fastcall *)(void *))alarm_handler, &cl_info) )
-      {
-        printf("S147LINK: Cannot set alarm handler ...\n");
-        DeleteThread(thid);
-        return -3;
-      }
-      else
-      {
-        return 0;
-      }
-    }
-  }
-  else
+  if ( thid <= 0 )
   {
     printf("S147LINK: Cannot create RPC server thread ...\n");
     return -1;
   }
+  if ( StartThread(thid, 0) )
+  {
+    printf("S147LINK: Cannot start RPC server thread ...\n");
+    DeleteThread(thid);
+    return -2;
+  }
+  USec2SysClock(0x7D0u, &cl_info.sys_clock);
+  if ( SetAlarm(&cl_info.sys_clock, (unsigned int (__fastcall *)(void *))alarm_handler, &cl_info) )
+  {
+    printf("S147LINK: Cannot set alarm handler ...\n");
+    DeleteThread(thid);
+    return -3;
+  }
+  return 0;
 }
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
@@ -767,10 +737,7 @@ void __fastcall reset_circlink()
   m_unk0D = s147link_dev9_mem_mmio.m_unk0D;
   s147link_dev9_mem_mmio.m_unk0D = m_unk0D | 0x80;
   s147link_dev9_mem_mmio.m_unk22 = 2;
-  if ( gbBRE )
-    s147link_dev9_mem_mmio.m_unk23 = 0x51;
-  else
-    s147link_dev9_mem_mmio.m_unk23 = 0x11;
+  s147link_dev9_mem_mmio.m_unk23 = gbBRE ? 0x51 : 0x11;
   s147link_dev9_mem_mmio.m_maxnode_unk2B = cl_info.maxnode;
   s147link_dev9_mem_mmio.m_mynode_unk2D = cl_info.mynode;
   s147link_dev9_mem_mmio.m_unk31 = 0;
@@ -981,10 +948,7 @@ void *__fastcall dispatch(unsigned int fno, void *buf, int size)
       printf("S147LINK: Unknown RPC command (%X)\n", fno);
       break;
   }
-  if ( cl_info.online )
-    tmp_online = *(_DWORD *)buf | 0x10000;
-  else
-    tmp_online = *(_DWORD *)buf;
+  tmp_online = *(_DWORD *)buf | (cl_info.online ? 0x10000 : 0);
   *(_DWORD *)buf = tmp_online;
   for ( i = 1; i < cl_info.maxnode; i += 1 )
   {

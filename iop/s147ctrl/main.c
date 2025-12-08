@@ -204,23 +204,17 @@ int _start()
   Kprintf("\n");
   Kprintf("s147ctrl.irx: System147 Control/SRAM Driver v%d.%d\n", 2, 8);
   setup_ac_delay_regs();
-  if ( setup_ctrl_ioman_drv("ctrl", "Ctrl") >= 0 )
-  {
-    if ( setup_sram_ioman_drv("sram", "SRAM") >= 0 )
-    {
-      return 0;
-    }
-    else
-    {
-      Kprintf("s147ctrl.irx: Sram initialize failed\n");
-      return 1;
-    }
-  }
-  else
+  if ( setup_ctrl_ioman_drv("ctrl", "Ctrl") < 0 )
   {
     Kprintf("s147ctrl.irx: Ctrl initialize failed\n");
     return 1;
   }
+  if ( setup_sram_ioman_drv("sram", "SRAM") < 0 )
+  {
+    Kprintf("s147ctrl.irx: Sram initialize failed\n");
+    return 1;
+  }
+  return 0;
 }
 
 //----- (004000C0) --------------------------------------------------------
@@ -258,31 +252,25 @@ u32 __fastcall watchdog_alarm_cb(struct watchdog_info_ *userdata)
   int state; // [sp+14h] [+14h] BYREF
   vu8 v6; // [sp+18h] [+18h]
 
-  if ( userdata->g_watchdog_started == 1 )
-  {
-    CpuSuspendIntr(&state);
-    s147link_dev9_mem_mmio.m_watchdog_flag_unk34 = 0;
-    m_watchdog_flag_unk34 = s147link_dev9_mem_mmio.m_watchdog_flag_unk34;
-    v6 = m_watchdog_flag_unk34;
-    CpuResumeIntr(state);
-    if ( v6 == 0x3E )
-    {
-      s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
-      s147_dev9_mem_mmio.m_led = g_watchdog_flag_1;
-      if ( (((unsigned int)g_watchdog_count_1 >> 3) & 1) != 0 )
-        v2 = 2;
-      else
-        v2 = 1;
-      g_watchdog_flag_1 = v2;
-      ++g_watchdog_count_1;
-    }
-    return userdata->g_watchdog_clock.lo;
-  }
-  else
+  if ( userdata->g_watchdog_started != 1 )
   {
     s147_dev9_mem_mmio.m_led = 3;
     return 0;
   }
+  CpuSuspendIntr(&state);
+  s147link_dev9_mem_mmio.m_watchdog_flag_unk34 = 0;
+  m_watchdog_flag_unk34 = s147link_dev9_mem_mmio.m_watchdog_flag_unk34;
+  v6 = m_watchdog_flag_unk34;
+  CpuResumeIntr(state);
+  if ( v6 == 0x3E )
+  {
+    s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+    s147_dev9_mem_mmio.m_led = g_watchdog_flag_1;
+    v2 = ( (((unsigned int)g_watchdog_count_1 >> 3) & 1) != 0 ) ? 2 : 1;
+    g_watchdog_flag_1 = v2;
+    ++g_watchdog_count_1;
+  }
+  return userdata->g_watchdog_clock.lo;
 }
 // 402948: using guessed type int g_watchdog_count_1;
 // 40294C: using guessed type char g_watchdog_flag_1;
@@ -315,33 +303,32 @@ int __cdecl ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
   int state[2]; // [sp+10h] [+10h] BYREF
 
   (void)flags;
-  if ( f->unit == 99 )
+  if ( f->unit != 99 )
+    return 0;
+  if ( !strcmp(name, "watchdog-start") )
   {
-    if ( !strcmp(name, "watchdog-start") )
+    Kprintf("s147ctrl.irx: wdt-start\n");
+    CpuSuspendIntr(state);
+    g_watchdog_info.g_watchdog_started = 1;
+    CpuResumeIntr(state[0]);
+  }
+  else if ( !strcmp(name, "watchdog-stop") )
+  {
+    Kprintf("s147ctrl.irx: wdt-stop\n");
+    CpuSuspendIntr(state);
+    g_watchdog_info.g_watchdog_started = 0;
+    CpuResumeIntr(state[0]);
+  }
+  else if ( !strcmp(name, "rpcserv-start") )
+  {
+    Kprintf("s147ctrl.irx: rpcserv-start\n");
+    if ( !g_rpc_started )
     {
-      Kprintf("s147ctrl.irx: wdt-start\n");
+      do_rpc_start1();
+      do_rpc_start2();
       CpuSuspendIntr(state);
-      g_watchdog_info.g_watchdog_started = 1;
+      g_rpc_started = 1;
       CpuResumeIntr(state[0]);
-    }
-    else if ( !strcmp(name, "watchdog-stop") )
-    {
-      Kprintf("s147ctrl.irx: wdt-stop\n");
-      CpuSuspendIntr(state);
-      g_watchdog_info.g_watchdog_started = 0;
-      CpuResumeIntr(state[0]);
-    }
-    else if ( !strcmp(name, "rpcserv-start") )
-    {
-      Kprintf("s147ctrl.irx: rpcserv-start\n");
-      if ( !g_rpc_started )
-      {
-        do_rpc_start1();
-        do_rpc_start2();
-        CpuSuspendIntr(state);
-        g_rpc_started = 1;
-        CpuResumeIntr(state[0]);
-      }
     }
   }
   return 0;
@@ -365,35 +352,29 @@ int __cdecl ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
   int retres; // [sp+14h] [+14h]
 
   unit = f->unit;
-  if ( unit == 4 )
+  switch ( unit )
   {
-    if ( size != 0x1C )
-      return -22;
-    retres = ctrl_do_rtc_read(ptr);
-    if ( retres < 0 )
-    {
-      Kprintf("s147ctrl.irx: RTC Read failed (%d)\n", retres);
+    case 4:
+      if ( size != 0x1C )
+        return -22;
+      retres = ctrl_do_rtc_read(ptr);
+      if ( retres < 0 )
+        Kprintf("s147ctrl.irx: RTC Read failed (%d)\n", retres);
       return retres;
-    }
-  }
-  else if ( unit == 12 )
-  {
-    if ( size != 2 )
-      return -22;
-    m_security_unlock_set1 = s147_dev9_mem_mmio.m_security_unlock_set1;
-    *(_BYTE *)ptr = m_security_unlock_set1;
-    m_security_unlock_set2 = s147_dev9_mem_mmio.m_security_unlock_set2;
-    *((_BYTE *)ptr + 1) = m_security_unlock_set2;
-    return 2;
-  }
-  else
-  {
-    if ( size != 1 )
-      return -22;
-    *(_BYTE *)ptr = *(_BYTE *)(unit + 0xB0000000);
-    return 1;
-  }
-  return retres;
+    case 12:
+      if ( size != 2 )
+        return -22;
+      m_security_unlock_set1 = s147_dev9_mem_mmio.m_security_unlock_set1;
+      *(_BYTE *)ptr = m_security_unlock_set1;
+      m_security_unlock_set2 = s147_dev9_mem_mmio.m_security_unlock_set2;
+      *((_BYTE *)ptr + 1) = m_security_unlock_set2;
+      return 2;
+    default:
+      if ( size != 1 )
+        return -22;
+      *(_BYTE *)ptr = *(_BYTE *)(unit + 0xB0000000);
+      return 1;
+  }  
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
@@ -404,33 +385,27 @@ int __cdecl ctrl_drv_op_write(iop_file_t *f, void *ptr, int size)
   int retres; // [sp+14h] [+14h]
 
   unit = f->unit;
-  if ( unit == 4 )
+  switch ( unit )
   {
-    if ( size != 0x1C )
-      return -22;
-    retres = ctrl_do_rtc_write(ptr);
-    if ( retres < 0 )
-    {
-      Kprintf("s147ctrl.irx: RTC Write failed (%d)\n", retres);
+    case 4:
+      if ( size != 0x1C )
+        return -22;
+      retres = ctrl_do_rtc_write(ptr);
+      if ( retres < 0 )
+        Kprintf("s147ctrl.irx: RTC Write failed (%d)\n", retres);
       return retres;
-    }
+    case 12:
+      if ( size != 2 )
+        return -22;
+      s147_dev9_mem_mmio.m_security_unlock_set1 = *(_BYTE *)ptr;
+      s147_dev9_mem_mmio.m_security_unlock_set2 = *((_BYTE *)ptr + 1);
+      return 2;
+    default:
+      if ( size != 1 )
+        return -22;
+      *(_BYTE *)(unit + 0xB0000000) = *(_BYTE *)ptr;
+      return 1;
   }
-  else if ( unit == 12 )
-  {
-    if ( size != 2 )
-      return -22;
-    s147_dev9_mem_mmio.m_security_unlock_set1 = *(_BYTE *)ptr;
-    s147_dev9_mem_mmio.m_security_unlock_set2 = *((_BYTE *)ptr + 1);
-    return 2;
-  }
-  else
-  {
-    if ( size != 1 )
-      return -22;
-    *(_BYTE *)(unit + 0xB0000000) = *(_BYTE *)ptr;
-    return 1;
-  }
-  return retres;
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
@@ -450,10 +425,12 @@ int create_ctrl_sema()
   g_ctrl_sema_param.max = 1;
   g_ctrl_sema_param.attr = 1;
   g_ctrl_sema_id = CreateSema(&g_ctrl_sema_param);
-  if ( g_ctrl_sema_id >= 0 )
-    return 0;
-  Kprintf("s147ctrl.irx: CreateSema error (%d)\n", g_ctrl_sema_id);
-  return -1;
+  if ( g_ctrl_sema_id < 0 )
+  {
+    Kprintf("s147ctrl.irx: CreateSema error (%d)\n", g_ctrl_sema_id);
+    return -1;
+  }
+  return 0;
 }
 
 //----- (004008EC) --------------------------------------------------------
@@ -658,13 +635,12 @@ int __cdecl sram_drv_op_close(iop_file_t *f)
 {
   int state; // [sp+10h] [+10h] BYREF
 
-  if ( f->privdata )
-  {
-    CpuSuspendIntr(&state);
-    FreeSysMemory(f->privdata);
-    CpuResumeIntr(state);
-    f->privdata = 0;
-  }
+  if ( !f->privdata )
+    return 0;
+  CpuSuspendIntr(&state);
+  FreeSysMemory(f->privdata);
+  CpuResumeIntr(state);
+  f->privdata = 0;
   return 0;
 }
 
@@ -678,10 +654,7 @@ int __cdecl sram_drv_op_read(iop_file_t *f, void *ptr, int size)
   privdata = (struct sram_drv_privdata_ *)f->privdata;
   if ( (signed __int32)privdata->m_curpos >= (signed __int32)privdata->m_maxpos )
     return 0;
-  if ( (signed __int32)privdata->m_maxpos >= (signed __int32)(privdata->m_curpos + size) )
-    sizeb = size;
-  else
-    sizeb = privdata->m_maxpos - privdata->m_curpos;
+  sizeb = ( (signed __int32)privdata->m_maxpos < (signed __int32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
   sizea = sizeb;
   memcpy(ptr, (const void *)(privdata->m_curpos + 0xB0C00000), sizeb);
   privdata->m_curpos += sizea;
@@ -698,10 +671,7 @@ int __cdecl sram_drv_op_write(iop_file_t *f, void *ptr, int size)
   privdata = (struct sram_drv_privdata_ *)f->privdata;
   if ( (signed __int32)privdata->m_curpos >= (signed __int32)privdata->m_maxpos )
     return 0;
-  if ( (signed __int32)privdata->m_maxpos >= (signed __int32)(privdata->m_curpos + size) )
-    sizeb = size;
-  else
-    sizeb = privdata->m_maxpos - privdata->m_curpos;
+  sizeb = ( (signed __int32)privdata->m_maxpos < (signed __int32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
   sizea = sizeb;
   s147_dev9_mem_mmio.m_sram_write_flag = 1;
   memcpy((void *)(privdata->m_curpos + 0xB0C00000), ptr, sizeb);
@@ -717,21 +687,19 @@ int __cdecl sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
   struct sram_drv_privdata_ *privdata; // [sp+0h] [+0h]
 
   privdata = (struct sram_drv_privdata_ *)f->privdata;
-  if ( mode == 1 )
+  switch ( mode )
   {
-    privdata->m_curpos += offset;
-  }
-  else if ( mode >= 2 )
-  {
-    if ( mode != 2 )
+    case 0:
+      privdata->m_curpos = offset;
+      break;
+    case 1:
+      privdata->m_curpos += offset;
+      break;
+    case 2:
+      privdata->m_curpos = privdata->m_maxpos + offset;
+      break;
+    default:
       return -22;
-    privdata->m_curpos = privdata->m_maxpos + offset;
-  }
-  else
-  {
-    if ( mode )
-      return -22;
-    privdata->m_curpos = offset;
   }
   if ( (signed __int32)privdata->m_maxpos >= (signed __int32)privdata->m_curpos )
     return privdata->m_curpos;
@@ -920,10 +888,7 @@ void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length)
 void *__fastcall rpc_1470002_handler(int fno, void *buffer, int length)
 {
   (void)length;
-  if ( fno == 4 )
-    *(_DWORD *)buffer = ctrl_do_rtc_write(buffer);
-  else
-    *(_DWORD *)buffer = -22;
+  *(_DWORD *)buffer = ( fno == 4 ) ? ctrl_do_rtc_write(buffer) : -22;
   return buffer;
 }
 
@@ -931,11 +896,7 @@ void *__fastcall rpc_1470002_handler(int fno, void *buffer, int length)
 void *__fastcall rpc_1470003_handler(int fno, void *buffer, int length)
 {
   (void)length;
-  if ( fno == 4 )
-  {
-    *((_DWORD *)buffer + 7) = ctrl_do_rtc_read(buffer);
-  }
-  else
+  if ( fno != 4 )
   {
     *(_DWORD *)buffer = 0;
     *((_DWORD *)buffer + 1) = 0;
@@ -945,7 +906,9 @@ void *__fastcall rpc_1470003_handler(int fno, void *buffer, int length)
     *((_DWORD *)buffer + 5) = 0;
     *((_DWORD *)buffer + 6) = 0;
     *((_DWORD *)buffer + 7) = -22;
+    return buffer;
   }
+  *((_DWORD *)buffer + 7) = ctrl_do_rtc_read(buffer);
   return buffer;
 }
 
@@ -994,14 +957,12 @@ void *__fastcall rpc_1470200_handler(int fno, void *buffer, int length)
   if ( (unsigned int)fno >= 3 )
   {
     *(_DWORD *)buffer = -1;
+    return buffer;
   }
-  else
-  {
-    s147_dev9_mem_mmio.m_sram_write_flag = 1;
-    memcpy((void *)(*((_DWORD *)buffer + 256) + 0xB0C00000), buffer, *((_DWORD *)buffer + 257));
-    s147_dev9_mem_mmio.m_sram_write_flag = 0;
-    *(_DWORD *)buffer = 0;
-  }
+  s147_dev9_mem_mmio.m_sram_write_flag = 1;
+  memcpy((void *)(*((_DWORD *)buffer + 256) + 0xB0C00000), buffer, *((_DWORD *)buffer + 257));
+  s147_dev9_mem_mmio.m_sram_write_flag = 0;
+  *(_DWORD *)buffer = 0;
   return buffer;
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
@@ -1014,11 +975,9 @@ void *__fastcall rpc_1470201_handler(int fno, void *buffer, int length)
   {
     memset(buffer, 0, *((_DWORD *)buffer + 1));
     *((_DWORD *)buffer + 256) = -1;
+    return buffer;
   }
-  else
-  {
-    memcpy(buffer, (const void *)(*(_DWORD *)buffer + 0xB0C00000), *((_DWORD *)buffer + 1));
-    *((_DWORD *)buffer + 256) = 0;
-  }
+  memcpy(buffer, (const void *)(*(_DWORD *)buffer + 0xB0C00000), *((_DWORD *)buffer + 1));
+  *((_DWORD *)buffer + 256) = 0;
   return buffer;
 }
