@@ -207,69 +207,52 @@ static int clink_InterruptHandler(void *userdata)
   {
     for ( j_v6 = 1; io_pCommon->maxnode >= j_v6; ++j_v6 )
     {
-      if ( j_v6 == io_pCommon->mynode )
+      if ( j_v6 != io_pCommon->mynode )
       {
-        rxfc |= 1 << j_v6;
-      }
-      else if ( (rxfs & (1 << j_v6)) != 0 )
-      {
+        if ( (rxfs & (1 << j_v6)) == 0 )
+        {
+          continue;
+        }
         s147link_dev9_mem_mmio.m_node_unk05 = j_v6 | 0xC0;
         s147link_dev9_mem_mmio.m_unk07 = 0;
         m_unk09 = s147link_dev9_mem_mmio.m_unk09;
         if ( m_unk09 == io_pCommon->mynode )
         {
-          if ( s147link_dev9_mem_mmio.m_unk09 == 4 )
+          if ( s147link_dev9_mem_mmio.m_unk09 == 4 && !s147link_dev9_mem_mmio.m_unk09 )
           {
-            if ( s147link_dev9_mem_mmio.m_unk09 )
+            rnum = s147link_dev9_mem_mmio.m_unk09;
+            if ( io_pCommon->R_number[j_v6] != rnum )
             {
-              rxfc |= 1 << j_v6;
-            }
-            else
-            {
-              rnum = s147link_dev9_mem_mmio.m_unk09;
-              if ( io_pCommon->R_number[j_v6] == rnum )
+              v11 = s147link_dev9_mem_mmio.m_unk09;
+              if ( io_pCommon->R_remain )
               {
-                rxfc |= 1 << j_v6;
+                bufptr = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
+                *bufptr++ = j_v6;
+                *bufptr++ = io_pCommon->mynode;
+                *bufptr++ = 4;
+                *bufptr++ = 0;
+                *bufptr++ = rnum;
+                *bufptr = v11;
+                for ( k_v7 = 0; k_v7 < 0x3A; ++k_v7 )
+                  bufptr[k_v7 + 1] = s147link_dev9_mem_mmio.m_unk09;
+                --io_pCommon->R_remain;
+                ++io_pCommon->R_in;
+                io_pCommon->R_in &= 0x1FFu;
+                io_pCommon->R_number[j_v6] = rnum;
+              }
+              else if ( io_pCommon->R_pd[j_v6] )
+              {
+                if ( !++io_pCommon->R_lost[j_v6] )
+                  ++io_pCommon->R_lost[j_v6];
               }
               else
               {
-                v11 = s147link_dev9_mem_mmio.m_unk09;
-                if ( io_pCommon->R_remain )
-                {
-                  bufptr = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
-                  *bufptr++ = j_v6;
-                  *bufptr++ = io_pCommon->mynode;
-                  *bufptr++ = 4;
-                  *bufptr++ = 0;
-                  *bufptr++ = rnum;
-                  *bufptr = v11;
-                  for ( k_v7 = 0; k_v7 < 0x3A; ++k_v7 )
-                    bufptr[k_v7 + 1] = s147link_dev9_mem_mmio.m_unk09;
-                  --io_pCommon->R_remain;
-                  ++io_pCommon->R_in;
-                  io_pCommon->R_in &= 0x1FFu;
-                  io_pCommon->R_number[j_v6] = rnum;
-                  rxfc |= 1 << j_v6;
-                }
-                else if ( io_pCommon->R_pd[j_v6] )
-                {
-                  rxfc |= 1 << j_v6;
-                  if ( !++io_pCommon->R_lost[j_v6] )
-                    ++io_pCommon->R_lost[j_v6];
-                }
+                continue;
               }
             }
           }
-          else
-          {
-            rxfc |= 1 << j_v6;
-          }
         }
-        else if ( m_unk09 )
-        {
-          rxfc |= 1 << j_v6;
-        }
-        else
+        else if ( !m_unk09 )
         {
           if ( s147link_dev9_mem_mmio.m_unk09 == 0x38 )
           {
@@ -296,26 +279,21 @@ static int clink_InterruptHandler(void *userdata)
                 --io_pCommon->R_remain;
                 ++io_pCommon->R_in;
                 io_pCommon->R_in &= 0x1FFu;
-                rxfc |= 1 << j_v6;
               }
               else if ( io_pCommon->R_pd[j_v6] )
               {
-                rxfc |= 1 << j_v6;
                 if ( !++io_pCommon->R_lost[j_v6] )
                   ++io_pCommon->R_lost[j_v6];
               }
+              else
+              {
+                continue;
+              }
             }
-            else
-            {
-              rxfc |= 1 << j_v6;
-            }
-          }
-          else
-          {
-            rxfc |= 1 << j_v6;
           }
         }
       }
+      rxfc |= 1 << j_v6;
     }
   }
   tflag = 0;
