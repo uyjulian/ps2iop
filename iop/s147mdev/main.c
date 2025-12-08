@@ -82,7 +82,7 @@ static int register_atfile_ioman_device(const char *atfile_name, const char *atf
 //----- (00400184) --------------------------------------------------------
 int s147mdev_4_addfs(iop_device_t *drv, int unit10)
 {
-  int retval; // [sp+10h] [+10h]
+  int retres; // [sp+10h] [+10h]
 
   if ( unit10 < 0 || unit10 >= 100 )
   {
@@ -94,28 +94,28 @@ int s147mdev_4_addfs(iop_device_t *drv, int unit10)
     Kprintf("s147mdev.irx: Invalid device table\n");
     return -1;
   }
-  retval = drv->ops->init(drv);
-  if ( retval >= 0 )
+  retres = drv->ops->init(drv);
+  if ( retres >= 0 )
     g_atfile_unit_info[unit10 / 10] = drv;
-  return retval;
+  return retres;
 }
 
 //----- (004002A4) --------------------------------------------------------
 int s147mdev_5_delfs(int unit10)
 {
-  int retval; // [sp+10h] [+10h]
+  int retres; // [sp+10h] [+10h]
 
   if ( unit10 < 0 || unit10 >= 100 )
   {
     Kprintf("s147mdev.irx: Invalid unit number\n");
     return -1;
   }
-  retval = ( g_atfile_unit_info[unit10 / 10] ) ? g_atfile_unit_info[unit10 / 10]->ops->deinit(g_atfile_unit_info[unit10 / 10]) : 0;
-  if ( retval >= 0 )
+  retres = ( g_atfile_unit_info[unit10 / 10] ) ? g_atfile_unit_info[unit10 / 10]->ops->deinit(g_atfile_unit_info[unit10 / 10]) : 0;
+  if ( retres >= 0 )
     g_atfile_unit_info[unit10 / 10] = 0;
-  return retval;
+  return retres;
 }
-// 4003C0: variable 'retval' is possibly undefined
+// 4003C0: variable 'retres' is possibly undefined
 
 //----- (00400430) --------------------------------------------------------
 static int atfile_drv_op_nulldev(iop_file_t *f)

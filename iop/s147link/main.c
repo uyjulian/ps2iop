@@ -167,11 +167,8 @@ static int clink_InterruptHandler(void *userdata)
 {
   u8 unk09_tmp; // $v0
   u8 *bufptr; // $s4
-  u8 *bufptr_v2; // $s4
-  u8 *bufptr_v3; // $s4
-  unsigned int i_v5; // [sp+10h] [+10h]
-  unsigned int j_v6; // [sp+14h] [+14h]
-  unsigned int k_v7; // [sp+18h] [+18h]
+  unsigned int i; // [sp+10h] [+10h]
+  unsigned int j; // [sp+18h] [+18h]
   u8 stsH; // [sp+1Ch] [+1Ch]
   u8 stsL; // [sp+1Dh] [+1Dh]
   u8 rnum; // [sp+1Eh] [+1Eh]
@@ -203,15 +200,15 @@ static int clink_InterruptHandler(void *userdata)
   rxfs = ((s147link_dev9_mem_mmio.m_rxfc_hi_unk1E << 8) | s147link_dev9_mem_mmio.m_rxfc_lo_unk1F) & io_pCommon->nodemask;
   if ( rxfs )
   {
-    for ( j_v6 = 1; io_pCommon->maxnode >= j_v6; ++j_v6 )
+    for ( i = 1; io_pCommon->maxnode >= i; ++i )
     {
-      if ( j_v6 != io_pCommon->mynode )
+      if ( i != io_pCommon->mynode )
       {
-        if ( (rxfs & (1 << j_v6)) == 0 )
+        if ( (rxfs & (1 << i)) == 0 )
         {
           continue;
         }
-        s147link_dev9_mem_mmio.m_node_unk05 = j_v6 | 0xC0;
+        s147link_dev9_mem_mmio.m_node_unk05 = i | 0xC0;
         s147link_dev9_mem_mmio.m_unk07 = 0;
         unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
         if ( unk09_tmp == io_pCommon->mynode )
@@ -219,29 +216,29 @@ static int clink_InterruptHandler(void *userdata)
           if ( s147link_dev9_mem_mmio.m_unk09 == 4 && !s147link_dev9_mem_mmio.m_unk09 )
           {
             rnum = s147link_dev9_mem_mmio.m_unk09;
-            if ( io_pCommon->R_number[j_v6] != rnum )
+            if ( io_pCommon->R_number[i] != rnum )
             {
               unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
               if ( io_pCommon->R_remain )
               {
                 bufptr = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
-                *bufptr++ = j_v6;
+                *bufptr++ = i;
                 *bufptr++ = io_pCommon->mynode;
                 *bufptr++ = 4;
                 *bufptr++ = 0;
                 *bufptr++ = rnum;
                 *bufptr = unk09_tmp;
-                for ( k_v7 = 0; k_v7 < 0x3A; ++k_v7 )
-                  bufptr[k_v7 + 1] = s147link_dev9_mem_mmio.m_unk09;
+                for ( j = 0; j < 0x3A; ++j )
+                  bufptr[j + 1] = s147link_dev9_mem_mmio.m_unk09;
                 --io_pCommon->R_remain;
                 ++io_pCommon->R_in;
                 io_pCommon->R_in &= 0x1FFu;
-                io_pCommon->R_number[j_v6] = rnum;
+                io_pCommon->R_number[i] = rnum;
               }
-              else if ( io_pCommon->R_pd[j_v6] )
+              else if ( io_pCommon->R_pd[i] )
               {
-                if ( !++io_pCommon->R_lost[j_v6] )
-                  ++io_pCommon->R_lost[j_v6];
+                if ( !++io_pCommon->R_lost[i] )
+                  ++io_pCommon->R_lost[i];
               }
               else
               {
@@ -254,34 +251,34 @@ static int clink_InterruptHandler(void *userdata)
         {
           if ( s147link_dev9_mem_mmio.m_unk09 == 0x38 )
           {
-            s147link_dev9_mem_mmio.m_node_unk05 = j_v6 | 0xC0;
+            s147link_dev9_mem_mmio.m_node_unk05 = i | 0xC0;
             s147link_dev9_mem_mmio.m_unk07 = 0x38;
             unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
             if ( (unk09_tmp & 0xE0) == 0x20 || (unk09_tmp & 0xE0) == 0x60 )
             {
               if ( io_pCommon->R_remain )
               {
-                bufptr_v2 = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
-                *bufptr_v2++ = j_v6;
-                *bufptr_v2++ = 0;
-                *bufptr_v2 = 56;
-                bufptr_v2 += 54;
-                *bufptr_v2++ = unk09_tmp;
-                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr_v2 = s147link_dev9_mem_mmio.m_unk09;
-                bufptr_v2[1] = s147link_dev9_mem_mmio.m_unk09;
+                bufptr = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
+                *bufptr++ = i;
+                *bufptr++ = 0;
+                *bufptr = 56;
+                bufptr += 54;
+                *bufptr++ = unk09_tmp;
+                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
+                *bufptr = s147link_dev9_mem_mmio.m_unk09;
+                bufptr[1] = s147link_dev9_mem_mmio.m_unk09;
                 --io_pCommon->R_remain;
                 ++io_pCommon->R_in;
                 io_pCommon->R_in &= 0x1FFu;
               }
-              else if ( io_pCommon->R_pd[j_v6] )
+              else if ( io_pCommon->R_pd[i] )
               {
-                if ( !++io_pCommon->R_lost[j_v6] )
-                  ++io_pCommon->R_lost[j_v6];
+                if ( !++io_pCommon->R_lost[i] )
+                  ++io_pCommon->R_lost[i];
               }
               else
               {
@@ -291,7 +288,7 @@ static int clink_InterruptHandler(void *userdata)
           }
         }
       }
-      rxfc |= 1 << j_v6;
+      rxfc |= 1 << i;
     }
   }
   tflag = 0;
@@ -314,16 +311,16 @@ static int clink_InterruptHandler(void *userdata)
         s147link_dev9_mem_mmio.m_unk15 = 0x1A;
         break;
       }
-      bufptr_v3 = &io_pCommon->T_top[0x40 * io_pCommon->T_out];
-      if ( *bufptr_v3 == io_pCommon->mynode )
+      bufptr = &io_pCommon->T_top[0x40 * io_pCommon->T_out];
+      if ( *bufptr == io_pCommon->mynode )
       {
-        io_pCommon->T_node = bufptr_v3[1];
+        io_pCommon->T_node = bufptr[1];
         if ( !io_pCommon->T_error[io_pCommon->T_node] || !io_pCommon->T_pd[io_pCommon->T_node] )
         {
           s147link_dev9_mem_mmio.m_node_unk05 = (io_pCommon->mynode & 0xFF) | 0x40;
           s147link_dev9_mem_mmio.m_unk07 = 0;
-          for ( i_v5 = 0; i_v5 < 0x40; ++i_v5 )
-            s147link_dev9_mem_mmio.m_unk09 = bufptr_v3[i_v5];
+          for ( i = 0; i < 0x40; ++i )
+            s147link_dev9_mem_mmio.m_unk09 = bufptr[i];
           ++io_pCommon->T_remain;
           ++io_pCommon->T_out;
           io_pCommon->T_out = (u8)io_pCommon->T_out;
@@ -359,8 +356,8 @@ static int clink_InterruptHandler(void *userdata)
 static int cl_mread(void *dstptr, int count)
 {
   int state; // [sp+10h] [+10h] BYREF
-  size_t size; // [sp+14h] [+14h]
-  int packs1; // [sp+18h] [+18h]
+  int size; // [sp+14h] [+14h]
+  int packs; // [sp+18h] [+18h]
 
   CpuSuspendIntr(&state);
   size = 0x200 - cl_info.R_remain;
@@ -369,17 +366,17 @@ static int cl_mread(void *dstptr, int count)
     CpuResumeIntr(state);
     return 0;
   }
-  if ( count >= (int)size )
+  if ( count >= size )
     count = size;
   else
     size = count;
-  packs1 = cl_info.R_out + size - 0x200;
-  if ( packs1 > 0 )
+  packs = cl_info.R_out + size - 0x200;
+  if ( packs > 0 )
   {
-    size -= packs1;
+    size -= packs;
     size <<= 6;
     memcpy(dstptr, rx_buff[cl_info.R_out], size);
-    memcpy((char *)dstptr + size, rx_buff, packs1 << 6);
+    memcpy((char *)dstptr + size, rx_buff, packs << 6);
   }
   else
   {
@@ -467,7 +464,7 @@ static int cl_mwrite(u8 *srcptr, int count)
 {
   int state; // [sp+10h] [+10h] BYREF
   int i; // [sp+14h] [+14h]
-  int packs1; // [sp+20h] [+20h]
+  int packs; // [sp+20h] [+20h]
 
   if ( cl_info.T_remain < (unsigned int)count )
     return 0;
@@ -487,11 +484,11 @@ static int cl_mwrite(u8 *srcptr, int count)
     CpuResumeIntr(state);
     return 0;
   }
-  packs1 = cl_info.T_in + count - 0x100;
-  if ( packs1 > 0 )
+  packs = cl_info.T_in + count - 0x100;
+  if ( packs > 0 )
   {
-    memcpy(tx_buff[cl_info.T_in], srcptr, (count - packs1) << 6);
-    memcpy(tx_buff, &srcptr[0x40 * (count - packs1)], packs1 << 6);
+    memcpy(tx_buff[cl_info.T_in], srcptr, (count - packs) << 6);
+    memcpy(tx_buff, &srcptr[0x40 * (count - packs)], packs << 6);
   }
   else
   {
@@ -745,13 +742,13 @@ static void *dispatch(int fno, void *buf, int size)
 {
   int state; // [sp+14h] [+14h] BYREF
   int node; // [sp+18h] [+18h]
-  int sizea; // [sp+1Ch] [+1Ch]
+  int sizeb; // [sp+1Ch] [+1Ch]
   unsigned int i; // [sp+20h] [+20h]
 
   (void)size;
   FlushDcache();
   node = fno & 0xFF;
-  sizea = (fno & 0xFFFF00) >> 8;
+  sizeb = (fno & 0xFFFF00) >> 8;
   switch (fno >> 24)
   {
     case 0x00:
@@ -783,10 +780,10 @@ static void *dispatch(int fno, void *buf, int size)
       CpuResumeIntr(state);
       break;
     case 0x30:
-      *(u32 *)buf = cl_write(node, (u8 *)buf, sizea);
+      *(u32 *)buf = cl_write(node, (u8 *)buf, sizeb);
       break;
     case 0x40:
-      *(u32 *)buf = cl_mwrite((u8 *)buf, sizea);
+      *(u32 *)buf = cl_mwrite((u8 *)buf, sizeb);
       break;
     case 0x50:
       CpuSuspendIntr(&state);
@@ -829,7 +826,7 @@ static void *dispatch(int fno, void *buf, int size)
       cl_info.R_lost[node] = 0;
       break;
     case 0xD0:
-      *(u32 *)buf = cl_write_custom(node, (u8 *)buf, sizea);
+      *(u32 *)buf = cl_write_custom(node, (u8 *)buf, sizeb);
       break;
     case 0xF0:
       CpuSuspendIntr(&state);
