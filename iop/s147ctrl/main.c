@@ -298,12 +298,14 @@ int ctrl_drv_op_nulldev()
 //----- (00400330) --------------------------------------------------------
 int __cdecl ctrl_drv_op_init(iop_device_t *dev)
 {
+  (void)dev;
   return 0;
 }
 
 //----- (00400358) --------------------------------------------------------
 int __cdecl ctrl_drv_op_deinit(iop_device_t *dev)
 {
+  (void)dev;
   return 0;
 }
 
@@ -312,6 +314,7 @@ int __cdecl ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
 {
   int state[2]; // [sp+10h] [+10h] BYREF
 
+  (void)flags;
   if ( f->unit == 99 )
   {
     if ( !strcmp(name, "watchdog-start") )
@@ -349,6 +352,7 @@ int __cdecl ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
 //----- (004004D4) --------------------------------------------------------
 int __cdecl ctrl_drv_op_close(iop_file_t *f)
 {
+  (void)f;
   return 0;
 }
 
@@ -433,6 +437,9 @@ int __cdecl ctrl_drv_op_write(iop_file_t *f, void *ptr, int size)
 //----- (00400820) --------------------------------------------------------
 int __cdecl ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode)
 {
+  (void)f;
+  (void)offset;
+  (void)mode;
   return 0;
 }
 
@@ -618,12 +625,14 @@ int sram_drv_op_nulldev()
 //----- (00401398) --------------------------------------------------------
 int __cdecl sram_drv_op_init(iop_device_t *dev)
 {
+  (void)dev;
   return 0;
 }
 
 //----- (004013C0) --------------------------------------------------------
 int __cdecl sram_drv_op_deinit(iop_device_t *dev)
 {
+  (void)dev;
   return 0;
 }
 
@@ -633,6 +642,8 @@ int __cdecl sram_drv_op_open(iop_file_t *f, const char *name, int flags)
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
   int state; // [sp+14h] [+14h] BYREF
 
+  (void)name;
+  (void)flags;
   CpuSuspendIntr(&state);
   f->privdata = AllocSysMemory(0, 8, 0);
   CpuResumeIntr(state);
@@ -777,6 +788,7 @@ void *__fastcall rpc_1470000_handler(int fno, void *buffer, int length)
 {
   void *result; // $v0
 
+  (void)length;
   switch ( fno )
   {
     case 1:
@@ -837,6 +849,7 @@ void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length)
   vu8 m_security_unlock_set2; // $v1
   void *result; // $v0
 
+  (void)length;
   switch ( fno )
   {
     case 0:
@@ -906,6 +919,7 @@ void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length)
 //----- (00401D30) --------------------------------------------------------
 void *__fastcall rpc_1470002_handler(int fno, void *buffer, int length)
 {
+  (void)length;
   if ( fno == 4 )
     *(_DWORD *)buffer = ctrl_do_rtc_write(buffer);
   else
@@ -916,6 +930,7 @@ void *__fastcall rpc_1470002_handler(int fno, void *buffer, int length)
 //----- (00401DCC) --------------------------------------------------------
 void *__fastcall rpc_1470003_handler(int fno, void *buffer, int length)
 {
+  (void)length;
   if ( fno == 4 )
   {
     *((_DWORD *)buffer + 7) = ctrl_do_rtc_read(buffer);
@@ -975,6 +990,7 @@ void rpc_thread2(void *userdata)
 //----- (00401FFC) --------------------------------------------------------
 void *__fastcall rpc_1470200_handler(int fno, void *buffer, int length)
 {
+  (void)length;
   if ( (unsigned int)fno >= 3 )
   {
     *(_DWORD *)buffer = -1;
@@ -993,6 +1009,7 @@ void *__fastcall rpc_1470200_handler(int fno, void *buffer, int length)
 //----- (004020E0) --------------------------------------------------------
 void *__fastcall rpc_1470201_handler(int fno, void *buffer, int length)
 {
+  (void)length;
   if ( (unsigned int)fno >= 3 )
   {
     memset(buffer, 0, *((_DWORD *)buffer + 1));

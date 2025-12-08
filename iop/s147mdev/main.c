@@ -152,12 +152,14 @@ int __fastcall atfile_drv_op_nulldev(iop_file_t *f)
 //----- (004004D8) --------------------------------------------------------
 int __cdecl atfile_drv_op_init(iop_device_t *dev)
 {
+  (void)dev;
   return 0;
 }
 
 //----- (00400500) --------------------------------------------------------
 int __cdecl atfile_drv_op_deinit(iop_device_t *dev)
 {
+  (void)dev;
   return 0;
 }
 

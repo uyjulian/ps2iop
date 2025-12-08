@@ -897,6 +897,7 @@ void *__fastcall dispatch(unsigned int fno, void *buf, int size)
   unsigned int i; // [sp+20h] [+20h]
   int j; // [sp+24h] [+24h]
 
+  (void)size;
   FlushDcache();
   node = fno & 0xFF;
   sizea = (fno & 0xFFFF00) >> 8;
