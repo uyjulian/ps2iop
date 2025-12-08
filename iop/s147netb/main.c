@@ -3,18 +3,15 @@
 
 IRX_ID("S147NETB", 2, 2);
 
-//-------------------------------------------------------------------------
-// Function declarations
-
-int _start();
-
 //----- (00400000) --------------------------------------------------------
-int _start()
+int _start(int ac, char **av)
 {
   char probebuf; // [sp+10h] [+10h] BYREF
   int fd; // [sp+14h] [+14h]
   int probe_i; // [sp+18h] [+18h]
 
+  (void)ac;
+  (void)av;
   Kprintf("\ns147netb.irx: System147 Network Boot Manager v%d.%d\n", 2, 2);
   fd = open("atfile19:usb-probe", 1);
   if ( fd < 0 )

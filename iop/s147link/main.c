@@ -102,7 +102,7 @@ int cl_write(int node, u8 *srcptr, int size);
 int cl_write_custom(int node, u8 *srcptr, int cpVal);
 int cl_mwrite(u8 *srcptr, int count);
 int InitS147link(int maxnode, int mynode, int priority);
-void reset_circlink();
+void reset_circlink(void);
 unsigned int alarm_handler(void *userdata);
 void s147link_loop(void *userdata);
 void *dispatch(int fno, void *buf, int size);
@@ -654,7 +654,7 @@ int InitS147link(int maxnode, int mynode, int priority)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (0040281C) --------------------------------------------------------
-void reset_circlink()
+void reset_circlink(void)
 {
   vu8 m_stsH_unk12; // $v0
   vu8 m_stsL_unk13; // $v0

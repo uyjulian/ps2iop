@@ -94,11 +94,11 @@ struct sram_drv_privdata_
 //-------------------------------------------------------------------------
 // Function declarations
 
-int _start();
-int setup_ac_delay_regs();
+int _start(int ac, char **av);
+void setup_ac_delay_regs(void);
 int setup_ctrl_ioman_drv(const char *devpfx, const char *devname);
 unsigned int watchdog_alarm_cb(void *userdata);
-int ctrl_drv_op_nulldev();
+int ctrl_drv_op_nulldev(void);
 int ctrl_drv_op_init(iop_device_t *dev);
 int ctrl_drv_op_deinit(iop_device_t *dev);
 int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags);
@@ -106,13 +106,13 @@ int ctrl_drv_op_close(iop_file_t *f);
 int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size);
 int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size);
 int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode);
-int create_ctrl_sema();
+int create_ctrl_sema(void);
 int ctrl_do_rtc_read(u32 *rtcbuf);
 int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk);
 int ctrl_do_rtc_write(u32 *rtcbuf);
 void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk);
 int setup_sram_ioman_drv(const char *devpfx, const char *devname);
-int sram_drv_op_nulldev();
+int sram_drv_op_nulldev(void);
 int sram_drv_op_init(iop_device_t *dev);
 int sram_drv_op_deinit(iop_device_t *dev);
 int sram_drv_op_open(iop_file_t *f, const char *name, int flags);
@@ -120,13 +120,13 @@ int sram_drv_op_close(iop_file_t *f);
 int sram_drv_op_read(iop_file_t *f, void *ptr, int size);
 int sram_drv_op_write(iop_file_t *f, void *ptr, int size);
 int sram_drv_op_lseek(iop_file_t *f, int offset, int mode);
-int do_rpc_start1();
+int do_rpc_start1(void);
 void rpc_thread1(void *userdata);
 void *rpc_1470000_handler(int fno, void *buffer, int length);
 void *rpc_1470001_handler(int fno, void *buffer, int length);
 void *rpc_1470002_handler(int fno, void *buffer, int length);
 void *rpc_1470003_handler(int fno, void *buffer, int length);
-int do_rpc_start2();
+int do_rpc_start2(void);
 void rpc_thread2(void *userdata);
 void *rpc_1470200_handler(int fno, void *buffer, int length);
 void *rpc_1470201_handler(int fno, void *buffer, int length);
@@ -192,8 +192,10 @@ struct s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-int _start()
+int _start(int ac, char **av)
 {
+  (void)ac;
+  (void)av;
   Kprintf("\n");
   Kprintf("s147ctrl.irx: System147 Control/SRAM Driver v%d.%d\n", 2, 8);
   setup_ac_delay_regs();
@@ -211,10 +213,10 @@ int _start()
 }
 
 //----- (004000C0) --------------------------------------------------------
-int setup_ac_delay_regs()
+void setup_ac_delay_regs(void)
 {
   SetAcMemDelayReg(0x261A2122u);
-  return SetAcIoDelayReg(0xA61A0166);
+  SetAcIoDelayReg(0xA61A0166);
 }
 
 //----- (00400100) --------------------------------------------------------
@@ -269,7 +271,7 @@ unsigned int watchdog_alarm_cb(void *userdata)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (0040030C) --------------------------------------------------------
-int ctrl_drv_op_nulldev()
+int ctrl_drv_op_nulldev(void)
 {
   return 0;
 }
@@ -406,7 +408,7 @@ int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode)
 }
 
 //----- (00400850) --------------------------------------------------------
-int create_ctrl_sema()
+int create_ctrl_sema(void)
 {
   g_ctrl_sema_param.initial = 1;
   g_ctrl_sema_param.max = 1;
@@ -576,7 +578,7 @@ int setup_sram_ioman_drv(const char *devpfx, const char *devname)
 // 402960: using guessed type int (*g_ops_sram_ioman[17])();
 
 //----- (00401374) --------------------------------------------------------
-int sram_drv_op_nulldev()
+int sram_drv_op_nulldev(void)
 {
   return 0;
 }
@@ -686,7 +688,7 @@ int sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
 }
 
 //----- (00401890) --------------------------------------------------------
-int do_rpc_start1()
+int do_rpc_start1(void)
 {
   iop_thread_t thparam; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]
@@ -846,7 +848,7 @@ void *rpc_1470003_handler(int fno, void *buffer, int length)
 }
 
 //----- (00401EB0) --------------------------------------------------------
-int do_rpc_start2()
+int do_rpc_start2(void)
 {
   iop_thread_t thparam; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]

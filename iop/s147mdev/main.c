@@ -6,7 +6,7 @@ IRX_ID("S147MDEV", 2, 1);
 //-------------------------------------------------------------------------
 // Function declarations
 
-int _start();
+int _start(int ac, char **av);
 int register_atfile_ioman_device(const char *atfile_name, const char *atfile_desc);
 int s147mdev_4_addfs(iop_device_t *drv, int unit10);
 int s147mdev_5_delfs(int unit10);
@@ -47,8 +47,10 @@ iop_device_t g_atfile_device; // idb
 iop_device_t *g_atfile_unit_info[10];
 
 //----- (00400000) --------------------------------------------------------
-int _start()
+int _start(int ac, char **av)
 {
+  (void)ac;
+  (void)av;
   Kprintf("\ns147mdev.irx: System147 Multi Device File System Manager v%d.%d\n", 2, 1);
   register_atfile_ioman_device("atfile", "Multi Device File System");
   if ( RegisterLibraryEntries(&_exp_s147mdev) )
