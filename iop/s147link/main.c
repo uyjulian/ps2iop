@@ -3,16 +3,6 @@
 
 IRX_ID("S147LINK", 2, 7);
 
-#define __fastcall
-#define __cdecl
-#define _BYTE u8
-#define _WORD u16
-#define _DWORD u32
-#define __int8 char
-#define __int32 int
-
-typedef unsigned int u_int;
-
 struct s147link_dev9_mem_mmio_
 {
   vu8 m_pad00;
@@ -75,15 +65,15 @@ typedef struct __anon_struct_35
   unsigned int mynode;
   unsigned int maxnode;
   unsigned int nodemask;
-  unsigned __int8 *R_top;
+  u8 *R_top;
   unsigned int R_in;
   unsigned int R_out;
   unsigned int R_remain;
-  unsigned __int8 R_number[16];
+  u8 R_number[16];
   unsigned int R_lost[16];
   unsigned int R_pd[16];
   unsigned int R_count;
-  unsigned __int8 *T_top;
+  u8 *T_top;
   unsigned int T_in;
   unsigned int T_out;
   unsigned int T_remain;
@@ -91,7 +81,7 @@ typedef struct __anon_struct_35
   int T_error[16];
   unsigned int T_pd[16];
   unsigned int T_time[16];
-  unsigned __int8 T_number;
+  u8 T_number;
   unsigned int timeout;
   unsigned int online;
   unsigned int ontimer;
@@ -104,15 +94,15 @@ typedef struct __anon_struct_35
 //-------------------------------------------------------------------------
 // Function declarations
 
-int __fastcall _start(int argc, char **argv);
-void __fastcall T_fix(CL_COM *io_pCommon);
+int _start(int argc, char **argv);
+void T_fix(CL_COM *io_pCommon);
 int clink_InterruptHandler(void *userdata);
-int __fastcall cl_mread(void *dstptr, int count);
-int __fastcall cl_write(int node, unsigned __int8 *srcptr, int size);
-int __fastcall cl_write_custom(int node, unsigned __int8 *srcptr, int cpVal);
-int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count);
-int __fastcall InitS147link(int maxnode, int mynode, int priority);
-void __fastcall reset_circlink();
+int cl_mread(void *dstptr, int count);
+int cl_write(int node, u8 *srcptr, int size);
+int cl_write_custom(int node, u8 *srcptr, int cpVal);
+int cl_mwrite(u8 *srcptr, int count);
+int InitS147link(int maxnode, int mynode, int priority);
+void reset_circlink();
 unsigned int alarm_handler(void *userdata);
 void s147link_loop(void *userdata);
 void *dispatch(int fno, void *buf, int size);
@@ -121,15 +111,15 @@ void *dispatch(int fno, void *buf, int size);
 // Data declarations
 
 int gbBRE;
-unsigned __int8 rpc_buf[32784];
-unsigned __int8 rx_buff[512][64];
-unsigned __int8 tx_buff[256][64];
+u8 rpc_buf[32784];
+u8 rx_buff[512][64];
+u8 tx_buff[256][64];
 CL_COM cl_info;
 struct s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-int __fastcall _start(int argc, char **argv)
+int _start(int argc, char **argv)
 {
   int maxnode; // [sp+10h] [+10h]
   int mynode; // [sp+14h] [+14h]
@@ -161,7 +151,7 @@ int __fastcall _start(int argc, char **argv)
 // 40013C: variable 'priority' is possibly undefined
 
 //----- (00400300) --------------------------------------------------------
-void __fastcall T_fix(CL_COM *io_pCommon)
+void T_fix(CL_COM *io_pCommon)
 {
   if ( io_pCommon->T_remain >= 0x101 )
   {
@@ -184,17 +174,17 @@ void __fastcall T_fix(CL_COM *io_pCommon)
 int clink_InterruptHandler(void *userdata)
 {
   vu8 m_unk09; // $v0
-  unsigned __int8 v11; // $v0
-  unsigned __int8 *bufptr; // $s4
+  u8 v11; // $v0
+  u8 *bufptr; // $s4
   vu8 v16; // $v0
-  unsigned __int8 *bufptr_v2; // $s4
-  unsigned __int8 *bufptr_v3; // $s4
+  u8 *bufptr_v2; // $s4
+  u8 *bufptr_v3; // $s4
   unsigned int i_v5; // [sp+10h] [+10h]
   unsigned int j_v6; // [sp+14h] [+14h]
   unsigned int k_v7; // [sp+18h] [+18h]
-  unsigned __int8 stsH; // [sp+1Ch] [+1Ch]
-  unsigned __int8 stsL; // [sp+1Dh] [+1Dh]
-  unsigned __int8 rnum; // [sp+1Eh] [+1Eh]
+  u8 stsH; // [sp+1Ch] [+1Ch]
+  u8 stsL; // [sp+1Dh] [+1Dh]
+  u8 rnum; // [sp+1Eh] [+1Eh]
   unsigned int rxfs; // [sp+20h] [+20h]
   unsigned int rxfc; // [sp+24h] [+24h]
   unsigned int tflag; // [sp+28h] [+28h]
@@ -368,7 +358,7 @@ int clink_InterruptHandler(void *userdata)
             s147link_dev9_mem_mmio.m_unk09 = bufptr_v3[i_v5];
           ++io_pCommon->T_remain;
           ++io_pCommon->T_out;
-          io_pCommon->T_out = (unsigned __int8)io_pCommon->T_out;
+          io_pCommon->T_out = (u8)io_pCommon->T_out;
           T_fix(io_pCommon);
           s147link_dev9_mem_mmio.m_unk15 = 0x1B;
           tflag = 1;
@@ -378,7 +368,7 @@ int clink_InterruptHandler(void *userdata)
       }
       ++io_pCommon->T_remain;
       ++io_pCommon->T_out;
-      io_pCommon->T_out = (unsigned __int8)io_pCommon->T_out;
+      io_pCommon->T_out = (u8)io_pCommon->T_out;
       T_fix(io_pCommon);
     }
   }
@@ -398,7 +388,7 @@ int clink_InterruptHandler(void *userdata)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00401520) --------------------------------------------------------
-int __fastcall cl_mread(void *dstptr, int count)
+int cl_mread(void *dstptr, int count)
 {
   int state; // [sp+10h] [+10h] BYREF
   size_t size; // [sp+14h] [+14h]
@@ -452,7 +442,7 @@ int __fastcall cl_mread(void *dstptr, int count)
 }
 
 //----- (00401864) --------------------------------------------------------
-int __fastcall cl_write(int node, unsigned __int8 *srcptr, int size)
+int cl_write(int node, u8 *srcptr, int size)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -480,7 +470,7 @@ int __fastcall cl_write(int node, unsigned __int8 *srcptr, int size)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00401A84) --------------------------------------------------------
-int __fastcall cl_write_custom(int node, unsigned __int8 *srcptr, int cpVal)
+int cl_write_custom(int node, u8 *srcptr, int cpVal)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -490,7 +480,7 @@ int __fastcall cl_write_custom(int node, unsigned __int8 *srcptr, int cpVal)
     CpuResumeIntr(state);
     return 0;
   }
-  memcpy(tx_buff[cl_info.T_in], srcptr, sizeof(unsigned __int8[64]));
+  memcpy(tx_buff[cl_info.T_in], srcptr, sizeof(u8[64]));
   tx_buff[cl_info.T_in][0] = cl_info.mynode;
   tx_buff[cl_info.T_in][1] = node & 0xFF;
   tx_buff[cl_info.T_in][2] = cpVal & 0xFF;
@@ -505,7 +495,7 @@ int __fastcall cl_write_custom(int node, unsigned __int8 *srcptr, int cpVal)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00401C10) --------------------------------------------------------
-int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
+int cl_mwrite(u8 *srcptr, int count)
 {
   int state; // [sp+10h] [+10h] BYREF
   int i; // [sp+14h] [+14h]
@@ -550,15 +540,15 @@ int __fastcall cl_mwrite(unsigned __int8 *srcptr, int count)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (00401F3C) --------------------------------------------------------
-int __fastcall InitS147link(int maxnode, int mynode, int priority)
+int InitS147link(int maxnode, int mynode, int priority)
 {
   iop_thread_t param; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]
   int i; // [sp+2Ch] [+2Ch]
   int j; // [sp+30h] [+30h]
   int state; // [sp+34h] [+34h] BYREF
-  unsigned __int8 stsH;
-  unsigned __int8 stsL;
+  u8 stsH;
+  u8 stsL;
 
   s147link_dev9_mem_mmio.m_unk0D |= 0x80;
   s147link_dev9_mem_mmio.m_unk22 = 2;
@@ -664,7 +654,7 @@ int __fastcall InitS147link(int maxnode, int mynode, int priority)
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 //----- (0040281C) --------------------------------------------------------
-void __fastcall reset_circlink()
+void reset_circlink()
 {
   vu8 m_stsH_unk12; // $v0
   vu8 m_stsL_unk13; // $v0
@@ -795,12 +785,12 @@ void *dispatch(int fno, void *buf, int size)
   switch (fno >> 24)
   {
     case 0x00:
-      *(_DWORD *)buf = 1;
+      *(u32 *)buf = 1;
       break;
     case 0x01:
-      cl_info.R_pd[node] = *(_DWORD *)buf;
-      cl_info.T_pd[node] = *((_DWORD *)buf + 1);
-      cl_info.T_time[node] = *((_DWORD *)buf + 2);
+      cl_info.R_pd[node] = *(u32 *)buf;
+      cl_info.T_pd[node] = *((u32 *)buf + 1);
+      cl_info.T_time[node] = *((u32 *)buf + 2);
       break;
     case 0x10:
       CpuSuspendIntr(&state);
@@ -810,23 +800,23 @@ void *dispatch(int fno, void *buf, int size)
       s147link_dev9_mem_mmio.m_unk17 = 1;
       s147link_dev9_mem_mmio.m_unk17 = 0xE;
       cl_info.T_error[cl_info.T_node] = 0xFFFFFFFD;
-      *(_DWORD *)buf = cl_info.T_node;
+      *(u32 *)buf = cl_info.T_node;
       CpuResumeIntr(state);
       break;
     case 0x11:
-      *(_DWORD *)buf = cl_info.rbfix;
+      *(u32 *)buf = cl_info.rbfix;
       break;
     case 0x20:
-      *(_DWORD *)buf = cl_mread((char *)buf + 4, *(_DWORD *)buf);
+      *(u32 *)buf = cl_mread((char *)buf + 4, *(u32 *)buf);
       CpuSuspendIntr(&state);
       clink_InterruptHandler(&cl_info);
       CpuResumeIntr(state);
       break;
     case 0x30:
-      *(_DWORD *)buf = cl_write(node, (unsigned __int8 *)buf, sizea);
+      *(u32 *)buf = cl_write(node, (u8 *)buf, sizea);
       break;
     case 0x40:
-      *(_DWORD *)buf = cl_mwrite((unsigned __int8 *)buf, sizea);
+      *(u32 *)buf = cl_mwrite((u8 *)buf, sizea);
       break;
     case 0x50:
       CpuSuspendIntr(&state);
@@ -836,16 +826,16 @@ void *dispatch(int fno, void *buf, int size)
       CpuResumeIntr(state);
       break;
     case 0x60:
-      *(_DWORD *)buf = cl_info.R_remain;
+      *(u32 *)buf = cl_info.R_remain;
       break;
     case 0x70:
-      *(_DWORD *)buf = cl_info.T_remain;
+      *(u32 *)buf = cl_info.T_remain;
       break;
     case 0x80:
-      *(_DWORD *)buf = cl_info.online;
+      *(u32 *)buf = cl_info.online;
       break;
     case 0x90:
-      *(_DWORD *)buf = cl_info.T_error[node];
+      *(u32 *)buf = cl_info.T_error[node];
       break;
     case 0xA0:
       CpuSuspendIntr(&state);
@@ -859,17 +849,17 @@ void *dispatch(int fno, void *buf, int size)
       s147link_dev9_mem_mmio.m_unk17 = 1;
       s147link_dev9_mem_mmio.m_unk17 = 0xE;
       cl_info.T_error[cl_info.T_node] = 0xFFFFFFFD;
-      *(_DWORD *)buf = cl_info.T_node;
+      *(u32 *)buf = cl_info.T_node;
       s147link_dev9_mem_mmio.m_unk15 = 0x1B;
       clink_InterruptHandler(&cl_info);
       CpuResumeIntr(state);
       break;
     case 0xC0:
-      *(_DWORD *)buf = cl_info.R_lost[node];
+      *(u32 *)buf = cl_info.R_lost[node];
       cl_info.R_lost[node] = 0;
       break;
     case 0xD0:
-      *(_DWORD *)buf = cl_write_custom(node, (unsigned __int8 *)buf, sizea);
+      *(u32 *)buf = cl_write_custom(node, (u8 *)buf, sizea);
       break;
     case 0xF0:
       CpuSuspendIntr(&state);
@@ -880,13 +870,13 @@ void *dispatch(int fno, void *buf, int size)
       printf("S147LINK: Unknown RPC command (%X)\n", fno);
       break;
   }
-  *(_DWORD *)buf |= (cl_info.online ? 0x10000 : 0);
+  *(u32 *)buf |= (cl_info.online ? 0x10000 : 0);
   for ( i = 1; i < cl_info.maxnode; i += 1 )
   {
     if ( cl_info.T_error[i] )
-      *(_DWORD *)buf |= 0x10000 << i;
+      *(u32 *)buf |= 0x10000 << i;
     if ( cl_info.R_lost[i] )
-      *(_DWORD *)buf |= 0x10000 << i;
+      *(u32 *)buf |= 0x10000 << i;
   }
   FlushDcache();
   return buf;

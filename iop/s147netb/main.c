@@ -3,14 +3,6 @@
 
 IRX_ID("S147NETB", 2, 2);
 
-#define __fastcall
-#define __cdecl
-#define _BYTE u8
-#define _WORD u16
-#define _DWORD u32
-#define __int8 char
-#define __int32 int
-
 //-------------------------------------------------------------------------
 // Function declarations
 
@@ -36,7 +28,7 @@ int _start()
     Kprintf(
       "\ns147netb.irx: === Wait %dsec for USB initialize... (probe=%d) ===\n",
       probe_i,
-      (unsigned __int8)probebuf);
+      (u8)probebuf);
     if ( probebuf == 1 )
       break;
     DelayThread(1000000);

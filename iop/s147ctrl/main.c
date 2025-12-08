@@ -3,13 +3,6 @@
 
 IRX_ID("S147CTRL", 2, 8);
 
-#define __fastcall
-#define __cdecl
-#define _BYTE u8
-#define _WORD u16
-#define _DWORD u32
-#define __int32 int
-
 struct watchdog_info_
 {
   int g_watchdog_started;
@@ -103,40 +96,40 @@ struct sram_drv_privdata_
 
 int _start();
 int setup_ac_delay_regs();
-int __fastcall setup_ctrl_ioman_drv(const char *devpfx, const char *devname);
-u32 __fastcall watchdog_alarm_cb(struct watchdog_info_ *userdata);
+int setup_ctrl_ioman_drv(const char *devpfx, const char *devname);
+unsigned int watchdog_alarm_cb(void *userdata);
 int ctrl_drv_op_nulldev();
-int __cdecl ctrl_drv_op_init(iop_device_t *dev);
-int __cdecl ctrl_drv_op_deinit(iop_device_t *dev);
-int __cdecl ctrl_drv_op_open(iop_file_t *f, const char *name, int flags);
-int __cdecl ctrl_drv_op_close(iop_file_t *f);
-int __cdecl ctrl_drv_op_read(iop_file_t *f, void *ptr, int size);
-int __cdecl ctrl_drv_op_write(iop_file_t *f, void *ptr, int size);
-int __cdecl ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode);
+int ctrl_drv_op_init(iop_device_t *dev);
+int ctrl_drv_op_deinit(iop_device_t *dev);
+int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags);
+int ctrl_drv_op_close(iop_file_t *f);
+int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size);
+int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size);
+int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode);
 int create_ctrl_sema();
-int __fastcall ctrl_do_rtc_read(_DWORD *rtcbuf);
-int __fastcall ctrl_do_rtc_read_inner(int flgcnt, int flgmsk);
-int __fastcall ctrl_do_rtc_write(_DWORD *rtcbuf);
+int ctrl_do_rtc_read(u32 *rtcbuf);
+int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk);
+int ctrl_do_rtc_write(u32 *rtcbuf);
 void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk);
-int __fastcall setup_sram_ioman_drv(const char *devpfx, const char *devname);
+int setup_sram_ioman_drv(const char *devpfx, const char *devname);
 int sram_drv_op_nulldev();
-int __cdecl sram_drv_op_init(iop_device_t *dev);
-int __cdecl sram_drv_op_deinit(iop_device_t *dev);
-int __cdecl sram_drv_op_open(iop_file_t *f, const char *name, int flags);
-int __cdecl sram_drv_op_close(iop_file_t *f);
-int __cdecl sram_drv_op_read(iop_file_t *f, void *ptr, int size);
-int __cdecl sram_drv_op_write(iop_file_t *f, void *ptr, int size);
-int __cdecl sram_drv_op_lseek(iop_file_t *f, int offset, int mode);
+int sram_drv_op_init(iop_device_t *dev);
+int sram_drv_op_deinit(iop_device_t *dev);
+int sram_drv_op_open(iop_file_t *f, const char *name, int flags);
+int sram_drv_op_close(iop_file_t *f);
+int sram_drv_op_read(iop_file_t *f, void *ptr, int size);
+int sram_drv_op_write(iop_file_t *f, void *ptr, int size);
+int sram_drv_op_lseek(iop_file_t *f, int offset, int mode);
 int do_rpc_start1();
 void rpc_thread1(void *userdata);
-void *__fastcall rpc_1470000_handler(int fno, void *buffer, int length);
-void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length);
-void *__fastcall rpc_1470002_handler(int fno, void *buffer, int length);
-void *__fastcall rpc_1470003_handler(int fno, void *buffer, int length);
+void *rpc_1470000_handler(int fno, void *buffer, int length);
+void *rpc_1470001_handler(int fno, void *buffer, int length);
+void *rpc_1470002_handler(int fno, void *buffer, int length);
+void *rpc_1470003_handler(int fno, void *buffer, int length);
 int do_rpc_start2();
 void rpc_thread2(void *userdata);
-void *__fastcall rpc_1470200_handler(int fno, void *buffer, int length);
-void *__fastcall rpc_1470201_handler(int fno, void *buffer, int length);
+void *rpc_1470200_handler(int fno, void *buffer, int length);
+void *rpc_1470201_handler(int fno, void *buffer, int length);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -225,11 +218,11 @@ int setup_ac_delay_regs()
 }
 
 //----- (00400100) --------------------------------------------------------
-int __fastcall setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
+int setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
 {
   g_watchdog_info.g_watchdog_started = 1;
   USec2SysClock(0x4E20u, &g_watchdog_info.g_watchdog_clock);
-  SetAlarm(&g_watchdog_info.g_watchdog_clock, (unsigned int (__cdecl *)(void *))watchdog_alarm_cb, &g_watchdog_info);
+  SetAlarm(&g_watchdog_info.g_watchdog_clock, watchdog_alarm_cb, &g_watchdog_info);
   if ( create_ctrl_sema() < 0 )
     return -1;
   g_drv_ctrl_ioman.name = devpfx;
@@ -245,12 +238,14 @@ int __fastcall setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
 // 402F70: using guessed type watchdog_info_ g_watchdog_info;
 
 //----- (004001EC) --------------------------------------------------------
-u32 __fastcall watchdog_alarm_cb(struct watchdog_info_ *userdata)
+unsigned int watchdog_alarm_cb(void *userdata)
 {
   int state; // [sp+14h] [+14h] BYREF
   vu8 v6; // [sp+18h] [+18h]
+  struct watchdog_info_ *wdi;
 
-  if ( userdata->g_watchdog_started != 1 )
+  wdi = (struct watchdog_info_ *)userdata;
+  if ( wdi->g_watchdog_started != 1 )
   {
     s147_dev9_mem_mmio.m_led = 3;
     return 0;
@@ -266,7 +261,7 @@ u32 __fastcall watchdog_alarm_cb(struct watchdog_info_ *userdata)
     g_watchdog_flag_1 = ( (((unsigned int)g_watchdog_count_1 >> 3) & 1) != 0 ) ? 2 : 1;
     ++g_watchdog_count_1;
   }
-  return userdata->g_watchdog_clock.lo;
+  return wdi->g_watchdog_clock.lo;
 }
 // 402948: using guessed type int g_watchdog_count_1;
 // 40294C: using guessed type char g_watchdog_flag_1;
@@ -280,21 +275,21 @@ int ctrl_drv_op_nulldev()
 }
 
 //----- (00400330) --------------------------------------------------------
-int __cdecl ctrl_drv_op_init(iop_device_t *dev)
+int ctrl_drv_op_init(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (00400358) --------------------------------------------------------
-int __cdecl ctrl_drv_op_deinit(iop_device_t *dev)
+int ctrl_drv_op_deinit(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (00400380) --------------------------------------------------------
-int __cdecl ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
+int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -333,14 +328,14 @@ int __cdecl ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
 // 402F70: using guessed type watchdog_info_ g_watchdog_info;
 
 //----- (004004D4) --------------------------------------------------------
-int __cdecl ctrl_drv_op_close(iop_file_t *f)
+int ctrl_drv_op_close(iop_file_t *f)
 {
   (void)f;
   return 0;
 }
 
 //----- (004004FC) --------------------------------------------------------
-int __cdecl ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
+int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
 {
   int unit; // [sp+10h] [+10h]
   int retres; // [sp+14h] [+14h]
@@ -358,20 +353,20 @@ int __cdecl ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
     case 12:
       if ( size != 2 )
         return -22;
-      *(_BYTE *)ptr = s147_dev9_mem_mmio.m_security_unlock_set1;
-      *((_BYTE *)ptr + 1) = s147_dev9_mem_mmio.m_security_unlock_set2;
+      *(u8 *)ptr = s147_dev9_mem_mmio.m_security_unlock_set1;
+      *((u8 *)ptr + 1) = s147_dev9_mem_mmio.m_security_unlock_set2;
       return 2;
     default:
       if ( size != 1 )
         return -22;
-      *(_BYTE *)ptr = *(_BYTE *)(unit + 0xB0000000);
+      *(u8 *)ptr = *(u8 *)(unit + 0xB0000000);
       return 1;
   }  
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400690) --------------------------------------------------------
-int __cdecl ctrl_drv_op_write(iop_file_t *f, void *ptr, int size)
+int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size)
 {
   int unit; // [sp+10h] [+10h]
   int retres; // [sp+14h] [+14h]
@@ -389,20 +384,20 @@ int __cdecl ctrl_drv_op_write(iop_file_t *f, void *ptr, int size)
     case 12:
       if ( size != 2 )
         return -22;
-      s147_dev9_mem_mmio.m_security_unlock_set1 = *(_BYTE *)ptr;
-      s147_dev9_mem_mmio.m_security_unlock_set2 = *((_BYTE *)ptr + 1);
+      s147_dev9_mem_mmio.m_security_unlock_set1 = *(u8 *)ptr;
+      s147_dev9_mem_mmio.m_security_unlock_set2 = *((u8 *)ptr + 1);
       return 2;
     default:
       if ( size != 1 )
         return -22;
-      *(_BYTE *)(unit + 0xB0000000) = *(_BYTE *)ptr;
+      *(u8 *)(unit + 0xB0000000) = *(u8 *)ptr;
       return 1;
   }
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400820) --------------------------------------------------------
-int __cdecl ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode)
+int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode)
 {
   (void)f;
   (void)offset;
@@ -426,7 +421,7 @@ int create_ctrl_sema()
 }
 
 //----- (004008EC) --------------------------------------------------------
-int __fastcall ctrl_do_rtc_read(_DWORD *rtcbuf)
+int ctrl_do_rtc_read(u32 *rtcbuf)
 {
   WaitSema(g_ctrl_sema_id);
   g_timer_id = AllocHardTimer(1, 0x20, 1);
@@ -471,7 +466,7 @@ int __fastcall ctrl_do_rtc_read(_DWORD *rtcbuf)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400C40) --------------------------------------------------------
-int __fastcall ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
+int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
 {
   int i; // [sp+10h] [+10h]
 
@@ -495,7 +490,7 @@ int __fastcall ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400DB8) --------------------------------------------------------
-int __fastcall ctrl_do_rtc_write(_DWORD *rtcbuf)
+int ctrl_do_rtc_write(u32 *rtcbuf)
 {
   WaitSema(g_ctrl_sema_id);
   g_timer_id = AllocHardTimer(1, 0x20, 1);
@@ -567,7 +562,7 @@ void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (004012E0) --------------------------------------------------------
-int __fastcall setup_sram_ioman_drv(const char *devpfx, const char *devname)
+int setup_sram_ioman_drv(const char *devpfx, const char *devname)
 {
   g_drv_sram_ioman.name = devpfx;
   g_drv_sram_ioman.type = 0x10;
@@ -587,21 +582,21 @@ int sram_drv_op_nulldev()
 }
 
 //----- (00401398) --------------------------------------------------------
-int __cdecl sram_drv_op_init(iop_device_t *dev)
+int sram_drv_op_init(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (004013C0) --------------------------------------------------------
-int __cdecl sram_drv_op_deinit(iop_device_t *dev)
+int sram_drv_op_deinit(iop_device_t *dev)
 {
   (void)dev;
   return 0;
 }
 
 //----- (004013E8) --------------------------------------------------------
-int __cdecl sram_drv_op_open(iop_file_t *f, const char *name, int flags)
+int sram_drv_op_open(iop_file_t *f, const char *name, int flags)
 {
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
   int state; // [sp+14h] [+14h] BYREF
@@ -618,7 +613,7 @@ int __cdecl sram_drv_op_open(iop_file_t *f, const char *name, int flags)
 }
 
 //----- (00401480) --------------------------------------------------------
-int __cdecl sram_drv_op_close(iop_file_t *f)
+int sram_drv_op_close(iop_file_t *f)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -632,30 +627,30 @@ int __cdecl sram_drv_op_close(iop_file_t *f)
 }
 
 //----- (004014FC) --------------------------------------------------------
-int __cdecl sram_drv_op_read(iop_file_t *f, void *ptr, int size)
+int sram_drv_op_read(iop_file_t *f, void *ptr, int size)
 {
   int sizeb; // $v0
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
 
   privdata = (struct sram_drv_privdata_ *)f->privdata;
-  if ( (signed __int32)privdata->m_curpos >= (signed __int32)privdata->m_maxpos )
+  if ( (s32)privdata->m_curpos >= (s32)privdata->m_maxpos )
     return 0;
-  sizeb = ( (signed __int32)privdata->m_maxpos < (signed __int32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
+  sizeb = ( (s32)privdata->m_maxpos < (s32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
   memcpy(ptr, (const void *)(privdata->m_curpos + 0xB0C00000), sizeb);
   privdata->m_curpos += sizeb;
   return sizeb;
 }
 
 //----- (00401620) --------------------------------------------------------
-int __cdecl sram_drv_op_write(iop_file_t *f, void *ptr, int size)
+int sram_drv_op_write(iop_file_t *f, void *ptr, int size)
 {
   int sizeb; // $v0
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
 
   privdata = (struct sram_drv_privdata_ *)f->privdata;
-  if ( (signed __int32)privdata->m_curpos >= (signed __int32)privdata->m_maxpos )
+  if ( (s32)privdata->m_curpos >= (s32)privdata->m_maxpos )
     return 0;
-  sizeb = ( (signed __int32)privdata->m_maxpos < (signed __int32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
+  sizeb = ( (s32)privdata->m_maxpos < (s32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
   s147_dev9_mem_mmio.m_sram_write_flag = 1;
   memcpy((void *)(privdata->m_curpos + 0xB0C00000), ptr, sizeb);
   s147_dev9_mem_mmio.m_sram_write_flag = 0;
@@ -665,7 +660,7 @@ int __cdecl sram_drv_op_write(iop_file_t *f, void *ptr, int size)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00401758) --------------------------------------------------------
-int __cdecl sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
+int sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
 {
   struct sram_drv_privdata_ *privdata; // [sp+0h] [+0h]
 
@@ -684,7 +679,7 @@ int __cdecl sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
     default:
       return -22;
   }
-  if ( (signed __int32)privdata->m_maxpos >= (signed __int32)privdata->m_curpos )
+  if ( (s32)privdata->m_maxpos >= (s32)privdata->m_curpos )
     return privdata->m_curpos;
   privdata->m_curpos = privdata->m_maxpos;
   return -22;
@@ -730,41 +725,41 @@ void rpc_thread1(void *userdata)
 // 40191C: using guessed type SifRpcServerData_t sd4;
 
 //----- (00401A48) --------------------------------------------------------
-void *__fastcall rpc_1470000_handler(int fno, void *buffer, int length)
+void *rpc_1470000_handler(int fno, void *buffer, int length)
 {
   (void)length;
   switch ( fno )
   {
     case 1:
-      s147_dev9_mem_mmio.m_led = *(_BYTE *)buffer;
-      *(_DWORD *)buffer = 0;
+      s147_dev9_mem_mmio.m_led = *(u8 *)buffer;
+      *(u32 *)buffer = 0;
       break;
     case 2:
-      s147_dev9_mem_mmio.m_security_unlock_unlock = *(_BYTE *)buffer;
-      *(_DWORD *)buffer = 0;
+      s147_dev9_mem_mmio.m_security_unlock_unlock = *(u8 *)buffer;
+      *(u32 *)buffer = 0;
       break;
     case 3:
-      s147_dev9_mem_mmio.m_unk03 = *(_BYTE *)buffer;
-      *(_DWORD *)buffer = 0;
+      s147_dev9_mem_mmio.m_unk03 = *(u8 *)buffer;
+      *(u32 *)buffer = 0;
       break;
     case 4:
-      s147_dev9_mem_mmio.m_rtc_flag = *(_BYTE *)buffer;
-      *(_DWORD *)buffer = 0;
+      s147_dev9_mem_mmio.m_rtc_flag = *(u8 *)buffer;
+      *(u32 *)buffer = 0;
       break;
     case 5:
-      s147_dev9_mem_mmio.m_watchdog_flag2 = *(_BYTE *)buffer;
-      *(_DWORD *)buffer = 0;
+      s147_dev9_mem_mmio.m_watchdog_flag2 = *(u8 *)buffer;
+      *(u32 *)buffer = 0;
       break;
     case 12:
-      s147_dev9_mem_mmio.m_security_unlock_set1 = *(_BYTE *)buffer;
-      *(_DWORD *)buffer = 0;
+      s147_dev9_mem_mmio.m_security_unlock_set1 = *(u8 *)buffer;
+      *(u32 *)buffer = 0;
       break;
     case 13:
-      s147_dev9_mem_mmio.m_security_unlock_set2 = *(_BYTE *)buffer;
-      *(_DWORD *)buffer = 0;
+      s147_dev9_mem_mmio.m_security_unlock_set2 = *(u8 *)buffer;
+      *(u32 *)buffer = 0;
       break;
     default:
-      *(_DWORD *)buffer = -22;
+      *(u32 *)buffer = -22;
       break;
   }
   return buffer;
@@ -772,50 +767,50 @@ void *__fastcall rpc_1470000_handler(int fno, void *buffer, int length)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00401BA0) --------------------------------------------------------
-void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length)
+void *rpc_1470001_handler(int fno, void *buffer, int length)
 {
   (void)length;
   switch ( fno )
   {
     case 0:
-      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_unk00;
-      *((_DWORD *)buffer + 1) = 0;
+      *(u8 *)buffer = s147_dev9_mem_mmio.m_unk00;
+      *((u32 *)buffer + 1) = 0;
       break;
     case 1:
-      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_led;
-      *((_DWORD *)buffer + 1) = 0;
+      *(u8 *)buffer = s147_dev9_mem_mmio.m_led;
+      *((u32 *)buffer + 1) = 0;
       break;
     case 2:
-      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_security_unlock_unlock;
-      *((_DWORD *)buffer + 1) = 0;
+      *(u8 *)buffer = s147_dev9_mem_mmio.m_security_unlock_unlock;
+      *((u32 *)buffer + 1) = 0;
       break;
     case 3:
-      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_unk03;
-      *((_DWORD *)buffer + 1) = 0;
+      *(u8 *)buffer = s147_dev9_mem_mmio.m_unk03;
+      *((u32 *)buffer + 1) = 0;
       break;
     case 4:
-      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_rtc_flag;
-      *((_DWORD *)buffer + 1) = 0;
+      *(u8 *)buffer = s147_dev9_mem_mmio.m_rtc_flag;
+      *((u32 *)buffer + 1) = 0;
       break;
     case 5:
-      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_watchdog_flag2;
-      *((_DWORD *)buffer + 1) = 0;
+      *(u8 *)buffer = s147_dev9_mem_mmio.m_watchdog_flag2;
+      *((u32 *)buffer + 1) = 0;
       break;
     case 6:
-      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_unk06;
-      *((_DWORD *)buffer + 1) = 0;
+      *(u8 *)buffer = s147_dev9_mem_mmio.m_unk06;
+      *((u32 *)buffer + 1) = 0;
       break;
     case 12:
-      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_security_unlock_set1;
-      *((_DWORD *)buffer + 1) = 0;
+      *(u8 *)buffer = s147_dev9_mem_mmio.m_security_unlock_set1;
+      *((u32 *)buffer + 1) = 0;
       break;
     case 13:
-      *(_BYTE *)buffer = s147_dev9_mem_mmio.m_security_unlock_set2;
-      *((_DWORD *)buffer + 1) = 0;
+      *(u8 *)buffer = s147_dev9_mem_mmio.m_security_unlock_set2;
+      *((u32 *)buffer + 1) = 0;
       break;
     default:
-      *(_BYTE *)buffer = 0;
-      *((_DWORD *)buffer + 1) = -22;
+      *(u8 *)buffer = 0;
+      *((u32 *)buffer + 1) = -22;
       break;
   }
   return buffer;
@@ -823,30 +818,30 @@ void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00401D30) --------------------------------------------------------
-void *__fastcall rpc_1470002_handler(int fno, void *buffer, int length)
+void *rpc_1470002_handler(int fno, void *buffer, int length)
 {
   (void)length;
-  *(_DWORD *)buffer = ( fno == 4 ) ? ctrl_do_rtc_write(buffer) : -22;
+  *(u32 *)buffer = ( fno == 4 ) ? ctrl_do_rtc_write(buffer) : -22;
   return buffer;
 }
 
 //----- (00401DCC) --------------------------------------------------------
-void *__fastcall rpc_1470003_handler(int fno, void *buffer, int length)
+void *rpc_1470003_handler(int fno, void *buffer, int length)
 {
   (void)length;
   if ( fno != 4 )
   {
-    *(_DWORD *)buffer = 0;
-    *((_DWORD *)buffer + 1) = 0;
-    *((_DWORD *)buffer + 2) = 0;
-    *((_DWORD *)buffer + 3) = 0;
-    *((_DWORD *)buffer + 4) = 0;
-    *((_DWORD *)buffer + 5) = 0;
-    *((_DWORD *)buffer + 6) = 0;
-    *((_DWORD *)buffer + 7) = -22;
+    *(u32 *)buffer = 0;
+    *((u32 *)buffer + 1) = 0;
+    *((u32 *)buffer + 2) = 0;
+    *((u32 *)buffer + 3) = 0;
+    *((u32 *)buffer + 4) = 0;
+    *((u32 *)buffer + 5) = 0;
+    *((u32 *)buffer + 6) = 0;
+    *((u32 *)buffer + 7) = -22;
     return buffer;
   }
-  *((_DWORD *)buffer + 7) = ctrl_do_rtc_read(buffer);
+  *((u32 *)buffer + 7) = ctrl_do_rtc_read(buffer);
   return buffer;
 }
 
@@ -886,33 +881,33 @@ void rpc_thread2(void *userdata)
 // 401F3C: using guessed type SifRpcServerData_t sd2;
 
 //----- (00401FFC) --------------------------------------------------------
-void *__fastcall rpc_1470200_handler(int fno, void *buffer, int length)
+void *rpc_1470200_handler(int fno, void *buffer, int length)
 {
   (void)length;
   if ( (unsigned int)fno >= 3 )
   {
-    *(_DWORD *)buffer = -1;
+    *(u32 *)buffer = -1;
     return buffer;
   }
   s147_dev9_mem_mmio.m_sram_write_flag = 1;
-  memcpy((void *)(*((_DWORD *)buffer + 256) + 0xB0C00000), buffer, *((_DWORD *)buffer + 257));
+  memcpy((void *)(*((u32 *)buffer + 256) + 0xB0C00000), buffer, *((u32 *)buffer + 257));
   s147_dev9_mem_mmio.m_sram_write_flag = 0;
-  *(_DWORD *)buffer = 0;
+  *(u32 *)buffer = 0;
   return buffer;
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (004020E0) --------------------------------------------------------
-void *__fastcall rpc_1470201_handler(int fno, void *buffer, int length)
+void *rpc_1470201_handler(int fno, void *buffer, int length)
 {
   (void)length;
   if ( (unsigned int)fno >= 3 )
   {
-    memset(buffer, 0, *((_DWORD *)buffer + 1));
-    *((_DWORD *)buffer + 256) = -1;
+    memset(buffer, 0, *((u32 *)buffer + 1));
+    *((u32 *)buffer + 256) = -1;
     return buffer;
   }
-  memcpy(buffer, (const void *)(*(_DWORD *)buffer + 0xB0C00000), *((_DWORD *)buffer + 1));
-  *((_DWORD *)buffer + 256) = 0;
+  memcpy(buffer, (const void *)(*(u32 *)buffer + 0xB0C00000), *((u32 *)buffer + 1));
+  *((u32 *)buffer + 256) = 0;
   return buffer;
 }
