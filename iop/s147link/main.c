@@ -102,11 +102,11 @@ static void *dispatch(int fno, void *buf, int size);
 //-------------------------------------------------------------------------
 // Data declarations
 
-int gbBRE;
-u8 rpc_buf[32784];
-u8 rx_buff[512][64];
-u8 tx_buff[256][64];
-CL_COM cl_info;
+static int gbBRE;
+static u8 rpc_buf[32784];
+static u8 rx_buff[512][64];
+static u8 tx_buff[256][64];
+static CL_COM cl_info;
 struct s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio; // weak
 
 

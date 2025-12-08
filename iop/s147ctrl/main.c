@@ -133,7 +133,7 @@ static void *rpc_1470201_handler(int fno, void *buffer, int length);
 //-------------------------------------------------------------------------
 // Data declarations
 
-iop_device_ops_t g_ops_ctrl_ioman =
+static iop_device_ops_t g_ops_ctrl_ioman =
 {
   &ctrl_drv_op_init,
   &ctrl_drv_op_deinit,
@@ -153,11 +153,11 @@ iop_device_ops_t g_ops_ctrl_ioman =
   (void *)&ctrl_drv_op_nulldev,
   (void *)&ctrl_drv_op_nulldev
 }; // weak
-int g_rpc_started = 0; // weak
-int g_watchdog_count_1 = 0; // weak
-char g_watchdog_flag_1 = '\x01'; // weak
-u32 g_max_timer_counter = 0; // weak
-iop_device_ops_t g_ops_sram_ioman =
+static int g_rpc_started = 0; // weak
+static int g_watchdog_count_1 = 0; // weak
+static char g_watchdog_flag_1 = 1; // weak
+static u32 g_max_timer_counter = 0; // weak
+static iop_device_ops_t g_ops_sram_ioman =
 {
   &sram_drv_op_init,
   &sram_drv_op_deinit,
@@ -177,15 +177,15 @@ iop_device_ops_t g_ops_sram_ioman =
   (void *)&sram_drv_op_nulldev,
   (void *)&sram_drv_op_nulldev,
 }; // weak
-iop_device_t g_drv_ctrl_ioman; // idb
-int g_rtc_flag; // weak
-int g_timer_id; // idb
-iop_sema_t g_ctrl_sema_param; // idb
-int g_ctrl_sema_id; // idb
-iop_device_t g_drv_sram_ioman; // idb
-int g_rpc1_buf[8]; // weak
-int g_rpc2_buf[260]; // weak
-struct watchdog_info_ g_watchdog_info; // weak
+static iop_device_t g_drv_ctrl_ioman; // idb
+static int g_rtc_flag; // weak
+static int g_timer_id; // idb
+static iop_sema_t g_ctrl_sema_param; // idb
+static int g_ctrl_sema_id; // idb
+static iop_device_t g_drv_sram_ioman; // idb
+static int g_rpc1_buf[8]; // weak
+static int g_rpc2_buf[260]; // weak
+static struct watchdog_info_ g_watchdog_info; // weak
 struct s147_dev9_mem_mmio_ s147_dev9_mem_mmio; // weak
 struct s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio; // weak
 

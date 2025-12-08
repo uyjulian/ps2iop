@@ -22,7 +22,7 @@ static int atfile_drv_op_lseek(iop_file_t *f, int offset, int mode);
 // Data declarations
 
 extern struct irx_export_table _exp_s147mdev;
-iop_device_ops_t atfile_drv_ops =
+static iop_device_ops_t atfile_drv_ops =
 {
   &atfile_drv_op_init,
   &atfile_drv_op_deinit,
@@ -42,8 +42,8 @@ iop_device_ops_t atfile_drv_ops =
   (void *)&atfile_drv_op_nulldev,
   (void *)&atfile_drv_op_nulldev,
 }; // weak
-iop_device_t g_atfile_device; // idb
-iop_device_t *g_atfile_unit_info[10];
+static iop_device_t g_atfile_device; // idb
+static iop_device_t *g_atfile_unit_info[10];
 
 //----- (00400000) --------------------------------------------------------
 int _start(int ac, char **av)
