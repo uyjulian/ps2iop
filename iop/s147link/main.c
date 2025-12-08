@@ -165,10 +165,8 @@ static void T_fix(CL_COM *io_pCommon)
 //----- (00400458) --------------------------------------------------------
 static int clink_InterruptHandler(void *userdata)
 {
-  vu8 m_unk09; // $v0
-  u8 v11; // $v0
+  u8 unk09_tmp; // $v0
   u8 *bufptr; // $s4
-  vu8 v16; // $v0
   u8 *bufptr_v2; // $s4
   u8 *bufptr_v3; // $s4
   unsigned int i_v5; // [sp+10h] [+10h]
@@ -215,15 +213,15 @@ static int clink_InterruptHandler(void *userdata)
         }
         s147link_dev9_mem_mmio.m_node_unk05 = j_v6 | 0xC0;
         s147link_dev9_mem_mmio.m_unk07 = 0;
-        m_unk09 = s147link_dev9_mem_mmio.m_unk09;
-        if ( m_unk09 == io_pCommon->mynode )
+        unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
+        if ( unk09_tmp == io_pCommon->mynode )
         {
           if ( s147link_dev9_mem_mmio.m_unk09 == 4 && !s147link_dev9_mem_mmio.m_unk09 )
           {
             rnum = s147link_dev9_mem_mmio.m_unk09;
             if ( io_pCommon->R_number[j_v6] != rnum )
             {
-              v11 = s147link_dev9_mem_mmio.m_unk09;
+              unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
               if ( io_pCommon->R_remain )
               {
                 bufptr = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
@@ -232,7 +230,7 @@ static int clink_InterruptHandler(void *userdata)
                 *bufptr++ = 4;
                 *bufptr++ = 0;
                 *bufptr++ = rnum;
-                *bufptr = v11;
+                *bufptr = unk09_tmp;
                 for ( k_v7 = 0; k_v7 < 0x3A; ++k_v7 )
                   bufptr[k_v7 + 1] = s147link_dev9_mem_mmio.m_unk09;
                 --io_pCommon->R_remain;
@@ -252,14 +250,14 @@ static int clink_InterruptHandler(void *userdata)
             }
           }
         }
-        else if ( !m_unk09 )
+        else if ( !unk09_tmp )
         {
           if ( s147link_dev9_mem_mmio.m_unk09 == 0x38 )
           {
             s147link_dev9_mem_mmio.m_node_unk05 = j_v6 | 0xC0;
             s147link_dev9_mem_mmio.m_unk07 = 0x38;
-            v16 = s147link_dev9_mem_mmio.m_unk09;
-            if ( (v16 & 0xE0) == 0x20 || (v16 & 0xE0) == 0x60 )
+            unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
+            if ( (unk09_tmp & 0xE0) == 0x20 || (unk09_tmp & 0xE0) == 0x60 )
             {
               if ( io_pCommon->R_remain )
               {
@@ -268,7 +266,7 @@ static int clink_InterruptHandler(void *userdata)
                 *bufptr_v2++ = 0;
                 *bufptr_v2 = 56;
                 bufptr_v2 += 54;
-                *bufptr_v2++ = v16;
+                *bufptr_v2++ = unk09_tmp;
                 *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
                 *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
                 *bufptr_v2++ = s147link_dev9_mem_mmio.m_unk09;
@@ -627,8 +625,8 @@ static int InitS147link(int maxnode, int mynode, int priority)
 //----- (0040281C) --------------------------------------------------------
 static void reset_circlink(void)
 {
-  vu8 m_stsH_unk12; // $v0
-  vu8 m_stsL_unk13; // $v0
+  u8 stsH; // $v0
+  u8 stsL; // $v0
   int i; // [sp+0h] [+0h]
   int j; // [sp+4h] [+4h]
 
@@ -665,10 +663,10 @@ static void reset_circlink(void)
   s147link_dev9_mem_mmio.m_unk1D = 0xFF;
   s147link_dev9_mem_mmio.m_rxfc_hi_unk1E = 0xFF;
   s147link_dev9_mem_mmio.m_rxfc_lo_unk1F = 0xFF;
-  m_stsH_unk12 = s147link_dev9_mem_mmio.m_stsH_unk12;
-  m_stsL_unk13 = s147link_dev9_mem_mmio.m_stsL_unk13;
-  s147link_dev9_mem_mmio.m_stsH_unk12 = m_stsH_unk12;
-  s147link_dev9_mem_mmio.m_stsL_unk13 = m_stsL_unk13;
+  stsH = s147link_dev9_mem_mmio.m_stsH_unk12;
+  stsL = s147link_dev9_mem_mmio.m_stsL_unk13;
+  s147link_dev9_mem_mmio.m_stsH_unk12 = stsH;
+  s147link_dev9_mem_mmio.m_stsL_unk13 = stsL;
 }
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 #endif

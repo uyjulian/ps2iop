@@ -242,7 +242,7 @@ static int setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
 static unsigned int watchdog_alarm_cb(void *userdata)
 {
   int state; // [sp+14h] [+14h] BYREF
-  vu8 v6; // [sp+18h] [+18h]
+  u8 unk34_tmp; // [sp+18h] [+18h]
   struct watchdog_info_ *wdi;
 
   wdi = (struct watchdog_info_ *)userdata;
@@ -253,9 +253,9 @@ static unsigned int watchdog_alarm_cb(void *userdata)
   }
   CpuSuspendIntr(&state);
   s147link_dev9_mem_mmio.m_watchdog_flag_unk34 = 0;
-  v6 = s147link_dev9_mem_mmio.m_watchdog_flag_unk34;
+  unk34_tmp = s147link_dev9_mem_mmio.m_watchdog_flag_unk34;
   CpuResumeIntr(state);
-  if ( v6 == 0x3E )
+  if ( unk34_tmp == 0x3E )
   {
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
     s147_dev9_mem_mmio.m_led = g_watchdog_flag_1;
