@@ -781,25 +781,36 @@ void *__fastcall rpc_1470000_handler(int fno, void *buffer, int length)
   {
     case 1:
       s147_dev9_mem_mmio.m_led = *(_BYTE *)buffer;
-      goto LABEL_10;
+      *(_DWORD *)buffer = 0;
+      result = buffer;
+      break;
     case 2:
       s147_dev9_mem_mmio.m_security_unlock_unlock = *(_BYTE *)buffer;
-      goto LABEL_10;
+      *(_DWORD *)buffer = 0;
+      result = buffer;
+      break;
     case 3:
       s147_dev9_mem_mmio.m_unk03 = *(_BYTE *)buffer;
-      goto LABEL_10;
+      *(_DWORD *)buffer = 0;
+      result = buffer;
+      break;
     case 4:
       s147_dev9_mem_mmio.m_rtc_flag = *(_BYTE *)buffer;
-      goto LABEL_10;
+      *(_DWORD *)buffer = 0;
+      result = buffer;
+      break;
     case 5:
       s147_dev9_mem_mmio.m_watchdog_flag2 = *(_BYTE *)buffer;
-      goto LABEL_10;
+      *(_DWORD *)buffer = 0;
+      result = buffer;
+      break;
     case 12:
       s147_dev9_mem_mmio.m_security_unlock_set1 = *(_BYTE *)buffer;
-      goto LABEL_10;
+      *(_DWORD *)buffer = 0;
+      result = buffer;
+      break;
     case 13:
       s147_dev9_mem_mmio.m_security_unlock_set2 = *(_BYTE *)buffer;
-LABEL_10:
       *(_DWORD *)buffer = 0;
       result = buffer;
       break;
@@ -831,39 +842,46 @@ void *__fastcall rpc_1470001_handler(int fno, void *buffer, int length)
     case 0:
       m_unk00 = s147_dev9_mem_mmio.m_unk00;
       *(_BYTE *)buffer = m_unk00;
-      goto LABEL_12;
+      *((_DWORD *)buffer + 1) = 0;
+      result = buffer;
     case 1:
       m_led = s147_dev9_mem_mmio.m_led;
       *(_BYTE *)buffer = m_led;
-      goto LABEL_12;
+      *((_DWORD *)buffer + 1) = 0;
+      result = buffer;
     case 2:
       m_security_unlock_unlock = s147_dev9_mem_mmio.m_security_unlock_unlock;
       *(_BYTE *)buffer = m_security_unlock_unlock;
-      goto LABEL_12;
+      *((_DWORD *)buffer + 1) = 0;
+      result = buffer;
     case 3:
       m_unk03 = s147_dev9_mem_mmio.m_unk03;
       *(_BYTE *)buffer = m_unk03;
-      goto LABEL_12;
+      *((_DWORD *)buffer + 1) = 0;
+      result = buffer;
     case 4:
       m_rtc_flag = s147_dev9_mem_mmio.m_rtc_flag;
       *(_BYTE *)buffer = m_rtc_flag;
-      goto LABEL_12;
+      *((_DWORD *)buffer + 1) = 0;
+      result = buffer;
     case 5:
       m_watchdog_flag2 = s147_dev9_mem_mmio.m_watchdog_flag2;
       *(_BYTE *)buffer = m_watchdog_flag2;
-      goto LABEL_12;
+      *((_DWORD *)buffer + 1) = 0;
+      result = buffer;
     case 6:
       m_unk06 = s147_dev9_mem_mmio.m_unk06;
       *(_BYTE *)buffer = m_unk06;
-      goto LABEL_12;
+      *((_DWORD *)buffer + 1) = 0;
+      result = buffer;
     case 12:
       m_security_unlock_set1 = s147_dev9_mem_mmio.m_security_unlock_set1;
       *(_BYTE *)buffer = m_security_unlock_set1;
-      goto LABEL_12;
+      *((_DWORD *)buffer + 1) = 0;
+      result = buffer;
     case 13:
       m_security_unlock_set2 = s147_dev9_mem_mmio.m_security_unlock_set2;
       *(_BYTE *)buffer = m_security_unlock_set2;
-LABEL_12:
       *((_DWORD *)buffer + 1) = 0;
       result = buffer;
       break;

@@ -396,33 +396,34 @@ int __fastcall clink_InterruptHandler(CL_COM *io_pCommon)
       if ( io_pCommon->T_remain == 0x100 )
       {
         s147link_dev9_mem_mmio.m_unk15 = 0x1A;
-        goto LABEL_62;
+        break;
       }
       bufptr_v3 = &io_pCommon->T_top[0x40 * io_pCommon->T_out];
       if ( *bufptr_v3 == io_pCommon->mynode )
       {
         io_pCommon->T_node = bufptr_v3[1];
         if ( !io_pCommon->T_error[io_pCommon->T_node] || !io_pCommon->T_pd[io_pCommon->T_node] )
+        {
+          s147link_dev9_mem_mmio.m_node_unk05 = (io_pCommon->mynode & 0xFF) | 0x40;
+          s147link_dev9_mem_mmio.m_unk07 = 0;
+          for ( i_v5 = 0; i_v5 < 0x40; ++i_v5 )
+            s147link_dev9_mem_mmio.m_unk09 = *bufptr_v3++;
+          ++io_pCommon->T_remain;
+          ++io_pCommon->T_out;
+          io_pCommon->T_out = (unsigned __int8)io_pCommon->T_out;
+          T_fix(io_pCommon);
+          s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+          tflag = 1;
+          io_pCommon->timeout = 1;
           break;
+        }
       }
       ++io_pCommon->T_remain;
       ++io_pCommon->T_out;
       io_pCommon->T_out = (unsigned __int8)io_pCommon->T_out;
       T_fix(io_pCommon);
     }
-    s147link_dev9_mem_mmio.m_node_unk05 = (io_pCommon->mynode & 0xFF) | 0x40;
-    s147link_dev9_mem_mmio.m_unk07 = 0;
-    for ( i_v5 = 0; i_v5 < 0x40; ++i_v5 )
-      s147link_dev9_mem_mmio.m_unk09 = *bufptr_v3++;
-    ++io_pCommon->T_remain;
-    ++io_pCommon->T_out;
-    io_pCommon->T_out = (unsigned __int8)io_pCommon->T_out;
-    T_fix(io_pCommon);
-    s147link_dev9_mem_mmio.m_unk15 = 0x1B;
-    tflag = 1;
-    io_pCommon->timeout = 1;
   }
-LABEL_62:
   CpuSuspendIntr(&state);
   if ( tflag )
     s147link_dev9_mem_mmio.m_unk17 = 3;
@@ -894,7 +895,6 @@ int __fastcall s147link_loop()
 //----- (004030A8) --------------------------------------------------------
 void *__fastcall dispatch(unsigned int fno, void *buf, int size)
 {
-  unsigned int fno_masked; // $v0
   int tmp_online; // $v1
   int state; // [sp+14h] [+14h] BYREF
   int node; // [sp+18h] [+18h]
@@ -903,70 +903,71 @@ void *__fastcall dispatch(unsigned int fno, void *buf, int size)
   int j; // [sp+24h] [+24h]
 
   FlushDcache();
-  fno_masked = fno & 0xFF000000;
-  if ( (fno & 0xFF000000) == 0x8000000 )
+  node = fno & 0xFF;
+  sizea = (fno & 0xFFFF00) >> 8;
+  switch (fno >> 24)
   {
-    *(_DWORD *)buf = cl_info.online;
-  }
-  else if ( fno_masked > 0x8000000 )
-  {
-    if ( fno_masked == 0xC000000 )
-    {
-      node = (unsigned __int8)fno;
-      *(_DWORD *)buf = cl_info.R_lost[(unsigned __int8)fno];
-      cl_info.R_lost[node] = 0;
-    }
-    else if ( fno_masked > 0xC000000 )
-    {
-      if ( fno_masked == 0xF000000 )
-      {
-        CpuSuspendIntr(&state);
-        clink_InterruptHandler(&cl_info);
-        CpuResumeIntr(state);
-      }
-      else if ( fno_masked > 0xF000000 )
-      {
-        if ( fno_masked == 0x10000000 )
-        {
-          CpuSuspendIntr(&state);
-          cl_info.T_out = 0;
-          cl_info.T_in = 0;
-          cl_info.T_remain = 0x100;
-          s147link_dev9_mem_mmio.m_unk17 = 1;
-          s147link_dev9_mem_mmio.m_unk17 = 0xE;
-          cl_info.T_error[cl_info.T_node] = 0xFFFFFFFD;
-          *(_DWORD *)buf = cl_info.T_node;
-          CpuResumeIntr(state);
-        }
-        else
-        {
-          if ( fno_masked != 0x11000000 )
-            goto LABEL_50;
-          *(_DWORD *)buf = cl_info.rbfix;
-        }
-      }
-      else
-      {
-        if ( fno_masked != 0xD000000 )
-          goto LABEL_50;
-        node = (unsigned __int8)fno;
-        sizea = (fno & 0xFFFF00) >> 8;
-        *(_DWORD *)buf = cl_write_custom((unsigned __int8)fno, (unsigned __int8 *)buf, sizea);
-      }
-    }
-    else if ( fno_masked == 0xA000000 )
-    {
-      node = (unsigned __int8)fno;
+    case 0x00:
+      *(_DWORD *)buf = 1;
+      break;
+    case 0x01:
+      cl_info.R_pd[node] = *(_DWORD *)buf;
+      cl_info.T_pd[node] = *((_DWORD *)buf + 1);
+      cl_info.T_time[node] = *((_DWORD *)buf + 2);
+      break;
+    case 0x10:
+      CpuSuspendIntr(&state);
+      cl_info.T_out = 0;
+      cl_info.T_in = 0;
+      cl_info.T_remain = 0x100;
+      s147link_dev9_mem_mmio.m_unk17 = 1;
+      s147link_dev9_mem_mmio.m_unk17 = 0xE;
+      cl_info.T_error[cl_info.T_node] = 0xFFFFFFFD;
+      *(_DWORD *)buf = cl_info.T_node;
+      CpuResumeIntr(state);
+      break;
+    case 0x11:
+      *(_DWORD *)buf = cl_info.rbfix;
+      break;
+    case 0x20:
+      *(_DWORD *)buf = cl_mread((char *)buf + 4, *(_DWORD *)buf);
+      CpuSuspendIntr(&state);
+      clink_InterruptHandler(&cl_info);
+      CpuResumeIntr(state);
+      break;
+    case 0x30:
+      *(_DWORD *)buf = cl_write(node, (unsigned __int8 *)buf, sizea);
+      break;
+    case 0x40:
+      *(_DWORD *)buf = cl_mwrite((unsigned __int8 *)buf, sizea);
+      break;
+    case 0x50:
+      CpuSuspendIntr(&state);
+      cl_info.R_out = 0;
+      cl_info.R_in = 0;
+      cl_info.R_remain = 0x200;
+      CpuResumeIntr(state);
+      break;
+    case 0x60:
+      *(_DWORD *)buf = cl_info.R_remain;
+      break;
+    case 0x70:
+      *(_DWORD *)buf = cl_info.T_remain;
+      break;
+    case 0x80:
+      *(_DWORD *)buf = cl_info.online;
+      break;
+    case 0x90:
+      *(_DWORD *)buf = cl_info.T_error[node];
+      break;
+    case 0xA0:
       CpuSuspendIntr(&state);
       cl_info.T_error[node] = 0;
       s147link_dev9_mem_mmio.m_unk15 = 0x1B;
       clink_InterruptHandler(&cl_info);
       CpuResumeIntr(state);
-    }
-    else if ( fno_masked > 0xA000000 )
-    {
-      if ( fno_masked != 0xB000000 )
-        goto LABEL_50;
+      break;
+    case 0xB0:
       CpuSuspendIntr(&state);
       s147link_dev9_mem_mmio.m_unk17 = 1;
       s147link_dev9_mem_mmio.m_unk17 = 0xE;
@@ -975,79 +976,23 @@ void *__fastcall dispatch(unsigned int fno, void *buf, int size)
       s147link_dev9_mem_mmio.m_unk15 = 0x1B;
       clink_InterruptHandler(&cl_info);
       CpuResumeIntr(state);
-    }
-    else
-    {
-      if ( fno_masked != 0x9000000 )
-        goto LABEL_50;
-      node = (unsigned __int8)fno;
-      *(_DWORD *)buf = cl_info.T_error[(unsigned __int8)fno];
-    }
-  }
-  else if ( fno_masked == 0x3000000 )
-  {
-    node = (unsigned __int8)fno;
-    sizea = (fno & 0xFFFF00) >> 8;
-    *(_DWORD *)buf = cl_write((unsigned __int8)fno, (unsigned __int8 *)buf, sizea);
-  }
-  else if ( fno_masked > 0x3000000 )
-  {
-    if ( fno_masked == 0x5000000 )
-    {
+      break;
+    case 0xC0:
+      *(_DWORD *)buf = cl_info.R_lost[node];
+      cl_info.R_lost[node] = 0;
+      break;
+    case 0xD0:
+      *(_DWORD *)buf = cl_write_custom(node, (unsigned __int8 *)buf, sizea);
+      break;
+    case 0xF0:
       CpuSuspendIntr(&state);
-      cl_info.R_out = 0;
-      cl_info.R_in = 0;
-      cl_info.R_remain = 0x200;
+      clink_InterruptHandler(&cl_info);
       CpuResumeIntr(state);
-    }
-    else if ( fno_masked > 0x5000000 )
-    {
-      if ( fno_masked == 0x6000000 )
-      {
-        *(_DWORD *)buf = cl_info.R_remain;
-      }
-      else
-      {
-        if ( fno_masked != 0x7000000 )
-          goto LABEL_50;
-        *(_DWORD *)buf = cl_info.T_remain;
-      }
-    }
-    else
-    {
-      if ( fno_masked != 0x4000000 )
-        goto LABEL_50;
-      sizea = (fno & 0xFFFF00) >> 8;
-      *(_DWORD *)buf = cl_mwrite((unsigned __int8 *)buf, sizea);
-    }
-  }
-  else if ( fno_masked == 0x1000000 )
-  {
-    node = (unsigned __int8)fno;
-    cl_info.R_pd[(unsigned __int8)fno] = *(_DWORD *)buf;
-    cl_info.T_pd[node] = *((_DWORD *)buf + 1);
-    cl_info.T_time[node] = *((_DWORD *)buf + 2);
-  }
-  else if ( fno_masked > 0x1000000 )
-  {
-    if ( fno_masked != 0x2000000 )
-      goto LABEL_50;
-    *(_DWORD *)buf = cl_mread((char *)buf + 4, *(_DWORD *)buf);
-    CpuSuspendIntr(&state);
-    clink_InterruptHandler(&cl_info);
-    CpuResumeIntr(state);
-  }
-  else
-  {
-    if ( fno_masked )
-    {
-LABEL_50:
+      break;
+    default:
       printf("S147LINK: Unknown RPC command (%X)\n", fno);
-      goto LABEL_51;
-    }
-    *(_DWORD *)buf = 1;
+      break;
   }
-LABEL_51:
   if ( cl_info.online )
     tmp_online = *(_DWORD *)buf | 0x10000;
   else
