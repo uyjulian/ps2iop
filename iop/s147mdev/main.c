@@ -9,7 +9,7 @@ IRX_ID("S147MDEV", 2, 1);
 static int register_atfile_ioman_device(const char *atfile_name, const char *atfile_desc);
 int s147mdev_4_addfs(iop_device_t *drv, int unit10);
 int s147mdev_5_delfs(int unit10);
-static int atfile_drv_op_nulldev(iop_file_t *f);
+static int atfile_drv_op_nulldev(const iop_file_t *f);
 static int atfile_drv_op_init(iop_device_t *dev);
 static int atfile_drv_op_deinit(iop_device_t *dev);
 static int atfile_drv_op_open(iop_file_t *f, const char *name, int flags);
@@ -118,7 +118,7 @@ int s147mdev_5_delfs(int unit10)
 // 4003C0: variable 'retres' is possibly undefined
 
 //----- (00400430) --------------------------------------------------------
-static int atfile_drv_op_nulldev(iop_file_t *f)
+static int atfile_drv_op_nulldev(const iop_file_t *f)
 {
   int unit; // [sp+10h] [+10h]
 

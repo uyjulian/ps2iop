@@ -165,13 +165,10 @@ static void T_fix(CL_COM *io_pCommon)
 //----- (00400458) --------------------------------------------------------
 static int clink_InterruptHandler(void *userdata)
 {
-  u8 unk09_tmp; // $v0
   u8 *bufptr; // $s4
   unsigned int i; // [sp+10h] [+10h]
-  unsigned int j; // [sp+18h] [+18h]
   u8 stsH; // [sp+1Ch] [+1Ch]
   u8 stsL; // [sp+1Dh] [+1Dh]
-  u8 rnum; // [sp+1Eh] [+1Eh]
   unsigned int rxfs; // [sp+20h] [+20h]
   unsigned int rxfc; // [sp+24h] [+24h]
   unsigned int tflag; // [sp+28h] [+28h]
@@ -204,6 +201,8 @@ static int clink_InterruptHandler(void *userdata)
     {
       if ( i != io_pCommon->mynode )
       {
+        u8 unk09_tmp; // $v0
+
         if ( (rxfs & (1 << i)) == 0 )
         {
           continue;
@@ -213,14 +212,19 @@ static int clink_InterruptHandler(void *userdata)
         unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
         if ( unk09_tmp == io_pCommon->mynode )
         {
+          // cppcheck-suppress incorrectLogicOperator
           if ( s147link_dev9_mem_mmio.m_unk09 == 4 && !s147link_dev9_mem_mmio.m_unk09 )
           {
+            u8 rnum; // [sp+1Eh] [+1Eh]
+
             rnum = s147link_dev9_mem_mmio.m_unk09;
             if ( io_pCommon->R_number[i] != rnum )
             {
               unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
               if ( io_pCommon->R_remain )
               {
+                unsigned int j; // [sp+18h] [+18h]
+
                 bufptr = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
                 *bufptr++ = i;
                 *bufptr++ = io_pCommon->mynode;

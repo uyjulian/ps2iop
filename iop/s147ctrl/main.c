@@ -100,15 +100,15 @@ static unsigned int watchdog_alarm_cb(void *userdata);
 static int ctrl_drv_op_nulldev(void);
 static int ctrl_drv_op_init(iop_device_t *dev);
 static int ctrl_drv_op_deinit(iop_device_t *dev);
-static int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags);
+static int ctrl_drv_op_open(const iop_file_t *f, const char *name, int flags);
 static int ctrl_drv_op_close(iop_file_t *f);
-static int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size);
-static int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size);
+static int ctrl_drv_op_read(const iop_file_t *f, void *ptr, int size);
+static int ctrl_drv_op_write(const iop_file_t *f, void *ptr, int size);
 static int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode);
 static int create_ctrl_sema(void);
 static int ctrl_do_rtc_read(u32 *rtcbuf);
 static int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk);
-static int ctrl_do_rtc_write(u32 *rtcbuf);
+static int ctrl_do_rtc_write(const u32 *rtcbuf);
 static void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk);
 static int setup_sram_ioman_drv(const char *devpfx, const char *devname);
 static int sram_drv_op_nulldev(void);
@@ -135,23 +135,23 @@ static void *rpc_1470201_handler(int fno, void *buffer, int length);
 
 static iop_device_ops_t g_ops_ctrl_ioman =
 {
-  &ctrl_drv_op_init,
-  &ctrl_drv_op_deinit,
+  (void *)&ctrl_drv_op_init,
+  (void *)&ctrl_drv_op_deinit,
   (void *)&ctrl_drv_op_nulldev,
-  &ctrl_drv_op_open,
-  &ctrl_drv_op_close,
-  &ctrl_drv_op_read,
-  &ctrl_drv_op_write,
-  &ctrl_drv_op_lseek,
-  (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev,
+  (void *)&ctrl_drv_op_open,
+  (void *)&ctrl_drv_op_close,
+  (void *)&ctrl_drv_op_read,
+  (void *)&ctrl_drv_op_write,
+  (void *)&ctrl_drv_op_lseek,
   (void *)&ctrl_drv_op_nulldev,
   (void *)&ctrl_drv_op_nulldev,
   (void *)&ctrl_drv_op_nulldev,
   (void *)&ctrl_drv_op_nulldev,
   (void *)&ctrl_drv_op_nulldev,
   (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev
+  (void *)&ctrl_drv_op_nulldev,
+  (void *)&ctrl_drv_op_nulldev,
+  (void *)&ctrl_drv_op_nulldev,
 }; // weak
 // Unofficial: move to bss
 static int g_rpc_started; // weak
@@ -163,14 +163,14 @@ static char g_watchdog_flag_1; // weak
 static u32 g_max_timer_counter; // weak
 static iop_device_ops_t g_ops_sram_ioman =
 {
-  &sram_drv_op_init,
-  &sram_drv_op_deinit,
+  (void *)&sram_drv_op_init,
+  (void *)&sram_drv_op_deinit,
   (void *)&sram_drv_op_nulldev,
-  &sram_drv_op_open,
-  &sram_drv_op_close,
-  &sram_drv_op_read,
-  &sram_drv_op_write,
-  &sram_drv_op_lseek,
+  (void *)&sram_drv_op_open,
+  (void *)&sram_drv_op_close,
+  (void *)&sram_drv_op_read,
+  (void *)&sram_drv_op_write,
+  (void *)&sram_drv_op_lseek,
   (void *)&sram_drv_op_nulldev,
   (void *)&sram_drv_op_nulldev,
   (void *)&sram_drv_op_nulldev,
@@ -207,6 +207,7 @@ int _start(int ac, char **av)
     Kprintf("s147ctrl.irx: Ctrl initialize failed\n");
     return 1;
   }
+  // cppcheck-suppress knownConditionTrueFalse
   if ( setup_sram_ioman_drv("sram", "SRAM") < 0 )
   {
     Kprintf("s147ctrl.irx: Sram initialize failed\n");
@@ -295,7 +296,7 @@ static int ctrl_drv_op_deinit(iop_device_t *dev)
 }
 
 //----- (00400380) --------------------------------------------------------
-static int ctrl_drv_op_open(iop_file_t *f, const char *name, int flags)
+static int ctrl_drv_op_open(const iop_file_t *f, const char *name, int flags)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -341,7 +342,7 @@ static int ctrl_drv_op_close(iop_file_t *f)
 }
 
 //----- (004004FC) --------------------------------------------------------
-static int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
+static int ctrl_drv_op_read(const iop_file_t *f, void *ptr, int size)
 {
   int unit; // [sp+10h] [+10h]
   int retres; // [sp+14h] [+14h]
@@ -372,7 +373,7 @@ static int ctrl_drv_op_read(iop_file_t *f, void *ptr, int size)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400690) --------------------------------------------------------
-static int ctrl_drv_op_write(iop_file_t *f, void *ptr, int size)
+static int ctrl_drv_op_write(const iop_file_t *f, void *ptr, int size)
 {
   int unit; // [sp+10h] [+10h]
   int retres; // [sp+14h] [+14h]
@@ -495,7 +496,7 @@ static int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400DB8) --------------------------------------------------------
-static int ctrl_do_rtc_write(u32 *rtcbuf)
+static int ctrl_do_rtc_write(const u32 *rtcbuf)
 {
   WaitSema(g_ctrl_sema_id);
   g_timer_id = AllocHardTimer(1, 0x20, 1);
