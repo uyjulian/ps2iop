@@ -222,7 +222,7 @@ int _start(int ac, char **av)
 //----- (004000C0) --------------------------------------------------------
 static void setup_ac_delay_regs(void)
 {
-  SetAcMemDelayReg(0x261A2122u);
+  SetAcMemDelayReg(0x261A2122);
   SetAcIoDelayReg(0xA61A0166);
 }
 
@@ -230,7 +230,7 @@ static void setup_ac_delay_regs(void)
 static int setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
 {
   g_watchdog_info.g_watchdog_started = 1;
-  USec2SysClock(0x4E20u, &g_watchdog_info.g_watchdog_clock);
+  USec2SysClock(0x4E20, &g_watchdog_info.g_watchdog_clock);
   SetAlarm(&g_watchdog_info.g_watchdog_clock, watchdog_alarm_cb, &g_watchdog_info);
   if ( create_ctrl_sema() < 0 )
     return -1;

@@ -616,7 +616,7 @@ static int InitS147link(int maxnode, int mynode, int priority)
     DeleteThread(thid);
     return -2;
   }
-  USec2SysClock(0x7D0u, &cl_info.sys_clock);
+  USec2SysClock(0x7D0, &cl_info.sys_clock);
   if ( SetAlarm(&cl_info.sys_clock, alarm_handler, &cl_info) )
   {
     printf("S147LINK: Cannot set alarm handler ...\n");
