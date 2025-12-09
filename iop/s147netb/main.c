@@ -5,12 +5,11 @@
 
 IRX_ID("S147NETB", 2, 2);
 
-//----- (00400000) --------------------------------------------------------
 int _start(int ac, char **av)
 {
-  char probebuf; // [sp+10h] [+10h] BYREF
-  int fd; // [sp+14h] [+14h]
-  int probe_i; // [sp+18h] [+18h]
+  char probebuf;
+  int fd;
+  int probe_i;
 
   (void)ac;
   (void)av;
@@ -75,4 +74,3 @@ int _start(int ac, char **av)
   Kprintf("s147netb.irx: LoadStartModule \"%s\" (%d)\n", "atfile10:s147http.irx", LoadStartModule("atfile10:s147http.irx", 0, 0, 0));
   return MODULE_RESIDENT_END;
 }
-// 400000: using guessed type char probebuf[4];

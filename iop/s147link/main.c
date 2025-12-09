@@ -90,17 +90,10 @@ typedef struct __anon_struct_35
   iop_sys_clock_t sys_clock;
 } CL_COM;
 
-
-//-------------------------------------------------------------------------
-// Function declarations
-
 static int InitS147link(int maxnode, int mynode, int priority);
 static unsigned int alarm_handler(void *userdata);
 static void s147link_loop(void *userdata);
 static void *dispatch(int fno, void *buf, int size);
-
-//-------------------------------------------------------------------------
-// Data declarations
 
 static int gbBRE;
 static u8 rpc_buf[32784];
@@ -109,13 +102,11 @@ static u8 tx_buff[256][64];
 static CL_COM cl_info;
 #define USE_S147LINK_DEV9_MEM_MMIO() struct s147link_dev9_mem_mmio_ *const s147link_dev9_mem_mmio = (void *)0xB0800000
 
-
-//----- (00400000) --------------------------------------------------------
 int _start(int argc, char **argv)
 {
-  int maxnode; // [sp+10h] [+10h]
-  int mynode; // [sp+14h] [+14h]
-  int priority; // [sp+18h] [+18h]
+  int maxnode;
+  int mynode;
+  int priority;
 
   maxnode = ( argc >= 2 ) ? strtol(argv[1], 0, 10) : 0;
   if ( maxnode < 2 || maxnode >= 16 )
@@ -138,11 +129,7 @@ int _start(int argc, char **argv)
   }
   return MODULE_RESIDENT_END;
 }
-// 40005C: variable 'maxnode' is possibly undefined
-// 4000C8: variable 'mynode' is possibly undefined
-// 40013C: variable 'priority' is possibly undefined
 
-//----- (00400300) --------------------------------------------------------
 static void T_fix(CL_COM *io_pCommon)
 {
   if ( io_pCommon->T_remain >= 0x101 )
@@ -164,17 +151,16 @@ static void T_fix(CL_COM *io_pCommon)
   }
 }
 
-//----- (00400458) --------------------------------------------------------
 static int clink_InterruptHandler(void *userdata)
 {
-  u8 *bufptr; // $s4
-  unsigned int i; // [sp+10h] [+10h]
-  u8 stsH; // [sp+1Ch] [+1Ch]
-  u8 stsL; // [sp+1Dh] [+1Dh]
-  unsigned int rxfs; // [sp+20h] [+20h]
-  unsigned int rxfc; // [sp+24h] [+24h]
-  unsigned int tflag; // [sp+28h] [+28h]
-  int state; // [sp+2Ch] [+2Ch] BYREF
+  u8 *bufptr;
+  unsigned int i;
+  u8 stsH;
+  u8 stsL;
+  unsigned int rxfs;
+  unsigned int rxfc;
+  unsigned int tflag;
+  int state;
   CL_COM *io_pCommon;
   USE_S147LINK_DEV9_MEM_MMIO();
 
@@ -204,7 +190,7 @@ static int clink_InterruptHandler(void *userdata)
     {
       if ( i != io_pCommon->mynode )
       {
-        u8 unk09_tmp; // $v0
+        u8 unk09_tmp;
 
         if ( (rxfs & (1 << i)) == 0 )
         {
@@ -218,7 +204,7 @@ static int clink_InterruptHandler(void *userdata)
           // cppcheck-suppress incorrectLogicOperator
           if ( s147link_dev9_mem_mmio->m_unk09 == 4 && !s147link_dev9_mem_mmio->m_unk09 )
           {
-            u8 rnum; // [sp+1Eh] [+1Eh]
+            u8 rnum;
 
             rnum = s147link_dev9_mem_mmio->m_unk09;
             if ( io_pCommon->R_number[i] != rnum )
@@ -226,7 +212,7 @@ static int clink_InterruptHandler(void *userdata)
               unk09_tmp = s147link_dev9_mem_mmio->m_unk09;
               if ( io_pCommon->R_remain )
               {
-                unsigned int j; // [sp+18h] [+18h]
+                unsigned int j;
 
                 bufptr = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
                 bufptr[0] = i;
@@ -358,14 +344,12 @@ static int clink_InterruptHandler(void *userdata)
   CpuResumeIntr(state);
   return 1;
 }
-// B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
-//----- (00401520) --------------------------------------------------------
 static int cl_mread(void *dstptr, int count)
 {
-  int state; // [sp+10h] [+10h] BYREF
-  int size; // [sp+14h] [+14h]
-  int packs; // [sp+18h] [+18h]
+  int state;
+  int size;
+  int packs;
 
   CpuSuspendIntr(&state);
   size = 0x200 - cl_info.R_remain;
@@ -416,10 +400,9 @@ static int cl_mread(void *dstptr, int count)
   return count;
 }
 
-//----- (00401864) --------------------------------------------------------
 static int cl_write(int node, u8 *srcptr, int size)
 {
-  int state; // [sp+10h] [+10h] BYREF
+  int state;
   USE_S147LINK_DEV9_MEM_MMIO();
 
   CpuSuspendIntr(&state);
@@ -443,12 +426,10 @@ static int cl_write(int node, u8 *srcptr, int size)
   CpuResumeIntr(state);
   return size;
 }
-// B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
-//----- (00401A84) --------------------------------------------------------
 static int cl_write_custom(int node, u8 *srcptr, int cpVal)
 {
-  int state; // [sp+10h] [+10h] BYREF
+  int state;
   USE_S147LINK_DEV9_MEM_MMIO();
 
   CpuSuspendIntr(&state);
@@ -469,14 +450,12 @@ static int cl_write_custom(int node, u8 *srcptr, int cpVal)
   CpuResumeIntr(state);
   return 64;
 }
-// B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
-//----- (00401C10) --------------------------------------------------------
 static int cl_mwrite(u8 *srcptr, int count)
 {
-  int state; // [sp+10h] [+10h] BYREF
-  int i; // [sp+14h] [+14h]
-  int packs; // [sp+20h] [+20h]
+  int state;
+  int i;
+  int packs;
   USE_S147LINK_DEV9_MEM_MMIO();
 
   if ( cl_info.T_remain < (unsigned int)count )
@@ -515,16 +494,14 @@ static int cl_mwrite(u8 *srcptr, int count)
   CpuResumeIntr(state);
   return count;
 }
-// B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
-//----- (00401F3C) --------------------------------------------------------
 static int InitS147link(int maxnode, int mynode, int priority)
 {
-  iop_thread_t param; // [sp+10h] [+10h] BYREF
-  int thid; // [sp+28h] [+28h]
-  int i; // [sp+2Ch] [+2Ch]
-  int j; // [sp+30h] [+30h]
-  int state; // [sp+34h] [+34h] BYREF
+  iop_thread_t param;
+  int thid;
+  int i;
+  int j;
+  int state;
   u8 stsH;
   u8 stsL;
   USE_S147LINK_DEV9_MEM_MMIO();
@@ -630,16 +607,14 @@ static int InitS147link(int maxnode, int mynode, int priority)
   }
   return 0;
 }
-// B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
 #ifdef UNUSED_FUNC
-//----- (0040281C) --------------------------------------------------------
 static void reset_circlink(void)
 {
-  u8 stsH; // $v0
-  u8 stsL; // $v0
-  int i; // [sp+0h] [+0h]
-  int j; // [sp+4h] [+4h]
+  u8 stsH;
+  u8 stsL;
+  int i;
+  int j;
   USE_S147LINK_DEV9_MEM_MMIO();
 
   s147link_dev9_mem_mmio->m_unk0D |= 0x80;
@@ -680,13 +655,11 @@ static void reset_circlink(void)
   s147link_dev9_mem_mmio->m_stsH_unk12 = stsH;
   s147link_dev9_mem_mmio->m_stsL_unk13 = stsL;
 }
-// B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 #endif
 
-//----- (00402D58) --------------------------------------------------------
 static unsigned int alarm_handler(void *userdata)
 {
-  int state; // [sp+10h] [+10h] BYREF
+  int state;
   CL_COM *io_pCommon;
   USE_S147LINK_DEV9_MEM_MMIO();
 
@@ -739,13 +712,11 @@ static unsigned int alarm_handler(void *userdata)
   }
   return io_pCommon->sys_clock.lo;
 }
-// B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 
-//----- (00403018) --------------------------------------------------------
 static void s147link_loop(void *userdata)
 {
-  SifRpcDataQueue_t qd; // [sp+20h] [+20h] BYREF
-  SifRpcServerData_t sd; // [sp+38h] [+38h] BYREF
+  SifRpcDataQueue_t qd;
+  SifRpcServerData_t sd;
 
   (void)userdata;
   sceSifSetRpcQueue(&qd, GetThreadId());
@@ -753,13 +724,12 @@ static void s147link_loop(void *userdata)
   sceSifRpcLoop(&qd);
 }
 
-//----- (004030A8) --------------------------------------------------------
 static void *dispatch(int fno, void *buf, int size)
 {
-  int state; // [sp+14h] [+14h] BYREF
-  int node; // [sp+18h] [+18h]
-  int sizeb; // [sp+1Ch] [+1Ch]
-  unsigned int i; // [sp+20h] [+20h]
+  int state;
+  int node;
+  int sizeb;
+  unsigned int i;
   USE_S147LINK_DEV9_MEM_MMIO();
 
   (void)size;
@@ -865,4 +835,3 @@ static void *dispatch(int fno, void *buf, int size)
   FlushDcache();
   return buf;
 }
-// B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
