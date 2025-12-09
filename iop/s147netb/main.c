@@ -19,7 +19,7 @@ int _start(int ac, char **av)
     Kprintf("s147netb.irx: Could not initialize USB memory driver\n");
     return 1;
   }
-  for ( probe_i = 5; probe_i > 0; --probe_i )
+  for ( probe_i = 5; probe_i > 0; probe_i -= 1 )
   {
     read(fd, &probebuf, sizeof(probebuf));
     Kprintf(

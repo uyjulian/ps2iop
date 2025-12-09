@@ -266,7 +266,7 @@ static unsigned int watchdog_alarm_cb(void *userdata)
     // Unofficial: add 1 here
     s147_dev9_mem_mmio.m_led = g_watchdog_flag_1 + 1;
     g_watchdog_flag_1 = ( (((unsigned int)g_watchdog_count_1 >> 3) & 1) != 0 ) ? 1 : 0;
-    ++g_watchdog_count_1;
+    g_watchdog_count_1 += 1;
   }
   return wdi->g_watchdog_clock.lo;
 }
@@ -477,7 +477,7 @@ static int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
   int i; // [sp+10h] [+10h]
 
   g_rtc_flag = 0;
-  for ( i = 0; i < flgcnt; ++i )
+  for ( i = 0; i < flgcnt; i += 1 )
   {
     s147_dev9_mem_mmio.m_rtc_flag = 0xB;
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
@@ -546,7 +546,7 @@ static void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
   unsigned int xval; // [sp+20h] [+20h]
 
   xval = inflg & flgmsk;
-  for ( i = 0; i < flgcnt; ++i )
+  for ( i = 0; i < flgcnt; i += 1 )
   {
     s147_dev9_mem_mmio.m_rtc_flag = (xval & 1) | 0xC;
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )

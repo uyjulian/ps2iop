@@ -66,7 +66,7 @@ static int register_atfile_ioman_device(const char *atfile_name, const char *atf
 {
   int i; // [sp+10h] [+10h]
 
-  for ( i = 0; i < 10; ++i )
+  for ( i = 0; i < 10; i += 1 )
     g_atfile_unit_info[i] = 0;
   g_atfile_device.name = atfile_name;
   g_atfile_device.type = 16;

@@ -150,15 +150,17 @@ static void T_fix(CL_COM *io_pCommon)
     io_pCommon->T_remain = 0x100;
     io_pCommon->T_out = 0;
     io_pCommon->T_in = io_pCommon->T_out;
-    if ( !++io_pCommon->rbfix )
-      --io_pCommon->rbfix;
+    io_pCommon->rbfix += 1;
+    if ( !io_pCommon->rbfix )
+      io_pCommon->rbfix -= 1;
   }
   if ( io_pCommon->T_remain == 0x100 && io_pCommon->T_in != io_pCommon->T_out )
   {
     io_pCommon->T_out = 0;
     io_pCommon->T_in = io_pCommon->T_out;
-    if ( !++io_pCommon->rbfix )
-      --io_pCommon->rbfix;
+    io_pCommon->rbfix += 1;
+    if ( !io_pCommon->rbfix )
+      io_pCommon->rbfix -= 1;
   }
 }
 
@@ -197,7 +199,7 @@ static int clink_InterruptHandler(void *userdata)
   rxfs = ((s147link_dev9_mem_mmio.m_rxfc_hi_unk1E << 8) | s147link_dev9_mem_mmio.m_rxfc_lo_unk1F) & io_pCommon->nodemask;
   if ( rxfs )
   {
-    for ( i = 1; io_pCommon->maxnode >= i; ++i )
+    for ( i = 1; io_pCommon->maxnode >= i; i += 1 )
     {
       if ( i != io_pCommon->mynode )
       {
@@ -226,23 +228,24 @@ static int clink_InterruptHandler(void *userdata)
                 unsigned int j; // [sp+18h] [+18h]
 
                 bufptr = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
-                *bufptr++ = i;
-                *bufptr++ = io_pCommon->mynode;
-                *bufptr++ = 4;
-                *bufptr++ = 0;
-                *bufptr++ = rnum;
-                *bufptr = unk09_tmp;
-                for ( j = 0; j < 0x3A; ++j )
-                  bufptr[j + 1] = s147link_dev9_mem_mmio.m_unk09;
-                --io_pCommon->R_remain;
-                ++io_pCommon->R_in;
+                bufptr[0] = i;
+                bufptr[1] = io_pCommon->mynode;
+                bufptr[2] = 4;
+                bufptr[3] = 0;
+                bufptr[4] = rnum;
+                bufptr[5] = unk09_tmp;
+                for ( j = 0; j < 0x3A; j += 1 )
+                  bufptr[j + 6] = s147link_dev9_mem_mmio.m_unk09;
+                io_pCommon->R_remain -= 1;
+                io_pCommon->R_in += 1;
                 io_pCommon->R_in &= 0x1FFu;
                 io_pCommon->R_number[i] = rnum;
               }
               else if ( io_pCommon->R_pd[i] )
               {
-                if ( !++io_pCommon->R_lost[i] )
-                  ++io_pCommon->R_lost[i];
+                io_pCommon->R_lost[i] += 1;
+                if ( !io_pCommon->R_lost[i] )
+                  io_pCommon->R_lost[i] += 1;
               }
               else
               {
@@ -263,26 +266,26 @@ static int clink_InterruptHandler(void *userdata)
               if ( io_pCommon->R_remain )
               {
                 bufptr = &io_pCommon->R_top[0x40 * io_pCommon->R_in];
-                *bufptr++ = i;
-                *bufptr++ = 0;
-                *bufptr = 56;
-                bufptr += 54;
-                *bufptr++ = unk09_tmp;
-                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr++ = s147link_dev9_mem_mmio.m_unk09;
-                *bufptr = s147link_dev9_mem_mmio.m_unk09;
-                bufptr[1] = s147link_dev9_mem_mmio.m_unk09;
-                --io_pCommon->R_remain;
-                ++io_pCommon->R_in;
+                bufptr[0] = i;
+                bufptr[1] = 0;
+                bufptr[2] = 56;
+                bufptr[56] = unk09_tmp;
+                bufptr[57] = s147link_dev9_mem_mmio.m_unk09;
+                bufptr[58] = s147link_dev9_mem_mmio.m_unk09;
+                bufptr[59] = s147link_dev9_mem_mmio.m_unk09;
+                bufptr[60] = s147link_dev9_mem_mmio.m_unk09;
+                bufptr[61] = s147link_dev9_mem_mmio.m_unk09;
+                bufptr[62] = s147link_dev9_mem_mmio.m_unk09;
+                bufptr[63] = s147link_dev9_mem_mmio.m_unk09;
+                io_pCommon->R_remain -= 1;
+                io_pCommon->R_in += 1;
                 io_pCommon->R_in &= 0x1FFu;
               }
               else if ( io_pCommon->R_pd[i] )
               {
-                if ( !++io_pCommon->R_lost[i] )
-                  ++io_pCommon->R_lost[i];
+                io_pCommon->R_lost[i] += 1;
+                if ( !io_pCommon->R_lost[i] )
+                  io_pCommon->R_lost[i] += 1;
               }
               else
               {
@@ -323,10 +326,10 @@ static int clink_InterruptHandler(void *userdata)
         {
           s147link_dev9_mem_mmio.m_node_unk05 = (io_pCommon->mynode & 0xFF) | 0x40;
           s147link_dev9_mem_mmio.m_unk07 = 0;
-          for ( i = 0; i < 0x40; ++i )
+          for ( i = 0; i < 0x40; i += 1 )
             s147link_dev9_mem_mmio.m_unk09 = bufptr[i];
-          ++io_pCommon->T_remain;
-          ++io_pCommon->T_out;
+          io_pCommon->T_remain += 1;
+          io_pCommon->T_out += 1;
           io_pCommon->T_out = (u8)io_pCommon->T_out;
           T_fix(io_pCommon);
           s147link_dev9_mem_mmio.m_unk15 = 0x1B;
@@ -335,8 +338,8 @@ static int clink_InterruptHandler(void *userdata)
           break;
         }
       }
-      ++io_pCommon->T_remain;
-      ++io_pCommon->T_out;
+      io_pCommon->T_remain += 1;
+      io_pCommon->T_out += 1;
       io_pCommon->T_out = (u8)io_pCommon->T_out;
       T_fix(io_pCommon);
     }
@@ -394,16 +397,18 @@ static int cl_mread(void *dstptr, int count)
     cl_info.R_remain = 0x200;
     cl_info.R_out = 0;
     cl_info.R_in = 0;
-    if ( !++cl_info.rbfix )
-      --cl_info.rbfix;
+    cl_info.rbfix += 1;
+    if ( !cl_info.rbfix )
+      cl_info.rbfix -= 1;
     count = 0;
   }
   if ( cl_info.R_remain == 512 && cl_info.R_in != cl_info.R_out )
   {
     cl_info.R_out = 0;
     cl_info.R_in = 0;
-    if ( !++cl_info.rbfix )
-      --cl_info.rbfix;
+    cl_info.rbfix += 1;
+    if ( !cl_info.rbfix )
+      cl_info.rbfix -= 1;
     count = 0;
   }
   CpuResumeIntr(state);
@@ -428,8 +433,8 @@ static int cl_write(int node, u8 *srcptr, int size)
   tx_buff[cl_info.T_in][3] = 0;
   cl_info.T_number += 1;
   tx_buff[cl_info.T_in][4] = cl_info.T_number;
-  --cl_info.T_remain;
-  ++cl_info.T_in;
+  cl_info.T_remain -= 1;
+  cl_info.T_in += 1;
   cl_info.T_in = (cl_info.T_in & 0xFF);
   s147link_dev9_mem_mmio.m_unk15 = 0x1B;
   clink_InterruptHandler(&cl_info);
@@ -453,8 +458,8 @@ static int cl_write_custom(int node, u8 *srcptr, int cpVal)
   tx_buff[cl_info.T_in][0] = cl_info.mynode;
   tx_buff[cl_info.T_in][1] = node & 0xFF;
   tx_buff[cl_info.T_in][2] = cpVal & 0xFF;
-  --cl_info.T_remain;
-  ++cl_info.T_in;
+  cl_info.T_remain -= 1;
+  cl_info.T_in += 1;
   cl_info.T_in = (cl_info.T_in & 0xFF);
   s147link_dev9_mem_mmio.m_unk15 = 0x1B;
   clink_InterruptHandler(&cl_info);
@@ -526,11 +531,11 @@ static int InitS147link(int maxnode, int mynode, int priority)
   s147link_dev9_mem_mmio.m_mynode_unk2D = mynode;
   s147link_dev9_mem_mmio.m_unk31 = 0;
   s147link_dev9_mem_mmio.m_unk2F = 2;
-  for ( i = 0; i < 4; ++i )
+  for ( i = 0; i < 4; i += 1 )
   {
     s147link_dev9_mem_mmio.m_node_unk05 = i | 0x40;
     s147link_dev9_mem_mmio.m_unk07 = 0;
-    for ( j = 0; j < 256; ++j )
+    for ( j = 0; j < 256; j += 1 )
       s147link_dev9_mem_mmio.m_unk09 = 0;
   }
   s147link_dev9_mem_mmio.m_unk28 = 0;
@@ -557,7 +562,7 @@ static int InitS147link(int maxnode, int mynode, int priority)
   cl_info.R_remain = 0x200;
   cl_info.R_out = 0;
   cl_info.R_in = 0;
-  for ( i = 0; i < 16; ++i )
+  for ( i = 0; i < 16; i += 1 )
   {
     cl_info.R_number[i] = 0;
     cl_info.T_error[i] = 0;
@@ -638,11 +643,11 @@ static void reset_circlink(void)
   s147link_dev9_mem_mmio.m_mynode_unk2D = cl_info.mynode;
   s147link_dev9_mem_mmio.m_unk31 = 0;
   s147link_dev9_mem_mmio.m_unk2F = 2;
-  for ( i = 0; i < 4; ++i )
+  for ( i = 0; i < 4; i += 1 )
   {
     s147link_dev9_mem_mmio.m_node_unk05 = i | 0x40;
     s147link_dev9_mem_mmio.m_unk07 = 0;
-    for ( j = 0; j < 256; ++j )
+    for ( j = 0; j < 256; j += 1 )
       s147link_dev9_mem_mmio.m_unk09 = 0;
   }
   s147link_dev9_mem_mmio.m_unk28 = 0;
@@ -685,7 +690,7 @@ static unsigned int alarm_handler(void *userdata)
     {
       if ( io_pCommon->T_time[io_pCommon->T_node] >= io_pCommon->timeout )
       {
-        ++io_pCommon->timeout;
+        io_pCommon->timeout += 1;
       }
       else
       {
@@ -709,7 +714,7 @@ static unsigned int alarm_handler(void *userdata)
   {
     if ( io_pCommon->ontimer < 0xFA )
     {
-      ++io_pCommon->ontimer;
+      io_pCommon->ontimer += 1;
     }
     else
     {
@@ -721,7 +726,7 @@ static unsigned int alarm_handler(void *userdata)
   if ( io_pCommon->offtimer )
   {
     if ( io_pCommon->offtimer < 0xFA )
-      ++io_pCommon->offtimer;
+      io_pCommon->offtimer += 1;
     else
       io_pCommon->online = 0;
   }
