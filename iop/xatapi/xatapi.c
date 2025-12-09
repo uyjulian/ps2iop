@@ -206,7 +206,7 @@ static iop_device_ops_t ata_ioman_devops =
   (void *)&xatapi_nulldev0,
   (void *)&xatapi_nulldev0
 };
-static iop_device_t ata_ioman_device = { "xatapi", 268435472u, 1u, "CD-ROM_ATAPI", &ata_ioman_devops };
+static iop_device_t ata_ioman_device = { "xatapi", IOP_DT_FS | IOP_DT_FSEXT, 1, "CD-ROM_ATAPI", &ata_ioman_devops };
 // Unofficial: move to bss
 static int g_reset_scrambling_pack;
 // Unofficial: move to bss
@@ -687,8 +687,8 @@ static int sceCdAtapi_BC(void)
   else
   {
     if ( g_should_wait_for_dma_flag && !ReferEventFlagStatus(g_adma_evfid, &efinfo) && !efinfo.currBits )
-      SetEventFlag(g_adma_evfid, 1u);
-    SetEventFlag(g_acmd_evfid, 1u);
+      SetEventFlag(g_adma_evfid, 1);
+    SetEventFlag(g_acmd_evfid, 1);
     retres4 = 0;
     for ( i = 0; i < 100 && !retres4; i += 1 )
     {
@@ -732,9 +732,9 @@ static int sceCdAtapi_BC(void)
         char outbuf[16];
 
         if ( g_should_wait_for_dma_flag )
-          WaitEventFlag(g_adma_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+          WaitEventFlag(g_adma_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
         retres4 = 1;
-        WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+        WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
         memset(pkt, 0, sizeof(pkt));
         pkt[0] = 0xF9;
         pkt[2] = 0xB0;
@@ -761,8 +761,8 @@ static int sceCdAtapi_BC(void)
     if ( !flg )
     {
       if ( g_should_wait_for_dma_flag )
-        WaitEventFlag(g_adma_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
-      WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+        WaitEventFlag(g_adma_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
+      WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
     }
   }
   {
@@ -904,14 +904,14 @@ static void expbay_device_reset(void)
   if ( (*g_dev9_reg_power & 4) )
   {
     Kprintf("xatapi already Power On\n");
-    *g_dev9_reg_1460 |= 2u;
+    *g_dev9_reg_1460 |= 2;
     return;
   }
   Kprintf("xatapi Power On Start\n");
   *g_dev9_reg_power = (*g_dev9_reg_power & ~5) | 4;
   DelayThread(500000);
-  *g_dev9_reg_1460 |= 2u;
-  *g_dev9_reg_power |= 1u;
+  *g_dev9_reg_1460 |= 2;
+  *g_dev9_reg_power |= 1;
   DelayThread(500000);
 }
 
@@ -979,7 +979,7 @@ static int xatapi_do_init(void)
     if ( g_xatapi_verbose >= 0 )
       Kprintf("xatapi:Tray locked !!\n");
   }
-  else if ( sceCdSetMediumRemoval(1u, &traylock_ret) )
+  else if ( sceCdSetMediumRemoval(1, &traylock_ret) )
   {
     if ( g_xatapi_verbose >= 0 )
       Kprintf("xatapi:Tray lock\n");
@@ -993,7 +993,7 @@ static int xatapi_do_init(void)
   expbay_device_reset();
   if ( g_xatapi_verbose >= 0 )
     Kprintf("xatapi Dev5->Rainbow\n");
-  sceCdChgSys(1u);
+  sceCdChgSys(1);
   if ( g_xatapi_verbose > 0 )
     Kprintf("xatapi Dev5->Rainbow end\n");
   if ( g_xatapi_verbose > 0 )
@@ -1080,15 +1080,15 @@ static int xatapi_dev_devctl(
   retres1 = 0;
   if ( g_xatapi_verbose > 0 )
     Kprintf("xatapi devctl: cmd:%08x arg:%d\n", cmd, *(u32 *)args);
-  if ( cmd == 0x439B && PollEventFlag(g_io_event_flag, 1u, 0, &efbits) == KE_EVF_COND && *(u32 *)args == 1 )
+  if ( cmd == 0x439B && PollEventFlag(g_io_event_flag, 1, WEF_AND, &efbits) == KE_EVF_COND && *(u32 *)args == 1 )
   {
     *(u32 *)buf = 6;
     return 0;
   }
-  WaitEventFlag(g_io_event_flag, 1u, WEF_AND | WEF_CLEAR, &efbits);
+  WaitEventFlag(g_io_event_flag, 1, WEF_AND | WEF_CLEAR, &efbits);
   if ( g_devctl_retonly_unset )
   {
-    SetEventFlag(g_io_event_flag, 1u);
+    SetEventFlag(g_io_event_flag, 1);
     return -EIO;
   }
   switch ( cmd )
@@ -1200,7 +1200,7 @@ static int xatapi_dev_devctl(
       retres1 = -EIO;
       break;
   }
-  SetEventFlag(g_io_event_flag, 1u);
+  SetEventFlag(g_io_event_flag, 1);
   if ( g_xatapi_verbose > 0 )
     Kprintf("xatapi devctl: cmd:%08x End.\n", cmd);
   return retres1;
@@ -1293,8 +1293,8 @@ static int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
   int result;
 
-  dmac_ch_set_chcr(3u, 0);
-  dmac_ch_get_chcr(3u);
+  dmac_ch_set_chcr(3, 0);
+  dmac_ch_get_chcr(3);
   if ( device >= 2 && (!g_dev5_predma_cbs[device] || !g_dev5_postdma_cbs[device]) )
     return -1;
   if ( g_xatapi_verbose > 0 )
@@ -1302,22 +1302,22 @@ static int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
   result = WaitSema(g_dma_lock_sema);
   if ( result < 0 )
     return result;
-  dev5_speed_regs->r_spd_dma_ctrl = ( dev5_speed_regs->r_spd_rev_1 >= 0x11u ) ? ((device & 1) | 6) : ((device & 3) | 4);
+  dev5_speed_regs->r_spd_dma_ctrl = ( dev5_speed_regs->r_spd_rev_1 >= 0x11 ) ? ((device & 1) | 6) : ((device & 3) | 4);
   if ( g_dev5_predma_cbs[device] )
     g_dev5_predma_cbs[device](bcr_in, dir);
   if ( g_xatapi_verbose > 0 )
     Kprintf("DMA Ch3 Set.\n");
   if ( g_xatapi_verbose > 0 )
     Kprintf("Set MADR3:%08x Set BCR3:%08x\n", buf, bcr_in);
-  dmac_ch_set_madr(3u, (u32)buf);
-  dmac_ch_set_bcr(3u, bcr_in);
-  dmac_ch_set_chcr(3u, dir | 0x41000200);
-  dmac_ch_get_chcr(3u);
+  dmac_ch_set_madr(3, (u32)buf);
+  dmac_ch_set_bcr(3, bcr_in);
+  dmac_ch_set_chcr(3, dir | 0x41000200);
+  dmac_ch_get_chcr(3);
   if ( g_xatapi_verbose > 0 )
-    Kprintf("CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3u), dmac_ch_get_madr(3u), dmac_ch_get_bcr(3u));
-  while ( (dmac_ch_get_chcr(3u) & 0x1000000) );
+    Kprintf("CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3), dmac_ch_get_madr(3), dmac_ch_get_bcr(3));
+  while ( (dmac_ch_get_chcr(3) & 0x1000000) );
   if ( g_xatapi_verbose > 0 )
-    Kprintf("MADR3= %08x\n", dmac_ch_get_madr(3u));
+    Kprintf("MADR3= %08x\n", dmac_ch_get_madr(3));
   if ( g_dev5_postdma_cbs[device] )
     g_dev5_postdma_cbs[device](bcr_in, dir);
   if ( g_xatapi_verbose > 0 )
@@ -1330,8 +1330,8 @@ static int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, 
 {
   int result;
 
-  dmac_ch_set_chcr(3u, 0);
-  dmac_ch_get_chcr(3u);
+  dmac_ch_set_chcr(3, 0);
+  dmac_ch_get_chcr(3);
   if ( device >= 2 && (!g_dev5_predma_cbs[device] || !g_dev5_postdma_cbs[device]) )
     return -1;
   if ( g_xatapi_verbose > 0 )
@@ -1339,7 +1339,7 @@ static int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, 
   result = WaitSema(g_dma_lock_sema);
   if ( result < 0 )
     return result;
-  dev5_speed_regs->r_spd_dma_ctrl = ( dev5_speed_regs->r_spd_rev_1 >= 0x11u ) ? ((device & 1) | 6) : ((device & 3) | 4);
+  dev5_speed_regs->r_spd_dma_ctrl = ( dev5_speed_regs->r_spd_rev_1 >= 0x11 ) ? ((device & 1) | 6) : ((device & 3) | 4);
   if ( g_dev5_predma_cbs[device] )
     g_dev5_predma_cbs[device](bcr_in, dir);
   speedIntrDisable(256);
@@ -1349,15 +1349,15 @@ static int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, 
     Kprintf("DMA Ch3 Set.\n");
   if ( g_xatapi_verbose > 0 )
     Kprintf("Set MADR3:%08x Set BCR3:%08x\n", buf, bcr_in);
-  dmac_ch_set_madr(3u, (u32)buf);
-  dmac_ch_set_bcr(3u, bcr_in);
-  dmac_ch_set_chcr(3u, dir | 0x41000200);
-  dmac_ch_get_chcr(3u);
+  dmac_ch_set_madr(3, (u32)buf);
+  dmac_ch_set_bcr(3, bcr_in);
+  dmac_ch_set_chcr(3, dir | 0x41000200);
+  dmac_ch_get_chcr(3);
   if ( g_xatapi_verbose > 0 )
-    Kprintf("CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3u), dmac_ch_get_madr(3u), dmac_ch_get_bcr(3u));
-  while ( (dmac_ch_get_chcr(3u) & 0x1000000) );
+    Kprintf("CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3), dmac_ch_get_madr(3), dmac_ch_get_bcr(3));
+  while ( (dmac_ch_get_chcr(3) & 0x1000000) );
   if ( g_xatapi_verbose > 0 )
-    Kprintf("MADR3= %08x\n", dmac_ch_get_madr(3u));
+    Kprintf("MADR3= %08x\n", dmac_ch_get_madr(3));
   FpgaCheckWriteBuffer();
   FpgaXfrenOff();
   FpgaLayer1Off();
@@ -1374,8 +1374,8 @@ static int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, 
 {
   int result;
 
-  dmac_ch_set_chcr(3u, 0);
-  dmac_ch_get_chcr(3u);
+  dmac_ch_set_chcr(3, 0);
+  dmac_ch_get_chcr(3);
   if ( device >= 2 && (!g_dev5_predma_cbs[device] || !g_dev5_postdma_cbs[device]) )
     return -1;
   if ( g_xatapi_verbose > 0 )
@@ -1387,15 +1387,15 @@ static int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, 
     Kprintf("DMA Ch3 Set.\n");
   if ( g_xatapi_verbose > 0 )
     Kprintf("Set MADR3:%08x Set BCR3:%08x\n", buf, bcr_in);
-  dmac_ch_set_madr(3u, (u32)buf);
-  dmac_ch_set_bcr(3u, bcr_in);
-  dmac_ch_set_chcr(3u, dir | 0x41000200);
-  dmac_ch_get_chcr(3u);
+  dmac_ch_set_madr(3, (u32)buf);
+  dmac_ch_set_bcr(3, bcr_in);
+  dmac_ch_set_chcr(3, dir | 0x41000200);
+  dmac_ch_get_chcr(3);
   if ( g_xatapi_verbose > 0 )
-    Kprintf("CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3u), dmac_ch_get_madr(3u), dmac_ch_get_bcr(3u));
-  while ( (dmac_ch_get_chcr(3u) & 0x1000000) );
+    Kprintf("CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3), dmac_ch_get_madr(3), dmac_ch_get_bcr(3));
+  while ( (dmac_ch_get_chcr(3) & 0x1000000) );
   if ( g_xatapi_verbose > 0 )
-    Kprintf("MADR3= %08x\n", dmac_ch_get_madr(3u));
+    Kprintf("MADR3= %08x\n", dmac_ch_get_madr(3));
   if ( g_xatapi_verbose > 0 )
     Kprintf("SpdDmaTransfer_extrans End.\n");
   SignalSema(g_dma_lock_sema);
@@ -1406,8 +1406,8 @@ static int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, 
 {
   int result;
 
-  dmac_ch_set_chcr(3u, 0);
-  dmac_ch_get_chcr(3u);
+  dmac_ch_set_chcr(3, 0);
+  dmac_ch_get_chcr(3);
   if ( device >= 2 && (!g_dev5_predma_cbs[device] || !g_dev5_postdma_cbs[device]) )
     return -1;
   if ( g_xatapi_verbose > 0 )
@@ -1421,15 +1421,15 @@ static int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, 
     Kprintf("DMA Ch3 Set.\n");
   if ( g_xatapi_verbose > 0 )
     Kprintf("Set MADR3:%08x Set BCR3:%08x\n", buf, bcr_in);
-  dmac_ch_set_madr(3u, (u32)buf);
-  dmac_ch_set_bcr(3u, bcr_in);
-  dmac_ch_set_chcr(3u, dir | 0x41000200);
-  dmac_ch_get_chcr(3u);
+  dmac_ch_set_madr(3, (u32)buf);
+  dmac_ch_set_bcr(3, bcr_in);
+  dmac_ch_set_chcr(3, dir | 0x41000200);
+  dmac_ch_get_chcr(3);
   if ( g_xatapi_verbose > 0 )
-    Kprintf("CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3u), dmac_ch_get_madr(3u), dmac_ch_get_bcr(3u));
-  while ( (dmac_ch_get_chcr(3u) & 0x1000000) );
+    Kprintf("CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3), dmac_ch_get_madr(3), dmac_ch_get_bcr(3));
+  while ( (dmac_ch_get_chcr(3) & 0x1000000) );
   if ( g_xatapi_verbose > 0 )
-    Kprintf("MADR3= %08x\n", dmac_ch_get_madr(3u));
+    Kprintf("MADR3= %08x\n", dmac_ch_get_madr(3));
   FpgaCheckWriteBuffer2();
   FpgaXfrenOff();
   FpgaLayer1Off();
@@ -1578,7 +1578,7 @@ void xatapi_9_sceCdSpdAtaDmaStart(int dir)
   u32 efbits;
 
   g_is_wait_busy = 0;
-  WaitEventFlag(g_adma_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+  WaitEventFlag(g_adma_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
   g_should_wait_for_dma_flag = 1;
   if ( g_xatapi_verbose > 0 )
     Kprintf("sceCdSpdAtaDmaStart Call %d :Read 0:Write 1\n", dir);
@@ -1623,7 +1623,7 @@ void xatapi_10_sceCdSpdAtaDmaEnd(void)
   else
     ata_multiword_dma_mode(g_dma_speed_value);
   g_should_wait_for_dma_flag = 0;
-  SetEventFlag(g_adma_evfid, 1u);
+  SetEventFlag(g_adma_evfid, 1);
 }
 
 static void ata_pio_mode(int mode)
@@ -1702,7 +1702,7 @@ static int ata_intr_cb(int flag)
   if ( g_xatapi_verbose > 0 )
     Kprintf("call AtaIntrHandle %d\n", flag);
   speedIntrDisable(3);
-  iSetEventFlag(g_atapi_event_flag, 2u);
+  iSetEventFlag(g_atapi_event_flag, 2);
   return 1;
 }
 
@@ -1711,7 +1711,7 @@ static void AtaEjectIntrHandle(void)
   if ( g_xatapi_verbose > 0 )
     Kprintf("call AtaEjectIntrHandle\n");
   g_is_wait_busy = 1;
-  iSetEventFlag(g_atapi_event_flag, 4u);
+  iSetEventFlag(g_atapi_event_flag, 4);
 }
 
 static unsigned int AtaAlarmrHandle(void *usrdat)
@@ -1720,7 +1720,7 @@ static unsigned int AtaAlarmrHandle(void *usrdat)
 
   if ( g_xatapi_verbose > 0 )
     Kprintf("call AtaAlarmrHandle\n");
-  iSetEventFlag(g_atapi_event_flag, 1u);
+  iSetEventFlag(g_atapi_event_flag, 1);
   return 0;
 }
 
@@ -1730,9 +1730,9 @@ int xatapi_14_set_speed_reg(int regaddr, u16 regval)
 
   if ( (unsigned int)(regaddr - 64) < 0x1D )
   {
-    WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+    WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
     *(vu16 *)((char *)&dev5_speed_regs->unv00 + regaddr) = regval;
-    SetEventFlag(g_acmd_evfid, 1u);
+    SetEventFlag(g_acmd_evfid, 1);
   }
   return regval;
 }
@@ -1744,9 +1744,9 @@ int xatapi_13_get_speed_reg(int regaddr)
 
   if ( (unsigned int)(regaddr - 64) >= 0x1D )
     return 0;
-  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
   tmpval = *(u16 *)((char *)&dev5_speed_regs->unv00 + regaddr);
-  SetEventFlag(g_acmd_evfid, 1u);
+  SetEventFlag(g_acmd_evfid, 1);
   return tmpval;
 }
 
@@ -1755,9 +1755,9 @@ int xatapi_11_sceAtaGetError(void)
   u8 r_spd_ata_error;
   u32 efbits;
 
-  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
   r_spd_ata_error = dev5_speed_regs->r_spd_ata_error;
-  SetEventFlag(g_acmd_evfid, 1u);
+  SetEventFlag(g_acmd_evfid, 1);
   return r_spd_ata_error;
 }
 
@@ -1766,9 +1766,9 @@ int xatapi_12_get_ata_control(void)
   u8 r_spd_ata_control;
   u32 efbits;
 
-  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
   r_spd_ata_control = dev5_speed_regs->r_spd_ata_control;
-  SetEventFlag(g_acmd_evfid, 1u);
+  SetEventFlag(g_acmd_evfid, 1);
   return r_spd_ata_control;
 }
 
@@ -1801,18 +1801,18 @@ static int ata_wait_busy1_busy(void)
     }
     switch ( i / 0xA )
     {
-      case 0u:
+      case 0:
         break;
-      case 1u:
+      case 1:
         DelayThread(100);
         break;
-      case 2u:
+      case 2:
         DelayThread(1000);
         break;
-      case 3u:
+      case 3:
         DelayThread(10000);
         break;
-      case 4u:
+      case 4:
         DelayThread(100000);
         break;
       default:
@@ -1849,18 +1849,18 @@ static int ata_wait_busy2_busy(void)
     }
     switch ( i / 0xA )
     {
-      case 0u:
+      case 0:
         break;
-      case 1u:
+      case 1:
         DelayThread(100);
         break;
-      case 2u:
+      case 2:
         DelayThread(1000);
         break;
-      case 3u:
+      case 3:
         DelayThread(10000);
         break;
-      case 4u:
+      case 4:
         DelayThread(100000);
         break;
       default:
@@ -1897,18 +1897,18 @@ static int ata_wait_bus_busy_busbusy(void)
     }
     switch ( i / 0xA )
     {
-      case 0u:
+      case 0:
         break;
-      case 1u:
+      case 1:
         DelayThread(100);
         break;
-      case 2u:
+      case 2:
         DelayThread(1000);
         break;
-      case 3u:
+      case 3:
         DelayThread(10000);
         break;
-      case 4u:
+      case 4:
         DelayThread(100000);
         break;
       default:
@@ -1974,7 +1974,7 @@ static int sceAtaExecCmd(
     return -506;
   atad_cmd_state.buf = buf;
   atad_cmd_state.blkcount = blkcount;
-  if ( !(dev5_speed_regs->r_spd_ata_control & 0x40) && ((command < 0x90u && command != 8) || (command >= 0xA2u || command < 0xA0u)) )
+  if ( !(dev5_speed_regs->r_spd_ata_control & 0x40) && ((command < 0x90 && command != 8) || (command >= 0xA2 || command < 0xA0)) )
   {
     if ( g_xatapi_verbose > 0 )
       Kprintf("DEV5 ATA: error: device not ready\n");
@@ -2038,11 +2038,11 @@ int xatapi_5_sceAtaExecCmd(
   int retres;
   u32 efbits;
 
-  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
   retres = sceAtaExecCmd(buf, blkcount, feature, nsector, sector, lcyl, hcyl, select, command, unk10);
   if ( retres )
   {
-    SetEventFlag(g_acmd_evfid, 1u);
+    SetEventFlag(g_acmd_evfid, 1);
   }
   return retres;
 }
@@ -2129,7 +2129,7 @@ static int sceCdAtapiExecCmd_local(
   }
   if ( using_timeout )
   {
-    USec2SysClock(0x93D1CC0u, &sysclk);
+    USec2SysClock(0x93D1CC0, &sysclk);
     result = SetAlarm(&sysclk, AtaAlarmrHandle, 0);
     if ( result < 0 )
       return result;
@@ -2147,8 +2147,8 @@ static int sceCdAtapiExecCmd_local(
              (u8)((u16)((atad_cmd_state.blkcount_atapi & 0xFFFF)
                                                 * (atad_cmd_state.blksize_atapi & 0xFFFF)) >> 8),
              n << 4,
-             0xA0u,
-             9u);
+             0xA0,
+             9);
   retres1 = result;
   if ( retres1 )
   {
@@ -2243,11 +2243,11 @@ int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pk
   int retres;
   u32 efbits;
 
-  WaitEventFlag(g_acmd_evfid, 1u, WEF_AND | WEF_CLEAR, &efbits);
+  WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
   retres = sceCdAtapiExecCmd(n, buf, nsec, secsize, pkt, pkt_len, proto);
   if ( retres )
   {
-    SetEventFlag(g_acmd_evfid, 1u);
+    SetEventFlag(g_acmd_evfid, 1);
   }
   return retres;
 }
@@ -2408,7 +2408,7 @@ static int atapi_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
       speedIntrEnable(3);
       if ( g_xatapi_verbose > 0 )
         Kprintf("Wait Event\n");
-      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7, WEF_OR | WEF_CLEAR, &efbits);
       if ( g_xatapi_verbose > 0 )
         Kprintf("Event come\n");
       if ( (efbits & 1) )
@@ -2480,7 +2480,7 @@ static int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
     if ( !dbuf_stat_mask )
     {
       speedIntrEnable(3);
-      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         if ( g_xatapi_verbose > 0 )
@@ -2533,13 +2533,13 @@ static int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
     if ( dir )
     {
       memcpy(g_atapi_xfer_buf, buf, blkremainder);
-      result = SpdDmaTransfer(0, g_atapi_xfer_buf, 0x40020u, dir);
+      result = SpdDmaTransfer(0, g_atapi_xfer_buf, 0x40020, dir);
       if ( result < 0 )
         return result;
     }
     else
     {
-      result = SpdDmaTransfer(0, g_atapi_xfer_buf, 0x40020u, 0);
+      result = SpdDmaTransfer(0, g_atapi_xfer_buf, 0x40020, 0);
       if ( result < 0 )
         return result;
       memcpy(buf, g_atapi_xfer_buf, blkremainder);
@@ -2578,7 +2578,7 @@ static int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
     if ( !dbuf_stat_mask )
     {
       speedIntrEnable(3);
-      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         if ( g_xatapi_verbose > 0 )
@@ -2627,17 +2627,17 @@ static int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
     while ( !(dev5_speed_regs->r_spd_intr_stat & 1) );
     dev5_speed_regs->m_spd_unk36 += 512;
     if ( g_xatapi_verbose > 0 )
-      Kprintf("SpdDmaTransfer buf:%08x bcr:%d dir:%d\n", buf, 262176, dir);
+      Kprintf("SpdDmaTransfer buf:%08x bcr:%d dir:%d\n", buf, 0x40020, dir);
     if ( dir )
     {
       memcpy(g_atapi_xfer_buf, buf, blkremainder);
-      result = SpdDmaTransfer_extrans_1(0, g_atapi_xfer_buf, 0x40020u, dir);
+      result = SpdDmaTransfer_extrans_1(0, g_atapi_xfer_buf, 0x40020, dir);
       if ( result < 0 )
         return result;
     }
     else
     {
-      result = SpdDmaTransfer_extrans_1(0, g_atapi_xfer_buf, 0x40020u, 0);
+      result = SpdDmaTransfer_extrans_1(0, g_atapi_xfer_buf, 0x40020, 0);
       if ( result < 0 )
         return result;
       memcpy(buf, g_atapi_xfer_buf, blkremainder);
@@ -2666,7 +2666,7 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   FpgaClearBuffer();
   FpgaXfdir(dir);
   CancelAlarm(AtaAlarmrHandle, 0);
-  USec2SysClock(0x989680u, &sysclk);
+  USec2SysClock(0x989680, &sysclk);
   result = SetAlarm(&sysclk, AtaAlarmrHandle, 0);
   if ( result < 0 )
   {
@@ -2675,7 +2675,7 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   while ( 1 )
   {
     speedIntrEnable(3);
-    WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
+    WaitEventFlag(g_atapi_event_flag, 7, WEF_OR | WEF_CLEAR, &efbits);
     if ( (efbits & 1) )
     {
       if ( g_xatapi_verbose > 0 )
@@ -2702,7 +2702,7 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
     if ( g_xatapi_verbose > 0 )
       Kprintf("DEV5 ATA: warning: ata intr without error.\n");
   }
-  dev5_speed_regs->r_spd_dma_ctrl = ( dev5_speed_regs->r_spd_rev_1 >= 0x11u ) ? 6 : 4;
+  dev5_speed_regs->r_spd_dma_ctrl = ( dev5_speed_regs->r_spd_rev_1 >= 0x11 ) ? 6 : 4;
   ata_pre_dma_cb();
   FpgaLayer1On();
   FpgaXfrenOn();
@@ -2728,7 +2728,7 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
           DelayThread(10000);
           break;
       }
-      PollEventFlag(g_atapi_event_flag, 5u, 17, &efbits);
+      PollEventFlag(g_atapi_event_flag, 5, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         if ( g_xatapi_verbose > 0 )
@@ -2782,11 +2782,11 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
     if ( dir )
     {
       memcpy(g_atapi_xfer_buf, buf, blkremainder);
-      extransres = SpdDmaTransfer_extrans_2(0, g_atapi_xfer_buf, 0x40020u, dir);
+      extransres = SpdDmaTransfer_extrans_2(0, g_atapi_xfer_buf, 0x40020, dir);
     }
     else
     {
-      extransres = SpdDmaTransfer_extrans_2(0, g_atapi_xfer_buf, 0x40020u, 0);
+      extransres = SpdDmaTransfer_extrans_2(0, g_atapi_xfer_buf, 0x40020, 0);
       if ( extransres >= 0 )
       {
         memcpy(buf, g_atapi_xfer_buf, blkremainder);
@@ -2839,9 +2839,9 @@ static void DmaRun_spck(char *buf, unsigned int secsize)
   {
     dev5_speed_regs->m_spd_unk36 += 512;
     if ( g_xatapi_verbose > 0 )
-      Kprintf("SpdDmaTransfer buf:%08x bcr:%d dir:%d\n", buf, 262176, 1);
+      Kprintf("SpdDmaTransfer buf:%08x bcr:%d dir:%d\n", buf, 0x40020, 1);
     memcpy(g_atapi_xfer_buf, buf, secsize & 0x1FF);
-    if ( SpdDmaTransfer_extrans_3(0, g_atapi_xfer_buf, 0x40020u, 1) < 0 )
+    if ( SpdDmaTransfer_extrans_3(0, g_atapi_xfer_buf, 0x40020, 1) < 0 )
     {
       return;
     }
@@ -2865,7 +2865,7 @@ static int sceAtaWaitResult(void)
   {
     case 1:
     case 8:
-      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         res = -502;
@@ -2896,7 +2896,7 @@ static int sceAtaWaitResult(void)
       if ( !intr_stat_msk )
       {
         speedIntrEnable(1);
-        WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
+        WaitEventFlag(g_atapi_event_flag, 7, WEF_OR | WEF_CLEAR, &efbits);
         if ( (efbits & 1) )
         {
           if ( g_xatapi_verbose > 0 )
@@ -2980,7 +2980,7 @@ int xatapi_6_sceAtaWaitResult(void)
     return -511;
   }
   restmp = sceAtaWaitResult();
-  SetEventFlag(g_acmd_evfid, 1u);
+  SetEventFlag(g_acmd_evfid, 1);
   return restmp;
 }
 
@@ -2999,7 +2999,7 @@ static int sceCdAtapiWaitResult_local(void)
     case 8:
       if ( g_xatapi_verbose > 0 )
         Kprintf("waitresult\n");
-      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         res = -502;
@@ -3071,7 +3071,7 @@ static int sceCdAtapiWaitResult_local(void)
       if ( g_xatapi_verbose > 0 )
         Kprintf("ata command not finished yet\n");
       speedIntrEnable(1);
-      WaitEventFlag(g_atapi_event_flag, 7u, WEF_OR | WEF_CLEAR, &efbits);
+      WaitEventFlag(g_atapi_event_flag, 7, WEF_OR | WEF_CLEAR, &efbits);
       if ( (efbits & 1) )
       {
         if ( g_xatapi_verbose > 0 )
@@ -3137,7 +3137,7 @@ int xatapi_8_sceCdAtapiWaitResult(void)
     return -511;
   }
   restmp = sceCdAtapiWaitResult_local();
-  SetEventFlag(g_acmd_evfid, 1u);
+  SetEventFlag(g_acmd_evfid, 1);
   return restmp;
 }
 
@@ -3177,7 +3177,7 @@ static int sceAtaFlushCache(int device)
 {
   int result;
 
-  result = xatapi_5_sceAtaExecCmd(0, 1u, 0, 0, 0, 0, 0, device << 4, 0xE7u, 1u);
+  result = xatapi_5_sceAtaExecCmd(0, 1, 0, 0, 0, 0, 0, device << 4, 0xE7, 1);
   return result ? result : xatapi_6_sceAtaWaitResult();
 }
 #endif
@@ -3186,7 +3186,7 @@ static int ata_device_identify(int device, void *info)
 {
   int result;
 
-  result = xatapi_5_sceAtaExecCmd(info, 1u, 0, 0, 0, 0, 0, device << 4, 0xECu, 2u);
+  result = xatapi_5_sceAtaExecCmd(info, 1, 0, 0, 0, 0, 0, device << 4, 0xEC, 2);
   return result ? result : xatapi_6_sceAtaWaitResult();
 }
 
@@ -3194,7 +3194,7 @@ static int ata_device_pkt_identify(int device, void *info)
 {
   int result;
 
-  result = xatapi_5_sceAtaExecCmd(info, 1u, 0, 0, 0, 0, 0, device << 4, 0xA1u, 2u);
+  result = xatapi_5_sceAtaExecCmd(info, 1, 0, 0, 0, 0, 0, device << 4, 0xA1, 2);
   return result ? result : xatapi_6_sceAtaWaitResult();
 }
 
@@ -3202,7 +3202,7 @@ static int atapi_device_set_transfer_mode(int device, int type, int mode)
 {
   int result;
 
-  result = xatapi_5_sceAtaExecCmd(0, 1u, 3u, (u8)(mode | type), 0, 0, 0, device << 4, 0xEFu, 1u);
+  result = xatapi_5_sceAtaExecCmd(0, 1, 3, (u8)(mode | type), 0, 0, 0, device << 4, 0xEF, 1);
   if ( result )
     return result;
   result = xatapi_6_sceAtaWaitResult();
@@ -3229,7 +3229,7 @@ static int ata_device_set_transfer_mode(int device, int type, int mode)
 {
   int result;
 
-  result = sceAtaExecCmd(0, 1u, 3u, (u8)(mode | type), 0, 0, 0, device << 4, 0xEFu, 1u);
+  result = sceAtaExecCmd(0, 1, 3, (u8)(mode | type), 0, 0, 0, device << 4, 0xEF, 1);
   if ( result )
     return result;
   result = sceAtaWaitResult();
