@@ -122,6 +122,7 @@ static void rpc_thread2(void *userdata);
 static void *rpc_1470200_handler(int fno, void *buffer, int length);
 static void *rpc_1470201_handler(int fno, void *buffer, int length);
 
+// Unofficial: merge callbacks that use the same return value
 IOMAN_RETURN_VALUE_IMPL(0);
 
 static iop_device_ops_t g_ops_ctrl_ioman =
