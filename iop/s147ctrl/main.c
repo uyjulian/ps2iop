@@ -96,23 +96,16 @@ struct sram_drv_privdata_
 static void setup_ac_delay_regs(void);
 static int setup_ctrl_ioman_drv(const char *devpfx, const char *devname);
 static unsigned int watchdog_alarm_cb(void *userdata);
-static int ctrl_drv_op_nulldev(void);
-static int ctrl_drv_op_init(iop_device_t *dev);
-static int ctrl_drv_op_deinit(iop_device_t *dev);
 static int ctrl_drv_op_open(const iop_file_t *f, const char *name, int flags);
 static int ctrl_drv_op_close(iop_file_t *f);
 static int ctrl_drv_op_read(const iop_file_t *f, void *ptr, int size);
 static int ctrl_drv_op_write(const iop_file_t *f, void *ptr, int size);
-static int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode);
 static int create_ctrl_sema(void);
 static int ctrl_do_rtc_read(u32 *rtcbuf);
 static int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk);
 static int ctrl_do_rtc_write(const u32 *rtcbuf);
 static void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk);
 static int setup_sram_ioman_drv(const char *devpfx, const char *devname);
-static int sram_drv_op_nulldev(void);
-static int sram_drv_op_init(iop_device_t *dev);
-static int sram_drv_op_deinit(iop_device_t *dev);
 static int sram_drv_op_open(iop_file_t *f, const char *name, int flags);
 static int sram_drv_op_close(iop_file_t *f);
 static int sram_drv_op_read(iop_file_t *f, void *ptr, int size);
@@ -129,25 +122,27 @@ static void rpc_thread2(void *userdata);
 static void *rpc_1470200_handler(int fno, void *buffer, int length);
 static void *rpc_1470201_handler(int fno, void *buffer, int length);
 
+IOMAN_RETURN_VALUE_IMPL(0);
+
 static iop_device_ops_t g_ops_ctrl_ioman =
 {
-  (void *)&ctrl_drv_op_init,
-  (void *)&ctrl_drv_op_deinit,
-  (void *)&ctrl_drv_op_nulldev,
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
   (void *)&ctrl_drv_op_open,
   (void *)&ctrl_drv_op_close,
   (void *)&ctrl_drv_op_read,
   (void *)&ctrl_drv_op_write,
-  (void *)&ctrl_drv_op_lseek,
-  (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev,
-  (void *)&ctrl_drv_op_nulldev,
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
 };
 // Unofficial: move to bss
 static int g_rpc_started;
@@ -159,23 +154,23 @@ static char g_watchdog_flag_1;
 static u32 g_max_timer_counter;
 static iop_device_ops_t g_ops_sram_ioman =
 {
-  (void *)&sram_drv_op_init,
-  (void *)&sram_drv_op_deinit,
-  (void *)&sram_drv_op_nulldev,
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
   (void *)&sram_drv_op_open,
   (void *)&sram_drv_op_close,
   (void *)&sram_drv_op_read,
   (void *)&sram_drv_op_write,
   (void *)&sram_drv_op_lseek,
-  (void *)&sram_drv_op_nulldev,
-  (void *)&sram_drv_op_nulldev,
-  (void *)&sram_drv_op_nulldev,
-  (void *)&sram_drv_op_nulldev,
-  (void *)&sram_drv_op_nulldev,
-  (void *)&sram_drv_op_nulldev,
-  (void *)&sram_drv_op_nulldev,
-  (void *)&sram_drv_op_nulldev,
-  (void *)&sram_drv_op_nulldev,
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
 };
 static iop_device_t g_drv_ctrl_ioman;
 static int g_rtc_flag;
@@ -260,23 +255,6 @@ static unsigned int watchdog_alarm_cb(void *userdata)
     g_watchdog_count_1 += 1;
   }
   return wdi->g_watchdog_clock.lo;
-}
-
-static int ctrl_drv_op_nulldev(void)
-{
-  return 0;
-}
-
-static int ctrl_drv_op_init(iop_device_t *dev)
-{
-  (void)dev;
-  return 0;
-}
-
-static int ctrl_drv_op_deinit(iop_device_t *dev)
-{
-  (void)dev;
-  return 0;
 }
 
 static int ctrl_drv_op_open(const iop_file_t *f, const char *name, int flags)
@@ -379,14 +357,6 @@ static int ctrl_drv_op_write(const iop_file_t *f, void *ptr, int size)
       *(u8 *)(unit + 0xB0000000) = *(u8 *)ptr;
       return 1;
   }
-}
-
-static int ctrl_drv_op_lseek(iop_file_t *f, int offset, int mode)
-{
-  (void)f;
-  (void)offset;
-  (void)mode;
-  return 0;
 }
 
 static int create_ctrl_sema(void)
@@ -544,23 +514,6 @@ static int setup_sram_ioman_drv(const char *devpfx, const char *devname)
   g_drv_sram_ioman.ops = &g_ops_sram_ioman;
   DelDrv(devpfx);
   AddDrv(&g_drv_sram_ioman);
-  return 0;
-}
-
-static int sram_drv_op_nulldev(void)
-{
-  return 0;
-}
-
-static int sram_drv_op_init(iop_device_t *dev)
-{
-  (void)dev;
-  return 0;
-}
-
-static int sram_drv_op_deinit(iop_device_t *dev)
-{
-  (void)dev;
   return 0;
 }
 
