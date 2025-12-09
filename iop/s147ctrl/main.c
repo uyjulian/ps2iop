@@ -1,5 +1,8 @@
 
 #include "irx_imports.h"
+#include <loadcore.h>
+#include <sys/fcntl.h>
+#include <errno.h>
 
 IRX_ID("S147CTRL", 2, 8);
 
@@ -205,15 +208,15 @@ int _start(int ac, char **av)
   if ( setup_ctrl_ioman_drv("ctrl", "Ctrl") < 0 )
   {
     Kprintf("s147ctrl.irx: Ctrl initialize failed\n");
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   // cppcheck-suppress knownConditionTrueFalse
   if ( setup_sram_ioman_drv("sram", "SRAM") < 0 )
   {
     Kprintf("s147ctrl.irx: Sram initialize failed\n");
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
-  return 0;
+  return MODULE_RESIDENT_END;
 }
 
 //----- (004000C0) --------------------------------------------------------
@@ -232,7 +235,7 @@ static int setup_ctrl_ioman_drv(const char *devpfx, const char *devname)
   if ( create_ctrl_sema() < 0 )
     return -1;
   g_drv_ctrl_ioman.name = devpfx;
-  g_drv_ctrl_ioman.type = 0x10;
+  g_drv_ctrl_ioman.type = IOP_DT_FS;
   g_drv_ctrl_ioman.version = 0;
   g_drv_ctrl_ioman.desc = devname;
   g_drv_ctrl_ioman.ops = &g_ops_ctrl_ioman;
@@ -352,20 +355,20 @@ static int ctrl_drv_op_read(const iop_file_t *f, void *ptr, int size)
   {
     case 4:
       if ( size != 0x1C )
-        return -22;
+        return -EINVAL;
       retres = ctrl_do_rtc_read(ptr);
       if ( retres < 0 )
         Kprintf("s147ctrl.irx: RTC Read failed (%d)\n", retres);
       return retres;
     case 12:
       if ( size != 2 )
-        return -22;
+        return -EINVAL;
       *(u8 *)ptr = s147_dev9_mem_mmio.m_security_unlock_set1;
       *((u8 *)ptr + 1) = s147_dev9_mem_mmio.m_security_unlock_set2;
       return 2;
     default:
       if ( size != 1 )
-        return -22;
+        return -EINVAL;
       *(u8 *)ptr = *(u8 *)(unit + 0xB0000000);
       return 1;
   }  
@@ -383,20 +386,20 @@ static int ctrl_drv_op_write(const iop_file_t *f, void *ptr, int size)
   {
     case 4:
       if ( size != 0x1C )
-        return -22;
+        return -EINVAL;
       retres = ctrl_do_rtc_write(ptr);
       if ( retres < 0 )
         Kprintf("s147ctrl.irx: RTC Write failed (%d)\n", retres);
       return retres;
     case 12:
       if ( size != 2 )
-        return -22;
+        return -EINVAL;
       s147_dev9_mem_mmio.m_security_unlock_set1 = *(u8 *)ptr;
       s147_dev9_mem_mmio.m_security_unlock_set2 = *((u8 *)ptr + 1);
       return 2;
     default:
       if ( size != 1 )
-        return -22;
+        return -EINVAL;
       *(u8 *)(unit + 0xB0000000) = *(u8 *)ptr;
       return 1;
   }
@@ -417,7 +420,7 @@ static int create_ctrl_sema(void)
 {
   g_ctrl_sema_param.initial = 1;
   g_ctrl_sema_param.max = 1;
-  g_ctrl_sema_param.attr = 1;
+  g_ctrl_sema_param.attr = SA_THPRI;
   g_ctrl_sema_id = CreateSema(&g_ctrl_sema_param);
   if ( g_ctrl_sema_id < 0 )
   {
@@ -570,7 +573,7 @@ static void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
 static int setup_sram_ioman_drv(const char *devpfx, const char *devname)
 {
   g_drv_sram_ioman.name = devpfx;
-  g_drv_sram_ioman.type = 0x10;
+  g_drv_sram_ioman.type = IOP_DT_FS;
   g_drv_sram_ioman.version = 0;
   g_drv_sram_ioman.desc = devname;
   g_drv_sram_ioman.ops = &g_ops_sram_ioman;
@@ -609,7 +612,7 @@ static int sram_drv_op_open(iop_file_t *f, const char *name, int flags)
   (void)name;
   (void)flags;
   CpuSuspendIntr(&state);
-  f->privdata = AllocSysMemory(0, sizeof(struct sram_drv_privdata_), 0);
+  f->privdata = AllocSysMemory(ALLOC_FIRST, sizeof(struct sram_drv_privdata_), 0);
   CpuResumeIntr(state);
   privdata = (struct sram_drv_privdata_ *)f->privdata;
   privdata->m_curpos = 0;
@@ -672,22 +675,22 @@ static int sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
   privdata = (struct sram_drv_privdata_ *)f->privdata;
   switch ( mode )
   {
-    case 0:
+    case SEEK_SET:
       privdata->m_curpos = offset;
       break;
-    case 1:
+    case SEEK_CUR:
       privdata->m_curpos += offset;
       break;
-    case 2:
+    case SEEK_END:
       privdata->m_curpos = privdata->m_maxpos + offset;
       break;
     default:
-      return -22;
+      return -EINVAL;
   }
   if ( (s32)privdata->m_maxpos < (s32)privdata->m_curpos )
   {
     privdata->m_curpos = privdata->m_maxpos;
-    return -22;
+    return -EINVAL;
   }
   return privdata->m_curpos;
 }
@@ -698,7 +701,7 @@ static int do_rpc_start1(void)
   iop_thread_t thparam; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]
 
-  thparam.attr = 0x2000000;
+  thparam.attr = TH_C;
   thparam.thread = rpc_thread1;
   thparam.priority = 10;
   thparam.stacksize = 0x800;
@@ -858,7 +861,7 @@ static int do_rpc_start2(void)
   iop_thread_t thparam; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]
 
-  thparam.attr = 0x2000000;
+  thparam.attr = TH_C;
   thparam.thread = rpc_thread2;
   thparam.priority = 10;
   thparam.stacksize = 0x800;

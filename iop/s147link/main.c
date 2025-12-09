@@ -134,9 +134,9 @@ int _start(int argc, char **argv)
   if ( InitS147link(maxnode, mynode, priority) )
   {
     printf("S147LINK: Can't Initialize driver thread.\n");
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
-  return 0;
+  return MODULE_RESIDENT_END;
 }
 // 40005C: variable 'maxnode' is possibly undefined
 // 4000C8: variable 'mynode' is possibly undefined
@@ -599,7 +599,7 @@ static int InitS147link(int maxnode, int mynode, int priority)
   CpuResumeIntr(state);
   EnableIntr(13);
   sceSifInitRpc(0);
-  param.attr = 0x2000000;
+  param.attr = TH_C;
   param.thread = s147link_loop;
   param.priority = priority;
   param.stacksize = 0x800;

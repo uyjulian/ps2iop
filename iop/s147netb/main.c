@@ -1,5 +1,7 @@
 
 #include "irx_imports.h"
+#include <loadcore.h>
+#include <sys/fcntl.h>
 
 IRX_ID("S147NETB", 2, 2);
 
@@ -13,11 +15,11 @@ int _start(int ac, char **av)
   (void)ac;
   (void)av;
   Kprintf("\ns147netb.irx: System147 Network Boot Manager v%d.%d\n", 2, 2);
-  fd = open("atfile19:usb-probe", 1);
+  fd = open("atfile19:usb-probe", O_RDONLY);
   if ( fd < 0 )
   {
     Kprintf("s147netb.irx: Could not initialize USB memory driver\n");
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   for ( probe_i = 5; probe_i > 0; probe_i -= 1 )
   {
@@ -34,43 +36,43 @@ int _start(int ac, char **av)
   if ( !probebuf )
   {
     Kprintf("\ns147netb.irx: *** No USB memory ***\n");
-    return 0;
+    return MODULE_RESIDENT_END;
   }
-  fd = open("atfile10:ifc000.cnf", 1);
+  fd = open("atfile10:ifc000.cnf", O_RDONLY);
   if ( fd < 0 )
   {
     Kprintf("s147netb.irx: Could not find \"%s\"\n", "atfile10:ifc000.cnf");
-    return 0;
+    return MODULE_RESIDENT_END;
   }
   close(fd);
   Kprintf("s147netb.irx: \"%s\" is found\n", "atfile10:ifc000.cnf");
-  fd = open("atfile10:inet.irx", 1);
+  fd = open("atfile10:inet.irx", O_RDONLY);
   if ( fd < 0 )
   {
     Kprintf("s147netb.irx: Could not find \"%s\"\n", "atfile10:inet.irx");
-    return 0;
+    return MODULE_RESIDENT_END;
   }
   close(fd);
   Kprintf("s147netb.irx: \"%s\" is found\n", "atfile10:inet.irx");
-  fd = open("atfile10:an986.irx", 1);
+  fd = open("atfile10:an986.irx", O_RDONLY);
   if ( fd < 0 )
   {
     Kprintf("s147netb.irx: Could not find \"%s\"\n", "atfile10:an986.irx");
-    return 0;
+    return MODULE_RESIDENT_END;
   }
   close(fd);
   Kprintf("s147netb.irx: \"%s\" is found\n", "atfile10:an986.irx");
-  fd = open("atfile10:s147http.irx", 1);
+  fd = open("atfile10:s147http.irx", O_RDONLY);
   if ( fd < 0 )
   {
     Kprintf("s147netb.irx: Could not find \"%s\"\n", "atfile10:s147http.irx");
-    return 0;
+    return MODULE_RESIDENT_END;
   }
   close(fd);
   Kprintf("s147netb.irx: \"%s\" is found\n", "atfile10:s147http.irx");
   Kprintf("s147netb.irx: LoadStartModule \"%s\" (%d)\n", "atfile10:inet.irx", LoadStartModule("atfile10:inet.irx", 0, 0, 0));
   Kprintf("s147netb.irx: LoadStartModule \"%s\" (%d)\n", "atfile10:an986.irx", LoadStartModule("atfile10:an986.irx", 0, 0, 0));
   Kprintf("s147netb.irx: LoadStartModule \"%s\" (%d)\n", "atfile10:s147http.irx", LoadStartModule("atfile10:s147http.irx", 0, 0, 0));
-  return 0;
+  return MODULE_RESIDENT_END;
 }
 // 400000: using guessed type char probebuf[4];

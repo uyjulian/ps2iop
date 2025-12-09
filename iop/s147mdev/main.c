@@ -1,5 +1,6 @@
 
 #include "irx_imports.h"
+#include <errno.h>
 
 IRX_ID("S147MDEV", 2, 1);
 
@@ -55,10 +56,10 @@ int _start(int ac, char **av)
   if ( RegisterLibraryEntries(&_exp_s147mdev) )
   {
     Kprintf("s147mdev.irx: RegisterLibraryEntries - Failed.\n");
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   Kprintf("s147mdev.irx: RegisterLibraryEntries - OK.\n");
-  return 0;
+  return MODULE_RESIDENT_END;
 }
 
 //----- (004000A0) --------------------------------------------------------
@@ -69,7 +70,7 @@ static int register_atfile_ioman_device(const char *atfile_name, const char *atf
   for ( i = 0; i < 10; i += 1 )
     g_atfile_unit_info[i] = 0;
   g_atfile_device.name = atfile_name;
-  g_atfile_device.type = 16;
+  g_atfile_device.type = IOP_DT_FS;
   g_atfile_device.version = 0;
   g_atfile_device.desc = atfile_desc;
   g_atfile_device.ops = &atfile_drv_ops;
@@ -126,7 +127,7 @@ static int atfile_drv_op_nulldev(const iop_file_t *f)
   if ( !g_atfile_unit_info[unit / 10] )
   {
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
-    return -19;
+    return -ENODEV;
   }
   return 0;
 }
@@ -156,7 +157,7 @@ static int atfile_drv_op_open(iop_file_t *f, const char *name, int flags)
   if ( unit < 0 || unit >= 100 )
   {
     Kprintf("s147mdev.irx: Invalid unit number\n");
-    return -19;
+    return -ENODEV;
   }
   fstk.mode = f->mode;
   fstk.unit = f->unit % 10;
@@ -164,7 +165,7 @@ static int atfile_drv_op_open(iop_file_t *f, const char *name, int flags)
   if ( !g_atfile_unit_info[unit / 10] )
   {
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
-    return -19;
+    return -ENODEV;
   }
   retres = g_atfile_unit_info[unit / 10]->ops->open(&fstk, name, flags);
   f->privdata = fstk.privdata;
@@ -181,7 +182,7 @@ static int atfile_drv_op_close(iop_file_t *f)
   if ( unit < 0 || unit >= 100 )
   {
     Kprintf("s147mdev.irx: Invalid unit number\n");
-    return -19;
+    return -ENODEV;
   }
   fstk.mode = f->mode;
   fstk.unit = f->unit % 10;
@@ -190,7 +191,7 @@ static int atfile_drv_op_close(iop_file_t *f)
   if ( !g_atfile_unit_info[unit / 10] )
   {
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
-    return -19;
+    return -ENODEV;
   }
   return g_atfile_unit_info[unit / 10]->ops->close(&fstk);
 }
@@ -205,7 +206,7 @@ static int atfile_drv_op_read(iop_file_t *f, void *ptr, int size)
   if ( unit < 0 || unit >= 100 )
   {
     Kprintf("s147mdev.irx: Invalid unit number\n");
-    return -19;
+    return -ENODEV;
   }
   fstk.mode = f->mode;
   fstk.unit = f->unit % 10;
@@ -214,7 +215,7 @@ static int atfile_drv_op_read(iop_file_t *f, void *ptr, int size)
   if ( !g_atfile_unit_info[unit / 10] )
   {
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
-    return -19;
+    return -ENODEV;
   }
   return g_atfile_unit_info[unit / 10]->ops->read(&fstk, ptr, size);
 }
@@ -229,7 +230,7 @@ static int atfile_drv_op_write(iop_file_t *f, void *ptr, int size)
   if ( unit < 0 || unit >= 100 )
   {
     Kprintf("s147mdev.irx: Invalid unit number\n");
-    return -19;
+    return -ENODEV;
   }
   fstk.mode = f->mode;
   fstk.unit = f->unit % 10;
@@ -238,7 +239,7 @@ static int atfile_drv_op_write(iop_file_t *f, void *ptr, int size)
   if ( !g_atfile_unit_info[unit / 10] )
   {
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
-    return -19;
+    return -ENODEV;
   }
   return g_atfile_unit_info[unit / 10]->ops->write(&fstk, ptr, size);
 }
@@ -253,7 +254,7 @@ static int atfile_drv_op_lseek(iop_file_t *f, int offset, int mode)
   if ( unit < 0 || unit >= 100 )
   {
     Kprintf("s147mdev.irx: Invalid unit number\n");
-    return -19;
+    return -ENODEV;
   }
   fstk.mode = f->mode;
   fstk.unit = f->unit % 10;
@@ -262,7 +263,7 @@ static int atfile_drv_op_lseek(iop_file_t *f, int offset, int mode)
   if ( !g_atfile_unit_info[unit / 10] )
   {
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
-    return -19;
+    return -ENODEV;
   }
   return g_atfile_unit_info[unit / 10]->ops->lseek(&fstk, offset, mode);
 }
