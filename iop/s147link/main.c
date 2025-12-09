@@ -107,7 +107,7 @@ static u8 rpc_buf[32784];
 static u8 rx_buff[512][64];
 static u8 tx_buff[256][64];
 static CL_COM cl_info;
-struct s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio; // weak
+#define USE_S147LINK_DEV9_MEM_MMIO() struct s147link_dev9_mem_mmio_ *const s147link_dev9_mem_mmio = (void *)0xB0800000
 
 
 //----- (00400000) --------------------------------------------------------
@@ -176,27 +176,28 @@ static int clink_InterruptHandler(void *userdata)
   unsigned int tflag; // [sp+28h] [+28h]
   int state; // [sp+2Ch] [+2Ch] BYREF
   CL_COM *io_pCommon;
+  USE_S147LINK_DEV9_MEM_MMIO();
 
   io_pCommon = (CL_COM *)userdata;
-  stsH = s147link_dev9_mem_mmio.m_stsH_unk12;
-  stsL = s147link_dev9_mem_mmio.m_stsL_unk13;
+  stsH = s147link_dev9_mem_mmio->m_stsH_unk12;
+  stsL = s147link_dev9_mem_mmio->m_stsL_unk13;
   if ( (stsL & 8) != 0 )
   {
-    if ( (s147link_dev9_mem_mmio.m_unk03 & 8) != 0 )
+    if ( (s147link_dev9_mem_mmio->m_unk03 & 8) != 0 )
     {
-      s147link_dev9_mem_mmio.m_unk17 = 1;
-      s147link_dev9_mem_mmio.m_unk17 = 0xE;
+      s147link_dev9_mem_mmio->m_unk17 = 1;
+      s147link_dev9_mem_mmio->m_unk17 = 0xE;
     }
-    if ( (s147link_dev9_mem_mmio.m_unk01 & 4) != 0 )
+    if ( (s147link_dev9_mem_mmio->m_unk01 & 4) != 0 )
     {
-      s147link_dev9_mem_mmio.m_unk17 = 0x16;
+      s147link_dev9_mem_mmio->m_unk17 = 0x16;
       if ( !io_pCommon->ontimer )
         io_pCommon->offtimer = 1;
       io_pCommon->ontimer = 1;
     }
   }
   rxfc = 0;
-  rxfs = ((s147link_dev9_mem_mmio.m_rxfc_hi_unk1E << 8) | s147link_dev9_mem_mmio.m_rxfc_lo_unk1F) & io_pCommon->nodemask;
+  rxfs = ((s147link_dev9_mem_mmio->m_rxfc_hi_unk1E << 8) | s147link_dev9_mem_mmio->m_rxfc_lo_unk1F) & io_pCommon->nodemask;
   if ( rxfs )
   {
     for ( i = 1; io_pCommon->maxnode >= i; i += 1 )
@@ -209,20 +210,20 @@ static int clink_InterruptHandler(void *userdata)
         {
           continue;
         }
-        s147link_dev9_mem_mmio.m_node_unk05 = i | 0xC0;
-        s147link_dev9_mem_mmio.m_unk07 = 0;
-        unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
+        s147link_dev9_mem_mmio->m_node_unk05 = i | 0xC0;
+        s147link_dev9_mem_mmio->m_unk07 = 0;
+        unk09_tmp = s147link_dev9_mem_mmio->m_unk09;
         if ( unk09_tmp == io_pCommon->mynode )
         {
           // cppcheck-suppress incorrectLogicOperator
-          if ( s147link_dev9_mem_mmio.m_unk09 == 4 && !s147link_dev9_mem_mmio.m_unk09 )
+          if ( s147link_dev9_mem_mmio->m_unk09 == 4 && !s147link_dev9_mem_mmio->m_unk09 )
           {
             u8 rnum; // [sp+1Eh] [+1Eh]
 
-            rnum = s147link_dev9_mem_mmio.m_unk09;
+            rnum = s147link_dev9_mem_mmio->m_unk09;
             if ( io_pCommon->R_number[i] != rnum )
             {
-              unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
+              unk09_tmp = s147link_dev9_mem_mmio->m_unk09;
               if ( io_pCommon->R_remain )
               {
                 unsigned int j; // [sp+18h] [+18h]
@@ -235,7 +236,7 @@ static int clink_InterruptHandler(void *userdata)
                 bufptr[4] = rnum;
                 bufptr[5] = unk09_tmp;
                 for ( j = 0; j < 0x3A; j += 1 )
-                  bufptr[j + 6] = s147link_dev9_mem_mmio.m_unk09;
+                  bufptr[j + 6] = s147link_dev9_mem_mmio->m_unk09;
                 io_pCommon->R_remain -= 1;
                 io_pCommon->R_in += 1;
                 io_pCommon->R_in &= 0x1FF;
@@ -256,11 +257,11 @@ static int clink_InterruptHandler(void *userdata)
         }
         else if ( !unk09_tmp )
         {
-          if ( s147link_dev9_mem_mmio.m_unk09 == 0x38 )
+          if ( s147link_dev9_mem_mmio->m_unk09 == 0x38 )
           {
-            s147link_dev9_mem_mmio.m_node_unk05 = i | 0xC0;
-            s147link_dev9_mem_mmio.m_unk07 = 0x38;
-            unk09_tmp = s147link_dev9_mem_mmio.m_unk09;
+            s147link_dev9_mem_mmio->m_node_unk05 = i | 0xC0;
+            s147link_dev9_mem_mmio->m_unk07 = 0x38;
+            unk09_tmp = s147link_dev9_mem_mmio->m_unk09;
             if ( (unk09_tmp & 0xE0) == 0x20 || (unk09_tmp & 0xE0) == 0x60 )
             {
               if ( io_pCommon->R_remain )
@@ -270,13 +271,13 @@ static int clink_InterruptHandler(void *userdata)
                 bufptr[1] = 0;
                 bufptr[2] = 56;
                 bufptr[56] = unk09_tmp;
-                bufptr[57] = s147link_dev9_mem_mmio.m_unk09;
-                bufptr[58] = s147link_dev9_mem_mmio.m_unk09;
-                bufptr[59] = s147link_dev9_mem_mmio.m_unk09;
-                bufptr[60] = s147link_dev9_mem_mmio.m_unk09;
-                bufptr[61] = s147link_dev9_mem_mmio.m_unk09;
-                bufptr[62] = s147link_dev9_mem_mmio.m_unk09;
-                bufptr[63] = s147link_dev9_mem_mmio.m_unk09;
+                bufptr[57] = s147link_dev9_mem_mmio->m_unk09;
+                bufptr[58] = s147link_dev9_mem_mmio->m_unk09;
+                bufptr[59] = s147link_dev9_mem_mmio->m_unk09;
+                bufptr[60] = s147link_dev9_mem_mmio->m_unk09;
+                bufptr[61] = s147link_dev9_mem_mmio->m_unk09;
+                bufptr[62] = s147link_dev9_mem_mmio->m_unk09;
+                bufptr[63] = s147link_dev9_mem_mmio->m_unk09;
                 io_pCommon->R_remain -= 1;
                 io_pCommon->R_in += 1;
                 io_pCommon->R_in &= 0x1FF;
@@ -301,8 +302,8 @@ static int clink_InterruptHandler(void *userdata)
   tflag = 0;
   if ( (stsL & 0x10) != 0 )
   {
-    s147link_dev9_mem_mmio.m_unk17 = 1;
-    s147link_dev9_mem_mmio.m_unk17 = 0xE;
+    s147link_dev9_mem_mmio->m_unk17 = 1;
+    s147link_dev9_mem_mmio->m_unk17 = 0xE;
   }
   if ( (stsL & 2) != 0 && (stsL & 4) == 0 && io_pCommon->timeout )
   {
@@ -315,7 +316,7 @@ static int clink_InterruptHandler(void *userdata)
     {
       if ( io_pCommon->T_remain == 0x100 )
       {
-        s147link_dev9_mem_mmio.m_unk15 = 0x1A;
+        s147link_dev9_mem_mmio->m_unk15 = 0x1A;
         break;
       }
       bufptr = &io_pCommon->T_top[0x40 * io_pCommon->T_out];
@@ -324,15 +325,15 @@ static int clink_InterruptHandler(void *userdata)
         io_pCommon->T_node = bufptr[1];
         if ( !io_pCommon->T_error[io_pCommon->T_node] || !io_pCommon->T_pd[io_pCommon->T_node] )
         {
-          s147link_dev9_mem_mmio.m_node_unk05 = (io_pCommon->mynode & 0xFF) | 0x40;
-          s147link_dev9_mem_mmio.m_unk07 = 0;
+          s147link_dev9_mem_mmio->m_node_unk05 = (io_pCommon->mynode & 0xFF) | 0x40;
+          s147link_dev9_mem_mmio->m_unk07 = 0;
           for ( i = 0; i < 0x40; i += 1 )
-            s147link_dev9_mem_mmio.m_unk09 = bufptr[i];
+            s147link_dev9_mem_mmio->m_unk09 = bufptr[i];
           io_pCommon->T_remain += 1;
           io_pCommon->T_out += 1;
           io_pCommon->T_out &= 0xFF;
           T_fix(io_pCommon);
-          s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+          s147link_dev9_mem_mmio->m_unk15 = 0x1B;
           tflag = 1;
           io_pCommon->timeout = 1;
           break;
@@ -346,14 +347,14 @@ static int clink_InterruptHandler(void *userdata)
   }
   CpuSuspendIntr(&state);
   if ( tflag )
-    s147link_dev9_mem_mmio.m_unk17 = 3;
+    s147link_dev9_mem_mmio->m_unk17 = 3;
   if ( rxfc )
   {
-    s147link_dev9_mem_mmio.m_rxfc_hi_unk1E = (rxfc >> 8) & 0xFF;
-    s147link_dev9_mem_mmio.m_rxfc_lo_unk1F = rxfc;
+    s147link_dev9_mem_mmio->m_rxfc_hi_unk1E = (rxfc >> 8) & 0xFF;
+    s147link_dev9_mem_mmio->m_rxfc_lo_unk1F = rxfc;
   }
-  s147link_dev9_mem_mmio.m_stsH_unk12 = stsH;
-  s147link_dev9_mem_mmio.m_stsL_unk13 = stsL;
+  s147link_dev9_mem_mmio->m_stsH_unk12 = stsH;
+  s147link_dev9_mem_mmio->m_stsL_unk13 = stsL;
   CpuResumeIntr(state);
   return 1;
 }
@@ -419,6 +420,7 @@ static int cl_mread(void *dstptr, int count)
 static int cl_write(int node, u8 *srcptr, int size)
 {
   int state; // [sp+10h] [+10h] BYREF
+  USE_S147LINK_DEV9_MEM_MMIO();
 
   CpuSuspendIntr(&state);
   if ( !cl_info.T_remain || size >= 0x41 )
@@ -436,7 +438,7 @@ static int cl_write(int node, u8 *srcptr, int size)
   cl_info.T_remain -= 1;
   cl_info.T_in += 1;
   cl_info.T_in &= 0xFF;
-  s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+  s147link_dev9_mem_mmio->m_unk15 = 0x1B;
   clink_InterruptHandler(&cl_info);
   CpuResumeIntr(state);
   return size;
@@ -447,6 +449,7 @@ static int cl_write(int node, u8 *srcptr, int size)
 static int cl_write_custom(int node, u8 *srcptr, int cpVal)
 {
   int state; // [sp+10h] [+10h] BYREF
+  USE_S147LINK_DEV9_MEM_MMIO();
 
   CpuSuspendIntr(&state);
   if ( !cl_info.T_remain )
@@ -461,7 +464,7 @@ static int cl_write_custom(int node, u8 *srcptr, int cpVal)
   cl_info.T_remain -= 1;
   cl_info.T_in += 1;
   cl_info.T_in &= 0xFF;
-  s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+  s147link_dev9_mem_mmio->m_unk15 = 0x1B;
   clink_InterruptHandler(&cl_info);
   CpuResumeIntr(state);
   return 64;
@@ -474,6 +477,7 @@ static int cl_mwrite(u8 *srcptr, int count)
   int state; // [sp+10h] [+10h] BYREF
   int i; // [sp+14h] [+14h]
   int packs; // [sp+20h] [+20h]
+  USE_S147LINK_DEV9_MEM_MMIO();
 
   if ( cl_info.T_remain < (unsigned int)count )
     return 0;
@@ -506,7 +510,7 @@ static int cl_mwrite(u8 *srcptr, int count)
   cl_info.T_remain -= count;
   cl_info.T_in += count;
   cl_info.T_in &= 0xFF;
-  s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+  s147link_dev9_mem_mmio->m_unk15 = 0x1B;
   clink_InterruptHandler(&cl_info);
   CpuResumeIntr(state);
   return count;
@@ -523,33 +527,34 @@ static int InitS147link(int maxnode, int mynode, int priority)
   int state; // [sp+34h] [+34h] BYREF
   u8 stsH;
   u8 stsL;
+  USE_S147LINK_DEV9_MEM_MMIO();
 
-  s147link_dev9_mem_mmio.m_unk0D |= 0x80;
-  s147link_dev9_mem_mmio.m_unk22 = 2;
-  s147link_dev9_mem_mmio.m_unk23 = gbBRE ? 0x51 : 0x11;
-  s147link_dev9_mem_mmio.m_maxnode_unk2B = maxnode;
-  s147link_dev9_mem_mmio.m_mynode_unk2D = mynode;
-  s147link_dev9_mem_mmio.m_unk31 = 0;
-  s147link_dev9_mem_mmio.m_unk2F = 2;
+  s147link_dev9_mem_mmio->m_unk0D |= 0x80;
+  s147link_dev9_mem_mmio->m_unk22 = 2;
+  s147link_dev9_mem_mmio->m_unk23 = gbBRE ? 0x51 : 0x11;
+  s147link_dev9_mem_mmio->m_maxnode_unk2B = maxnode;
+  s147link_dev9_mem_mmio->m_mynode_unk2D = mynode;
+  s147link_dev9_mem_mmio->m_unk31 = 0;
+  s147link_dev9_mem_mmio->m_unk2F = 2;
   for ( i = 0; i < 4; i += 1 )
   {
-    s147link_dev9_mem_mmio.m_node_unk05 = i | 0x40;
-    s147link_dev9_mem_mmio.m_unk07 = 0;
+    s147link_dev9_mem_mmio->m_node_unk05 = i | 0x40;
+    s147link_dev9_mem_mmio->m_unk07 = 0;
     for ( j = 0; j < 256; j += 1 )
-      s147link_dev9_mem_mmio.m_unk09 = 0;
+      s147link_dev9_mem_mmio->m_unk09 = 0;
   }
-  s147link_dev9_mem_mmio.m_unk28 = 0;
-  s147link_dev9_mem_mmio.m_unk29 = 0;
-  s147link_dev9_mem_mmio.m_unk21 = 0;
-  s147link_dev9_mem_mmio.m_unk24 = 0;
-  s147link_dev9_mem_mmio.m_unk25 = 0xFF;
-  s147link_dev9_mem_mmio.m_unk0D &= 0x7F;
-  s147link_dev9_mem_mmio.m_unk22 |= 1;
-  s147link_dev9_mem_mmio.m_node_unk05 = mynode | 0x40;
-  s147link_dev9_mem_mmio.m_unk07 = 0;
-  s147link_dev9_mem_mmio.m_unk09 = mynode;
-  s147link_dev9_mem_mmio.m_unk09 = 2;
-  s147link_dev9_mem_mmio.m_unk09 = 4;
+  s147link_dev9_mem_mmio->m_unk28 = 0;
+  s147link_dev9_mem_mmio->m_unk29 = 0;
+  s147link_dev9_mem_mmio->m_unk21 = 0;
+  s147link_dev9_mem_mmio->m_unk24 = 0;
+  s147link_dev9_mem_mmio->m_unk25 = 0xFF;
+  s147link_dev9_mem_mmio->m_unk0D &= 0x7F;
+  s147link_dev9_mem_mmio->m_unk22 |= 1;
+  s147link_dev9_mem_mmio->m_node_unk05 = mynode | 0x40;
+  s147link_dev9_mem_mmio->m_unk07 = 0;
+  s147link_dev9_mem_mmio->m_unk09 = mynode;
+  s147link_dev9_mem_mmio->m_unk09 = 2;
+  s147link_dev9_mem_mmio->m_unk09 = 4;
   cl_info.mynode = mynode;
   cl_info.maxnode = maxnode;
   j = 1;
@@ -585,17 +590,17 @@ static int InitS147link(int maxnode, int mynode, int priority)
   CpuSuspendIntr(&state);
   ReleaseIntrHandler(13);
   RegisterIntrHandler(13, 1, clink_InterruptHandler, &cl_info);
-  s147link_dev9_mem_mmio.m_unk01 = 0xC;
-  s147link_dev9_mem_mmio.m_unk14 = 0x8E;
-  s147link_dev9_mem_mmio.m_unk15 = 0x1A;
-  s147link_dev9_mem_mmio.m_unk1C = 0xFF;
-  s147link_dev9_mem_mmio.m_unk1D = 0xFF;
-  s147link_dev9_mem_mmio.m_rxfc_hi_unk1E = 0xFF;
-  s147link_dev9_mem_mmio.m_rxfc_lo_unk1F = 0xFF;
-  stsH = s147link_dev9_mem_mmio.m_stsH_unk12;
-  stsL = s147link_dev9_mem_mmio.m_stsL_unk13;
-  s147link_dev9_mem_mmio.m_stsH_unk12 = stsH;
-  s147link_dev9_mem_mmio.m_stsL_unk13 = stsL;
+  s147link_dev9_mem_mmio->m_unk01 = 0xC;
+  s147link_dev9_mem_mmio->m_unk14 = 0x8E;
+  s147link_dev9_mem_mmio->m_unk15 = 0x1A;
+  s147link_dev9_mem_mmio->m_unk1C = 0xFF;
+  s147link_dev9_mem_mmio->m_unk1D = 0xFF;
+  s147link_dev9_mem_mmio->m_rxfc_hi_unk1E = 0xFF;
+  s147link_dev9_mem_mmio->m_rxfc_lo_unk1F = 0xFF;
+  stsH = s147link_dev9_mem_mmio->m_stsH_unk12;
+  stsL = s147link_dev9_mem_mmio->m_stsL_unk13;
+  s147link_dev9_mem_mmio->m_stsH_unk12 = stsH;
+  s147link_dev9_mem_mmio->m_stsL_unk13 = stsL;
   CpuResumeIntr(state);
   EnableIntr(13);
   sceSifInitRpc(0);
@@ -635,44 +640,45 @@ static void reset_circlink(void)
   u8 stsL; // $v0
   int i; // [sp+0h] [+0h]
   int j; // [sp+4h] [+4h]
+  USE_S147LINK_DEV9_MEM_MMIO();
 
-  s147link_dev9_mem_mmio.m_unk0D |= 0x80;
-  s147link_dev9_mem_mmio.m_unk22 = 2;
-  s147link_dev9_mem_mmio.m_unk23 = gbBRE ? 0x51 : 0x11;
-  s147link_dev9_mem_mmio.m_maxnode_unk2B = cl_info.maxnode;
-  s147link_dev9_mem_mmio.m_mynode_unk2D = cl_info.mynode;
-  s147link_dev9_mem_mmio.m_unk31 = 0;
-  s147link_dev9_mem_mmio.m_unk2F = 2;
+  s147link_dev9_mem_mmio->m_unk0D |= 0x80;
+  s147link_dev9_mem_mmio->m_unk22 = 2;
+  s147link_dev9_mem_mmio->m_unk23 = gbBRE ? 0x51 : 0x11;
+  s147link_dev9_mem_mmio->m_maxnode_unk2B = cl_info.maxnode;
+  s147link_dev9_mem_mmio->m_mynode_unk2D = cl_info.mynode;
+  s147link_dev9_mem_mmio->m_unk31 = 0;
+  s147link_dev9_mem_mmio->m_unk2F = 2;
   for ( i = 0; i < 4; i += 1 )
   {
-    s147link_dev9_mem_mmio.m_node_unk05 = i | 0x40;
-    s147link_dev9_mem_mmio.m_unk07 = 0;
+    s147link_dev9_mem_mmio->m_node_unk05 = i | 0x40;
+    s147link_dev9_mem_mmio->m_unk07 = 0;
     for ( j = 0; j < 256; j += 1 )
-      s147link_dev9_mem_mmio.m_unk09 = 0;
+      s147link_dev9_mem_mmio->m_unk09 = 0;
   }
-  s147link_dev9_mem_mmio.m_unk28 = 0;
-  s147link_dev9_mem_mmio.m_unk29 = 0;
-  s147link_dev9_mem_mmio.m_unk21 = 0;
-  s147link_dev9_mem_mmio.m_unk24 = 0;
-  s147link_dev9_mem_mmio.m_unk25 = 0xFF;
-  s147link_dev9_mem_mmio.m_unk0D &= 0x7F;
-  s147link_dev9_mem_mmio.m_unk22 |= 1;
-  s147link_dev9_mem_mmio.m_node_unk05 = (cl_info.mynode & 0xFF) | 0x40;
-  s147link_dev9_mem_mmio.m_unk07 = 0;
-  s147link_dev9_mem_mmio.m_unk09 = cl_info.mynode;
-  s147link_dev9_mem_mmio.m_unk09 = 2;
-  s147link_dev9_mem_mmio.m_unk09 = 4;
-  s147link_dev9_mem_mmio.m_unk01 = 0xC;
-  s147link_dev9_mem_mmio.m_unk14 = 0x8E;
-  s147link_dev9_mem_mmio.m_unk15 = 0x1A;
-  s147link_dev9_mem_mmio.m_unk1C = 0xFF;
-  s147link_dev9_mem_mmio.m_unk1D = 0xFF;
-  s147link_dev9_mem_mmio.m_rxfc_hi_unk1E = 0xFF;
-  s147link_dev9_mem_mmio.m_rxfc_lo_unk1F = 0xFF;
-  stsH = s147link_dev9_mem_mmio.m_stsH_unk12;
-  stsL = s147link_dev9_mem_mmio.m_stsL_unk13;
-  s147link_dev9_mem_mmio.m_stsH_unk12 = stsH;
-  s147link_dev9_mem_mmio.m_stsL_unk13 = stsL;
+  s147link_dev9_mem_mmio->m_unk28 = 0;
+  s147link_dev9_mem_mmio->m_unk29 = 0;
+  s147link_dev9_mem_mmio->m_unk21 = 0;
+  s147link_dev9_mem_mmio->m_unk24 = 0;
+  s147link_dev9_mem_mmio->m_unk25 = 0xFF;
+  s147link_dev9_mem_mmio->m_unk0D &= 0x7F;
+  s147link_dev9_mem_mmio->m_unk22 |= 1;
+  s147link_dev9_mem_mmio->m_node_unk05 = (cl_info.mynode & 0xFF) | 0x40;
+  s147link_dev9_mem_mmio->m_unk07 = 0;
+  s147link_dev9_mem_mmio->m_unk09 = cl_info.mynode;
+  s147link_dev9_mem_mmio->m_unk09 = 2;
+  s147link_dev9_mem_mmio->m_unk09 = 4;
+  s147link_dev9_mem_mmio->m_unk01 = 0xC;
+  s147link_dev9_mem_mmio->m_unk14 = 0x8E;
+  s147link_dev9_mem_mmio->m_unk15 = 0x1A;
+  s147link_dev9_mem_mmio->m_unk1C = 0xFF;
+  s147link_dev9_mem_mmio->m_unk1D = 0xFF;
+  s147link_dev9_mem_mmio->m_rxfc_hi_unk1E = 0xFF;
+  s147link_dev9_mem_mmio->m_rxfc_lo_unk1F = 0xFF;
+  stsH = s147link_dev9_mem_mmio->m_stsH_unk12;
+  stsL = s147link_dev9_mem_mmio->m_stsL_unk13;
+  s147link_dev9_mem_mmio->m_stsH_unk12 = stsH;
+  s147link_dev9_mem_mmio->m_stsL_unk13 = stsL;
 }
 // B0800000: using guessed type s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio;
 #endif
@@ -682,6 +688,7 @@ static unsigned int alarm_handler(void *userdata)
 {
   int state; // [sp+10h] [+10h] BYREF
   CL_COM *io_pCommon;
+  USE_S147LINK_DEV9_MEM_MMIO();
 
   io_pCommon = (CL_COM *)userdata;
   if ( io_pCommon->timeout )
@@ -695,12 +702,12 @@ static unsigned int alarm_handler(void *userdata)
       else
       {
         CpuSuspendIntr(&state);
-        (void)s147link_dev9_mem_mmio.m_stsL_unk13;
+        (void)s147link_dev9_mem_mmio->m_stsL_unk13;
         io_pCommon->timeout = 0;
-        s147link_dev9_mem_mmio.m_unk17 = 1;
-        s147link_dev9_mem_mmio.m_unk17 = 0xE;
+        s147link_dev9_mem_mmio->m_unk17 = 1;
+        s147link_dev9_mem_mmio->m_unk17 = 0xE;
         cl_info.T_error[cl_info.T_node] = 0xFFFFFFFE;
-        s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+        s147link_dev9_mem_mmio->m_unk15 = 0x1B;
         clink_InterruptHandler(&cl_info);
         CpuResumeIntr(state);
       }
@@ -753,6 +760,7 @@ static void *dispatch(int fno, void *buf, int size)
   int node; // [sp+18h] [+18h]
   int sizeb; // [sp+1Ch] [+1Ch]
   unsigned int i; // [sp+20h] [+20h]
+  USE_S147LINK_DEV9_MEM_MMIO();
 
   (void)size;
   FlushDcache();
@@ -773,8 +781,8 @@ static void *dispatch(int fno, void *buf, int size)
       cl_info.T_out = 0;
       cl_info.T_in = 0;
       cl_info.T_remain = 0x100;
-      s147link_dev9_mem_mmio.m_unk17 = 1;
-      s147link_dev9_mem_mmio.m_unk17 = 0xE;
+      s147link_dev9_mem_mmio->m_unk17 = 1;
+      s147link_dev9_mem_mmio->m_unk17 = 0xE;
       cl_info.T_error[cl_info.T_node] = 0xFFFFFFFD;
       *(u32 *)buf = cl_info.T_node;
       CpuResumeIntr(state);
@@ -816,17 +824,17 @@ static void *dispatch(int fno, void *buf, int size)
     case 0xA0:
       CpuSuspendIntr(&state);
       cl_info.T_error[node] = 0;
-      s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+      s147link_dev9_mem_mmio->m_unk15 = 0x1B;
       clink_InterruptHandler(&cl_info);
       CpuResumeIntr(state);
       break;
     case 0xB0:
       CpuSuspendIntr(&state);
-      s147link_dev9_mem_mmio.m_unk17 = 1;
-      s147link_dev9_mem_mmio.m_unk17 = 0xE;
+      s147link_dev9_mem_mmio->m_unk17 = 1;
+      s147link_dev9_mem_mmio->m_unk17 = 0xE;
       cl_info.T_error[cl_info.T_node] = 0xFFFFFFFD;
       *(u32 *)buf = cl_info.T_node;
-      s147link_dev9_mem_mmio.m_unk15 = 0x1B;
+      s147link_dev9_mem_mmio->m_unk15 = 0x1B;
       clink_InterruptHandler(&cl_info);
       CpuResumeIntr(state);
       break;

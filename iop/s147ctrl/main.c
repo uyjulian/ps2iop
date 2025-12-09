@@ -193,9 +193,8 @@ static iop_device_t g_drv_sram_ioman; // idb
 static int g_rpc1_buf[8]; // weak
 static int g_rpc2_buf[260]; // weak
 static struct watchdog_info_ g_watchdog_info; // weak
-struct s147_dev9_mem_mmio_ s147_dev9_mem_mmio; // weak
-struct s147link_dev9_mem_mmio_ s147link_dev9_mem_mmio; // weak
-
+#define USE_S147_DEV9_MEM_MMIO() struct s147_dev9_mem_mmio_ *const s147_dev9_mem_mmio = (void *)0xB0000000
+#define USE_S147LINK_DEV9_MEM_MMIO() struct s147link_dev9_mem_mmio_ *const s147link_dev9_mem_mmio = (void *)0xB0800000
 
 //----- (00400000) --------------------------------------------------------
 int _start(int ac, char **av)
@@ -252,22 +251,24 @@ static unsigned int watchdog_alarm_cb(void *userdata)
   int state; // [sp+14h] [+14h] BYREF
   u8 unk34_tmp; // [sp+18h] [+18h]
   struct watchdog_info_ *wdi;
+  USE_S147_DEV9_MEM_MMIO();
+  USE_S147LINK_DEV9_MEM_MMIO();
 
   wdi = (struct watchdog_info_ *)userdata;
   if ( wdi->g_watchdog_started != 1 )
   {
-    s147_dev9_mem_mmio.m_led = 3;
+    s147_dev9_mem_mmio->m_led = 3;
     return 0;
   }
   CpuSuspendIntr(&state);
-  s147link_dev9_mem_mmio.m_watchdog_flag_unk34 = 0;
-  unk34_tmp = s147link_dev9_mem_mmio.m_watchdog_flag_unk34;
+  s147link_dev9_mem_mmio->m_watchdog_flag_unk34 = 0;
+  unk34_tmp = s147link_dev9_mem_mmio->m_watchdog_flag_unk34;
   CpuResumeIntr(state);
   if ( unk34_tmp == 0x3E )
   {
-    s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+    s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
     // Unofficial: add 1 here
-    s147_dev9_mem_mmio.m_led = g_watchdog_flag_1 + 1;
+    s147_dev9_mem_mmio->m_led = g_watchdog_flag_1 + 1;
     g_watchdog_flag_1 = ( (((unsigned int)g_watchdog_count_1 >> 3) & 1) != 0 ) ? 1 : 0;
     g_watchdog_count_1 += 1;
   }
@@ -349,6 +350,7 @@ static int ctrl_drv_op_read(const iop_file_t *f, void *ptr, int size)
 {
   int unit; // [sp+10h] [+10h]
   int retres; // [sp+14h] [+14h]
+  USE_S147_DEV9_MEM_MMIO();
 
   unit = f->unit;
   switch ( unit )
@@ -363,8 +365,8 @@ static int ctrl_drv_op_read(const iop_file_t *f, void *ptr, int size)
     case 12:
       if ( size != 2 )
         return -EINVAL;
-      *(u8 *)ptr = s147_dev9_mem_mmio.m_security_unlock_set1;
-      *((u8 *)ptr + 1) = s147_dev9_mem_mmio.m_security_unlock_set2;
+      *(u8 *)ptr = s147_dev9_mem_mmio->m_security_unlock_set1;
+      *((u8 *)ptr + 1) = s147_dev9_mem_mmio->m_security_unlock_set2;
       return 2;
     default:
       if ( size != 1 )
@@ -380,6 +382,7 @@ static int ctrl_drv_op_write(const iop_file_t *f, void *ptr, int size)
 {
   int unit; // [sp+10h] [+10h]
   int retres; // [sp+14h] [+14h]
+  USE_S147_DEV9_MEM_MMIO();
 
   unit = f->unit;
   switch ( unit )
@@ -394,8 +397,8 @@ static int ctrl_drv_op_write(const iop_file_t *f, void *ptr, int size)
     case 12:
       if ( size != 2 )
         return -EINVAL;
-      s147_dev9_mem_mmio.m_security_unlock_set1 = *(u8 *)ptr;
-      s147_dev9_mem_mmio.m_security_unlock_set2 = *((u8 *)ptr + 1);
+      s147_dev9_mem_mmio->m_security_unlock_set1 = *(u8 *)ptr;
+      s147_dev9_mem_mmio->m_security_unlock_set2 = *((u8 *)ptr + 1);
       return 2;
     default:
       if ( size != 1 )
@@ -433,6 +436,8 @@ static int create_ctrl_sema(void)
 //----- (004008EC) --------------------------------------------------------
 static int ctrl_do_rtc_read(u32 *rtcbuf)
 {
+  USE_S147_DEV9_MEM_MMIO();
+
   WaitSema(g_ctrl_sema_id);
   g_timer_id = AllocHardTimer(1, 0x20, 1);
   if ( g_timer_id < 0 )
@@ -442,11 +447,11 @@ static int ctrl_do_rtc_read(u32 *rtcbuf)
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
-  s147_dev9_mem_mmio.m_rtc_flag = 1;
+  s147_dev9_mem_mmio->m_rtc_flag = 1;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
-  s147_dev9_mem_mmio.m_rtc_flag = 9;
+  s147_dev9_mem_mmio->m_rtc_flag = 9;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
@@ -457,11 +462,11 @@ static int ctrl_do_rtc_read(u32 *rtcbuf)
   rtcbuf[2] = ctrl_do_rtc_read_inner(8, 0x3F);
   rtcbuf[1] = ctrl_do_rtc_read_inner(8, 0x1F);
   *rtcbuf = ctrl_do_rtc_read_inner(8, 0xFF);
-  s147_dev9_mem_mmio.m_rtc_flag = 1;
+  s147_dev9_mem_mmio->m_rtc_flag = 1;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
-  s147_dev9_mem_mmio.m_rtc_flag = 1;
+  s147_dev9_mem_mmio->m_rtc_flag = 1;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
@@ -478,16 +483,17 @@ static int ctrl_do_rtc_read(u32 *rtcbuf)
 static int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
 {
   int i; // [sp+10h] [+10h]
+  USE_S147_DEV9_MEM_MMIO();
 
   g_rtc_flag = 0;
   for ( i = 0; i < flgcnt; i += 1 )
   {
-    s147_dev9_mem_mmio.m_rtc_flag = 0xB;
+    s147_dev9_mem_mmio->m_rtc_flag = 0xB;
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
       ;
     g_max_timer_counter += 0x40;
-    g_rtc_flag |= (s147_dev9_mem_mmio.m_rtc_flag & 1) << i;
-    s147_dev9_mem_mmio.m_rtc_flag = 9;
+    g_rtc_flag |= (s147_dev9_mem_mmio->m_rtc_flag & 1) << i;
+    s147_dev9_mem_mmio->m_rtc_flag = 9;
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
       ;
     g_max_timer_counter += 0x40;
@@ -501,6 +507,8 @@ static int ctrl_do_rtc_read_inner(int flgcnt, int flgmsk)
 //----- (00400DB8) --------------------------------------------------------
 static int ctrl_do_rtc_write(const u32 *rtcbuf)
 {
+  USE_S147_DEV9_MEM_MMIO();
+
   WaitSema(g_ctrl_sema_id);
   g_timer_id = AllocHardTimer(1, 0x20, 1);
   if ( g_timer_id < 0 )
@@ -510,11 +518,11 @@ static int ctrl_do_rtc_write(const u32 *rtcbuf)
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
-  s147_dev9_mem_mmio.m_rtc_flag = 5;
+  s147_dev9_mem_mmio->m_rtc_flag = 5;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
-  s147_dev9_mem_mmio.m_rtc_flag = 0xD;
+  s147_dev9_mem_mmio->m_rtc_flag = 0xD;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
@@ -525,11 +533,11 @@ static int ctrl_do_rtc_write(const u32 *rtcbuf)
   ctrl_do_rtc_write_inner(rtcbuf[2], 8, 0x3F);
   ctrl_do_rtc_write_inner(rtcbuf[1], 8, 0x1F);
   ctrl_do_rtc_write_inner(*rtcbuf, 8, 0xFF);
-  s147_dev9_mem_mmio.m_rtc_flag = 5;
+  s147_dev9_mem_mmio->m_rtc_flag = 5;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
-  s147_dev9_mem_mmio.m_rtc_flag = 1;
+  s147_dev9_mem_mmio->m_rtc_flag = 1;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
@@ -547,21 +555,22 @@ static void ctrl_do_rtc_write_inner(int inflg, int flgcnt, int flgmsk)
 {
   int i; // [sp+10h] [+10h]
   unsigned int xval; // [sp+20h] [+20h]
+  USE_S147_DEV9_MEM_MMIO();
 
   xval = inflg & flgmsk;
   for ( i = 0; i < flgcnt; i += 1 )
   {
-    s147_dev9_mem_mmio.m_rtc_flag = (xval & 1) | 0xC;
+    s147_dev9_mem_mmio->m_rtc_flag = (xval & 1) | 0xC;
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
       ;
     g_max_timer_counter += 0x40;
-    s147_dev9_mem_mmio.m_rtc_flag = (xval & 1) | 0xE;
+    s147_dev9_mem_mmio->m_rtc_flag = (xval & 1) | 0xE;
     while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
       ;
     g_max_timer_counter += 0x40;
     xval >>= 1;
   }
-  s147_dev9_mem_mmio.m_rtc_flag = (xval & 1) | 0xC;
+  s147_dev9_mem_mmio->m_rtc_flag = (xval & 1) | 0xC;
   while ( GetTimerCounter(g_timer_id) < g_max_timer_counter )
     ;
   g_max_timer_counter += 0x40;
@@ -654,14 +663,15 @@ static int sram_drv_op_write(iop_file_t *f, void *ptr, int size)
 {
   int sizeb; // $v0
   struct sram_drv_privdata_ *privdata; // [sp+10h] [+10h]
+  USE_S147_DEV9_MEM_MMIO();
 
   privdata = (struct sram_drv_privdata_ *)f->privdata;
   if ( (s32)privdata->m_curpos >= (s32)privdata->m_maxpos )
     return 0;
   sizeb = ( (s32)privdata->m_maxpos < (s32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
-  s147_dev9_mem_mmio.m_sram_write_flag = 1;
+  s147_dev9_mem_mmio->m_sram_write_flag = 1;
   memcpy((void *)(privdata->m_curpos + 0xB0C00000), ptr, sizeb);
-  s147_dev9_mem_mmio.m_sram_write_flag = 0;
+  s147_dev9_mem_mmio->m_sram_write_flag = 0;
   privdata->m_curpos += sizeb;
   return sizeb;
 }
@@ -737,35 +747,37 @@ static void rpc_thread1(void *userdata)
 //----- (00401A48) --------------------------------------------------------
 static void *rpc_1470000_handler(int fno, void *buffer, int length)
 {
+  USE_S147_DEV9_MEM_MMIO();
+
   (void)length;
   switch ( fno )
   {
     case 1:
-      s147_dev9_mem_mmio.m_led = *(u8 *)buffer;
+      s147_dev9_mem_mmio->m_led = *(u8 *)buffer;
       *(u32 *)buffer = 0;
       break;
     case 2:
-      s147_dev9_mem_mmio.m_security_unlock_unlock = *(u8 *)buffer;
+      s147_dev9_mem_mmio->m_security_unlock_unlock = *(u8 *)buffer;
       *(u32 *)buffer = 0;
       break;
     case 3:
-      s147_dev9_mem_mmio.m_unk03 = *(u8 *)buffer;
+      s147_dev9_mem_mmio->m_unk03 = *(u8 *)buffer;
       *(u32 *)buffer = 0;
       break;
     case 4:
-      s147_dev9_mem_mmio.m_rtc_flag = *(u8 *)buffer;
+      s147_dev9_mem_mmio->m_rtc_flag = *(u8 *)buffer;
       *(u32 *)buffer = 0;
       break;
     case 5:
-      s147_dev9_mem_mmio.m_watchdog_flag2 = *(u8 *)buffer;
+      s147_dev9_mem_mmio->m_watchdog_flag2 = *(u8 *)buffer;
       *(u32 *)buffer = 0;
       break;
     case 12:
-      s147_dev9_mem_mmio.m_security_unlock_set1 = *(u8 *)buffer;
+      s147_dev9_mem_mmio->m_security_unlock_set1 = *(u8 *)buffer;
       *(u32 *)buffer = 0;
       break;
     case 13:
-      s147_dev9_mem_mmio.m_security_unlock_set2 = *(u8 *)buffer;
+      s147_dev9_mem_mmio->m_security_unlock_set2 = *(u8 *)buffer;
       *(u32 *)buffer = 0;
       break;
     default:
@@ -779,43 +791,45 @@ static void *rpc_1470000_handler(int fno, void *buffer, int length)
 //----- (00401BA0) --------------------------------------------------------
 static void *rpc_1470001_handler(int fno, void *buffer, int length)
 {
+  USE_S147_DEV9_MEM_MMIO();
+
   (void)length;
   switch ( fno )
   {
     case 0:
-      *(u8 *)buffer = s147_dev9_mem_mmio.m_unk00;
+      *(u8 *)buffer = s147_dev9_mem_mmio->m_unk00;
       *((u32 *)buffer + 1) = 0;
       break;
     case 1:
-      *(u8 *)buffer = s147_dev9_mem_mmio.m_led;
+      *(u8 *)buffer = s147_dev9_mem_mmio->m_led;
       *((u32 *)buffer + 1) = 0;
       break;
     case 2:
-      *(u8 *)buffer = s147_dev9_mem_mmio.m_security_unlock_unlock;
+      *(u8 *)buffer = s147_dev9_mem_mmio->m_security_unlock_unlock;
       *((u32 *)buffer + 1) = 0;
       break;
     case 3:
-      *(u8 *)buffer = s147_dev9_mem_mmio.m_unk03;
+      *(u8 *)buffer = s147_dev9_mem_mmio->m_unk03;
       *((u32 *)buffer + 1) = 0;
       break;
     case 4:
-      *(u8 *)buffer = s147_dev9_mem_mmio.m_rtc_flag;
+      *(u8 *)buffer = s147_dev9_mem_mmio->m_rtc_flag;
       *((u32 *)buffer + 1) = 0;
       break;
     case 5:
-      *(u8 *)buffer = s147_dev9_mem_mmio.m_watchdog_flag2;
+      *(u8 *)buffer = s147_dev9_mem_mmio->m_watchdog_flag2;
       *((u32 *)buffer + 1) = 0;
       break;
     case 6:
-      *(u8 *)buffer = s147_dev9_mem_mmio.m_unk06;
+      *(u8 *)buffer = s147_dev9_mem_mmio->m_unk06;
       *((u32 *)buffer + 1) = 0;
       break;
     case 12:
-      *(u8 *)buffer = s147_dev9_mem_mmio.m_security_unlock_set1;
+      *(u8 *)buffer = s147_dev9_mem_mmio->m_security_unlock_set1;
       *((u32 *)buffer + 1) = 0;
       break;
     case 13:
-      *(u8 *)buffer = s147_dev9_mem_mmio.m_security_unlock_set2;
+      *(u8 *)buffer = s147_dev9_mem_mmio->m_security_unlock_set2;
       *((u32 *)buffer + 1) = 0;
       break;
     default:
@@ -893,15 +907,17 @@ static void rpc_thread2(void *userdata)
 //----- (00401FFC) --------------------------------------------------------
 static void *rpc_1470200_handler(int fno, void *buffer, int length)
 {
+  USE_S147_DEV9_MEM_MMIO();
+
   (void)length;
   if ( (unsigned int)fno >= 3 )
   {
     *(u32 *)buffer = -1;
     return buffer;
   }
-  s147_dev9_mem_mmio.m_sram_write_flag = 1;
+  s147_dev9_mem_mmio->m_sram_write_flag = 1;
   memcpy((void *)(*((u32 *)buffer + 256) + 0xB0C00000), buffer, *((u32 *)buffer + 257));
-  s147_dev9_mem_mmio.m_sram_write_flag = 0;
+  s147_dev9_mem_mmio->m_sram_write_flag = 0;
   *(u32 *)buffer = 0;
   return buffer;
 }
