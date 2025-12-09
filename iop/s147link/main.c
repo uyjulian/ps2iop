@@ -238,7 +238,7 @@ static int clink_InterruptHandler(void *userdata)
                   bufptr[j + 6] = s147link_dev9_mem_mmio.m_unk09;
                 io_pCommon->R_remain -= 1;
                 io_pCommon->R_in += 1;
-                io_pCommon->R_in &= 0x1FFu;
+                io_pCommon->R_in &= 0x1FF;
                 io_pCommon->R_number[i] = rnum;
               }
               else if ( io_pCommon->R_pd[i] )
@@ -279,7 +279,7 @@ static int clink_InterruptHandler(void *userdata)
                 bufptr[63] = s147link_dev9_mem_mmio.m_unk09;
                 io_pCommon->R_remain -= 1;
                 io_pCommon->R_in += 1;
-                io_pCommon->R_in &= 0x1FFu;
+                io_pCommon->R_in &= 0x1FF;
               }
               else if ( io_pCommon->R_pd[i] )
               {
@@ -330,7 +330,7 @@ static int clink_InterruptHandler(void *userdata)
             s147link_dev9_mem_mmio.m_unk09 = bufptr[i];
           io_pCommon->T_remain += 1;
           io_pCommon->T_out += 1;
-          io_pCommon->T_out = (u8)io_pCommon->T_out;
+          io_pCommon->T_out &= 0xFF;
           T_fix(io_pCommon);
           s147link_dev9_mem_mmio.m_unk15 = 0x1B;
           tflag = 1;
@@ -340,7 +340,7 @@ static int clink_InterruptHandler(void *userdata)
       }
       io_pCommon->T_remain += 1;
       io_pCommon->T_out += 1;
-      io_pCommon->T_out = (u8)io_pCommon->T_out;
+      io_pCommon->T_out &= 0xFF;
       T_fix(io_pCommon);
     }
   }
@@ -391,7 +391,7 @@ static int cl_mread(void *dstptr, int count)
   }
   cl_info.R_remain += count;
   cl_info.R_out += count;
-  cl_info.R_out = cl_info.R_out & 0x1FF;
+  cl_info.R_out &= 0x1FF;
   if ( cl_info.R_remain >= 0x201 )
   {
     cl_info.R_remain = 0x200;
@@ -435,7 +435,7 @@ static int cl_write(int node, u8 *srcptr, int size)
   tx_buff[cl_info.T_in][4] = cl_info.T_number;
   cl_info.T_remain -= 1;
   cl_info.T_in += 1;
-  cl_info.T_in = (cl_info.T_in & 0xFF);
+  cl_info.T_in &= 0xFF;
   s147link_dev9_mem_mmio.m_unk15 = 0x1B;
   clink_InterruptHandler(&cl_info);
   CpuResumeIntr(state);
@@ -460,7 +460,7 @@ static int cl_write_custom(int node, u8 *srcptr, int cpVal)
   tx_buff[cl_info.T_in][2] = cpVal & 0xFF;
   cl_info.T_remain -= 1;
   cl_info.T_in += 1;
-  cl_info.T_in = (cl_info.T_in & 0xFF);
+  cl_info.T_in &= 0xFF;
   s147link_dev9_mem_mmio.m_unk15 = 0x1B;
   clink_InterruptHandler(&cl_info);
   CpuResumeIntr(state);
@@ -505,7 +505,7 @@ static int cl_mwrite(u8 *srcptr, int count)
   }
   cl_info.T_remain -= count;
   cl_info.T_in += count;
-  cl_info.T_in = (cl_info.T_in & 0xFF);
+  cl_info.T_in &= 0xFF;
   s147link_dev9_mem_mmio.m_unk15 = 0x1B;
   clink_InterruptHandler(&cl_info);
   CpuResumeIntr(state);
