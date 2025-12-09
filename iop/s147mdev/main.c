@@ -111,6 +111,12 @@ static int atfile_drv_op_nulldev(const iop_file_t *f)
   int unit;
 
   unit = f->unit;
+  // Unofficial: add bounds check here
+  if ( unit < 0 || unit >= 100 )
+  {
+    Kprintf("s147mdev.irx: Invalid unit number\n");
+    return -ENODEV;
+  }
   if ( !g_atfile_unit_info[unit / 10] )
   {
     Kprintf("s147mdev.irx: Undefined unit number (%d), do nothing\n", unit);
