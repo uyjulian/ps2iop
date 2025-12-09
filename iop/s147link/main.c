@@ -60,7 +60,7 @@ struct s147link_dev9_mem_mmio_
   vu8 m_watchdog_flag_unk34;
 };
 
-typedef struct __anon_struct_35
+typedef struct CL_COM_
 {
   unsigned int mynode;
   unsigned int maxnode;
