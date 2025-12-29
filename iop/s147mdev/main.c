@@ -1,12 +1,11 @@
 
 #include "irx_imports.h"
 #include <errno.h>
+#include <s147mdev.h>
 
 IRX_ID("S147MDEV", 2, 1);
 
 static int register_atfile_ioman_device(const char *atfile_name, const char *atfile_desc);
-int s147mdev_4_addfs(iop_device_t *drv, int unit10);
-int s147mdev_5_delfs(int unit10);
 static int atfile_drv_op_nulldev(const iop_file_t *f);
 static int atfile_drv_op_init(iop_device_t *dev);
 static int atfile_drv_op_deinit(iop_device_t *dev);
