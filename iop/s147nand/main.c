@@ -794,6 +794,8 @@ int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt)
   int i; // [sp+14h] [+14h]
   int retres; // [sp+18h] [+18h]
 
+  // Unofficial: initialize retres
+  retres = 0;
   WaitSema(g_sema_id_init);
   for ( i = 0; i < pagecnt; ++i )
   {
@@ -818,6 +820,8 @@ int s147nand_8_multi_write_dma(void *ptr, int pageoffs, int pagecnt)
   int i; // [sp+14h] [+14h]
   int retres; // [sp+18h] [+18h]
 
+  // Unofficial: initialize retres
+  retres = 0;
   for ( i = 0; i < pagecnt; ++i )
   {
     xptr = (char *)ptr + 4 * (s147nand_16_getnandinfo()->m_page_size_noecc >> 2) * i;
@@ -871,7 +875,11 @@ int nand_mdev_open_special(iop_file_t *f, const char *name)
   f->privdata = AllocSysMemory(0, 16, 0);
   CpuResumeIntr(state);
   if ( !f->privdata )
+  {
     Kprintf("s147nand.irx: AllocSysMemory failed (9:Open)\n");
+    // Unofficial: return early on error
+    return -2;
+  }
   privdat = (nand_mdev_privdata_stru_ *)f->privdata;
   memset(privdat, 0, sizeof(nand_mdev_privdata_stru_));
   privdat->m_seek_cur = 0;

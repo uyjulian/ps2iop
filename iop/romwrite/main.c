@@ -487,7 +487,6 @@ int do_handle_atfile_image(int part, const char *str)
   result = part;
   if ( part >= 0 )
   {
-    result = part;
     if ( part < 8 )
       return (int)strcpy(g_atfile_part_image[part], str);
   }
@@ -971,7 +970,6 @@ int do_write_partition(int part)
         {
           STATUS_PRINTF("\nromwrite: Bad block error, use \"-f\" option.\n");
           err = 1;
-          finished = 1;
           break;
         }
       }
