@@ -2,7 +2,7 @@ IOP_BIN = s147nand.irx
 
 IOP_OBJS = imports.o exports.o main.o
 
-IOP_CFLAGS += -Iinclude -I../s147mdev/include
+IOP_CFLAGS += -Wall -Wextra -Iinclude -I../s147mdev/include
 
 all: $(IOP_BIN)
 

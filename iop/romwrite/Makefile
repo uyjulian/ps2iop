@@ -2,7 +2,7 @@ IOP_BIN = romwrite.irx
 
 IOP_OBJS = imports.o main.o
 
-IOP_CFLAGS += -Iinclude -I../s147nand/include
+IOP_CFLAGS += -Wall -Wextra -Iinclude -I../s147nand/include
 
 all: $(IOP_BIN)
 
