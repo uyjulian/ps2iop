@@ -303,17 +303,14 @@ static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
 {
   int xsize3; // $s0
   nand_mdev_privdata_stru_ *privdat; // [sp+18h] [+18h]
-  char *ptr_char; // [sp+1Ch] [+1Ch]
   int xsector1; // [sp+20h] [+20h]
   int xsector2; // [sp+24h] [+24h]
   int xsize2; // [sp+28h] [+28h]
   int cursz; // [sp+2Ch] [+2Ch]
   int special; // [sp+34h] [+34h]
   int pageoffs; // [sp+38h] [+38h]
-  int remainnnutes; // [sp+3Ch] [+3Ch]
 
   privdat = (nand_mdev_privdata_stru_ *)f->privdata;
-  ptr_char = (char *)ptr;
   WaitSema(g_sema_id_dev);
   if ( privdat->m_seek_cur >= privdat->m_seek_max )
   {
@@ -340,9 +337,8 @@ static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
   for ( cursz = 0; cursz < xsize2; cursz += xsize3 )
   {
     pageoffs = do_nand_bytes2sector(privdat->m_partition_offset, privdat->m_seek_cur);
-    remainnnutes = do_nand_bytes2sector_remainder(privdat->m_seek_cur);
     xsize3 = (( pageoffs >= xsector1 ) ? xsector2 : 2048) - do_nand_bytes2sector_remainder(privdat->m_seek_cur);
-    do_nand_sector_rw(ptr_char + cursz, pageoffs, remainnnutes, xsize3);
+    do_nand_sector_rw(((char *)ptr) + cursz, pageoffs, do_nand_bytes2sector_remainder(privdat->m_seek_cur), xsize3);
     privdat->m_seek_cur += xsize3;
   }
   SignalSema(g_sema_id_dev);
@@ -690,23 +686,17 @@ static void do_update_acdelay(void)
 //----- (004019C4) --------------------------------------------------------
 static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size)
 {
-  int tpageoffs1; // $v0
-  const nand_info_stru_ *nandinf; // $v0
-  int tpageoffs2; // $s0
   int dma; // [sp+10h] [+10h]
 
   WaitSema(g_sema_id_init);
   if ( ((uiptr)ptr & 3) != 0 || (byteoffs & 3) != 0 || (size & 3) != 0 )
   {
-    tpageoffs2 = s147nand_14_translate_pageoffs(pageoffs);
-    nandinf = s147nand_16_getnandinfo();
-    dma = s147nand_20_nand_read_dma(g_nand_unaligned_buf, tpageoffs2, 0, nandinf->m_page_size_noecc);
+    dma = s147nand_20_nand_read_dma(g_nand_unaligned_buf, s147nand_14_translate_pageoffs(pageoffs), 0, s147nand_16_getnandinfo()->m_page_size_noecc);
     memcpy(ptr, (char *)g_nand_unaligned_buf + byteoffs, size);
   }
   else
   {
-    tpageoffs1 = s147nand_14_translate_pageoffs(pageoffs);
-    dma = s147nand_20_nand_read_dma(ptr, tpageoffs1, byteoffs, size);
+    dma = s147nand_20_nand_read_dma(ptr, s147nand_14_translate_pageoffs(pageoffs), byteoffs, size);
   }
   SignalSema(g_sema_id_init);
   return dma;
@@ -715,9 +705,6 @@ static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size)
 //----- (00401AF4) --------------------------------------------------------
 int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt)
 {
-  char *xptr; // $s0
-  const nand_info_stru_ *nandinf; // $v0
-  int xpageoffs; // $s1
   int i; // [sp+14h] [+14h]
   int retres; // [sp+18h] [+18h]
 
@@ -726,10 +713,7 @@ int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt)
   WaitSema(g_sema_id_init);
   for ( i = 0; i < pagecnt; ++i )
   {
-    xptr = (char *)ptr + 4 * (s147nand_16_getnandinfo()->m_page_size_noecc >> 2) * i;
-    xpageoffs = s147nand_14_translate_pageoffs(pageoffs + i);
-    nandinf = s147nand_16_getnandinfo();
-    retres = s147nand_20_nand_read_dma(xptr, xpageoffs, 0, nandinf->m_page_size_noecc);
+    retres = s147nand_20_nand_read_dma((char *)ptr + 4 * (s147nand_16_getnandinfo()->m_page_size_noecc >> 2) * i, s147nand_14_translate_pageoffs(pageoffs + i), 0, s147nand_16_getnandinfo()->m_page_size_noecc);
     if ( retres )
       return retres;
   }
@@ -741,9 +725,6 @@ int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt)
 //----- (00401C38) --------------------------------------------------------
 int s147nand_8_multi_write_dma(void *ptr, int pageoffs, int pagecnt)
 {
-  char *xptr; // $s0
-  const nand_info_stru_ *nandinf; // $v0
-  int xpageoffs; // $s1
   int i; // [sp+14h] [+14h]
   int retres; // [sp+18h] [+18h]
 
@@ -751,10 +732,7 @@ int s147nand_8_multi_write_dma(void *ptr, int pageoffs, int pagecnt)
   retres = 0;
   for ( i = 0; i < pagecnt; ++i )
   {
-    xptr = (char *)ptr + 4 * (s147nand_16_getnandinfo()->m_page_size_noecc >> 2) * i;
-    xpageoffs = s147nand_14_translate_pageoffs(pageoffs + i);
-    nandinf = s147nand_16_getnandinfo();
-    retres = s147nand_22_nand_write_dma(xptr, xpageoffs, 0, nandinf->m_page_size_noecc);
+    retres = s147nand_22_nand_write_dma((char *)ptr + 4 * (s147nand_16_getnandinfo()->m_page_size_noecc >> 2) * i, s147nand_14_translate_pageoffs(pageoffs + i), 0, s147nand_16_getnandinfo()->m_page_size_noecc);
     if ( retres )
       return retres;
   }
@@ -871,7 +849,6 @@ static size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size)
 {
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
   int retres1; // [sp+14h] [+14h]
-  int retres2; // [sp+14h] [+14h]
 
   privdata = (nand_mdev_privdata_stru_ *)f->privdata;
   if ( (privdata->m_flags & 0x10000) != 0 )
@@ -890,10 +867,10 @@ static size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size)
   }
   if ( (privdata->m_flags & 0x1000000) != 0 )
   {
-    retres2 = do_nand_sector_rw(ptr, privdata->m_partition_offset, privdata->m_seek_cur, size);
-    if ( retres2 < 0 )
+    retres1 = do_nand_sector_rw(ptr, privdata->m_partition_offset, privdata->m_seek_cur, size);
+    if ( retres1 < 0 )
     {
-      return retres2;
+      return retres1;
     }
     privdata->m_seek_cur += size;
     return size;
@@ -904,10 +881,8 @@ static size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size)
 //----- (0040246C) --------------------------------------------------------
 static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
 {
-  int tpageoffs; // $v0
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
   int retres1; // [sp+14h] [+14h]
-  int retres2; // [sp+14h] [+14h]
   int xsz; // [sp+18h] [+18h]
   int i; // [sp+1Ch] [+1Ch]
 
@@ -925,8 +900,7 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
     retres1 = 0;
     for ( i = 0; i < g_nand_header.m_nand_partition_8_size; ++i )
     {
-      tpageoffs = s147nand_27_blocks2pages(i + g_nand_header.m_nand_partition_8);
-      retres1 = s147nand_11_erasetranslatepageoffs(tpageoffs);
+      retres1 = s147nand_11_erasetranslatepageoffs(s147nand_27_blocks2pages(i + g_nand_header.m_nand_partition_8));
     }
     privdata->m_flags &= ~0x2000000u;
     if ( retres1 )
@@ -940,12 +914,12 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
     _break(7u, 0);
   if ( g_nand_header.m_page_size_noecc == -1 && size == (int)0x80000000 )
     _break(6u, 0);
-  retres2 = s147nand_8_multi_write_dma(
+  retres1 = s147nand_8_multi_write_dma(
               ptr,
               privdata->m_seek_cur / g_nand_header.m_page_size_noecc + privdata->m_partition_offset,
               size / g_nand_header.m_page_size_noecc);
-  if ( retres2 < 0 )
-    return retres2;
+  if ( retres1 < 0 )
+    return retres1;
   privdata->m_seek_cur += size;
   privdata->m_seek_max = privdata->m_seek_cur;
   return size;
@@ -988,16 +962,12 @@ static size_t do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, size_t s
 //----- (004029AC) --------------------------------------------------------
 int s147nand_11_erasetranslatepageoffs(int pageoffs)
 {
-  int tpageoffs; // $v0
-
-  tpageoffs = s147nand_14_translate_pageoffs(pageoffs);
-  return s147nand_24_eraseoffset(tpageoffs);
+  return s147nand_24_eraseoffset(s147nand_14_translate_pageoffs(pageoffs));
 }
 
 //----- (004029FC) --------------------------------------------------------
 int s147nand_12_load_logaddrtable(void)
 {
-  const nand_info_stru_ *nandinf; // $v0
   nand_header_stru_ hdr; // [sp+10h] [+10h] BYREF
   int state; // [sp+B0h] [+B0h] BYREF
 
@@ -1012,8 +982,7 @@ int s147nand_12_load_logaddrtable(void)
   CpuResumeIntr(state);
   s147nand_19_logaddr_read(g_logical_addr_tbl, 1, 2 * hdr.m_block_size);
   CpuSuspendIntr(&state);
-  nandinf = s147nand_16_getnandinfo();
-  g_nand_unaligned_buf = AllocSysMemory(0, nandinf->m_page_size_noecc, 0);
+  g_nand_unaligned_buf = AllocSysMemory(0, s147nand_16_getnandinfo()->m_page_size_noecc, 0);
   CpuResumeIntr(state);
   if ( !g_nand_unaligned_buf )
   {
@@ -1036,9 +1005,11 @@ int s147nand_13_translate_blockoffs(int blockoffs)
     Kprintf("s147nand.irx: Invalid logical block address %d\n", blockoffs);
     return -1470010;
   }
-  if ( !g_nand_unaligned_buf_alloced && (logaddrtable = s147nand_12_load_logaddrtable(), logaddrtable < 0) )
+  if ( !g_nand_unaligned_buf_alloced )
   {
-    return logaddrtable;
+    logaddrtable = s147nand_12_load_logaddrtable();
+    if ( logaddrtable < 0 )
+      return logaddrtable;
   }
   tbladdr = g_logical_addr_tbl[blockoffs];
   switch ( tbladdr )
@@ -1057,20 +1028,16 @@ int s147nand_13_translate_blockoffs(int blockoffs)
 //----- (00402CB8) --------------------------------------------------------
 int s147nand_14_translate_pageoffs(int pageoffs)
 {
-  int blockoffs; // $v0
   int tblockoffs; // [sp+10h] [+10h]
-  int remainpage; // [sp+14h] [+14h]
 
-  blockoffs = s147nand_28_pages2blocks(pageoffs);
-  tblockoffs = s147nand_13_translate_blockoffs(blockoffs);
+  tblockoffs = s147nand_13_translate_blockoffs(s147nand_28_pages2blocks(pageoffs));
   if ( tblockoffs == -1470010 )
     return -1470010;
   if ( !g_nand_header.m_pages_per_block )
     _break(7u, 0);
   if ( g_nand_header.m_pages_per_block == -1 && pageoffs == (int)0x80000000 )
     _break(6u, 0);
-  remainpage = pageoffs % g_nand_header.m_pages_per_block;
-  return s147nand_27_blocks2pages(tblockoffs) + remainpage;
+  return s147nand_27_blocks2pages(tblockoffs) + (pageoffs % g_nand_header.m_pages_per_block);
 }
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
@@ -1203,20 +1170,12 @@ int s147nand_23_nand_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecn
 //----- (004032B4) --------------------------------------------------------
 int s147nand_24_eraseoffset(int pageoffs)
 {
-  int blockoffs1; // $v0
-  int xpageoffs1; // $v0
-  int blockoffs2; // $v0
-  int xpageoffs2; // $v0
   int retres; // [sp+10h] [+10h]
   int state; // [sp+14h] [+14h] BYREF
   char v8[8]; // [sp+18h] [+18h] BYREF
 
-  blockoffs1 = s147nand_28_pages2blocks(pageoffs);
-  xpageoffs1 = s147nand_27_blocks2pages(blockoffs1);
-  s147nand_21_nand_read_pio(v8, xpageoffs1, g_nand_info.m_page_size_noecc, 1);
-  blockoffs2 = s147nand_28_pages2blocks(pageoffs);
-  xpageoffs2 = s147nand_27_blocks2pages(blockoffs2);
-  s147nand_21_nand_read_pio(&v8[1], xpageoffs2 + 1, g_nand_info.m_page_size_noecc, 1);
+  s147nand_21_nand_read_pio(v8, s147nand_27_blocks2pages(s147nand_28_pages2blocks(pageoffs)), g_nand_info.m_page_size_noecc, 1);
+  s147nand_21_nand_read_pio(&v8[1], s147nand_27_blocks2pages(s147nand_28_pages2blocks(pageoffs)) + 1, g_nand_info.m_page_size_noecc, 1);
   if ( (unsigned __int8)v8[0] != 255 || (unsigned __int8)v8[1] != 255 )
     return -1470020;
   WaitSema(g_sema_id_nand);
@@ -1260,22 +1219,18 @@ int s147nand_26_nand_readid(void *ptr)
 static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
   int state; // [sp+18h] [+18h] BYREF
-  u32 size; // [sp+1Ch] [+1Ch]
-  __int16 v10; // [sp+30h] [+30h]
 
-  v10 = byteoffs;
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
     return -1470010;
   if ( byteoffs < 0 || byteoffs >= g_nand_info.m_page_size_withecc )
     return -1470010;
   if ( bytecnt < 4 || g_nand_info.m_page_size_withecc < byteoffs + bytecnt )
     return -1470010;
-  size = bytecnt >> 2;
   CpuSuspendIntr(&state);
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 1;
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = v10;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(v10 & 0xF00) >> 8;
+  s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(byteoffs);
+  s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(byteoffs & 0xF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(pageoffs & 0xFF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
@@ -1284,7 +1239,7 @@ static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int byt
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   CpuSuspendIntr(&state);
   s147_dev9_mem_mmio.m_security_unlock_unlock = 0;
-  dmac_request(8u, ptr, size, 1u, 0);
+  dmac_request(8u, ptr, bytecnt >> 2, 1u, 0);
   g_thid = GetThreadId();
   CpuResumeIntr(state);
   dmac_transfer(8u);
@@ -1335,31 +1290,26 @@ static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int byt
 //----- (004039C4) --------------------------------------------------------
 static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
-  vu8 m_nand_outbyte; // $v0
   int state; // [sp+18h] [+18h] BYREF
-  u32 size; // [sp+1Ch] [+1Ch]
-  vu8 flgtmp; // [sp+20h] [+20h]
-  __int16 v12; // [sp+38h] [+38h]
+  u8 flgtmp; // [sp+20h] [+20h]
 
-  v12 = byteoffs;
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
     return -1470010;
   if ( byteoffs < 0 || byteoffs >= g_nand_info.m_page_size_withecc )
     return -1470010;
   if ( bytecnt < 4 || g_nand_info.m_page_size_withecc < byteoffs + bytecnt )
     return -1470010;
-  size = bytecnt >> 2;
   CpuSuspendIntr(&state);
   s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0xA5;
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 1;
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x80;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = v12;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(v12 & 0xF00) >> 8;
+  s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(byteoffs);
+  s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(byteoffs & 0xF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(pageoffs & 0xFF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
   s147_dev9_mem_mmio.m_security_unlock_unlock = 0;
-  dmac_request(8u, ptr, size, 1u, 1);
+  dmac_request(8u, ptr, bytecnt >> 2, 1u, 1);
   g_thid = GetThreadId();
   CpuResumeIntr(state);
   dmac_transfer(8u);
@@ -1367,8 +1317,7 @@ static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int by
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x10;
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
-  m_nand_outbyte = s147nand_dev9_io_mmio.m_nand_outbyte;
-  flgtmp = m_nand_outbyte;
+  flgtmp = s147nand_dev9_io_mmio.m_nand_outbyte;
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
   s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0;
   if ( g_nand_watchdog_enabled == 1 )
@@ -1387,7 +1336,7 @@ static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int by
 //----- (00403CAC) --------------------------------------------------------
 static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
-  vu8 m_nand_outbyte; // $v0
+  u8 flgtmp; // $v0
   int i; // [sp+0h] [+0h]
 
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
@@ -1409,14 +1358,14 @@ static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int by
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x10;
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
-  m_nand_outbyte = s147nand_dev9_io_mmio.m_nand_outbyte;
+  flgtmp = s147nand_dev9_io_mmio.m_nand_outbyte;
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
   s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0;
   if ( g_nand_watchdog_enabled == 1 )
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
-  if ( (m_nand_outbyte & 0x80) == 0 )
+  if ( (flgtmp & 0x80) == 0 )
     return -1470030;
-  if ( (m_nand_outbyte & 1) != 0 )
+  if ( (flgtmp & 1) != 0 )
     return -1470020;
   return 0;
 }
@@ -1428,7 +1377,7 @@ static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int by
 //----- (00403F74) --------------------------------------------------------
 static int nand_lowlevel_blockerase(int pageoffs)
 {
-  vu8 m_nand_outbyte; // $v0
+  u8 flgtmp; // $v0
 
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
     return -1470010;
@@ -1441,14 +1390,14 @@ static int nand_lowlevel_blockerase(int pageoffs)
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0xD0;
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
-  m_nand_outbyte = s147nand_dev9_io_mmio.m_nand_outbyte;
+  flgtmp = s147nand_dev9_io_mmio.m_nand_outbyte;
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
   s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0;
   if ( g_nand_watchdog_enabled == 1 )
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
-  if ( (m_nand_outbyte & 0x80) == 0 )
+  if ( (flgtmp & 0x80) == 0 )
     return -1470030;
-  if ( (m_nand_outbyte & 1) != 0 )
+  if ( (flgtmp & 1) != 0 )
     return -1470020;
   return 0;
 }

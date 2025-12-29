@@ -155,10 +155,7 @@ s147_dev9_mem_mmio_ s147_dev9_mem_mmio; // weak
 //----- (00400000) --------------------------------------------------------
 static void do_format_nand_device(char devindchr)
 {
-  char tmp_devindchr; // [sp+10h] [+10h]
-
-  tmp_devindchr = devindchr;
-  switch (devindchr)
+  switch ( devindchr )
   {
   case '2':
     do_set_flag(0x10000);
@@ -171,10 +168,10 @@ static void do_format_nand_device(char devindchr)
     break;
   default:
     do_set_flag(0xF0000);
-    tmp_devindchr = ' ';
+    devindchr = ' ';
     break;
   }
-  STATUS_PRINTF(" -f%c: Format NAND(atfile:) device\n", tmp_devindchr);
+  STATUS_PRINTF(" -f%c: Format NAND(atfile:) device\n", devindchr);
 }
 
 //----- (00400104) --------------------------------------------------------
@@ -192,11 +189,11 @@ int _start(int ac, char **av)
   iop_thread_t thparam; // [sp+10h] [+10h] BYREF
   int thid; // [sp+28h] [+28h]
   int i; // [sp+2Ch] [+2Ch]
-  int tmp_secrcode; // [sp+30h] [+30h]
   char secrcode1; // [sp+34h] [+34h]
   char secrcode2; // [sp+35h] [+35h]
   int fd; // [sp+38h] [+38h]
-  int product_code; // [sp+3Ch] [+3Ch]
+  char *product_code; // [sp+3Ch] [+3Ch]
+  int image_file_idx;
 
   // Unofficial: omit SIF output command set to 30
   if ( ac < 2 )
@@ -258,10 +255,10 @@ int _start(int ac, char **av)
         case '5':
         case '6':
         case '7':
-          product_code = strtol(av[i] + 1, 0, 10);
-          STATUS_PRINTF(" -%d : Write \"atfile%d:\" image file\n", product_code, product_code);
-          do_set_flag(1 << product_code);
-          do_handle_atfile_image(product_code, av[++i]);
+          image_file_idx = strtol(av[i] + 1, 0, 10);
+          STATUS_PRINTF(" -%d : Write \"atfile%d:\" image file\n", image_file_idx, image_file_idx);
+          do_set_flag(1 << image_file_idx);
+          do_handle_atfile_image(image_file_idx, av[++i]);
           break;
         case 'd':
           STATUS_PRINTF(" -d : Search \"atfile*.147\" in the directory and Write\n");
@@ -299,16 +296,14 @@ int _start(int ac, char **av)
                 do_set_secr_code(0xFF, 0xFFu);
                 break;
               }
-              product_code = (int)do_read_product_code(fd);
-              do_set_secr_code(*(_BYTE *)product_code, *(_BYTE *)(product_code + 1));
+              product_code = do_read_product_code(fd);
+              do_set_secr_code(product_code[0], product_code[1]);
               close(fd);
               break;
             default:
               STATUS_PRINTF(" -s : Set immediate secrity code\n");
-              tmp_secrcode = strtol(av[++i], 0, 10);
-              secrcode1 = tmp_secrcode;
-              tmp_secrcode = strtol(av[++i], 0, 10);
-              secrcode2 = tmp_secrcode;
+              secrcode1 = strtol(av[++i], 0, 10);
+              secrcode2 = strtol(av[++i], 0, 10);
               do_set_flag(0x1000000);
               do_set_secr_code(secrcode1, secrcode2);
               break;
@@ -339,7 +334,6 @@ int _start(int ac, char **av)
 static void thread_proc(void *userdata)
 {
   int i; // [sp+10h] [+10h]
-  int j; // [sp+10h] [+10h]
 
   (void)userdata;
   if ( do_start_write_proc() )
@@ -363,10 +357,10 @@ static void thread_proc(void *userdata)
       s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
       do_toggle_dev9addr_inner(5 * i, 50);
     }
-    for ( j = 20; j > 0; --j )
+    for ( i = 20; i > 0; --i )
     {
       s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
-      do_toggle_dev9addr_inner(5 * j, 50);
+      do_toggle_dev9addr_inner(5 * i, 50);
     }
   }
 }
@@ -456,13 +450,11 @@ static int do_start_write_proc(void)
   nand_info_stru_ *nandinf; // [sp+18h] [+18h]
   int state; // [sp+1Ch] [+1Ch] BYREF
   int part; // [sp+20h] [+20h]
-  int fd1; // [sp+24h] [+24h]
+  int fd; // [sp+24h] [+24h]
   int logaddrtable; // [sp+28h] [+28h]
   u8 nandid[5]; // [sp+30h] [+30h] BYREF
-  int fd2; // [sp+38h] [+38h]
 
-  fd1 = open("ctrl99:watchdog-stop", 1);
-  close(fd1);
+  close(open("ctrl99:watchdog-stop", 1));
   if ( (g_curflag & 0x1000000) != 0 )
   {
     STATUS_PRINTF("====== Set security code ======\n");
@@ -522,8 +514,7 @@ static int do_start_write_proc(void)
     if ( logaddrtable )
       return logaddrtable;
     s147nand_6_checkformat();
-    fd2 = open("atfile9:acdelay", 1);
-    close(fd2);
+    close(open("atfile9:acdelay", 1));
     if ( (g_curflag & 0x2000000) != 0 )
     {
       STATUS_PRINTF("====== Search directory ======\n");
@@ -535,15 +526,15 @@ static int do_start_write_proc(void)
           continue;
         }
         sprintf(g_atfile_part_image[part], "%satfile%d.147", g_atfile_147_dir, part);
-        fd1 = open(g_atfile_part_image[part], 1);
-        if ( fd1 < 0 )
+        fd = open(g_atfile_part_image[part], 1);
+        if ( fd < 0 )
         {
           DelayThread(10000);
           continue;
         }
         do_set_flag(1 << part);
         do_handle_atfile_image(part, g_atfile_part_image[part]);
-        close(fd1);
+        close(fd);
         STATUS_PRINTF(" \"%s\" is found\n", g_atfile_part_image[part]);
       }
       STATUS_PRINTF(" \n");
@@ -594,17 +585,11 @@ static int do_start_write_proc(void)
 static int do_format_device(int abspart)
 {
   int blocks; // [sp+18h] [+18h]
-  int blocksa; // [sp+18h] [+18h]
-  int blocksb; // [sp+18h] [+18h]
-  int blocksc; // [sp+18h] [+18h]
-  int blocksd; // [sp+18h] [+18h]
   int bboffs; // [sp+1Ch] [+1Ch]
   int nand_partition_offset; // [sp+20h] [+20h]
   int bbcnt1; // [sp+24h] [+24h]
   int eraseres; // [sp+28h] [+28h]
   int i; // [sp+30h] [+30h]
-  int xnand_partition_offset; // [sp+34h] [+34h]
-  int xnand_partition_size; // [sp+38h] [+38h]
 
   STATUS_PRINTF("====== Format NAND device ======\n");
   STATUS_PRINTF(" [1/3]Block Erase and Check Bad Blocks\n");
@@ -632,22 +617,21 @@ static int do_format_device(int abspart)
   *g_blockinfo_dat_buf = 0xEEEE;
   *g_blockinfo_str_buf = 'B';
   nand_partition_offset = get_nand_partition_offset(8, 8);
-  for ( blocksa = 1; blocksa < nand_partition_offset - 1; ++blocksa )
+  for ( blocks = 1; blocks < nand_partition_offset - 1; ++blocks )
   {
-    if ( g_blockinfo_str_buf[blocksa] == '=' )
+    if ( g_blockinfo_str_buf[blocks] == '=' )
     {
-      g_blockinfo_dat_buf[blocksa] = 0xEEEE;
-      g_blockinfo_str_buf[blocksa] = 'R';
+      g_blockinfo_dat_buf[blocks] = 0xEEEE;
+      g_blockinfo_str_buf[blocks] = 'R';
     }
   }
-  blocksb = nand_partition_offset - 1;
   bbcnt1 = 0;
   if ( g_blockinfo_str_buf[nand_partition_offset - 1] == 'X' )
   {
     bbcnt1 = check_badblock_count();
     if ( bbcnt1 >= 0 )
     {
-      g_blockinfo_dat_buf[blocksb] = bbcnt1;
+      g_blockinfo_dat_buf[nand_partition_offset - 1] = bbcnt1;
       g_blockinfo_dat_buf[bbcnt1] = 0xCCCC;
       g_blockinfo_str_buf[bbcnt1] = '@';
       bboffs = bbcnt1;
@@ -655,25 +639,25 @@ static int do_format_device(int abspart)
   }
   else
   {
-    g_blockinfo_dat_buf[blocksb] = 0xAAAA;
+    g_blockinfo_dat_buf[nand_partition_offset - 1] = 0xAAAA;
     bboffs = nand_partition_offset - 1;
   }
   if ( bbcnt1 >= 0 )
   {
-    for ( blocksc = nand_partition_offset; blocksc < g_device_info->m_block_size; ++blocksc )
+    for ( blocks = nand_partition_offset; blocks < g_device_info->m_block_size; ++blocks )
     {
-      if ( g_blockinfo_str_buf[blocksc] == 'X' )
+      if ( g_blockinfo_str_buf[blocks] == 'X' )
       {
         bbcnt1 = check_badblock_count();
         if ( bbcnt1 < 0 )
           break;
-        g_blockinfo_dat_buf[blocksc] = bbcnt1;
+        g_blockinfo_dat_buf[blocks] = bbcnt1;
         g_blockinfo_dat_buf[bbcnt1] = 0xCCCC;
         g_blockinfo_str_buf[bbcnt1] = '@';
       }
       else
       {
-        g_blockinfo_dat_buf[blocksc] = 0xAAAA;
+        g_blockinfo_dat_buf[blocks] = 0xAAAA;
       }
     }
   }
@@ -682,9 +666,9 @@ static int do_format_device(int abspart)
     STATUS_PRINTF(" Error: Too many bad blocks to replace\n");
     return -1;
   }
-  for ( blocksd = 0; blocksd < g_device_info->m_block_size; ++blocksd )
+  for ( blocks = 0; blocks < g_device_info->m_block_size; ++blocks )
   {
-    do_output_bb_info(blocksd, abspart, bboffs);
+    do_output_bb_info(blocks, abspart, bboffs);
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
   }
   STATUS_PRINTF("\n");
@@ -695,17 +679,15 @@ static int do_format_device(int abspart)
   g_nand_partbuf.m_hdr.m_bootsector_ver_2 = 0;
   for ( i = 0; i < 8; ++i )
   {
-    xnand_partition_offset = get_nand_partition_offset(i, abspart);
-    xnand_partition_size = get_nand_partition_size(i, abspart);
-    g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i] = xnand_partition_offset;
-    g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i + 1] = xnand_partition_size;
+    g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i] = get_nand_partition_offset(i, abspart);
+    g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i + 1] = get_nand_partition_size(i, abspart);
     STATUS_PRINTF(
       " atfile%d: StartBlock = 0x%04x(%4d) / BlockSize = 0x%04x(%4d)\n",
       i,
-      xnand_partition_offset,
-      xnand_partition_offset,
-      xnand_partition_size,
-      xnand_partition_size);
+      g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i],
+      g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i],
+      g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i + 1],
+      g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i + 1]);
   }
   g_nand_partbuf.m_hdr.m_nand_partition_8 = get_nand_partition_offset(8, abspart);
   g_nand_partbuf.m_hdr.m_nand_partition_8_size = get_nand_partition_size(8, abspart);
@@ -739,11 +721,7 @@ static int do_format_device(int abspart)
 //----- (004028F4) --------------------------------------------------------
 static int do_write_partition(int part)
 {
-  int blockoffs1; // $s0
-  int blockoffs2; // $v0
-  int tblockoffs2; // $v0
-  int blockoffs5; // $v0
-  int fd1; // [sp+1Ch] [+1Ch]
+  int fd; // [sp+1Ch] [+1Ch]
   int state; // [sp+20h] [+20h] BYREF
   int bytes; // [sp+24h] [+24h]
   int partsizebytes; // [sp+28h] [+28h]
@@ -753,7 +731,6 @@ static int do_write_partition(int part)
   int blocks; // [sp+38h] [+38h]
   int pageoffs; // [sp+3Ch] [+3Ch]
   int partblocks1; // [sp+40h] [+40h]
-  int readres; // [sp+44h] [+44h]
   int xind3; // [sp+48h] [+48h]
   int xindbytes; // [sp+4Ch] [+4Ch]
   int i; // [sp+54h] [+54h]
@@ -773,8 +750,8 @@ static int do_write_partition(int part)
       STATUS_PRINTF(" Error: No partition #0 table\n");
       return -1;
     }
-    fd1 = open(g_atfile_info_image, 1);
-    if ( fd1 < 0 )
+    fd = open(g_atfile_info_image, 1);
+    if ( fd < 0 )
     {
       STATUS_PRINTF(" Error: File not found - \"%s\"\n", g_atfile_info_image);
       return -1;
@@ -788,8 +765,8 @@ static int do_write_partition(int part)
       STATUS_PRINTF(" Error: Invalid unit number\n");
       return -1;
     }
-    fd1 = open(g_atfile_part_image[part], 1);
-    if ( fd1 < 0 )
+    fd = open(g_atfile_part_image[part], 1);
+    if ( fd < 0 )
     {
       STATUS_PRINTF(" Error: File not found - \"%s\"\n", g_atfile_part_image[part]);
       return -1;
@@ -807,7 +784,7 @@ static int do_write_partition(int part)
   {
     if ( part == 9 )
     {
-      bytes = lseek(fd1, 0, 2);
+      bytes = lseek(fd, 0, 2);
       if ( g_device_info->m_page_size_noecc < bytes )
       {
         STATUS_PRINTF(" Error: INFO image file is too large - \"%s\"\n", g_atfile_info_image);
@@ -816,9 +793,9 @@ static int do_write_partition(int part)
       }
       if ( !err )
       {
-        lseek(fd1, 0, 0);
+        lseek(fd, 0, 0);
         expected_readres = 8;
-        actual_readres = read(fd1, g_page_buf, expected_readres);
+        actual_readres = read(fd, g_page_buf, expected_readres);
         if ( actual_readres < expected_readres )
         {
           err = 1;
@@ -840,7 +817,7 @@ static int do_write_partition(int part)
     }
     else
     {
-      bytes = lseek(fd1, 0, 2);
+      bytes = lseek(fd, 0, 2);
       partsizebytes = s147nand_10_get_nand_partition_size(part)
                     * g_device_info->m_pages_per_block
                     * g_device_info->m_page_size_noecc;
@@ -852,9 +829,9 @@ static int do_write_partition(int part)
       }
       if ( !err )
       {
-        lseek(fd1, 0, 0);
+        lseek(fd, 0, 0);
         expected_readres = 0x20;
-        actual_readres = read(fd1, g_page_buf, expected_readres);
+        actual_readres = read(fd, g_page_buf, expected_readres);
         if ( actual_readres < expected_readres )
         {
           err = 1;
@@ -878,22 +855,18 @@ static int do_write_partition(int part)
   if ( !err )
   {
     STATUS_PRINTF(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
-    lseek(fd1, 0, 0);
+    lseek(fd, 0, 0);
     xind2 = 0;
     pageoffs = partblocks1;
     finished = 0;
     for ( xind1 = 0; xind1 < blocks; xind1 += 1 )
     {
-      blockoffs1 = s147nand_28_pages2blocks(pageoffs);
-      blockoffs2 = s147nand_28_pages2blocks(pageoffs);
-      tblockoffs2 = s147nand_13_translate_blockoffs(blockoffs2);
-      STATUS_PRINTF(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, blockoffs1, tblockoffs2);
+      STATUS_PRINTF(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, s147nand_28_pages2blocks(pageoffs), s147nand_13_translate_blockoffs(s147nand_28_pages2blocks(pageoffs)));
       s147_dev9_mem_mmio.m_led = s147nand_28_pages2blocks(pageoffs) & 3;
       if ( (g_curflag & 0xFF0000) == 0 )
       {
         STATUS_PRINTF("Erase -> ");
-        readres = s147nand_11_erasetranslatepageoffs(pageoffs);
-        if ( readres == -1470020 )
+        if ( s147nand_11_erasetranslatepageoffs(pageoffs) == -1470020 )
         {
           STATUS_PRINTF("\nromwrite: Bad block error, use \"-f\" option.\n");
           err = 1;
@@ -915,7 +888,7 @@ static int do_write_partition(int part)
           expected_readres = ( g_device_info->m_page_size_noecc < bytes ) ? g_device_info->m_page_size_noecc : bytes;
         }
         // Unofficial: check against read bytes instead of 0
-        actual_readres = read(fd1, g_part_buf, expected_readres);
+        actual_readres = read(fd, g_part_buf, expected_readres);
         if ( actual_readres < expected_readres )
         {
           err = 1;
@@ -926,11 +899,9 @@ static int do_write_partition(int part)
         {
           s147nand_8_multi_write_dma((char *)g_part_buf + i, pageoffs, 1);
           s147nand_7_multi_read_dma(g_page_buf, pageoffs, 1);
-          readres = do_verify((char *)g_part_buf + i, g_page_buf, g_device_info->m_page_size_noecc);
-          if ( readres )
+          if ( do_verify((char *)g_part_buf + i, g_page_buf, g_device_info->m_page_size_noecc) )
           {
-            blockoffs5 = s147nand_28_pages2blocks(pageoffs);
-            STATUS_PRINTF("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs5, pageoffs);
+            STATUS_PRINTF("romwrite: Verify error - LogBlock=%d LogPage=%d\n", s147nand_28_pages2blocks(pageoffs), pageoffs);
             err = 1;
             finished = 1;
             break;
@@ -955,9 +926,9 @@ static int do_write_partition(int part)
   {
     STATUS_PRINTF(" Error: File-I/O fault (%d)\n", actual_readres);
   }
-  if ( fd1 >= 0 )
+  if ( fd >= 0 )
   {
-    close(fd1);
+    close(fd);
   }
   if ( err )
   {
@@ -989,19 +960,16 @@ static int check_badblock_count(void)
 //----- (00403834) --------------------------------------------------------
 static int get_nand_partition_offset(int part, int abspart)
 {
-  int m_block_size; // $v1
-
   if ( part == 8 )
     return get_nand_block_size_div_32();
   if ( abspart )
   {
     if ( part < 0 || part >= abspart )
       return -1;
-    m_block_size = g_device_info->m_block_size;
-    if ( abspart == -1 && m_block_size == (int)0x80000000 )
+    if ( abspart == -1 && g_device_info->m_block_size == (int)0x80000000 )
       _break(6u, 0);
     if ( part )
-      return m_block_size / abspart * part;
+      return g_device_info->m_block_size / abspart * part;
     return get_nand_block_size_div_32_div_64();
   }
   if ( !part )
@@ -1015,18 +983,15 @@ static int get_nand_partition_offset(int part, int abspart)
 //----- (004039D0) --------------------------------------------------------
 static int get_nand_partition_size(int part, int abspart)
 {
-  int m_block_size; // $v1
-
   if ( part == 8 )
     return get_nand_block_size_div_32_div_64() - get_nand_block_size_div_32();
   if ( abspart )
   {
     if ( part < 0 || part >= abspart )
       return 0;
-    m_block_size = g_device_info->m_block_size;
-    if ( abspart == -1 && m_block_size == (int)0x80000000 )
+    if ( abspart == -1 && g_device_info->m_block_size == (int)0x80000000 )
       _break(6u, 0);
-    return m_block_size / abspart - (part ? 0 : get_nand_block_size_div_32_div_64());
+    return g_device_info->m_block_size / abspart - (part ? 0 : get_nand_block_size_div_32_div_64());
   }
   if ( part )
     return ( part == 1 ) ? (3 * (g_device_info->m_block_size / 4)) : 0;
@@ -1135,17 +1100,12 @@ static int do_list_files(int part)
 //----- (004041F4) --------------------------------------------------------
 static void do_output_bb_info(int blocksd, int abspart, int bboffs)
 {
-  signed __int8 chrval; // [sp+10h] [+10h]
-
   (void)abspart;
-  chrval = g_blockinfo_str_buf[blocksd];
-  if ( blocksd == bboffs )
-    chrval = 'I';
   if ( (blocksd & 0x3F) == 0 )
   {
     STATUS_PRINTF(" %04X(%4d):", blocksd, blocksd);
   }
-  STATUS_PRINTF("%c", chrval);
+  STATUS_PRINTF("%c", ( blocksd == bboffs ) ? 'I' : g_blockinfo_str_buf[blocksd]);
   if ( (blocksd & 0xF) == 15 )
   {
     STATUS_PRINTF(" ");
@@ -1175,15 +1135,13 @@ static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
   int i; // [sp+0h] [+0h]
   int cmpval; // [sp+4h] [+4h]
   int j; // [sp+8h] [+8h]
-  u32 idval; // [sp+Ch] [+Ch]
 
   for ( i = 0; g_nand_type_info[i].m_nand_name; ++i )
   {
     cmpval = 0;
     for ( j = 0; j < 5; ++j )
     {
-      idval = g_nand_type_info[i].m_id[j];
-      if ( ((int)idval == -1) || ((unsigned __int8)idval == (unsigned __int8)nandid[j]) )
+      if ( ((int)g_nand_type_info[i].m_id[j] == -1) || ((unsigned __int8)g_nand_type_info[i].m_id[j] == (unsigned __int8)nandid[j]) )
       {
         ++cmpval;
       }
