@@ -638,7 +638,7 @@ void s147nand_6_checkformat(void)
 //----- (00401768) --------------------------------------------------------
 static void do_update_acdelay(void)
 {
-  int state[2]; // [sp+18h] [+18h] BYREF
+  int state; // [sp+18h] [+18h] BYREF
 
   Kprintf("s147nand.irx: Update Acdelay\n", g_nand_header.m_bootsector_ver_1, g_nand_header.m_bootsector_ver_2);
   DelayThread(10000);
@@ -654,9 +654,9 @@ static void do_update_acdelay(void)
   }
   else
   {
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     SetAcMemDelayReg(g_nand_header.m_acmem_delay_val);
-    CpuResumeIntr(state[0]);
+    CpuResumeIntr(state);
     Kprintf(
       "s147nand.irx: AcMem = 0x%08x (DMA=%d, Read=%d, Write=%d)\n",
       g_nand_header.m_acmem_delay_val,
@@ -671,9 +671,9 @@ static void do_update_acdelay(void)
   }
   else
   {
-    CpuSuspendIntr(state);
+    CpuSuspendIntr(&state);
     SetAcIoDelayReg(g_nand_header.m_acio_delay_val);
-    CpuResumeIntr(state[0]);
+    CpuResumeIntr(state);
     Kprintf(
       "s147nand.irx: AcIo  = 0x%08x (DMA=%d, Read=%d, Write=%d)\n",
       g_nand_header.m_acio_delay_val,
@@ -999,7 +999,7 @@ int s147nand_12_load_logaddrtable(void)
 {
   const nand_info_stru_ *nandinf; // $v0
   nand_header_stru_ hdr; // [sp+10h] [+10h] BYREF
-  int state[2]; // [sp+B0h] [+B0h] BYREF
+  int state; // [sp+B0h] [+B0h] BYREF
 
   s147nand_20_nand_read_dma(&hdr, 0, 0, 160);
   if ( strncmp(hdr.m_hdr, "S147NAND", 9) )
@@ -1007,14 +1007,14 @@ int s147nand_12_load_logaddrtable(void)
     Kprintf("s147nand.irx: Unformatted device error.\n");
     return -19;
   }
-  CpuSuspendIntr(state);
+  CpuSuspendIntr(&state);
   g_logical_addr_tbl = (u16 *)AllocSysMemory(0, 2 * hdr.m_block_size, 0);
-  CpuResumeIntr(state[0]);
+  CpuResumeIntr(state);
   s147nand_19_logaddr_read(g_logical_addr_tbl, 1, 2 * hdr.m_block_size);
-  CpuSuspendIntr(state);
+  CpuSuspendIntr(&state);
   nandinf = s147nand_16_getnandinfo();
   g_nand_unaligned_buf = AllocSysMemory(0, nandinf->m_page_size_noecc, 0);
-  CpuResumeIntr(state[0]);
+  CpuResumeIntr(state);
   if ( !g_nand_unaligned_buf )
   {
     Kprintf("s147nand.irx: AllocSysMemory failed (LogAddrTable)\n");
