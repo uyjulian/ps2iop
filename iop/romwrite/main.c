@@ -101,11 +101,10 @@ int do_list_files(int part);
 int do_output_bb_info(int blocksd, int abspart, int bboffs);
 int do_verify(void *buf1, void *buf2, int len);
 nand_id_desc_info_stru_ *do_parse_device_info(char *nandid);
-#define some_blowfish_magic_1(...) do {} while(0)
-#define some_blowfish_magic_2(...) do {} while(0)
-#define set_sif_output_cmd(...) do {} while(0)
-#define do_print_to_osdsys_2(...) do {} while(0)
-#define do_print_to_osdsys_1(...) do {} while(0)
+// Unofficial: printf to IOP Kprintf instead of EE
+#define USER_PRINTF(...) Kprintf(__VA_ARGS__)
+// Unofficial: printf to EE is omitted
+#define STATUS_PRINTF(...) Kprintf(__VA_ARGS__)
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -182,27 +181,18 @@ int do_format_nand_device(char devindchr)
     tmp_devindchr = ' ';
     break;
   }
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2(" -f%c: Format NAND(atfile:) device\n", tmp_devindchr);
-  else
-    Kprintf(" -f%c: Format NAND(atfile:) device\n", tmp_devindchr);
+  STATUS_PRINTF(" -f%c: Format NAND(atfile:) device\n", tmp_devindchr);
   return 0;
 }
-// 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 
 //----- (00400104) --------------------------------------------------------
 char *do_read_product_code(int fd)
 {
   read(fd, g_product_code_tmp, 32);
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("  ---> OK, set product code - \"%s\"\n", &g_product_code_tmp[16]);
-  else
-    Kprintf("  ---> OK, set product code - \"%s\"\n", &g_product_code_tmp[16]);
-  some_blowfish_magic_1("S147NBGI", 8);
-  some_blowfish_magic_2((int *)g_product_code_tmp, (int *)&g_product_code_tmp[4]);
+  STATUS_PRINTF("  ---> OK, set product code - \"%s\"\n", &g_product_code_tmp[16]);
+  // Unofficial: omit Blowfish hashing S147NBGI
   return &g_product_code_tmp[4];
 }
-// 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 
 //----- (004001E0) --------------------------------------------------------
 int _start(int ac, char **av)
@@ -216,23 +206,23 @@ int _start(int ac, char **av)
   int fd; // [sp+38h] [+38h]
   int product_code; // [sp+3Ch] [+3Ch]
 
-  set_sif_output_cmd(30);
+  // Unofficial: omit SIF output command set to 30
   if ( ac >= 2 )
   {
-    do_print_to_osdsys_1("\n====== romwrite(version 0x%04x): Check argument ======\n", 0x701);
+    USER_PRINTF("\n====== romwrite(version 0x%04x): Check argument ======\n", 0x701);
     DelayThread(10000);
     for ( i = 1; i < ac; ++i )
     {
       if ( !strcmp(av[i], "-m") || !strcmp(av[i], "--main") )
       {
-        do_print_to_osdsys_1(" -m, --main : MainPCB mode (Send PRINTF to EE)\n");
+        USER_PRINTF(" -m, --main : MainPCB mode (Send PRINTF to EE)\n");
         DelayThread(10000);
         set_send_print_to_osdsys(1);
         break;
       }
       if ( !strcmp(av[i], "-v") || !strcmp(av[i], "--vga") )
       {
-        do_print_to_osdsys_1(" -v, --vga : Set boot video mode (VGA)\n");
+        USER_PRINTF(" -v, --vga : Set boot video mode (VGA)\n");
         DelayThread(10000);
         set_boot_video_mode(2);
         break;
@@ -253,18 +243,12 @@ int _start(int ac, char **av)
           case '6':
           case '7':
             product_code = strtol(av[i] + 1, 0, 10);
-            if ( is_send_print_to_osdsys() == 1 )
-              do_print_to_osdsys_2(" -%d : Write \"atfile%d:\" image file\n", product_code, product_code);
-            else
-              Kprintf(" -%d : Write \"atfile%d:\" image file\n", product_code, product_code);
+            STATUS_PRINTF(" -%d : Write \"atfile%d:\" image file\n", product_code, product_code);
             do_set_flag(1 << product_code);
             do_handle_atfile_image(product_code, av[++i]);
             break;
           case 'd':
-            if ( is_send_print_to_osdsys() == 1 )
-              do_print_to_osdsys_2(" -d : Search \"atfile*.147\" in the directory and Write\n");
-            else
-              Kprintf(" -d : Search \"atfile*.147\" in the directory and Write\n");
+            STATUS_PRINTF(" -d : Search \"atfile*.147\" in the directory and Write\n");
             ++i;
             do_set_flag(0x2000000);
             do_set_atfile_147_dir(av[i]);
@@ -273,36 +257,24 @@ int _start(int ac, char **av)
             do_format_nand_device(av[i][2]);
             break;
           case 'i':
-            if ( is_send_print_to_osdsys() == 1 )
-              do_print_to_osdsys_2(" -i : Write \"atfile9:info\" image\n");
-            else
-              Kprintf(" -i : Write \"atfile9:info\" image\n");
+            STATUS_PRINTF(" -i : Write \"atfile9:info\" image\n");
             do_set_flag(0x200);
             do_handle_atfile_image(9, av[++i]);
             break;
           case 'l':
-            if ( is_send_print_to_osdsys() == 1 )
-              do_print_to_osdsys_2(" -l : Read NAND device and Display all file list\n");
-            else
-              Kprintf(" -l : Read NAND device and Display all file list\n");
+            STATUS_PRINTF(" -l : Read NAND device and Display all file list\n");
             do_set_flag(0x4000000);
             break;
           case 's':
             if ( av[i][2] == '0' )
             {
-              if ( is_send_print_to_osdsys() == 1 )
-                do_print_to_osdsys_2(" -s0: Set default security code\n");
-              else
-                Kprintf(" -s0: Set default security code\n");
+              STATUS_PRINTF(" -s0: Set default security code\n");
               do_set_flag(0x1000000);
               do_set_secr_code(0xFF, 0xFFu);
             }
             else if ( av[i][2] == 'r' )
             {
-              if ( is_send_print_to_osdsys() == 1 )
-                do_print_to_osdsys_2(" -sr: Read \"s147secr.147\" file\n");
-              else
-                Kprintf(" -sr: Read \"s147secr.147\" file\n");
+              STATUS_PRINTF(" -sr: Read \"s147secr.147\" file\n");
               do_set_flag(0x1000000);
               fd = open(av[++i], 1);
               if ( fd >= 0 )
@@ -313,19 +285,13 @@ int _start(int ac, char **av)
               }
               else
               {
-                if ( is_send_print_to_osdsys() == 1 )
-                  do_print_to_osdsys_2("  ---> File not found, set default code\n");
-                else
-                  Kprintf("  ---> File not found, set default code\n");
+                STATUS_PRINTF("  ---> File not found, set default code\n");
                 do_set_secr_code(0xFF, 0xFFu);
               }
             }
             else
             {
-              if ( is_send_print_to_osdsys() == 1 )
-                do_print_to_osdsys_2(" -s : Set immediate secrity code\n");
-              else
-                Kprintf(" -s : Set immediate secrity code\n");
+              STATUS_PRINTF(" -s : Set immediate secrity code\n");
               tmp_secrcode = strtol(av[++i], 0, 10);
               secrcode1 = tmp_secrcode;
               tmp_secrcode = strtol(av[++i], 0, 10);
@@ -339,10 +305,7 @@ int _start(int ac, char **av)
         }
       }
     }
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2("\n");
-    else
-      Kprintf("\n");
+    STATUS_PRINTF("\n");
     thparam.attr = 0x2000000;
     thparam.thread = (void (*)(void *))thread_proc;
     thparam.priority = 0x7A;
@@ -361,33 +324,32 @@ int _start(int ac, char **av)
   }
   else
   {
-    do_print_to_osdsys_1("SYS147 ROM Writer (version 0x%04x)\n\n", 0x701);
+    USER_PRINTF("SYS147 ROM Writer (version 0x%04x)\n\n", 0x701);
     DelayThread(10000);
-    do_print_to_osdsys_1("usage: %s [OPTION]... [FILE]...\n", "romwrite.irx");
+    USER_PRINTF("usage: %s [OPTION]... [FILE]...\n", "romwrite.irx");
     DelayThread(10000);
-    do_print_to_osdsys_1("  -m, --main ............. MainPCB mode (Send PRINTF to EE)\n");
+    USER_PRINTF("  -m, --main ............. MainPCB mode (Send PRINTF to EE)\n");
     DelayThread(10000);
-    do_print_to_osdsys_1("  -s0 .................... Set default security code\n");
+    USER_PRINTF("  -s0 .................... Set default security code\n");
     DelayThread(10000);
-    do_print_to_osdsys_1("  -sr .................... Read \"s147secr.147\" and set security code\n");
+    USER_PRINTF("  -sr .................... Read \"s147secr.147\" and set security code\n");
     DelayThread(10000);
-    do_print_to_osdsys_1("  -f(f2, f4, f8) ......... Format NAND(atfile:) device\n");
+    USER_PRINTF("  -f(f2, f4, f8) ......... Format NAND(atfile:) device\n");
     DelayThread(10000);
-    do_print_to_osdsys_1("  -0([1..7]) filename .... Write \"atfile[0..7]:\" image file\n");
+    USER_PRINTF("  -0([1..7]) filename .... Write \"atfile[0..7]:\" image file\n");
     DelayThread(10000);
-    do_print_to_osdsys_1("  -d directory ........... Search \"atfile*.147\" in the directory and Write\n");
+    USER_PRINTF("  -d directory ........... Search \"atfile*.147\" in the directory and Write\n");
     DelayThread(10000);
-    do_print_to_osdsys_1("  -i filename ............ Write \"atfile9:info\" image from file\n");
+    USER_PRINTF("  -i filename ............ Write \"atfile9:info\" image from file\n");
     DelayThread(10000);
-    do_print_to_osdsys_1("  -l ..................... Read NAND device and Display all file list\n");
+    USER_PRINTF("  -l ..................... Read NAND device and Display all file list\n");
     DelayThread(10000);
-    do_print_to_osdsys_1("  -v, --vga .............. Set boot video mode (VGA)\n");
+    USER_PRINTF("  -v, --vga .............. Set boot video mode (VGA)\n");
     DelayThread(10000);
     return 1;
   }
 }
 // 400B40: using guessed type void __noreturn thread_proc();
-// 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 
 //----- (00400B40) --------------------------------------------------------
 void thread_proc()
@@ -397,10 +359,7 @@ void thread_proc()
 
   if ( do_start_write_proc() )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2("\n****** Aborted ******\n\n");
-    else
-      Kprintf("\n****** Aborted ******\n\n");
+    STATUS_PRINTF("\n****** Aborted ******\n\n");
     while ( 1 )
     {
       s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
@@ -411,10 +370,7 @@ void thread_proc()
       DelayThread(250000);
     }
   }
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("====== Completed ======\n\n");
-  else
-    Kprintf("====== Completed ======\n\n");
+  STATUS_PRINTF("====== Completed ======\n\n");
   while ( 1 )
   {
     for ( i = 1; i < 20; ++i )
@@ -430,7 +386,6 @@ void thread_proc()
   }
 }
 // 400B40: using guessed type void __noreturn thread_proc();
-// 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400D00) --------------------------------------------------------
@@ -561,65 +516,32 @@ int do_start_write_proc()
   close(fd1);
   if ( (g_curflag & 0x1000000) != 0 )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2("====== Set security code ======\n");
-    else
-      Kprintf("====== Set security code ======\n");
+    STATUS_PRINTF("====== Set security code ======\n");
     s147_dev9_mem_mmio.m_security_unlock_set1 = g_secr_code_1;
     s147_dev9_mem_mmio.m_security_unlock_set2 = g_secr_code_2;
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2("\n");
-    else
-      Kprintf("\n");
+    STATUS_PRINTF("\n");
   }
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("====== Device information ======\n");
-  else
-    Kprintf("====== Device information ======\n");
+  STATUS_PRINTF("====== Device information ======\n");
   s147nand_26_nand_readid(nandid);
   g_device_info = do_parse_device_info((char *)nandid);
   if ( g_device_info )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" ID = %02X/%02X/%02X/%02X/%02X\n", nandid[0], nandid[1], nandid[2], nandid[3], nandid[4]);
-    else
-      Kprintf(" ID = %02X/%02X/%02X/%02X/%02X\n", nandid[0], nandid[1], nandid[2], nandid[3], nandid[4]);
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" \"%s\", %s\n", g_device_info->m_nand_name, g_device_info->m_nand_desc);
-    else
-      Kprintf(" \"%s\", %s\n", g_device_info->m_nand_name, g_device_info->m_nand_desc);
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(
-        " PageSize    = %d + %d (Bytes)\n",
-        g_device_info->m_page_size_noecc,
-        g_device_info->m_page_size_withecc - g_device_info->m_page_size_noecc);
-    else
-      Kprintf(
-        " PageSize    = %d + %d (Bytes)\n",
-        g_device_info->m_page_size_noecc,
-        g_device_info->m_page_size_withecc - g_device_info->m_page_size_noecc);
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" Pages/Block = %d (Pages)\n", g_device_info->m_pages_per_block);
-    else
-      Kprintf(" Pages/Block = %d (Pages)\n", g_device_info->m_pages_per_block);
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" BlockSize   = %d (Blocks)\n", g_device_info->m_block_size);
-    else
-      Kprintf(" BlockSize   = %d (Blocks)\n", g_device_info->m_block_size);
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2("\n");
-    else
-      Kprintf("\n");
+    STATUS_PRINTF(" ID = %02X/%02X/%02X/%02X/%02X\n", nandid[0], nandid[1], nandid[2], nandid[3], nandid[4]);
+    STATUS_PRINTF(" \"%s\", %s\n", g_device_info->m_nand_name, g_device_info->m_nand_desc);
+    STATUS_PRINTF(
+      " PageSize    = %d + %d (Bytes)\n",
+      g_device_info->m_page_size_noecc,
+      g_device_info->m_page_size_withecc - g_device_info->m_page_size_noecc);
+    STATUS_PRINTF(" Pages/Block = %d (Pages)\n", g_device_info->m_pages_per_block);
+    STATUS_PRINTF(" BlockSize   = %d (Blocks)\n", g_device_info->m_block_size);
+    STATUS_PRINTF("\n");
     CpuSuspendIntr(&state);
     g_blockinfo_str_buf = (u8 *)AllocSysMemory(0, g_device_info->m_block_size, 0);
     g_blockinfo_dat_buf = (u16 *)AllocSysMemory(0, 2 * g_device_info->m_block_size, 0);
     CpuResumeIntr(state);
     if ( !g_blockinfo_str_buf || !g_blockinfo_dat_buf )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2("\nError: AllocSysMemory failed\n\n");
-      else
-        Kprintf("\nError: AllocSysMemory failed\n\n");
+      STATUS_PRINTF("\nError: AllocSysMemory failed\n\n");
       return -1;
     }
     nandinf = s147nand_16_getnandinfo();
@@ -663,10 +585,7 @@ int do_start_write_proc()
     close(fd2);
     if ( (g_curflag & 0x2000000) != 0 )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2("====== Search directory ======\n");
-      else
-        Kprintf("====== Search directory ======\n");
+      STATUS_PRINTF("====== Search directory ======\n");
       for ( part = 0; part < 8; ++part )
       {
         if ( s147nand_10_get_nand_partition_size(part) > 0 )
@@ -682,70 +601,42 @@ int do_start_write_proc()
             do_set_flag(1 << part);
             do_handle_atfile_image(part, g_atfile_part_image[part]);
             close(fd1);
-            if ( is_send_print_to_osdsys() == 1 )
-              do_print_to_osdsys_2(" \"%s\" is found\n", g_atfile_part_image[part]);
-            else
-              Kprintf(" \"%s\" is found\n", g_atfile_part_image[part]);
+            STATUS_PRINTF(" \"%s\" is found\n", g_atfile_part_image[part]);
           }
-        }
-        else if ( is_send_print_to_osdsys() == 1 )
-        {
-          do_print_to_osdsys_2(" atfile%d: Unformatted - Do nothing\n", part);
         }
         else
         {
-          Kprintf(" atfile%d: Unformatted - Do nothing\n", part);
+          STATUS_PRINTF(" atfile%d: Unformatted - Do nothing\n", part);
         }
       }
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" \n");
-      else
-        Kprintf(" \n");
+      STATUS_PRINTF(" \n");
     }
     for ( part = 0; part < 8; ++part )
     {
       if ( ((1 << part) & g_curflag) != 0 )
       {
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2("====== Write \"%s\" to atfile%d: ======\n", g_atfile_part_image[part], part);
-        else
-          Kprintf("====== Write \"%s\" to atfile%d: ======\n", g_atfile_part_image[part], part);
+        STATUS_PRINTF("====== Write \"%s\" to atfile%d: ======\n", g_atfile_part_image[part], part);
         logaddrtable = do_write_partition(part);
         if ( logaddrtable )
           return logaddrtable;
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2(" \n");
-        else
-          Kprintf(" \n");
+        STATUS_PRINTF(" \n");
       }
     }
     if ( (g_curflag & 0x200) != 0 )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2("====== Write \"%s\" to \"atfile9:info\" ======\n", g_atfile_info_image);
-      else
-        Kprintf("====== Write \"%s\" to \"atfile9:info\" ======\n", g_atfile_info_image);
+      STATUS_PRINTF("====== Write \"%s\" to \"atfile9:info\" ======\n", g_atfile_info_image);
       logaddrtable = do_write_partition(9);
       if ( logaddrtable )
         return logaddrtable;
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" \n");
-      else
-        Kprintf(" \n");
+      STATUS_PRINTF(" \n");
     }
     if ( (g_curflag & 0x4000000) != 0 )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2("====== Display file list ======\n");
-      else
-        Kprintf("====== Display file list ======\n");
+      STATUS_PRINTF("====== Display file list ======\n");
       logaddrtable = s147nand_12_load_logaddrtable();
       if ( logaddrtable )
       {
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2(" Error: Unformatted device (%d)\n", logaddrtable);
-        else
-          Kprintf(" Error: Unformatted device (%d)\n", logaddrtable);
+        STATUS_PRINTF(" Error: Unformatted device (%d)\n", logaddrtable);
         return logaddrtable;
       }
       for ( part = 0; part < 8; ++part )
@@ -753,17 +644,10 @@ int do_start_write_proc()
     }
     return 0;
   }
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2(" ID = %02X/%02X/%02X/%02X/%02X\n", nandid[0], nandid[1], nandid[2], nandid[3], nandid[4]);
-  else
-    Kprintf(" ID = %02X/%02X/%02X/%02X/%02X\n", nandid[0], nandid[1], nandid[2], nandid[3], nandid[4]);
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("\nError: Unknown Device\n");
-  else
-    Kprintf("\nError: Unknown Device\n");
+  STATUS_PRINTF(" ID = %02X/%02X/%02X/%02X/%02X\n", nandid[0], nandid[1], nandid[2], nandid[3], nandid[4]);
+  STATUS_PRINTF("\nError: Unknown Device\n");
   return -1;
 }
-// 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 // 407CA0: using guessed type char g_secr_code_1;
 // 407CA1: using guessed type char g_secr_code_2;
 // 407CA4: using guessed type int g_curflag;
@@ -787,18 +671,9 @@ int do_format_device(int abspart)
   int xnand_partition_offset; // [sp+34h] [+34h]
   int xnand_partition_size; // [sp+38h] [+38h]
 
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("====== Format NAND device ======\n");
-  else
-    Kprintf("====== Format NAND device ======\n");
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2(" [1/3]Block Erase and Check Bad Blocks\n");
-  else
-    Kprintf(" [1/3]Block Erase and Check Bad Blocks\n");
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2(" BadBlock =");
-  else
-    Kprintf(" BadBlock =");
+  STATUS_PRINTF("====== Format NAND device ======\n");
+  STATUS_PRINTF(" [1/3]Block Erase and Check Bad Blocks\n");
+  STATUS_PRINTF(" BadBlock =");
   for ( blocks = 0; blocks < g_device_info->m_block_size; ++blocks )
   {
     s147_dev9_mem_mmio.m_led = (blocks >> 4) & 3;
@@ -815,31 +690,19 @@ int do_format_device(int abspart)
     if ( eraseres == -1470020 )
     {
       g_blockinfo_str_buf[blocks] = 'X';
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" %d", blocks);
-      else
-        Kprintf(" %d", blocks);
+      STATUS_PRINTF(" %d", blocks);
     }
     else if ( eraseres )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" %d*(%d)", blocks, eraseres);
-      else
-        Kprintf(" %d*(%d)", blocks, eraseres);
+      STATUS_PRINTF(" %d*(%d)", blocks, eraseres);
     }
     else
     {
       g_blockinfo_str_buf[blocks] = '=';
     }
   }
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("\n\n");
-  else
-    Kprintf("\n\n");
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2(" [2/3]Replace Bad Blocks ('B':Boot, 'I':Info, 'X':Broken, 'R':Reserved, '@':Occupied)\n");
-  else
-    Kprintf(" [2/3]Replace Bad Blocks ('B':Boot, 'I':Info, 'X':Broken, 'R':Reserved, '@':Occupied)\n");
+  STATUS_PRINTF("\n\n");
+  STATUS_PRINTF(" [2/3]Replace Bad Blocks ('B':Boot, 'I':Info, 'X':Broken, 'R':Reserved, '@':Occupied)\n");
   *g_blockinfo_dat_buf = 0xEEEE;
   *g_blockinfo_str_buf = 'B';
   nand_partition_offset = get_nand_partition_offset(8, 8);
@@ -890,10 +753,7 @@ int do_format_device(int abspart)
   }
   if ( bbcnt1 < 0 )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" Error: Too many bad blocks to replace\n");
-    else
-      Kprintf(" Error: Too many bad blocks to replace\n");
+    STATUS_PRINTF(" Error: Too many bad blocks to replace\n");
     return -1;
   }
   for ( blocksd = 0; blocksd < g_device_info->m_block_size; ++blocksd )
@@ -901,14 +761,8 @@ int do_format_device(int abspart)
     do_output_bb_info(blocksd, abspart, bboffs);
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
   }
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("\n");
-  else
-    Kprintf("\n");
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2(" [3/3]Write Boot Sector and Logical Address Table\n");
-  else
-    Kprintf(" [3/3]Write Boot Sector and Logical Address Table\n");
+  STATUS_PRINTF("\n");
+  STATUS_PRINTF(" [3/3]Write Boot Sector and Logical Address Table\n");
   memset(&g_nand_partbuf, 0, 160);
   strncpy((char *)&g_nand_partbuf, "S147NAND", 9);
   g_nand_partbuf.m_hdr.m_bootsector_ver_1 = 3;
@@ -919,43 +773,23 @@ int do_format_device(int abspart)
     xnand_partition_size = get_nand_partition_size(i, abspart);
     g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i] = xnand_partition_offset;
     g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i + 1] = xnand_partition_size;
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(
-        " atfile%d: StartBlock = 0x%04x(%4d) / BlockSize = 0x%04x(%4d)\n",
-        i,
-        xnand_partition_offset,
-        xnand_partition_offset,
-        xnand_partition_size,
-        xnand_partition_size);
-    else
-      Kprintf(
-        " atfile%d: StartBlock = 0x%04x(%4d) / BlockSize = 0x%04x(%4d)\n",
-        i,
-        xnand_partition_offset,
-        xnand_partition_offset,
-        xnand_partition_size,
-        xnand_partition_size);
+    STATUS_PRINTF(
+      " atfile%d: StartBlock = 0x%04x(%4d) / BlockSize = 0x%04x(%4d)\n",
+      i,
+      xnand_partition_offset,
+      xnand_partition_offset,
+      xnand_partition_size,
+      xnand_partition_size);
   }
   g_nand_partbuf.m_hdr.m_nand_partition_8 = get_nand_partition_offset(8, abspart);
   g_nand_partbuf.m_hdr.m_nand_partition_8_size = get_nand_partition_size(8, abspart);
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2(
-      " system : StartBlock = 0x%04x(%4d) / BlockSize = 0x%04x(%4d)\n",
-      g_nand_partbuf.m_hdr.m_nand_partition_8,
-      g_nand_partbuf.m_hdr.m_nand_partition_8,
-      g_nand_partbuf.m_hdr.m_nand_partition_8_size,
-      g_nand_partbuf.m_hdr.m_nand_partition_8_size);
-  else
-    Kprintf(
-      " system : StartBlock = 0x%04x(%4d) / BlockSize = 0x%04x(%4d)\n",
-      g_nand_partbuf.m_hdr.m_nand_partition_8,
-      g_nand_partbuf.m_hdr.m_nand_partition_8,
-      g_nand_partbuf.m_hdr.m_nand_partition_8_size,
-      g_nand_partbuf.m_hdr.m_nand_partition_8_size);
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("\n");
-  else
-    Kprintf("\n");
+  STATUS_PRINTF(
+    " system : StartBlock = 0x%04x(%4d) / BlockSize = 0x%04x(%4d)\n",
+    g_nand_partbuf.m_hdr.m_nand_partition_8,
+    g_nand_partbuf.m_hdr.m_nand_partition_8,
+    g_nand_partbuf.m_hdr.m_nand_partition_8_size,
+    g_nand_partbuf.m_hdr.m_nand_partition_8_size);
+  STATUS_PRINTF("\n");
   g_nand_partbuf.m_hdr.m_nand_seccode[0] = g_secr_code_1;
   g_nand_partbuf.m_hdr.m_nand_seccode[1] = g_secr_code_2;
   g_nand_partbuf.m_hdr.m_nand_vidmode[0] = g_boot_video_mode;
@@ -970,7 +804,6 @@ int do_format_device(int abspart)
   do_dma_write_bytes_multi(g_blockinfo_dat_buf, 1, 2 * g_device_info->m_block_size);
   return 0;
 }
-// 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 // 407CA0: using guessed type char g_secr_code_1;
 // 407CA1: using guessed type char g_secr_code_2;
 // 407CAC: using guessed type int g_boot_video_mode;
@@ -1011,19 +844,13 @@ int do_write_partition(int part)
     partblocks1 = (s147nand_9_get_nand_partition(8) - 1) * g_device_info->m_pages_per_block;
     if ( partblocks1 < 0 )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" Error: No partition #0 table\n");
-      else
-        Kprintf(" Error: No partition #0 table\n");
+      STATUS_PRINTF(" Error: No partition #0 table\n");
       return -1;
     }
     fd1 = open(g_atfile_info_image, 1);
     if ( fd1 < 0 )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" Error: File not found - \"%s\"\n", g_atfile_info_image);
-      else
-        Kprintf(" Error: File not found - \"%s\"\n", g_atfile_info_image);
+      STATUS_PRINTF(" Error: File not found - \"%s\"\n", g_atfile_info_image);
       return -1;
     }
   }
@@ -1032,19 +859,13 @@ int do_write_partition(int part)
     partblocks1 = s147nand_9_get_nand_partition(part) * g_device_info->m_pages_per_block;
     if ( partblocks1 < 0 )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" Error: Invalid unit number\n");
-      else
-        Kprintf(" Error: Invalid unit number\n");
+      STATUS_PRINTF(" Error: Invalid unit number\n");
       return -1;
     }
     fd1 = open(g_atfile_part_image[part], 1);
     if ( fd1 < 0 )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" Error: File not found - \"%s\"\n", g_atfile_part_image[part]);
-      else
-        Kprintf(" Error: File not found - \"%s\"\n", g_atfile_part_image[part]);
+      STATUS_PRINTF(" Error: File not found - \"%s\"\n", g_atfile_part_image[part]);
       return -1;
     }
   }
@@ -1053,10 +874,7 @@ int do_write_partition(int part)
   CpuResumeIntr(state);
   if ( !g_page_buf )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2("\nError: AllocSysMemory failed\n\n");
-    else
-      Kprintf("\nError: AllocSysMemory failed\n\n");
+    STATUS_PRINTF("\nError: AllocSysMemory failed\n\n");
     err = 1;
   }
   if ( !err )
@@ -1066,14 +884,8 @@ int do_write_partition(int part)
       bytes = lseek(fd1, 0, 2);
       if ( g_device_info->m_page_size_noecc < bytes )
       {
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2(" Error: INFO image file is too large - \"%s\"\n", g_atfile_info_image);
-        else
-          Kprintf(" Error: INFO image file is too large - \"%s\"\n", g_atfile_info_image);
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2(" FileSize(%d) > info(%d)\n", bytes, g_device_info->m_page_size_noecc);
-        else
-          Kprintf(" FileSize(%d) > info(%d)\n", bytes, g_device_info->m_page_size_noecc);
+        STATUS_PRINTF(" Error: INFO image file is too large - \"%s\"\n", g_atfile_info_image);
+        STATUS_PRINTF(" FileSize(%d) > info(%d)\n", bytes, g_device_info->m_page_size_noecc);
         err = 1;
       }
       if ( !err )
@@ -1089,10 +901,7 @@ int do_write_partition(int part)
         {
           if ( strncmp(g_page_buf, "S147INFO", 8) )
           {
-            if ( is_send_print_to_osdsys() == 1 )
-              do_print_to_osdsys_2(" Error: \"%s\" is not a S147INFO-image file\n", g_atfile_info_image);
-            else
-              Kprintf(" Error: \"%s\" is not a S147INFO-image file\n", g_atfile_info_image);
+            STATUS_PRINTF(" Error: \"%s\" is not a S147INFO-image file\n", g_atfile_info_image);
             err = 1;
           }
           if ( !err )
@@ -1111,14 +920,8 @@ int do_write_partition(int part)
                     * g_device_info->m_page_size_noecc;
       if ( partsizebytes < bytes )
       {
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2(" Error: ROM image file is too large - \"%s\"\n", g_atfile_part_image[part]);
-        else
-          Kprintf(" Error: ROM image file is too large - \"%s\"\n", g_atfile_part_image[part]);
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2(" FileSize(%d) > atfile%d(%d)\n", bytes, part, partsizebytes);
-        else
-          Kprintf(" FileSize(%d) > atfile%d(%d)\n", bytes, part, partsizebytes);
+        STATUS_PRINTF(" Error: ROM image file is too large - \"%s\"\n", g_atfile_part_image[part]);
+        STATUS_PRINTF(" FileSize(%d) > atfile%d(%d)\n", bytes, part, partsizebytes);
         err = 1;
       }
       if ( !err )
@@ -1134,10 +937,7 @@ int do_write_partition(int part)
         {
           if ( strncmp(g_page_buf, "S147ROM", 8) )
           {
-            if ( is_send_print_to_osdsys() == 1 )
-              do_print_to_osdsys_2(" Error: \"%s\" is not a S147ROM-image file\n", g_atfile_part_image[part]);
-            else
-              Kprintf(" Error: \"%s\" is not a S147ROM-image file\n", g_atfile_part_image[part]);
+            STATUS_PRINTF(" Error: \"%s\" is not a S147ROM-image file\n", g_atfile_part_image[part]);
             err = 1;
           }
           if ( !err )
@@ -1151,10 +951,7 @@ int do_write_partition(int part)
   }
   if ( !err )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
-    else
-      Kprintf(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
+    STATUS_PRINTF(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
     lseek(fd1, 0, 0);
     xind2 = 0;
     pageoffs = partblocks1;
@@ -1164,43 +961,21 @@ int do_write_partition(int part)
       blockoffs1 = s147nand_28_pages2blocks(pageoffs);
       blockoffs2 = s147nand_28_pages2blocks(pageoffs);
       tblockoffs2 = s147nand_13_translate_blockoffs(blockoffs2);
-      if ( is_send_print_to_osdsys() == 1 )
-      {
-        do_print_to_osdsys_2(
-          " atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ",
-          part,
-          xind1,
-          blocks - 1,
-          blockoffs1,
-          tblockoffs2);
-      }
-      else
-      {
-        Kprintf(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, blockoffs1, tblockoffs2);
-      }
+      STATUS_PRINTF(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, blockoffs1, tblockoffs2);
       s147_dev9_mem_mmio.m_led = s147nand_28_pages2blocks(pageoffs) & 3;
       if ( (g_curflag & 0xFF0000) == 0 )
       {
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2("Erase -> ");
-        else
-          Kprintf("Erase -> ");
+        STATUS_PRINTF("Erase -> ");
         readres = s147nand_11_erasetranslatepageoffs(pageoffs);
         if ( readres == -1470020 )
         {
-          if ( is_send_print_to_osdsys() == 1 )
-            do_print_to_osdsys_2("\nromwrite: Bad block error, use \"-f\" option.\n");
-          else
-            Kprintf("\nromwrite: Bad block error, use \"-f\" option.\n");
+          STATUS_PRINTF("\nromwrite: Bad block error, use \"-f\" option.\n");
           err = 1;
           finished = 1;
           break;
         }
       }
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2("Write -> Verify\n");
-      else
-        Kprintf("Write -> Verify\n");
+      STATUS_PRINTF("Write -> Verify\n");
       xind3 = 0;
       while ( xind3 < g_device_info->m_pages_per_block )
       {
@@ -1236,16 +1011,8 @@ int do_write_partition(int part)
           readres = do_verify((char *)g_part_buf + i, g_page_buf, g_device_info->m_page_size_noecc);
           if ( readres )
           {
-            if ( is_send_print_to_osdsys() == 1 )
-            {
-              blockoffs5 = s147nand_28_pages2blocks(pageoffs);
-              do_print_to_osdsys_2("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs5, pageoffs);
-            }
-            else
-            {
-              blockoffs5 = s147nand_28_pages2blocks(pageoffs);
-              Kprintf("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs5, pageoffs);
-            }
+            blockoffs5 = s147nand_28_pages2blocks(pageoffs);
+            STATUS_PRINTF("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs5, pageoffs);
             err = 1;
             finished = 1;
             break;
@@ -1268,10 +1035,7 @@ int do_write_partition(int part)
   }
   if ( actual_readres < expected_readres )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" Error: File-I/O fault (%d)\n", actual_readres);
-    else
-      Kprintf(" Error: File-I/O fault (%d)\n", actual_readres);
+    STATUS_PRINTF(" Error: File-I/O fault (%d)\n", actual_readres);
   }
   if ( fd1 >= 0 )
   {
@@ -1288,7 +1052,6 @@ int do_write_partition(int part)
   }
   return err ? -1 : 0;
 }
-// 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 // 407CA4: using guessed type int g_curflag;
 // 408700: using guessed type romwrite_part_buf_ g_nand_partbuf;
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
@@ -1437,25 +1200,13 @@ int do_list_files(int part)
       {
         if ( strncmp((const char *)&g_nand_partbuf, "S147ROM", 8) )
         {
-          if ( is_send_print_to_osdsys() == 1 )
-            do_print_to_osdsys_2(" \"%s%d:\" ... No data\n", "atfile", part);
-          else
-            Kprintf(" \"%s%d:\" ... No data\n", "atfile", part);
-          if ( is_send_print_to_osdsys() == 1 )
-            do_print_to_osdsys_2(" -----------------------------\n\n");
-          else
-            Kprintf(" -----------------------------\n\n");
+          STATUS_PRINTF(" \"%s%d:\" ... No data\n", "atfile", part);
+          STATUS_PRINTF(" -----------------------------\n\n");
           return -19;
         }
         m_entrycnt = g_nand_partbuf.m_dir.m_entrycnt;
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2(" \"%s%d:\"\n", "atfile", part);
-        else
-          Kprintf(" \"%s%d:\"\n", "atfile", part);
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2(" -----------------------------\n");
-        else
-          Kprintf(" -----------------------------\n");
+        STATUS_PRINTF(" \"%s%d:\"\n", "atfile", part);
+        STATUS_PRINTF(" -----------------------------\n");
       }
       else
       {
@@ -1474,10 +1225,7 @@ int do_list_files(int part)
         {
           ++filcnt;
         }
-        if ( is_send_print_to_osdsys() == 1 )
-          do_print_to_osdsys_2(" %9d  %s\n", g_nand_partbuf.m_direntry[i].m_size, pathtmp);
-        else
-          Kprintf(" %9d  %s\n", g_nand_partbuf.m_direntry[i].m_size, pathtmp);
+        STATUS_PRINTF(" %9d  %s\n", g_nand_partbuf.m_direntry[i].m_size, pathtmp);
         DelayThread(20000);
       }
     }
@@ -1486,21 +1234,11 @@ int do_list_files(int part)
       break;
     }
   }
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2(" -----------------------------\n");
-  else
-    Kprintf(" -----------------------------\n");
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("   %d directories, %d files\n", dircnt, filcnt);
-  else
-    Kprintf("   %d directories, %d files\n", dircnt, filcnt);
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("\n");
-  else
-    Kprintf("\n");
+  STATUS_PRINTF(" -----------------------------\n");
+  STATUS_PRINTF("   %d directories, %d files\n", dircnt, filcnt);
+  STATUS_PRINTF("\n");
   return m_entrycnt;
 }
-// 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 // 408700: using guessed type romwrite_part_buf_ g_nand_partbuf;
 
 //----- (004041F4) --------------------------------------------------------
@@ -1515,33 +1253,20 @@ int do_output_bb_info(int blocksd, int abspart, int bboffs)
     chrval = 'I';
   if ( (blocksd & 0x3F) == 0 )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" %04X(%4d):", blocksd, blocksd);
-    else
-      Kprintf(" %04X(%4d):", blocksd, blocksd);
+    STATUS_PRINTF(" %04X(%4d):", blocksd, blocksd);
   }
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("%c", chrval);
-  else
-    Kprintf("%c", chrval);
+  STATUS_PRINTF("%c", chrval);
   if ( (blocksd & 0xF) == 15 )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" ");
-    else
-      Kprintf(" ");
+    STATUS_PRINTF(" ");
   }
   result = blocksd & 0x3F;
   if ( result == '?' )
   {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2("\n");
-    else
-      Kprintf("\n");
+    STATUS_PRINTF("\n");
   }
   return result;
 }
-// 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 
 //----- (00404380) --------------------------------------------------------
 int do_verify(void *buf1, void *buf2, int len)
