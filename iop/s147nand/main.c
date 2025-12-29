@@ -302,8 +302,6 @@ static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
   int xsector2; // [sp+24h] [+24h]
   int xsize2; // [sp+28h] [+28h]
   int cursz; // [sp+2Ch] [+2Ch]
-  int special; // [sp+34h] [+34h]
-  int pageoffs; // [sp+38h] [+38h]
 
   privdat = (nand_mdev_privdata_stru_ *)f->privdata;
   WaitSema(g_sema_id_dev);
@@ -323,6 +321,8 @@ static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
       xsize2);
   if ( f->unit == 9 )
   {
+    int special; // [sp+34h] [+34h]
+
     special = nand_mdev_read_special(f, ptr, size);
     SignalSema(g_sema_id_dev);
     return special;
@@ -331,6 +331,8 @@ static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
   xsector2 = do_nand_bytes2sector_remainder(privdat->m_seek_cur + xsize2);
   for ( cursz = 0; cursz < xsize2; cursz += xsize3 )
   {
+    int pageoffs; // [sp+38h] [+38h]
+
     pageoffs = do_nand_bytes2sector(privdat->m_partition_offset, privdat->m_seek_cur);
     xsize3 = (( pageoffs >= xsector1 ) ? xsector2 : 2048) - do_nand_bytes2sector_remainder(privdat->m_seek_cur);
     do_nand_sector_rw(((char *)ptr) + cursz, pageoffs, do_nand_bytes2sector_remainder(privdat->m_seek_cur), xsize3);
@@ -343,11 +345,11 @@ static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
 //----- (004008BC) --------------------------------------------------------
 static int nand_mdev_op_write(iop_file_t *f, void *ptr, int size)
 {
-  int retres; // [sp+14h] [+14h]
-
   WaitSema(g_sema_id_dev);
   if ( f->unit == 9 )
   {
+    int retres; // [sp+14h] [+14h]
+
     retres = nand_mdev_write_special(f, ptr, size);
     SignalSema(g_sema_id_dev);
     return retres;
@@ -392,7 +394,6 @@ static int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode)
 //----- (00400B20) --------------------------------------------------------
 int s147nand_4_dumpprintinfo(int part)
 {
-  nand_direntry_stru_ *dirbuf; // [sp+10h] [+10h]
   const nand_dir_stru_ *hdrbuf; // [sp+14h] [+14h]
   int retres; // [sp+1Ch] [+1Ch]
   int nand_partition_offset; // [sp+20h] [+20h]
@@ -412,6 +413,8 @@ int s147nand_4_dumpprintinfo(int part)
     return -19;
   for ( i = 0; i < 64; ++i )
   {
+    nand_direntry_stru_ *dirbuf; // [sp+10h] [+10h]
+
     s147nand_7_multi_read_dma(g_nand_sector_buffer, nand_partition_offset + i, 1);
     dirbuf = (nand_direntry_stru_ *)g_nand_sector_buffer;
     for ( j = 0; j < 64; ++j )
@@ -480,11 +483,12 @@ static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, cons
 static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name)
 {
   size_t i; // [sp+10h] [+10h]
-  int nand_direntry; // [sp+14h] [+14h]
 
   for ( i = 0; name[i] && name[i] != '/'; ++i );
   if ( name[i] == '/' )
   {
+    int nand_direntry; // [sp+14h] [+14h]
+
     nand_direntry = do_get_nand_direntry(privdat, name, i, 'D');
     return ( nand_direntry >= 0 ) ? do_nand_open_inner2(privdat, &name[i + 1]) : nand_direntry;
   }
@@ -879,7 +883,6 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
   int retres1; // [sp+14h] [+14h]
   int xsz; // [sp+18h] [+18h]
-  int i; // [sp+1Ch] [+1Ch]
 
   privdata = (nand_mdev_privdata_stru_ *)f->privdata;
   xsz = g_nand_header.m_nand_partition_8_size * g_nand_header.m_pages_per_block * g_nand_header.m_page_size_noecc;
@@ -892,6 +895,8 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
   }
   if ( (privdata->m_flags & 0x2000000) != 0 )
   {
+    int i; // [sp+1Ch] [+1Ch]
+
     retres1 = 0;
     for ( i = 0; i < g_nand_header.m_nand_partition_8_size; ++i )
     {
@@ -993,7 +998,6 @@ int s147nand_12_load_logaddrtable(void)
 int s147nand_13_translate_blockoffs(int blockoffs)
 {
   int tbladdr; // [sp+10h] [+10h]
-  int logaddrtable; // [sp+14h] [+14h]
 
   if ( blockoffs <= 0 || blockoffs >= s147nand_16_getnandinfo()->m_block_size )
   {
@@ -1002,6 +1006,8 @@ int s147nand_13_translate_blockoffs(int blockoffs)
   }
   if ( !g_nand_unaligned_buf_alloced )
   {
+    int logaddrtable; // [sp+14h] [+14h]
+
     logaddrtable = s147nand_12_load_logaddrtable();
     if ( logaddrtable < 0 )
       return logaddrtable;
@@ -1094,12 +1100,13 @@ void s147nand_18_enable_nand_watchdog(void)
 int s147nand_19_logaddr_read(u16 *tbl, int pageoffs, int bytecnt)
 {
   int i; // [sp+10h] [+10h]
-  int retres; // [sp+14h] [+14h]
   int pagecnt; // [sp+18h] [+18h]
 
   pagecnt = s147nand_30_bytes2pagesnoeccround(bytecnt);
   for ( i = 0; i < pagecnt; ++i )
   {
+    int retres; // [sp+14h] [+14h]
+
     retres = s147nand_20_nand_read_dma(
                &tbl[2 * (g_nand_info.m_page_size_noecc >> 2) * i],
                pageoffs + i,

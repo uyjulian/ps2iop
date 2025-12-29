@@ -445,7 +445,6 @@ static int do_start_write_proc(void)
   nand_info_stru_ *nandinf; // [sp+18h] [+18h]
   int state; // [sp+1Ch] [+1Ch] BYREF
   int part; // [sp+20h] [+20h]
-  int fd; // [sp+24h] [+24h]
   int logaddrtable; // [sp+28h] [+28h]
   u8 nandid[5]; // [sp+30h] [+30h] BYREF
 
@@ -460,116 +459,118 @@ static int do_start_write_proc(void)
   STATUS_PRINTF("====== Device information ======\n");
   s147nand_26_nand_readid(nandid);
   g_device_info = do_parse_device_info((char *)nandid);
-  if ( g_device_info )
+  if ( !g_device_info )
   {
     STATUS_PRINTF(" ID = %02X/%02X/%02X/%02X/%02X\n", nandid[0], nandid[1], nandid[2], nandid[3], nandid[4]);
-    STATUS_PRINTF(" \"%s\", %s\n", g_device_info->m_nand_name, g_device_info->m_nand_desc);
-    STATUS_PRINTF(
-      " PageSize    = %d + %d (Bytes)\n",
-      g_device_info->m_page_size_noecc,
-      g_device_info->m_page_size_withecc - g_device_info->m_page_size_noecc);
-    STATUS_PRINTF(" Pages/Block = %d (Pages)\n", g_device_info->m_pages_per_block);
-    STATUS_PRINTF(" BlockSize   = %d (Blocks)\n", g_device_info->m_block_size);
-    STATUS_PRINTF("\n");
-    CpuSuspendIntr(&state);
-    g_blockinfo_str_buf = (u8 *)AllocSysMemory(0, g_device_info->m_block_size, 0);
-    g_blockinfo_dat_buf = (u16 *)AllocSysMemory(0, 2 * g_device_info->m_block_size, 0);
-    CpuResumeIntr(state);
-    if ( !g_blockinfo_str_buf || !g_blockinfo_dat_buf )
-    {
-      STATUS_PRINTF("\nError: AllocSysMemory failed\n\n");
-      return -1;
-    }
-    nandinf = s147nand_16_getnandinfo();
-    CpuSuspendIntr(&state);
-    nandinf->m_page_size_noecc = g_device_info->m_page_size_noecc;
-    nandinf->m_page_size_withecc = g_device_info->m_page_size_withecc;
-    nandinf->m_pages_per_block = g_device_info->m_pages_per_block;
-    nandinf->m_block_size = g_device_info->m_block_size;
-    nandinf->m_page_count = g_device_info->m_block_size * g_device_info->m_pages_per_block;
-    CpuResumeIntr(state);
-    logaddrtable = 0;
-    switch ( g_curflag & 0xFF0000 )
-    {
-      case 0x10000:
-        logaddrtable = do_format_device(2);
-        break;
-      case 0x20000:
-        logaddrtable = do_format_device(4);
-        break;
-      case 0x30000:
-        logaddrtable = do_format_device(8);
-        break;
-      case 0xF0000:
-        logaddrtable = do_format_device(0);
-        break;
-      default:
-        break;
-    }
-    if ( logaddrtable )
-      return logaddrtable;
-    s147nand_6_checkformat();
-    close(open("atfile9:acdelay", 1));
-    if ( (g_curflag & 0x2000000) != 0 )
-    {
-      STATUS_PRINTF("====== Search directory ======\n");
-      for ( part = 0; part < 8; ++part )
-      {
-        if ( s147nand_10_get_nand_partition_size(part) <= 0 )
-        {
-          STATUS_PRINTF(" atfile%d: Unformatted - Do nothing\n", part);
-          continue;
-        }
-        sprintf(g_atfile_part_image[part], "%satfile%d.147", g_atfile_147_dir, part);
-        fd = open(g_atfile_part_image[part], 1);
-        if ( fd < 0 )
-        {
-          DelayThread(10000);
-          continue;
-        }
-        do_set_flag(1 << part);
-        do_handle_atfile_image(part, g_atfile_part_image[part]);
-        close(fd);
-        STATUS_PRINTF(" \"%s\" is found\n", g_atfile_part_image[part]);
-      }
-      STATUS_PRINTF(" \n");
-    }
-    for ( part = 0; part < 8; ++part )
-    {
-      if ( ((1 << part) & g_curflag) != 0 )
-      {
-        STATUS_PRINTF("====== Write \"%s\" to atfile%d: ======\n", g_atfile_part_image[part], part);
-        logaddrtable = do_write_partition(part);
-        if ( logaddrtable )
-          return logaddrtable;
-        STATUS_PRINTF(" \n");
-      }
-    }
-    if ( (g_curflag & 0x200) != 0 )
-    {
-      STATUS_PRINTF("====== Write \"%s\" to \"atfile9:info\" ======\n", g_atfile_info_image);
-      logaddrtable = do_write_partition(9);
-      if ( logaddrtable )
-        return logaddrtable;
-      STATUS_PRINTF(" \n");
-    }
-    if ( (g_curflag & 0x4000000) != 0 )
-    {
-      STATUS_PRINTF("====== Display file list ======\n");
-      logaddrtable = s147nand_12_load_logaddrtable();
-      if ( logaddrtable )
-      {
-        STATUS_PRINTF(" Error: Unformatted device (%d)\n", logaddrtable);
-        return logaddrtable;
-      }
-      for ( part = 0; part < 8; ++part )
-        do_list_files(part);
-    }
-    return 0;
+    STATUS_PRINTF("\nError: Unknown Device\n");
+    return -1;
   }
   STATUS_PRINTF(" ID = %02X/%02X/%02X/%02X/%02X\n", nandid[0], nandid[1], nandid[2], nandid[3], nandid[4]);
-  STATUS_PRINTF("\nError: Unknown Device\n");
-  return -1;
+  STATUS_PRINTF(" \"%s\", %s\n", g_device_info->m_nand_name, g_device_info->m_nand_desc);
+  STATUS_PRINTF(
+    " PageSize    = %d + %d (Bytes)\n",
+    g_device_info->m_page_size_noecc,
+    g_device_info->m_page_size_withecc - g_device_info->m_page_size_noecc);
+  STATUS_PRINTF(" Pages/Block = %d (Pages)\n", g_device_info->m_pages_per_block);
+  STATUS_PRINTF(" BlockSize   = %d (Blocks)\n", g_device_info->m_block_size);
+  STATUS_PRINTF("\n");
+  CpuSuspendIntr(&state);
+  g_blockinfo_str_buf = (u8 *)AllocSysMemory(0, g_device_info->m_block_size, 0);
+  g_blockinfo_dat_buf = (u16 *)AllocSysMemory(0, 2 * g_device_info->m_block_size, 0);
+  CpuResumeIntr(state);
+  if ( !g_blockinfo_str_buf || !g_blockinfo_dat_buf )
+  {
+    STATUS_PRINTF("\nError: AllocSysMemory failed\n\n");
+    return -1;
+  }
+  nandinf = s147nand_16_getnandinfo();
+  CpuSuspendIntr(&state);
+  nandinf->m_page_size_noecc = g_device_info->m_page_size_noecc;
+  nandinf->m_page_size_withecc = g_device_info->m_page_size_withecc;
+  nandinf->m_pages_per_block = g_device_info->m_pages_per_block;
+  nandinf->m_block_size = g_device_info->m_block_size;
+  nandinf->m_page_count = g_device_info->m_block_size * g_device_info->m_pages_per_block;
+  CpuResumeIntr(state);
+  logaddrtable = 0;
+  switch ( g_curflag & 0xFF0000 )
+  {
+    case 0x10000:
+      logaddrtable = do_format_device(2);
+      break;
+    case 0x20000:
+      logaddrtable = do_format_device(4);
+      break;
+    case 0x30000:
+      logaddrtable = do_format_device(8);
+      break;
+    case 0xF0000:
+      logaddrtable = do_format_device(0);
+      break;
+    default:
+      break;
+  }
+  if ( logaddrtable )
+    return logaddrtable;
+  s147nand_6_checkformat();
+  close(open("atfile9:acdelay", 1));
+  if ( (g_curflag & 0x2000000) != 0 )
+  {
+    STATUS_PRINTF("====== Search directory ======\n");
+    for ( part = 0; part < 8; ++part )
+    {
+      int fd; // [sp+24h] [+24h]
+
+      if ( s147nand_10_get_nand_partition_size(part) <= 0 )
+      {
+        STATUS_PRINTF(" atfile%d: Unformatted - Do nothing\n", part);
+        continue;
+      }
+      sprintf(g_atfile_part_image[part], "%satfile%d.147", g_atfile_147_dir, part);
+      fd = open(g_atfile_part_image[part], 1);
+      if ( fd < 0 )
+      {
+        DelayThread(10000);
+        continue;
+      }
+      do_set_flag(1 << part);
+      do_handle_atfile_image(part, g_atfile_part_image[part]);
+      close(fd);
+      STATUS_PRINTF(" \"%s\" is found\n", g_atfile_part_image[part]);
+    }
+    STATUS_PRINTF(" \n");
+  }
+  for ( part = 0; part < 8; ++part )
+  {
+    if ( ((1 << part) & g_curflag) != 0 )
+    {
+      STATUS_PRINTF("====== Write \"%s\" to atfile%d: ======\n", g_atfile_part_image[part], part);
+      logaddrtable = do_write_partition(part);
+      if ( logaddrtable )
+        return logaddrtable;
+      STATUS_PRINTF(" \n");
+    }
+  }
+  if ( (g_curflag & 0x200) != 0 )
+  {
+    STATUS_PRINTF("====== Write \"%s\" to \"atfile9:info\" ======\n", g_atfile_info_image);
+    logaddrtable = do_write_partition(9);
+    if ( logaddrtable )
+      return logaddrtable;
+    STATUS_PRINTF(" \n");
+  }
+  if ( (g_curflag & 0x4000000) != 0 )
+  {
+    STATUS_PRINTF("====== Display file list ======\n");
+    logaddrtable = s147nand_12_load_logaddrtable();
+    if ( logaddrtable )
+    {
+      STATUS_PRINTF(" Error: Unformatted device (%d)\n", logaddrtable);
+      return logaddrtable;
+    }
+    for ( part = 0; part < 8; ++part )
+      do_list_files(part);
+  }
+  return 0;
 }
 // 407CA0: using guessed type char g_secr_code_1;
 // 407CA1: using guessed type char g_secr_code_2;
@@ -583,7 +584,6 @@ static int do_format_device(int abspart)
   int bboffs; // [sp+1Ch] [+1Ch]
   int nand_partition_offset; // [sp+20h] [+20h]
   int bbcnt1; // [sp+24h] [+24h]
-  int eraseres; // [sp+28h] [+28h]
   int i; // [sp+30h] [+30h]
 
   STATUS_PRINTF("====== Format NAND device ======\n");
@@ -591,6 +591,8 @@ static int do_format_device(int abspart)
   STATUS_PRINTF(" BadBlock =");
   for ( blocks = 0; blocks < g_device_info->m_block_size; ++blocks )
   {
+    int eraseres; // [sp+28h] [+28h]
+
     s147_dev9_mem_mmio.m_led = (blocks >> 4) & 3;
     eraseres = blocks ? s147nand_24_eraseoffset(s147nand_27_blocks2pages(blocks)) : s147nand_25_nand_blockerase(s147nand_27_blocks2pages(0));
     switch ( eraseres )
@@ -719,17 +721,9 @@ static int do_write_partition(int part)
   int fd; // [sp+1Ch] [+1Ch]
   int state; // [sp+20h] [+20h] BYREF
   int bytes; // [sp+24h] [+24h]
-  int partsizebytes; // [sp+28h] [+28h]
-  int xind2; // [sp+2Ch] [+2Ch]
-  int xind1; // [sp+30h] [+30h]
   int pages; // [sp+34h] [+34h]
   int blocks; // [sp+38h] [+38h]
-  int pageoffs; // [sp+3Ch] [+3Ch]
   int partblocks1; // [sp+40h] [+40h]
-  int xind3; // [sp+48h] [+48h]
-  int xindbytes; // [sp+4Ch] [+4Ch]
-  int i; // [sp+54h] [+54h]
-  int finished;
   int actual_readres;
   int expected_readres;
   int err;
@@ -812,6 +806,8 @@ static int do_write_partition(int part)
     }
     else
     {
+      int partsizebytes; // [sp+28h] [+28h]
+
       bytes = lseek(fd, 0, 2);
       partsizebytes = s147nand_10_get_nand_partition_size(part)
                     * g_device_info->m_pages_per_block
@@ -849,6 +845,11 @@ static int do_write_partition(int part)
   }
   if ( !err )
   {
+    int xind2; // [sp+2Ch] [+2Ch]
+    int xind1; // [sp+30h] [+30h]
+    int pageoffs; // [sp+3Ch] [+3Ch]
+    int finished;
+
     STATUS_PRINTF(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
     lseek(fd, 0, 0);
     xind2 = 0;
@@ -856,6 +857,8 @@ static int do_write_partition(int part)
     finished = 0;
     for ( xind1 = 0; xind1 < blocks; xind1 += 1 )
     {
+      int xind3; // [sp+48h] [+48h]
+
       STATUS_PRINTF(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, s147nand_28_pages2blocks(pageoffs), s147nand_13_translate_blockoffs(s147nand_28_pages2blocks(pageoffs)));
       s147_dev9_mem_mmio.m_led = s147nand_28_pages2blocks(pageoffs) & 3;
       if ( (g_curflag & 0xFF0000) == 0 )
@@ -871,9 +874,13 @@ static int do_write_partition(int part)
       STATUS_PRINTF("Write -> Verify\n");
       for ( xind3 = 0; xind3 < g_device_info->m_pages_per_block; )
       {
+        int i; // [sp+54h] [+54h]
+
         g_part_buf = &g_nand_partbuf;
         if ( part != 9 )
         {
+          int xindbytes; // [sp+4Ch] [+4Ch]
+
           xindbytes = bytes - xind2 * g_device_info->m_page_size_noecc;
           expected_readres = ( xindbytes > 0x20000 ) ? 0x20000 : xindbytes;
         }
@@ -1128,11 +1135,12 @@ static int do_verify(void *buf1, void *buf2, int len)
 static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
 {
   int i; // [sp+0h] [+0h]
-  int cmpval; // [sp+4h] [+4h]
   int j; // [sp+8h] [+8h]
 
   for ( i = 0; g_nand_type_info[i].m_nand_name; ++i )
   {
+    int cmpval; // [sp+4h] [+4h]
+
     cmpval = 0;
     for ( j = 0; j < 5; ++j )
     {
