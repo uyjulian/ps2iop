@@ -675,7 +675,7 @@ int s147nand_6_checkformat()
       "s147nand.irx: BootSector format version = %d.%d\n",
       g_nand_header.m_bootsector_ver_1,
       g_nand_header.m_bootsector_ver_2);
-    if ( g_nand_header.m_bootsector_ver_1 >= 2u )
+    if ( (u32)g_nand_header.m_bootsector_ver_1 >= 2u )
     {
       Kprintf("s147nand.irx: %-.32s\n", (const char *)g_nand_header.m_nand_desc);
       CpuSuspendIntr(&state);
@@ -716,9 +716,9 @@ int do_update_acdelay()
 
   Kprintf("s147nand.irx: Update Acdelay\n", g_nand_header.m_bootsector_ver_1, g_nand_header.m_bootsector_ver_2);
   DelayThread(10000);
-  if ( g_nand_header.m_bootsector_ver_1 >= 2u )
+  if ( (u32)g_nand_header.m_bootsector_ver_1 >= 2u )
   {
-    if ( g_nand_header.m_acmem_delay_val && g_nand_header.m_acmem_delay_val != -1 )
+    if ( g_nand_header.m_acmem_delay_val && (int)g_nand_header.m_acmem_delay_val != -1 )
     {
       CpuSuspendIntr(state);
       SetAcMemDelayReg(g_nand_header.m_acmem_delay_val);
@@ -735,7 +735,7 @@ int do_update_acdelay()
       Kprintf("s147nand.irx: AcMem = 0x%08x (Default)\n", g_nand_header.m_acmem_delay_val);
     }
     DelayThread(10000);
-    if ( g_nand_header.m_acio_delay_val && g_nand_header.m_acio_delay_val != -1 )
+    if ( g_nand_header.m_acio_delay_val && (int)g_nand_header.m_acio_delay_val != -1 )
     {
       CpuSuspendIntr(state);
       SetAcIoDelayReg(g_nand_header.m_acio_delay_val);
@@ -1015,11 +1015,11 @@ int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
 LABEL_10:
       if ( !g_nand_header.m_page_size_noecc )
         _break(7u, 0);
-      if ( g_nand_header.m_page_size_noecc == -1 && privdata->m_seek_cur == 0x80000000 )
+      if ( g_nand_header.m_page_size_noecc == -1 && privdata->m_seek_cur == (int)0x80000000 )
         _break(6u, 0);
       if ( !g_nand_header.m_page_size_noecc )
         _break(7u, 0);
-      if ( g_nand_header.m_page_size_noecc == -1 && size == 0x80000000 )
+      if ( g_nand_header.m_page_size_noecc == -1 && size == (int)0x80000000 )
         _break(6u, 0);
       retres2 = s147nand_8_multi_write_dma(
                   ptr,
@@ -1056,7 +1056,7 @@ size_t do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, size_t size)
   privdata = (nand_mdev_privdata_stru_ *)f->privdata;
   if ( privdata->m_seek_cur >= privdata->m_seek_max )
     return 0;
-  if ( privdata->m_seek_max >= privdata->m_seek_cur + size )
+  if ( privdata->m_seek_max >= (int)(privdata->m_seek_cur + size) )
     xxsize = size;
   else
     xxsize = privdata->m_seek_max - privdata->m_seek_cur;
@@ -1077,7 +1077,7 @@ size_t do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, size_t size)
   privdata = (nand_mdev_privdata_stru_ *)f->privdata;
   if ( privdata->m_seek_cur >= privdata->m_seek_max )
     return 0;
-  if ( privdata->m_seek_max >= privdata->m_seek_cur + size )
+  if ( privdata->m_seek_max >= (int)(privdata->m_seek_cur + size) )
     xxsize = size;
   else
     xxsize = privdata->m_seek_max - privdata->m_seek_cur;
@@ -1184,7 +1184,7 @@ int s147nand_14_translate_pageoffs(int pageoffs)
     return -1470010;
   if ( !g_nand_header.m_pages_per_block )
     _break(7u, 0);
-  if ( g_nand_header.m_pages_per_block == -1 && pageoffs == 0x80000000 )
+  if ( g_nand_header.m_pages_per_block == -1 && pageoffs == (int)0x80000000 )
     _break(6u, 0);
   remainpage = pageoffs % g_nand_header.m_pages_per_block;
   return s147nand_27_blocks2pages(tblockoffs) + remainpage;
@@ -1637,7 +1637,7 @@ int s147nand_28_pages2blocks(int pages)
 {
   if ( !g_nand_info.m_pages_per_block )
     _break(7u, 0);
-  if ( g_nand_info.m_pages_per_block == -1 && pages == 0x80000000 )
+  if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
     _break(6u, 0);
   return pages / g_nand_info.m_pages_per_block;
 }
@@ -1650,12 +1650,12 @@ int s147nand_29_pages2blockround(int pages)
 
   if ( !g_nand_info.m_pages_per_block )
     _break(7u, 0);
-  if ( g_nand_info.m_pages_per_block == -1 && pages == 0x80000000 )
+  if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
     _break(6u, 0);
   blocks = pages / g_nand_info.m_pages_per_block;
   if ( !g_nand_info.m_pages_per_block )
     _break(7u, 0);
-  if ( g_nand_info.m_pages_per_block == -1 && pages == 0x80000000 )
+  if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
     _break(6u, 0);
   if ( pages % g_nand_info.m_pages_per_block )
     ++blocks;
@@ -1670,12 +1670,12 @@ int s147nand_30_bytes2pagesnoeccround(int bytes)
 
   if ( !g_nand_info.m_page_size_noecc )
     _break(7u, 0);
-  if ( g_nand_info.m_page_size_noecc == -1 && bytes == 0x80000000 )
+  if ( g_nand_info.m_page_size_noecc == -1 && bytes == (int)0x80000000 )
     _break(6u, 0);
   pages = bytes / g_nand_info.m_page_size_noecc;
   if ( !g_nand_info.m_page_size_noecc )
     _break(7u, 0);
-  if ( g_nand_info.m_page_size_noecc == -1 && bytes == 0x80000000 )
+  if ( g_nand_info.m_page_size_noecc == -1 && bytes == (int)0x80000000 )
     _break(6u, 0);
   if ( bytes % g_nand_info.m_page_size_noecc )
     ++pages;

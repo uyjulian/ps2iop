@@ -1285,7 +1285,7 @@ int get_nand_partition_offset(int part, int abspart)
     if ( part < 0 || part >= abspart )
       return -1;
     m_block_size = g_device_info->m_block_size;
-    if ( abspart == -1 && m_block_size == 0x80000000 )
+    if ( abspart == -1 && m_block_size == (int)0x80000000 )
       _break(6u, 0);
     if ( part )
       return m_block_size / abspart * part;
@@ -1316,7 +1316,7 @@ int get_nand_partition_size(int part, int abspart)
     if ( part >= 0 && part < abspart )
     {
       m_block_size = g_device_info->m_block_size;
-      if ( abspart == -1 && m_block_size == 0x80000000 )
+      if ( abspart == -1 && m_block_size == (int)0x80000000 )
         _break(6u, 0);
       if ( part )
         return m_block_size / abspart;
@@ -1535,7 +1535,7 @@ nand_id_desc_info_stru_ *do_parse_device_info(char *nandid)
     for ( j = 0; j < 5; ++j )
     {
       idval = g_nand_type_info[i].m_id[j];
-      if ( idval == -1 )
+      if ( (int)idval == -1 )
       {
         ++cmpval;
       }
