@@ -80,36 +80,33 @@ typedef struct nand_mdev_privdata_stru_x
 //-------------------------------------------------------------------------
 // Function declarations
 
-int _start();
-int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc);
-int nand_mdev_op_nulldev();
-int nand_mdev_op_init(iop_device_t *dev);
-int nand_mdev_op_deinit(iop_device_t *dev);
-int nand_mdev_op_open(iop_file_t *f, const char *name, int flags);
-int nand_mdev_op_close(iop_file_t *f);
-int nand_mdev_op_read(iop_file_t *f, void *ptr, int size);
-int nand_mdev_op_write(iop_file_t *f, void *ptr, int size);
-int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode);
-int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, const char *name);
-int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name);
-u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, size_t idx, char typ);
-int do_nand_bytes2sector(int pageoffs, int byteoffs);
-int do_nand_bytes2sector_remainder(int byteoffs);
-int do_update_acdelay();
-int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size);
-int get_nand_partition_offset(int part);
-int nand_mdev_open_special(iop_file_t *f, const char *name);
-size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size);
-int nand_mdev_write_special(iop_file_t *f, void *ptr, int size);
-size_t do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, size_t size);
-size_t do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, size_t size);
-int dev9_intr_handler(void *unusd);
-int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
-int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);
-int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
-int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);
-int nand_lowlevel_blockerase(int pageoffs);
-int nand_lowlevel_readid(void *ptr);
+static int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc);
+static int nand_mdev_op_nulldev(void);
+static int nand_mdev_op_init(iop_device_t *dev);
+static int nand_mdev_op_deinit(iop_device_t *dev);
+static int nand_mdev_op_open(iop_file_t *f, const char *name, int flags);
+static int nand_mdev_op_close(iop_file_t *f);
+static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size);
+static int nand_mdev_op_write(iop_file_t *f, void *ptr, int size);
+static int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode);
+static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, const char *name);
+static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name);
+static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, size_t idx, char typ);
+static int do_nand_bytes2sector(int pageoffs, int byteoffs);
+static int do_nand_bytes2sector_remainder(int byteoffs);
+static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size);
+static int get_nand_partition_offset(int part);
+static int nand_mdev_open_special(iop_file_t *f, const char *name);
+static size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size);
+static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size);
+static size_t do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, size_t size);
+static size_t do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, size_t size);
+static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
+static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);
+static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
+static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);
+static int nand_lowlevel_blockerase(int pageoffs);
+static int nand_lowlevel_readid(void *ptr);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -158,8 +155,10 @@ s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-int _start()
+int _start(int ac, char **av)
 {
+  (void)ac;
+  (void)av;
   Kprintf("\ns147nand.irx: System147 NAND-Flash File System Driver v%d.%d\n", 5, 2);
   if ( do_register_nand_to_mdev("nand", "NAND-Flash") )
     return 1;
@@ -176,7 +175,7 @@ int _start()
 }
 
 //----- (004000B0) --------------------------------------------------------
-int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc)
+static int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc)
 {
   if ( s147nand_5_outerinit() < 0 )
     return -1;
@@ -205,13 +204,13 @@ int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc)
 // 405170: using guessed type int (*nand_mdev_ops[17])();
 
 //----- (004001D4) --------------------------------------------------------
-int nand_mdev_op_nulldev()
+static int nand_mdev_op_nulldev(void)
 {
   return 0;
 }
 
 //----- (004001F8) --------------------------------------------------------
-int nand_mdev_op_init(iop_device_t *dev)
+static int nand_mdev_op_init(iop_device_t *dev)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -227,7 +226,7 @@ int nand_mdev_op_init(iop_device_t *dev)
 }
 
 //----- (00400298) --------------------------------------------------------
-int nand_mdev_op_deinit(iop_device_t *dev)
+static int nand_mdev_op_deinit(iop_device_t *dev)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -242,7 +241,7 @@ int nand_mdev_op_deinit(iop_device_t *dev)
 }
 
 //----- (00400300) --------------------------------------------------------
-int nand_mdev_op_open(iop_file_t *f, const char *name, int flags)
+static int nand_mdev_op_open(iop_file_t *f, const char *name, int flags)
 {
   nand_mdev_privdata_stru_ *privdat; // [sp+10h] [+10h]
   int state; // [sp+14h] [+14h] BYREF
@@ -284,7 +283,7 @@ int nand_mdev_op_open(iop_file_t *f, const char *name, int flags)
 }
 
 //----- (004004C4) --------------------------------------------------------
-int nand_mdev_op_close(iop_file_t *f)
+static int nand_mdev_op_close(iop_file_t *f)
 {
   int state; // [sp+10h] [+10h] BYREF
 
@@ -301,7 +300,7 @@ int nand_mdev_op_close(iop_file_t *f)
 }
 
 //----- (00400560) --------------------------------------------------------
-int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
+static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
 {
   int xsize1; // $v0
   int xsize3; // $s0
@@ -372,7 +371,7 @@ int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
 }
 
 //----- (004008BC) --------------------------------------------------------
-int nand_mdev_op_write(iop_file_t *f, void *ptr, int size)
+static int nand_mdev_op_write(iop_file_t *f, void *ptr, int size)
 {
   int retres; // [sp+14h] [+14h]
 
@@ -391,7 +390,7 @@ int nand_mdev_op_write(iop_file_t *f, void *ptr, int size)
 }
 
 //----- (00400980) --------------------------------------------------------
-int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode)
+static int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode)
 {
   nand_mdev_privdata_stru_ *privdat; // [sp+10h] [+10h]
 
@@ -498,7 +497,7 @@ int s147nand_4_dumpprintinfo(int part)
 }
 
 //----- (00400E28) --------------------------------------------------------
-int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, const char *name)
+static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, const char *name)
 {
   int nand_partition_offset; // [sp+10h] [+10h]
 
@@ -519,7 +518,7 @@ int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, const char 
 }
 
 //----- (00400EF8) --------------------------------------------------------
-int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name)
+static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name)
 {
   size_t i; // [sp+10h] [+10h]
   signed __int32 nand_direntry; // [sp+14h] [+14h]
@@ -537,7 +536,7 @@ int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name)
 }
 
 //----- (0040101C) --------------------------------------------------------
-u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, size_t idx, char typ)
+static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, size_t idx, char typ)
 {
   size_t xidx; // $v0
   int lvtyp; // $v0
@@ -616,13 +615,13 @@ u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, si
 // 40101C: using guessed type char name_trunc[24];
 
 //----- (004013E8) --------------------------------------------------------
-int do_nand_bytes2sector(int pageoffs, int byteoffs)
+static int do_nand_bytes2sector(int pageoffs, int byteoffs)
 {
   return pageoffs + byteoffs / 2048;
 }
 
 //----- (0040142C) --------------------------------------------------------
-int do_nand_bytes2sector_remainder(int byteoffs)
+static int do_nand_bytes2sector_remainder(int byteoffs)
 {
   return byteoffs % 2048;
 }
@@ -706,7 +705,7 @@ int s147nand_6_checkformat()
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (00401768) --------------------------------------------------------
-int do_update_acdelay()
+static int do_update_acdelay(void)
 {
   int state[2]; // [sp+18h] [+18h] BYREF
 
@@ -761,7 +760,7 @@ int do_update_acdelay()
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (004019C4) --------------------------------------------------------
-int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size)
+static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size)
 {
   int tpageoffs1; // $v0
   const nand_info_stru_ *nandinf; // $v0
@@ -847,7 +846,7 @@ int s147nand_9_get_nand_partition(int part)
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (00401E14) --------------------------------------------------------
-int get_nand_partition_offset(int part)
+static int get_nand_partition_offset(int part)
 {
   return s147nand_9_get_nand_partition(part) * g_nand_header.m_pages_per_block;
 }
@@ -865,7 +864,7 @@ int s147nand_10_get_nand_partition_size(int part)
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (00401F28) --------------------------------------------------------
-int nand_mdev_open_special(iop_file_t *f, const char *name)
+static int nand_mdev_open_special(iop_file_t *f, const char *name)
 {
   nand_mdev_privdata_stru_ *privdat; // [sp+10h] [+10h]
   int state; // [sp+14h] [+14h] BYREF
@@ -942,7 +941,7 @@ int nand_mdev_open_special(iop_file_t *f, const char *name)
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (00402260) --------------------------------------------------------
-size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size)
+static size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size)
 {
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
   int retres1; // [sp+14h] [+14h]
@@ -986,7 +985,7 @@ size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size)
 }
 
 //----- (0040246C) --------------------------------------------------------
-int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
+static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
 {
   int tpageoffs; // $v0
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
@@ -1048,7 +1047,7 @@ int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (0040274C) --------------------------------------------------------
-size_t do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, size_t size)
+static size_t do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, size_t size)
 {
   int xxsize; // $v0
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
@@ -1069,7 +1068,7 @@ size_t do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, size_t size)
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (0040287C) --------------------------------------------------------
-size_t do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, size_t size)
+static size_t do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, size_t size)
 {
   int xxsize; // $v0
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
@@ -1193,7 +1192,7 @@ int s147nand_14_translate_pageoffs(int pageoffs)
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (00402D80) --------------------------------------------------------
-int dev9_intr_handler(void *unusd)
+static int dev9_intr_handler(void *unusd)
 {
   (void)unusd;
 
@@ -1208,7 +1207,7 @@ int s147nand_15_nandinit()
 
   DisableIntr(41, &intrstate);
   ReleaseIntrHandler(41);
-  RegisterIntrHandler(41, 1, (int (*)(void *))dev9_intr_handler, &g_probunusd_dword_4051D0);
+  RegisterIntrHandler(41, 1, dev9_intr_handler, &g_probunusd_dword_4051D0);
   EnableIntr(41);
   dmac_disable(8u);
   dmac_ch_set_dpcr(8u, 7u);
@@ -1379,7 +1378,7 @@ int s147nand_26_nand_readid(void *ptr)
 }
 
 //----- (004034D4) --------------------------------------------------------
-int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
+static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
   vu8 m_nand_waitflag; // $v0
   int state; // [sp+18h] [+18h] BYREF
@@ -1425,7 +1424,7 @@ int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 // B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
 
 //----- (00403748) --------------------------------------------------------
-int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
+static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
   vu8 m_nand_waitflag; // $v0
   vu8 v6; // $v0
@@ -1468,7 +1467,7 @@ int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 // B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
 
 //----- (004039C4) --------------------------------------------------------
-int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
+static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
   vu8 m_nand_waitflag; // $v0
   vu8 m_nand_outbyte; // $v0
@@ -1523,7 +1522,7 @@ int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 // B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
 
 //----- (00403CAC) --------------------------------------------------------
-int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
+static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
   vu8 m_nand_waitflag; // $v0
   vu8 m_nand_outbyte; // $v0
@@ -1567,7 +1566,7 @@ int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 // B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
 
 //----- (00403F74) --------------------------------------------------------
-int nand_lowlevel_blockerase(int pageoffs)
+static int nand_lowlevel_blockerase(int pageoffs)
 {
   vu8 m_nand_waitflag; // $v0
   vu8 m_nand_outbyte; // $v0
@@ -1602,7 +1601,7 @@ int nand_lowlevel_blockerase(int pageoffs)
 // B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
 
 //----- (00404128) --------------------------------------------------------
-int nand_lowlevel_readid(void *ptr)
+static int nand_lowlevel_readid(void *ptr)
 {
   vu8 m_nand_outbyte; // $v1
   int i; // [sp+0h] [+0h]

@@ -35,33 +35,33 @@ typedef struct nand_header_stru_x
 } nand_header_stru_;
 
 
-int s147nand_4_dumpprintinfo(int part);
-int s147nand_5_outerinit();
-int s147nand_6_checkformat();
-int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt);
-int s147nand_8_multi_write_dma(void *ptr, int pageoffs, int pagecnt);
-int s147nand_9_get_nand_partition(int part);
-int s147nand_10_get_nand_partition_size(int part);
-int s147nand_11_erasetranslatepageoffs(int pageoffs);
-int s147nand_12_load_logaddrtable();
-int s147nand_13_translate_blockoffs(int blockoffs);
-int s147nand_14_translate_pageoffs(int pageoffs);
-int s147nand_15_nandinit();
-nand_info_stru_ *s147nand_16_getnandinfo();
-int s147nand_17_get_sema();
-int s147nand_18_enable_nand_watchdog();
-int s147nand_19_logaddr_read(u16 *tbl, int pageoffs, int bytecnt);
-int s147nand_20_nand_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
-int s147nand_21_nand_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);
-int s147nand_22_nand_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
-int s147nand_23_nand_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);
-int s147nand_24_eraseoffset(int pageoffs);
-int s147nand_25_nand_blockerase(int pageoffs);
-int s147nand_26_nand_readid(void *ptr);
-int s147nand_27_blocks2pages(int blocks);
-int s147nand_28_pages2blocks(int pages);
-int s147nand_29_pages2blockround(int pages);
-int s147nand_30_bytes2pagesnoeccround(int bytes);
+extern int s147nand_4_dumpprintinfo(int part);
+extern int s147nand_5_outerinit();
+extern int s147nand_6_checkformat();
+extern int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt);
+extern int s147nand_8_multi_write_dma(void *ptr, int pageoffs, int pagecnt);
+extern int s147nand_9_get_nand_partition(int part);
+extern int s147nand_10_get_nand_partition_size(int part);
+extern int s147nand_11_erasetranslatepageoffs(int pageoffs);
+extern int s147nand_12_load_logaddrtable();
+extern int s147nand_13_translate_blockoffs(int blockoffs);
+extern int s147nand_14_translate_pageoffs(int pageoffs);
+extern int s147nand_15_nandinit();
+extern nand_info_stru_ *s147nand_16_getnandinfo();
+extern int s147nand_17_get_sema();
+extern int s147nand_18_enable_nand_watchdog();
+extern int s147nand_19_logaddr_read(u16 *tbl, int pageoffs, int bytecnt);
+extern int s147nand_20_nand_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
+extern int s147nand_21_nand_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);
+extern int s147nand_22_nand_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
+extern int s147nand_23_nand_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);
+extern int s147nand_24_eraseoffset(int pageoffs);
+extern int s147nand_25_nand_blockerase(int pageoffs);
+extern int s147nand_26_nand_readid(void *ptr);
+extern int s147nand_27_blocks2pages(int blocks);
+extern int s147nand_28_pages2blocks(int pages);
+extern int s147nand_29_pages2blockround(int pages);
+extern int s147nand_30_bytes2pagesnoeccround(int bytes);
 
 #define s147nand_IMPORTS_start DECLARE_IMPORT_TABLE(s147nand, 4, 2)
 #define s147nand_IMPORTS_end END_IMPORT_TABLE
