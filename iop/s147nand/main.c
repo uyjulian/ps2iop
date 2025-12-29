@@ -1645,9 +1645,9 @@ int s147nand_29_pages2blockround(int pages)
     _break(7u, 0);
   if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
     _break(6u, 0);
-  blocks = pages / g_nand_info.m_pages_per_block;
   if ( !g_nand_info.m_pages_per_block )
     _break(7u, 0);
+  blocks = pages / g_nand_info.m_pages_per_block;
   if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
     _break(6u, 0);
   if ( pages % g_nand_info.m_pages_per_block )
@@ -1665,9 +1665,9 @@ int s147nand_30_bytes2pagesnoeccround(int bytes)
     _break(7u, 0);
   if ( g_nand_info.m_page_size_noecc == -1 && bytes == (int)0x80000000 )
     _break(6u, 0);
-  pages = bytes / g_nand_info.m_page_size_noecc;
   if ( !g_nand_info.m_page_size_noecc )
     _break(7u, 0);
+  pages = bytes / g_nand_info.m_page_size_noecc;
   if ( g_nand_info.m_page_size_noecc == -1 && bytes == (int)0x80000000 )
     _break(6u, 0);
   if ( bytes % g_nand_info.m_page_size_noecc )
