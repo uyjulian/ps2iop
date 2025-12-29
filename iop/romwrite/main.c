@@ -1474,6 +1474,7 @@ int do_output_bb_info(int blocksd, int abspart, int bboffs)
   int result; // $v0
   signed __int8 chrval; // [sp+10h] [+10h]
 
+  (void)abspart;
   chrval = g_blockinfo_str_buf[blocksd];
   if ( blocksd == bboffs )
     chrval = 'I';

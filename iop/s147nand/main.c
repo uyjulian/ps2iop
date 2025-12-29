@@ -1194,6 +1194,8 @@ int s147nand_14_translate_pageoffs(int pageoffs)
 //----- (00402D80) --------------------------------------------------------
 int dev9_intr_handler(void *unusd)
 {
+  (void)unusd;
+
   iWakeupThread(g_thid);
   return 1;
 }
