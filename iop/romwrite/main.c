@@ -100,7 +100,7 @@ BOOL do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt);
 int do_list_files(int part);
 int do_output_bb_info(int blocksd, int abspart, int bboffs);
 int do_verify(void *buf1, void *buf2, int len);
-nand_id_desc_info_stru_ *do_parse_device_info(char *nandid);
+nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid);
 // Unofficial: printf to IOP Kprintf instead of EE
 #define USER_PRINTF(...) Kprintf(__VA_ARGS__)
 // Unofficial: printf to EE is omitted
@@ -1280,7 +1280,7 @@ int do_verify(void *buf1, void *buf2, int len)
 }
 
 //----- (00404454) --------------------------------------------------------
-nand_id_desc_info_stru_ *do_parse_device_info(char *nandid)
+nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
 {
   int i; // [sp+0h] [+0h]
   int cmpval; // [sp+4h] [+4h]

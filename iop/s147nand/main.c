@@ -430,7 +430,7 @@ int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode)
 int s147nand_4_dumpprintinfo(int part)
 {
   nand_direntry_stru_ *dirbuf; // [sp+10h] [+10h]
-  nand_dir_stru_ *hdrbuf; // [sp+14h] [+14h]
+  const nand_dir_stru_ *hdrbuf; // [sp+14h] [+14h]
   signed __int32 retres; // [sp+1Ch] [+1Ch]
   int nand_partition_offset; // [sp+20h] [+20h]
   int i; // [sp+28h] [+28h]
@@ -764,7 +764,7 @@ int do_update_acdelay()
 int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size)
 {
   int tpageoffs1; // $v0
-  nand_info_stru_ *nandinf; // $v0
+  const nand_info_stru_ *nandinf; // $v0
   int tpageoffs2; // $s0
   int dma; // [sp+10h] [+10h]
 
@@ -789,7 +789,7 @@ int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size)
 int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt)
 {
   char *xptr; // $s0
-  nand_info_stru_ *nandinf; // $v0
+  const nand_info_stru_ *nandinf; // $v0
   int xpageoffs; // $s1
   int i; // [sp+14h] [+14h]
   int retres; // [sp+18h] [+18h]
@@ -815,7 +815,7 @@ int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt)
 int s147nand_8_multi_write_dma(void *ptr, int pageoffs, int pagecnt)
 {
   char *xptr; // $s0
-  nand_info_stru_ *nandinf; // $v0
+  const nand_info_stru_ *nandinf; // $v0
   int xpageoffs; // $s1
   int i; // [sp+14h] [+14h]
   int retres; // [sp+18h] [+18h]
@@ -1101,7 +1101,7 @@ int s147nand_11_erasetranslatepageoffs(int pageoffs)
 //----- (004029FC) --------------------------------------------------------
 int s147nand_12_load_logaddrtable()
 {
-  nand_info_stru_ *nandinf; // $v0
+  const nand_info_stru_ *nandinf; // $v0
   nand_header_stru_ hdr; // [sp+10h] [+10h] BYREF
   int state[2]; // [sp+B0h] [+B0h] BYREF
 
