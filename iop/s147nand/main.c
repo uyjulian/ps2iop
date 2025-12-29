@@ -127,23 +127,23 @@ static iop_device_ops_t nand_mdev_ops =
   (void *)&nand_mdev_op_nulldev,
   (void *)&nand_mdev_op_nulldev
 }; // weak
-void *g_nand_unaligned_buf = NULL;
-int g_nand_unaligned_buf_alloced = 0; // weak
-int g_probunusd_dword_4051D0 = 0; // weak
-int g_nand_watchdog_enabled = 0; // weak
-nand_info_stru_ g_nand_info = { 2048, 2112, 64, 2048, 131072 }; // weak
-iop_device_t g_drv; // idb
-void *g_nand_sector_buffer; // idb
-const char *g_dev_name;
-iop_sema_t g_sema_param_dev; // idb
-int g_sema_id_dev; // idb
-iop_sema_t g_seama_param_1; // idb
-int g_sema_id_init; // idb
-nand_header_stru_ g_nand_header; // weak
-u16 *g_logical_addr_tbl;
-iop_sema_t g_sema_param; // idb
-int g_sema_id_nand; // idb
-int g_thid; // idb
+static void *g_nand_unaligned_buf = NULL;
+static int g_nand_unaligned_buf_alloced = 0; // weak
+static int g_probunusd_dword_4051D0 = 0; // weak
+static int g_nand_watchdog_enabled = 0; // weak
+static nand_info_stru_ g_nand_info = { 2048, 2112, 64, 2048, 131072 }; // weak
+static iop_device_t g_drv; // idb
+static void *g_nand_sector_buffer; // idb
+static const char *g_dev_name;
+static iop_sema_t g_sema_param_dev; // idb
+static int g_sema_id_dev; // idb
+static iop_sema_t g_seama_param_1; // idb
+static int g_sema_id_init; // idb
+static nand_header_stru_ g_nand_header; // weak
+static u16 *g_logical_addr_tbl;
+static iop_sema_t g_sema_param; // idb
+static int g_sema_id_nand; // idb
+static int g_thid; // idb
 iop_mmio_hwport_t iop_mmio_hwport_lo; // weak
 s147_dev9_mem_mmio_ s147_dev9_mem_mmio; // weak
 s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio; // weak

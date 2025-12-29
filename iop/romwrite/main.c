@@ -98,7 +98,7 @@ static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid);
 //-------------------------------------------------------------------------
 // Data declarations
 
-nand_id_desc_info_stru_ g_nand_type_info[4] =
+static nand_id_desc_info_stru_ g_nand_type_info[4] =
 {
   {
     { 236u, 218u, 4294967295u, 21u, 4294967295u },
@@ -129,21 +129,21 @@ nand_id_desc_info_stru_ g_nand_type_info[4] =
   },
   { { 0u, 0u, 0u, 0u, 0u }, NULL, NULL, 0, 0, 0, 0 }
 }; // weak
-char g_secr_code_1 = '\0'; // weak
-char g_secr_code_2 = '\0'; // weak
-int g_curflag = 0; // weak
-int g_boot_video_mode = 0; // weak
-void *g_part_buf = NULL; // idb
-char *g_page_buf = NULL; // idb
-int g_badblock_count = 1; // weak
-char g_product_code_tmp[32]; // weak
-u8 *g_blockinfo_str_buf;
-u16 *g_blockinfo_dat_buf;
-nand_id_desc_info_stru_ *g_device_info;
-char g_atfile_part_image[8][256];
-char g_atfile_info_image[0x100]; // idb
-char g_atfile_147_dir[0x100]; // idb
-romwrite_part_buf_ g_nand_partbuf; // weak
+static char g_secr_code_1 = '\0'; // weak
+static char g_secr_code_2 = '\0'; // weak
+static int g_curflag = 0; // weak
+static int g_boot_video_mode = 0; // weak
+static void *g_part_buf = NULL; // idb
+static char *g_page_buf = NULL; // idb
+static int g_badblock_count = 1; // weak
+static char g_product_code_tmp[32]; // weak
+static u8 *g_blockinfo_str_buf;
+static u16 *g_blockinfo_dat_buf;
+static nand_id_desc_info_stru_ *g_device_info;
+static char g_atfile_part_image[8][256];
+static char g_atfile_info_image[0x100]; // idb
+static char g_atfile_147_dir[0x100]; // idb
+static romwrite_part_buf_ g_nand_partbuf; // weak
 s147_dev9_mem_mmio_ s147_dev9_mem_mmio; // weak
 
 
@@ -187,7 +187,7 @@ int _start(int ac, char **av)
   char secrcode1; // [sp+34h] [+34h]
   char secrcode2; // [sp+35h] [+35h]
   int fd; // [sp+38h] [+38h]
-  char *product_code; // [sp+3Ch] [+3Ch]
+  const char *product_code; // [sp+3Ch] [+3Ch]
   int image_file_idx;
 
   // Unofficial: omit SIF output command set to 30
