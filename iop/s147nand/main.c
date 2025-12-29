@@ -397,25 +397,20 @@ int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode)
 
   privdat = (nand_mdev_privdata_stru_ *)f->privdata;
   WaitSema(g_sema_id_dev);
-  if ( mode == 1 )
+  switch (mode)
   {
-    privdat->m_seek_cur += offset;
-  }
-  else if ( mode >= 2 )
-  {
-    if ( mode != 2 )
-      goto LABEL_10;
-    privdat->m_seek_cur = privdat->m_seek_max + offset;
-  }
-  else
-  {
-    if ( mode )
-    {
-LABEL_10:
-      SignalSema(g_sema_id_dev);
-      return -22;
-    }
+  case 0:
     privdat->m_seek_cur = offset;
+    break;
+  case 1:
+    privdat->m_seek_cur += offset;
+    break;
+  case 2:
+    privdat->m_seek_cur = privdat->m_seek_max + offset;
+    break;
+  default:
+    SignalSema(g_sema_id_dev);
+    return -22;
   }
   if ( privdat->m_seek_max >= privdat->m_seek_cur )
   {
@@ -442,11 +437,13 @@ int s147nand_4_dumpprintinfo(int part)
   int j; // [sp+2Ch] [+2Ch]
   int dircnt; // [sp+30h] [+30h]
   int filcnt; // [sp+34h] [+34h]
+  int finished;
   char pathtmp[24]; // [sp+38h] [+38h] BYREF
 
   retres = -1;
   dircnt = 0;
   filcnt = 0;
+  finished = 0;
   nand_partition_offset = get_nand_partition_offset(part);
   if ( nand_partition_offset < 0 )
     return -19;
@@ -472,7 +469,10 @@ int s147nand_4_dumpprintinfo(int part)
       else
       {
         if ( (i << 6) - 1 + j >= retres )
-          goto LABEL_18;
+        {
+          finished = 1;
+          break;
+        }
         strcpy(pathtmp, dirbuf[j].m_name);
         if ( dirbuf[j].m_type == 'D' )
         {
@@ -486,8 +486,11 @@ int s147nand_4_dumpprintinfo(int part)
         Kprintf(" %9d  %s\n", dirbuf[j].m_size, pathtmp);
       }
     }
+    if ( finished )
+    {
+      break;
+    }
   }
-LABEL_18:
   Kprintf(" -----------------------------\n");
   Kprintf("   %d directories, %d files\n", dircnt, filcnt);
   Kprintf("\n");
@@ -554,19 +557,12 @@ u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, si
   size = xidx;
   strncpy(name_trunc, name, xidx);
   name_trunc[size] = 0;
-  offscnt = 0;
-LABEL_5:
-  if ( offscnt < 64 )
+  for ( offscnt = 0; offscnt < 64; ++offscnt )
   {
     s147nand_7_multi_read_dma(g_nand_sector_buffer, privdat->m_partition_offset + offscnt, 1);
     dirbuf = (nand_direntry_stru_ *)g_nand_sector_buffer;
-    for ( i = 0; ; ++i )
+    for ( i = 0; i < 64; ++i )
     {
-      if ( i >= 64 )
-      {
-        ++offscnt;
-        goto LABEL_5;
-      }
       if ( (offscnt << 6) - 1 + i == -1 )
       {
         p = (nand_dir_stru_ *)g_nand_sector_buffer;
@@ -997,44 +993,41 @@ int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
     return -22;
   if ( xsz >= privdata->m_seek_cur + size )
   {
-    if ( (privdata->m_flags & 0x2000000) == 0 )
-      goto LABEL_10;
-  	retres1 = 0;
-    for ( i = 0; i < g_nand_header.m_nand_partition_8_size; ++i )
+    if ( (privdata->m_flags & 0x2000000) != 0 )
     {
-      tpageoffs = s147nand_27_blocks2pages(i + g_nand_header.m_nand_partition_8);
-      retres1 = s147nand_11_erasetranslatepageoffs(tpageoffs);
+      retres1 = 0;
+      for ( i = 0; i < g_nand_header.m_nand_partition_8_size; ++i )
+      {
+        tpageoffs = s147nand_27_blocks2pages(i + g_nand_header.m_nand_partition_8);
+        retres1 = s147nand_11_erasetranslatepageoffs(tpageoffs);
+      }
+      privdata->m_flags &= ~0x2000000u;
+      if ( retres1 )
+      {
+        return retres1;
+      }
     }
-    privdata->m_flags &= ~0x2000000u;
-    if ( retres1 )
+    if ( !g_nand_header.m_page_size_noecc )
+      _break(7u, 0);
+    if ( g_nand_header.m_page_size_noecc == -1 && privdata->m_seek_cur == (int)0x80000000 )
+      _break(6u, 0);
+    if ( !g_nand_header.m_page_size_noecc )
+      _break(7u, 0);
+    if ( g_nand_header.m_page_size_noecc == -1 && size == (int)0x80000000 )
+      _break(6u, 0);
+    retres2 = s147nand_8_multi_write_dma(
+                ptr,
+                privdata->m_seek_cur / g_nand_header.m_page_size_noecc + privdata->m_partition_offset,
+                size / g_nand_header.m_page_size_noecc);
+    if ( retres2 >= 0 )
     {
-      return retres1;
+      privdata->m_seek_cur += size;
+      privdata->m_seek_max = privdata->m_seek_cur;
+      return size;
     }
     else
     {
-LABEL_10:
-      if ( !g_nand_header.m_page_size_noecc )
-        _break(7u, 0);
-      if ( g_nand_header.m_page_size_noecc == -1 && privdata->m_seek_cur == (int)0x80000000 )
-        _break(6u, 0);
-      if ( !g_nand_header.m_page_size_noecc )
-        _break(7u, 0);
-      if ( g_nand_header.m_page_size_noecc == -1 && size == (int)0x80000000 )
-        _break(6u, 0);
-      retres2 = s147nand_8_multi_write_dma(
-                  ptr,
-                  privdata->m_seek_cur / g_nand_header.m_page_size_noecc + privdata->m_partition_offset,
-                  size / g_nand_header.m_page_size_noecc);
-      if ( retres2 >= 0 )
-      {
-        privdata->m_seek_cur += size;
-        privdata->m_seek_max = privdata->m_seek_cur;
-        return size;
-      }
-      else
-      {
-        return retres2;
-      }
+      return retres2;
     }
   }
   else

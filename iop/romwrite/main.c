@@ -166,27 +166,22 @@ int do_format_nand_device(char devindchr)
   char tmp_devindchr; // [sp+10h] [+10h]
 
   tmp_devindchr = devindchr;
-  if ( devindchr == '4' )
+  switch (devindchr)
   {
-    do_set_flag(0x20000);
-    goto LABEL_11;
-  }
-  if ( devindchr >= '5' )
-  {
-    if ( devindchr == '8' )
-    {
-      do_set_flag(0x30000);
-      goto LABEL_11;
-    }
-  }
-  else if ( devindchr == '2' )
-  {
+  case '2':
     do_set_flag(0x10000);
-    goto LABEL_11;
+    break;
+  case '4':
+    do_set_flag(0x20000);
+    break;
+  case '8':
+    do_set_flag(0x30000);
+    break;
+  default:
+    do_set_flag(0xF0000);
+    tmp_devindchr = ' ';
+    break;
   }
-  do_set_flag(0xF0000);
-  tmp_devindchr = ' ';
-LABEL_11:
   if ( is_send_print_to_osdsys() == 1 )
     do_print_to_osdsys_2(" -f%c: Format NAND(atfile:) device\n", tmp_devindchr);
   else
@@ -787,7 +782,6 @@ int do_format_device(int abspart)
   int bboffs; // [sp+1Ch] [+1Ch]
   int nand_partition_offset; // [sp+20h] [+20h]
   int bbcnt1; // [sp+24h] [+24h]
-  int bbcnt2; // [sp+24h] [+24h]
   int eraseres; // [sp+28h] [+28h]
   int i; // [sp+30h] [+30h]
   int xnand_partition_offset; // [sp+34h] [+34h]
@@ -858,43 +852,49 @@ int do_format_device(int abspart)
     }
   }
   blocksb = nand_partition_offset - 1;
+  bbcnt1 = 0;
   if ( g_blockinfo_str_buf[nand_partition_offset - 1] == 'X' )
   {
     bbcnt1 = check_badblock_count();
-    if ( bbcnt1 < 0 )
+    if ( bbcnt1 >= 0 )
     {
-LABEL_69:
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" Error: Too many bad blocks to replace\n");
-      else
-        Kprintf(" Error: Too many bad blocks to replace\n");
-      return -1;
+      g_blockinfo_dat_buf[blocksb] = bbcnt1;
+      g_blockinfo_dat_buf[bbcnt1] = 0xCCCC;
+      g_blockinfo_str_buf[bbcnt1] = '@';
+      bboffs = bbcnt1;
     }
-    g_blockinfo_dat_buf[blocksb] = bbcnt1;
-    g_blockinfo_dat_buf[bbcnt1] = 0xCCCC;
-    g_blockinfo_str_buf[bbcnt1] = '@';
-    bboffs = bbcnt1;
   }
   else
   {
     g_blockinfo_dat_buf[blocksb] = 0xAAAA;
     bboffs = nand_partition_offset - 1;
   }
-  for ( blocksc = nand_partition_offset; blocksc < g_device_info->m_block_size; ++blocksc )
+  if ( bbcnt1 >= 0 )
   {
-    if ( g_blockinfo_str_buf[blocksc] == 'X' )
+    for ( blocksc = nand_partition_offset; blocksc < g_device_info->m_block_size; ++blocksc )
     {
-      bbcnt2 = check_badblock_count();
-      if ( bbcnt2 < 0 )
-        goto LABEL_69;
-      g_blockinfo_dat_buf[blocksc] = bbcnt2;
-      g_blockinfo_dat_buf[bbcnt2] = 0xCCCC;
-      g_blockinfo_str_buf[bbcnt2] = '@';
+      if ( g_blockinfo_str_buf[blocksc] == 'X' )
+      {
+        bbcnt1 = check_badblock_count();
+        if ( bbcnt1 < 0 )
+          break;
+        g_blockinfo_dat_buf[blocksc] = bbcnt1;
+        g_blockinfo_dat_buf[bbcnt1] = 0xCCCC;
+        g_blockinfo_str_buf[bbcnt1] = '@';
+      }
+      else
+      {
+        g_blockinfo_dat_buf[blocksc] = 0xAAAA;
+      }
     }
+  }
+  if ( bbcnt1 < 0 )
+  {
+    if ( is_send_print_to_osdsys() == 1 )
+      do_print_to_osdsys_2(" Error: Too many bad blocks to replace\n");
     else
-    {
-      g_blockinfo_dat_buf[blocksc] = 0xAAAA;
-    }
+      Kprintf(" Error: Too many bad blocks to replace\n");
+    return -1;
   }
   for ( blocksd = 0; blocksd < g_device_info->m_block_size; ++blocksd )
   {
@@ -983,8 +983,6 @@ int do_write_partition(int part)
   int blockoffs1; // $s0
   int blockoffs2; // $v0
   int tblockoffs2; // $v0
-  int m_page_size_noecc; // $v0
-  int xindbytes_max; // $v0
   int blockoffs5; // $v0
   int fd1; // [sp+1Ch] [+1Ch]
   int state; // [sp+20h] [+20h] BYREF
@@ -1000,7 +998,14 @@ int do_write_partition(int part)
   int xind3; // [sp+48h] [+48h]
   int xindbytes; // [sp+4Ch] [+4Ch]
   int i; // [sp+54h] [+54h]
+  int finished;
+  int actual_readres;
+  int expected_readres;
+  int err;
 
+  actual_readres = 0;
+  expected_readres = 0;
+  err = 0;
   if ( part == 9 )
   {
     partblocks1 = (s147nand_9_get_nand_partition(8) - 1) * g_device_info->m_pages_per_block;
@@ -1052,208 +1057,236 @@ int do_write_partition(int part)
       do_print_to_osdsys_2("\nError: AllocSysMemory failed\n\n");
     else
       Kprintf("\nError: AllocSysMemory failed\n\n");
-    goto LABEL_106;
+    err = 1;
   }
-  if ( part != 9 )
+  if ( !err )
   {
-    bytes = lseek(fd1, 0, 2);
-    partsizebytes = s147nand_10_get_nand_partition_size(part)
-                  * g_device_info->m_pages_per_block
-                  * g_device_info->m_page_size_noecc;
-    if ( partsizebytes < bytes )
+    if ( part == 9 )
     {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" Error: ROM image file is too large - \"%s\"\n", g_atfile_part_image[part]);
-      else
-        Kprintf(" Error: ROM image file is too large - \"%s\"\n", g_atfile_part_image[part]);
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" FileSize(%d) > atfile%d(%d)\n", bytes, part, partsizebytes);
-      else
-        Kprintf(" FileSize(%d) > atfile%d(%d)\n", bytes, part, partsizebytes);
-      goto LABEL_106;
-    }
-    lseek(fd1, 0, 0);
-    readres = read(fd1, g_page_buf, 32);
-    if ( (unsigned int)readres < 0x20 )
-    {
-      if ( is_send_print_to_osdsys() == 1 )
-        goto LABEL_93;
-      goto LABEL_94;
-    }
-    if ( strncmp(g_page_buf, "S147ROM", 8) )
-    {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2(" Error: \"%s\" is not a S147ROM-image file\n", g_atfile_part_image[part]);
-      else
-        Kprintf(" Error: \"%s\" is not a S147ROM-image file\n", g_atfile_part_image[part]);
-      goto LABEL_106;
-    }
-    pages = s147nand_30_bytes2pagesnoeccround(bytes);
-    blocks = s147nand_29_pages2blockround(pages);
-    if ( is_send_print_to_osdsys() != 1 )
-      goto LABEL_61;
-LABEL_60:
-    do_print_to_osdsys_2(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
-    goto LABEL_62;
-  }
-  bytes = lseek(fd1, 0, 2);
-  if ( g_device_info->m_page_size_noecc < bytes )
-  {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" Error: INFO image file is too large - \"%s\"\n", g_atfile_info_image);
-    else
-      Kprintf(" Error: INFO image file is too large - \"%s\"\n", g_atfile_info_image);
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" FileSize(%d) > info(%d)\n", bytes, g_device_info->m_page_size_noecc);
-    else
-      Kprintf(" FileSize(%d) > info(%d)\n", bytes, g_device_info->m_page_size_noecc);
-    goto LABEL_106;
-  }
-  lseek(fd1, 0, 0);
-  readres = read(fd1, g_page_buf, 8);
-  if ( readres < 8 )
-  {
-    if ( is_send_print_to_osdsys() == 1 )
-      goto LABEL_93;
-LABEL_94:
-    Kprintf(" Error: File-I/O fault (%d)\n", readres);
-    goto LABEL_106;
-  }
-  if ( strncmp(g_page_buf, "S147INFO", 8) )
-  {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2(" Error: \"%s\" is not a S147INFO-image file\n", g_atfile_info_image);
-    else
-      Kprintf(" Error: \"%s\" is not a S147INFO-image file\n", g_atfile_info_image);
-    goto LABEL_106;
-  }
-  pages = 1;
-  blocks = 1;
-  if ( is_send_print_to_osdsys() == 1 )
-    goto LABEL_60;
-LABEL_61:
-  Kprintf(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
-LABEL_62:
-  lseek(fd1, 0, 0);
-  xind2 = 0;
-  pageoffs = partblocks1;
-  xind1 = 0;
-LABEL_63:
-  if ( xind1 >= blocks )
-  {
-LABEL_105:
-    close(fd1);
-    return 0;
-  }
-  blockoffs1 = s147nand_28_pages2blocks(pageoffs);
-  blockoffs2 = s147nand_28_pages2blocks(pageoffs);
-  tblockoffs2 = s147nand_13_translate_blockoffs(blockoffs2);
-  if ( is_send_print_to_osdsys() == 1 )
-  {
-    do_print_to_osdsys_2(
-      " atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ",
-      part,
-      xind1,
-      blocks - 1,
-      blockoffs1,
-      tblockoffs2);
-  }
-  else
-  {
-    Kprintf(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, blockoffs1, tblockoffs2);
-  }
-  s147_dev9_mem_mmio.m_led = s147nand_28_pages2blocks(pageoffs) & 3;
-  if ( (g_curflag & 0xFF0000) == 0 )
-  {
-    if ( is_send_print_to_osdsys() == 1 )
-      do_print_to_osdsys_2("Erase -> ");
-    else
-      Kprintf("Erase -> ");
-    readres = s147nand_11_erasetranslatepageoffs(pageoffs);
-    if ( readres == -1470020 )
-    {
-      if ( is_send_print_to_osdsys() == 1 )
-        do_print_to_osdsys_2("\nromwrite: Bad block error, use \"-f\" option.\n");
-      else
-        Kprintf("\nromwrite: Bad block error, use \"-f\" option.\n");
-      goto LABEL_106;
-    }
-  }
-  if ( is_send_print_to_osdsys() == 1 )
-    do_print_to_osdsys_2("Write -> Verify\n");
-  else
-    Kprintf("Write -> Verify\n");
-  xind3 = 0;
-  while ( 1 )
-  {
-    if ( xind3 >= g_device_info->m_pages_per_block )
-    {
-      ++xind1;
-      goto LABEL_63;
-    }
-    g_part_buf = &g_nand_partbuf;
-    if ( part != 9 )
-      break;
-    memset(g_part_buf, 0, g_device_info->m_page_size_noecc);
-    if ( g_device_info->m_page_size_noecc < bytes )
-      m_page_size_noecc = g_device_info->m_page_size_noecc;
-    else
-      m_page_size_noecc = bytes;
-    readres = read(fd1, g_part_buf, m_page_size_noecc);
-    if ( readres < 0 )
-    {
-      if ( is_send_print_to_osdsys() == 1 )
-        goto LABEL_93;
-      goto LABEL_94;
-    }
-LABEL_95:
-    for ( i = 0; i <= 0x1FFFF; i += g_device_info->m_page_size_noecc )
-    {
-      s147nand_8_multi_write_dma((char *)g_part_buf + i, pageoffs, 1);
-      s147nand_7_multi_read_dma(g_page_buf, pageoffs, 1);
-      readres = do_verify((char *)g_part_buf + i, g_page_buf, g_device_info->m_page_size_noecc);
-      if ( readres )
+      bytes = lseek(fd1, 0, 2);
+      if ( g_device_info->m_page_size_noecc < bytes )
       {
         if ( is_send_print_to_osdsys() == 1 )
+          do_print_to_osdsys_2(" Error: INFO image file is too large - \"%s\"\n", g_atfile_info_image);
+        else
+          Kprintf(" Error: INFO image file is too large - \"%s\"\n", g_atfile_info_image);
+        if ( is_send_print_to_osdsys() == 1 )
+          do_print_to_osdsys_2(" FileSize(%d) > info(%d)\n", bytes, g_device_info->m_page_size_noecc);
+        else
+          Kprintf(" FileSize(%d) > info(%d)\n", bytes, g_device_info->m_page_size_noecc);
+        err = 1;
+      }
+      if ( !err )
+      {
+        lseek(fd1, 0, 0);
+        expected_readres = 8;
+        actual_readres = read(fd1, g_page_buf, expected_readres);
+        if ( actual_readres < expected_readres )
         {
-          blockoffs5 = s147nand_28_pages2blocks(pageoffs);
-          do_print_to_osdsys_2("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs5, pageoffs);
+          err = 1;
+        }
+        if ( !err )
+        {
+          if ( strncmp(g_page_buf, "S147INFO", 8) )
+          {
+            if ( is_send_print_to_osdsys() == 1 )
+              do_print_to_osdsys_2(" Error: \"%s\" is not a S147INFO-image file\n", g_atfile_info_image);
+            else
+              Kprintf(" Error: \"%s\" is not a S147INFO-image file\n", g_atfile_info_image);
+            err = 1;
+          }
+          if ( !err )
+          {
+            pages = 1;
+            blocks = 1;
+          }
+        }
+      }
+    }
+    else
+    {
+      bytes = lseek(fd1, 0, 2);
+      partsizebytes = s147nand_10_get_nand_partition_size(part)
+                    * g_device_info->m_pages_per_block
+                    * g_device_info->m_page_size_noecc;
+      if ( partsizebytes < bytes )
+      {
+        if ( is_send_print_to_osdsys() == 1 )
+          do_print_to_osdsys_2(" Error: ROM image file is too large - \"%s\"\n", g_atfile_part_image[part]);
+        else
+          Kprintf(" Error: ROM image file is too large - \"%s\"\n", g_atfile_part_image[part]);
+        if ( is_send_print_to_osdsys() == 1 )
+          do_print_to_osdsys_2(" FileSize(%d) > atfile%d(%d)\n", bytes, part, partsizebytes);
+        else
+          Kprintf(" FileSize(%d) > atfile%d(%d)\n", bytes, part, partsizebytes);
+        err = 1;
+      }
+      if ( !err )
+      {
+        lseek(fd1, 0, 0);
+        expected_readres = 0x20;
+        actual_readres = read(fd1, g_page_buf, expected_readres);
+        if ( actual_readres < expected_readres )
+        {
+          err = 1;
+        }
+        if ( !err )
+        {
+          if ( strncmp(g_page_buf, "S147ROM", 8) )
+          {
+            if ( is_send_print_to_osdsys() == 1 )
+              do_print_to_osdsys_2(" Error: \"%s\" is not a S147ROM-image file\n", g_atfile_part_image[part]);
+            else
+              Kprintf(" Error: \"%s\" is not a S147ROM-image file\n", g_atfile_part_image[part]);
+            err = 1;
+          }
+          if ( !err )
+          {
+            pages = s147nand_30_bytes2pagesnoeccround(bytes);
+            blocks = s147nand_29_pages2blockround(pages);
+          }
+        }
+      }
+    }
+  }
+  if ( !err )
+  {
+    if ( is_send_print_to_osdsys() == 1 )
+      do_print_to_osdsys_2(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
+    else
+      Kprintf(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
+    lseek(fd1, 0, 0);
+    xind2 = 0;
+    pageoffs = partblocks1;
+    finished = 0;
+    for ( xind1 = 0; xind1 < blocks; xind1 += 1 )
+    {
+      blockoffs1 = s147nand_28_pages2blocks(pageoffs);
+      blockoffs2 = s147nand_28_pages2blocks(pageoffs);
+      tblockoffs2 = s147nand_13_translate_blockoffs(blockoffs2);
+      if ( is_send_print_to_osdsys() == 1 )
+      {
+        do_print_to_osdsys_2(
+          " atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ",
+          part,
+          xind1,
+          blocks - 1,
+          blockoffs1,
+          tblockoffs2);
+      }
+      else
+      {
+        Kprintf(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, blockoffs1, tblockoffs2);
+      }
+      s147_dev9_mem_mmio.m_led = s147nand_28_pages2blocks(pageoffs) & 3;
+      if ( (g_curflag & 0xFF0000) == 0 )
+      {
+        if ( is_send_print_to_osdsys() == 1 )
+          do_print_to_osdsys_2("Erase -> ");
+        else
+          Kprintf("Erase -> ");
+        readres = s147nand_11_erasetranslatepageoffs(pageoffs);
+        if ( readres == -1470020 )
+        {
+          if ( is_send_print_to_osdsys() == 1 )
+            do_print_to_osdsys_2("\nromwrite: Bad block error, use \"-f\" option.\n");
+          else
+            Kprintf("\nromwrite: Bad block error, use \"-f\" option.\n");
+          err = 1;
+          finished = 1;
+          break;
+        }
+      }
+      if ( is_send_print_to_osdsys() == 1 )
+        do_print_to_osdsys_2("Write -> Verify\n");
+      else
+        Kprintf("Write -> Verify\n");
+      xind3 = 0;
+      while ( xind3 < g_device_info->m_pages_per_block )
+      {
+        g_part_buf = &g_nand_partbuf;
+        if ( part != 9 )
+        {
+          xindbytes = bytes - xind2 * g_device_info->m_page_size_noecc;
+          if ( xindbytes > 0x20000 )
+            expected_readres = 0x20000;
+          else
+            expected_readres = xindbytes;
         }
         else
         {
-          blockoffs5 = s147nand_28_pages2blocks(pageoffs);
-          Kprintf("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs5, pageoffs);
+          memset(g_part_buf, 0, g_device_info->m_page_size_noecc);
+          if ( g_device_info->m_page_size_noecc < bytes )
+            expected_readres = g_device_info->m_page_size_noecc;
+          else
+            expected_readres = bytes;
         }
-        goto LABEL_106;
+        // Unofficial: check against read bytes instead of 0
+        actual_readres = read(fd1, g_part_buf, expected_readres);
+        if ( actual_readres < expected_readres )
+        {
+          err = 1;
+          finished = 1;
+          break;
+        }
+        for ( i = 0; i <= 0x1FFFF; i += g_device_info->m_page_size_noecc )
+        {
+          s147nand_8_multi_write_dma((char *)g_part_buf + i, pageoffs, 1);
+          s147nand_7_multi_read_dma(g_page_buf, pageoffs, 1);
+          readres = do_verify((char *)g_part_buf + i, g_page_buf, g_device_info->m_page_size_noecc);
+          if ( readres )
+          {
+            if ( is_send_print_to_osdsys() == 1 )
+            {
+              blockoffs5 = s147nand_28_pages2blocks(pageoffs);
+              do_print_to_osdsys_2("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs5, pageoffs);
+            }
+            else
+            {
+              blockoffs5 = s147nand_28_pages2blocks(pageoffs);
+              Kprintf("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs5, pageoffs);
+            }
+            err = 1;
+            finished = 1;
+            break;
+          }
+          ++pageoffs;
+          ++xind2;
+          ++xind3;
+          if ( xind2 >= pages )
+          {
+            finished = 1;
+            break;
+          }
+        }
+        if ( finished )
+          break;
       }
-      ++pageoffs;
-      ++xind2;
-      ++xind3;
-      if ( xind2 >= pages )
-        goto LABEL_105;
+      if ( finished )
+        break;
     }
   }
-  xindbytes = bytes - xind2 * g_device_info->m_page_size_noecc;
-  if ( xindbytes > 0x20000 )
-    xindbytes_max = 0x20000;
-  else
-    xindbytes_max = xindbytes;
-  readres = read(fd1, g_part_buf, xindbytes_max);
-  if ( readres >= 0 )
-    goto LABEL_95;
-  if ( is_send_print_to_osdsys() != 1 )
-    goto LABEL_94;
-LABEL_93:
-  do_print_to_osdsys_2(" Error: File-I/O fault (%d)\n", readres);
-LABEL_106:
-  close(fd1);
-  CpuSuspendIntr(&state);
-  if ( g_part_buf )
-    FreeSysMemory(g_part_buf);
-  if ( g_page_buf )
-    FreeSysMemory(g_page_buf);
-  CpuResumeIntr(state);
-  return -1;
+  if ( actual_readres < expected_readres )
+  {
+    if ( is_send_print_to_osdsys() == 1 )
+      do_print_to_osdsys_2(" Error: File-I/O fault (%d)\n", actual_readres);
+    else
+      Kprintf(" Error: File-I/O fault (%d)\n", actual_readres);
+  }
+  if ( fd1 >= 0 )
+  {
+    close(fd1);
+  }
+  if ( err )
+  {
+    CpuSuspendIntr(&state);
+    if ( g_part_buf )
+      FreeSysMemory(g_part_buf);
+    if ( g_page_buf )
+      FreeSysMemory(g_page_buf);
+    CpuResumeIntr(state);
+  }
+  return err ? -1 : 0;
 }
 // 4055CC: using guessed type int do_print_to_osdsys_2(const char *, ...);
 // 407CA4: using guessed type int g_curflag;
@@ -1385,26 +1418,21 @@ int do_list_files(int part)
   int i; // [sp+2Ch] [+2Ch]
   int dircnt; // [sp+30h] [+30h]
   int filcnt; // [sp+34h] [+34h]
+  int finished;
   char pathtmp[24]; // [sp+38h] [+38h] BYREF
 
   m_entrycnt = -1;
   dircnt = 0;
   filcnt = 0;
+  finished = 0;
   pageoffs = s147nand_9_get_nand_partition(part) * g_device_info->m_pages_per_block;
   if ( pageoffs < 0 )
     return -19;
-  xind1 = 0;
-LABEL_4:
-  if ( xind1 < 64 )
+  for ( xind1 = 0; xind1 < 64; ++xind1 )
   {
     s147nand_7_multi_read_dma(&g_nand_partbuf, pageoffs + xind1, 1);
-    for ( i = 0; ; ++i )
+    for ( i = 0; i < 64; ++i )
     {
-      if ( i >= 64 )
-      {
-        ++xind1;
-        goto LABEL_4;
-      }
       if ( (xind1 << 6) - 1 + i == -1 )
       {
         if ( strncmp((const char *)&g_nand_partbuf, "S147ROM", 8) )
@@ -1432,7 +1460,10 @@ LABEL_4:
       else
       {
         if ( (xind1 << 6) - 1 + i >= m_entrycnt )
+        {
+          finished = 1;
           break;
+        }
         strcpy(pathtmp, (const char *)&g_nand_partbuf + 32 * i);
         if ( g_nand_partbuf.m_direntry[i].m_type == 'D' )
         {
@@ -1449,6 +1480,10 @@ LABEL_4:
           Kprintf(" %9d  %s\n", g_nand_partbuf.m_direntry[i].m_size, pathtmp);
         DelayThread(20000);
       }
+    }
+    if ( finished )
+    {
+      break;
     }
   }
   if ( is_send_print_to_osdsys() == 1 )
