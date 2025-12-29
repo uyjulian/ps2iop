@@ -36,20 +36,20 @@ typedef struct nand_header_stru_x
 
 
 extern int s147nand_4_dumpprintinfo(int part);
-extern int s147nand_5_outerinit();
-extern int s147nand_6_checkformat();
+extern int s147nand_5_outerinit(void);
+extern void s147nand_6_checkformat(void);
 extern int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt);
 extern int s147nand_8_multi_write_dma(void *ptr, int pageoffs, int pagecnt);
 extern int s147nand_9_get_nand_partition(int part);
 extern int s147nand_10_get_nand_partition_size(int part);
 extern int s147nand_11_erasetranslatepageoffs(int pageoffs);
-extern int s147nand_12_load_logaddrtable();
+extern int s147nand_12_load_logaddrtable(void);
 extern int s147nand_13_translate_blockoffs(int blockoffs);
 extern int s147nand_14_translate_pageoffs(int pageoffs);
-extern int s147nand_15_nandinit();
-extern nand_info_stru_ *s147nand_16_getnandinfo();
-extern int s147nand_17_get_sema();
-extern int s147nand_18_enable_nand_watchdog();
+extern int s147nand_15_nandinit(void);
+extern nand_info_stru_ *s147nand_16_getnandinfo(void);
+extern int s147nand_17_get_sema(void);
+extern void s147nand_18_enable_nand_watchdog(void);
 extern int s147nand_19_logaddr_read(u16 *tbl, int pageoffs, int bytecnt);
 extern int s147nand_20_nand_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
 extern int s147nand_21_nand_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);

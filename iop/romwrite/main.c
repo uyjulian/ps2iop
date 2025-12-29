@@ -76,12 +76,12 @@ typedef union romwrite_part_buf_x
 // Function declarations
 
 static void thread_proc(void *userdata); // weak
-static BOOL do_toggle_dev9addr_inner(int len, int cnt);
-static int set_boot_video_mode(int flg);
-static int do_set_flag(int flg);
-static int do_set_secr_code(char code1, unsigned __int8 code2);
-static int do_handle_atfile_image(int part, const char *str);
-static char *do_set_atfile_147_dir(const char *str);
+static void do_toggle_dev9addr_inner(int len, int cnt);
+static void set_boot_video_mode(int flg);
+static void do_set_flag(int flg);
+static void do_set_secr_code(char code1, unsigned __int8 code2);
+static void do_handle_atfile_image(int part, const char *str);
+static void do_set_atfile_147_dir(const char *str);
 static int do_start_write_proc(void);
 static int do_format_device(int abspart);
 static int do_write_partition(int part);
@@ -90,9 +90,9 @@ static int get_nand_partition_offset(int part, int abspart);
 static int get_nand_partition_size(int part, int abspart);
 static int get_nand_block_size_div_32_div_64(void);
 static int get_nand_block_size_div_32(void);
-static BOOL do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt);
+static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt);
 static int do_list_files(int part);
-static int do_output_bb_info(int blocksd, int abspart, int bboffs);
+static void do_output_bb_info(int blocksd, int abspart, int bboffs);
 static int do_verify(void *buf1, void *buf2, int len);
 static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid);
 // Unofficial: printf to IOP Kprintf instead of EE
@@ -153,7 +153,7 @@ s147_dev9_mem_mmio_ s147_dev9_mem_mmio; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-static int do_format_nand_device(char devindchr)
+static void do_format_nand_device(char devindchr)
 {
   char tmp_devindchr; // [sp+10h] [+10h]
 
@@ -175,7 +175,6 @@ static int do_format_nand_device(char devindchr)
     break;
   }
   STATUS_PRINTF(" -f%c: Format NAND(atfile:) device\n", tmp_devindchr);
-  return 0;
 }
 
 //----- (00400104) --------------------------------------------------------
@@ -383,16 +382,12 @@ static void thread_proc(void *userdata)
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
 //----- (00400D00) --------------------------------------------------------
-static BOOL do_toggle_dev9addr_inner(int len, int cnt)
+static void do_toggle_dev9addr_inner(int len, int cnt)
 {
-  BOOL result; // $v0
   int i; // [sp+10h] [+10h]
 
-  for ( i = 0; ; ++i )
+  for ( i = 0; i < cnt; ++i )
   {
-    result = i < cnt;
-    if ( i >= cnt )
-      break;
     if ( len > 0 )
     {
       s147_dev9_mem_mmio.m_led = 3;
@@ -404,7 +399,6 @@ static BOOL do_toggle_dev9addr_inner(int len, int cnt)
       DelayThread(10 * (100 - len));
     }
   }
-  return result;
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
@@ -421,60 +415,44 @@ static unsigned int generate_acio_delay_val(char dmat_val, char rddl_val, char w
 // Send print to OSDSYS related omitted
 
 //----- (00400FD8) --------------------------------------------------------
-static int set_boot_video_mode(int flg)
+static void set_boot_video_mode(int flg)
 {
-  int result; // $v0
-
-  result = flg;
   g_boot_video_mode = flg;
-  return result;
 }
 // 407CAC: using guessed type int g_boot_video_mode;
 
 //----- (00401004) --------------------------------------------------------
-static int do_set_flag(int flg)
+static void do_set_flag(int flg)
 {
-  int result; // $v0
-
-  result = g_curflag | flg;
   g_curflag |= flg;
-  return result;
 }
 // 407CA4: using guessed type int g_curflag;
 
 //----- (00401040) --------------------------------------------------------
-static int do_set_secr_code(char code1, unsigned __int8 code2)
+static void do_set_secr_code(char code1, unsigned __int8 code2)
 {
-  int result; // $v0
-
   g_secr_code_1 = code1;
-  result = code2;
   g_secr_code_2 = code2;
-  return result;
 }
 // 407CA0: using guessed type char g_secr_code_1;
 // 407CA1: using guessed type char g_secr_code_2;
 
 //----- (00401084) --------------------------------------------------------
-static int do_handle_atfile_image(int part, const char *str)
+static void do_handle_atfile_image(int part, const char *str)
 {
-  int result; // $v0
-
   if ( part == 9 )
-    return (int)strcpy(g_atfile_info_image, str);
-  result = part;
-  if ( part >= 0 )
+    strcpy(g_atfile_info_image, str);
+  else if ( part >= 0 && part < 8 && g_atfile_part_image[part] != str )
   {
-    if ( part < 8 )
-      return (int)strcpy(g_atfile_part_image[part], str);
+    // Unofficial: check if pointer is different
+    strcpy(g_atfile_part_image[part], str);
   }
-  return result;
 }
 
 //----- (0040113C) --------------------------------------------------------
-static char *do_set_atfile_147_dir(const char *str)
+static void do_set_atfile_147_dir(const char *str)
 {
-  return strcpy(g_atfile_147_dir, str);
+  strcpy(g_atfile_147_dir, str);
 }
 
 //----- (00401178) --------------------------------------------------------
@@ -1127,25 +1105,20 @@ static int get_nand_block_size_div_32(void)
 }
 
 //----- (00403C64) --------------------------------------------------------
-static BOOL do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt)
+static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt)
 {
-  BOOL result; // $v0
   int i; // [sp+10h] [+10h]
   int bytecnt; // [sp+14h] [+14h]
 
   bytecnt = s147nand_30_bytes2pagesnoeccround(pagecnt);
-  for ( i = 0; ; ++i )
+  for ( i = 0; i < bytecnt; ++i )
   {
-    result = i < bytecnt;
-    if ( i >= bytecnt )
-      break;
     s147nand_22_nand_write_dma(
       (char *)ptr + 4 * (g_device_info->m_page_size_noecc >> 2) * i,
       pageoffs + i,
       0,
       g_device_info->m_page_size_noecc);
   }
-  return result;
 }
 
 //----- (00403D40) --------------------------------------------------------
@@ -1218,9 +1191,8 @@ static int do_list_files(int part)
 // 408700: using guessed type romwrite_part_buf_ g_nand_partbuf;
 
 //----- (004041F4) --------------------------------------------------------
-static int do_output_bb_info(int blocksd, int abspart, int bboffs)
+static void do_output_bb_info(int blocksd, int abspart, int bboffs)
 {
-  int result; // $v0
   signed __int8 chrval; // [sp+10h] [+10h]
 
   (void)abspart;
@@ -1236,12 +1208,10 @@ static int do_output_bb_info(int blocksd, int abspart, int bboffs)
   {
     STATUS_PRINTF(" ");
   }
-  result = blocksd & 0x3F;
-  if ( result == '?' )
+  if ( (blocksd & 0x3F) == '?' )
   {
     STATUS_PRINTF("\n");
   }
-  return result;
 }
 
 //----- (00404380) --------------------------------------------------------

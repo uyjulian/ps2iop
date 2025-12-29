@@ -627,7 +627,7 @@ static int do_nand_bytes2sector_remainder(int byteoffs)
 }
 
 //----- (00401480) --------------------------------------------------------
-int s147nand_5_outerinit()
+int s147nand_5_outerinit(void)
 {
   int initres; // [sp+10h] [+10h]
 
@@ -657,7 +657,7 @@ int s147nand_5_outerinit()
 }
 
 //----- (00401558) --------------------------------------------------------
-int s147nand_6_checkformat()
+void s147nand_6_checkformat(void)
 {
   int state; // [sp+10h] [+10h] BYREF
   nand_info_stru_ *nandinf; // [sp+14h] [+14h]
@@ -693,19 +693,17 @@ int s147nand_6_checkformat()
     Kprintf("s147nand.irx: BlockSize   = %d (Blocks)\n", nandinf->m_block_size);
     Kprintf("s147nand.irx: PageSize    = %d (Pages)\n", nandinf->m_page_count);
     Kprintf("\n");
-    return 0;
   }
   else
   {
     Kprintf("s147nand.irx: Unformatted device\n");
     Kprintf("\n");
-    return 0;
   }
 }
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (00401768) --------------------------------------------------------
-static int do_update_acdelay(void)
+static void do_update_acdelay(void)
 {
   int state[2]; // [sp+18h] [+18h] BYREF
 
@@ -755,7 +753,6 @@ static int do_update_acdelay(void)
     Kprintf("s147nand.irx: Old version format, no update\n");
     DelayThread(10000);
   }
-  return 0;
 }
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
@@ -1098,7 +1095,7 @@ int s147nand_11_erasetranslatepageoffs(int pageoffs)
 }
 
 //----- (004029FC) --------------------------------------------------------
-int s147nand_12_load_logaddrtable()
+int s147nand_12_load_logaddrtable(void)
 {
   const nand_info_stru_ *nandinf; // $v0
   nand_header_stru_ hdr; // [sp+10h] [+10h] BYREF
@@ -1201,7 +1198,7 @@ static int dev9_intr_handler(void *unusd)
 }
 
 //----- (00402DC0) --------------------------------------------------------
-int s147nand_15_nandinit()
+int s147nand_15_nandinit(void)
 {
   int intrstate; // [sp+10h] [+10h] BYREF
 
@@ -1226,26 +1223,22 @@ int s147nand_15_nandinit()
 // 1F800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport_lo;
 
 //----- (00402EC0) --------------------------------------------------------
-nand_info_stru_ *s147nand_16_getnandinfo()
+nand_info_stru_ *s147nand_16_getnandinfo(void)
 {
   return &g_nand_info;
 }
 // 4051D8: using guessed type nand_info_stru_ g_nand_info;
 
 //----- (00402EE8) --------------------------------------------------------
-int s147nand_17_get_sema()
+int s147nand_17_get_sema(void)
 {
   return g_sema_id_nand;
 }
 
 //----- (00402F5C) --------------------------------------------------------
-int s147nand_18_enable_nand_watchdog()
+void s147nand_18_enable_nand_watchdog(void)
 {
-  int result; // $v0
-
-  result = 1;
   g_nand_watchdog_enabled = 1;
-  return result;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
 
