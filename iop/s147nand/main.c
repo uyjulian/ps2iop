@@ -537,7 +537,6 @@ int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name)
 u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, size_t idx, char typ)
 {
   size_t xidx; // $v0
-  int v5; // $a1
   int lvtyp; // $v0
   nand_direntry_stru_ *dirbuf; // [sp+14h] [+14h]
   nand_dir_stru_ *p; // [sp+18h] [+18h]
@@ -578,7 +577,7 @@ LABEL_5:
         }
         if ( p->m_ver >= 0x101u )
         {
-          Kprintf("s147nand.irx: Version 0x%04x format is not supported\n", v5);
+          Kprintf("s147nand.irx: Version 0x%04x format is not supported\n", p->m_ver);
           return -19;
         }
         hdrret = p->m_entrycnt;
@@ -618,7 +617,6 @@ LABEL_5:
   }
   return -2;
 }
-// 4011EC: variable 'v5' is possibly undefined
 // 40101C: using guessed type char name_trunc[24];
 
 //----- (004013E8) --------------------------------------------------------
@@ -775,7 +773,7 @@ int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size)
   int dma; // [sp+10h] [+10h]
 
   WaitSema(g_sema_id_init);
-  if ( ((unsigned __int8)ptr & 3) != 0 || (byteoffs & 3) != 0 || (size & 3) != 0 )
+  if ( ((uiptr)ptr & 3) != 0 || (byteoffs & 3) != 0 || (size & 3) != 0 )
   {
     tpageoffs2 = s147nand_14_translate_pageoffs(pageoffs);
     nandinf = s147nand_16_getnandinfo();
@@ -861,7 +859,7 @@ int s147nand_10_get_nand_partition_size(int part)
   if ( part == 8 )
     return g_nand_header.m_nand_partition_8_size;
   if ( part >= 0 && part < 8 )
-    return *(_DWORD *)&g_nand_header.m_nand_seccode[4 * part - 30];
+    return g_nand_header.m_nand_partition_info[(2 * part) + 1];
   return 0;
 }
 // 405258: using guessed type nand_header_stru_ g_nand_header;
@@ -1001,6 +999,7 @@ int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
   {
     if ( (privdata->m_flags & 0x2000000) == 0 )
       goto LABEL_10;
+  	retres1 = 0;
     for ( i = 0; i < g_nand_header.m_nand_partition_8_size; ++i )
     {
       tpageoffs = s147nand_27_blocks2pages(i + g_nand_header.m_nand_partition_8);

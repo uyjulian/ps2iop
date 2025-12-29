@@ -80,9 +80,7 @@ char *do_read_product_code(int fd);
 int _start(int ac, char **av);
 void thread_proc(); // weak
 BOOL do_toggle_dev9addr_inner(int len, int cnt);
-int unusedsub_400DF0(char a1, char a2, char a3);
 unsigned int generate_acio_delay_val(char dmat_val, char rddl_val, char wrdl_val);
-int unusedsub_400EE8(int a1);
 int set_send_print_to_osdsys(int flg);
 int is_send_print_to_osdsys();
 int set_boot_video_mode(int flg);
@@ -338,7 +336,7 @@ int _start(int ac, char **av)
               tmp_secrcode = strtol(av[++i], 0, 10);
               secrcode2 = tmp_secrcode;
               do_set_flag(0x1000000);
-              do_set_secr_code(secrcode1, tmp_secrcode);
+              do_set_secr_code(secrcode1, secrcode2);
             }
             break;
           default:
@@ -466,27 +464,15 @@ BOOL do_toggle_dev9addr_inner(int len, int cnt)
 }
 // B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
 
-//----- (00400DF0) --------------------------------------------------------
-int unusedsub_400DF0(char a1, char a2, char a3)
-{
-  return (((a1 - 1) & 0xF) << 24) | (16 * ((a2 - 1) & 0xF)) | 0x201A2100 | (a3 - 1) & 0xF;
-}
+// Unused function omitted
 
 //----- (00400E6C) --------------------------------------------------------
 unsigned int generate_acio_delay_val(char dmat_val, char rddl_val, char wrdl_val)
 {
-  return (((dmat_val - 1) & 0xF) << 24) | (16 * ((rddl_val - 1) & 0xF)) | 0xA01A0100 | (wrdl_val - 1) & 0xF;
+  return (((dmat_val - 1) & 0xF) << 24) | (16 * ((rddl_val - 1) & 0xF)) | 0xA01A0100 | ((wrdl_val - 1) & 0xF);
 }
 
-//----- (00400EE8) --------------------------------------------------------
-int unusedsub_400EE8(int a1)
-{
-  s147_dev9_mem_mmio.m_led = 3;
-  DelayThread(100 * a1);
-  s147_dev9_mem_mmio.m_led = 0;
-  return DelayThread(100 * (100 - a1));
-}
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
+// Unused function omitted
 
 //----- (00400F7C) --------------------------------------------------------
 int set_send_print_to_osdsys(int flg)
@@ -997,13 +983,9 @@ int do_write_partition(int part)
   int blockoffs1; // $s0
   int blockoffs2; // $v0
   int tblockoffs2; // $v0
-  int blockoffs3; // $s0
-  int blockoffs4; // $v0
-  int tblockoffs4; // $v0
   int m_page_size_noecc; // $v0
   int xindbytes_max; // $v0
   int blockoffs5; // $v0
-  int blockoffs6; // $v0
   int fd1; // [sp+1Ch] [+1Ch]
   int state; // [sp+20h] [+20h] BYREF
   int bytes; // [sp+24h] [+24h]
@@ -1017,7 +999,6 @@ int do_write_partition(int part)
   int readres; // [sp+44h] [+44h]
   int xind3; // [sp+48h] [+48h]
   int xindbytes; // [sp+4Ch] [+4Ch]
-  int size; // [sp+50h] [+50h]
   int i; // [sp+54h] [+54h]
 
   if ( part == 9 )
@@ -1164,11 +1145,11 @@ LABEL_105:
     close(fd1);
     return 0;
   }
+  blockoffs1 = s147nand_28_pages2blocks(pageoffs);
+  blockoffs2 = s147nand_28_pages2blocks(pageoffs);
+  tblockoffs2 = s147nand_13_translate_blockoffs(blockoffs2);
   if ( is_send_print_to_osdsys() == 1 )
   {
-    blockoffs1 = s147nand_28_pages2blocks(pageoffs);
-    blockoffs2 = s147nand_28_pages2blocks(pageoffs);
-    tblockoffs2 = s147nand_13_translate_blockoffs(blockoffs2);
     do_print_to_osdsys_2(
       " atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ",
       part,
@@ -1179,10 +1160,7 @@ LABEL_105:
   }
   else
   {
-    blockoffs3 = s147nand_28_pages2blocks(pageoffs);
-    blockoffs4 = s147nand_28_pages2blocks(pageoffs);
-    tblockoffs4 = s147nand_13_translate_blockoffs(blockoffs4);
-    Kprintf(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, blockoffs3, tblockoffs4);
+    Kprintf(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, blockoffs1, tblockoffs2);
   }
   s147_dev9_mem_mmio.m_led = s147nand_28_pages2blocks(pageoffs) & 3;
   if ( (g_curflag & 0xFF0000) == 0 )
@@ -1221,7 +1199,6 @@ LABEL_105:
       m_page_size_noecc = g_device_info->m_page_size_noecc;
     else
       m_page_size_noecc = bytes;
-    size = m_page_size_noecc;
     readres = read(fd1, g_part_buf, m_page_size_noecc);
     if ( readres < 0 )
     {
@@ -1244,8 +1221,8 @@ LABEL_95:
         }
         else
         {
-          blockoffs6 = s147nand_28_pages2blocks(pageoffs);
-          Kprintf("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs6, pageoffs);
+          blockoffs5 = s147nand_28_pages2blocks(pageoffs);
+          Kprintf("romwrite: Verify error - LogBlock=%d LogPage=%d\n", blockoffs5, pageoffs);
         }
         goto LABEL_106;
       }
@@ -1261,7 +1238,6 @@ LABEL_95:
     xindbytes_max = 0x20000;
   else
     xindbytes_max = xindbytes;
-  size = xindbytes_max;
   readres = read(fd1, g_part_buf, xindbytes_max);
   if ( readres >= 0 )
     goto LABEL_95;
