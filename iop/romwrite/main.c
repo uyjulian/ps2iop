@@ -345,7 +345,7 @@ static void thread_proc(void *userdata)
   if ( do_start_write_proc() )
   {
     STATUS_PRINTF("\n****** Aborted ******\n\n");
-    while ( 1 )
+    for ( ;; )
     {
       s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
       s147_dev9_mem_mmio.m_led = 1;
@@ -356,7 +356,7 @@ static void thread_proc(void *userdata)
     }
   }
   STATUS_PRINTF("====== Completed ======\n\n");
-  while ( 1 )
+  for ( ;; )
   {
     for ( i = 1; i < 20; ++i )
     {
@@ -901,8 +901,7 @@ static int do_write_partition(int part)
         }
       }
       STATUS_PRINTF("Write -> Verify\n");
-      xind3 = 0;
-      while ( xind3 < g_device_info->m_pages_per_block )
+      for ( xind3 = 0; xind3 < g_device_info->m_pages_per_block; )
       {
         g_part_buf = &g_nand_partbuf;
         if ( part != 9 )
@@ -978,11 +977,10 @@ static int do_write_partition(int part)
 //----- (00403758) --------------------------------------------------------
 static int check_badblock_count(void)
 {
-  while ( g_badblock_count < get_nand_partition_offset(8, 8) - 1 )
+  for ( ; g_badblock_count < get_nand_partition_offset(8, 8) - 1; ++g_badblock_count )
   {
     if ( g_blockinfo_str_buf[g_badblock_count] == 'R' )
       return g_badblock_count++;
-    ++g_badblock_count;
   }
   return -1;
 }

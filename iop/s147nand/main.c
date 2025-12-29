@@ -308,14 +308,12 @@ static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
   int xsector2; // [sp+24h] [+24h]
   int xsize2; // [sp+28h] [+28h]
   int cursz; // [sp+2Ch] [+2Ch]
-  int ind; // [sp+30h] [+30h]
   int special; // [sp+34h] [+34h]
   int pageoffs; // [sp+38h] [+38h]
   int remainnnutes; // [sp+3Ch] [+3Ch]
 
   privdat = (nand_mdev_privdata_stru_ *)f->privdata;
   ptr_char = (char *)ptr;
-  cursz = 0;
   WaitSema(g_sema_id_dev);
   if ( privdat->m_seek_cur >= privdat->m_seek_max )
   {
@@ -339,17 +337,13 @@ static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
   }
   xsector1 = do_nand_bytes2sector(privdat->m_partition_offset, privdat->m_seek_cur + xsize2);
   xsector2 = do_nand_bytes2sector_remainder(privdat->m_seek_cur + xsize2);
-  ind = 0;
-  while ( cursz < xsize2 )
+  for ( cursz = 0; cursz < xsize2; cursz += xsize3 )
   {
     pageoffs = do_nand_bytes2sector(privdat->m_partition_offset, privdat->m_seek_cur);
     remainnnutes = do_nand_bytes2sector_remainder(privdat->m_seek_cur);
     xsize3 = (( pageoffs >= xsector1 ) ? xsector2 : 2048) - do_nand_bytes2sector_remainder(privdat->m_seek_cur);
-    do_nand_sector_rw(ptr_char, pageoffs, remainnnutes, xsize3);
+    do_nand_sector_rw(ptr_char + cursz, pageoffs, remainnnutes, xsize3);
     privdat->m_seek_cur += xsize3;
-    ptr_char += xsize3;
-    cursz += xsize3;
-    ++ind;
   }
   SignalSema(g_sema_id_dev);
   return xsize2;
@@ -497,13 +491,13 @@ static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *na
   size_t i; // [sp+10h] [+10h]
   signed __int32 nand_direntry; // [sp+14h] [+14h]
 
-  for ( i = 0; name[i] != '/'; ++i )
+  for ( i = 0; name[i] && name[i] != '/'; ++i );
+  if ( name[i] == '/' )
   {
-    if ( !name[i] )
-      return do_get_nand_direntry(privdat, name, i, 'F');
+    nand_direntry = do_get_nand_direntry(privdat, name, i, 'D');
+    return ( nand_direntry >= 0 ) ? do_nand_open_inner2(privdat, &name[i + 1]) : nand_direntry;
   }
-  nand_direntry = do_get_nand_direntry(privdat, name, i, 'D');
-  return ( nand_direntry >= 0 ) ? do_nand_open_inner2(privdat, &name[i + 1]) : nand_direntry;
+  return do_get_nand_direntry(privdat, name, i, 'F');
 }
 
 //----- (0040101C) --------------------------------------------------------
@@ -1265,7 +1259,6 @@ int s147nand_26_nand_readid(void *ptr)
 //----- (004034D4) --------------------------------------------------------
 static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
-  vu8 m_nand_waitflag; // $v0
   int state; // [sp+18h] [+18h] BYREF
   u32 size; // [sp+1Ch] [+1Ch]
   __int16 v10; // [sp+30h] [+30h]
@@ -1288,9 +1281,7 @@ static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int byt
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x30;
   CpuResumeIntr(state);
-  do
-    m_nand_waitflag = s147nand_dev9_io_mmio.m_nand_waitflag;
-  while ( (m_nand_waitflag & 1) != 0 );
+  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   CpuSuspendIntr(&state);
   s147_dev9_mem_mmio.m_security_unlock_unlock = 0;
   dmac_request(8u, ptr, size, 1u, 0);
@@ -1311,9 +1302,6 @@ static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int byt
 //----- (00403748) --------------------------------------------------------
 static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
-  vu8 m_nand_waitflag; // $v0
-  vu8 v6; // $v0
-  vu8 m_nand_outbyte; // $v1
   int i; // [sp+0h] [+0h]
 
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
@@ -1322,9 +1310,7 @@ static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int byt
     return -1470010;
   if ( bytecnt <= 0 || g_nand_info.m_page_size_withecc < byteoffs + bytecnt )
     return -1470010;
-  do
-    m_nand_waitflag = s147nand_dev9_io_mmio.m_nand_waitflag;
-  while ( (m_nand_waitflag & 1) != 0 );
+  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 1;
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = byteoffs;
@@ -1333,14 +1319,9 @@ static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int byt
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(pageoffs & 0xFF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x30;
-  do
-    v6 = s147nand_dev9_io_mmio.m_nand_waitflag;
-  while ( (v6 & 1) != 0 );
+  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   for ( i = 0; i < bytecnt; ++i )
-  {
-    m_nand_outbyte = s147nand_dev9_io_mmio.m_nand_outbyte;
-    *((_BYTE *)ptr + i) = m_nand_outbyte;
-  }
+    ((_BYTE *)ptr)[i] = s147nand_dev9_io_mmio.m_nand_outbyte;
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
   if ( g_nand_watchdog_enabled == 1 )
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
@@ -1354,7 +1335,6 @@ static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int byt
 //----- (004039C4) --------------------------------------------------------
 static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
-  vu8 m_nand_waitflag; // $v0
   vu8 m_nand_outbyte; // $v0
   int state; // [sp+18h] [+18h] BYREF
   u32 size; // [sp+1Ch] [+1Ch]
@@ -1385,9 +1365,7 @@ static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int by
   dmac_transfer(8u);
   SleepThread();
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x10;
-  do
-    m_nand_waitflag = s147nand_dev9_io_mmio.m_nand_waitflag;
-  while ( (m_nand_waitflag & 1) != 0 );
+  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
   m_nand_outbyte = s147nand_dev9_io_mmio.m_nand_outbyte;
   flgtmp = m_nand_outbyte;
@@ -1409,7 +1387,6 @@ static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int by
 //----- (00403CAC) --------------------------------------------------------
 static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
-  vu8 m_nand_waitflag; // $v0
   vu8 m_nand_outbyte; // $v0
   int i; // [sp+0h] [+0h]
 
@@ -1428,11 +1405,9 @@ static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int by
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(pageoffs & 0xFF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
   for ( i = 0; i < bytecnt; ++i )
-    s147nand_dev9_io_mmio.m_nand_outbyte = *((_BYTE *)ptr + i);
+    s147nand_dev9_io_mmio.m_nand_outbyte = ((_BYTE *)ptr)[i];
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x10;
-  do
-    m_nand_waitflag = s147nand_dev9_io_mmio.m_nand_waitflag;
-  while ( (m_nand_waitflag & 1) != 0 );
+  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
   m_nand_outbyte = s147nand_dev9_io_mmio.m_nand_outbyte;
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
@@ -1453,7 +1428,6 @@ static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int by
 //----- (00403F74) --------------------------------------------------------
 static int nand_lowlevel_blockerase(int pageoffs)
 {
-  vu8 m_nand_waitflag; // $v0
   vu8 m_nand_outbyte; // $v0
 
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
@@ -1465,9 +1439,7 @@ static int nand_lowlevel_blockerase(int pageoffs)
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (unsigned __int16)(pageoffs & 0xFF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0xD0;
-  do
-    m_nand_waitflag = s147nand_dev9_io_mmio.m_nand_waitflag;
-  while ( (m_nand_waitflag & 1) != 0 );
+  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
   m_nand_outbyte = s147nand_dev9_io_mmio.m_nand_outbyte;
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
@@ -1488,7 +1460,6 @@ static int nand_lowlevel_blockerase(int pageoffs)
 //----- (00404128) --------------------------------------------------------
 static int nand_lowlevel_readid(void *ptr)
 {
-  vu8 m_nand_outbyte; // $v1
   int i; // [sp+0h] [+0h]
 
   if ( !ptr )
@@ -1497,10 +1468,7 @@ static int nand_lowlevel_readid(void *ptr)
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x90;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = 0;
   for ( i = 0; i < 5; ++i )
-  {
-    m_nand_outbyte = s147nand_dev9_io_mmio.m_nand_outbyte;
-    *((_BYTE *)ptr + i) = m_nand_outbyte;
-  }
+    ((_BYTE *)ptr)[i] = s147nand_dev9_io_mmio.m_nand_outbyte;
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
   if ( g_nand_watchdog_enabled == 1 )
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
