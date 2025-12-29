@@ -3,11 +3,6 @@
 
 IRX_ID("ROMWRITE", 7, 1);
 
-#define __int8 char
-#define __int32 int
-#define _BYTE u8
-#define _DWORD u32
-#define BOOL u32
 #define _break(...) __builtin_trap()
 
 typedef struct s147_dev9_mem_mmio_x
@@ -79,7 +74,7 @@ static void thread_proc(void *userdata); // weak
 static void do_toggle_dev9addr_inner(int len, int cnt);
 static void set_boot_video_mode(int flg);
 static void do_set_flag(int flg);
-static void do_set_secr_code(char code1, unsigned __int8 code2);
+static void do_set_secr_code(char code1, char code2);
 static void do_handle_atfile_image(int part, const char *str);
 static void do_set_atfile_147_dir(const char *str);
 static int do_start_write_proc(void);
@@ -415,7 +410,7 @@ static void do_set_flag(int flg)
 // 407CA4: using guessed type int g_curflag;
 
 //----- (00401040) --------------------------------------------------------
-static void do_set_secr_code(char code1, unsigned __int8 code2)
+static void do_set_secr_code(char code1, char code2)
 {
   g_secr_code_1 = code1;
   g_secr_code_2 = code2;
@@ -1031,7 +1026,7 @@ static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt)
 //----- (00403D40) --------------------------------------------------------
 static int do_list_files(int part)
 {
-  signed __int32 m_entrycnt; // [sp+1Ch] [+1Ch]
+  int m_entrycnt; // [sp+1Ch] [+1Ch]
   int pageoffs; // [sp+20h] [+20h]
   int xind1; // [sp+28h] [+28h]
   int i; // [sp+2Ch] [+2Ch]
@@ -1123,8 +1118,8 @@ static int do_verify(void *buf1, void *buf2, int len)
 
   for ( i = 0; i < len / 4; ++i )
   {
-    if ( *((_DWORD *)buf1 + i) != *((_DWORD *)buf2 + i) )
-      return *((_DWORD *)buf1 + i) - *((_DWORD *)buf2 + i);
+    if ( ((u32 *)buf1)[i] != ((u32 *)buf2)[i] )
+      return ((u32 *)buf1)[i] - ((u32 *)buf2)[i];
   }
   return 0;
 }
@@ -1141,7 +1136,7 @@ static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
     cmpval = 0;
     for ( j = 0; j < 5; ++j )
     {
-      if ( ((int)g_nand_type_info[i].m_id[j] == -1) || ((unsigned __int8)g_nand_type_info[i].m_id[j] == (unsigned __int8)nandid[j]) )
+      if ( ((int)g_nand_type_info[i].m_id[j] == -1) || ((u8)g_nand_type_info[i].m_id[j] == (u8)nandid[j]) )
       {
         ++cmpval;
       }
