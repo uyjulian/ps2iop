@@ -718,9 +718,9 @@ int s147nand_8_multi_write_dma(void *ptr, int pageoffs, int pagecnt)
 int s147nand_9_get_nand_partition(int part)
 {
   if ( part == 8 )
-    return g_nand_header.m_nand_partition_8;
+    return g_nand_header.m_nand_partition_8_info.m_offset;
   if ( part >= 0 && part < 8 )
-    return g_nand_header.m_nand_partition_info[2 * part];
+    return g_nand_header.m_nand_partition_info[part].m_offset;
   return 0;
 }
 // 405258: using guessed type nand_header_stru_ g_nand_header;
@@ -736,9 +736,9 @@ static int get_nand_partition_offset(int part)
 int s147nand_10_get_nand_partition_size(int part)
 {
   if ( part == 8 )
-    return g_nand_header.m_nand_partition_8_size;
+    return g_nand_header.m_nand_partition_8_info.m_size;
   if ( part >= 0 && part < 8 )
-    return g_nand_header.m_nand_partition_info[(2 * part) + 1];
+    return g_nand_header.m_nand_partition_info[part].m_size;
   return 0;
 }
 // 405258: using guessed type nand_header_stru_ g_nand_header;
@@ -856,7 +856,7 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
   int xsz; // [sp+18h] [+18h]
 
   privdata = (nand_mdev_privdata_stru_ *)f->privdata;
-  xsz = g_nand_header.m_nand_partition_8_size * g_nand_header.m_pages_per_block * g_nand_header.m_page_size_noecc;
+  xsz = g_nand_header.m_nand_partition_8_info.m_size * g_nand_header.m_pages_per_block * g_nand_header.m_page_size_noecc;
   if ( (privdata->m_flags & 0x1000000) == 0 )
     return -22;
   if ( xsz < privdata->m_seek_cur + size )
@@ -869,8 +869,8 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
     int i; // [sp+1Ch] [+1Ch]
 
     retres1 = 0;
-    for ( i = 0; i < g_nand_header.m_nand_partition_8_size; i += 1 )
-      retres1 = s147nand_11_erasetranslatepageoffs(s147nand_27_blocks2pages(i + g_nand_header.m_nand_partition_8));
+    for ( i = 0; i < g_nand_header.m_nand_partition_8_info.m_size; i += 1 )
+      retres1 = s147nand_11_erasetranslatepageoffs(s147nand_27_blocks2pages(i + g_nand_header.m_nand_partition_8_info.m_offset));
     privdata->m_flags &= ~0x2000000;
     if ( retres1 )
       return retres1;

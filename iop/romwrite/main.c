@@ -649,24 +649,24 @@ static int do_format_device(int abspart)
   g_nand_partbuf.m_hdr.m_bootsector_ver_2 = 0;
   for ( i = 0; i < 8; i += 1 )
   {
-    g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i] = get_nand_partition_offset(i, abspart);
-    g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i + 1] = get_nand_partition_size(i, abspart);
+    g_nand_partbuf.m_hdr.m_nand_partition_info[i].m_offset = get_nand_partition_offset(i, abspart);
+    g_nand_partbuf.m_hdr.m_nand_partition_info[i].m_size = get_nand_partition_size(i, abspart);
     STATUS_PRINTF(
       " atfile%d: StartBlock = 0x%04x(%4d) / BlockSize = 0x%04x(%4d)\n",
       i,
-      g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i],
-      g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i],
-      g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i + 1],
-      g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i + 1]);
+      g_nand_partbuf.m_hdr.m_nand_partition_info[i].m_offset,
+      g_nand_partbuf.m_hdr.m_nand_partition_info[i].m_offset,
+      g_nand_partbuf.m_hdr.m_nand_partition_info[i].m_size,
+      g_nand_partbuf.m_hdr.m_nand_partition_info[i].m_size);
   }
-  g_nand_partbuf.m_hdr.m_nand_partition_8 = get_nand_partition_offset(8, abspart);
-  g_nand_partbuf.m_hdr.m_nand_partition_8_size = get_nand_partition_size(8, abspart);
+  g_nand_partbuf.m_hdr.m_nand_partition_8_info.m_offset = get_nand_partition_offset(8, abspart);
+  g_nand_partbuf.m_hdr.m_nand_partition_8_info.m_size = get_nand_partition_size(8, abspart);
   STATUS_PRINTF(
     " system : StartBlock = 0x%04x(%4d) / BlockSize = 0x%04x(%4d)\n",
-    g_nand_partbuf.m_hdr.m_nand_partition_8,
-    g_nand_partbuf.m_hdr.m_nand_partition_8,
-    g_nand_partbuf.m_hdr.m_nand_partition_8_size,
-    g_nand_partbuf.m_hdr.m_nand_partition_8_size);
+    g_nand_partbuf.m_hdr.m_nand_partition_8_info.m_offset,
+    g_nand_partbuf.m_hdr.m_nand_partition_8_info.m_offset,
+    g_nand_partbuf.m_hdr.m_nand_partition_8_info.m_size,
+    g_nand_partbuf.m_hdr.m_nand_partition_8_info.m_size);
   STATUS_PRINTF("\n");
   g_nand_partbuf.m_hdr.m_nand_seccode[0] = g_secr_code_1;
   g_nand_partbuf.m_hdr.m_nand_seccode[1] = g_secr_code_2;

@@ -4,7 +4,6 @@
 
 #include <tamtypes.h>
 
-
 typedef struct nand_info_stru_x
 {
   int m_page_size_noecc;
@@ -14,12 +13,18 @@ typedef struct nand_info_stru_x
   int m_page_count;
 } nand_info_stru_;
 
+typedef struct nand_header_part_stru_x
+{
+  int m_offset;
+  int m_size;
+} nand_header_part_stru_;
+
 typedef struct nand_header_stru_x
 {
   char m_hdr[16];
   int m_bootsector_ver_1;
   int m_bootsector_ver_2;
-  int m_nand_partition_info[16];
+  nand_header_part_stru_ m_nand_partition_info[8];
   char m_nand_seccode[2];
   char pad[2];
   int m_nand_vidmode[1];
@@ -30,8 +35,7 @@ typedef struct nand_header_stru_x
   int m_block_size;
   unsigned int m_acmem_delay_val;
   unsigned int m_acio_delay_val;
-  int m_nand_partition_8;
-  int m_nand_partition_8_size;
+  nand_header_part_stru_ m_nand_partition_8_info;
 } nand_header_stru_;
 
 typedef struct nand_direntry_stru_x
