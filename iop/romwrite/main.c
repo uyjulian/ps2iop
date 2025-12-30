@@ -238,75 +238,74 @@ int _start(int ac, char **av)
   }
   for ( i = 1; i < ac; ++i )
   {
-    if ( *av[i] == '-' )
+    if ( *av[i] != '-' )
+      continue;
+    switch ( av[i][1] )
     {
-      switch ( av[i][1] )
-      {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-          image_file_idx = strtol(av[i] + 1, 0, 10);
-          STATUS_PRINTF(" -%d : Write \"atfile%d:\" image file\n", image_file_idx, image_file_idx);
-          do_set_flag(1 << image_file_idx);
-          do_handle_atfile_image(image_file_idx, av[++i]);
-          break;
-        case 'd':
-          STATUS_PRINTF(" -d : Search \"atfile*.147\" in the directory and Write\n");
-          ++i;
-          do_set_flag(0x2000000);
-          do_set_atfile_147_dir(av[i]);
-          break;
-        case 'f':
-          do_format_nand_device(av[i][2]);
-          break;
-        case 'i':
-          STATUS_PRINTF(" -i : Write \"atfile9:info\" image\n");
-          do_set_flag(0x200);
-          do_handle_atfile_image(9, av[++i]);
-          break;
-        case 'l':
-          STATUS_PRINTF(" -l : Read NAND device and Display all file list\n");
-          do_set_flag(0x4000000);
-          break;
-        case 's':
-          switch ( av[i][2] )
-          {
-            case '0':
-              STATUS_PRINTF(" -s0: Set default security code\n");
-              do_set_flag(0x1000000);
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+        image_file_idx = strtol(av[i] + 1, 0, 10);
+        STATUS_PRINTF(" -%d : Write \"atfile%d:\" image file\n", image_file_idx, image_file_idx);
+        do_set_flag(1 << image_file_idx);
+        do_handle_atfile_image(image_file_idx, av[++i]);
+        break;
+      case 'd':
+        STATUS_PRINTF(" -d : Search \"atfile*.147\" in the directory and Write\n");
+        ++i;
+        do_set_flag(0x2000000);
+        do_set_atfile_147_dir(av[i]);
+        break;
+      case 'f':
+        do_format_nand_device(av[i][2]);
+        break;
+      case 'i':
+        STATUS_PRINTF(" -i : Write \"atfile9:info\" image\n");
+        do_set_flag(0x200);
+        do_handle_atfile_image(9, av[++i]);
+        break;
+      case 'l':
+        STATUS_PRINTF(" -l : Read NAND device and Display all file list\n");
+        do_set_flag(0x4000000);
+        break;
+      case 's':
+        switch ( av[i][2] )
+        {
+          case '0':
+            STATUS_PRINTF(" -s0: Set default security code\n");
+            do_set_flag(0x1000000);
+            do_set_secr_code(0xFF, 0xFFu);
+            break;
+          case 'r':
+            STATUS_PRINTF(" -sr: Read \"s147secr.147\" file\n");
+            do_set_flag(0x1000000);
+            fd = open(av[++i], 1);
+            if ( fd < 0 )
+            {
+              STATUS_PRINTF("  ---> File not found, set default code\n");
               do_set_secr_code(0xFF, 0xFFu);
               break;
-            case 'r':
-              STATUS_PRINTF(" -sr: Read \"s147secr.147\" file\n");
-              do_set_flag(0x1000000);
-              fd = open(av[++i], 1);
-              if ( fd < 0 )
-              {
-                STATUS_PRINTF("  ---> File not found, set default code\n");
-                do_set_secr_code(0xFF, 0xFFu);
-                break;
-              }
-              product_code = do_read_product_code(fd);
-              do_set_secr_code(product_code[0], product_code[1]);
-              close(fd);
-              break;
-            default:
-              STATUS_PRINTF(" -s : Set immediate secrity code\n");
-              secrcode1 = strtol(av[++i], 0, 10);
-              secrcode2 = strtol(av[++i], 0, 10);
-              do_set_flag(0x1000000);
-              do_set_secr_code(secrcode1, secrcode2);
-              break;
-          }
-          break;
-        default:
-          continue;
-      }
+            }
+            product_code = do_read_product_code(fd);
+            do_set_secr_code(product_code[0], product_code[1]);
+            close(fd);
+            break;
+          default:
+            STATUS_PRINTF(" -s : Set immediate secrity code\n");
+            secrcode1 = strtol(av[++i], 0, 10);
+            secrcode2 = strtol(av[++i], 0, 10);
+            do_set_flag(0x1000000);
+            do_set_secr_code(secrcode1, secrcode2);
+            break;
+        }
+        break;
+      default:
+        break;
     }
   }
   STATUS_PRINTF("\n");
@@ -317,9 +316,7 @@ int _start(int ac, char **av)
   thparam.option = 0;
   thid = CreateThread(&thparam);
   if ( thid <= 0 )
-  {
     return 1;
-  }
   StartThread(thid, 0);
   return 0;
 }
@@ -541,14 +538,13 @@ static int do_start_write_proc(void)
   }
   for ( part = 0; part < 8; ++part )
   {
-    if ( ((1 << part) & g_curflag) != 0 )
-    {
-      STATUS_PRINTF("====== Write \"%s\" to atfile%d: ======\n", g_atfile_part_image[part], part);
-      logaddrtable = do_write_partition(part);
-      if ( logaddrtable )
-        return logaddrtable;
-      STATUS_PRINTF(" \n");
-    }
+    if ( ((1 << part) & g_curflag) == 0 )
+      continue;
+    STATUS_PRINTF("====== Write \"%s\" to atfile%d: ======\n", g_atfile_part_image[part], part);
+    logaddrtable = do_write_partition(part);
+    if ( logaddrtable )
+      return logaddrtable;
+    STATUS_PRINTF(" \n");
   }
   if ( (g_curflag & 0x200) != 0 )
   {
@@ -616,11 +612,10 @@ static int do_format_device(int abspart)
   nand_partition_offset = get_nand_partition_offset(8, 8);
   for ( blocks = 1; blocks < nand_partition_offset - 1; ++blocks )
   {
-    if ( g_blockinfo_str_buf[blocks] == '=' )
-    {
-      g_blockinfo_dat_buf[blocks] = 0xEEEE;
-      g_blockinfo_str_buf[blocks] = 'R';
-    }
+    if ( g_blockinfo_str_buf[blocks] != '=' )
+      continue;
+    g_blockinfo_dat_buf[blocks] = 0xEEEE;
+    g_blockinfo_str_buf[blocks] = 'R';
   }
   bbcnt1 = 0;
   if ( g_blockinfo_str_buf[nand_partition_offset - 1] == 'X' )
@@ -643,19 +638,17 @@ static int do_format_device(int abspart)
   {
     for ( blocks = nand_partition_offset; blocks < g_device_info->m_block_size; ++blocks )
     {
-      if ( g_blockinfo_str_buf[blocks] == 'X' )
-      {
-        bbcnt1 = check_badblock_count();
-        if ( bbcnt1 < 0 )
-          break;
-        g_blockinfo_dat_buf[blocks] = bbcnt1;
-        g_blockinfo_dat_buf[bbcnt1] = 0xCCCC;
-        g_blockinfo_str_buf[bbcnt1] = '@';
-      }
-      else
+      if ( g_blockinfo_str_buf[blocks] != 'X' )
       {
         g_blockinfo_dat_buf[blocks] = 0xAAAA;
+        continue;
       }
+      bbcnt1 = check_badblock_count();
+      if ( bbcnt1 < 0 )
+        break;
+      g_blockinfo_dat_buf[blocks] = bbcnt1;
+      g_blockinfo_dat_buf[bbcnt1] = 0xCCCC;
+      g_blockinfo_str_buf[bbcnt1] = '@';
     }
   }
   if ( bbcnt1 < 0 )
@@ -786,9 +779,7 @@ static int do_write_partition(int part)
         expected_readres = 8;
         actual_readres = read(fd, g_page_buf, expected_readres);
         if ( actual_readres < expected_readres )
-        {
           err = 1;
-        }
         if ( !err )
         {
           if ( strncmp(g_page_buf, "S147INFO", 8) )
@@ -824,9 +815,7 @@ static int do_write_partition(int part)
         expected_readres = 0x20;
         actual_readres = read(fd, g_page_buf, expected_readres);
         if ( actual_readres < expected_readres )
-        {
           err = 1;
-        }
         if ( !err )
         {
           if ( strncmp(g_page_buf, "S147ROM", 8) )
@@ -925,13 +914,9 @@ static int do_write_partition(int part)
     }
   }
   if ( actual_readres < expected_readres )
-  {
     STATUS_PRINTF(" Error: File-I/O fault (%d)\n", actual_readres);
-  }
   if ( fd >= 0 )
-  {
     close(fd);
-  }
   if ( err )
   {
     CpuSuspendIntr(&state);
@@ -951,10 +936,8 @@ static int do_write_partition(int part)
 static int check_badblock_count(void)
 {
   for ( ; g_badblock_count < get_nand_partition_offset(8, 8) - 1; ++g_badblock_count )
-  {
     if ( g_blockinfo_str_buf[g_badblock_count] == 'R' )
       return g_badblock_count++;
-  }
   return -1;
 }
 // 407CB8: using guessed type int g_badblock_count;
@@ -970,12 +953,11 @@ static int get_nand_partition_offset(int part, int abspart)
       return -1;
     if ( abspart == -1 && g_device_info->m_block_size == (int)0x80000000 )
       _break(6u, 0);
-    if ( part )
-      return g_device_info->m_block_size / abspart * part;
-    return get_nand_block_size_div_32_div_64();
   }
   if ( !part )
     return get_nand_block_size_div_32_div_64();
+  if ( abspart )
+    return g_device_info->m_block_size / abspart * part;
   if ( part != 1 )
     return -1;
   return g_device_info->m_block_size / 4;
@@ -1021,13 +1003,11 @@ static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt)
 
   bytecnt = s147nand_30_bytes2pagesnoeccround(pagecnt);
   for ( i = 0; i < bytecnt; ++i )
-  {
     s147nand_22_nand_write_dma(
       (char *)ptr + 4 * (g_device_info->m_page_size_noecc >> 2) * i,
       pageoffs + i,
       0,
       g_device_info->m_page_size_noecc);
-  }
 }
 
 //----- (00403D40) --------------------------------------------------------
@@ -1088,9 +1068,7 @@ static int do_list_files(int part)
       }
     }
     if ( finished )
-    {
       break;
-    }
   }
   STATUS_PRINTF(" -----------------------------\n");
   STATUS_PRINTF("   %d directories, %d files\n", dircnt, filcnt);
@@ -1104,18 +1082,12 @@ static void do_output_bb_info(int blocksd, int abspart, int bboffs)
 {
   (void)abspart;
   if ( (blocksd & 0x3F) == 0 )
-  {
     STATUS_PRINTF(" %04X(%4d):", blocksd, blocksd);
-  }
   STATUS_PRINTF("%c", ( blocksd == bboffs ) ? 'I' : g_blockinfo_str_buf[blocksd]);
   if ( (blocksd & 0xF) == 15 )
-  {
     STATUS_PRINTF(" ");
-  }
   if ( (blocksd & 0x3F) == '?' )
-  {
     STATUS_PRINTF("\n");
-  }
 }
 
 //----- (00404380) --------------------------------------------------------
@@ -1124,10 +1096,8 @@ static int do_verify(void *buf1, void *buf2, int len)
   int i; // [sp+0h] [+0h]
 
   for ( i = 0; i < len / 4; ++i )
-  {
     if ( ((u32 *)buf1)[i] != ((u32 *)buf2)[i] )
       return ((u32 *)buf1)[i] - ((u32 *)buf2)[i];
-  }
   return 0;
 }
 
@@ -1143,12 +1113,8 @@ static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
 
     cmpval = 0;
     for ( j = 0; j < 5; ++j )
-    {
       if ( ((int)g_nand_type_info[i].m_id[j] == -1) || ((u8)g_nand_type_info[i].m_id[j] == (u8)nandid[j]) )
-      {
         ++cmpval;
-      }
-    }
     if ( cmpval == 5 )
       return &g_nand_type_info[i];
   }

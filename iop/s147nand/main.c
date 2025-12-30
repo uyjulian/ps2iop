@@ -453,9 +453,7 @@ int s147nand_4_dumpprintinfo(int part)
       }
     }
     if ( finished )
-    {
       break;
-    }
   }
   Kprintf(" -----------------------------\n");
   Kprintf("   %d directories, %d files\n", dircnt, filcnt);
@@ -473,7 +471,6 @@ static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, cons
   {
     Kprintf("s147nand.irx: Error invalid unit number\n");
     return -19;
-
   }
   privdat->m_partition_offset = nand_partition_offset;
   return do_nand_open_inner2(privdat, name + (( *name == '/' ) ? 1 : 0));
@@ -858,9 +855,7 @@ static size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size)
   {
     retres1 = do_nand_sector_rw(ptr, privdata->m_partition_offset, privdata->m_seek_cur, size);
     if ( retres1 < 0 )
-    {
       return retres1;
-    }
     privdata->m_seek_cur += size;
     return size;
   }
@@ -868,9 +863,7 @@ static size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size)
   {
     retres1 = do_nand_sector_rw(ptr, privdata->m_partition_offset, privdata->m_seek_cur, size);
     if ( retres1 < 0 )
-    {
       return retres1;
-    }
     privdata->m_seek_cur += size;
     return size;
   }
@@ -899,9 +892,7 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
 
     retres1 = 0;
     for ( i = 0; i < g_nand_header.m_nand_partition_8_size; ++i )
-    {
       retres1 = s147nand_11_erasetranslatepageoffs(s147nand_27_blocks2pages(i + g_nand_header.m_nand_partition_8));
-    }
     privdata->m_flags &= ~0x2000000u;
     if ( retres1 )
       return retres1;
