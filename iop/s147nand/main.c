@@ -110,13 +110,10 @@ static s147nand_info_t g_nand_info;
 static iop_device_t g_drv;
 static void *g_nand_sector_buffer;
 static const char *g_dev_name;
-static iop_sema_t g_sema_param_dev;
 static int g_sema_id_dev;
-static iop_sema_t g_seama_param_1;
 static int g_sema_id_init;
 static s147nand_header_t g_nand_header;
 static u16 *g_logical_addr_tbl;
-static iop_sema_t g_sema_param;
 static int g_sema_id_nand;
 static int g_thid;
 
@@ -144,12 +141,16 @@ int _start(int ac, char **av)
 
 static int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc)
 {
+  iop_sema_t semaparam;
+
   if ( s147nand_5_outerinit() < 0 )
     return -1;
-  g_sema_param_dev.initial = 1;
-  g_sema_param_dev.max = 1;
-  g_sema_param_dev.attr = SA_THPRI;
-  g_sema_id_dev = CreateSema(&g_sema_param_dev);
+  // Unofficial: make semaparam local var
+  semaparam.initial = 1;
+  semaparam.max = 1;
+  semaparam.attr = SA_THPRI;
+  semaparam.option = 0;
+  g_sema_id_dev = CreateSema(&semaparam);
   if ( g_sema_id_dev < 0 )
   {
     Kprintf("s147nand.irx: CreateSema error (%d)\n", g_sema_id_dev);
@@ -525,6 +526,7 @@ static int do_nand_bytes2sector_remainder(int byteoffs)
 int s147nand_5_outerinit(void)
 {
   int initres;
+  iop_sema_t semaparam;
 
   initres = s147nand_15_nandinit();
   if ( initres )
@@ -532,10 +534,12 @@ int s147nand_5_outerinit(void)
     Kprintf("s147nand.irx: NAND initialize failed (%d)\n", initres);
     return -1;
   }
-  g_seama_param_1.initial = 1;
-  g_seama_param_1.max = 1;
-  g_seama_param_1.attr = SA_THPRI;
-  g_sema_id_init = CreateSema(&g_seama_param_1);
+  // Unofficial: make semaparam local var
+  semaparam.initial = 1;
+  semaparam.max = 1;
+  semaparam.attr = SA_THPRI;
+  semaparam.option = 0;
+  g_sema_id_init = CreateSema(&semaparam);
   if ( g_sema_id_init < 0 )
   {
     Kprintf("s147nand.irx: CreateSema error (%d)\n", g_sema_id_init);
@@ -974,6 +978,7 @@ static int dev9_intr_handler(void *unusd)
 int s147nand_15_nandinit(void)
 {
   int intrstate;
+  iop_sema_t semaparam;
   USE_IOP_MMIO_HWPORT();
 
   DisableIntr(IOP_IRQ_DMA_DEV9, &intrstate);
@@ -986,10 +991,12 @@ int s147nand_15_nandinit(void)
   sceEnableDMAChannel(IOP_DMAC_DEV9);
   // Unofficial: use uncached mirror
   iop_mmio_hwport->ssbus2.ind_B_address = 0xB4000008;
-  g_sema_param.initial = 1;
-  g_sema_param.max = 1;
-  g_sema_param.attr = SA_THPRI;
-  g_sema_id_nand = CreateSema(&g_sema_param);
+  // Unofficial: make semaparam local var
+  semaparam.initial = 1;
+  semaparam.max = 1;
+  semaparam.attr = SA_THPRI;
+  semaparam.option = 0;
+  g_sema_id_nand = CreateSema(&semaparam);
   if ( g_sema_id_nand >= 0 )
     return 0;
   printf("nand_Init: CreateSema error (%d)\n", g_sema_id_nand);
