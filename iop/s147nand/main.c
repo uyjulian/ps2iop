@@ -105,7 +105,6 @@ static iop_device_ops_t nand_mdev_ops =
 }; // weak
 static void *g_nand_unaligned_buf = NULL;
 static int g_nand_unaligned_buf_alloced = 0; // weak
-static int g_probunusd_dword_4051D0 = 0; // weak
 static int g_nand_watchdog_enabled = 0; // weak
 static s147nand_info_t g_nand_info = { 0x800, 0x840, 0x40, 0x800, 0x20000 }; // weak
 static iop_device_t g_drv; // idb
@@ -1029,7 +1028,8 @@ int s147nand_15_nandinit(void)
 
   DisableIntr(IOP_IRQ_DMA_DEV9, &intrstate);
   ReleaseIntrHandler(IOP_IRQ_DMA_DEV9);
-  RegisterIntrHandler(IOP_IRQ_DMA_DEV9, 1, dev9_intr_handler, &g_probunusd_dword_4051D0);
+  // Unofficial: removed unused userdata var
+  RegisterIntrHandler(IOP_IRQ_DMA_DEV9, 1, dev9_intr_handler, NULL);
   EnableIntr(IOP_IRQ_DMA_DEV9);
   sceDisableDMAChannel(IOP_DMAC_DEV9);
   sceSetDMAPriority(IOP_DMAC_DEV9, 7);
@@ -1044,7 +1044,6 @@ int s147nand_15_nandinit(void)
   printf("nand_Init: CreateSema error (%d)\n", g_sema_id_nand);
   return -1;
 }
-// 4051D0: using guessed type int g_probunusd_dword_4051D0;
 // 1F800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport_lo;
 
 //----- (00402EC0) --------------------------------------------------------
