@@ -6,11 +6,11 @@
 
 IRX_ID("S147CTRL", 2, 8);
 
-struct watchdog_info_
+typedef struct watchdog_info_
 {
   int g_watchdog_started;
   iop_sys_clock_t g_watchdog_clock;
-};
+} watchdog_info_t;
 
 struct s147_dev9_mem_mmio_
 {
@@ -87,11 +87,11 @@ struct s147link_dev9_mem_mmio_
   vu8 m_watchdog_flag_unk34;
 };
 
-struct sram_drv_privdata_
+typedef struct sram_drv_privdata_
 {
   u32 m_curpos;
   u32 m_maxpos;
-};
+} sram_drv_privdata_t;
 
 static void setup_ac_delay_regs(void);
 static int setup_ctrl_ioman_drv(const char *devpfx, const char *devname);
@@ -181,7 +181,7 @@ static int g_ctrl_sema_id;
 static iop_device_t g_drv_sram_ioman;
 static int g_rpc1_buf[8];
 static int g_rpc2_buf[260];
-static struct watchdog_info_ g_watchdog_info;
+static watchdog_info_t g_watchdog_info;
 #define USE_S147_DEV9_MEM_MMIO() struct s147_dev9_mem_mmio_ *const s147_dev9_mem_mmio = (void *)0xB0000000
 #define USE_S147LINK_DEV9_MEM_MMIO() struct s147link_dev9_mem_mmio_ *const s147link_dev9_mem_mmio = (void *)0xB0800000
 
@@ -233,11 +233,11 @@ static unsigned int watchdog_alarm_cb(void *userdata)
 {
   int state;
   u8 unk34_tmp;
-  struct watchdog_info_ *wdi;
+  watchdog_info_t *wdi;
   USE_S147_DEV9_MEM_MMIO();
   USE_S147LINK_DEV9_MEM_MMIO();
 
-  wdi = (struct watchdog_info_ *)userdata;
+  wdi = (watchdog_info_t *)userdata;
   if ( wdi->g_watchdog_started != 1 )
   {
     s147_dev9_mem_mmio->m_led = 3;
@@ -520,15 +520,15 @@ static int setup_sram_ioman_drv(const char *devpfx, const char *devname)
 
 static int sram_drv_op_open(iop_file_t *f, const char *name, int flags)
 {
-  struct sram_drv_privdata_ *privdata;
+  sram_drv_privdata_t *privdata;
   int state;
 
   (void)name;
   (void)flags;
   CpuSuspendIntr(&state);
-  f->privdata = AllocSysMemory(ALLOC_FIRST, sizeof(struct sram_drv_privdata_), 0);
+  f->privdata = AllocSysMemory(ALLOC_FIRST, sizeof(sram_drv_privdata_t), 0);
   CpuResumeIntr(state);
-  privdata = (struct sram_drv_privdata_ *)f->privdata;
+  privdata = (sram_drv_privdata_t *)f->privdata;
   privdata->m_curpos = 0;
   privdata->m_maxpos = 0x8000;
   return 0;
@@ -550,9 +550,9 @@ static int sram_drv_op_close(iop_file_t *f)
 static int sram_drv_op_read(iop_file_t *f, void *ptr, int size)
 {
   int sizeb;
-  struct sram_drv_privdata_ *privdata;
+  sram_drv_privdata_t *privdata;
 
-  privdata = (struct sram_drv_privdata_ *)f->privdata;
+  privdata = (sram_drv_privdata_t *)f->privdata;
   if ( (s32)privdata->m_curpos >= (s32)privdata->m_maxpos )
     return 0;
   sizeb = ( (s32)privdata->m_maxpos < (s32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
@@ -564,10 +564,10 @@ static int sram_drv_op_read(iop_file_t *f, void *ptr, int size)
 static int sram_drv_op_write(iop_file_t *f, void *ptr, int size)
 {
   int sizeb;
-  struct sram_drv_privdata_ *privdata;
+  sram_drv_privdata_t *privdata;
   USE_S147_DEV9_MEM_MMIO();
 
-  privdata = (struct sram_drv_privdata_ *)f->privdata;
+  privdata = (sram_drv_privdata_t *)f->privdata;
   if ( (s32)privdata->m_curpos >= (s32)privdata->m_maxpos )
     return 0;
   sizeb = ( (s32)privdata->m_maxpos < (s32)(privdata->m_curpos + size) ) ? (privdata->m_maxpos - privdata->m_curpos) : (u32)size;
@@ -580,9 +580,9 @@ static int sram_drv_op_write(iop_file_t *f, void *ptr, int size)
 
 static int sram_drv_op_lseek(iop_file_t *f, int offset, int mode)
 {
-  struct sram_drv_privdata_ *privdata;
+  sram_drv_privdata_t *privdata;
 
-  privdata = (struct sram_drv_privdata_ *)f->privdata;
+  privdata = (sram_drv_privdata_t *)f->privdata;
   switch ( mode )
   {
     case SEEK_SET:
