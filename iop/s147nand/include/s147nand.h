@@ -4,27 +4,27 @@
 
 #include <tamtypes.h>
 
-typedef struct nand_info_stru_x
+typedef struct s147nand_info_
 {
   int m_page_size_noecc;
   int m_page_size_withecc;
   int m_pages_per_block;
   int m_block_size;
   int m_page_count;
-} nand_info_stru_;
+} s147nand_info_t;
 
-typedef struct nand_header_part_stru_x
+typedef struct s147nand_header_part_
 {
   int m_offset;
   int m_size;
-} nand_header_part_stru_;
+} s147nand_header_part_t;
 
-typedef struct nand_header_stru_x
+typedef struct s147nand_header_
 {
   char m_sig[16];
   int m_bootsector_ver_1;
   int m_bootsector_ver_2;
-  nand_header_part_stru_ m_nand_partition_info[8];
+  s147nand_header_part_t m_nand_partition_info[8];
   char m_nand_seccode[2];
   char pad[2];
   int m_nand_vidmode[1];
@@ -35,10 +35,10 @@ typedef struct nand_header_stru_x
   int m_block_size;
   unsigned int m_acmem_delay_val;
   unsigned int m_acio_delay_val;
-  nand_header_part_stru_ m_nand_partition_8_info;
-} nand_header_stru_;
+  s147nand_header_part_t m_nand_partition_8_info;
+} s147nand_header_t;
 
-typedef struct nand_direntry_stru_x
+typedef struct s147nand_direntry_
 {
   char m_name[16];
   u32 m_unk;
@@ -46,10 +46,9 @@ typedef struct nand_direntry_stru_x
   u8 m_pad[3];
   u32 m_size;
   u32 m_offset;
-} nand_direntry_stru_;
+} s147nand_direntry_t;
 
-
-typedef struct nand_dir_stru_x
+typedef struct s147nand_dir_
 {
   char m_sig[8];
   u16 m_ver;
@@ -58,9 +57,8 @@ typedef struct nand_dir_stru_x
   u32 m_unk1;
   u32 m_unk2;
   u32 m_unk3;
-  nand_direntry_stru_ m_direntry[63];
-} nand_dir_stru_;
-
+  s147nand_direntry_t m_direntry[63];
+} s147nand_dir_t;
 
 extern int s147nand_4_dumpprintinfo(int part);
 extern int s147nand_5_outerinit(void);
@@ -74,7 +72,7 @@ extern int s147nand_12_load_logaddrtable(void);
 extern int s147nand_13_translate_blockoffs(int blockoffs);
 extern int s147nand_14_translate_pageoffs(int pageoffs);
 extern int s147nand_15_nandinit(void);
-extern nand_info_stru_ *s147nand_16_getnandinfo(void);
+extern s147nand_info_t *s147nand_16_getnandinfo(void);
 extern int s147nand_17_get_sema(void);
 extern void s147nand_18_enable_nand_watchdog(void);
 extern int s147nand_19_logaddr_read(u16 *tbl, int pageoffs, int bytecnt);

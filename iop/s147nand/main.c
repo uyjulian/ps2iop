@@ -9,7 +9,7 @@ IRX_ID("S147NAN2", 5, 2);
 
 #define _break(...) __builtin_trap()
 
-typedef struct s147_dev9_mem_mmio_x
+typedef struct s147_dev9_mem_mmio_
 {
   vu8 m_unk00;
   vu8 m_led;
@@ -25,9 +25,9 @@ typedef struct s147_dev9_mem_mmio_x
   vu8 m_pad0B;
   vu8 m_security_unlock_set1;
   vu8 m_security_unlock_set2;
-} s147_dev9_mem_mmio_;
+} s147_dev9_mem_mmio_t;
 
-typedef struct s147nand_dev9_io_mmio_x
+typedef struct s147nand_dev9_io_mmio_
 {
   vu8 m_nand_waitflag;
   vu8 m_nand_cmd_enable;
@@ -38,15 +38,15 @@ typedef struct s147nand_dev9_io_mmio_x
   vu8 m_pad06;
   vu8 m_pad07;
   vu8 m_nand_outbyte;
-} s147nand_dev9_io_mmio_;
+} s147nand_dev9_io_mmio_t;
 
-typedef struct nand_mdev_privdata_stru_x
+typedef struct s147nand_mdev_privdata_
 {
   int m_seek_cur;
   int m_flags;
   int m_seek_max;
   int m_partition_offset;
-} nand_mdev_privdata_stru_;
+} s147nand_mdev_privdata_t;
 
 //-------------------------------------------------------------------------
 // Function declarations
@@ -60,9 +60,9 @@ static int nand_mdev_op_close(iop_file_t *f);
 static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size);
 static int nand_mdev_op_write(iop_file_t *f, void *ptr, int size);
 static int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode);
-static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, const char *name);
-static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name);
-static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, int idx, char typ);
+static int do_nand_open_inner1(s147nand_mdev_privdata_t *privdat, int part, const char *name);
+static int do_nand_open_inner2(s147nand_mdev_privdata_t *privdat, const char *name);
+static u32 do_get_nand_direntry(s147nand_mdev_privdata_t *privdat, const char *name, int idx, char typ);
 static int do_nand_bytes2sector(int pageoffs, int byteoffs);
 static int do_nand_bytes2sector_remainder(int byteoffs);
 static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, int size);
@@ -107,7 +107,7 @@ static void *g_nand_unaligned_buf = NULL;
 static int g_nand_unaligned_buf_alloced = 0; // weak
 static int g_probunusd_dword_4051D0 = 0; // weak
 static int g_nand_watchdog_enabled = 0; // weak
-static nand_info_stru_ g_nand_info = { 0x800, 0x840, 0x40, 0x800, 0x20000 }; // weak
+static s147nand_info_t g_nand_info = { 0x800, 0x840, 0x40, 0x800, 0x20000 }; // weak
 static iop_device_t g_drv; // idb
 static void *g_nand_sector_buffer; // idb
 static const char *g_dev_name;
@@ -115,14 +115,14 @@ static iop_sema_t g_sema_param_dev; // idb
 static int g_sema_id_dev; // idb
 static iop_sema_t g_seama_param_1; // idb
 static int g_sema_id_init; // idb
-static nand_header_stru_ g_nand_header; // weak
+static s147nand_header_t g_nand_header; // weak
 static u16 *g_logical_addr_tbl;
 static iop_sema_t g_sema_param; // idb
 static int g_sema_id_nand; // idb
 static int g_thid; // idb
 iop_mmio_hwport_t iop_mmio_hwport_lo; // weak
-s147_dev9_mem_mmio_ s147_dev9_mem_mmio; // weak
-s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio; // weak
+s147_dev9_mem_mmio_t s147_dev9_mem_mmio; // weak
+s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio; // weak
 
 
 //----- (00400000) --------------------------------------------------------
@@ -208,7 +208,7 @@ static int nand_mdev_op_deinit(iop_device_t *dev)
 //----- (00400300) --------------------------------------------------------
 static int nand_mdev_op_open(iop_file_t *f, const char *name, int flags)
 {
-  nand_mdev_privdata_stru_ *privdat; // [sp+10h] [+10h]
+  s147nand_mdev_privdata_t *privdat; // [sp+10h] [+10h]
   int state; // [sp+14h] [+14h] BYREF
   int retres; // [sp+18h] [+18h]
 
@@ -222,7 +222,7 @@ static int nand_mdev_op_open(iop_file_t *f, const char *name, int flags)
     return retres;
   }
   CpuSuspendIntr(&state);
-  f->privdata = AllocSysMemory(ALLOC_LAST, sizeof(nand_mdev_privdata_stru_), 0);
+  f->privdata = AllocSysMemory(ALLOC_LAST, sizeof(s147nand_mdev_privdata_t), 0);
   CpuResumeIntr(state);
   if ( !f->privdata )
   {
@@ -231,8 +231,8 @@ static int nand_mdev_op_open(iop_file_t *f, const char *name, int flags)
   }
   if ( retres >= 0 )
   {
-    privdat = (nand_mdev_privdata_stru_ *)f->privdata;
-    memset(privdat, 0, sizeof(nand_mdev_privdata_stru_));
+    privdat = (s147nand_mdev_privdata_t *)f->privdata;
+    memset(privdat, 0, sizeof(s147nand_mdev_privdata_t));
     retres = do_nand_open_inner1(privdat, f->unit, name);
   }
   if ( retres < 0 )
@@ -273,13 +273,13 @@ static int nand_mdev_op_close(iop_file_t *f)
 static int nand_mdev_op_read(iop_file_t *f, void *ptr, int size)
 {
   int xsize3; // $s0
-  nand_mdev_privdata_stru_ *privdat; // [sp+18h] [+18h]
+  s147nand_mdev_privdata_t *privdat; // [sp+18h] [+18h]
   int xsector1; // [sp+20h] [+20h]
   int xsector2; // [sp+24h] [+24h]
   int xsize2; // [sp+28h] [+28h]
   int cursz; // [sp+2Ch] [+2Ch]
 
-  privdat = (nand_mdev_privdata_stru_ *)f->privdata;
+  privdat = (s147nand_mdev_privdata_t *)f->privdata;
   WaitSema(g_sema_id_dev);
   if ( privdat->m_seek_cur >= privdat->m_seek_max )
   {
@@ -337,9 +337,9 @@ static int nand_mdev_op_write(iop_file_t *f, void *ptr, int size)
 //----- (00400980) --------------------------------------------------------
 static int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode)
 {
-  nand_mdev_privdata_stru_ *privdat; // [sp+10h] [+10h]
+  s147nand_mdev_privdata_t *privdat; // [sp+10h] [+10h]
 
-  privdat = (nand_mdev_privdata_stru_ *)f->privdata;
+  privdat = (s147nand_mdev_privdata_t *)f->privdata;
   WaitSema(g_sema_id_dev);
   switch (mode)
   {
@@ -393,9 +393,9 @@ int s147nand_4_dumpprintinfo(int part)
     {
       if ( (i << 6) - 1 + j == -1 )
       {
-        const nand_dir_stru_ *hdrbuf; // [sp+14h] [+14h]
+        const s147nand_dir_t *hdrbuf; // [sp+14h] [+14h]
 
-        hdrbuf = (const nand_dir_stru_ *)g_nand_sector_buffer;
+        hdrbuf = (const s147nand_dir_t *)g_nand_sector_buffer;
         if ( strncmp(hdrbuf->m_sig, "S147ROM", 8) )
         {
           Kprintf(" \"%s%d:\" ... No data\n", g_dev_name, part);
@@ -408,9 +408,9 @@ int s147nand_4_dumpprintinfo(int part)
       }
       else
       {
-        const nand_direntry_stru_ *dirbuf; // [sp+10h] [+10h]
+        const s147nand_direntry_t *dirbuf; // [sp+10h] [+10h]
 
-        dirbuf = (const nand_direntry_stru_ *)g_nand_sector_buffer;
+        dirbuf = (const s147nand_direntry_t *)g_nand_sector_buffer;
         if ( (i << 6) - 1 + j >= hdrret )
         {
           finished = 1;
@@ -439,7 +439,7 @@ int s147nand_4_dumpprintinfo(int part)
 }
 
 //----- (00400E28) --------------------------------------------------------
-static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, const char *name)
+static int do_nand_open_inner1(s147nand_mdev_privdata_t *privdat, int part, const char *name)
 {
   int nand_partition_offset; // [sp+10h] [+10h]
 
@@ -454,7 +454,7 @@ static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, cons
 }
 
 //----- (00400EF8) --------------------------------------------------------
-static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name)
+static int do_nand_open_inner2(s147nand_mdev_privdata_t *privdat, const char *name)
 {
   int i; // [sp+10h] [+10h]
 
@@ -470,7 +470,7 @@ static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *na
 }
 
 //----- (0040101C) --------------------------------------------------------
-static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, int idx, char typ)
+static u32 do_get_nand_direntry(s147nand_mdev_privdata_t *privdat, const char *name, int idx, char typ)
 {
   int lvtyp; // $v0
   int size; // [sp+1Ch] [+1Ch]
@@ -491,9 +491,9 @@ static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *n
     {
       if ( (offscnt << 6) - 1 + i == -1 )
       {
-        const nand_dir_stru_ *hdrbuf; // [sp+18h] [+18h]
+        const s147nand_dir_t *hdrbuf; // [sp+18h] [+18h]
 
-        hdrbuf = (const nand_dir_stru_ *)g_nand_sector_buffer;
+        hdrbuf = (const s147nand_dir_t *)g_nand_sector_buffer;
         if ( strncmp(hdrbuf->m_sig, "S147ROM", 8) )
         {
           Kprintf("s147nand.irx: No directory entries\n");
@@ -508,9 +508,9 @@ static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *n
       }
       else
       {
-        const nand_direntry_stru_ *dirbuf; // [sp+14h] [+14h]
+        const s147nand_direntry_t *dirbuf; // [sp+14h] [+14h]
 
-        dirbuf = (const nand_direntry_stru_ *)g_nand_sector_buffer;
+        dirbuf = (const s147nand_direntry_t *)g_nand_sector_buffer;
         if ( (offscnt << 6) - 1 + i >= hdrret )
           return -ENOENT;
         lvtyp = (char)dirbuf[i].m_type;
@@ -567,7 +567,7 @@ int s147nand_5_outerinit(void)
 void s147nand_6_checkformat(void)
 {
   int state; // [sp+10h] [+10h] BYREF
-  nand_info_stru_ *nandinf; // [sp+14h] [+14h]
+  s147nand_info_t *nandinf; // [sp+14h] [+14h]
 
   nandinf = s147nand_16_getnandinfo();
   s147nand_20_nand_read_dma(&g_nand_header, 0, 0, sizeof(g_nand_header));
@@ -605,7 +605,7 @@ void s147nand_6_checkformat(void)
   Kprintf("s147nand.irx: PageSize    = %d (Pages)\n", nandinf->m_page_count);
   Kprintf("\n");
 }
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (00401768) --------------------------------------------------------
 static void do_update_acdelay(void)
@@ -657,7 +657,7 @@ static void do_update_acdelay(void)
   Kprintf("\n");
   DelayThread(10000);
 }
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (004019C4) --------------------------------------------------------
 static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, int size)
@@ -725,14 +725,14 @@ int s147nand_9_get_nand_partition(int part)
     return g_nand_header.m_nand_partition_info[part].m_offset;
   return 0;
 }
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (00401E14) --------------------------------------------------------
 static int get_nand_partition_offset(int part)
 {
   return s147nand_9_get_nand_partition(part) * g_nand_header.m_pages_per_block;
 }
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (00401E70) --------------------------------------------------------
 int s147nand_10_get_nand_partition_size(int part)
@@ -743,16 +743,16 @@ int s147nand_10_get_nand_partition_size(int part)
     return g_nand_header.m_nand_partition_info[part].m_size;
   return 0;
 }
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (00401F28) --------------------------------------------------------
 static int nand_mdev_open_special(iop_file_t *f, const char *name)
 {
-  nand_mdev_privdata_stru_ *privdat; // [sp+10h] [+10h]
+  s147nand_mdev_privdata_t *privdat; // [sp+10h] [+10h]
   int state; // [sp+14h] [+14h] BYREF
 
   CpuSuspendIntr(&state);
-  f->privdata = AllocSysMemory(ALLOC_FIRST, sizeof(nand_mdev_privdata_stru_), 0);
+  f->privdata = AllocSysMemory(ALLOC_FIRST, sizeof(s147nand_mdev_privdata_t), 0);
   CpuResumeIntr(state);
   if ( !f->privdata )
   {
@@ -760,8 +760,8 @@ static int nand_mdev_open_special(iop_file_t *f, const char *name)
     // Unofficial: return early on error
     return -ENOENT;
   }
-  privdat = (nand_mdev_privdata_stru_ *)f->privdata;
-  memset(privdat, 0, sizeof(nand_mdev_privdata_stru_));
+  privdat = (s147nand_mdev_privdata_t *)f->privdata;
+  memset(privdat, 0, sizeof(s147nand_mdev_privdata_t));
   privdat->m_seek_cur = 0;
   if ( !strcmp(name, "watchdog-enable") )
   {
@@ -818,15 +818,15 @@ static int nand_mdev_open_special(iop_file_t *f, const char *name)
   }
   return 0;
 }
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (00402260) --------------------------------------------------------
 static int nand_mdev_read_special(iop_file_t *f, void *ptr, int size)
 {
-  nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
+  s147nand_mdev_privdata_t *privdata; // [sp+10h] [+10h]
   int retres1; // [sp+14h] [+14h]
 
-  privdata = (nand_mdev_privdata_stru_ *)f->privdata;
+  privdata = (s147nand_mdev_privdata_t *)f->privdata;
   if ( (privdata->m_flags & 0x10000) != 0 )
     return do_nand_copy_seccode_from_buf(f, ptr, size);
   if ( (privdata->m_flags & 0x40000) != 0 )
@@ -853,11 +853,11 @@ static int nand_mdev_read_special(iop_file_t *f, void *ptr, int size)
 //----- (0040246C) --------------------------------------------------------
 static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
 {
-  nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
+  s147nand_mdev_privdata_t *privdata; // [sp+10h] [+10h]
   int retres1; // [sp+14h] [+14h]
   int xsz; // [sp+18h] [+18h]
 
-  privdata = (nand_mdev_privdata_stru_ *)f->privdata;
+  privdata = (s147nand_mdev_privdata_t *)f->privdata;
   xsz = g_nand_header.m_nand_partition_8_info.m_size * g_nand_header.m_pages_per_block * g_nand_header.m_page_size_noecc;
   if ( (privdata->m_flags & 0x1000000) == 0 )
     return -EINVAL;
@@ -896,15 +896,15 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
   return size;
 }
 // 40260C: variable 'retres1' is possibly undefined
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (0040274C) --------------------------------------------------------
 static int do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, int size)
 {
-  nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
+  s147nand_mdev_privdata_t *privdata; // [sp+10h] [+10h]
   int xsize; // [sp+14h] [+14h]
 
-  privdata = (nand_mdev_privdata_stru_ *)f->privdata;
+  privdata = (s147nand_mdev_privdata_t *)f->privdata;
   if ( privdata->m_seek_cur >= privdata->m_seek_max )
     return 0;
   xsize = ( privdata->m_seek_max >= (int)(privdata->m_seek_cur + size) ) ? size : (privdata->m_seek_max - privdata->m_seek_cur);
@@ -912,15 +912,15 @@ static int do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, int size)
   privdata->m_seek_cur += xsize;
   return xsize;
 }
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (0040287C) --------------------------------------------------------
 static int do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, int size)
 {
-  nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
+  s147nand_mdev_privdata_t *privdata; // [sp+10h] [+10h]
   int xsize; // [sp+14h] [+14h]
 
-  privdata = (nand_mdev_privdata_stru_ *)f->privdata;
+  privdata = (s147nand_mdev_privdata_t *)f->privdata;
   if ( privdata->m_seek_cur >= privdata->m_seek_max )
     return 0;
   xsize = ( privdata->m_seek_max >= (int)(privdata->m_seek_cur + size) ) ? size : (privdata->m_seek_max - privdata->m_seek_cur);
@@ -928,7 +928,7 @@ static int do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, int size)
   privdata->m_seek_cur += xsize;
   return xsize;
 }
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (004029AC) --------------------------------------------------------
 int s147nand_11_erasetranslatepageoffs(int pageoffs)
@@ -939,7 +939,7 @@ int s147nand_11_erasetranslatepageoffs(int pageoffs)
 //----- (004029FC) --------------------------------------------------------
 int s147nand_12_load_logaddrtable(void)
 {
-  nand_header_stru_ hdr; // [sp+10h] [+10h] BYREF
+  s147nand_header_t hdr; // [sp+10h] [+10h] BYREF
   int state; // [sp+B0h] [+B0h] BYREF
 
   s147nand_20_nand_read_dma(&hdr, 0, 0, sizeof(hdr));
@@ -1011,7 +1011,7 @@ int s147nand_14_translate_pageoffs(int pageoffs)
     _break(6, 0);
   return s147nand_27_blocks2pages(tblockoffs) + (pageoffs % g_nand_header.m_pages_per_block);
 }
-// 405258: using guessed type nand_header_stru_ g_nand_header;
+// 405258: using guessed type s147nand_header_t g_nand_header;
 
 //----- (00402D80) --------------------------------------------------------
 static int dev9_intr_handler(void *unusd)
@@ -1048,11 +1048,11 @@ int s147nand_15_nandinit(void)
 // 1F800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport_lo;
 
 //----- (00402EC0) --------------------------------------------------------
-nand_info_stru_ *s147nand_16_getnandinfo(void)
+s147nand_info_t *s147nand_16_getnandinfo(void)
 {
   return &g_nand_info;
 }
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
 
 //----- (00402EE8) --------------------------------------------------------
 int s147nand_17_get_sema(void)
@@ -1088,7 +1088,7 @@ int s147nand_19_logaddr_read(u16 *tbl, int pageoffs, int bytecnt)
   }
   return 0;
 }
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
 
 //----- (00403084) --------------------------------------------------------
 int s147nand_20_nand_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
@@ -1158,7 +1158,7 @@ int s147nand_24_eraseoffset(int pageoffs)
   SignalSema(g_sema_id_nand);
   return retres;
 }
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
 
 //----- (004033D4) --------------------------------------------------------
 int s147nand_25_nand_blockerase(int pageoffs)
@@ -1223,9 +1223,9 @@ static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int byt
   return 0;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
+// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00403748) --------------------------------------------------------
 static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
@@ -1256,9 +1256,9 @@ static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int byt
   return 0;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
+// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (004039C4) --------------------------------------------------------
 static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
@@ -1302,9 +1302,9 @@ static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int by
   return 0;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
+// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00403CAC) --------------------------------------------------------
 static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
@@ -1343,9 +1343,9 @@ static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int by
   return 0;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
+// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00403F74) --------------------------------------------------------
 static int nand_lowlevel_blockerase(int pageoffs)
@@ -1375,9 +1375,9 @@ static int nand_lowlevel_blockerase(int pageoffs)
   return 0;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
+// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00404128) --------------------------------------------------------
 static int nand_lowlevel_readid(void *ptr)
@@ -1397,15 +1397,15 @@ static int nand_lowlevel_readid(void *ptr)
   return 0;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_ s147nand_dev9_io_mmio;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
+// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00404204) --------------------------------------------------------
 int s147nand_27_blocks2pages(int blocks)
 {
   return blocks * g_nand_info.m_pages_per_block;
 }
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
 
 //----- (00404244) --------------------------------------------------------
 int s147nand_28_pages2blocks(int pages)
@@ -1416,7 +1416,7 @@ int s147nand_28_pages2blocks(int pages)
     _break(6, 0);
   return pages / g_nand_info.m_pages_per_block;
 }
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
 
 //----- (004042A0) --------------------------------------------------------
 int s147nand_29_pages2blockround(int pages)
@@ -1434,7 +1434,7 @@ int s147nand_29_pages2blockround(int pages)
     _break(6, 0);
   return blocks + (( pages % g_nand_info.m_pages_per_block ) ? 1 : 0);
 }
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;
 
 //----- (00404354) --------------------------------------------------------
 int s147nand_30_bytes2pagesnoeccround(int bytes)
@@ -1452,4 +1452,4 @@ int s147nand_30_bytes2pagesnoeccround(int bytes)
     _break(6, 0);
   return pages + (( bytes % g_nand_info.m_page_size_noecc ) ? 1 : 0);
 }
-// 4051D8: using guessed type nand_info_stru_ g_nand_info;
+// 4051D8: using guessed type s147nand_info_t g_nand_info;

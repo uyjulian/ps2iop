@@ -6,7 +6,7 @@ IRX_ID("ROMWRITE", 7, 1);
 
 #define _break(...) __builtin_trap()
 
-typedef struct s147_dev9_mem_mmio_x
+typedef struct s147_dev9_mem_mmio_
 {
   vu8 m_unk00;
   vu8 m_led;
@@ -22,9 +22,9 @@ typedef struct s147_dev9_mem_mmio_x
   vu8 m_pad0B;
   vu8 m_security_unlock_set1;
   vu8 m_security_unlock_set2;
-} s147_dev9_mem_mmio_;
+} s147_dev9_mem_mmio_t;
 
-typedef struct nand_id_desc_info_stru_x
+typedef struct nand_id_desc_info_
 {
   u32 m_id[5];
   const char *m_nand_name;
@@ -33,15 +33,15 @@ typedef struct nand_id_desc_info_stru_x
   int m_page_size_withecc;
   int m_pages_per_block;
   int m_block_size;
-} nand_id_desc_info_stru_;
+} nand_id_desc_info_t;
 
-typedef union romwrite_part_buf_x
+typedef union romwrite_part_buf_
 {
   u8 m_buf[0x20000];
-  nand_header_stru_ m_hdr;
-  nand_dir_stru_ m_dir;
-  nand_direntry_stru_ m_direntry[64];
-} romwrite_part_buf_;
+  s147nand_header_t m_hdr;
+  s147nand_dir_t m_dir;
+  s147nand_direntry_t m_direntry[64];
+} romwrite_part_buf_t;
 
 //-------------------------------------------------------------------------
 // Function declarations
@@ -65,7 +65,7 @@ static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt);
 static int do_list_files(int part);
 static void do_output_bb_info(int blocksd, int abspart, int bboffs);
 static int do_verify(void *buf1, void *buf2, int len);
-static const nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid);
+static const nand_id_desc_info_t *do_parse_device_info(const char *nandid);
 // Unofficial: printf to IOP Kprintf instead of EE
 #define USER_PRINTF(...) Kprintf(__VA_ARGS__)
 // Unofficial: printf to EE is omitted
@@ -74,7 +74,7 @@ static const nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid);
 //-------------------------------------------------------------------------
 // Data declarations
 
-static const nand_id_desc_info_stru_ g_nand_type_info[4] =
+static const nand_id_desc_info_t g_nand_type_info[4] =
 {
   {
     { 0xEC, 0xDA, 0xFFFFFFFF, 0x15, 0xFFFFFFFF },
@@ -115,12 +115,12 @@ static int g_badblock_count = 1; // weak
 static char g_product_code_tmp[32]; // weak
 static u8 *g_blockinfo_str_buf;
 static u16 *g_blockinfo_dat_buf;
-static const nand_id_desc_info_stru_ *g_device_info;
+static const nand_id_desc_info_t *g_device_info;
 static char g_atfile_part_image[8][0x100];
 static char g_atfile_info_image[0x100]; // idb
 static char g_atfile_147_dir[0x100]; // idb
-static romwrite_part_buf_ g_nand_partbuf; // weak
-s147_dev9_mem_mmio_ s147_dev9_mem_mmio; // weak
+static romwrite_part_buf_t g_nand_partbuf; // weak
+s147_dev9_mem_mmio_t s147_dev9_mem_mmio; // weak
 
 
 //----- (00400000) --------------------------------------------------------
@@ -338,7 +338,7 @@ static void thread_proc(void *userdata)
   }
 }
 // 400B40: using guessed type void __noreturn thread_proc();
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 //----- (00400D00) --------------------------------------------------------
 static void do_toggle_dev9addr_inner(int len, int cnt)
@@ -359,7 +359,7 @@ static void do_toggle_dev9addr_inner(int len, int cnt)
     }
   }
 }
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 // Unused function omitted
 
@@ -420,7 +420,7 @@ static void do_set_atfile_147_dir(const char *str)
 //----- (00401178) --------------------------------------------------------
 static int do_start_write_proc(void)
 {
-  nand_info_stru_ *nandinf; // [sp+18h] [+18h]
+  s147nand_info_t *nandinf; // [sp+18h] [+18h]
   int state; // [sp+1Ch] [+1Ch] BYREF
   int part; // [sp+20h] [+20h]
   int logaddrtable; // [sp+28h] [+28h]
@@ -552,7 +552,7 @@ static int do_start_write_proc(void)
 // 407CA0: using guessed type char g_secr_code_1;
 // 407CA1: using guessed type char g_secr_code_2;
 // 407CA4: using guessed type int g_curflag;
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 //----- (00401E5C) --------------------------------------------------------
 static int do_format_device(int abspart)
@@ -686,8 +686,8 @@ static int do_format_device(int abspart)
 // 407CA0: using guessed type char g_secr_code_1;
 // 407CA1: using guessed type char g_secr_code_2;
 // 407CAC: using guessed type int g_boot_video_mode;
-// 408700: using guessed type romwrite_part_buf_ g_nand_partbuf;
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
+// 408700: using guessed type romwrite_part_buf_t g_nand_partbuf;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 //----- (004028F4) --------------------------------------------------------
 static int do_write_partition(int part)
@@ -910,8 +910,8 @@ static int do_write_partition(int part)
   return err ? -1 : 0;
 }
 // 407CA4: using guessed type int g_curflag;
-// 408700: using guessed type romwrite_part_buf_ g_nand_partbuf;
-// B0000000: using guessed type s147_dev9_mem_mmio_ s147_dev9_mem_mmio;
+// 408700: using guessed type romwrite_part_buf_t g_nand_partbuf;
+// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 //----- (00403758) --------------------------------------------------------
 static int check_badblock_count(void)
@@ -1065,7 +1065,7 @@ static int do_list_files(int part)
   STATUS_PRINTF("\n");
   return hdrret;
 }
-// 408700: using guessed type romwrite_part_buf_ g_nand_partbuf;
+// 408700: using guessed type romwrite_part_buf_t g_nand_partbuf;
 
 //----- (004041F4) --------------------------------------------------------
 static void do_output_bb_info(int blocksd, int abspart, int bboffs)
@@ -1092,7 +1092,7 @@ static int do_verify(void *buf1, void *buf2, int len)
 }
 
 //----- (00404454) --------------------------------------------------------
-static const nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
+static const nand_id_desc_info_t *do_parse_device_info(const char *nandid)
 {
   int i; // [sp+0h] [+0h]
   int j; // [sp+8h] [+8h]
@@ -1110,4 +1110,4 @@ static const nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
   }
   return 0;
 }
-// 4060B0: using guessed type nand_id_desc_info_stru_ g_nand_type_info[4];
+// 4060B0: using guessed type nand_id_desc_info_t g_nand_type_info[4];
