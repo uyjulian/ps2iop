@@ -4,6 +4,8 @@
 #include <sys/fcntl.h>
 
 IRX_ID("S147NETB", 2, 2);
+// Text section hash:
+// 49d8ea7bd41706df5cfcebac25acdc5e
 
 int _start(int ac, char **av)
 {

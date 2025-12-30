@@ -2,6 +2,8 @@
 #include "irx_imports.h"
 
 IRX_ID("S147LINK", 2, 7);
+// Text section hash:
+// f409cc0329bb98d776c9aacef6573aa9
 
 struct s147link_dev9_mem_mmio_
 {

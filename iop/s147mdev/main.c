@@ -4,6 +4,8 @@
 #include <s147mdev.h>
 
 IRX_ID("S147MDEV", 2, 1);
+// Text section hash:
+// bda8a15d6a4c9a560598c37fd397d263
 
 static int register_atfile_ioman_device(const char *atfile_name, const char *atfile_desc);
 static int atfile_drv_op_nulldev(const iop_file_t *f);

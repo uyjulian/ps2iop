@@ -4,6 +4,8 @@
 #include <loadcore.h>
 
 IRX_ID("ROMWRITE", 7, 1);
+// Text section hash:
+// 6674c59e79963dd4c1d7f6fccfecbf70
 
 typedef struct s147_dev9_mem_mmio_
 {

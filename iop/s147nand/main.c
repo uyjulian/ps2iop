@@ -6,6 +6,8 @@
 #include <iop_mmio_hwport.h>
 
 IRX_ID("S147NAN2", 5, 2);
+// Text section hash:
+// 7894f2d18e733e5f2422b6c61af3b0da
 
 typedef struct s147_dev9_mem_mmio_
 {

@@ -5,6 +5,8 @@
 #include <errno.h>
 
 IRX_ID("S147CTRL", 2, 8);
+// Text section hash:
+// 0cc30d14ced9b7ccec282df9d56d0bf4
 
 typedef struct watchdog_info_
 {
