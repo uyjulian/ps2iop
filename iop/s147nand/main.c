@@ -139,14 +139,14 @@ int _start(int ac, char **av)
   g_nand_info.m_block_size = 0x800;
   g_nand_info.m_page_count = 0x20000;
   if ( do_register_nand_to_mdev("nand", "NAND-Flash") )
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   if ( RegisterLibraryEntries(&_exp_s147nand) )
   {
     Kprintf("s147nand.irx: RegisterLibraryEntries - Failed.\n");
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   Kprintf("s147nand.irx: RegisterLibraryEntries - OK.\n");
-  return 0;
+  return MODULE_RESIDENT_END;
 }
 
 //----- (004000B0) --------------------------------------------------------

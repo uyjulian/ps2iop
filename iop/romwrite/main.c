@@ -1,6 +1,7 @@
 
 #include <irx_imports.h>
 #include <sys/fcntl.h>
+#include <loadcore.h>
 
 IRX_ID("ROMWRITE", 7, 1);
 
@@ -197,7 +198,7 @@ int _start(int ac, char **av)
     DelayThread(10000);
     USER_PRINTF("  -v, --vga .............. Set boot video mode (VGA)\n");
     DelayThread(10000);
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   }
   // Unofficial: init var here instead
   g_badblock_count = 1;
@@ -305,9 +306,9 @@ int _start(int ac, char **av)
   thparam.option = 0;
   thid = CreateThread(&thparam);
   if ( thid <= 0 )
-    return 1;
+    return MODULE_NO_RESIDENT_END;
   StartThread(thid, 0);
-  return 0;
+  return MODULE_RESIDENT_END;
 }
 // 400B40: using guessed type void __noreturn thread_proc();
 
