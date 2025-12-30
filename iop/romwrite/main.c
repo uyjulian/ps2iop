@@ -390,7 +390,7 @@ static void do_toggle_dev9addr_inner(int len, int cnt)
 //----- (00400E6C) --------------------------------------------------------
 static unsigned int generate_acio_delay_val(char dmat_val, char rddl_val, char wrdl_val)
 {
-  return (((dmat_val - 1) & 0xF) << 24) | (16 * ((rddl_val - 1) & 0xF)) | 0xA01A0100 | ((wrdl_val - 1) & 0xF);
+  return (((dmat_val - 1) & 0xF) << 24) | (((rddl_val - 1) & 0xF) << 4) | 0xA01A0100 | ((wrdl_val - 1) & 0xF);
 }
 
 // Unused function omitted
@@ -478,7 +478,7 @@ static int do_start_write_proc(void)
   STATUS_PRINTF("\n");
   CpuSuspendIntr(&state);
   g_blockinfo_str_buf = (u8 *)AllocSysMemory(0, g_device_info->m_block_size, 0);
-  g_blockinfo_dat_buf = (u16 *)AllocSysMemory(0, 2 * g_device_info->m_block_size, 0);
+  g_blockinfo_dat_buf = (u16 *)AllocSysMemory(0, sizeof(u16) * g_device_info->m_block_size, 0);
   CpuResumeIntr(state);
   if ( !g_blockinfo_str_buf || !g_blockinfo_dat_buf )
   {
@@ -704,7 +704,7 @@ static int do_format_device(int abspart)
   g_nand_partbuf.m_hdr.m_acmem_delay_val = 0;
   g_nand_partbuf.m_hdr.m_acio_delay_val = generate_acio_delay_val(3, 3, 3);
   s147nand_22_nand_write_dma(&g_nand_partbuf, 0, 0, 160);
-  do_dma_write_bytes_multi(g_blockinfo_dat_buf, 1, 2 * g_device_info->m_block_size);
+  do_dma_write_bytes_multi(g_blockinfo_dat_buf, 1, sizeof(u16) * g_device_info->m_block_size);
   return 0;
 }
 // 407CA0: using guessed type char g_secr_code_1;
@@ -1018,7 +1018,7 @@ static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt)
   bytecnt = s147nand_30_bytes2pagesnoeccround(pagecnt);
   for ( i = 0; i < bytecnt; i += 1 )
     s147nand_22_nand_write_dma(
-      (char *)ptr + 4 * (g_device_info->m_page_size_noecc >> 2) * i,
+      (char *)ptr + ((g_device_info->m_page_size_noecc >> 2) << 2) * i,
       pageoffs + i,
       0,
       g_device_info->m_page_size_noecc);

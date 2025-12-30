@@ -709,7 +709,7 @@ int s147nand_7_multi_read_dma(void *ptr, int pageoffs, int pagecnt)
   WaitSema(g_sema_id_init);
   for ( i = 0; i < pagecnt; i += 1 )
   {
-    retres = s147nand_20_nand_read_dma((char *)ptr + 4 * (s147nand_16_getnandinfo()->m_page_size_noecc >> 2) * i, s147nand_14_translate_pageoffs(pageoffs + i), 0, s147nand_16_getnandinfo()->m_page_size_noecc);
+    retres = s147nand_20_nand_read_dma((char *)ptr + ((s147nand_16_getnandinfo()->m_page_size_noecc >> 2) << 2) * i, s147nand_14_translate_pageoffs(pageoffs + i), 0, s147nand_16_getnandinfo()->m_page_size_noecc);
     if ( retres )
       return retres;
   }
@@ -728,7 +728,7 @@ int s147nand_8_multi_write_dma(void *ptr, int pageoffs, int pagecnt)
   retres = 0;
   for ( i = 0; i < pagecnt; i += 1 )
   {
-    retres = s147nand_22_nand_write_dma((char *)ptr + 4 * (s147nand_16_getnandinfo()->m_page_size_noecc >> 2) * i, s147nand_14_translate_pageoffs(pageoffs + i), 0, s147nand_16_getnandinfo()->m_page_size_noecc);
+    retres = s147nand_22_nand_write_dma((char *)ptr + ((s147nand_16_getnandinfo()->m_page_size_noecc >> 2) << 2) * i, s147nand_14_translate_pageoffs(pageoffs + i), 0, s147nand_16_getnandinfo()->m_page_size_noecc);
     if ( retres )
       return retres;
   }
@@ -969,9 +969,9 @@ int s147nand_12_load_logaddrtable(void)
     return -19;
   }
   CpuSuspendIntr(&state);
-  g_logical_addr_tbl = (u16 *)AllocSysMemory(0, 2 * hdr.m_block_size, 0);
+  g_logical_addr_tbl = (u16 *)AllocSysMemory(0, sizeof(u16) * hdr.m_block_size, 0);
   CpuResumeIntr(state);
-  s147nand_19_logaddr_read(g_logical_addr_tbl, 1, 2 * hdr.m_block_size);
+  s147nand_19_logaddr_read(g_logical_addr_tbl, 1, sizeof(u16) * hdr.m_block_size);
   CpuSuspendIntr(&state);
   g_nand_unaligned_buf = AllocSysMemory(0, s147nand_16_getnandinfo()->m_page_size_noecc, 0);
   CpuResumeIntr(state);
@@ -1099,7 +1099,7 @@ int s147nand_19_logaddr_read(u16 *tbl, int pageoffs, int bytecnt)
     int retres; // [sp+14h] [+14h]
 
     retres = s147nand_20_nand_read_dma(
-               &tbl[2 * (g_nand_info.m_page_size_noecc >> 2) * i],
+               &tbl[((g_nand_info.m_page_size_noecc >> 2) << 1) * i],
                pageoffs + i,
                0,
                g_nand_info.m_page_size_noecc);
