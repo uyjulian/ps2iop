@@ -107,7 +107,6 @@ static int g_nand_watchdog_enabled;
 static s147nand_info_t g_nand_info;
 static iop_device_t g_drv;
 static void *g_nand_sector_buffer;
-static const char *g_dev_name;
 static int g_sema_id_dev;
 static int g_sema_id_init;
 static s147nand_header_t g_nand_header;
@@ -161,7 +160,7 @@ static int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc)
   g_drv.ops = &nand_mdev_ops;
   s147mdev_5_delfs(0);
   s147mdev_4_addfs(&g_drv, 0);
-  g_dev_name = drv_name;
+  // Unofficial: remove redundant var
   return 0;
 }
 
@@ -386,12 +385,14 @@ int s147nand_4_dumpprintinfo(int part)
         hdrbuf = (const s147nand_dir_t *)g_nand_sector_buffer;
         if ( strncmp(hdrbuf->m_sig, "S147ROM", 8) )
         {
-          Kprintf(" \"%s%d:\" ... No data\n", g_dev_name, part);
+          // Unofficial: use g_drv.name
+          Kprintf(" \"%s%d:\" ... No data\n", g_drv.name, part);
           Kprintf(" -----------------------------\n\n");
           return -ENODEV;
         }
         hdrret = hdrbuf->m_entrycnt;
-        Kprintf(" \"%s%d:\"\n", g_dev_name, part);
+        // Unofficial: use g_drv.name
+        Kprintf(" \"%s%d:\"\n", g_drv.name, part);
         Kprintf(" -----------------------------\n");
       }
       else
