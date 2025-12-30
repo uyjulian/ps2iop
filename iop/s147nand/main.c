@@ -497,7 +497,7 @@ static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *n
           Kprintf("s147nand.irx: No directory entries\n");
           return -19;
         }
-        if ( hdrbuf->m_ver >= 0x101u )
+        if ( hdrbuf->m_ver >= 0x101 )
         {
           Kprintf("s147nand.irx: Version 0x%04x format is not supported\n", hdrbuf->m_ver);
           return -19;
@@ -579,7 +579,7 @@ void s147nand_6_checkformat(void)
     "s147nand.irx: BootSector format version = %d.%d\n",
     g_nand_header.m_bootsector_ver_1,
     g_nand_header.m_bootsector_ver_2);
-  if ( (u32)g_nand_header.m_bootsector_ver_1 < 2u )
+  if ( (u32)g_nand_header.m_bootsector_ver_1 < 2 )
   {
     Kprintf("s147nand.irx: Old version format, 256MB-NAND only\n");
   }
@@ -612,7 +612,7 @@ static void do_update_acdelay(void)
 
   Kprintf("s147nand.irx: Update Acdelay\n", g_nand_header.m_bootsector_ver_1, g_nand_header.m_bootsector_ver_2);
   DelayThread(10000);
-  if ( (u32)g_nand_header.m_bootsector_ver_1 < 2u )
+  if ( (u32)g_nand_header.m_bootsector_ver_1 < 2 )
   {
     Kprintf("s147nand.irx: Old version format, no update\n");
     DelayThread(10000);
@@ -871,18 +871,18 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
     retres1 = 0;
     for ( i = 0; i < g_nand_header.m_nand_partition_8_size; i += 1 )
       retres1 = s147nand_11_erasetranslatepageoffs(s147nand_27_blocks2pages(i + g_nand_header.m_nand_partition_8));
-    privdata->m_flags &= ~0x2000000u;
+    privdata->m_flags &= ~0x2000000;
     if ( retres1 )
       return retres1;
   }
   if ( !g_nand_header.m_page_size_noecc )
-    _break(7u, 0);
+    _break(7, 0);
   if ( g_nand_header.m_page_size_noecc == -1 && privdata->m_seek_cur == (int)0x80000000 )
-    _break(6u, 0);
+    _break(6, 0);
   if ( !g_nand_header.m_page_size_noecc )
-    _break(7u, 0);
+    _break(7, 0);
   if ( g_nand_header.m_page_size_noecc == -1 && size == (int)0x80000000 )
-    _break(6u, 0);
+    _break(6, 0);
   retres1 = s147nand_8_multi_write_dma(
               ptr,
               privdata->m_seek_cur / g_nand_header.m_page_size_noecc + privdata->m_partition_offset,
@@ -1004,9 +1004,9 @@ int s147nand_14_translate_pageoffs(int pageoffs)
   if ( tblockoffs == -1470010 )
     return -1470010;
   if ( !g_nand_header.m_pages_per_block )
-    _break(7u, 0);
+    _break(7, 0);
   if ( g_nand_header.m_pages_per_block == -1 && pageoffs == (int)0x80000000 )
-    _break(6u, 0);
+    _break(6, 0);
   return s147nand_27_blocks2pages(tblockoffs) + (pageoffs % g_nand_header.m_pages_per_block);
 }
 // 405258: using guessed type nand_header_stru_ g_nand_header;
@@ -1029,9 +1029,9 @@ int s147nand_15_nandinit(void)
   ReleaseIntrHandler(41);
   RegisterIntrHandler(41, 1, dev9_intr_handler, &g_probunusd_dword_4051D0);
   EnableIntr(41);
-  dmac_disable(8u);
-  dmac_ch_set_dpcr(8u, 7u);
-  dmac_enable(8u);
+  dmac_disable(8);
+  dmac_ch_set_dpcr(8, 7);
+  dmac_enable(8);
   iop_mmio_hwport_lo.ssbus2.ind_B_address = 0xB4000008;
   g_sema_param.initial = 1;
   g_sema_param.max = 1;
@@ -1204,16 +1204,16 @@ static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int byt
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
+  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x30;
   CpuResumeIntr(state);
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   CpuSuspendIntr(&state);
   s147_dev9_mem_mmio.m_security_unlock_unlock = 0;
-  dmac_request(8u, ptr, bytecnt >> 2, 1u, 0);
+  dmac_request(8, ptr, bytecnt >> 2, 1, 0);
   g_thid = GetThreadId();
   CpuResumeIntr(state);
-  dmac_transfer(8u);
+  dmac_transfer(8);
   SleepThread();
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
   if ( g_nand_watchdog_enabled == 1 )
@@ -1243,7 +1243,7 @@ static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int byt
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
+  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x30;
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   for ( i = 0; i < bytecnt; i += 1 )
@@ -1278,12 +1278,12 @@ static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int by
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
+  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
   s147_dev9_mem_mmio.m_security_unlock_unlock = 0;
-  dmac_request(8u, ptr, bytecnt >> 2, 1u, 1);
+  dmac_request(8, ptr, bytecnt >> 2, 1, 1);
   g_thid = GetThreadId();
   CpuResumeIntr(state);
-  dmac_transfer(8u);
+  dmac_transfer(8);
   SleepThread();
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x10;
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
@@ -1323,7 +1323,7 @@ static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int by
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
+  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
   for ( i = 0; i < bytecnt; i += 1 )
     s147nand_dev9_io_mmio.m_nand_outbyte = ((u8 *)ptr)[i];
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x10;
@@ -1357,7 +1357,7 @@ static int nand_lowlevel_blockerase(int pageoffs)
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x60;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs & 0xC0;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000u) >> 16;
+  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0xD0;
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
@@ -1409,9 +1409,9 @@ int s147nand_27_blocks2pages(int blocks)
 int s147nand_28_pages2blocks(int pages)
 {
   if ( !g_nand_info.m_pages_per_block )
-    _break(7u, 0);
+    _break(7, 0);
   if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
-    _break(6u, 0);
+    _break(6, 0);
   return pages / g_nand_info.m_pages_per_block;
 }
 // 4051D8: using guessed type nand_info_stru_ g_nand_info;
@@ -1422,14 +1422,14 @@ int s147nand_29_pages2blockround(int pages)
   int blocks; // [sp+0h] [+0h]
 
   if ( !g_nand_info.m_pages_per_block )
-    _break(7u, 0);
+    _break(7, 0);
   if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
-    _break(6u, 0);
+    _break(6, 0);
   if ( !g_nand_info.m_pages_per_block )
-    _break(7u, 0);
+    _break(7, 0);
   blocks = pages / g_nand_info.m_pages_per_block;
   if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
-    _break(6u, 0);
+    _break(6, 0);
   return blocks + (( pages % g_nand_info.m_pages_per_block ) ? 1 : 0);
 }
 // 4051D8: using guessed type nand_info_stru_ g_nand_info;
@@ -1440,14 +1440,14 @@ int s147nand_30_bytes2pagesnoeccround(int bytes)
   int pages; // [sp+0h] [+0h]
 
   if ( !g_nand_info.m_page_size_noecc )
-    _break(7u, 0);
+    _break(7, 0);
   if ( g_nand_info.m_page_size_noecc == -1 && bytes == (int)0x80000000 )
-    _break(6u, 0);
+    _break(6, 0);
   if ( !g_nand_info.m_page_size_noecc )
-    _break(7u, 0);
+    _break(7, 0);
   pages = bytes / g_nand_info.m_page_size_noecc;
   if ( g_nand_info.m_page_size_noecc == -1 && bytes == (int)0x80000000 )
-    _break(6u, 0);
+    _break(6, 0);
   return pages + (( bytes % g_nand_info.m_page_size_noecc ) ? 1 : 0);
 }
 // 4051D8: using guessed type nand_info_stru_ g_nand_info;

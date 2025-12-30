@@ -76,33 +76,33 @@ static const nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid);
 static const nand_id_desc_info_stru_ g_nand_type_info[4] =
 {
   {
-    { 236u, 218u, 4294967295u, 21u, 4294967295u },
+    { 0xEC, 0xDA, 0xFFFFFFFF, 0x15, 0xFFFFFFFF },
     "SAMSUNG K9F2G08U0M",
     "8bit width, 256MBytes",
-    2048,
-    2112,
-    64,
-    2048
+    0x800,
+    0x840,
+    0x40,
+    0x800,
   },
   {
-    { 236u, 220u, 16u, 149u, 84u },
+    { 0xEC, 0xDC, 0x10, 0x95, 0x54 },
     "SAMSUNG K9F4G08U0M",
     "8bit width, 512MBytes",
-    2048,
-    2112,
-    64,
-    4096
+    0x800,
+    0x840,
+    0x40,
+    0x1000,
   },
   {
-    { 236u, 211u, 81u, 149u, 88u },
+    { 0xEC, 0xD3, 0x51, 0x95, 0x58 },
     "SAMSUNG K9K8G08U0M",
     "8bit width, 1GBytes",
-    2048,
-    2112,
-    64,
-    8192
+    0x800,
+    0x840,
+    0x40,
+    0x2000,
   },
-  { { 0u, 0u, 0u, 0u, 0u }, NULL, NULL, 0, 0, 0, 0 }
+  { { 0x0, 0x0, 0x0, 0x0, 0x0 }, NULL, NULL, 0, 0, 0, 0 }
 }; // weak
 static char g_secr_code_1 = 0; // weak
 static char g_secr_code_2 = 0; // weak
@@ -256,7 +256,7 @@ int _start(int ac, char **av)
           case '0':
             STATUS_PRINTF(" -s0: Set default security code\n");
             do_set_flag(0x1000000);
-            do_set_secr_code(0xFF, 0xFFu);
+            do_set_secr_code(0xFF, 0xFF);
             break;
           case 'r':
             STATUS_PRINTF(" -sr: Read \"s147secr.147\" file\n");
@@ -266,7 +266,7 @@ int _start(int ac, char **av)
             if ( fd < 0 )
             {
               STATUS_PRINTF("  ---> File not found, set default code\n");
-              do_set_secr_code(0xFF, 0xFFu);
+              do_set_secr_code(0xFF, 0xFF);
               break;
             }
             product_code = do_read_product_code(fd);
@@ -941,7 +941,7 @@ static int get_nand_partition_offset(int part, int abspart)
     if ( part < 0 || part >= abspart )
       return -1;
     if ( abspart == -1 && g_device_info->m_block_size == (int)0x80000000 )
-      _break(6u, 0);
+      _break(6, 0);
   }
   if ( !part )
     return get_nand_block_size_div_32_div_64();
@@ -963,7 +963,7 @@ static int get_nand_partition_size(int part, int abspart)
     if ( part < 0 || part >= abspart )
       return 0;
     if ( abspart == -1 && g_device_info->m_block_size == (int)0x80000000 )
-      _break(6u, 0);
+      _break(6, 0);
     return g_device_info->m_block_size / abspart - (part ? 0 : get_nand_block_size_div_32_div_64());
   }
   if ( part )
