@@ -23,7 +23,7 @@ typedef struct nand_header_stru_x
   char m_nand_seccode[2];
   char pad[2];
   int m_nand_vidmode[1];
-  int m_nand_desc[8];
+  char m_nand_desc[32];
   int m_page_size_noecc;
   int m_page_size_withecc;
   int m_pages_per_block;
@@ -33,6 +33,29 @@ typedef struct nand_header_stru_x
   int m_nand_partition_8;
   int m_nand_partition_8_size;
 } nand_header_stru_;
+
+typedef struct nand_direntry_stru_x
+{
+  char m_name[16];
+  u32 m_unk;
+  u8 m_type;
+  u8 m_pad[3];
+  u32 m_size;
+  u32 m_offset;
+} nand_direntry_stru_;
+
+
+typedef struct nand_dir_stru_x
+{
+  char m_sig[8];
+  u16 m_ver;
+  char m_unk0[6];
+  u32 m_entrycnt;
+  u32 m_unk1;
+  u32 m_unk2;
+  u32 m_unk3;
+  nand_direntry_stru_ m_direntry[63];
+} nand_dir_stru_;
 
 
 extern int s147nand_4_dumpprintinfo(int part);

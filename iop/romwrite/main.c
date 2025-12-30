@@ -34,29 +34,6 @@ typedef struct nand_id_desc_info_stru_x
   int m_block_size;
 } nand_id_desc_info_stru_;
 
-typedef struct nand_direntry_stru_x
-{
-  char m_name[16];
-  u32 m_unk;
-  u8 m_type;
-  u8 m_pad[3];
-  u32 m_size;
-  u32 m_offset;
-} nand_direntry_stru_;
-
-
-typedef struct nand_dir_stru_x
-{
-  char m_sig[8];
-  u16 m_ver;
-  char m_unk0[6];
-  u32 m_entrycnt;
-  u32 m_unk1;
-  u32 m_unk2;
-  u32 m_unk3;
-  nand_direntry_stru_ m_direntry[63];
-} nand_dir_stru_;
-
 typedef union romwrite_part_buf_x
 {
   u8 m_buf[131072];
@@ -64,8 +41,6 @@ typedef union romwrite_part_buf_x
   nand_dir_stru_ m_dir;
   nand_direntry_stru_ m_direntry[64];
 } romwrite_part_buf_;
-
-
 
 //-------------------------------------------------------------------------
 // Function declarations
@@ -89,7 +64,7 @@ static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt);
 static int do_list_files(int part);
 static void do_output_bb_info(int blocksd, int abspart, int bboffs);
 static int do_verify(void *buf1, void *buf2, int len);
-static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid);
+static const nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid);
 // Unofficial: printf to IOP Kprintf instead of EE
 #define USER_PRINTF(...) Kprintf(__VA_ARGS__)
 // Unofficial: printf to EE is omitted
@@ -98,7 +73,7 @@ static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid);
 //-------------------------------------------------------------------------
 // Data declarations
 
-static nand_id_desc_info_stru_ g_nand_type_info[4] =
+static const nand_id_desc_info_stru_ g_nand_type_info[4] =
 {
   {
     { 236u, 218u, 4294967295u, 21u, 4294967295u },
@@ -129,8 +104,8 @@ static nand_id_desc_info_stru_ g_nand_type_info[4] =
   },
   { { 0u, 0u, 0u, 0u, 0u }, NULL, NULL, 0, 0, 0, 0 }
 }; // weak
-static char g_secr_code_1 = '\0'; // weak
-static char g_secr_code_2 = '\0'; // weak
+static char g_secr_code_1 = 0; // weak
+static char g_secr_code_2 = 0; // weak
 static int g_curflag = 0; // weak
 static int g_boot_video_mode = 0; // weak
 static void *g_part_buf = NULL; // idb
@@ -139,8 +114,8 @@ static int g_badblock_count = 1; // weak
 static char g_product_code_tmp[32]; // weak
 static u8 *g_blockinfo_str_buf;
 static u16 *g_blockinfo_dat_buf;
-static nand_id_desc_info_stru_ *g_device_info;
-static char g_atfile_part_image[8][256];
+static const nand_id_desc_info_stru_ *g_device_info;
+static char g_atfile_part_image[8][0x100];
 static char g_atfile_info_image[0x100]; // idb
 static char g_atfile_147_dir[0x100]; // idb
 static romwrite_part_buf_ g_nand_partbuf; // weak
@@ -172,7 +147,7 @@ static void do_format_nand_device(char devindchr)
 //----- (00400104) --------------------------------------------------------
 static char *do_read_product_code(int fd)
 {
-  read(fd, g_product_code_tmp, 32);
+  read(fd, g_product_code_tmp, sizeof(g_product_code_tmp));
   STATUS_PRINTF("  ---> OK, set product code - \"%s\"\n", &g_product_code_tmp[16]);
   // Unofficial: omit Blowfish hashing S147NBGI
   return &g_product_code_tmp[4];
@@ -668,8 +643,8 @@ static int do_format_device(int abspart)
   }
   STATUS_PRINTF("\n");
   STATUS_PRINTF(" [3/3]Write Boot Sector and Logical Address Table\n");
-  memset(&g_nand_partbuf, 0, 160);
-  strncpy((char *)&g_nand_partbuf, "S147NAND", 9);
+  memset(&g_nand_partbuf.m_hdr, 0, sizeof(g_nand_partbuf.m_hdr));
+  strncpy(g_nand_partbuf.m_hdr.m_hdr, "S147NAND", 9);
   g_nand_partbuf.m_hdr.m_bootsector_ver_1 = 3;
   g_nand_partbuf.m_hdr.m_bootsector_ver_2 = 0;
   for ( i = 0; i < 8; i += 1 )
@@ -696,14 +671,14 @@ static int do_format_device(int abspart)
   g_nand_partbuf.m_hdr.m_nand_seccode[0] = g_secr_code_1;
   g_nand_partbuf.m_hdr.m_nand_seccode[1] = g_secr_code_2;
   g_nand_partbuf.m_hdr.m_nand_vidmode[0] = g_boot_video_mode;
-  strncpy((char *)g_nand_partbuf.m_hdr.m_nand_desc, g_device_info->m_nand_name, 32);
+  strncpy(g_nand_partbuf.m_hdr.m_nand_desc, g_device_info->m_nand_name, sizeof(g_nand_partbuf.m_hdr.m_nand_desc));
   g_nand_partbuf.m_hdr.m_page_size_noecc = g_device_info->m_page_size_noecc;
   g_nand_partbuf.m_hdr.m_page_size_withecc = g_device_info->m_page_size_withecc;
   g_nand_partbuf.m_hdr.m_pages_per_block = g_device_info->m_pages_per_block;
   g_nand_partbuf.m_hdr.m_block_size = g_device_info->m_block_size;
   g_nand_partbuf.m_hdr.m_acmem_delay_val = 0;
   g_nand_partbuf.m_hdr.m_acio_delay_val = generate_acio_delay_val(3, 3, 3);
-  s147nand_22_nand_write_dma(&g_nand_partbuf, 0, 0, 160);
+  s147nand_22_nand_write_dma(&g_nand_partbuf.m_hdr, 0, 0, sizeof(g_nand_partbuf.m_hdr));
   do_dma_write_bytes_multi(g_blockinfo_dat_buf, 1, sizeof(u16) * g_device_info->m_block_size);
   return 0;
 }
@@ -870,7 +845,7 @@ static int do_write_partition(int part)
       {
         int i; // [sp+54h] [+54h]
 
-        g_part_buf = &g_nand_partbuf;
+        g_part_buf = g_nand_partbuf.m_buf;
         if ( part != 9 )
         {
           int xindbytes; // [sp+4Ch] [+4Ch]
@@ -1027,7 +1002,7 @@ static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt)
 //----- (00403D40) --------------------------------------------------------
 static int do_list_files(int part)
 {
-  int m_entrycnt; // [sp+1Ch] [+1Ch]
+  int hdrret; // [sp+1Ch] [+1Ch]
   int pageoffs; // [sp+20h] [+20h]
   int xind1; // [sp+28h] [+28h]
   int i; // [sp+2Ch] [+2Ch]
@@ -1036,7 +1011,7 @@ static int do_list_files(int part)
   int finished;
   char pathtmp[24]; // [sp+38h] [+38h] BYREF
 
-  m_entrycnt = -1;
+  hdrret = -1;
   dircnt = 0;
   filcnt = 0;
   finished = 0;
@@ -1045,29 +1020,29 @@ static int do_list_files(int part)
     return -19;
   for ( xind1 = 0; xind1 < 64; xind1 += 1 )
   {
-    s147nand_7_multi_read_dma(&g_nand_partbuf, pageoffs + xind1, 1);
+    s147nand_7_multi_read_dma(g_nand_partbuf.m_buf, pageoffs + xind1, 1);
     for ( i = 0; i < 64; i += 1 )
     {
       if ( (xind1 << 6) - 1 + i == -1 )
       {
-        if ( strncmp((const char *)&g_nand_partbuf, "S147ROM", 8) )
+        if ( strncmp(g_nand_partbuf.m_dir.m_sig, "S147ROM", 8) )
         {
           STATUS_PRINTF(" \"%s%d:\" ... No data\n", "atfile", part);
           STATUS_PRINTF(" -----------------------------\n\n");
           return -19;
         }
-        m_entrycnt = g_nand_partbuf.m_dir.m_entrycnt;
+        hdrret = g_nand_partbuf.m_dir.m_entrycnt;
         STATUS_PRINTF(" \"%s%d:\"\n", "atfile", part);
         STATUS_PRINTF(" -----------------------------\n");
       }
       else
       {
-        if ( (xind1 << 6) - 1 + i >= m_entrycnt )
+        if ( (xind1 << 6) - 1 + i >= hdrret )
         {
           finished = 1;
           break;
         }
-        strcpy(pathtmp, (const char *)&g_nand_partbuf + 32 * i);
+        strcpy(pathtmp, g_nand_partbuf.m_direntry[i].m_name);
         if ( g_nand_partbuf.m_direntry[i].m_type == 'D' )
         {
           strcat(pathtmp, "/");
@@ -1087,7 +1062,7 @@ static int do_list_files(int part)
   STATUS_PRINTF(" -----------------------------\n");
   STATUS_PRINTF("   %d directories, %d files\n", dircnt, filcnt);
   STATUS_PRINTF("\n");
-  return m_entrycnt;
+  return hdrret;
 }
 // 408700: using guessed type romwrite_part_buf_ g_nand_partbuf;
 
@@ -1116,7 +1091,7 @@ static int do_verify(void *buf1, void *buf2, int len)
 }
 
 //----- (00404454) --------------------------------------------------------
-static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
+static const nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
 {
   int i; // [sp+0h] [+0h]
   int j; // [sp+8h] [+8h]

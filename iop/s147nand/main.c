@@ -38,31 +38,6 @@ typedef struct s147nand_dev9_io_mmio_x
   vu8 m_nand_outbyte;
 } s147nand_dev9_io_mmio_;
 
-
-typedef struct nand_direntry_stru_x
-{
-  char m_name[16];
-  u32 m_unk;
-  u8 m_type;
-  u8 m_pad[3];
-  u32 m_size;
-  u32 m_offset;
-} nand_direntry_stru_;
-
-
-typedef struct nand_dir_stru_x
-{
-  char m_sig[8];
-  u16 m_ver;
-  char m_unk0[6];
-  u32 m_entrycnt;
-  u32 m_unk1;
-  u32 m_unk2;
-  u32 m_unk3;
-  nand_direntry_stru_ m_direntry[63];
-} nand_dir_stru_;
-
-
 typedef struct nand_mdev_privdata_stru_x
 {
   int m_seek_cur;
@@ -70,7 +45,6 @@ typedef struct nand_mdev_privdata_stru_x
   int m_seek_max;
   int m_partition_offset;
 } nand_mdev_privdata_stru_;
-
 
 //-------------------------------------------------------------------------
 // Function declarations
@@ -86,16 +60,16 @@ static int nand_mdev_op_write(iop_file_t *f, void *ptr, int size);
 static int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode);
 static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, const char *name);
 static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name);
-static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, size_t idx, char typ);
+static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, int idx, char typ);
 static int do_nand_bytes2sector(int pageoffs, int byteoffs);
 static int do_nand_bytes2sector_remainder(int byteoffs);
-static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size);
+static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, int size);
 static int get_nand_partition_offset(int part);
 static int nand_mdev_open_special(iop_file_t *f, const char *name);
-static size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size);
+static int nand_mdev_read_special(iop_file_t *f, void *ptr, int size);
 static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size);
-static size_t do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, size_t size);
-static size_t do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, size_t size);
+static int do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, int size);
+static int do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, int size);
 static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
 static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt);
 static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt);
@@ -394,8 +368,7 @@ static int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode)
 //----- (00400B20) --------------------------------------------------------
 int s147nand_4_dumpprintinfo(int part)
 {
-  const nand_dir_stru_ *hdrbuf; // [sp+14h] [+14h]
-  int retres; // [sp+1Ch] [+1Ch]
+  int hdrret; // [sp+1Ch] [+1Ch]
   int nand_partition_offset; // [sp+20h] [+20h]
   int i; // [sp+28h] [+28h]
   int j; // [sp+2Ch] [+2Ch]
@@ -404,7 +377,7 @@ int s147nand_4_dumpprintinfo(int part)
   int finished;
   char pathtmp[24]; // [sp+38h] [+38h] BYREF
 
-  retres = -1;
+  hdrret = -1;
   dircnt = 0;
   filcnt = 0;
   finished = 0;
@@ -413,28 +386,30 @@ int s147nand_4_dumpprintinfo(int part)
     return -19;
   for ( i = 0; i < 64; i += 1 )
   {
-    nand_direntry_stru_ *dirbuf; // [sp+10h] [+10h]
-
     s147nand_7_multi_read_dma(g_nand_sector_buffer, nand_partition_offset + i, 1);
-    dirbuf = (nand_direntry_stru_ *)g_nand_sector_buffer;
     for ( j = 0; j < 64; j += 1 )
     {
       if ( (i << 6) - 1 + j == -1 )
       {
-        hdrbuf = (nand_dir_stru_ *)g_nand_sector_buffer;
-        if ( strncmp((const char *)g_nand_sector_buffer, "S147ROM", 8) )
+        const nand_dir_stru_ *hdrbuf; // [sp+14h] [+14h]
+
+        hdrbuf = (const nand_dir_stru_ *)g_nand_sector_buffer;
+        if ( strncmp(hdrbuf->m_sig, "S147ROM", 8) )
         {
           Kprintf(" \"%s%d:\" ... No data\n", g_dev_name, part);
           Kprintf(" -----------------------------\n\n");
           return -19;
         }
-        retres = hdrbuf->m_entrycnt;
+        hdrret = hdrbuf->m_entrycnt;
         Kprintf(" \"%s%d:\"\n", g_dev_name, part);
         Kprintf(" -----------------------------\n");
       }
       else
       {
-        if ( (i << 6) - 1 + j >= retres )
+        const nand_direntry_stru_ *dirbuf; // [sp+10h] [+10h]
+
+        dirbuf = (const nand_direntry_stru_ *)g_nand_sector_buffer;
+        if ( (i << 6) - 1 + j >= hdrret )
         {
           finished = 1;
           break;
@@ -458,7 +433,7 @@ int s147nand_4_dumpprintinfo(int part)
   Kprintf(" -----------------------------\n");
   Kprintf("   %d directories, %d files\n", dircnt, filcnt);
   Kprintf("\n");
-  return retres;
+  return hdrret;
 }
 
 //----- (00400E28) --------------------------------------------------------
@@ -479,7 +454,7 @@ static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, cons
 //----- (00400EF8) --------------------------------------------------------
 static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *name)
 {
-  size_t i; // [sp+10h] [+10h]
+  int i; // [sp+10h] [+10h]
 
   for ( i = 0; name[i] && name[i] != '/'; i += 1 );
   if ( name[i] == '/' )
@@ -493,12 +468,10 @@ static int do_nand_open_inner2(nand_mdev_privdata_stru_ *privdat, const char *na
 }
 
 //----- (0040101C) --------------------------------------------------------
-static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, size_t idx, char typ)
+static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *name, int idx, char typ)
 {
   int lvtyp; // $v0
-  nand_direntry_stru_ *dirbuf; // [sp+14h] [+14h]
-  nand_dir_stru_ *p; // [sp+18h] [+18h]
-  size_t size; // [sp+1Ch] [+1Ch]
+  int size; // [sp+1Ch] [+1Ch]
   int hdrret; // [sp+24h] [+24h]
   int offscnt; // [sp+2Ch] [+2Ch]
   int i; // [sp+30h] [+30h]
@@ -511,26 +484,31 @@ static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *n
   for ( offscnt = 0; offscnt < 64; offscnt += 1 )
   {
     s147nand_7_multi_read_dma(g_nand_sector_buffer, privdat->m_partition_offset + offscnt, 1);
-    dirbuf = (nand_direntry_stru_ *)g_nand_sector_buffer;
+    
     for ( i = 0; i < 64; i += 1 )
     {
       if ( (offscnt << 6) - 1 + i == -1 )
       {
-        p = (nand_dir_stru_ *)g_nand_sector_buffer;
-        if ( strncmp((const char *)g_nand_sector_buffer, "S147ROM", 8) )
+        const nand_dir_stru_ *hdrbuf; // [sp+18h] [+18h]
+
+        hdrbuf = (const nand_dir_stru_ *)g_nand_sector_buffer;
+        if ( strncmp(hdrbuf->m_sig, "S147ROM", 8) )
         {
           Kprintf("s147nand.irx: No directory entries\n");
           return -19;
         }
-        if ( p->m_ver >= 0x101u )
+        if ( hdrbuf->m_ver >= 0x101u )
         {
-          Kprintf("s147nand.irx: Version 0x%04x format is not supported\n", p->m_ver);
+          Kprintf("s147nand.irx: Version 0x%04x format is not supported\n", hdrbuf->m_ver);
           return -19;
         }
-        hdrret = p->m_entrycnt;
+        hdrret = hdrbuf->m_entrycnt;
       }
       else
       {
+        const nand_direntry_stru_ *dirbuf; // [sp+14h] [+14h]
+
+        dirbuf = (const nand_direntry_stru_ *)g_nand_sector_buffer;
         if ( (offscnt << 6) - 1 + i >= hdrret )
           return -2;
         lvtyp = (char)dirbuf[i].m_type;
@@ -603,11 +581,11 @@ void s147nand_6_checkformat(void)
     g_nand_header.m_bootsector_ver_2);
   if ( (u32)g_nand_header.m_bootsector_ver_1 < 2u )
   {
-    Kprintf("s147nand.irx: Old version format, 256MB-NAND only\n", g_nand_header.m_nand_desc);
+    Kprintf("s147nand.irx: Old version format, 256MB-NAND only\n");
   }
   else
   {
-    Kprintf("s147nand.irx: %-.32s\n", (const char *)g_nand_header.m_nand_desc);
+    Kprintf("s147nand.irx: %-.32s\n", g_nand_header.m_nand_desc);
     CpuSuspendIntr(&state);
     nandinf->m_page_size_noecc = g_nand_header.m_page_size_noecc;
     nandinf->m_page_size_withecc = g_nand_header.m_page_size_withecc;
@@ -680,7 +658,7 @@ static void do_update_acdelay(void)
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (004019C4) --------------------------------------------------------
-static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, size_t size)
+static int do_nand_sector_rw(void *ptr, int pageoffs, int byteoffs, int size)
 {
   int dma; // [sp+10h] [+10h]
 
@@ -841,7 +819,7 @@ static int nand_mdev_open_special(iop_file_t *f, const char *name)
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (00402260) --------------------------------------------------------
-static size_t nand_mdev_read_special(iop_file_t *f, void *ptr, size_t size)
+static int nand_mdev_read_special(iop_file_t *f, void *ptr, int size)
 {
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
   int retres1; // [sp+14h] [+14h]
@@ -919,15 +897,15 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (0040274C) --------------------------------------------------------
-static size_t do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, size_t size)
+static int do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, int size)
 {
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
-  size_t xsize; // [sp+14h] [+14h]
+  int xsize; // [sp+14h] [+14h]
 
   privdata = (nand_mdev_privdata_stru_ *)f->privdata;
   if ( privdata->m_seek_cur >= privdata->m_seek_max )
     return 0;
-  xsize = ( privdata->m_seek_max >= (int)(privdata->m_seek_cur + size) ) ? size : (size_t)(privdata->m_seek_max - privdata->m_seek_cur);
+  xsize = ( privdata->m_seek_max >= (int)(privdata->m_seek_cur + size) ) ? size : (privdata->m_seek_max - privdata->m_seek_cur);
   memcpy(ptr, &g_nand_header.m_nand_seccode[privdata->m_seek_cur], xsize);
   privdata->m_seek_cur += xsize;
   return xsize;
@@ -935,15 +913,15 @@ static size_t do_nand_copy_seccode_from_buf(iop_file_t *f, void *ptr, size_t siz
 // 405258: using guessed type nand_header_stru_ g_nand_header;
 
 //----- (0040287C) --------------------------------------------------------
-static size_t do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, size_t size)
+static int do_nand_copy_videomode_from_buf(iop_file_t *f, void *ptr, int size)
 {
   nand_mdev_privdata_stru_ *privdata; // [sp+10h] [+10h]
-  size_t xsize; // [sp+14h] [+14h]
+  int xsize; // [sp+14h] [+14h]
 
   privdata = (nand_mdev_privdata_stru_ *)f->privdata;
   if ( privdata->m_seek_cur >= privdata->m_seek_max )
     return 0;
-  xsize = ( privdata->m_seek_max >= (int)(privdata->m_seek_cur + size) ) ? size : (size_t)(privdata->m_seek_max - privdata->m_seek_cur);
+  xsize = ( privdata->m_seek_max >= (int)(privdata->m_seek_cur + size) ) ? size : (privdata->m_seek_max - privdata->m_seek_cur);
   memcpy(ptr, &g_nand_header.m_nand_vidmode[privdata->m_seek_cur], xsize);
   privdata->m_seek_cur += xsize;
   return xsize;
