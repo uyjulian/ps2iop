@@ -26,19 +26,21 @@ typedef struct s147_dev9_mem_mmio_
   vu8 m_security_unlock_set1;
   vu8 m_security_unlock_set2;
 } s147_dev9_mem_mmio_t;
+#define USE_S147_DEV9_MEM_MMIO() s147_dev9_mem_mmio_t *const s147_dev9_mem_mmio = (void *)0xB0000000
 
 typedef struct s147nand_dev9_io_mmio_
 {
-  vu8 m_nand_waitflag;
-  vu8 m_nand_cmd_enable;
-  vu8 m_nand_cmd_sel;
-  vu8 m_nand_cmd_offs;
-  vu8 m_nand_write_cmd_unlock;
+  vu8 m_nand_waitflag; // 0 (R/B)
+  vu8 m_nand_cmd_enable; // 1 (CE+WE)
+  vu8 m_nand_cmd_sel; // 10 (CE+WE+CLE)
+  vu8 m_nand_cmd_offs; // 11 (CE+WE+ALE)
+  vu8 m_nand_write_cmd_unlock; // 100
   vu8 m_pad05;
   vu8 m_pad06;
   vu8 m_pad07;
   vu8 m_nand_outbyte;
-} s147nand_dev9_io_mmio_t;
+} s147nand_dev9_io_mmio_t; // 1000 (CE+RE)
+#define USE_S147MAMD_DEV9_IO_MMIO() s147nand_dev9_io_mmio_t *const s147nand_dev9_io_mmio = (void *)0xB4000000
 
 typedef struct s147nand_mdev_privdata_
 {
@@ -123,10 +125,6 @@ static u16 *g_logical_addr_tbl;
 static iop_sema_t g_sema_param; // idb
 static int g_sema_id_nand; // idb
 static int g_thid; // idb
-iop_mmio_hwport_t iop_mmio_hwport_lo; // weak
-s147_dev9_mem_mmio_t s147_dev9_mem_mmio; // weak
-s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio; // weak
-
 
 //----- (00400000) --------------------------------------------------------
 int _start(int ac, char **av)
@@ -1035,6 +1033,7 @@ static int dev9_intr_handler(void *unusd)
 int s147nand_15_nandinit(void)
 {
   int intrstate; // [sp+10h] [+10h] BYREF
+  USE_IOP_MMIO_HWPORT();
 
   DisableIntr(IOP_IRQ_DMA_DEV9, &intrstate);
   ReleaseIntrHandler(IOP_IRQ_DMA_DEV9);
@@ -1044,7 +1043,8 @@ int s147nand_15_nandinit(void)
   sceDisableDMAChannel(IOP_DMAC_DEV9);
   sceSetDMAPriority(IOP_DMAC_DEV9, 7);
   sceEnableDMAChannel(IOP_DMAC_DEV9);
-  iop_mmio_hwport_lo.ssbus2.ind_B_address = 0xB4000008;
+  // Unofficial: use uncached mirror
+  iop_mmio_hwport->ssbus2.ind_B_address = 0xB4000008;
   g_sema_param.initial = 1;
   g_sema_param.max = 1;
   g_sema_param.attr = SA_THPRI;
@@ -1054,7 +1054,6 @@ int s147nand_15_nandinit(void)
   printf("nand_Init: CreateSema error (%d)\n", g_sema_id_nand);
   return -1;
 }
-// 1F800000: using guessed type iop_mmio_hwport_t iop_mmio_hwport_lo;
 
 //----- (00402EC0) --------------------------------------------------------
 s147nand_info_t *s147nand_16_getnandinfo(void)
@@ -1201,6 +1200,8 @@ int s147nand_26_nand_readid(void *ptr)
 static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
   int state; // [sp+18h] [+18h] BYREF
+  USE_S147_DEV9_MEM_MMIO();
+  USE_S147MAMD_DEV9_IO_MMIO();
 
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
     return -1470010;
@@ -1209,37 +1210,37 @@ static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int byt
   if ( bytecnt < 4 || g_nand_info.m_page_size_withecc < byteoffs + bytecnt )
     return -1470010;
   CpuSuspendIntr(&state);
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 1;
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs);
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x30;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 1;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(byteoffs);
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = pageoffs;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x30;
   CpuResumeIntr(state);
-  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
+  while ( (s147nand_dev9_io_mmio->m_nand_waitflag & 1) != 0 );
   CpuSuspendIntr(&state);
-  s147_dev9_mem_mmio.m_security_unlock_unlock = 0;
+  s147_dev9_mem_mmio->m_security_unlock_unlock = 0;
   sceSetSliceDMA(IOP_DMAC_DEV9, ptr, bytecnt >> 2, 1, 0);
   g_thid = GetThreadId();
   CpuResumeIntr(state);
   sceStartDMA(IOP_DMAC_DEV9);
   SleepThread();
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 0;
   if ( g_nand_watchdog_enabled == 1 )
-    s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+    s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
   return 0;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
 // 4051D8: using guessed type s147nand_info_t g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00403748) --------------------------------------------------------
 static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
   int i; // [sp+0h] [+0h]
+  USE_S147_DEV9_MEM_MMIO();
+  USE_S147MAMD_DEV9_IO_MMIO();
 
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
     return -1470010;
@@ -1247,33 +1248,33 @@ static int nand_lowlevel_read_pio(void *ptr, int pageoffs, int byteoffs, int byt
     return -1470010;
   if ( bytecnt <= 0 || g_nand_info.m_page_size_withecc < byteoffs + bytecnt )
     return -1470010;
-  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 1;
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = byteoffs;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x30;
-  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
+  while ( (s147nand_dev9_io_mmio->m_nand_waitflag & 1) != 0 );
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 1;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = byteoffs;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = pageoffs;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x30;
+  while ( (s147nand_dev9_io_mmio->m_nand_waitflag & 1) != 0 );
   for ( i = 0; i < bytecnt; i += 1 )
-    ((u8 *)ptr)[i] = s147nand_dev9_io_mmio.m_nand_outbyte;
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
+    ((u8 *)ptr)[i] = s147nand_dev9_io_mmio->m_nand_outbyte;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 0;
   if ( g_nand_watchdog_enabled == 1 )
-    s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+    s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
   return 0;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
 // 4051D8: using guessed type s147nand_info_t g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (004039C4) --------------------------------------------------------
 static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
   int state; // [sp+18h] [+18h] BYREF
   u8 flgtmp; // [sp+20h] [+20h]
+  USE_S147_DEV9_MEM_MMIO();
+  USE_S147MAMD_DEV9_IO_MMIO();
 
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
     return -1470010;
@@ -1282,28 +1283,28 @@ static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int by
   if ( bytecnt < 4 || g_nand_info.m_page_size_withecc < byteoffs + bytecnt )
     return -1470010;
   CpuSuspendIntr(&state);
-  s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0xA5;
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 1;
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x80;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs);
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
-  s147_dev9_mem_mmio.m_security_unlock_unlock = 0;
+  s147nand_dev9_io_mmio->m_nand_write_cmd_unlock = 0xA5;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 1;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x80;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(byteoffs);
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = pageoffs;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
+  s147_dev9_mem_mmio->m_security_unlock_unlock = 0;
   sceSetSliceDMA(IOP_DMAC_DEV9, ptr, bytecnt >> 2, 1, 1);
   g_thid = GetThreadId();
   CpuResumeIntr(state);
   sceStartDMA(IOP_DMAC_DEV9);
   SleepThread();
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x10;
-  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
-  flgtmp = s147nand_dev9_io_mmio.m_nand_outbyte;
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
-  s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x10;
+  while ( (s147nand_dev9_io_mmio->m_nand_waitflag & 1) != 0 );
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x70;
+  flgtmp = s147nand_dev9_io_mmio->m_nand_outbyte;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 0;
+  s147nand_dev9_io_mmio->m_nand_write_cmd_unlock = 0;
   if ( g_nand_watchdog_enabled == 1 )
-    s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+    s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
   if ( (flgtmp & 0x80) == 0 )
     return -1470030;
   if ( (flgtmp & 1) != 0 )
@@ -1312,14 +1313,14 @@ static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int by
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
 // 4051D8: using guessed type s147nand_info_t g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00403CAC) --------------------------------------------------------
 static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int bytecnt)
 {
   u8 flgtmp; // $v0
   int i; // [sp+0h] [+0h]
+  USE_S147_DEV9_MEM_MMIO();
+  USE_S147MAMD_DEV9_IO_MMIO();
 
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
     return -1470010;
@@ -1327,24 +1328,24 @@ static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int by
     return -1470010;
   if ( bytecnt <= 0 || g_nand_info.m_page_size_withecc < byteoffs + bytecnt )
     return -1470010;
-  s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0xA5;
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 1;
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x80;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = byteoffs;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
+  s147nand_dev9_io_mmio->m_nand_write_cmd_unlock = 0xA5;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 1;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x80;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = byteoffs;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(byteoffs & 0xF00) >> 8;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = pageoffs;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
   for ( i = 0; i < bytecnt; i += 1 )
-    s147nand_dev9_io_mmio.m_nand_outbyte = ((u8 *)ptr)[i];
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x10;
-  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
-  flgtmp = s147nand_dev9_io_mmio.m_nand_outbyte;
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
-  s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0;
+    s147nand_dev9_io_mmio->m_nand_outbyte = ((u8 *)ptr)[i];
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x10;
+  while ( (s147nand_dev9_io_mmio->m_nand_waitflag & 1) != 0 );
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x70;
+  flgtmp = s147nand_dev9_io_mmio->m_nand_outbyte;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 0;
+  s147nand_dev9_io_mmio->m_nand_write_cmd_unlock = 0;
   if ( g_nand_watchdog_enabled == 1 )
-    s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+    s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
   if ( (flgtmp & 0x80) == 0 )
     return -1470030;
   if ( (flgtmp & 1) != 0 )
@@ -1353,30 +1354,30 @@ static int nand_lowlevel_write_pio(void *ptr, int pageoffs, int byteoffs, int by
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
 // 4051D8: using guessed type s147nand_info_t g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00403F74) --------------------------------------------------------
 static int nand_lowlevel_blockerase(int pageoffs)
 {
   u8 flgtmp; // $v0
+  USE_S147_DEV9_MEM_MMIO();
+  USE_S147MAMD_DEV9_IO_MMIO();
 
   if ( pageoffs < 0 || pageoffs >= g_nand_info.m_page_count )
     return -1470010;
-  s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0xA5;
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 1;
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x60;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = pageoffs & 0xC0;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0xD0;
-  while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x70;
-  flgtmp = s147nand_dev9_io_mmio.m_nand_outbyte;
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
-  s147nand_dev9_io_mmio.m_nand_write_cmd_unlock = 0;
+  s147nand_dev9_io_mmio->m_nand_write_cmd_unlock = 0xA5;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 1;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x60;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = pageoffs & 0xC0;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0xD0;
+  while ( (s147nand_dev9_io_mmio->m_nand_waitflag & 1) != 0 );
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x70;
+  flgtmp = s147nand_dev9_io_mmio->m_nand_outbyte;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 0;
+  s147nand_dev9_io_mmio->m_nand_write_cmd_unlock = 0;
   if ( g_nand_watchdog_enabled == 1 )
-    s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+    s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
   if ( (flgtmp & 0x80) == 0 )
     return -1470030;
   if ( (flgtmp & 1) != 0 )
@@ -1385,29 +1386,27 @@ static int nand_lowlevel_blockerase(int pageoffs)
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
 // 4051D8: using guessed type s147nand_info_t g_nand_info;
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00404128) --------------------------------------------------------
 static int nand_lowlevel_readid(void *ptr)
 {
   int i; // [sp+0h] [+0h]
+  USE_S147_DEV9_MEM_MMIO();
+  USE_S147MAMD_DEV9_IO_MMIO();
 
   if ( !ptr )
     return -1470010;
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 1;
-  s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x90;
-  s147nand_dev9_io_mmio.m_nand_cmd_offs = 0;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 1;
+  s147nand_dev9_io_mmio->m_nand_cmd_sel = 0x90;
+  s147nand_dev9_io_mmio->m_nand_cmd_offs = 0;
   for ( i = 0; i < 5; i += 1 )
-    ((u8 *)ptr)[i] = s147nand_dev9_io_mmio.m_nand_outbyte;
-  s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
+    ((u8 *)ptr)[i] = s147nand_dev9_io_mmio->m_nand_outbyte;
+  s147nand_dev9_io_mmio->m_nand_cmd_enable = 0;
   if ( g_nand_watchdog_enabled == 1 )
-    s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+    s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
   return 0;
 }
 // 4051D4: using guessed type int g_nand_watchdog_enabled;
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
-// B4000000: using guessed type s147nand_dev9_io_mmio_t s147nand_dev9_io_mmio;
 
 //----- (00404204) --------------------------------------------------------
 int s147nand_27_blocks2pages(int blocks)

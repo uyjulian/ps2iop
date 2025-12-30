@@ -23,6 +23,7 @@ typedef struct s147_dev9_mem_mmio_
   vu8 m_security_unlock_set1;
   vu8 m_security_unlock_set2;
 } s147_dev9_mem_mmio_t;
+#define USE_S147_DEV9_MEM_MMIO() s147_dev9_mem_mmio_t *const s147_dev9_mem_mmio = (void *)0xB0000000
 
 typedef struct nand_id_desc_info_
 {
@@ -127,8 +128,6 @@ static char g_atfile_part_image[8][0x100];
 static char g_atfile_info_image[0x100]; // idb
 static char g_atfile_147_dir[0x100]; // idb
 static romwrite_part_buf_t g_nand_partbuf; // weak
-s147_dev9_mem_mmio_t s147_dev9_mem_mmio; // weak
-
 
 //----- (00400000) --------------------------------------------------------
 static void do_format_nand_device(char devindchr)
@@ -316,6 +315,7 @@ int _start(int ac, char **av)
 static void thread_proc(void *userdata)
 {
   int i; // [sp+10h] [+10h]
+  USE_S147_DEV9_MEM_MMIO();
 
   (void)userdata;
   if ( do_start_write_proc() )
@@ -323,11 +323,11 @@ static void thread_proc(void *userdata)
     STATUS_PRINTF("\n****** Aborted ******\n\n");
     for ( ;; )
     {
-      s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
-      s147_dev9_mem_mmio.m_led = 1;
+      s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
+      s147_dev9_mem_mmio->m_led = 1;
       DelayThread(250000);
-      s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
-      s147_dev9_mem_mmio.m_led = 0;
+      s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
+      s147_dev9_mem_mmio->m_led = 0;
       DelayThread(250000);
     }
   }
@@ -336,39 +336,38 @@ static void thread_proc(void *userdata)
   {
     for ( i = 1; i < 20; i += 1 )
     {
-      s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+      s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
       do_toggle_dev9addr_inner(5 * i, 50);
     }
     for ( i = 20; i > 0; i -= 1 )
     {
-      s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+      s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
       do_toggle_dev9addr_inner(5 * i, 50);
     }
   }
 }
 // 400B40: using guessed type void __noreturn thread_proc();
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 //----- (00400D00) --------------------------------------------------------
 static void do_toggle_dev9addr_inner(int len, int cnt)
 {
   int i; // [sp+10h] [+10h]
+  USE_S147_DEV9_MEM_MMIO();
 
   for ( i = 0; i < cnt; i += 1 )
   {
     if ( len > 0 )
     {
-      s147_dev9_mem_mmio.m_led = 3;
+      s147_dev9_mem_mmio->m_led = 3;
       DelayThread(10 * len);
     }
     if ( len < 100 )
     {
-      s147_dev9_mem_mmio.m_led = 0;
+      s147_dev9_mem_mmio->m_led = 0;
       DelayThread(10 * (100 - len));
     }
   }
 }
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 // Unused function omitted
 
@@ -434,13 +433,14 @@ static int do_start_write_proc(void)
   int part; // [sp+20h] [+20h]
   int logaddrtable; // [sp+28h] [+28h]
   u8 nandid[5]; // [sp+30h] [+30h] BYREF
+  USE_S147_DEV9_MEM_MMIO();
 
   close(open("ctrl99:watchdog-stop", O_RDONLY));
   if ( (g_curflag & 0x1000000) != 0 )
   {
     STATUS_PRINTF("====== Set security code ======\n");
-    s147_dev9_mem_mmio.m_security_unlock_set1 = g_secr_code_1;
-    s147_dev9_mem_mmio.m_security_unlock_set2 = g_secr_code_2;
+    s147_dev9_mem_mmio->m_security_unlock_set1 = g_secr_code_1;
+    s147_dev9_mem_mmio->m_security_unlock_set2 = g_secr_code_2;
     STATUS_PRINTF("\n");
   }
   STATUS_PRINTF("====== Device information ======\n");
@@ -561,7 +561,6 @@ static int do_start_write_proc(void)
 // 407CA0: using guessed type char g_secr_code_1;
 // 407CA1: using guessed type char g_secr_code_2;
 // 407CA4: using guessed type int g_curflag;
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 //----- (00401E5C) --------------------------------------------------------
 static int do_format_device(int abspart)
@@ -571,6 +570,7 @@ static int do_format_device(int abspart)
   int nand_partition_offset; // [sp+20h] [+20h]
   int bbcnt1; // [sp+24h] [+24h]
   int i; // [sp+30h] [+30h]
+  USE_S147_DEV9_MEM_MMIO();
 
   STATUS_PRINTF("====== Format NAND device ======\n");
   STATUS_PRINTF(" [1/3]Block Erase and Check Bad Blocks\n");
@@ -579,7 +579,7 @@ static int do_format_device(int abspart)
   {
     int eraseres; // [sp+28h] [+28h]
 
-    s147_dev9_mem_mmio.m_led = (blocks >> 4) & 3;
+    s147_dev9_mem_mmio->m_led = (blocks >> 4) & 3;
     eraseres = blocks ? s147nand_24_eraseoffset(s147nand_27_blocks2pages(blocks)) : s147nand_25_nand_blockerase(s147nand_27_blocks2pages(0));
     switch ( eraseres )
     {
@@ -649,7 +649,7 @@ static int do_format_device(int abspart)
   for ( blocks = 0; blocks < g_device_info->m_block_size; blocks += 1 )
   {
     do_output_bb_info(blocks, abspart, bboffs);
-    s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
+    s147_dev9_mem_mmio->m_watchdog_flag2 = 0;
   }
   STATUS_PRINTF("\n");
   STATUS_PRINTF(" [3/3]Write Boot Sector and Logical Address Table\n");
@@ -696,7 +696,6 @@ static int do_format_device(int abspart)
 // 407CA1: using guessed type char g_secr_code_2;
 // 407CAC: using guessed type int g_boot_video_mode;
 // 408700: using guessed type romwrite_part_buf_t g_nand_partbuf;
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 //----- (004028F4) --------------------------------------------------------
 static int do_write_partition(int part)
@@ -710,6 +709,7 @@ static int do_write_partition(int part)
   int actual_readres;
   int expected_readres;
   int err;
+  USE_S147_DEV9_MEM_MMIO();
 
   actual_readres = 0;
   expected_readres = 0;
@@ -839,7 +839,7 @@ static int do_write_partition(int part)
       int xind3; // [sp+48h] [+48h]
 
       STATUS_PRINTF(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, s147nand_28_pages2blocks(pageoffs), s147nand_13_translate_blockoffs(s147nand_28_pages2blocks(pageoffs)));
-      s147_dev9_mem_mmio.m_led = s147nand_28_pages2blocks(pageoffs) & 3;
+      s147_dev9_mem_mmio->m_led = s147nand_28_pages2blocks(pageoffs) & 3;
       if ( (g_curflag & 0xFF0000) == 0 )
       {
         STATUS_PRINTF("Erase -> ");
@@ -920,7 +920,6 @@ static int do_write_partition(int part)
 }
 // 407CA4: using guessed type int g_curflag;
 // 408700: using guessed type romwrite_part_buf_t g_nand_partbuf;
-// B0000000: using guessed type s147_dev9_mem_mmio_t s147_dev9_mem_mmio;
 
 //----- (00403758) --------------------------------------------------------
 static int check_badblock_count(void)
