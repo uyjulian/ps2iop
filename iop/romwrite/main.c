@@ -45,10 +45,7 @@ typedef union romwrite_part_buf_
   s147nand_direntry_t m_direntry[64];
 } romwrite_part_buf_t;
 
-//-------------------------------------------------------------------------
-// Function declarations
-
-static void thread_proc(void *userdata); // weak
+static void thread_proc(void *userdata);
 static void do_toggle_dev9addr_inner(int len, int cnt);
 static void set_boot_video_mode(int flg);
 static void do_set_flag(int flg);
@@ -72,9 +69,6 @@ static const nand_id_desc_info_t *do_parse_device_info(const char *nandid);
 #define USER_PRINTF(...) Kprintf(__VA_ARGS__)
 // Unofficial: printf to EE is omitted
 #define STATUS_PRINTF(...) Kprintf(__VA_ARGS__)
-
-//-------------------------------------------------------------------------
-// Data declarations
 
 static const nand_id_desc_info_t g_nand_type_info[4] =
 {
@@ -106,31 +100,30 @@ static const nand_id_desc_info_t g_nand_type_info[4] =
     0x2000,
   },
   { { 0x0, 0x0, 0x0, 0x0, 0x0 }, NULL, NULL, 0, 0, 0, 0 }
-}; // weak
+};
 // Unofficial: move to bss
-static char g_secr_code_1; // weak
+static char g_secr_code_1;
 // Unofficial: move to bss
-static char g_secr_code_2; // weak
+static char g_secr_code_2;
 // Unofficial: move to bss
-static int g_curflag; // weak
+static int g_curflag;
 // Unofficial: move to bss
-static int g_boot_video_mode; // weak
+static int g_boot_video_mode;
 // Unofficial: move to bss
-static void *g_part_buf; // idb
+static void *g_part_buf;
 // Unofficial: move to bss
-static char *g_page_buf; // idb
+static char *g_page_buf;
 // Unofficial: move to bss
-static int g_badblock_count; // weak
-static char g_product_code_tmp[32]; // weak
+static int g_badblock_count;
+static char g_product_code_tmp[32];
 static u8 *g_blockinfo_str_buf;
 static u16 *g_blockinfo_dat_buf;
 static const nand_id_desc_info_t *g_device_info;
 static char g_atfile_part_image[8][0x100];
-static char g_atfile_info_image[0x100]; // idb
-static char g_atfile_147_dir[0x100]; // idb
-static romwrite_part_buf_t g_nand_partbuf; // weak
+static char g_atfile_info_image[0x100];
+static char g_atfile_147_dir[0x100];
+static romwrite_part_buf_t g_nand_partbuf;
 
-//----- (00400000) --------------------------------------------------------
 static void do_format_nand_device(char devindchr)
 {
   switch ( devindchr )
@@ -152,7 +145,6 @@ static void do_format_nand_device(char devindchr)
   STATUS_PRINTF(" -f%c: Format NAND(atfile:) device\n", devindchr);
 }
 
-//----- (00400104) --------------------------------------------------------
 static char *do_read_product_code(int fd)
 {
   read(fd, g_product_code_tmp, sizeof(g_product_code_tmp));
@@ -161,16 +153,15 @@ static char *do_read_product_code(int fd)
   return &g_product_code_tmp[4];
 }
 
-//----- (004001E0) --------------------------------------------------------
 int _start(int ac, char **av)
 {
-  iop_thread_t thparam; // [sp+10h] [+10h] BYREF
-  int thid; // [sp+28h] [+28h]
-  int i; // [sp+2Ch] [+2Ch]
-  char secrcode1; // [sp+34h] [+34h]
-  char secrcode2; // [sp+35h] [+35h]
-  int fd; // [sp+38h] [+38h]
-  const char *product_code; // [sp+3Ch] [+3Ch]
+  iop_thread_t thparam;
+  int thid;
+  int i;
+  char secrcode1;
+  char secrcode2;
+  int fd;
+  const char *product_code;
   int image_file_idx;
 
   // Unofficial: omit SIF output command set to 30
@@ -310,12 +301,10 @@ int _start(int ac, char **av)
   StartThread(thid, 0);
   return MODULE_RESIDENT_END;
 }
-// 400B40: using guessed type void __noreturn thread_proc();
 
-//----- (00400B40) --------------------------------------------------------
 static void thread_proc(void *userdata)
 {
-  int i; // [sp+10h] [+10h]
+  int i;
   USE_S147_DEV9_MEM_MMIO();
 
   (void)userdata;
@@ -347,12 +336,10 @@ static void thread_proc(void *userdata)
     }
   }
 }
-// 400B40: using guessed type void __noreturn thread_proc();
 
-//----- (00400D00) --------------------------------------------------------
 static void do_toggle_dev9addr_inner(int len, int cnt)
 {
-  int i; // [sp+10h] [+10h]
+  int i;
   USE_S147_DEV9_MEM_MMIO();
 
   for ( i = 0; i < cnt; i += 1 )
@@ -372,7 +359,6 @@ static void do_toggle_dev9addr_inner(int len, int cnt)
 
 // Unused function omitted
 
-//----- (00400E6C) --------------------------------------------------------
 static unsigned int generate_acio_delay_val(char dmat_val, char rddl_val, char wrdl_val)
 {
   return (((dmat_val - 1) & 0xF) << 24) | (((rddl_val - 1) & 0xF) << 4) | 0xA01A0100 | ((wrdl_val - 1) & 0xF);
@@ -382,30 +368,22 @@ static unsigned int generate_acio_delay_val(char dmat_val, char rddl_val, char w
 
 // Send print to OSDSYS related omitted
 
-//----- (00400FD8) --------------------------------------------------------
 static void set_boot_video_mode(int flg)
 {
   g_boot_video_mode = flg;
 }
-// 407CAC: using guessed type int g_boot_video_mode;
 
-//----- (00401004) --------------------------------------------------------
 static void do_set_flag(int flg)
 {
   g_curflag |= flg;
 }
-// 407CA4: using guessed type int g_curflag;
 
-//----- (00401040) --------------------------------------------------------
 static void do_set_secr_code(char code1, char code2)
 {
   g_secr_code_1 = code1;
   g_secr_code_2 = code2;
 }
-// 407CA0: using guessed type char g_secr_code_1;
-// 407CA1: using guessed type char g_secr_code_2;
 
-//----- (00401084) --------------------------------------------------------
 static void do_handle_atfile_image(int part, const char *str)
 {
   if ( part == 9 )
@@ -420,20 +398,18 @@ static void do_handle_atfile_image(int part, const char *str)
   }
 }
 
-//----- (0040113C) --------------------------------------------------------
 static void do_set_atfile_147_dir(const char *str)
 {
   strcpy(g_atfile_147_dir, str);
 }
 
-//----- (00401178) --------------------------------------------------------
 static int do_start_write_proc(void)
 {
-  s147nand_info_t *nandinf; // [sp+18h] [+18h]
-  int state; // [sp+1Ch] [+1Ch] BYREF
-  int part; // [sp+20h] [+20h]
-  int logaddrtable; // [sp+28h] [+28h]
-  u8 nandid[5]; // [sp+30h] [+30h] BYREF
+  s147nand_info_t *nandinf;
+  int state;
+  int part;
+  int logaddrtable;
+  u8 nandid[5];
   USE_S147_DEV9_MEM_MMIO();
 
   close(open("ctrl99:watchdog-stop", O_RDONLY));
@@ -506,7 +482,7 @@ static int do_start_write_proc(void)
     STATUS_PRINTF("====== Search directory ======\n");
     for ( part = 0; part < 8; part += 1 )
     {
-      int fd; // [sp+24h] [+24h]
+      int fd;
 
       if ( s147nand_10_get_nand_partition_size(part) <= 0 )
       {
@@ -559,18 +535,14 @@ static int do_start_write_proc(void)
   }
   return 0;
 }
-// 407CA0: using guessed type char g_secr_code_1;
-// 407CA1: using guessed type char g_secr_code_2;
-// 407CA4: using guessed type int g_curflag;
 
-//----- (00401E5C) --------------------------------------------------------
 static int do_format_device(int abspart)
 {
-  int blocks; // [sp+18h] [+18h]
-  int bboffs; // [sp+1Ch] [+1Ch]
-  int nand_partition_offset; // [sp+20h] [+20h]
-  int bbcnt1; // [sp+24h] [+24h]
-  int i; // [sp+30h] [+30h]
+  int blocks;
+  int bboffs;
+  int nand_partition_offset;
+  int bbcnt1;
+  int i;
   USE_S147_DEV9_MEM_MMIO();
 
   STATUS_PRINTF("====== Format NAND device ======\n");
@@ -578,7 +550,7 @@ static int do_format_device(int abspart)
   STATUS_PRINTF(" BadBlock =");
   for ( blocks = 0; blocks < g_device_info->m_block_size; blocks += 1 )
   {
-    int eraseres; // [sp+28h] [+28h]
+    int eraseres;
 
     s147_dev9_mem_mmio->m_led = (blocks >> 4) & 3;
     eraseres = blocks ? s147nand_24_eraseoffset(s147nand_27_blocks2pages(blocks)) : s147nand_25_nand_blockerase(s147nand_27_blocks2pages(0));
@@ -693,20 +665,15 @@ static int do_format_device(int abspart)
   do_dma_write_bytes_multi(g_blockinfo_dat_buf, 1, sizeof(u16) * g_device_info->m_block_size);
   return 0;
 }
-// 407CA0: using guessed type char g_secr_code_1;
-// 407CA1: using guessed type char g_secr_code_2;
-// 407CAC: using guessed type int g_boot_video_mode;
-// 408700: using guessed type romwrite_part_buf_t g_nand_partbuf;
 
-//----- (004028F4) --------------------------------------------------------
 static int do_write_partition(int part)
 {
-  int fd; // [sp+1Ch] [+1Ch]
-  int state; // [sp+20h] [+20h] BYREF
-  int bytes; // [sp+24h] [+24h]
-  int pages; // [sp+34h] [+34h]
-  int blocks; // [sp+38h] [+38h]
-  int partblocks1; // [sp+40h] [+40h]
+  int fd;
+  int state;
+  int bytes;
+  int pages;
+  int blocks;
+  int partblocks1;
   int actual_readres;
   int expected_readres;
   int err;
@@ -788,7 +755,7 @@ static int do_write_partition(int part)
     }
     else
     {
-      int partsizebytes; // [sp+28h] [+28h]
+      int partsizebytes;
 
       bytes = lseek(fd, 0, SEEK_END);
       partsizebytes = s147nand_10_get_nand_partition_size(part)
@@ -825,9 +792,9 @@ static int do_write_partition(int part)
   }
   if ( !err )
   {
-    int xind2; // [sp+2Ch] [+2Ch]
-    int xind1; // [sp+30h] [+30h]
-    int pageoffs; // [sp+3Ch] [+3Ch]
+    int xind2;
+    int xind1;
+    int pageoffs;
     int finished;
 
     STATUS_PRINTF(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
@@ -837,7 +804,7 @@ static int do_write_partition(int part)
     finished = 0;
     for ( xind1 = 0; xind1 < blocks; xind1 += 1 )
     {
-      int xind3; // [sp+48h] [+48h]
+      int xind3;
 
       STATUS_PRINTF(" atfile%d(%d/%d): LogBlock=%d (PhyBlock=%d) ", part, xind1, blocks - 1, s147nand_28_pages2blocks(pageoffs), s147nand_13_translate_blockoffs(s147nand_28_pages2blocks(pageoffs)));
       s147_dev9_mem_mmio->m_led = s147nand_28_pages2blocks(pageoffs) & 3;
@@ -854,12 +821,12 @@ static int do_write_partition(int part)
       STATUS_PRINTF("Write -> Verify\n");
       for ( xind3 = 0; xind3 < g_device_info->m_pages_per_block; )
       {
-        int i; // [sp+54h] [+54h]
+        int i;
 
         g_part_buf = g_nand_partbuf.m_buf;
         if ( part != 9 )
         {
-          int xindbytes; // [sp+4Ch] [+4Ch]
+          int xindbytes;
 
           xindbytes = bytes - xind2 * g_device_info->m_page_size_noecc;
           expected_readres = ( xindbytes > 0x20000 ) ? 0x20000 : xindbytes;
@@ -919,10 +886,7 @@ static int do_write_partition(int part)
   }
   return err ? -1 : 0;
 }
-// 407CA4: using guessed type int g_curflag;
-// 408700: using guessed type romwrite_part_buf_t g_nand_partbuf;
 
-//----- (00403758) --------------------------------------------------------
 static int check_badblock_count(void)
 {
   int retval;
@@ -939,9 +903,7 @@ static int check_badblock_count(void)
   }
   return retval;
 }
-// 407CB8: using guessed type int g_badblock_count;
 
-//----- (00403834) --------------------------------------------------------
 static int get_nand_partition_offset(int part, int abspart)
 {
   if ( part == 8 )
@@ -961,9 +923,7 @@ static int get_nand_partition_offset(int part, int abspart)
     return -1;
   return g_device_info->m_block_size / 4;
 }
-// 403940: conditional instruction was optimized away because $a1.4!=0
 
-//----- (004039D0) --------------------------------------------------------
 static int get_nand_partition_size(int part, int abspart)
 {
   if ( part == 8 )
@@ -980,25 +940,21 @@ static int get_nand_partition_size(int part, int abspart)
     return ( part == 1 ) ? (3 * (g_device_info->m_block_size / 4)) : 0;
   return g_device_info->m_block_size / 4 - get_nand_block_size_div_32_div_64();
 }
-// 403B1C: conditional instruction was optimized away because $a1.4!=0
 
-//----- (00403BA4) --------------------------------------------------------
 static int get_nand_block_size_div_32_div_64(void)
 {
   return get_nand_block_size_div_32() + g_device_info->m_block_size / 64;
 }
 
-//----- (00403C18) --------------------------------------------------------
 static int get_nand_block_size_div_32(void)
 {
   return g_device_info->m_block_size / 32;
 }
 
-//----- (00403C64) --------------------------------------------------------
 static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt)
 {
-  int i; // [sp+10h] [+10h]
-  int bytecnt; // [sp+14h] [+14h]
+  int i;
+  int bytecnt;
 
   bytecnt = s147nand_30_bytes2pagesnoeccround(pagecnt);
   for ( i = 0; i < bytecnt; i += 1 )
@@ -1009,17 +965,16 @@ static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt)
       g_device_info->m_page_size_noecc);
 }
 
-//----- (00403D40) --------------------------------------------------------
 static int do_list_files(int part)
 {
-  int hdrret; // [sp+1Ch] [+1Ch]
-  int pageoffs; // [sp+20h] [+20h]
-  int xind1; // [sp+28h] [+28h]
-  int i; // [sp+2Ch] [+2Ch]
-  int dircnt; // [sp+30h] [+30h]
-  int filcnt; // [sp+34h] [+34h]
+  int hdrret;
+  int pageoffs;
+  int xind1;
+  int i;
+  int dircnt;
+  int filcnt;
   int finished;
-  char pathtmp[24]; // [sp+38h] [+38h] BYREF
+  char pathtmp[24];
 
   hdrret = -1;
   dircnt = 0;
@@ -1074,9 +1029,7 @@ static int do_list_files(int part)
   STATUS_PRINTF("\n");
   return hdrret;
 }
-// 408700: using guessed type romwrite_part_buf_t g_nand_partbuf;
 
-//----- (004041F4) --------------------------------------------------------
 static void do_output_bb_info(int blocksd, int abspart, int bboffs)
 {
   (void)abspart;
@@ -1089,10 +1042,9 @@ static void do_output_bb_info(int blocksd, int abspart, int bboffs)
     STATUS_PRINTF("\n");
 }
 
-//----- (00404380) --------------------------------------------------------
 static int do_verify(void *buf1, void *buf2, int len)
 {
-  int i; // [sp+0h] [+0h]
+  int i;
 
   for ( i = 0; i < len / 4; i += 1 )
     if ( ((u32 *)buf1)[i] != ((u32 *)buf2)[i] )
@@ -1100,15 +1052,14 @@ static int do_verify(void *buf1, void *buf2, int len)
   return 0;
 }
 
-//----- (00404454) --------------------------------------------------------
 static const nand_id_desc_info_t *do_parse_device_info(const char *nandid)
 {
-  int i; // [sp+0h] [+0h]
-  int j; // [sp+8h] [+8h]
+  int i;
+  int j;
 
   for ( i = 0; g_nand_type_info[i].m_nand_name; i += 1 )
   {
-    int cmpval; // [sp+4h] [+4h]
+    int cmpval;
 
     cmpval = 0;
     for ( j = 0; j < 5; j += 1 )
@@ -1119,4 +1070,3 @@ static const nand_id_desc_info_t *do_parse_device_info(const char *nandid)
   }
   return 0;
 }
-// 4060B0: using guessed type nand_id_desc_info_t g_nand_type_info[4];
