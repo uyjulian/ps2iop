@@ -111,7 +111,7 @@ static iop_device_t g_drv;
 static void *g_nand_sector_buffer;
 static int g_sema_id_dev;
 static int g_sema_id_init;
-static s147nand_header_t g_nand_header;
+static s147nand_header_t g_nand_header __attribute__((__aligned__(16)));
 static u16 *g_logical_addr_tbl;
 static int g_sema_id_nand;
 static int g_thid;
@@ -894,7 +894,7 @@ int s147nand_11_erasetranslatepageoffs(int pageoffs)
 
 int s147nand_12_load_logaddrtable(void)
 {
-  s147nand_header_t hdr;
+  s147nand_header_t hdr __attribute__((__aligned__(16)));
   int state;
 
   s147nand_20_nand_read_dma(&hdr, 0, 0, sizeof(hdr));

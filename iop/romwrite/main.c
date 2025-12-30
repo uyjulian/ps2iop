@@ -118,7 +118,7 @@ static const nand_id_desc_info_t *g_device_info;
 static char g_atfile_part_image[8][0x100];
 static char g_atfile_info_image[0x100];
 static char g_atfile_147_dir[0x100];
-static romwrite_part_buf_t g_nand_partbuf;
+static romwrite_part_buf_t g_nand_partbuf __attribute__((__aligned__(16)));
 
 static void do_format_nand_device(char devindchr)
 {
