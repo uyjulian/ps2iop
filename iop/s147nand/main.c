@@ -571,7 +571,7 @@ void s147nand_6_checkformat(void)
 
   nandinf = s147nand_16_getnandinfo();
   s147nand_20_nand_read_dma(&g_nand_header, 0, 0, sizeof(g_nand_header));
-  if ( strncmp(g_nand_header.m_hdr, "S147NAND", 9) )
+  if ( strncmp(g_nand_header.m_sig, "S147NAND", 9) )
   {
     Kprintf("s147nand.irx: Unformatted device\n");
     Kprintf("\n");
@@ -943,7 +943,7 @@ int s147nand_12_load_logaddrtable(void)
   int state; // [sp+B0h] [+B0h] BYREF
 
   s147nand_20_nand_read_dma(&hdr, 0, 0, sizeof(hdr));
-  if ( strncmp(hdr.m_hdr, "S147NAND", 9) )
+  if ( strncmp(hdr.m_sig, "S147NAND", 9) )
   {
     Kprintf("s147nand.irx: Unformatted device error.\n");
     return -19;

@@ -21,7 +21,7 @@ typedef struct nand_header_part_stru_x
 
 typedef struct nand_header_stru_x
 {
-  char m_hdr[16];
+  char m_sig[16];
   int m_bootsector_ver_1;
   int m_bootsector_ver_2;
   nand_header_part_stru_ m_nand_partition_info[8];
