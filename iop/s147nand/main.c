@@ -102,8 +102,6 @@ static iop_device_ops_t nand_mdev_ops =
 // Unofficial: move to bss
 static void *g_nand_unaligned_buf;
 // Unofficial: move to bss
-static int g_nand_unaligned_buf_alloced;
-// Unofficial: move to bss
 static int g_nand_watchdog_enabled;
 // Unofficial: move to bss
 static s147nand_info_t g_nand_info;
@@ -919,7 +917,7 @@ int s147nand_12_load_logaddrtable(void)
     Kprintf("s147nand.irx: AllocSysMemory failed (LogAddrTable)\n");
     return -1;
   }
-  g_nand_unaligned_buf_alloced = 1;
+  // Unofficial: remove redundant var
   return 0;
 }
 
@@ -932,7 +930,8 @@ int s147nand_13_translate_blockoffs(int blockoffs)
     Kprintf("s147nand.irx: Invalid logical block address %d\n", blockoffs);
     return -1470010;
   }
-  if ( !g_nand_unaligned_buf_alloced )
+  // Unofficial: check g_nand_unaligned_buf instead
+  if ( !g_nand_unaligned_buf )
   {
     int logaddrtable;
 
