@@ -51,7 +51,6 @@ typedef struct s147nand_mdev_privdata_
 } s147nand_mdev_privdata_t;
 
 static int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc);
-static int nand_mdev_op_nulldev(void);
 static int nand_mdev_op_init(iop_device_t *dev);
 static int nand_mdev_op_deinit(iop_device_t *dev);
 static int nand_mdev_op_open(iop_file_t *f, const char *name, int flags);
@@ -79,25 +78,28 @@ static int nand_lowlevel_blockerase(int pageoffs);
 static int nand_lowlevel_readid(void *ptr);
 
 extern struct irx_export_table _exp_s147nand;
+
+IOMAN_RETURN_VALUE_IMPL(0);
+
 static iop_device_ops_t nand_mdev_ops =
 {
   &nand_mdev_op_init,
   &nand_mdev_op_deinit,
-  (void *)&nand_mdev_op_nulldev,
+  IOMAN_RETURN_VALUE(0),
   &nand_mdev_op_open,
   &nand_mdev_op_close,
   &nand_mdev_op_read,
   &nand_mdev_op_write,
   &nand_mdev_op_lseek,
-  (void *)&nand_mdev_op_nulldev,
-  (void *)&nand_mdev_op_nulldev,
-  (void *)&nand_mdev_op_nulldev,
-  (void *)&nand_mdev_op_nulldev,
-  (void *)&nand_mdev_op_nulldev,
-  (void *)&nand_mdev_op_nulldev,
-  (void *)&nand_mdev_op_nulldev,
-  (void *)&nand_mdev_op_nulldev,
-  (void *)&nand_mdev_op_nulldev
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
+  IOMAN_RETURN_VALUE(0),
 };
 // Unofficial: move to bss
 static void *g_nand_unaligned_buf;
@@ -161,11 +163,6 @@ static int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc)
   s147mdev_5_delfs(0);
   s147mdev_4_addfs(&g_drv, 0);
   // Unofficial: remove redundant var
-  return 0;
-}
-
-static int nand_mdev_op_nulldev(void)
-{
   return 0;
 }
 
