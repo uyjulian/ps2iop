@@ -166,7 +166,7 @@ static int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc)
     return -1;
   }
   g_drv.name = drv_name;
-  g_drv.type = 16;
+  g_drv.type = IOP_DT_FS;
   g_drv.version = 0;
   g_drv.desc = drv_desc;
   g_drv.ops = &nand_mdev_ops;
