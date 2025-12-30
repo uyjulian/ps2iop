@@ -5,8 +5,6 @@
 
 IRX_ID("ROMWRITE", 7, 1);
 
-#define _break(...) __builtin_trap()
-
 typedef struct s147_dev9_mem_mmio_
 {
   vu8 m_unk00;
@@ -908,7 +906,7 @@ static int get_nand_partition_offset(int part, int abspart)
     if ( part < 0 || part >= abspart )
       return -1;
     if ( abspart == -1 && g_device_info->m_block_size == (int)0x80000000 )
-      _break(6, 0);
+      __builtin_trap();
   }
   if ( !part )
     return get_nand_block_size_div_32_div_64();
@@ -928,7 +926,7 @@ static int get_nand_partition_size(int part, int abspart)
     if ( part < 0 || part >= abspart )
       return 0;
     if ( abspart == -1 && g_device_info->m_block_size == (int)0x80000000 )
-      _break(6, 0);
+      __builtin_trap();
     return g_device_info->m_block_size / abspart - (part ? 0 : get_nand_block_size_div_32_div_64());
   }
   if ( part )

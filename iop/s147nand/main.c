@@ -7,8 +7,6 @@
 
 IRX_ID("S147NAN2", 5, 2);
 
-#define _break(...) __builtin_trap()
-
 typedef struct s147_dev9_mem_mmio_
 {
   vu8 m_unk00;
@@ -841,13 +839,13 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
       return retres1;
   }
   if ( !g_nand_header.m_page_size_noecc )
-    _break(7, 0);
+    __builtin_trap();
   if ( g_nand_header.m_page_size_noecc == -1 && privdata->m_seek_cur == (int)0x80000000 )
-    _break(6, 0);
+    __builtin_trap();
   if ( !g_nand_header.m_page_size_noecc )
-    _break(7, 0);
+    __builtin_trap();
   if ( g_nand_header.m_page_size_noecc == -1 && size == (int)0x80000000 )
-    _break(6, 0);
+    __builtin_trap();
   retres1 = s147nand_8_multi_write_dma(
               ptr,
               privdata->m_seek_cur / g_nand_header.m_page_size_noecc + privdata->m_partition_offset,
@@ -958,9 +956,9 @@ int s147nand_14_translate_pageoffs(int pageoffs)
   if ( tblockoffs == -1470010 )
     return -1470010;
   if ( !g_nand_header.m_pages_per_block )
-    _break(7, 0);
+    __builtin_trap();
   if ( g_nand_header.m_pages_per_block == -1 && pageoffs == (int)0x80000000 )
-    _break(6, 0);
+    __builtin_trap();
   return s147nand_27_blocks2pages(tblockoffs) + (pageoffs % g_nand_header.m_pages_per_block);
 }
 
@@ -1330,9 +1328,9 @@ int s147nand_27_blocks2pages(int blocks)
 int s147nand_28_pages2blocks(int pages)
 {
   if ( !g_nand_info.m_pages_per_block )
-    _break(7, 0);
+    __builtin_trap();
   if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
-    _break(6, 0);
+    __builtin_trap();
   return pages / g_nand_info.m_pages_per_block;
 }
 
@@ -1341,14 +1339,14 @@ int s147nand_29_pages2blockround(int pages)
   int blocks;
 
   if ( !g_nand_info.m_pages_per_block )
-    _break(7, 0);
+    __builtin_trap();
   if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
-    _break(6, 0);
+    __builtin_trap();
   if ( !g_nand_info.m_pages_per_block )
-    _break(7, 0);
+    __builtin_trap();
   blocks = pages / g_nand_info.m_pages_per_block;
   if ( g_nand_info.m_pages_per_block == -1 && pages == (int)0x80000000 )
-    _break(6, 0);
+    __builtin_trap();
   return blocks + (( pages % g_nand_info.m_pages_per_block ) ? 1 : 0);
 }
 
@@ -1357,13 +1355,13 @@ int s147nand_30_bytes2pagesnoeccround(int bytes)
   int pages;
 
   if ( !g_nand_info.m_page_size_noecc )
-    _break(7, 0);
+    __builtin_trap();
   if ( g_nand_info.m_page_size_noecc == -1 && bytes == (int)0x80000000 )
-    _break(6, 0);
+    __builtin_trap();
   if ( !g_nand_info.m_page_size_noecc )
-    _break(7, 0);
+    __builtin_trap();
   pages = bytes / g_nand_info.m_page_size_noecc;
   if ( g_nand_info.m_page_size_noecc == -1 && bytes == (int)0x80000000 )
-    _break(6, 0);
+    __builtin_trap();
   return pages + (( bytes % g_nand_info.m_page_size_noecc ) ? 1 : 0);
 }
