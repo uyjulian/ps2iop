@@ -361,7 +361,7 @@ int s147nand_4_dumpprintinfo(int part)
   int dircnt;
   int filcnt;
   int finished;
-  char pathtmp[24];
+  char pathtmp[18];
 
   hdrret = -1;
   dircnt = 0;
@@ -460,10 +460,10 @@ static u32 do_get_nand_direntry(s147nand_mdev_privdata_t *privdat, const char *n
   int hdrret;
   int offscnt;
   int i;
-  char name_trunc[24];
+  char name_trunc[18];
 
   hdrret = -1;
-  size = ( idx > 16 ) ? 16 : idx;
+  size = ( idx > (int)(sizeof(name_trunc) - 2) ) ? (int)(sizeof(name_trunc) - 2) : idx;
   strncpy(name_trunc, name, size);
   name_trunc[size] = 0;
   for ( offscnt = 0; offscnt < 64; offscnt += 1 )
@@ -1086,11 +1086,12 @@ int s147nand_24_eraseoffset(int pageoffs)
 {
   int retres;
   int state;
-  char v8[8];
+  u8 val1;
+  u8 val2;
 
-  s147nand_21_nand_read_pio(v8, s147nand_27_blocks2pages(s147nand_28_pages2blocks(pageoffs)), g_nand_info.m_page_size_noecc, 1);
-  s147nand_21_nand_read_pio(&v8[1], s147nand_27_blocks2pages(s147nand_28_pages2blocks(pageoffs)) + 1, g_nand_info.m_page_size_noecc, 1);
-  if ( (u8)v8[0] != 255 || (u8)v8[1] != 255 )
+  s147nand_21_nand_read_pio(&val1, s147nand_27_blocks2pages(s147nand_28_pages2blocks(pageoffs)) + 0, g_nand_info.m_page_size_noecc, sizeof(val1));
+  s147nand_21_nand_read_pio(&val2, s147nand_27_blocks2pages(s147nand_28_pages2blocks(pageoffs)) + 1, g_nand_info.m_page_size_noecc, sizeof(val2));
+  if ( val1 != 255 || val2 != 255 )
     return -1470020;
   WaitSema(g_sema_id_nand);
   CpuSuspendIntr(&state);

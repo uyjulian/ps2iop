@@ -102,15 +102,11 @@ static const nand_id_desc_info_t g_nand_type_info[4] =
   { { 0x0, 0x0, 0x0, 0x0, 0x0 }, NULL, NULL, 0, 0, 0, 0 }
 };
 // Unofficial: move to bss
-static char g_secr_code_1;
-// Unofficial: move to bss
-static char g_secr_code_2;
+static char g_secr_code[2];
 // Unofficial: move to bss
 static int g_curflag;
 // Unofficial: move to bss
 static int g_boot_video_mode;
-// Unofficial: move to bss
-static void *g_part_buf;
 // Unofficial: move to bss
 static char *g_page_buf;
 // Unofficial: move to bss
@@ -380,8 +376,8 @@ static void do_set_flag(int flg)
 
 static void do_set_secr_code(char code1, char code2)
 {
-  g_secr_code_1 = code1;
-  g_secr_code_2 = code2;
+  g_secr_code[0] = code1;
+  g_secr_code[1] = code2;
 }
 
 static void do_handle_atfile_image(int part, const char *str)
@@ -416,8 +412,8 @@ static int do_start_write_proc(void)
   if ( (g_curflag & 0x1000000) != 0 )
   {
     STATUS_PRINTF("====== Set security code ======\n");
-    s147_dev9_mem_mmio->m_security_unlock_set1 = g_secr_code_1;
-    s147_dev9_mem_mmio->m_security_unlock_set2 = g_secr_code_2;
+    s147_dev9_mem_mmio->m_security_unlock_set1 = g_secr_code[0];
+    s147_dev9_mem_mmio->m_security_unlock_set2 = g_secr_code[1];
     STATUS_PRINTF("\n");
   }
   STATUS_PRINTF("====== Device information ======\n");
@@ -651,8 +647,8 @@ static int do_format_device(int abspart)
     g_nand_partbuf.m_hdr.m_nand_partition_8_info.m_size,
     g_nand_partbuf.m_hdr.m_nand_partition_8_info.m_size);
   STATUS_PRINTF("\n");
-  g_nand_partbuf.m_hdr.m_nand_seccode[0] = g_secr_code_1;
-  g_nand_partbuf.m_hdr.m_nand_seccode[1] = g_secr_code_2;
+  g_nand_partbuf.m_hdr.m_nand_seccode[0] = g_secr_code[0];
+  g_nand_partbuf.m_hdr.m_nand_seccode[1] = g_secr_code[1];
   g_nand_partbuf.m_hdr.m_nand_vidmode[0] = g_boot_video_mode;
   strncpy(g_nand_partbuf.m_hdr.m_nand_desc, g_device_info->m_nand_name, sizeof(g_nand_partbuf.m_hdr.m_nand_desc));
   g_nand_partbuf.m_hdr.m_page_size_noecc = g_device_info->m_page_size_noecc;
@@ -823,7 +819,7 @@ static int do_write_partition(int part)
       {
         int i;
 
-        g_part_buf = g_nand_partbuf.m_buf;
+        // Unofficial: don't use global variable for partition buffer
         if ( part != 9 )
         {
           int xindbytes;
@@ -833,11 +829,11 @@ static int do_write_partition(int part)
         }
         else
         {
-          memset(g_part_buf, 0, g_device_info->m_page_size_noecc);
+          memset(g_nand_partbuf.m_buf, 0, g_device_info->m_page_size_noecc);
           expected_readres = ( g_device_info->m_page_size_noecc < bytes ) ? g_device_info->m_page_size_noecc : bytes;
         }
         // Unofficial: check against read bytes instead of 0
-        actual_readres = read(fd, g_part_buf, expected_readres);
+        actual_readres = read(fd, g_nand_partbuf.m_buf, expected_readres);
         if ( actual_readres < expected_readres )
         {
           err = 1;
@@ -846,9 +842,9 @@ static int do_write_partition(int part)
         }
         for ( i = 0; i <= 0x1FFFF; i += g_device_info->m_page_size_noecc )
         {
-          s147nand_8_multi_write_dma((char *)g_part_buf + i, pageoffs, 1);
+          s147nand_8_multi_write_dma(((char *)g_nand_partbuf.m_buf) + i, pageoffs, 1);
           s147nand_7_multi_read_dma(g_page_buf, pageoffs, 1);
-          if ( do_verify((char *)g_part_buf + i, g_page_buf, g_device_info->m_page_size_noecc) )
+          if ( do_verify(((char *)g_nand_partbuf.m_buf) + i, g_page_buf, g_device_info->m_page_size_noecc) )
           {
             STATUS_PRINTF("romwrite: Verify error - LogBlock=%d LogPage=%d\n", s147nand_28_pages2blocks(pageoffs), pageoffs);
             err = 1;
@@ -878,7 +874,7 @@ static int do_write_partition(int part)
   if ( err )
   {
     CpuSuspendIntr(&state);
-    // Unofficial: don't free g_part_buf
+    // Unofficial: don't free partition buffer
     if ( g_page_buf )
       FreeSysMemory(g_page_buf);
     CpuResumeIntr(state);
@@ -973,7 +969,7 @@ static int do_list_files(int part)
   int dircnt;
   int filcnt;
   int finished;
-  char pathtmp[24];
+  char pathtmp[18];
 
   hdrret = -1;
   dircnt = 0;
