@@ -219,7 +219,7 @@ int _start(int ac, char **av)
   }
   USER_PRINTF("\n====== romwrite(version 0x%04x): Check argument ======\n", 0x701);
   DelayThread(10000);
-  for ( i = 1; i < ac; ++i )
+  for ( i = 1; i < ac; i += 1 )
   {
     if ( !strcmp(av[i], "-m") || !strcmp(av[i], "--main") )
     {
@@ -236,7 +236,7 @@ int _start(int ac, char **av)
       break;
     }
   }
-  for ( i = 1; i < ac; ++i )
+  for ( i = 1; i < ac; i += 1 )
   {
     if ( *av[i] != '-' )
       continue;
@@ -253,11 +253,12 @@ int _start(int ac, char **av)
         image_file_idx = strtol(av[i] + 1, 0, 10);
         STATUS_PRINTF(" -%d : Write \"atfile%d:\" image file\n", image_file_idx, image_file_idx);
         do_set_flag(1 << image_file_idx);
-        do_handle_atfile_image(image_file_idx, av[++i]);
+        i += 1;
+        do_handle_atfile_image(image_file_idx, av[i]);
         break;
       case 'd':
         STATUS_PRINTF(" -d : Search \"atfile*.147\" in the directory and Write\n");
-        ++i;
+        i += 1;
         do_set_flag(0x2000000);
         do_set_atfile_147_dir(av[i]);
         break;
@@ -267,7 +268,8 @@ int _start(int ac, char **av)
       case 'i':
         STATUS_PRINTF(" -i : Write \"atfile9:info\" image\n");
         do_set_flag(0x200);
-        do_handle_atfile_image(9, av[++i]);
+        i += 1;
+        do_handle_atfile_image(9, av[i]);
         break;
       case 'l':
         STATUS_PRINTF(" -l : Read NAND device and Display all file list\n");
@@ -284,7 +286,8 @@ int _start(int ac, char **av)
           case 'r':
             STATUS_PRINTF(" -sr: Read \"s147secr.147\" file\n");
             do_set_flag(0x1000000);
-            fd = open(av[++i], 1);
+            i += 1;
+            fd = open(av[i], 1);
             if ( fd < 0 )
             {
               STATUS_PRINTF("  ---> File not found, set default code\n");
@@ -297,8 +300,10 @@ int _start(int ac, char **av)
             break;
           default:
             STATUS_PRINTF(" -s : Set immediate secrity code\n");
-            secrcode1 = strtol(av[++i], 0, 10);
-            secrcode2 = strtol(av[++i], 0, 10);
+            i += 1;
+            secrcode1 = strtol(av[i], 0, 10);
+            i += 1;
+            secrcode2 = strtol(av[i], 0, 10);
             do_set_flag(0x1000000);
             do_set_secr_code(secrcode1, secrcode2);
             break;
@@ -344,12 +349,12 @@ static void thread_proc(void *userdata)
   STATUS_PRINTF("====== Completed ======\n\n");
   for ( ;; )
   {
-    for ( i = 1; i < 20; ++i )
+    for ( i = 1; i < 20; i += 1 )
     {
       s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
       do_toggle_dev9addr_inner(5 * i, 50);
     }
-    for ( i = 20; i > 0; --i )
+    for ( i = 20; i > 0; i -= 1 )
     {
       s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
       do_toggle_dev9addr_inner(5 * i, 50);
@@ -364,7 +369,7 @@ static void do_toggle_dev9addr_inner(int len, int cnt)
 {
   int i; // [sp+10h] [+10h]
 
-  for ( i = 0; i < cnt; ++i )
+  for ( i = 0; i < cnt; i += 1 )
   {
     if ( len > 0 )
     {
@@ -513,7 +518,7 @@ static int do_start_write_proc(void)
   if ( (g_curflag & 0x2000000) != 0 )
   {
     STATUS_PRINTF("====== Search directory ======\n");
-    for ( part = 0; part < 8; ++part )
+    for ( part = 0; part < 8; part += 1 )
     {
       int fd; // [sp+24h] [+24h]
 
@@ -536,7 +541,7 @@ static int do_start_write_proc(void)
     }
     STATUS_PRINTF(" \n");
   }
-  for ( part = 0; part < 8; ++part )
+  for ( part = 0; part < 8; part += 1 )
   {
     if ( ((1 << part) & g_curflag) == 0 )
       continue;
@@ -563,7 +568,7 @@ static int do_start_write_proc(void)
       STATUS_PRINTF(" Error: Unformatted device (%d)\n", logaddrtable);
       return logaddrtable;
     }
-    for ( part = 0; part < 8; ++part )
+    for ( part = 0; part < 8; part += 1 )
       do_list_files(part);
   }
   return 0;
@@ -585,7 +590,7 @@ static int do_format_device(int abspart)
   STATUS_PRINTF("====== Format NAND device ======\n");
   STATUS_PRINTF(" [1/3]Block Erase and Check Bad Blocks\n");
   STATUS_PRINTF(" BadBlock =");
-  for ( blocks = 0; blocks < g_device_info->m_block_size; ++blocks )
+  for ( blocks = 0; blocks < g_device_info->m_block_size; blocks += 1 )
   {
     int eraseres; // [sp+28h] [+28h]
 
@@ -610,7 +615,7 @@ static int do_format_device(int abspart)
   *g_blockinfo_dat_buf = 0xEEEE;
   *g_blockinfo_str_buf = 'B';
   nand_partition_offset = get_nand_partition_offset(8, 8);
-  for ( blocks = 1; blocks < nand_partition_offset - 1; ++blocks )
+  for ( blocks = 1; blocks < nand_partition_offset - 1; blocks += 1 )
   {
     if ( g_blockinfo_str_buf[blocks] != '=' )
       continue;
@@ -636,7 +641,7 @@ static int do_format_device(int abspart)
   }
   if ( bbcnt1 >= 0 )
   {
-    for ( blocks = nand_partition_offset; blocks < g_device_info->m_block_size; ++blocks )
+    for ( blocks = nand_partition_offset; blocks < g_device_info->m_block_size; blocks += 1 )
     {
       if ( g_blockinfo_str_buf[blocks] != 'X' )
       {
@@ -656,7 +661,7 @@ static int do_format_device(int abspart)
     STATUS_PRINTF(" Error: Too many bad blocks to replace\n");
     return -1;
   }
-  for ( blocks = 0; blocks < g_device_info->m_block_size; ++blocks )
+  for ( blocks = 0; blocks < g_device_info->m_block_size; blocks += 1 )
   {
     do_output_bb_info(blocks, abspart, bboffs);
     s147_dev9_mem_mmio.m_watchdog_flag2 = 0;
@@ -667,7 +672,7 @@ static int do_format_device(int abspart)
   strncpy((char *)&g_nand_partbuf, "S147NAND", 9);
   g_nand_partbuf.m_hdr.m_bootsector_ver_1 = 3;
   g_nand_partbuf.m_hdr.m_bootsector_ver_2 = 0;
-  for ( i = 0; i < 8; ++i )
+  for ( i = 0; i < 8; i += 1 )
   {
     g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i] = get_nand_partition_offset(i, abspart);
     g_nand_partbuf.m_hdr.m_nand_partition_info[2 * i + 1] = get_nand_partition_size(i, abspart);
@@ -897,9 +902,9 @@ static int do_write_partition(int part)
             finished = 1;
             break;
           }
-          ++pageoffs;
-          ++xind2;
-          ++xind3;
+          pageoffs += 1;
+          xind2 += 1;
+          xind3 += 1;
           if ( xind2 >= pages )
           {
             finished = 1;
@@ -935,10 +940,19 @@ static int do_write_partition(int part)
 //----- (00403758) --------------------------------------------------------
 static int check_badblock_count(void)
 {
-  for ( ; g_badblock_count < get_nand_partition_offset(8, 8) - 1; ++g_badblock_count )
+  int retval;
+
+  retval = -1;
+  for ( ; g_badblock_count < get_nand_partition_offset(8, 8) - 1; g_badblock_count += 1 )
+  {
     if ( g_blockinfo_str_buf[g_badblock_count] == 'R' )
-      return g_badblock_count++;
-  return -1;
+    {
+      retval = g_badblock_count;
+      g_badblock_count += 1;
+      break;
+    }
+  }
+  return retval;
 }
 // 407CB8: using guessed type int g_badblock_count;
 
@@ -1002,7 +1016,7 @@ static void do_dma_write_bytes_multi(void *ptr, int pageoffs, int pagecnt)
   int bytecnt; // [sp+14h] [+14h]
 
   bytecnt = s147nand_30_bytes2pagesnoeccround(pagecnt);
-  for ( i = 0; i < bytecnt; ++i )
+  for ( i = 0; i < bytecnt; i += 1 )
     s147nand_22_nand_write_dma(
       (char *)ptr + 4 * (g_device_info->m_page_size_noecc >> 2) * i,
       pageoffs + i,
@@ -1029,10 +1043,10 @@ static int do_list_files(int part)
   pageoffs = s147nand_9_get_nand_partition(part) * g_device_info->m_pages_per_block;
   if ( pageoffs < 0 )
     return -19;
-  for ( xind1 = 0; xind1 < 64; ++xind1 )
+  for ( xind1 = 0; xind1 < 64; xind1 += 1 )
   {
     s147nand_7_multi_read_dma(&g_nand_partbuf, pageoffs + xind1, 1);
-    for ( i = 0; i < 64; ++i )
+    for ( i = 0; i < 64; i += 1 )
     {
       if ( (xind1 << 6) - 1 + i == -1 )
       {
@@ -1057,11 +1071,11 @@ static int do_list_files(int part)
         if ( g_nand_partbuf.m_direntry[i].m_type == 'D' )
         {
           strcat(pathtmp, "/");
-          ++dircnt;
+          dircnt += 1;
         }
         else
         {
-          ++filcnt;
+          filcnt += 1;
         }
         STATUS_PRINTF(" %9d  %s\n", g_nand_partbuf.m_direntry[i].m_size, pathtmp);
         DelayThread(20000);
@@ -1095,7 +1109,7 @@ static int do_verify(void *buf1, void *buf2, int len)
 {
   int i; // [sp+0h] [+0h]
 
-  for ( i = 0; i < len / 4; ++i )
+  for ( i = 0; i < len / 4; i += 1 )
     if ( ((u32 *)buf1)[i] != ((u32 *)buf2)[i] )
       return ((u32 *)buf1)[i] - ((u32 *)buf2)[i];
   return 0;
@@ -1107,14 +1121,14 @@ static nand_id_desc_info_stru_ *do_parse_device_info(const char *nandid)
   int i; // [sp+0h] [+0h]
   int j; // [sp+8h] [+8h]
 
-  for ( i = 0; g_nand_type_info[i].m_nand_name; ++i )
+  for ( i = 0; g_nand_type_info[i].m_nand_name; i += 1 )
   {
     int cmpval; // [sp+4h] [+4h]
 
     cmpval = 0;
-    for ( j = 0; j < 5; ++j )
+    for ( j = 0; j < 5; j += 1 )
       if ( ((int)g_nand_type_info[i].m_id[j] == -1) || ((u8)g_nand_type_info[i].m_id[j] == (u8)nandid[j]) )
-        ++cmpval;
+        cmpval += 1;
     if ( cmpval == 5 )
       return &g_nand_type_info[i];
   }
