@@ -448,7 +448,7 @@ static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, cons
     return -19;
   }
   privdat->m_partition_offset = nand_partition_offset;
-  return do_nand_open_inner2(privdat, name + (( *name == '/' ) ? 1 : 0));
+  return do_nand_open_inner2(privdat, name + (( name[0] == '/' ) ? 1 : 0));
 }
 
 //----- (00400EF8) --------------------------------------------------------

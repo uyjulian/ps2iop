@@ -213,7 +213,7 @@ int _start(int ac, char **av)
   }
   for ( i = 1; i < ac; i += 1 )
   {
-    if ( *av[i] != '-' )
+    if ( av[i][0] != '-' )
       continue;
     switch ( av[i][1] )
     {
@@ -587,8 +587,8 @@ static int do_format_device(int abspart)
   }
   STATUS_PRINTF("\n\n");
   STATUS_PRINTF(" [2/3]Replace Bad Blocks ('B':Boot, 'I':Info, 'X':Broken, 'R':Reserved, '@':Occupied)\n");
-  *g_blockinfo_dat_buf = 0xEEEE;
-  *g_blockinfo_str_buf = 'B';
+  g_blockinfo_dat_buf[0] = 0xEEEE;
+  g_blockinfo_str_buf[0] = 'B';
   nand_partition_offset = get_nand_partition_offset(8, 8);
   for ( blocks = 1; blocks < nand_partition_offset - 1; blocks += 1 )
   {
