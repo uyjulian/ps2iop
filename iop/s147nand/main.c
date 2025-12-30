@@ -1,6 +1,8 @@
 
 #include <irx_imports.h>
 #include <s147nand.h>
+#include <errno.h>
+#include <sys/fcntl.h>
 #include <iop_mmio_hwport.h>
 
 IRX_ID("S147NAN2", 5, 2);
@@ -105,7 +107,7 @@ static void *g_nand_unaligned_buf = NULL;
 static int g_nand_unaligned_buf_alloced = 0; // weak
 static int g_probunusd_dword_4051D0 = 0; // weak
 static int g_nand_watchdog_enabled = 0; // weak
-static nand_info_stru_ g_nand_info = { 2048, 2112, 64, 2048, 131072 }; // weak
+static nand_info_stru_ g_nand_info = { 0x800, 0x840, 0x40, 0x800, 0x20000 }; // weak
 static iop_device_t g_drv; // idb
 static void *g_nand_sector_buffer; // idb
 static const char *g_dev_name;
@@ -147,7 +149,7 @@ static int do_register_nand_to_mdev(const char *drv_name, const char *drv_desc)
     return -1;
   g_sema_param_dev.initial = 1;
   g_sema_param_dev.max = 1;
-  g_sema_param_dev.attr = 1;
+  g_sema_param_dev.attr = SA_THPRI;
   g_sema_id_dev = CreateSema(&g_sema_param_dev);
   if ( g_sema_id_dev < 0 )
   {
@@ -180,12 +182,12 @@ static int nand_mdev_op_init(iop_device_t *dev)
   (void)dev;
   Kprintf("s147nand.irx: SectorBuffer=%d, FileParam=%d\n", 0, 1);
   CpuSuspendIntr(&state);
-  g_nand_sector_buffer = AllocSysMemory(0, 2048, 0);
+  g_nand_sector_buffer = AllocSysMemory(ALLOC_FIRST, 2048, 0);
   CpuResumeIntr(state);
   if ( g_nand_sector_buffer )
     return 0;
   Kprintf("s147nand.irx: AllocSysMemory failed (s147file_Init)\n");
-  return -12;
+  return -ENOMEM;
 }
 
 //----- (00400298) --------------------------------------------------------
@@ -220,12 +222,12 @@ static int nand_mdev_op_open(iop_file_t *f, const char *name, int flags)
     return retres;
   }
   CpuSuspendIntr(&state);
-  f->privdata = AllocSysMemory(1, 16, 0);
+  f->privdata = AllocSysMemory(ALLOC_LAST, sizeof(nand_mdev_privdata_stru_), 0);
   CpuResumeIntr(state);
   if ( !f->privdata )
   {
     Kprintf("s147nand.irx: AllocSysMemory failed (Open)\n");
-    retres = -12;
+    retres = -ENOMEM;
   }
   if ( retres >= 0 )
   {
@@ -341,25 +343,25 @@ static int nand_mdev_op_lseek(iop_file_t *f, int offset, int mode)
   WaitSema(g_sema_id_dev);
   switch (mode)
   {
-  case 0:
+  case SEEK_SET:
     privdat->m_seek_cur = offset;
     break;
-  case 1:
+  case SEEK_CUR:
     privdat->m_seek_cur += offset;
     break;
-  case 2:
+  case SEEK_END:
     privdat->m_seek_cur = privdat->m_seek_max + offset;
     break;
   default:
     SignalSema(g_sema_id_dev);
-    return -22;
+    return -EINVAL;
   }
   if ( privdat->m_seek_max < privdat->m_seek_cur )
   {
     Kprintf("s147nand.irx: Out of range (seek=%d, filesize=%d)\n", privdat->m_seek_cur, privdat->m_seek_max);
     privdat->m_seek_cur = privdat->m_seek_max;
     SignalSema(g_sema_id_dev);
-    return -22;
+    return -EINVAL;
   }
   SignalSema(g_sema_id_dev);
   return privdat->m_seek_cur;
@@ -383,7 +385,7 @@ int s147nand_4_dumpprintinfo(int part)
   finished = 0;
   nand_partition_offset = get_nand_partition_offset(part);
   if ( nand_partition_offset < 0 )
-    return -19;
+    return -ENODEV;
   for ( i = 0; i < 64; i += 1 )
   {
     s147nand_7_multi_read_dma(g_nand_sector_buffer, nand_partition_offset + i, 1);
@@ -398,7 +400,7 @@ int s147nand_4_dumpprintinfo(int part)
         {
           Kprintf(" \"%s%d:\" ... No data\n", g_dev_name, part);
           Kprintf(" -----------------------------\n\n");
-          return -19;
+          return -ENODEV;
         }
         hdrret = hdrbuf->m_entrycnt;
         Kprintf(" \"%s%d:\"\n", g_dev_name, part);
@@ -445,7 +447,7 @@ static int do_nand_open_inner1(nand_mdev_privdata_stru_ *privdat, int part, cons
   if ( nand_partition_offset < 0 )
   {
     Kprintf("s147nand.irx: Error invalid unit number\n");
-    return -19;
+    return -ENODEV;
   }
   privdat->m_partition_offset = nand_partition_offset;
   return do_nand_open_inner2(privdat, name + (( name[0] == '/' ) ? 1 : 0));
@@ -495,12 +497,12 @@ static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *n
         if ( strncmp(hdrbuf->m_sig, "S147ROM", 8) )
         {
           Kprintf("s147nand.irx: No directory entries\n");
-          return -19;
+          return -ENODEV;
         }
         if ( hdrbuf->m_ver >= 0x101 )
         {
           Kprintf("s147nand.irx: Version 0x%04x format is not supported\n", hdrbuf->m_ver);
-          return -19;
+          return -ENODEV;
         }
         hdrret = hdrbuf->m_entrycnt;
       }
@@ -510,7 +512,7 @@ static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *n
 
         dirbuf = (const nand_direntry_stru_ *)g_nand_sector_buffer;
         if ( (offscnt << 6) - 1 + i >= hdrret )
-          return -2;
+          return -ENOENT;
         lvtyp = (char)dirbuf[i].m_type;
         if ( (((lvtyp == 'D') && typ == 'D') || ((lvtyp == 'F' || lvtyp == '\x00') && typ == 'F')) && (!strcmp(dirbuf[i].m_name, name_trunc)) )
         {
@@ -521,7 +523,7 @@ static u32 do_get_nand_direntry(nand_mdev_privdata_stru_ *privdat, const char *n
       }
     }
   }
-  return -2;
+  return -ENOENT;
 }
 // 40101C: using guessed type char name_trunc[24];
 
@@ -550,7 +552,7 @@ int s147nand_5_outerinit(void)
   }
   g_seama_param_1.initial = 1;
   g_seama_param_1.max = 1;
-  g_seama_param_1.attr = 1;
+  g_seama_param_1.attr = SA_THPRI;
   g_sema_id_init = CreateSema(&g_seama_param_1);
   if ( g_sema_id_init < 0 )
   {
@@ -750,13 +752,13 @@ static int nand_mdev_open_special(iop_file_t *f, const char *name)
   int state; // [sp+14h] [+14h] BYREF
 
   CpuSuspendIntr(&state);
-  f->privdata = AllocSysMemory(0, 16, 0);
+  f->privdata = AllocSysMemory(ALLOC_FIRST, sizeof(nand_mdev_privdata_stru_), 0);
   CpuResumeIntr(state);
   if ( !f->privdata )
   {
     Kprintf("s147nand.irx: AllocSysMemory failed (9:Open)\n");
     // Unofficial: return early on error
-    return -2;
+    return -ENOENT;
   }
   privdat = (nand_mdev_privdata_stru_ *)f->privdata;
   memset(privdat, 0, sizeof(nand_mdev_privdata_stru_));
@@ -812,7 +814,7 @@ static int nand_mdev_open_special(iop_file_t *f, const char *name)
     CpuSuspendIntr(&state);
     FreeSysMemory(f->privdata);
     CpuResumeIntr(state);
-    return -2;
+    return -ENOENT;
   }
   return 0;
 }
@@ -845,7 +847,7 @@ static int nand_mdev_read_special(iop_file_t *f, void *ptr, int size)
     privdata->m_seek_cur += size;
     return size;
   }
-  return -2;
+  return -ENOENT;
 }
 
 //----- (0040246C) --------------------------------------------------------
@@ -858,11 +860,11 @@ static int nand_mdev_write_special(iop_file_t *f, void *ptr, int size)
   privdata = (nand_mdev_privdata_stru_ *)f->privdata;
   xsz = g_nand_header.m_nand_partition_8_info.m_size * g_nand_header.m_pages_per_block * g_nand_header.m_page_size_noecc;
   if ( (privdata->m_flags & 0x1000000) == 0 )
-    return -22;
+    return -EINVAL;
   if ( xsz < privdata->m_seek_cur + size )
   {
     Kprintf("s147nand.irx: Out of rewritable partition, lseek(%d) > max(%d)\n", privdata->m_seek_cur + size, xsz);
-    return -27;
+    return -EFBIG;
   }
   if ( (privdata->m_flags & 0x2000000) != 0 )
   {
@@ -947,11 +949,11 @@ int s147nand_12_load_logaddrtable(void)
     return -19;
   }
   CpuSuspendIntr(&state);
-  g_logical_addr_tbl = (u16 *)AllocSysMemory(0, sizeof(u16) * hdr.m_block_size, 0);
+  g_logical_addr_tbl = (u16 *)AllocSysMemory(ALLOC_FIRST, sizeof(u16) * hdr.m_block_size, 0);
   CpuResumeIntr(state);
   s147nand_19_logaddr_read(g_logical_addr_tbl, 1, sizeof(u16) * hdr.m_block_size);
   CpuSuspendIntr(&state);
-  g_nand_unaligned_buf = AllocSysMemory(0, s147nand_16_getnandinfo()->m_page_size_noecc, 0);
+  g_nand_unaligned_buf = AllocSysMemory(ALLOC_FIRST, s147nand_16_getnandinfo()->m_page_size_noecc, 0);
   CpuResumeIntr(state);
   if ( !g_nand_unaligned_buf )
   {
@@ -1025,17 +1027,17 @@ int s147nand_15_nandinit(void)
 {
   int intrstate; // [sp+10h] [+10h] BYREF
 
-  DisableIntr(41, &intrstate);
-  ReleaseIntrHandler(41);
-  RegisterIntrHandler(41, 1, dev9_intr_handler, &g_probunusd_dword_4051D0);
-  EnableIntr(41);
-  dmac_disable(8);
-  dmac_ch_set_dpcr(8, 7);
-  dmac_enable(8);
+  DisableIntr(IOP_IRQ_DMA_DEV9, &intrstate);
+  ReleaseIntrHandler(IOP_IRQ_DMA_DEV9);
+  RegisterIntrHandler(IOP_IRQ_DMA_DEV9, 1, dev9_intr_handler, &g_probunusd_dword_4051D0);
+  EnableIntr(IOP_IRQ_DMA_DEV9);
+  sceDisableDMAChannel(IOP_DMAC_DEV9);
+  sceSetDMAPriority(IOP_DMAC_DEV9, 7);
+  sceEnableDMAChannel(IOP_DMAC_DEV9);
   iop_mmio_hwport_lo.ssbus2.ind_B_address = 0xB4000008;
   g_sema_param.initial = 1;
   g_sema_param.max = 1;
-  g_sema_param.attr = 1;
+  g_sema_param.attr = SA_THPRI;
   g_sema_id_nand = CreateSema(&g_sema_param);
   if ( g_sema_id_nand >= 0 )
     return 0;
@@ -1210,10 +1212,10 @@ static int nand_lowlevel_read_dma(void *ptr, int pageoffs, int byteoffs, int byt
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );
   CpuSuspendIntr(&state);
   s147_dev9_mem_mmio.m_security_unlock_unlock = 0;
-  dmac_request(8, ptr, bytecnt >> 2, 1, 0);
+  sceSetSliceDMA(IOP_DMAC_DEV9, ptr, bytecnt >> 2, 1, 0);
   g_thid = GetThreadId();
   CpuResumeIntr(state);
-  dmac_transfer(8);
+  sceStartDMA(IOP_DMAC_DEV9);
   SleepThread();
   s147nand_dev9_io_mmio.m_nand_cmd_enable = 0;
   if ( g_nand_watchdog_enabled == 1 )
@@ -1280,10 +1282,10 @@ static int nand_lowlevel_write_dma(void *ptr, int pageoffs, int byteoffs, int by
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (u16)(pageoffs & 0xFF00) >> 8;
   s147nand_dev9_io_mmio.m_nand_cmd_offs = (pageoffs & 0xFF0000) >> 16;
   s147_dev9_mem_mmio.m_security_unlock_unlock = 0;
-  dmac_request(8, ptr, bytecnt >> 2, 1, 1);
+  sceSetSliceDMA(IOP_DMAC_DEV9, ptr, bytecnt >> 2, 1, 1);
   g_thid = GetThreadId();
   CpuResumeIntr(state);
-  dmac_transfer(8);
+  sceStartDMA(IOP_DMAC_DEV9);
   SleepThread();
   s147nand_dev9_io_mmio.m_nand_cmd_sel = 0x10;
   while ( (s147nand_dev9_io_mmio.m_nand_waitflag & 1) != 0 );

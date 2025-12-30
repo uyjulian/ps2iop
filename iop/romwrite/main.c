@@ -1,5 +1,6 @@
 
 #include <irx_imports.h>
+#include <sys/fcntl.h>
 
 IRX_ID("ROMWRITE", 7, 1);
 
@@ -262,7 +263,7 @@ int _start(int ac, char **av)
             STATUS_PRINTF(" -sr: Read \"s147secr.147\" file\n");
             do_set_flag(0x1000000);
             i += 1;
-            fd = open(av[i], 1);
+            fd = open(av[i], O_RDONLY);
             if ( fd < 0 )
             {
               STATUS_PRINTF("  ---> File not found, set default code\n");
@@ -289,7 +290,7 @@ int _start(int ac, char **av)
     }
   }
   STATUS_PRINTF("\n");
-  thparam.attr = 0x2000000;
+  thparam.attr = TH_C;
   thparam.thread = thread_proc;
   thparam.priority = 0x7A;
   thparam.stacksize = 0x80000;
@@ -425,7 +426,7 @@ static int do_start_write_proc(void)
   int logaddrtable; // [sp+28h] [+28h]
   u8 nandid[5]; // [sp+30h] [+30h] BYREF
 
-  close(open("ctrl99:watchdog-stop", 1));
+  close(open("ctrl99:watchdog-stop", O_RDONLY));
   if ( (g_curflag & 0x1000000) != 0 )
   {
     STATUS_PRINTF("====== Set security code ======\n");
@@ -452,8 +453,8 @@ static int do_start_write_proc(void)
   STATUS_PRINTF(" BlockSize   = %d (Blocks)\n", g_device_info->m_block_size);
   STATUS_PRINTF("\n");
   CpuSuspendIntr(&state);
-  g_blockinfo_str_buf = (u8 *)AllocSysMemory(0, g_device_info->m_block_size, 0);
-  g_blockinfo_dat_buf = (u16 *)AllocSysMemory(0, sizeof(u16) * g_device_info->m_block_size, 0);
+  g_blockinfo_str_buf = (u8 *)AllocSysMemory(ALLOC_FIRST, g_device_info->m_block_size, 0);
+  g_blockinfo_dat_buf = (u16 *)AllocSysMemory(ALLOC_FIRST, sizeof(u16) * g_device_info->m_block_size, 0);
   CpuResumeIntr(state);
   if ( !g_blockinfo_str_buf || !g_blockinfo_dat_buf )
   {
@@ -489,7 +490,7 @@ static int do_start_write_proc(void)
   if ( logaddrtable )
     return logaddrtable;
   s147nand_6_checkformat();
-  close(open("atfile9:acdelay", 1));
+  close(open("atfile9:acdelay", O_RDONLY));
   if ( (g_curflag & 0x2000000) != 0 )
   {
     STATUS_PRINTF("====== Search directory ======\n");
@@ -503,7 +504,7 @@ static int do_start_write_proc(void)
         continue;
       }
       sprintf(g_atfile_part_image[part], "%satfile%d.147", g_atfile_147_dir, part);
-      fd = open(g_atfile_part_image[part], 1);
+      fd = open(g_atfile_part_image[part], O_RDONLY);
       if ( fd < 0 )
       {
         DelayThread(10000);
@@ -712,7 +713,7 @@ static int do_write_partition(int part)
       STATUS_PRINTF(" Error: No partition #0 table\n");
       return -1;
     }
-    fd = open(g_atfile_info_image, 1);
+    fd = open(g_atfile_info_image, O_RDONLY);
     if ( fd < 0 )
     {
       STATUS_PRINTF(" Error: File not found - \"%s\"\n", g_atfile_info_image);
@@ -727,7 +728,7 @@ static int do_write_partition(int part)
       STATUS_PRINTF(" Error: Invalid unit number\n");
       return -1;
     }
-    fd = open(g_atfile_part_image[part], 1);
+    fd = open(g_atfile_part_image[part], O_RDONLY);
     if ( fd < 0 )
     {
       STATUS_PRINTF(" Error: File not found - \"%s\"\n", g_atfile_part_image[part]);
@@ -735,7 +736,7 @@ static int do_write_partition(int part)
     }
   }
   CpuSuspendIntr(&state);
-  g_page_buf = (char *)AllocSysMemory(0, g_device_info->m_page_size_noecc, 0);
+  g_page_buf = (char *)AllocSysMemory(ALLOC_FIRST, g_device_info->m_page_size_noecc, 0);
   CpuResumeIntr(state);
   if ( !g_page_buf )
   {
@@ -746,7 +747,7 @@ static int do_write_partition(int part)
   {
     if ( part == 9 )
     {
-      bytes = lseek(fd, 0, 2);
+      bytes = lseek(fd, 0, SEEK_END);
       if ( g_device_info->m_page_size_noecc < bytes )
       {
         STATUS_PRINTF(" Error: INFO image file is too large - \"%s\"\n", g_atfile_info_image);
@@ -755,7 +756,7 @@ static int do_write_partition(int part)
       }
       if ( !err )
       {
-        lseek(fd, 0, 0);
+        lseek(fd, 0, SEEK_SET);
         expected_readres = 8;
         actual_readres = read(fd, g_page_buf, expected_readres);
         if ( actual_readres < expected_readres )
@@ -779,7 +780,7 @@ static int do_write_partition(int part)
     {
       int partsizebytes; // [sp+28h] [+28h]
 
-      bytes = lseek(fd, 0, 2);
+      bytes = lseek(fd, 0, SEEK_END);
       partsizebytes = s147nand_10_get_nand_partition_size(part)
                     * g_device_info->m_pages_per_block
                     * g_device_info->m_page_size_noecc;
@@ -791,7 +792,7 @@ static int do_write_partition(int part)
       }
       if ( !err )
       {
-        lseek(fd, 0, 0);
+        lseek(fd, 0, SEEK_SET);
         expected_readres = 0x20;
         actual_readres = read(fd, g_page_buf, expected_readres);
         if ( actual_readres < expected_readres )
@@ -820,7 +821,7 @@ static int do_write_partition(int part)
     int finished;
 
     STATUS_PRINTF(" FileSize = %dbytes SectorSize=%dsectors BlockSize=%dblocks\n", bytes, pages, blocks);
-    lseek(fd, 0, 0);
+    lseek(fd, 0, SEEK_SET);
     xind2 = 0;
     pageoffs = partblocks1;
     finished = 0;
