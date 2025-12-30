@@ -878,8 +878,7 @@ static int do_write_partition(int part)
   if ( err )
   {
     CpuSuspendIntr(&state);
-    if ( g_part_buf )
-      FreeSysMemory(g_part_buf);
+    // Unofficial: don't free g_part_buf
     if ( g_page_buf )
       FreeSysMemory(g_page_buf);
     CpuResumeIntr(state);
