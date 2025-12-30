@@ -105,13 +105,20 @@ static const nand_id_desc_info_t g_nand_type_info[4] =
   },
   { { 0x0, 0x0, 0x0, 0x0, 0x0 }, NULL, NULL, 0, 0, 0, 0 }
 }; // weak
-static char g_secr_code_1 = 0; // weak
-static char g_secr_code_2 = 0; // weak
-static int g_curflag = 0; // weak
-static int g_boot_video_mode = 0; // weak
-static void *g_part_buf = NULL; // idb
-static char *g_page_buf = NULL; // idb
-static int g_badblock_count = 1; // weak
+// Unofficial: move to bss
+static char g_secr_code_1; // weak
+// Unofficial: move to bss
+static char g_secr_code_2; // weak
+// Unofficial: move to bss
+static int g_curflag; // weak
+// Unofficial: move to bss
+static int g_boot_video_mode; // weak
+// Unofficial: move to bss
+static void *g_part_buf; // idb
+// Unofficial: move to bss
+static char *g_page_buf; // idb
+// Unofficial: move to bss
+static int g_badblock_count; // weak
 static char g_product_code_tmp[32]; // weak
 static u8 *g_blockinfo_str_buf;
 static u16 *g_blockinfo_dat_buf;
@@ -193,6 +200,8 @@ int _start(int ac, char **av)
     DelayThread(10000);
     return 1;
   }
+  // Unofficial: init var here instead
+  g_badblock_count = 1;
   USER_PRINTF("\n====== romwrite(version 0x%04x): Check argument ======\n", 0x701);
   DelayThread(10000);
   for ( i = 1; i < ac; i += 1 )

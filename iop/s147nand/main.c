@@ -103,10 +103,14 @@ static iop_device_ops_t nand_mdev_ops =
   (void *)&nand_mdev_op_nulldev,
   (void *)&nand_mdev_op_nulldev
 }; // weak
-static void *g_nand_unaligned_buf = NULL;
-static int g_nand_unaligned_buf_alloced = 0; // weak
-static int g_nand_watchdog_enabled = 0; // weak
-static s147nand_info_t g_nand_info = { 0x800, 0x840, 0x40, 0x800, 0x20000 }; // weak
+// Unofficial: move to bss
+static void *g_nand_unaligned_buf;
+// Unofficial: move to bss
+static int g_nand_unaligned_buf_alloced; // weak
+// Unofficial: move to bss
+static int g_nand_watchdog_enabled; // weak
+// Unofficial: move to bss
+static s147nand_info_t g_nand_info; // weak
 static iop_device_t g_drv; // idb
 static void *g_nand_sector_buffer; // idb
 static const char *g_dev_name;
@@ -130,6 +134,12 @@ int _start(int ac, char **av)
   (void)ac;
   (void)av;
   Kprintf("\ns147nand.irx: System147 NAND-Flash File System Driver v%d.%d\n", 5, 2);
+  // Unofficial: init vars here instead
+  g_nand_info.m_page_size_noecc = 0x800;
+  g_nand_info.m_page_size_withecc = 0x840;
+  g_nand_info.m_pages_per_block = 0x40;
+  g_nand_info.m_block_size = 0x800;
+  g_nand_info.m_page_count = 0x20000;
   if ( do_register_nand_to_mdev("nand", "NAND-Flash") )
     return 1;
   if ( RegisterLibraryEntries(&_exp_s147nand) )
