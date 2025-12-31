@@ -2,7 +2,7 @@ IOP_BIN = xatapi.irx
 
 IOP_OBJS = xatapi.o imports.o exports.o
 
-IOP_CFLAGS += -I../00common/
+IOP_CFLAGS += -I../00common/ -DBUILDING_CDVD_MODULE
 
 IOP_WARNFLAGS += -Wall -Wextra
 
