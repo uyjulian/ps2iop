@@ -1236,8 +1236,8 @@ static int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
   int result;
 
-  dmac_ch_set_chcr(3, 0);
-  dmac_ch_get_chcr(3);
+  dmac_ch_set_chcr(IOP_DMAC_CDVD, 0);
+  dmac_ch_get_chcr(IOP_DMAC_CDVD);
   if ( device >= 2 && (!g_dev5_predma_cbs[device] || !g_dev5_postdma_cbs[device]) )
     return -1;
   VERBOSE_KPRINTF(1, "Wait Intr\n");
@@ -1249,13 +1249,13 @@ static int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
     g_dev5_predma_cbs[device](bcr_in, dir);
   VERBOSE_KPRINTF(1, "DMA Ch3 Set.\n");
   VERBOSE_KPRINTF(1, "Set MADR3:%08x Set BCR3:%08x\n", buf, bcr_in);
-  dmac_ch_set_madr(3, (u32)buf);
-  dmac_ch_set_bcr(3, bcr_in);
-  dmac_ch_set_chcr(3, dir | 0x41000200);
-  dmac_ch_get_chcr(3);
-  VERBOSE_KPRINTF(1, "CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3), dmac_ch_get_madr(3), dmac_ch_get_bcr(3));
-  while ( (dmac_ch_get_chcr(3) & 0x1000000) ) {}
-  VERBOSE_KPRINTF(1, "MADR3= %08x\n", dmac_ch_get_madr(3));
+  dmac_ch_set_madr(IOP_DMAC_CDVD, (u32)buf);
+  dmac_ch_set_bcr(IOP_DMAC_CDVD, bcr_in);
+  dmac_ch_set_chcr(IOP_DMAC_CDVD, dir | 0x41000200);
+  dmac_ch_get_chcr(IOP_DMAC_CDVD);
+  VERBOSE_KPRINTF(1, "CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(IOP_DMAC_CDVD), dmac_ch_get_madr(IOP_DMAC_CDVD), dmac_ch_get_bcr(IOP_DMAC_CDVD));
+  while ( (dmac_ch_get_chcr(IOP_DMAC_CDVD) & 0x1000000) ) {}
+  VERBOSE_KPRINTF(1, "MADR3= %08x\n", dmac_ch_get_madr(IOP_DMAC_CDVD));
   if ( g_dev5_postdma_cbs[device] )
     g_dev5_postdma_cbs[device](bcr_in, dir);
   VERBOSE_KPRINTF(1, "SpdDmaTransfer End.\n");
@@ -1267,8 +1267,8 @@ static int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, 
 {
   int result;
 
-  dmac_ch_set_chcr(3, 0);
-  dmac_ch_get_chcr(3);
+  dmac_ch_set_chcr(IOP_DMAC_CDVD, 0);
+  dmac_ch_get_chcr(IOP_DMAC_CDVD);
   if ( device >= 2 && (!g_dev5_predma_cbs[device] || !g_dev5_postdma_cbs[device]) )
     return -1;
   VERBOSE_KPRINTF(1, "Wait Intr\n");
@@ -1283,13 +1283,13 @@ static int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, 
   FpgaXfrenOn();
   VERBOSE_KPRINTF(1, "DMA Ch3 Set.\n");
   VERBOSE_KPRINTF(1, "Set MADR3:%08x Set BCR3:%08x\n", buf, bcr_in);
-  dmac_ch_set_madr(3, (u32)buf);
-  dmac_ch_set_bcr(3, bcr_in);
-  dmac_ch_set_chcr(3, dir | 0x41000200);
-  dmac_ch_get_chcr(3);
-  VERBOSE_KPRINTF(1, "CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3), dmac_ch_get_madr(3), dmac_ch_get_bcr(3));
-  while ( (dmac_ch_get_chcr(3) & 0x1000000) ) {}
-  VERBOSE_KPRINTF(1, "MADR3= %08x\n", dmac_ch_get_madr(3));
+  dmac_ch_set_madr(IOP_DMAC_CDVD, (u32)buf);
+  dmac_ch_set_bcr(IOP_DMAC_CDVD, bcr_in);
+  dmac_ch_set_chcr(IOP_DMAC_CDVD, dir | 0x41000200);
+  dmac_ch_get_chcr(IOP_DMAC_CDVD);
+  VERBOSE_KPRINTF(1, "CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(IOP_DMAC_CDVD), dmac_ch_get_madr(IOP_DMAC_CDVD), dmac_ch_get_bcr(IOP_DMAC_CDVD));
+  while ( (dmac_ch_get_chcr(IOP_DMAC_CDVD) & 0x1000000) ) {}
+  VERBOSE_KPRINTF(1, "MADR3= %08x\n", dmac_ch_get_madr(IOP_DMAC_CDVD));
   FpgaCheckWriteBuffer();
   FpgaXfrenOff();
   FpgaLayer1Off();
@@ -1305,8 +1305,8 @@ static int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, 
 {
   int result;
 
-  dmac_ch_set_chcr(3, 0);
-  dmac_ch_get_chcr(3);
+  dmac_ch_set_chcr(IOP_DMAC_CDVD, 0);
+  dmac_ch_get_chcr(IOP_DMAC_CDVD);
   if ( device >= 2 && (!g_dev5_predma_cbs[device] || !g_dev5_postdma_cbs[device]) )
     return -1;
   VERBOSE_KPRINTF(1, "Wait Intr\n");
@@ -1315,13 +1315,13 @@ static int SpdDmaTransfer_extrans_2(unsigned int device, void *buf, u32 bcr_in, 
     return result;
   VERBOSE_KPRINTF(1, "DMA Ch3 Set.\n");
   VERBOSE_KPRINTF(1, "Set MADR3:%08x Set BCR3:%08x\n", buf, bcr_in);
-  dmac_ch_set_madr(3, (u32)buf);
-  dmac_ch_set_bcr(3, bcr_in);
-  dmac_ch_set_chcr(3, dir | 0x41000200);
-  dmac_ch_get_chcr(3);
-  VERBOSE_KPRINTF(1, "CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3), dmac_ch_get_madr(3), dmac_ch_get_bcr(3));
-  while ( (dmac_ch_get_chcr(3) & 0x1000000) ) {}
-  VERBOSE_KPRINTF(1, "MADR3= %08x\n", dmac_ch_get_madr(3));
+  dmac_ch_set_madr(IOP_DMAC_CDVD, (u32)buf);
+  dmac_ch_set_bcr(IOP_DMAC_CDVD, bcr_in);
+  dmac_ch_set_chcr(IOP_DMAC_CDVD, dir | 0x41000200);
+  dmac_ch_get_chcr(IOP_DMAC_CDVD);
+  VERBOSE_KPRINTF(1, "CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(IOP_DMAC_CDVD), dmac_ch_get_madr(IOP_DMAC_CDVD), dmac_ch_get_bcr(IOP_DMAC_CDVD));
+  while ( (dmac_ch_get_chcr(IOP_DMAC_CDVD) & 0x1000000) ) {}
+  VERBOSE_KPRINTF(1, "MADR3= %08x\n", dmac_ch_get_madr(IOP_DMAC_CDVD));
   VERBOSE_KPRINTF(1, "SpdDmaTransfer_extrans End.\n");
   SignalSema(g_dma_lock_sema);
   return 0;
@@ -1331,8 +1331,8 @@ static int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, 
 {
   int result;
 
-  dmac_ch_set_chcr(3, 0);
-  dmac_ch_get_chcr(3);
+  dmac_ch_set_chcr(IOP_DMAC_CDVD, 0);
+  dmac_ch_get_chcr(IOP_DMAC_CDVD);
   if ( device >= 2 && (!g_dev5_predma_cbs[device] || !g_dev5_postdma_cbs[device]) )
     return -1;
   VERBOSE_KPRINTF(1, "Wait Intr\n");
@@ -1343,13 +1343,13 @@ static int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, 
   FpgaXfrenOn();
   VERBOSE_KPRINTF(1, "DMA Ch3 Set.\n");
   VERBOSE_KPRINTF(1, "Set MADR3:%08x Set BCR3:%08x\n", buf, bcr_in);
-  dmac_ch_set_madr(3, (u32)buf);
-  dmac_ch_set_bcr(3, bcr_in);
-  dmac_ch_set_chcr(3, dir | 0x41000200);
-  dmac_ch_get_chcr(3);
-  VERBOSE_KPRINTF(1, "CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(3), dmac_ch_get_madr(3), dmac_ch_get_bcr(3));
-  while ( (dmac_ch_get_chcr(3) & 0x1000000) ) {}
-  VERBOSE_KPRINTF(1, "MADR3= %08x\n", dmac_ch_get_madr(3));
+  dmac_ch_set_madr(IOP_DMAC_CDVD, (u32)buf);
+  dmac_ch_set_bcr(IOP_DMAC_CDVD, bcr_in);
+  dmac_ch_set_chcr(IOP_DMAC_CDVD, dir | 0x41000200);
+  dmac_ch_get_chcr(IOP_DMAC_CDVD);
+  VERBOSE_KPRINTF(1, "CHCR3:%08x MADR3:%08x BCR3:%08x\n", dmac_ch_get_chcr(IOP_DMAC_CDVD), dmac_ch_get_madr(IOP_DMAC_CDVD), dmac_ch_get_bcr(IOP_DMAC_CDVD));
+  while ( (dmac_ch_get_chcr(IOP_DMAC_CDVD) & 0x1000000) ) {}
+  VERBOSE_KPRINTF(1, "MADR3= %08x\n", dmac_ch_get_madr(IOP_DMAC_CDVD));
   FpgaCheckWriteBuffer2();
   FpgaXfrenOff();
   FpgaLayer1Off();
