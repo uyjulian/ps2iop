@@ -217,8 +217,10 @@ static iop_device_t ata_ioman_device = { "xatapi", IOP_DT_FS | IOP_DT_FSEXT, 1, 
 static int g_reset_scrambling_pack;
 // Unofficial: move to bss
 static int g_pes_scrambling_control_pack;
-static int g_dma_mode_value = 1;
-static int g_dma_speed_value = 2;
+// Unofficial: move to bss
+static int g_dma_mode_value;
+// Unofficial: move to bss
+static int g_dma_speed_value;
 // Unofficial: move to bss
 static int g_should_wait_for_dma_flag;
 // Unofficial: move to bss
@@ -1135,6 +1137,10 @@ int _start(int ac, char **av)
   (void)av;
 
   Kprintf("xatapi_init Call\n");
+  // Unofficial: initialize variable here
+  g_dma_mode_value = 1;
+  // Unofficial: initialize variable here
+  g_dma_speed_value = 2;
   if ( RegisterLibraryEntries(&_exp_xatapi) )
     return MODULE_NO_RESIDENT_END;
   DelDrv("xatapi");
