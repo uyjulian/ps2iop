@@ -132,10 +132,6 @@ struct dev5_fpga_regs_
   vu16 r_fpga_revision;
 };
 
-static int xatapi_nulldev0(void);
-static s64 xatapi_nulldev0_64bit(void);
-static int xatapi_dev_init(void);
-static int xatapi_dev_deinit(void);
 static int xatapi_dev_devctl(const iop_file_t *f, const char *name, int cmd, void *args, unsigned int arglen, void *buf, unsigned int buflen);
 static void speed_init(void);
 static void speed_device_init(void);
@@ -176,35 +172,40 @@ static vu16 *const g_dev9_reg_1460 = (void *)0xBF801460;
 static vu16 *const g_dev9_reg_power = (void *)0xBF80146C;
 // Unofficial: move to bss
 static int (*p_dev5_intr_cb)(u32);
+
+IOMANX_RETURN_VALUE_IMPL(0);
+// unofficial: don't print on nulldev0 call
+IOMANX_RETURN_VALUE_IMPL(EIO);
+
 static iop_device_ops_t ata_ioman_devops =
 {
-  (void *)&xatapi_dev_init,
-  (void *)&xatapi_dev_deinit,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0_64bit,
+  IOMANX_RETURN_VALUE(0),
+  IOMANX_RETURN_VALUE(0),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE_S64(EIO),
   (void *)&xatapi_dev_devctl,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0,
-  (void *)&xatapi_nulldev0
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
+  IOMANX_RETURN_VALUE(EIO),
 };
 static iop_device_t ata_ioman_device = { "xatapi", IOP_DT_FS | IOP_DT_FSEXT, 1, "CD-ROM_ATAPI", &ata_ioman_devops };
 // Unofficial: move to bss
@@ -975,28 +976,6 @@ static int xatapi_do_init(void)
   return 1;
 }
 
-static int xatapi_nulldev0(void)
-{
-  printf("nulldev0 call\n");
-  return -EIO;
-}
-
-static s64 xatapi_nulldev0_64bit(void)
-{
-  printf("nulldev0 call\n");
-  return -EIO;
-}
-
-static int xatapi_dev_init(void)
-{
-  return 0;
-}
-
-static int xatapi_dev_deinit(void)
-{
-  return 0;
-}
-
 int xatapi_2_terminate(int with_quit)
 {
   int sc_tmp;
@@ -1161,7 +1140,7 @@ int _start(int ac, char **av)
   DelDrv("xatapi");
   if ( AddDrv(&ata_ioman_device) )
   {
-    xatapi_dev_deinit();
+    // Unofficial: omitted call to empty dev deinit function
     return MODULE_NO_RESIDENT_END;
   }
   return !xatapi_do_init() ? MODULE_NO_RESIDENT_END : MODULE_RESIDENT_END;
