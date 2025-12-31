@@ -658,86 +658,84 @@ static int sceCdAtapi_BC(void)
       if ( retres4 || (retres4 = sceCdAtapiWaitResult_local()) )
         DelayThread(10000);
     }
-  }
-  if ( retres4 )
-  {
-    VERBOSE_KPRINTF(1, "sceCdAtapi BC 0 fail\n");
-  }
-  else
-  {
-    if ( g_should_wait_for_dma_flag && !ReferEventFlagStatus(g_adma_evfid, &efinfo) && !efinfo.currBits )
-      SetEventFlag(g_adma_evfid, 1);
-    SetEventFlag(g_acmd_evfid, 1);
-    retres4 = 0;
-    for ( i = 0; i < 100 && !retres4; i += 1 )
+    if ( retres4 )
     {
-#if 0
-      retres4 = sceCdResetWakeupReason((u32 *)outbuf, &waresontmp);
-#else
-      retres4 = 0;
-      waresontmp = 0;
-#endif
-      if ( !retres4 || waresontmp )
-        DelayThread(10000);
-    }
-    flg = 0;
-    if ( !retres4 )
-    {
-      VERBOSE_KPRINTF(0, "sceCdAtapi BC 1 fail\n");
+      VERBOSE_KPRINTF(1, "sceCdAtapi BC 0 fail\n");
     }
     else
     {
-      DelayThread(10000);
+      if ( g_should_wait_for_dma_flag && !ReferEventFlagStatus(g_adma_evfid, &efinfo) && !efinfo.currBits )
+        SetEventFlag(g_adma_evfid, 1);
+      SetEventFlag(g_acmd_evfid, 1);
       retres4 = 0;
       for ( i = 0; i < 100 && !retres4; i += 1 )
       {
-#if 0
-        retres4 = cdvdman_169((u32 *)outbuf, &waresontmp);
-#else
+  #if 0
+        retres4 = sceCdResetWakeupReason((u32 *)outbuf, &waresontmp);
+  #else
         retres4 = 0;
         waresontmp = 0;
-#endif
+  #endif
         if ( !retres4 || waresontmp )
           DelayThread(10000);
       }
+      flg = 0;
       if ( !retres4 )
       {
-        VERBOSE_KPRINTF(0, "sceCdAtapi BC 2 fail\n");
+        VERBOSE_KPRINTF(0, "sceCdAtapi BC 1 fail\n");
       }
       else
       {
-        char outbuf[16];
-
-        if ( g_should_wait_for_dma_flag )
-          WaitEventFlag(g_adma_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
-        retres4 = 1;
-        WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
-        memset(pkt, 0, sizeof(pkt));
-        pkt[0] = 0xF9;
-        pkt[2] = 0xB0;
-        pkt[8] = sizeof(outbuf);
-        for ( i = 0; i < 10 && retres4; i += 1 )
+        DelayThread(10000);
+        retres4 = 0;
+        for ( i = 0; i < 100 && !retres4; i += 1 )
         {
-          retres4 = sceCdAtapiExecCmd_local(0, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 3);
-          if ( retres4 || (retres4 = sceCdAtapiWaitResult_local()) )
+  #if 0
+          retres4 = cdvdman_169((u32 *)outbuf, &waresontmp);
+  #else
+          retres4 = 0;
+          waresontmp = 0;
+  #endif
+          if ( !retres4 || waresontmp )
             DelayThread(10000);
         }
-        if ( retres4 )
+        if ( !retres4 )
         {
-          VERBOSE_KPRINTF(1, "sceCdAtapi BC 3 fail\n");
+          VERBOSE_KPRINTF(0, "sceCdAtapi BC 2 fail\n");
         }
         else
         {
-          VERBOSE_KPRINTF(1, "sceCdAtapi BC OK\n");
+          if ( g_should_wait_for_dma_flag )
+            WaitEventFlag(g_adma_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
+          retres4 = 1;
+          WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
+          memset(pkt, 0, sizeof(pkt));
+          pkt[0] = 0xF9;
+          pkt[2] = 0xB0;
+          pkt[8] = sizeof(outbuf);
+          for ( i = 0; i < 10 && retres4; i += 1 )
+          {
+            retres4 = sceCdAtapiExecCmd_local(0, outbuf, 1, sizeof(outbuf), pkt, sizeof(pkt), 3);
+            if ( retres4 || (retres4 = sceCdAtapiWaitResult_local()) )
+              DelayThread(10000);
+          }
+          if ( retres4 )
+          {
+            VERBOSE_KPRINTF(1, "sceCdAtapi BC 3 fail\n");
+          }
+          else
+          {
+            VERBOSE_KPRINTF(1, "sceCdAtapi BC OK\n");
+          }
+          flg = 1;
         }
-        flg = 1;
       }
-    }
-    if ( !flg )
-    {
-      if ( g_should_wait_for_dma_flag )
-        WaitEventFlag(g_adma_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
-      WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
+      if ( !flg )
+      {
+        if ( g_should_wait_for_dma_flag )
+          WaitEventFlag(g_adma_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
+        WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
+      }
     }
   }
   {
