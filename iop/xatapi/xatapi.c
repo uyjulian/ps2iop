@@ -98,6 +98,8 @@ struct dev5_speed_regs_
   vu16 r_spd_mwdma_mode;
   vu16 r_spd_udma_mode;
 };
+// cppcheck-suppress-macro constVariablePointer
+#define USE_DEV5_SPEED_REGS() struct dev5_speed_regs_ *const dev5_speed_regs = (void *)0xBF410000
 
 struct dev5_fpga_regs_
 {
@@ -131,6 +133,8 @@ struct dev5_fpga_regs_
   vu16 unvpad[2013];
   vu16 r_fpga_revision;
 };
+// cppcheck-suppress-macro constVariablePointer
+#define USE_DEV5_FPGA_REGS() struct dev5_fpga_regs_  *const dev5_fpga_regs = (void *)0xBF414000
 
 static int xatapi_dev_devctl(const iop_file_t *f, const char *name, int cmd, void *args, unsigned int arglen, void *buf, unsigned int buflen);
 static void speed_init(void);
@@ -173,6 +177,7 @@ static vu16 *const g_dev9_reg_power = (void *)0xBF80146C;
 // Unofficial: move to bss
 static int (*p_dev5_intr_cb)(int flag);
 
+// cppcheck-suppress unusedFunction
 IOMANX_RETURN_VALUE_IMPL(0);
 // unofficial: don't print on nulldev0 call
 IOMANX_RETURN_VALUE_IMPL(EIO);
@@ -237,9 +242,6 @@ static ata_devinfo_t atad_devinfo[2];
 static ata_cmd_state_t atad_cmd_state;
 static int ata_param[128];
 static int g_atapi_xfer_buf[130];
-static struct dev5_speed_regs_ *const dev5_speed_regs = (void *)0xBF410000;
-static struct dev5_fpga_regs_  *const dev5_fpga_regs = (void *)0xBF414000;
-
 
 static int do_atapi_cmd_inquiry_12h(s16 dev_nr)
 {
@@ -1170,6 +1172,7 @@ static int speed_intr_dispatch(int flag)
 {
   int i;
   int j;
+  USE_DEV5_SPEED_REGS();
 
   if ( flag == 1 )
   {
@@ -1195,6 +1198,7 @@ static int speed_intr_dispatch(int flag)
 static void speedIntrEnable(s16 mask)
 {
   int state;
+  USE_DEV5_SPEED_REGS();
 
   CpuSuspendIntr(&state);
   dev5_speed_regs->r_spd_intr_mask &= ~mask;
@@ -1205,6 +1209,7 @@ static void speedIntrEnable(s16 mask)
 static void speedIntrDisable(s16 mask)
 {
   int state;
+  USE_DEV5_SPEED_REGS();
 
   CpuSuspendIntr(&state);
   dev5_speed_regs->r_spd_intr_mask &= ~mask;
@@ -1214,6 +1219,7 @@ static void speedIntrDisable(s16 mask)
 static int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
   int result;
+  USE_DEV5_SPEED_REGS();
 
   dmac_ch_set_chcr(IOP_DMAC_CDVD, 0);
   dmac_ch_get_chcr(IOP_DMAC_CDVD);
@@ -1245,6 +1251,7 @@ static int SpdDmaTransfer(unsigned int device, void *buf, u32 bcr_in, int dir)
 static int SpdDmaTransfer_extrans_1(unsigned int device, void *buf, u32 bcr_in, int dir)
 {
   int result;
+  USE_DEV5_SPEED_REGS();
 
   dmac_ch_set_chcr(IOP_DMAC_CDVD, 0);
   dmac_ch_get_chcr(IOP_DMAC_CDVD);
@@ -1339,6 +1346,8 @@ static int SpdDmaTransfer_extrans_3(unsigned int device, void *buf, u32 bcr_in, 
 
 static void speedLEDCtl(int ctl)
 {
+  USE_DEV5_SPEED_REGS();
+
   // Unofficial: was 8 bit access
   dev5_speed_regs->r_spd_pio_data = !ctl;
 }
@@ -1377,6 +1386,7 @@ static void speed_device_init(void)
 {
   int idx;
   const char *revtypes[4];
+  USE_DEV5_SPEED_REGS();
 
   revtypes[0] = "unknown";
   revtypes[1] = "TS";
@@ -1446,6 +1456,8 @@ static void do_hex_dump(void *ptr, int len)
 
 static void ata_pre_dma_cb(void)
 {
+  USE_DEV5_SPEED_REGS();
+
   VERBOSE_KPRINTF(1, "ata_pre_dma_handler:old %x\n", dev5_speed_regs->r_spd_xfr_ctrl);
   dev5_speed_regs->r_spd_xfr_ctrl |= 0x80;
   VERBOSE_KPRINTF(1, "ata_pre_dma_handler:new %x\n", dev5_speed_regs->r_spd_xfr_ctrl);
@@ -1453,6 +1465,8 @@ static void ata_pre_dma_cb(void)
 
 static void ata_post_dma_cb(void)
 {
+  USE_DEV5_SPEED_REGS();
+
   VERBOSE_KPRINTF(1, "ata_post_dma_handler:old %x\n", dev5_speed_regs->r_spd_xfr_ctrl);
   dev5_speed_regs->r_spd_xfr_ctrl &= ~0x80;
   VERBOSE_KPRINTF(1, "ata_post_dma_handler:new %x\n", dev5_speed_regs->r_spd_xfr_ctrl);
@@ -1467,6 +1481,7 @@ void xatapi_9_sceCdSpdAtaDmaStart(int dir)
 {
   int spd_if_ctrl_manip_2;
   u32 efbits;
+  USE_DEV5_SPEED_REGS();
 
   g_is_wait_busy = 0;
   WaitEventFlag(g_adma_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
@@ -1483,6 +1498,7 @@ void xatapi_9_sceCdSpdAtaDmaStart(int dir)
 void xatapi_10_sceCdSpdAtaDmaEnd(void)
 {
   iop_event_info_t efinfo;
+  USE_DEV5_SPEED_REGS();
 
   VERBOSE_KPRINTF(1, "sceCdSpdAtaDmaEnd Call\n");
   if ( !g_should_wait_for_dma_flag )
@@ -1513,6 +1529,8 @@ void xatapi_10_sceCdSpdAtaDmaEnd(void)
 
 static void ata_pio_mode(int mode)
 {
+  USE_DEV5_SPEED_REGS();
+
   VERBOSE_KPRINTF(1, "SpdAtaSetPioTiming %d\n", mode);
   switch ( mode )
   {
@@ -1537,6 +1555,8 @@ static void ata_pio_mode(int mode)
 
 static void ata_multiword_dma_mode(int mode)
 {
+  USE_DEV5_SPEED_REGS();
+
   VERBOSE_KPRINTF(1, "SpdAtaSetMdmaTiming %d\n", mode);
   switch ( mode )
   {
@@ -1556,6 +1576,8 @@ static void ata_multiword_dma_mode(int mode)
 
 static void ata_ultra_dma_mode(int mode)
 {
+  USE_DEV5_SPEED_REGS();
+
   VERBOSE_KPRINTF(1, "SpdAtaSetUdmaTiming %d\n", mode);
   switch ( mode )
   {
@@ -1606,6 +1628,7 @@ static unsigned int AtaAlarmrHandle(void *usrdat)
 int xatapi_14_set_speed_reg(int regaddr, u16 regval)
 {
   u32 efbits;
+  USE_DEV5_SPEED_REGS();
 
   if ( (unsigned int)(regaddr - 64) < 0x1D )
   {
@@ -1620,6 +1643,7 @@ int xatapi_13_get_speed_reg(int regaddr)
 {
   int tmpval;
   u32 efbits;
+  USE_DEV5_SPEED_REGS();
 
   if ( (unsigned int)(regaddr - 64) >= 0x1D )
     return 0;
@@ -1633,6 +1657,7 @@ int xatapi_11_sceAtaGetError(void)
 {
   u8 r_spd_ata_error;
   u32 efbits;
+  USE_DEV5_SPEED_REGS();
 
   WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
   r_spd_ata_error = dev5_speed_regs->r_spd_ata_error;
@@ -1644,6 +1669,7 @@ int xatapi_12_get_ata_control(void)
 {
   u8 r_spd_ata_control;
   u32 efbits;
+  USE_DEV5_SPEED_REGS();
 
   WaitEventFlag(g_acmd_evfid, 1, WEF_AND | WEF_CLEAR, &efbits);
   r_spd_ata_control = dev5_speed_regs->r_spd_ata_control;
@@ -1653,12 +1679,15 @@ int xatapi_12_get_ata_control(void)
 
 static int sceAtaGetError(void)
 {
+  USE_DEV5_SPEED_REGS();
+
   return (u8)dev5_speed_regs->r_spd_ata_error;
 }
 
 static int ata_wait_busy1_busy(void)
 {
   unsigned int i;
+  USE_DEV5_SPEED_REGS();
 
   for ( i = 0; i < 0x50; i += 1 )
   {
@@ -1704,6 +1733,7 @@ static int ata_wait_busy1_busy(void)
 static int ata_wait_busy2_busy(void)
 {
   unsigned int i;
+  USE_DEV5_SPEED_REGS();
 
   for ( i = 0; i < 55; i += 1 )
   {
@@ -1749,6 +1779,7 @@ static int ata_wait_busy2_busy(void)
 static int ata_wait_bus_busy_busbusy(void)
 {
   unsigned int i;
+  USE_DEV5_SPEED_REGS();
 
   for ( i = 0; i < 80; i += 1 )
   {
@@ -1794,6 +1825,7 @@ static int ata_wait_bus_busy_busbusy(void)
 static int ata_device_select(int device)
 {
   int result;
+  USE_DEV5_SPEED_REGS();
 
   result = ata_wait_bus_busy_busbusy();
   if ( result < 0 )
@@ -1823,6 +1855,7 @@ static int sceAtaExecCmd(
   int result;
   int using_timeout;
   iop_sys_clock_t sysclk;
+  USE_DEV5_SPEED_REGS();
 
   ClearEventFlag(g_atapi_event_flag, 0);
   g_is_wait_busy = 0;
@@ -1931,6 +1964,7 @@ static int sceCdAtapiExecCmd_local(
   char ata_status_1;
   unsigned int i;
   iop_sys_clock_t sysclk;
+  USE_DEV5_SPEED_REGS();
 
   feature_tmp = 0;
   VERBOSE_KPRINTF(1, "sceCdAtapiExecCmd Start. pkt_len %d proto %d\n", pkt_len, proto);
@@ -2112,6 +2146,7 @@ int xatapi_7_sceCdAtapiExecCmd(s16 n, void *buf, int nsec, int secsize, void *pk
 static int ata_pio_transfer(ata_cmd_state_t *cmd_state)
 {
   char r_spd_ata_status;
+  USE_DEV5_SPEED_REGS();
 
   r_spd_ata_status = dev5_speed_regs->r_spd_ata_status;
   if ( (r_spd_ata_status & 1) )
@@ -2174,6 +2209,7 @@ static int IoRun_atapi(ata_cmd_state_t *cmd_state)
   u32 blktotal;
   unsigned int lhcyl;
   unsigned int i;
+  USE_DEV5_SPEED_REGS();
 
   VERBOSE_KPRINTF(1, "Pio trans %d\n", cmd_state->blkcount_atapi * cmd_state->blksize_atapi);
   result = ata_wait_busy1_busy();
@@ -2240,6 +2276,7 @@ static int atapi_transfer_wrapper(char *buf, unsigned int blkcount, int dir)
   char spd_ata_status_tmp;
   u32 efbits;
   int flg;
+  USE_DEV5_SPEED_REGS();
 
   for ( blkcount_tmp = blkcount; blkcount_tmp; blkcount_tmp -= (flg ? dbuf_stat_mask : 0) )
   {
@@ -2308,6 +2345,7 @@ static int DmaRun_atapi(char *buf, int blkcount, int blksize, int dir)
   char spd_ata_status_tmp;
   unsigned int dbuf_stat_sectors;
   u32 efbits;
+  USE_DEV5_SPEED_REGS();
 
   VERBOSE_KPRINTF(1, "DmaRun_atapi start\n");
   blkremainder = (blkcount * blksize) & 0x1FF;
@@ -2395,6 +2433,7 @@ static int DmaRun_atapi_extrans1(char *buf, int blkcount, int blksize, int dir)
   char spd_ata_status_tmp;
   unsigned int dbuf_stat_sectors;
   u32 efbits;
+  USE_DEV5_SPEED_REGS();
 
   VERBOSE_KPRINTF(1, "DmaRun_atapi_extrans start\n");
   FpgaLayer2Off();
@@ -2485,6 +2524,7 @@ static int DmaRun_atapi_extrans2(char *buf, int blkcount, int blksize, int dir)
   int extransres;
   iop_sys_clock_t sysclk;
   u32 efbits;
+  USE_DEV5_SPEED_REGS();
 
   VERBOSE_KPRINTF(1, "DmaRun_atapi_extrans start\n");
   FpgaLayer2Off();
@@ -2624,6 +2664,7 @@ static void DmaRun_spck(char *buf, unsigned int secsize)
 {
   unsigned int secsize_sectors;
   unsigned int fpga_spckcnt;
+  USE_DEV5_SPEED_REGS();
 
   VERBOSE_KPRINTF(1, "DmaRun_spck start\n");
   FpgaSpckmodeOn();
@@ -2669,6 +2710,7 @@ static int sceAtaWaitResult(void)
   int intr_stat_msk;
   u32 efbits;
   int suc;
+  USE_DEV5_SPEED_REGS();
 
   suc = 0;
   res = 0;
@@ -2793,6 +2835,7 @@ static int sceCdAtapiWaitResult_local(void)
   int intr_stat_msk;
   u32 efbits;
   int padinfo;
+  USE_DEV5_SPEED_REGS();
 
   res = 0;
   switch ( atad_cmd_state.type_atapi )
@@ -2932,6 +2975,8 @@ int xatapi_8_sceCdAtapiWaitResult(void)
 
 static void ata_bus_reset_inner(void)
 {
+  USE_DEV5_SPEED_REGS();
+
   dev5_speed_regs->r_spd_if_ctrl = 128;
   DelayThread(100);
   dev5_speed_regs->r_spd_if_ctrl = 0;
@@ -2942,6 +2987,8 @@ static void ata_bus_reset_inner(void)
 
 static int ata_bus_reset(void)
 {
+  USE_DEV5_SPEED_REGS();
+
   if ( !(dev5_speed_regs->r_spd_if_ctrl & 0x40) )
     ata_bus_reset_inner();
   return ata_wait_busy2_busy();
@@ -2949,6 +2996,8 @@ static int ata_bus_reset(void)
 
 int xatapi_4_sceAtaSoftReset(void)
 {
+  USE_DEV5_SPEED_REGS();
+
   if ( (dev5_speed_regs->r_spd_ata_control & 0x80) )
     return -501;
   dev5_speed_regs->r_spd_ata_control = 6;
@@ -3043,6 +3092,7 @@ static void ata_device_probe(ata_devinfo_t *devinfo)
 {
   char r_spd_ata_lcyl;
   u8 r_spd_ata_hcyl;
+  USE_DEV5_SPEED_REGS();
 
   devinfo->exists = 0;
   devinfo->has_packet = 2;
@@ -3115,6 +3165,7 @@ static void ata_device_set_transfer_mode_outer(int device)
 static void ata_init_devices(ata_devinfo_t *devinfo)
 {
   int i;
+  USE_DEV5_SPEED_REGS();
 
   if ( xatapi_4_sceAtaSoftReset() )
     return;
@@ -3166,6 +3217,7 @@ static void ata_init_devices(ata_devinfo_t *devinfo)
 static void sceAtapiInit(int device)
 {
   int resetval;
+  USE_DEV5_SPEED_REGS();
 
   (void)device;
   if ( g_ata_devinfo_init )
@@ -3239,6 +3291,7 @@ static int create_event_flags(void)
 
 static void FpgaLayer1On(void)
 {
+  USE_DEV5_FPGA_REGS();
   VERBOSE_KPRINTF(1, "%s():old:FPGA_LAYER1 %x\n", "FpgaLayer1On", dev5_fpga_regs->r_fpga_layer1);
   dev5_fpga_regs->r_fpga_layer1 &= ~1;
   dev5_fpga_regs->r_fpga_layer1 |= 1;
@@ -3247,6 +3300,8 @@ static void FpgaLayer1On(void)
 
 static void FpgaLayer1Off(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():old:FPGA_LAYER1 %x\n", "FpgaLayer1Off", dev5_fpga_regs->r_fpga_layer1);
   dev5_fpga_regs->r_fpga_layer1 &= ~1;
   VERBOSE_KPRINTF(1, "%s():new:FPGA_LAYER1 %x\n", "FpgaLayer1Off", dev5_fpga_regs->r_fpga_layer1);
@@ -3255,6 +3310,8 @@ static void FpgaLayer1Off(void)
 #ifdef UNUSED_FUNC
 static void FpgaLayer2On(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():old:FPGA_LAYER2 %x\n", "FpgaLayer2On", dev5_fpga_regs->r_fpga_layer2);
   dev5_fpga_regs->r_fpga_layer2 &= ~1;
   dev5_fpga_regs->r_fpga_layer2 |= 1;
@@ -3264,6 +3321,8 @@ static void FpgaLayer2On(void)
 
 static void FpgaLayer2Off(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():old:FPGA_LAYER2 %x\n", "FpgaLayer2Off", dev5_fpga_regs->r_fpga_layer2);
   dev5_fpga_regs->r_fpga_layer2 &= ~1;
   VERBOSE_KPRINTF(1, "%s():new:FPGA_LAYER2 %x\n", "FpgaLayer2Off", dev5_fpga_regs->r_fpga_layer2);
@@ -3271,6 +3330,8 @@ static void FpgaLayer2Off(void)
 
 static void FpgaXfrenOn(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():old:FPGA_XFREN %x\n", "FpgaXfrenOn", dev5_fpga_regs->r_fpga_xfren);
   dev5_fpga_regs->r_fpga_xfren &= ~1;
   dev5_fpga_regs->r_fpga_xfren |= 1;
@@ -3279,6 +3340,8 @@ static void FpgaXfrenOn(void)
 
 static void FpgaXfrenOff(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():old:FPGA_XFREN %x\n", "FpgaXfrenOff", dev5_fpga_regs->r_fpga_xfren);
   dev5_fpga_regs->r_fpga_xfren &= ~1;
   VERBOSE_KPRINTF(1, "%s():new:FPGA_XFREN %x\n", "FpgaXfrenOff", dev5_fpga_regs->r_fpga_xfren);
@@ -3286,6 +3349,8 @@ static void FpgaXfrenOff(void)
 
 static void FpgaSpckmodeOn(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOn", dev5_fpga_regs->r_fpga_spckmode);
   dev5_fpga_regs->r_fpga_spckmode &= ~1;
   dev5_fpga_regs->r_fpga_spckmode |= 1;
@@ -3294,6 +3359,8 @@ static void FpgaSpckmodeOn(void)
 
 static void FpgaSpckmodeOff(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():old:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs->r_fpga_spckmode);
   dev5_fpga_regs->r_fpga_spckmode &= ~1;
   VERBOSE_KPRINTF(1, "%s():new:FPGA_SPCKMODE %x\n", "FpgaSpckmodeOff", dev5_fpga_regs->r_fpga_spckmode);
@@ -3301,6 +3368,8 @@ static void FpgaSpckmodeOff(void)
 
 static void FpgaXfdir(int dir)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():old:FPGA_XFRDIR %x\n", "FpgaXfrdir", dev5_fpga_regs->r_fpga_xfrdir);
   dev5_fpga_regs->r_fpga_xfrdir &= ~1;
   if ( dir )
@@ -3312,6 +3381,8 @@ static void FpgaXfdir(int dir)
 
 static int FpgaGetRevision(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():FPGA_REVISION %x\n", "FpgaGetRevision", dev5_fpga_regs->r_fpga_revision);
   return (u16)dev5_fpga_regs->r_fpga_revision;
 }
@@ -3319,18 +3390,23 @@ static int FpgaGetRevision(void)
 #ifdef UNUSED_FUNC
 static unsigned int do_fpga_add_unused8120(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   return (dev5_fpga_regs->r_fpga_sl3bufd + (unsigned int)dev5_fpga_regs->r_fpga_exbufd) >> 7;
 }
 #endif
 
 static int do_fpga_check_spckcnt(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   return (u16)dev5_fpga_regs->r_fpga_spckcnt;
 }
 
 static void FpgaCheckWriteBuffer(void)
 {
   int i;
+  USE_DEV5_FPGA_REGS();
 
   VERBOSE_KPRINTF(1, "%s():in ...\n", "FpgaCheckWriteBuffer");
   for ( i = 0; i < 10000 && (dev5_fpga_regs->r_fpga_exbufe || dev5_fpga_regs->r_fpga_sl3bufe); i += 1 );
@@ -3343,6 +3419,8 @@ static void FpgaCheckWriteBuffer(void)
 
 static void FpgaCheckWriteBuffer2(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():in ...\n", "FpgaCheckWriteBuffer2");
   while ( dev5_fpga_regs->r_fpga_sl3bufd )
   {
@@ -3356,6 +3434,8 @@ static void FpgaCheckWriteBuffer2(void)
 
 static void FpgaClearBuffer(void)
 {
+  USE_DEV5_FPGA_REGS();
+
   VERBOSE_KPRINTF(1, "%s():old:FPGA_SL3BUFD %x\n", "FpgaClearBuffer", dev5_fpga_regs->r_fpga_sl3bufd);
   VERBOSE_KPRINTF(1, "%s():old:FPGA_SL3BUFE %x\n", "FpgaClearBuffer", dev5_fpga_regs->r_fpga_sl3bufe);
   VERBOSE_KPRINTF(1, "%s():old:FPGA_EXBUFD %x\n", "FpgaClearBuffer", dev5_fpga_regs->r_fpga_exbufd);
