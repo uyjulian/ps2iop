@@ -171,7 +171,7 @@ static int g_devctl_retonly_unset;
 static vu16 *const g_dev9_reg_1460 = (void *)0xBF801460;
 static vu16 *const g_dev9_reg_power = (void *)0xBF80146C;
 // Unofficial: move to bss
-static int (*p_dev5_intr_cb)(u32);
+static int (*p_dev5_intr_cb)(int flag);
 
 IOMANX_RETURN_VALUE_IMPL(0);
 // unofficial: don't print on nulldev0 call
@@ -229,9 +229,9 @@ static int g_io_event_flag;
 static int g_adma_evfid;
 static int g_acmd_evfid;
 static int g_dma_lock_sema;
-static void (*g_dev5_intr_cbs[16])(int);
-static void (*g_dev5_predma_cbs[4])(u32, int);
-static void (*g_dev5_postdma_cbs[4])(u32, int);
+static void (*g_dev5_intr_cbs[16])(int flag);
+static void (*g_dev5_predma_cbs[4])(u32 bcr_in, int dir);
+static void (*g_dev5_postdma_cbs[4])(u32 bcr_in, int dir);
 static int g_atapi_event_flag;
 static ata_devinfo_t atad_devinfo[2];
 static ata_cmd_state_t atad_cmd_state;
@@ -892,7 +892,7 @@ static int cd_atapi_intr_callback_cb(int cbarg)
 
 static void speedRegisterIntrDispatchCb(void *callback)
 {
-  p_dev5_intr_cb = (int (*)(u32))callback;
+  p_dev5_intr_cb = (int (*)(int flag))callback;
 }
 
 static void sceDev5Init(void)
@@ -904,11 +904,11 @@ static void sceDev5Init(void)
   VERBOSE_KPRINTF(1, "dev5 atapi Init end\n");
 }
 
-static int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2)
+static int atapi_eject_interrupt_handler(int is_eject, void *userdata)
 {
   u32 buzzerres;
 
-  (void)unused_arg2;
+  (void)userdata;
   if ( is_eject != 1 )
     return 1;
   VERBOSE_KPRINTF(1, "Eject intr : media removal\n");
@@ -917,7 +917,7 @@ static int atapi_eject_interrupt_handler(int is_eject, void *unused_arg2)
 
 static int xatapi_do_init(void)
 {
-  int (*oldcb)(int, void *);
+  int (*oldcb)(int is_eject, void *userdata);
   u32 *sc_tmp;
   u32 trylocktmp;
   u32 traylock_ret;
@@ -928,7 +928,7 @@ static int xatapi_do_init(void)
   g_cd_sc_ffffffd9_ptr = sc_tmp;
   sceCdSC(0xFFFFFFD7, (int *)&sc_tmp);
   g_bf40200a_is_set_ptr = (int)sc_tmp;
-  oldcb = (int (*)(int, void *))sceCdSetAtapiEjectCallback((int (*)(int, void *))atapi_eject_interrupt_handler, 0);
+  oldcb = (int (*)(int is_eject, void *userdata))sceCdSetAtapiEjectCallback((int (*)(int is_eject, void *userdata))atapi_eject_interrupt_handler, 0);
   if ( !sceCdGetMediumRemoval(&trylocktmp, &traylock_ret) )
   {
     VERBOSE_KPRINTF(0, "xatapi:sceCdGetMediumRemoval NG(%x) !!\n", traylock_ret);
