@@ -985,10 +985,11 @@ void inet_thread_proc(void *userdata)
 struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2)
 {
 	struct an986_priv *priv; // $s0
-	int started; // $s1
+	int err; // $s1
 	iop_event_t efparam; // [sp+10h] [-28h] BYREF
 	iop_thread_t thparam; // [sp+20h] [-18h] BYREF
 
+	err = 0;
 	priv = (struct an986_priv *)sceInetAllocMem(0, 888);
 	if ( !priv )
 	{
@@ -1027,41 +1028,51 @@ struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name
 			printf("CreateEventFlag -> %d", priv->m_efid);
 			printf("\n");
 		}
-		goto err;
+		err = 1;
 	}
+	if ( !err )
+	{
 	thparam.attr = 0x2000000;
-	thparam.thread = inet_thread_proc;
-	thparam.option = 0;
-	thparam.priority = g_thpri;
-	thparam.stacksize = g_thstack;
-	priv->m_thid = CreateThread(&thparam);
-	if ( priv->m_thid <= 0 )
-	{
-		if ( g_verbose )
+		thparam.thread = inet_thread_proc;
+		thparam.option = 0;
+		thparam.priority = g_thpri;
+		thparam.stacksize = g_thstack;
+		priv->m_thid = CreateThread(&thparam);
+		if ( priv->m_thid <= 0 )
 		{
-			printf("%s: ", priv->m_devops.interface);
-			printf("CreateThread -> %d", priv->m_thid);
-			printf("\n");
+			if ( g_verbose )
+			{
+				printf("%s: ", priv->m_devops.interface);
+				printf("CreateThread -> %d", priv->m_thid);
+				printf("\n");
+			}
+			err = 1;
 		}
-		DeleteEventFlag(priv->m_efid);
-		goto err;
 	}
-	started = StartThread(priv->m_thid, priv);
-	if ( started )
+	if ( !err )
 	{
-		if ( g_verbose )
+		err = StartThread(priv->m_thid, priv);
+		if ( err )
 		{
-			printf("%s: ", priv->m_devops.interface);
-			printf("StartThread -> %d", started);
-			printf("\n");
+			if ( g_verbose )
+			{
+				printf("%s: ", priv->m_devops.interface);
+				printf("StartThread -> %d", err);
+				printf("\n");
+			}
+			err = 1;
 		}
-		DeleteThread(priv->m_thid);
-		goto err;
+	}
+	if ( err )
+	{
+		if ( priv->m_thid > 0 )
+			DeleteThread(priv->m_thid);
+		if ( priv->m_thid > 0 )
+			DeleteEventFlag(priv->m_efid);
+		sceInetFreeMem(&priv->m_devops, priv);
+		priv = NULL;
 	}
 	return priv;
-err:
-	sceInetFreeMem(&priv->m_devops, priv);
-	return 0;
 }
 // 4034F8: using guessed type int g_thpri;
 // 4034FC: using guessed type int g_thstack;
