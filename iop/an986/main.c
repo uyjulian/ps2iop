@@ -739,9 +739,7 @@ int an986_inet_control(void *userdata, int code, void *ptr, int len)
 //----- (00400F78) --------------------------------------------------------
 void inet_thread_proc(void *userdata)
 {
-	int result; // $v0
 	int xferret; // $s0
-	int xidx_1; // $s0
 	int regres; // $s0
 	int idxcnt; // $s2
 	int indindx2; // $s0
@@ -755,290 +753,230 @@ void inet_thread_proc(void *userdata)
 	struct an986_priv *priv;
 
 	priv = (struct an986_priv *)userdata;
-	result = ef_wait_wrap(priv, 1u);
-	if ( !result )
+	if ( ef_wait_wrap(priv, 1u) )
+		return;
+	devreq.requesttype = 0;
+	devreq.request = 9;
+	devreq.index = 0;
+	devreq.length = 0;
+	devreq.value = priv->m_subclass;
+	xferret = sceUsbdTransferPipe(priv->m_ctrl_pipe, 0, 0, &devreq, an986_done, priv);
+	if ( xferret )
 	{
-		devreq.requesttype = 0;
-		devreq.request = 9;
-		devreq.index = 0;
-		devreq.length = 0;
-		devreq.value = priv->m_subclass;
-		xferret = sceUsbdTransferPipe(priv->m_ctrl_pipe, 0, 0, &devreq, an986_done, priv);
-		if ( xferret )
+		if ( g_verbose )
 		{
-			result = g_verbose;
-			if ( g_verbose )
+			printf("%s: ", priv->m_devops.interface);
+			printf("sceUsbdSetConfiguration -> 0x%x", xferret);
+			printf("\n");
+		}
+		return;
+	}
+	if ( ef_wait_wrap(priv, 4u) )
+		return;
+	if ( control_negative_xfer(priv, 16, 6) )
+		return;
+	for ( i = 0; i < 3; i += 1 )
+	{
+		priv->m_usb_xfer_buf[32] = i;
+		priv->m_usb_xfer_buf[33] = 0;
+		priv->m_usb_xfer_buf[34] = 0;
+		priv->m_usb_xfer_buf[35] = 2;
+		if ( control_positive_xfer(priv, 32, 4) )
+			return;
+		while ( !control_negative_xfer(priv, 35, 1) )
+		{
+			if ( (priv->m_usb_xfer_buf[35] & 4) != 0 )
 			{
-				printf("%s: ", priv->m_devops.interface);
-				printf("sceUsbdSetConfiguration -> 0x%x", xferret);
-				printf("\n");
+				if ( control_negative_xfer(priv, 33, 3) )
+					return;
+				priv->m_hwaddr_tmp[(i * 2) + 0] = priv->m_usb_xfer_buf[33];
+				priv->m_hwaddr_tmp[(i * 2) + 1] = priv->m_usb_xfer_buf[34];
+				break;
+			}
+			DelayThread(10000);
+		}
+	}
+	bcopy(priv->m_hwaddr_tmp, &priv->m_usb_xfer_buf[16], 6);
+	if ( control_positive_xfer(priv, 16, 6) )
+		return;
+	bcopy(priv->m_hwaddr_tmp, priv->m_devops.hw_addr, 6);
+	priv->m_link_status = -1;
+	regres = sceInetRegisterNetDevice(&priv->m_devops);
+	if ( regres < 0 )
+	{
+		if ( g_verbose )
+		{
+			printf("%s: ", priv->m_devops.interface);
+			printf("sceInetRegisterNetDevice -> %d", regres);
+			printf("\n");
+		}
+		return;
+	}
+	if ( ef_wait_wrap(priv, 2u) )
+		return;
+	priv->m_usb_xfer_buf[126] = 36;
+	priv->m_usb_xfer_buf[127] = 6;
+	if ( control_positive_xfer(priv, 126, 2) )
+		return;
+	priv->m_usb_xfer_buf[126] = 38;
+	priv->m_usb_xfer_buf[127] = 4;
+	if ( control_positive_xfer(priv, 126, 2) )
+		return;
+	if ( priv->m_is_pegasus2 )
+	{
+		priv->m_usb_xfer_buf[123] = 3;
+		if ( control_positive_xfer(priv, 123, 1) )
+			return;
+		priv->m_usb_xfer_buf[123] = 2;
+		if ( control_positive_xfer(priv, 123, 1) )
+			return;
+	}
+	priv->m_usb_xfer_buf[1] = 8;
+	if ( control_positive_xfer(priv, 1, 1) )
+		return;
+	while ( !control_negative_xfer(priv, 1, 1) && (priv->m_usb_xfer_buf[1] & 8) != 0 )
+	{
+		DelayThread(10000);
+	}
+	idxcnt = 0;
+	indindx2 = 0;
+	outval_1 = 0;
+	while ( (outval_1 & 0x24) != 0x24 )
+	{
+		if ( control_inout_xfer(priv, idxcnt, 1, &outval_1) )
+			return;
+		if ( outval_1 == 0xFFFF )
+		{
+			idxcnt += 1;
+			if ( idxcnt >= 32 )
+			{
+				if ( g_verbose )
+				{
+					printf("%s: ", priv->m_devops.interface);
+					printf("Valid PHY chip not found");
+					printf("\n");
+				}
 				return;
 			}
 		}
 		else
 		{
-			result = ef_wait_wrap(priv, 4u);
-			if ( !result )
+			if ( (outval_1 & 0x24) == 0x24 )
+				break;
+			DelayThread(100000);
+			indindx2 += 1;
+			if ( indindx2 >= 30 )
+				priv->m_link_status = 0;
+		}
+	}
+	priv->m_link_status = 1;
+	printf(
+		"%s: Auto-Nego complete and valid link detected (%d,BMSR=%04x)\n",
+		priv->m_devops.interface,
+		idxcnt,
+		outval_1);
+	if ( control_inout_xfer(priv, idxcnt, 4, priv->m_usb_ctrl_buf) || control_inout_xfer(priv, idxcnt, 5, &priv->m_usb_ctrl_buf[1]) )
+		return;
+	priv->m_usb_xfer_buf[1] = 0;
+	outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
+	if ( (outval_1 & 0x140) != 0 )
+		priv->m_usb_xfer_buf[1] |= 0x20u;
+	if ( (outval_1 & 0x180) != 0 )
+		priv->m_usb_xfer_buf[1] |= 0x10u;
+	if ( control_positive_xfer(priv, 1, 1) )
+		return;
+	priv->m_nego_status = (( (outval_1 & 0x140) != 0 ) ? 2 : 1) << (( (outval_1 & 0x180) != 0 ) ? 2 : 0);
+	printf(
+		"%s: %s %s Duplex Mode (ANAR=0x%04x ANLPAR=0x%04x)\n",
+		priv->m_devops.interface,
+		( (outval_1 & 0x180) != 0 ) ? "100BaseTX" : "10BaseT",
+		( (outval_1 & 0x140) != 0 ) ? "Full" : "Half",
+		priv->m_usb_ctrl_buf[0],
+		priv->m_usb_ctrl_buf[1]);
+	if ( control_inout_xfer(priv, idxcnt, 2, &outval_2) || control_inout_xfer(priv, idxcnt, 3, &outval_3) )
+		return;
+	printf(
+		"%s: PHY OUI=0x%06x MODEL=0x%02x REV=0x%x (0x%04x,0x%04x)\n",
+		priv->m_devops.interface,
+		(outval_2 << 6) | (outval_3 >> 10),
+		(outval_3 >> 4) & 0x1F,
+		outval_3 & 0xF,
+		outval_2,
+		outval_3);
+	priv->m_usb_xfer_buf[0] = 0xC9;
+	if ( control_positive_xfer(priv, 0, 1) )
+		return;
+	if ( priv->m_is_pegasus2 )
+	{
+		priv->m_usb_xfer_buf[124] = 0x34;
+		priv->m_usb_xfer_buf[126] = 0x26;
+		priv->m_usb_xfer_buf[127] = 0x30;
+		if ( control_positive_xfer(priv, 124, 4) )
+			return;
+	}
+	for ( i = 0; i < 8; i += 1 )
+		bulk_xfer(priv);
+	priv->m_val_for_inet_start = 1;
+	if ( !priv->m_start_stop_flag )
+		SetEventFlag(priv->m_devops.evfid, 1u);
+	priv->m_val_for_alarm_cb = 10;
+	USec2SysClock(0xF4240u, &priv->m_sysclk);
+	SetAlarm(
+		&priv->m_sysclk,
+		alarm_cb,
+		priv);
+	indindx = 0;
+	priv->m_timer_active = 1;
+	while ( 1 )
+	{
+		while ( priv->m_val_for_alarm_cb > 0 )
+		{
+			control_negative_xfer(priv, 43, 5);
+			if ( (priv->m_usb_xfer_buf[43] & 0x6C) != 0 )
 			{
-				result = control_negative_xfer(priv, 16, 6);
-				xidx_1 = 0;
-				if ( !result )
+				if ( (priv->m_usb_xfer_buf[43] & 0x60) != 0 )
+					priv->m_collisions += 1;
+				if ( (priv->m_usb_xfer_buf[43] & 0xC) != 0 )
+					priv->m_err_tx_carrier += 1;
+				priv->m_tx_errors += 1;
+			}
+			if ( (priv->m_usb_xfer_buf[45] & 1) != 0 )
+			{
+				priv->m_err_rx_over += 1;
+				priv->m_rx_errors += 1;
+			}
+			priv->m_err_rx_missed += priv->m_usb_xfer_buf[47];
+			priv->m_rx_errors += priv->m_usb_xfer_buf[47];
+			DelayThread(100000);
+			indindx += 1;
+			if ( indindx >= 11 )
+			{
+				indindx = 0;
+				if ( priv->m_cnt_for_bulk_xfer > 0 )
 				{
-LABEL_8:
-					priv->m_usb_xfer_buf[32] = xidx_1;
-					priv->m_usb_xfer_buf[33] = 0;
-					priv->m_usb_xfer_buf[34] = 0;
-					priv->m_usb_xfer_buf[35] = 2;
-					result = control_positive_xfer(priv, 32, 4);
-					if ( !result )
-					{
-						while ( 1 )
-						{
-							result = control_negative_xfer(priv, 35, 1);
-							if ( result )
-								break;
-							if ( (priv->m_usb_xfer_buf[35] & 4) != 0 )
-							{
-								result = control_negative_xfer(priv, 33, 3);
-								xidx_1 += 1;
-								if ( result )
-									return;
-								priv->m_hwaddr_tmp[(xidx_1 * 2) + 0] = priv->m_usb_xfer_buf[33];
-								priv->m_hwaddr_tmp[(xidx_1 * 2) + 1] = priv->m_usb_xfer_buf[34];
-								if ( xidx_1 < 3 )
-									goto LABEL_8;
-								bcopy(priv->m_hwaddr_tmp, &priv->m_usb_xfer_buf[16], 6);
-								result = control_positive_xfer(priv, 16, 6);
-								if ( result )
-									return;
-								bcopy(priv->m_hwaddr_tmp, priv->m_devops.hw_addr, 6);
-								priv->m_link_status = -1;
-								regres = sceInetRegisterNetDevice(&priv->m_devops);
-								if ( regres >= 0 )
-								{
-									result = ef_wait_wrap(priv, 2u);
-									if ( !result )
-									{
-										priv->m_usb_xfer_buf[126] = 36;
-										priv->m_usb_xfer_buf[127] = 6;
-										result = control_positive_xfer(priv, 126, 2);
-										if ( !result )
-										{
-											priv->m_usb_xfer_buf[126] = 38;
-											priv->m_usb_xfer_buf[127] = 4;
-											result = control_positive_xfer(priv, 126, 2);
-											if ( !result )
-											{
-												if ( !priv->m_is_pegasus2
-													|| ((priv->m_usb_xfer_buf[123] = 3,
-															result = 2,
-															control_positive_xfer(priv, 123, 1) == 0)
-													&& (priv->m_usb_xfer_buf[123] = 2, (result = control_positive_xfer(priv, 123, 1)) == 0)) )
-												{
-													priv->m_usb_xfer_buf[1] = 8;
-													result = control_positive_xfer(priv, 1, 1);
-													if ( !result )
-													{
-														while ( 1 )
-														{
-															result = control_negative_xfer(priv, 1, 1);
-															if ( result )
-																break;
-															idxcnt = 0;
-															if ( (priv->m_usb_xfer_buf[1] & 8) == 0 )
-															{
-																indindx2 = 0;
-																while ( 1 )
-																{
-																	result = control_inout_xfer(priv, idxcnt, 1, &outval_1);
-																	if ( result )
-																		return;
-																	if ( outval_1 == 0xFFFF )
-																	{
-																		idxcnt += 1;
-																		if ( idxcnt >= 32 )
-																		{
-																			result = g_verbose;
-																			if ( !g_verbose )
-																				return;
-																			printf("%s: ", priv->m_devops.interface);
-																			printf("Valid PHY chip not found");
-																			printf("\n");
-																			return;
-																		}
-																	}
-																	else
-																	{
-																		if ( (outval_1 & 0x24) == 36 )
-																		{
-																			priv->m_link_status = 1;
-																			printf(
-																				"%s: Auto-Nego complete and valid link detected (%d,BMSR=%04x)\n",
-																				priv->m_devops.interface,
-																				idxcnt,
-																				outval_1);
-																			result = control_inout_xfer(priv, idxcnt, 4, priv->m_usb_ctrl_buf);
-																			if ( !result )
-																			{
-																				result = control_inout_xfer(priv, idxcnt, 5, &priv->m_usb_ctrl_buf[1]);
-																				if ( !result )
-																				{
-																					outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
-																					priv->m_usb_xfer_buf[1] = 0;
-																					if ( (outval_1 & 0x140) != 0 )
-																						priv->m_usb_xfer_buf[1] |= 0x20u;
-																					if ( (outval_1 & 0x180) != 0 )
-																						priv->m_usb_xfer_buf[1] |= 0x10u;
-																					result = control_positive_xfer(priv, 1, 1);
-																					if ( !result )
-																					{
-																						priv->m_nego_status = ( (outval_1 & 0x180) != 0 ) ? (( (outval_1 & 0x140) != 0 ) ? 8 : 4) : (( (outval_1 & 0x140) != 0 ) ? 2 : 1);
-																						printf(
-																							"%s: %s %s Duplex Mode (ANAR=0x%04x ANLPAR=0x%04x)\n",
-																							priv->m_devops.interface,
-																							( (outval_1 & 0x180) != 0 ) ? "100BaseTX" : "10BaseT",
-																							( (outval_1 & 0x140) != 0 ) ? "Full" : "Half",
-																							priv->m_usb_ctrl_buf[0],
-																							priv->m_usb_ctrl_buf[1]);
-																						result = control_inout_xfer(priv, idxcnt, 2, &outval_2);
-																						if ( !result )
-																						{
-																							result = control_inout_xfer(priv, idxcnt, 3, &outval_3);
-																							if ( !result )
-																							{
-																								printf(
-																									"%s: PHY OUI=0x%06x MODEL=0x%02x REV=0x%x (0x%04x,0x%04x)\n",
-																									priv->m_devops.interface,
-																									(outval_2 << 6) | (outval_3 >> 10),
-																									(outval_3 >> 4) & 0x1F,
-																									outval_3 & 0xF,
-																									outval_2,
-																									outval_3);
-																								priv->m_usb_xfer_buf[0] = 0xC9;
-																								result = control_positive_xfer(priv, 0, 1);
-																								if ( !result )
-																								{
-																									if ( !priv->m_is_pegasus2
-																										|| (priv->m_usb_xfer_buf[124] = 0x34,
-																												priv->m_usb_xfer_buf[126] = 0x26,
-																												priv->m_usb_xfer_buf[127] = 0x30,
-																												(result = control_positive_xfer(priv, 124, 4)) == 0) )
-																									{
-																										for ( i = 0; i < 8; i += 1 )
-																											bulk_xfer(priv);
-																										priv->m_val_for_inet_start = 1;
-																										if ( !priv->m_start_stop_flag )
-																											SetEventFlag(priv->m_devops.evfid, 1u);
-																										priv->m_val_for_alarm_cb = 10;
-																										USec2SysClock(0xF4240u, &priv->m_sysclk);
-																										SetAlarm(
-																											&priv->m_sysclk,
-																											alarm_cb,
-																											priv);
-																										indindx = 0;
-																										priv->m_timer_active = 1;
-																										while ( 1 )
-																										{
-																											do
-																											{
-																												control_negative_xfer(priv, 43, 5);
-																												if ( (priv->m_usb_xfer_buf[43] & 0x6C) != 0 )
-																												{
-																													if ( (priv->m_usb_xfer_buf[43] & 0x60) != 0 )
-																													{
-																														priv->m_collisions += 1;
-																													}
-																													if ( (priv->m_usb_xfer_buf[43] & 0xC) != 0 )
-																														priv->m_err_tx_carrier += 1;
-																													priv->m_tx_errors += 1;
-																												}
-																												if ( (priv->m_usb_xfer_buf[45] & 1) != 0 )
-																												{
-																													priv->m_err_rx_over += 1;
-																													priv->m_rx_errors += 1;
-																												}
-																												if ( priv->m_usb_xfer_buf[47] )
-																												{
-																													priv->m_err_rx_missed += priv->m_usb_xfer_buf[47];
-																													priv->m_rx_errors += priv->m_usb_xfer_buf[47];
-																												}
-																												DelayThread(100000);
-																												indindx += 1;
-																												if ( indindx >= 11 )
-																												{
-																													indindx = 0;
-																													if ( priv->m_cnt_for_bulk_xfer > 0 )
-																													{
-																														CpuSuspendIntr(&state);
-																														priv->m_cnt_for_bulk_xfer -= 1;
-																														CpuResumeIntr(state);
-																														bulk_xfer(priv);
-																													}
-																												}
-																											}
-																											while ( priv->m_val_for_alarm_cb > 0 );
-																											result = control_inout_xfer(priv, idxcnt, 1, &outval_1);
-																											if ( result )
-																												break;
-																											if ( (outval_1 & 4) == 0 )
-																											{
-																												priv->m_link_status = 0;
-																												while ( 1 )
-																												{
-																													result = control_inout_xfer(priv, idxcnt, 1, &outval_1);
-																													if ( result )
-																														break;
-																													if ( (outval_1 & 0x24) == 36 )
-																													{
-																														priv->m_link_status = 1;
-																														priv->m_val_for_alarm_cb = 10;
-																														break;
-																													}
-																													DelayThread(100000);
-																												}
-																												return;
-																											}
-																											priv->m_val_for_alarm_cb = 10;
-																										}
-																									}
-																								}
-																							}
-																						}
-																					}
-																				}
-																			}
-																			return;
-																		}
-																		DelayThread(100000);
-																		indindx2 += 1;
-																		if ( indindx2 >= 30 )
-																			priv->m_link_status = 0;
-																	}
-																}
-															}
-															DelayThread(10000);
-														}
-													}
-												}
-											}
-										}
-									}
-									return;
-								}
-								result = g_verbose;
-								if ( !g_verbose )
-									return;
-								printf("%s: ", priv->m_devops.interface);
-								printf("sceInetRegisterNetDevice -> %d", regres);
-								printf("\n");
-								return;
-							}
-							DelayThread(10000);
-						}
-					}
+					CpuSuspendIntr(&state);
+					priv->m_cnt_for_bulk_xfer -= 1;
+					CpuResumeIntr(state);
+					bulk_xfer(priv);
 				}
 			}
 		}
+		if ( control_inout_xfer(priv, idxcnt, 1, &outval_1) )
+			return;
+		if ( (outval_1 & 4) == 0 )
+		{
+			priv->m_link_status = 0;
+			while ( (outval_1 & 0x24) != 0x24 )
+			{
+				if ( control_inout_xfer(priv, idxcnt, 1, &outval_1) )
+					return;
+				if ( (outval_1 & 0x24) == 0x24 )
+					break;
+				DelayThread(100000);
+			}
+			priv->m_link_status = 1;
+		}
+		priv->m_val_for_alarm_cb = 10;
 	}
 }
 // 403504: using guessed type int g_verbose;
