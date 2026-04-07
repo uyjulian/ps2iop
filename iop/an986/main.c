@@ -87,7 +87,7 @@ int an986_ldd_disconnect(int devId);
 int an986_ldd_probe(int devId);
 int do_print_version();
 int do_print_help();
-int scan_number(char *inchr, int *outptr);
+int scan_number(const char *e_arg, unsigned int *n_result);
 int do_print_list();
 int an986_init(int ac, char **av);
 
@@ -201,14 +201,11 @@ void ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
 
 	priv->m_ef_wait_retval = wait_retval;
 	efret = SetEventFlag(priv->m_efid, efbits);
-	if ( efret )
+	if ( efret && g_verbose )
 	{
-		if ( g_verbose )
-		{
-			printf("%s: ", priv->m_devops.interface);
-			printf("SetEventFlag (%d)", efret);
-			printf("\n");
-		}
+		printf("%s: ", priv->m_devops.interface);
+		printf("SetEventFlag (%d)", efret);
+		printf("\n");
 	}
 }
 // 403504: using guessed type int g_verbose;
@@ -219,14 +216,11 @@ void an986_done(int efbits, int doneval, void *userdata)
 	struct an986_priv *priv_tmp; // $a0
 
 	priv_tmp = (struct an986_priv *)userdata;
-	if ( efbits )
+	if ( efbits && g_verbose )
 	{
-		if ( g_verbose )
-		{
-			printf("%s: ", priv_tmp->m_devops.interface);
-			printf("%s: -> 0x%x\n", "an986_done", efbits);
-			printf("\n");
-		}
+		printf("%s: ", priv_tmp->m_devops.interface);
+		printf("%s: -> 0x%x\n", "an986_done", efbits);
+		printf("\n");
 	}
 	priv_tmp->m_done_related = doneval;
 	ef_set_wrap(priv_tmp, efbits, 4u);
@@ -308,9 +302,7 @@ int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *ou
 	priv->m_usb_xfer_buf[40] = (xval & 0x1F) | 0x40;
 	result = control_positive_xfer(priv, 37, 4);
 	if ( result )
-	{
 		return result;
-	}
 	while ( 1 )
 	{
 		result = control_negative_xfer(priv, 40, 1);
@@ -320,9 +312,7 @@ int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *ou
 		{
 			result = control_negative_xfer(priv, 37, 4);
 			if ( result )
-			{
 				return result;
-			}
 			*outptr = priv->m_usb_xfer_buf[38] | (priv->m_usb_xfer_buf[39] << 8);
 			return 0;
 		}
@@ -403,24 +393,7 @@ void bulk_xfer(struct an986_priv *priv)
 	int state; // [sp+18h] [-8h] BYREF
 
 	pkt = sceInetAllocPkt(&priv->m_devops, 1524);
-	if ( pkt )
-	{
-		pkt->m_reserved1 = (void *)priv;
-		pkt->rp += 2;
-		pkt->wp += 2;
-		xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt->wp, 0x5F2u, 0, an986_rx_done, pkt);
-		if ( xferret )
-		{
-			if ( g_verbose )
-			{
-				printf("%s: ", priv->m_devops.interface);
-				printf("sceUsbdBulkTransfer -> 0x%x\n", xferret);
-				printf("\n");
-			}
-			sceInetFreePkt(&priv->m_devops, pkt);
-		}
-	}
-	else
+	if ( !pkt )
 	{
 		if ( g_verbose )
 		{
@@ -431,6 +404,21 @@ void bulk_xfer(struct an986_priv *priv)
 		CpuSuspendIntr(&state);
 		++priv->m_cnt_for_bulk_xfer;
 		CpuResumeIntr(state);
+		return;
+	}
+	pkt->m_reserved1 = (void *)priv;
+	pkt->rp += 2;
+	pkt->wp += 2;
+	xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt->wp, 0x5F2u, 0, an986_rx_done, pkt);
+	if ( xferret )
+	{
+		if ( g_verbose )
+		{
+			printf("%s: ", priv->m_devops.interface);
+			printf("sceUsbdBulkTransfer -> 0x%x\n", xferret);
+			printf("\n");
+		}
+		sceInetFreePkt(&priv->m_devops, pkt);
 	}
 }
 // 403504: using guessed type int g_verbose;
@@ -492,16 +480,15 @@ int an986_inet_stop(void *userdata, int unused)
 	(void)unused;
 	priv = (struct an986_priv *)userdata;
 	priv->m_start_stop_flag = 1;
-	if ( priv->m_val_for_inet_stop )
-	{
-		TerminateThread(priv->m_thid);
-		DeleteThread(priv->m_thid);
-		DeleteEventFlag(priv->m_efid);
-		if ( priv->m_timer_active )
-			CancelAlarm(alarm_cb, priv);
-		sceInetUnregisterNetDevice(&priv->m_devops);
-		sceInetFreeMem(&priv->m_devops, priv);
-	}
+	if ( !priv->m_val_for_inet_stop )
+		return 0;
+	TerminateThread(priv->m_thid);
+	DeleteThread(priv->m_thid);
+	DeleteEventFlag(priv->m_efid);
+	if ( priv->m_timer_active )
+		CancelAlarm(alarm_cb, priv);
+	sceInetUnregisterNetDevice(&priv->m_devops);
+	sceInetFreeMem(&priv->m_devops, priv);
 	return 0;
 }
 
@@ -722,19 +709,16 @@ int an986_inet_control(void *userdata, int code, void *ptr, int len)
 			m_nego_status = priv->m_link_status;
 			break;
 		case 0x81000000:
-			if ( ptr )
-			{
-				if ( len == 4 )
-				{
-					bcopy(ptr, &priority, 4);
-					m_nego_status = -403;
-					if ( (unsigned int)(priority - 9) < 0x73 )
-					{
-						g_thpri = priority;
-						m_nego_status = ChangeThreadPriority(priv->m_thid, priority);
-					}
-				}
-			}
+			if ( !ptr )
+				break;
+			if ( len != 4 )
+				break;
+			bcopy(ptr, &priority, 4);
+			m_nego_status = -403;
+			if ( (unsigned int)(priority - 9) >= 0x73 )
+				break;
+			g_thpri = priority;
+			m_nego_status = ChangeThreadPriority(priv->m_thid, priority);
 			break;
 		case 0x81040000:
 			m_nego_status = inet_81040000_multicast_list_handler(priv, ptr, len);
@@ -743,7 +727,7 @@ int an986_inet_control(void *userdata, int code, void *ptr, int len)
 	if ( p_m_err_rx_over && ptr && len == 4 )
 	{
 		bcopy(p_m_err_rx_over, ptr, 4);
-		return 0;
+		m_nego_status = 0;
 	}
 	return m_nego_status;
 }
@@ -1066,79 +1050,78 @@ struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name
 	iop_thread_t thparam; // [sp+20h] [-18h] BYREF
 
 	priv = (struct an986_priv *)sceInetAllocMem(0, 888);
-	if ( priv )
+	if ( !priv )
 	{
-		bzero(priv, 888);
-		priv->m_is_pegasus2 = is_pegasus2;
-		priv->m_magic_cur = g_magic_count;
-		sprintf(priv->m_devops.interface, "an986,%d", priv->m_magic_cur);
-		g_magic_count += 1;
-		priv->m_devops.module_name = "an986";
-		priv->m_devops.prot_ver = 2;
-		priv->m_devops.flags = 1040;
-		priv->m_devops.start = an986_inet_start;
-		priv->m_devops.stop = an986_inet_stop;
-		priv->m_devops.xmit = an986_inet_xmit;
-		priv->m_devops.control = an986_inet_control;
-		priv->m_devops.vendor_name = vendor_name;
-		priv->m_devops.device_name = device_name;
-		priv->m_devops.impl_ver = 0;
-		priv->m_devops.priv = priv;
-		priv->m_devops.mtu = 1500;
-		memset(&efparam, 0, sizeof(efparam));
-		priv->m_efid = CreateEventFlag(&efparam);
-		if ( priv->m_efid > 0 )
-		{
-			thparam.attr = 0x2000000;
-			thparam.thread = inet_thread_proc;
-			thparam.option = 0;
-			thparam.priority = g_thpri;
-			thparam.stacksize = g_thstack;
-			priv->m_thid = CreateThread(&thparam);
-			if ( priv->m_thid > 0 )
-			{
-				started = StartThread(priv->m_thid, priv);
-				if ( !started )
-					return priv;
-				if ( g_verbose )
-				{
-					printf("%s: ", priv->m_devops.interface);
-					printf("StartThread -> %d", started);
-					printf("\n");
-				}
-				DeleteThread(priv->m_thid);
-			}
-			else if ( g_verbose )
-			{
-				printf("%s: ", priv->m_devops.interface);
-				printf("CreateThread -> %d", priv->m_thid);
-				printf("\n");
-			}
-			DeleteEventFlag(priv->m_efid);
-		}
-		else
-		{
-			if ( g_verbose )
-			{
-				printf("%s: ", priv->m_devops.interface);
-				printf("CreateEventFlag -> %d", priv->m_efid);
-				printf("\n");
-			}
-		}
-		sceInetFreeMem(&priv->m_devops, priv);
-		return 0;
-	}
-	else
-	{
-		priv = 0;
 		if ( g_verbose )
 		{
 			printf("%s: ", (const char *)320);
 			printf("sceInetAllocMem(%d) -> no space or not ready", 888);
 			printf("\n");
 		}
+		return priv;
+	}
+	bzero(priv, 888);
+	priv->m_is_pegasus2 = is_pegasus2;
+	priv->m_magic_cur = g_magic_count;
+	sprintf(priv->m_devops.interface, "an986,%d", priv->m_magic_cur);
+	g_magic_count += 1;
+	priv->m_devops.module_name = "an986";
+	priv->m_devops.prot_ver = 2;
+	priv->m_devops.flags = 1040;
+	priv->m_devops.start = an986_inet_start;
+	priv->m_devops.stop = an986_inet_stop;
+	priv->m_devops.xmit = an986_inet_xmit;
+	priv->m_devops.control = an986_inet_control;
+	priv->m_devops.vendor_name = vendor_name;
+	priv->m_devops.device_name = device_name;
+	priv->m_devops.impl_ver = 0;
+	priv->m_devops.priv = priv;
+	priv->m_devops.mtu = 1500;
+	memset(&efparam, 0, sizeof(efparam));
+	priv->m_efid = CreateEventFlag(&efparam);
+	if ( priv->m_efid <= 0 )
+	{
+		if ( g_verbose )
+		{
+			printf("%s: ", priv->m_devops.interface);
+			printf("CreateEventFlag -> %d", priv->m_efid);
+			printf("\n");
+		}
+		goto err;
+	}
+	thparam.attr = 0x2000000;
+	thparam.thread = inet_thread_proc;
+	thparam.option = 0;
+	thparam.priority = g_thpri;
+	thparam.stacksize = g_thstack;
+	priv->m_thid = CreateThread(&thparam);
+	if ( priv->m_thid <= 0 )
+	{
+		if ( g_verbose )
+		{
+			printf("%s: ", priv->m_devops.interface);
+			printf("CreateThread -> %d", priv->m_thid);
+			printf("\n");
+		}
+		DeleteEventFlag(priv->m_efid);
+		goto err;
+	}
+	started = StartThread(priv->m_thid, priv);
+	if ( started )
+	{
+		if ( g_verbose )
+		{
+			printf("%s: ", priv->m_devops.interface);
+			printf("StartThread -> %d", started);
+			printf("\n");
+		}
+		DeleteThread(priv->m_thid);
+		goto err;
 	}
 	return priv;
+err:
+	sceInetFreeMem(&priv->m_devops, priv);
+	return 0;
 }
 // 4034F8: using guessed type int g_thpri;
 // 4034FC: using guessed type int g_thstack;
@@ -1165,30 +1148,21 @@ struct an986_devinfo *do_check_static_descriptor(
 			switch ( g_an986_devinfo[i].m_chip )
 			{
 			case 'p':
-				if ( is_probe )
+				if ( is_probe && g_verbose )
 				{
-					if ( g_verbose )
-					{
-						printf(" [pegasus] -> supported\n");
-					}
+					printf(" [pegasus] -> supported\n");
 				}
 				return &g_an986_devinfo[i];
 			case 'P':
-				if ( is_probe )
+				if ( is_probe && g_verbose )
 				{
-					if ( g_verbose )
-					{
-						printf(" [pegasusII] -> supported\n");
-					}
+					printf(" [pegasusII] -> supported\n");
 				}
 				return &g_an986_devinfo[i];
 			case 'k':
-				if ( is_probe )
+				if ( is_probe && g_verbose )
 				{
-					if ( g_verbose )
-					{
-						printf(" [klsi] -> unsupported\n");
-					}
+					printf(" [klsi] -> unsupported\n");
 				}
 				return NULL;
 			default:
@@ -1196,12 +1170,9 @@ struct an986_devinfo *do_check_static_descriptor(
 			}
 		}
 	}
-	if ( is_probe )
+	if ( is_probe && g_verbose )
 	{
-		if ( g_verbose )
-		{
-			printf(" [unknown] -> unsupported\n");
-		}
+		printf(" [unknown] -> unsupported\n");
 	}
 	return NULL;
 }
@@ -1223,82 +1194,70 @@ int an986_ldd_connect(int devId)
 	if ( g_verbose )
 		printf("an986_attach,%d: called\n", devId);
 	devdesc2 = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, 0, 1u);
-	if ( devdesc2 )
+	if ( !devdesc2 )
+		return -1;
+	cur_devinfo = do_check_static_descriptor(0, devdesc2->idVendor, devdesc2->idProduct);
+	if ( !cur_devinfo )
+		return -1;
+	devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc2, 2u);
+	if ( !devdesc )
+		return -1;
+	if ( devdesc->bDeviceClass != 1 )
+		return -1;
+	intfdesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc, 4u);
+	if ( !intfdesc )
+		return -1;
+	if ( intfdesc->bNumEndpoints != 3 )
+		return -1;
+	bulk_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, intfdesc, 5u);
+	if ( !bulk_in_desc )
+		return -1;
+	if ( (bulk_in_desc->bEndpointAddress & 0x80) == 0 )
+		return -1;
+	if ( (bulk_in_desc->bmAttributes & 3) != 2 )
+		return -1;
+	bulk_out_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_in_desc, 5u);
+	if ( !bulk_out_desc )
+		return -1;
+	if ( (bulk_out_desc->bEndpointAddress & 0x80) != 0 )
+		return -1;
+	if ( (bulk_out_desc->bmAttributes & 3) != 2 )
+		return -1;
+	int_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_out_desc, 5u);
+	if ( !int_in_desc )
+		return -1;
+	if ( (int_in_desc->bEndpointAddress & 0x80) == 0 )
+		return -1;
+	if ( (int_in_desc->bmAttributes & 3) != 3 )
+		return -1;
+	mem_for_inet = do_allocate_mem_for_inet(
+									 (char *)cur_devinfo->m_vendor_name,
+									 (char *)cur_devinfo->m_device_name,
+									 cur_devinfo->m_chip == 'P');
+	if ( !mem_for_inet )
+		return -1;
+	mem_for_inet->m_ctrl_pipe = sceUsbdOpenPipe(devId, 0);
+	if ( mem_for_inet->m_ctrl_pipe < 0 )
+		return -1;
+	mem_for_inet->m_bulk_in_pipe = sceUsbdOpenPipe(devId, bulk_in_desc);
+	if ( mem_for_inet->m_bulk_in_pipe < 0 )
+		return -1;
+	mem_for_inet->m_bulk_out_pipe = sceUsbdOpenPipeAligned(devId, bulk_out_desc);
+	if ( mem_for_inet->m_bulk_out_pipe < 0 )
+		return -1;
+	mem_for_inet->m_int_in_pipe = sceUsbdOpenPipe(devId, int_in_desc);
+	if ( mem_for_inet->m_int_in_pipe < 0 )
+		return -1;
+	sceUsbdSetPrivateData(devId, mem_for_inet);
+	mem_for_inet->m_devops.bus_type = 1;
+	sceUsbdGetDeviceLocation(devId, mem_for_inet->m_devops.bus_loc);
+	mem_for_inet->m_subclass = devdesc->bDeviceSubClass;
+	ef_set_wrap(mem_for_inet, 0, 1u);
+	if ( g_verbose )
 	{
-		cur_devinfo = do_check_static_descriptor(0, devdesc2->idVendor, devdesc2->idProduct);
-		if ( !cur_devinfo )
-			return -1;
-		devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc2, 2u);
-		if ( !devdesc )
-			return -1;
-		if ( devdesc->bDeviceClass != 1 )
-			return -1;
-		intfdesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc, 4u);
-		if ( !intfdesc )
-			return -1;
-		if ( intfdesc->bNumEndpoints == 3 )
-		{
-			bulk_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, intfdesc, 5u);
-			if ( bulk_in_desc )
-			{
-				if ( (bulk_in_desc->bEndpointAddress & 0x80) != 0 )
-				{
-					if ( (bulk_in_desc->bmAttributes & 3) == 2 )
-					{
-						bulk_out_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_in_desc, 5u);
-						if ( bulk_out_desc )
-						{
-							if ( (bulk_out_desc->bEndpointAddress & 0x80) == 0 )
-							{
-								if ( (bulk_out_desc->bmAttributes & 3) == 2 )
-								{
-									int_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_out_desc, 5u);
-									if ( int_in_desc )
-									{
-										if ( (int_in_desc->bEndpointAddress & 0x80) != 0 )
-										{
-											if ( (int_in_desc->bmAttributes & 3) == 3 )
-											{
-												mem_for_inet = do_allocate_mem_for_inet(
-																				 (char *)cur_devinfo->m_vendor_name,
-																				 (char *)cur_devinfo->m_device_name,
-																				 cur_devinfo->m_chip == 'P');
-												if ( !mem_for_inet )
-													return -1;
-												mem_for_inet->m_ctrl_pipe = sceUsbdOpenPipe(devId, 0);
-												if ( mem_for_inet->m_ctrl_pipe < 0 )
-													return -1;
-												mem_for_inet->m_bulk_in_pipe = sceUsbdOpenPipe(devId, bulk_in_desc);
-												if ( mem_for_inet->m_bulk_in_pipe < 0 )
-													return -1;
-												mem_for_inet->m_bulk_out_pipe = sceUsbdOpenPipeAligned(devId, bulk_out_desc);
-												if ( mem_for_inet->m_bulk_out_pipe < 0 )
-													return -1;
-												mem_for_inet->m_int_in_pipe = sceUsbdOpenPipe(devId, int_in_desc);
-												if ( mem_for_inet->m_int_in_pipe < 0 )
-													return -1;
-												sceUsbdSetPrivateData(devId, mem_for_inet);
-												mem_for_inet->m_devops.bus_type = 1;
-												sceUsbdGetDeviceLocation(devId, mem_for_inet->m_devops.bus_loc);
-												mem_for_inet->m_subclass = devdesc->bDeviceSubClass;
-												ef_set_wrap(mem_for_inet, 0, 1u);
-												if ( g_verbose )
-												{
-													printf("an986_attach,%d: -> attached\n", devId);
-												}
-												return 0;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		printf("an986_attach,%d: -> attached\n", devId);
 	}
-	return -1;
+	return 0;
 }
 // 403504: using guessed type int g_verbose;
 
@@ -1391,52 +1350,50 @@ int do_print_help()
 }
 
 //----- (004020A8) --------------------------------------------------------
-int scan_number(char *inchr, int *outptr)
+int scan_number(const char *e_arg, unsigned int *n_result)
 {
-	char *curchrptr; // $a3
-	int base; // $t1
-	int curval; // $t0
-	int currel; // $a0
+	const char *e_arg_1;
+	unsigned int curbasex;
+	unsigned int curnum;
 
-	curchrptr = inchr;
-	base = 10;
-	if ( *inchr == '0' && inchr[1] )
+	e_arg_1 = e_arg;
+	curbasex = 10;
+	if ( *e_arg == '0' && e_arg[1] )
 	{
-		base = 8;
-		curchrptr += 1;
-		if ( inchr[1] == 'x' )
+		e_arg_1 = e_arg + 1;
+		curbasex = 8;
+		if ( e_arg[1] == 'x' )
 		{
-			curchrptr += 1;
-			base = 16;
+			e_arg_1 = e_arg + 2;
+			curbasex = 16;
 		}
 	}
-	curval = 0;
-	if ( *curchrptr )
+	curnum = 0;
+	if ( *e_arg_1 )
 	{
 		while ( 1 )
 		{
-			if ( (unsigned int)((u8)*curchrptr - 48) >= 0xA )
+			u32 e_arg_1_num;
+
+			e_arg_1_num = (((u8)*e_arg_1)) - '0';
+			if ( ((u8)*e_arg_1) - (unsigned int)'0' >= 0xA )
 			{
-				if ( (unsigned int)((u8)*curchrptr - 97) >= 6 )
+				e_arg_1_num = (((u8)*e_arg_1)) - 'W';
+				if ( ((u8)*e_arg_1) - (unsigned int)'a' >= 6 )
 					break;
-				currel = (char)(u8)*curchrptr - 87;
 			}
-			else
-			{
-				currel = (char)(u8)*curchrptr - 48;
-			}
-			if ( currel >= base )
+			if ( e_arg_1_num >= curbasex )
 				break;
-			++curchrptr;
-			curval = curval * base + currel;
-			if ( !*curchrptr )
+			e_arg_1 += 1;
+			curnum = curnum * curbasex + e_arg_1_num;
+			if ( !*e_arg_1 )
 			{
-				*outptr = curval;
+				*n_result = curnum;
 				return 0;
 			}
 		}
 	}
-	printf("%s: %s - invalid digit\n", "scan_number", inchr);
+	printf("%s: %s - invalid digit\n", "scan_number", e_arg);
 	return -1;
 }
 
@@ -1480,7 +1437,6 @@ int an986_init(int ac, char **av)
 {
 	int i; // $s2
 	char *thpricurx; // $s0
-	int loadmode_tmp; // $v0
 	unsigned int vidtmp; // [sp+10h] [-8h] BYREF
 
 	g_load_mode = 'n';
@@ -1489,105 +1445,83 @@ int an986_init(int ac, char **av)
 	{
 		if ( !strcmp("-help", av[i]) )
 			return do_print_help();
-		if ( !strcmp("-version", av[i]) )
+		else if ( !strcmp("-version", av[i]) )
 			return do_print_version();
-		if ( !strcmp("-verbose", av[i]) )
+		else if ( !strcmp("-verbose", av[i]) )
 		{
 			g_verbose = 1;
 		}
-		else
+		else if ( !strcmp("-list", av[i]) )
+			return do_print_list();
+		else if ( !strcmp("-p", av[i]) || !strcmp("-P", av[i]) )
 		{
-			if ( !strcmp("-list", av[i]) )
-				return do_print_list();
-			if ( (strcmp("-p", av[i]) == 0) || (strcmp("-P", av[i]) == 0) )
+			g_an986_devinfo[0].m_chip = av[i][1];
+			++i;
+			if ( i >= ac || scan_number((char *)av[i], &vidtmp) )
+				return do_print_help();
+			g_an986_devinfo[0].m_vendor_id = (vidtmp >> 16) & 0xFFFF;
+			g_an986_devinfo[0].m_product_id = vidtmp & 0xFFFF;
+		}
+		else if ( !strncmp("thpri=", av[i], 6) )
+		{
+			thpricurx = &av[i][6];
+			if ( (look_ctype_table(*thpricurx) & 4) == 0 )
+				return do_print_help();
+			g_thpri = strtol(thpricurx, 0, 10);
+			if ( (unsigned int)(g_thpri - 9) >= 0x73 )
+				return do_print_help();
+			while ( *thpricurx && (look_ctype_table(*thpricurx) & 4) != 0 )
 			{
-				g_an986_devinfo[0].m_chip = av[i][1];
-				++i;
-				if ( i >= ac || scan_number((char *)av[i], (int *)&vidtmp) )
-					return do_print_help();
-				g_an986_devinfo[0].m_vendor_id = (vidtmp >> 16) & 0xFFFF;
-				g_an986_devinfo[0].m_product_id = vidtmp & 0xFFFF;
-				continue;
-			}
-			if ( !strncmp("thpri=", av[i], 6) )
-			{
-				thpricurx = &av[i][6];
-				if ( (look_ctype_table(*thpricurx) & 4) == 0 )
-					return do_print_help();
-				g_thpri = strtol(thpricurx, 0, 10);
-				if ( (unsigned int)(g_thpri - 9) >= 0x73 )
-					return do_print_help();
-				if ( !*thpricurx )
-				{
-					continue;
-				}
-				while ( *thpricurx && (look_ctype_table(*thpricurx) & 4) != 0 )
-				{
-					++thpricurx;
-				}
-			}
-			else
-			{
-				if ( strncmp("thstack=", av[i], 8) )
-				{
-					loadmode_tmp = 'a';
-					if ( strcmp("AUTOLOAD", av[i]) != 0 )
-					{
-						loadmode_tmp = 'a';
-						if ( strcmp("lmode=AUTOLOAD", av[i]) != 0 )
-						{
-							loadmode_tmp = 't';
-							if ( strcmp("TESTLOAD", av[i]) != 0 )
-							{
-								loadmode_tmp = 't';
-								if ( strcmp("lmode=TESTLOAD", av[i]) != 0 )
-									return do_print_help();
-							}
-						}
-					}
-					g_load_mode = loadmode_tmp;
-					g_resident_flag = 0;
-					continue;
-				}
-				thpricurx = &av[i][8];
-				if ( (look_ctype_table(*thpricurx) & 4) == 0 )
-					return do_print_help();
-				g_thstack = strtol(thpricurx, 0, 10);
-				while ( *thpricurx && ((look_ctype_table(*thpricurx) & 4) != 0) )
-				{
-					++thpricurx;
-				}
-				if ( !strcmp(thpricurx, "KB") )
-				{
-					g_thstack <<= 10;
-					continue;
-				}
+				++thpricurx;
 			}
 			if ( *thpricurx )
 				return do_print_help();
 		}
-	}
-	if ( sceUsbdRegisterLdd(&g_an986_ldd) == 0 )
-	{
-		if ( g_verbose )
-			printf("an986_start: load_mode='%c' resident_flag=%d\n", g_load_mode, g_resident_flag);
-		if ( g_load_mode == 't' )
+		else if ( !strncmp("thstack=", av[i], 8) )
 		{
-			sceUsbdUnregisterLdd(&g_an986_ldd);
-			return 5;
+			thpricurx = &av[i][8];
+			if ( (look_ctype_table(*thpricurx) & 4) == 0 )
+				return do_print_help();
+			g_thstack = strtol(thpricurx, 0, 10);
+			while ( *thpricurx && ((look_ctype_table(*thpricurx) & 4) != 0) )
+			{
+				++thpricurx;
+			}
+			if ( !strcmp(thpricurx, "KB") )
+			{
+				g_thstack <<= 10;
+				thpricurx += 2;
+			}
+			if ( *thpricurx )
+				return do_print_help();
 		}
-		else if ( g_resident_flag )
-		{
-			do_print_version();
-			return 0;
-		}
+		else if ( !strcmp("AUTOLOAD", av[i]) || !strcmp("lmode=AUTOLOAD", av[i]) )
+			g_load_mode = 'a';
+		else if ( !strcmp("TESTLOAD", av[i]) || !strcmp("lmode=TESTLOAD", av[i]) )
+			g_load_mode = 't';
 		else
-		{
-			sceUsbdUnregisterLdd(&g_an986_ldd);
-			return 6;
-		}
+			return do_print_help();
 	}
-	return 4;
+	if ( g_load_mode != 'n' )
+		g_resident_flag = 0;
+	if ( sceUsbdRegisterLdd(&g_an986_ldd) != 0 )
+	{
+		return 4;
+	}
+	if ( g_verbose )
+		printf("an986_start: load_mode='%c' resident_flag=%d\n", g_load_mode, g_resident_flag);
+	if ( g_load_mode == 't' )
+	{
+		sceUsbdUnregisterLdd(&g_an986_ldd);
+		return 5;
+	}
+	else if ( g_resident_flag )
+	{
+		do_print_version();
+		return 0;
+	}
+	sceUsbdUnregisterLdd(&g_an986_ldd);
+	return 6;
 }
 // 403090: using guessed type an986_devinfo g_an986_devinfo[53];
 // 4034B4: using guessed type sceUsbdLddOps g_an986_ldd;
@@ -1607,16 +1541,13 @@ int _start(int ac, char **av)
 		printf("an986: module already loaded\n");
 		return 1;
 	}
-	else
+	initval = an986_init(ac, av);
+	if ( g_verbose )
+		printf("an986: an986_init() -> 0x%x\n", initval);
+	if ( initval )
 	{
-		initval = an986_init(ac, av);
-		if ( g_verbose )
-			printf("an986: an986_init() -> 0x%x\n", initval);
-		if ( initval )
-		{
-			ReleaseLibraryEntries(&_exp_an986);
-			return (initval << 4) | (g_resident_flag ? 4 : 0) | 1;
-		}
+		ReleaseLibraryEntries(&_exp_an986);
+		return (initval << 4) | (g_resident_flag ? 4 : 0) | 1;
 	}
 	return 0;
 }
