@@ -219,15 +219,15 @@ void an986_done(int efbits, int doneval, void *userdata)
 	struct an986_priv *priv_tmp; // $a0
 
 	priv_tmp = (struct an986_priv *)userdata;
-	if ( !efbits )
-		goto LABEL_4;
-	if ( g_verbose )
+	if ( efbits )
 	{
-		printf("%s: ", priv_tmp->m_devops.interface);
-		printf("%s: -> 0x%x\n", "an986_done", efbits);
-		printf("\n");
+		if ( g_verbose )
+		{
+			printf("%s: ", priv_tmp->m_devops.interface);
+			printf("%s: -> 0x%x\n", "an986_done", efbits);
+			printf("\n");
+		}
 	}
-LABEL_4:
 	priv_tmp->m_done_related = doneval;
 	ef_set_wrap(priv_tmp, efbits, 4u);
 }
@@ -347,16 +347,15 @@ void an986_rx_done(int aresult, int acount, void *userdata)
 	++priv->m_rx_packets;
 	pkt->m_reserved1 = 0;
 	if ( priv->m_start_stop_flag || priv->m_val_for_inet_stop )
-		goto LABEL_23;
-	if ( acount < 68 )
 	{
-LABEL_19:
-		++priv->m_rx_errors;
-LABEL_23:
 		sceInetFreePkt(&priv->m_devops, pkt);
-		goto LABEL_22;
 	}
-	if ( (pkt->rp[acount - 2] & 0x1F) != 0 )
+	else if ( acount < 68 )
+	{
+		++priv->m_rx_errors;
+		sceInetFreePkt(&priv->m_devops, pkt);
+	}
+	else
 	{
 		if ( (pkt->rp[acount - 2] & 1) != 0 )
 		{
@@ -379,13 +378,18 @@ LABEL_23:
 			++priv->m_err_rx_frame;
 		}
 		if ( (pkt->rp[acount - 2] & 0x1E) )
-			goto LABEL_19;
+		{
+			++priv->m_rx_errors;
+			sceInetFreePkt(&priv->m_devops, pkt);
+		}
+		else
+		{
+			priv->m_rx_bytes = priv->m_rx_bytes - 8 + acount;
+			pkt->wp += acount - 8;
+			sceInetPktEnQ(&priv->m_devops.rcvq, pkt);
+			SetEventFlag(priv->m_devops.evfid, 4u);
+		}
 	}
-	priv->m_rx_bytes = priv->m_rx_bytes - 8 + acount;
-	pkt->wp += acount - 8;
-	sceInetPktEnQ(&priv->m_devops.rcvq, pkt);
-	SetEventFlag(priv->m_devops.evfid, 4u);
-LABEL_22:
 	bulk_xfer(priv);
 	priv->m_val_for_alarm_cb = 10;
 }
@@ -440,14 +444,14 @@ void an986_tx_done(int aresult, int acount, void *userdata)
 	(void)acount;
 	pkt = (sceInetPkt_t *)userdata;
 	priv = (struct an986_priv *)pkt->m_reserved1;
-	if ( aresult == 0 )
-		goto LABEL_4;
-	if ( g_verbose )
+	if ( aresult )
 	{
-		printf("%s: ", priv->m_devops.interface);
-		printf("%s: -> 0x%x\n", "an986_tx_done", aresult);
-		printf("\n");
-LABEL_4:
+		if ( g_verbose )
+		{
+			printf("%s: ", priv->m_devops.interface);
+			printf("%s: -> 0x%x\n", "an986_tx_done", aresult);
+			printf("\n");
+		}
 	}
 	pkt->m_reserved1 = 0;
 	sceInetFreePkt(&priv->m_devops, pkt);
@@ -509,9 +513,11 @@ int an986_inet_xmit(void *userdata, int unused)
   u8 *rp; // $v1
   u32 xrp2; // $s1
   struct an986_priv *priv;
+  int dropped;
 
 	(void)unused;
 	priv = (struct an986_priv *)userdata;
+	dropped = 0;
   xferres = -1;
   pkt = sceInetPktDeQ(&priv->m_devops.sndq);
   if ( pkt )
@@ -522,16 +528,7 @@ int an986_inet_xmit(void *userdata, int unused)
       || (rp = pkt->rp, xrp2 = pkt->wp - rp, xrp2 - 60 >= 0x5AF)
       || (pkt->rp = rp - 2, ((uiptr)(pkt->rp) & 3) != 0) )
     {
-LABEL_15:
-      if ( g_verbose )
-      {
-        printf("%s: ", priv->m_devops.interface);
-        printf("dropped");
-        printf("\n");
-      }
-LABEL_17:
-      ++priv->m_tx_dropped;
-      sceInetFreePkt(&priv->m_devops, pkt);
+			dropped = 1;
     }
     else
     {
@@ -554,16 +551,29 @@ LABEL_17:
           break;
         if ( xferres != 274 )
         {
-          if ( !g_verbose )
-            goto LABEL_17;
-          printf("%s: ", priv->m_devops.interface);
-          printf("sceUsbdBulkTransfer -> 0x%x", xferres);
-          printf("\n");
-          goto LABEL_15;
+          if ( g_verbose )
+          {
+	          printf("%s: ", priv->m_devops.interface);
+	          printf("sceUsbdBulkTransfer -> 0x%x", xferres);
+	          printf("\n");
+          }
+        	dropped = 1;
+        	break;
         }
         DelayThread(10000);
       }
     }
+  }
+  if ( dropped )
+  {
+    if ( g_verbose )
+    {
+      printf("%s: ", priv->m_devops.interface);
+      printf("dropped");
+      printf("\n");
+    }
+    ++priv->m_tx_dropped;
+    sceInetFreePkt(&priv->m_devops, pkt);
   }
   priv->m_val_for_alarm_cb = 10;
   return xferres;
@@ -1011,13 +1021,13 @@ LABEL_8:
 																													if ( (outval_1 & 0x24) == 36 )
 																													{
 																														priv->m_link_status = 1;
-																														goto LABEL_86;
+																														priv->m_val_for_alarm_cb = 10;
+																														break;
 																													}
 																													DelayThread(100000);
 																												}
 																												return;
 																											}
-LABEL_86:
 																											priv->m_val_for_alarm_cb = 10;
 																										}
 																									}
@@ -1471,28 +1481,21 @@ int do_print_list()
 		printf("  %04x", cur_devinfo->m_product_id);
 		printf("  %-14s", cur_devinfo->m_vendor_name);
 		printf("  %-14s", cur_devinfo->m_device_name);
-		if ( cur_devinfo->m_chip == 'k' )
+		switch ( cur_devinfo->m_chip )
 		{
+		case 'p':
+			printf("  Pegasus");
+			break;
+		case 'P':
+			printf("  PegasusII");
+			break;
+		case 'k':
 			printf("  KLSI");
-		}
-		else
-		{
-			if ( cur_devinfo->m_chip >= 0x6C )
-			{
-				if ( cur_devinfo->m_chip == 'p' )
-				{
-					printf("  Pegasus");
-					goto LABEL_11;
-				}
-			}
-			else if ( cur_devinfo->m_chip == 'P' )
-			{
-				printf("  PegasusII");
-				goto LABEL_11;
-			}
+			break;
+		default:
 			printf("  Unknown");
+			break;
 		}
-LABEL_11:
 		++cur_devinfo;
 		printf("\n");
 	}
@@ -1538,7 +1541,6 @@ int an986_init(int ac, char **av)
 					return do_print_help();
 				g_an986_devinfo[0].m_vendor_id = (vidtmp >> 16) & 0xFFFF;
 				g_an986_devinfo[0].m_product_id = vidtmp & 0xFFFF;
-LABEL_34:
 				--ac_min_one;
 				continue;
 			}
@@ -1551,12 +1553,15 @@ LABEL_34:
 				if ( (unsigned int)(g_thpri - 9) >= 0x73 )
 					return do_print_help();
 				if ( !(*i)[6] )
-					goto LABEL_34;
+				{
+					--ac_min_one;
+					continue;
+				}
 				while ( (look_ctype_table(*thpricurx) & 4) != 0 )
 				{
 					thirpcurxchr = *++thpricurx;
-					if ( !*thpricurx )
-						goto LABEL_27;
+					if ( !thirpcurxchr )
+						break;
 				}
 			}
 			else
@@ -1580,7 +1585,8 @@ LABEL_34:
 					}
 					g_load_mode = loadmode_tmp;
 					g_resident_flag = 0;
-					goto LABEL_34;
+					--ac_min_one;
+					continue;
 				}
 				thpricurx = (char *)(*i + 8);
 				if ( (look_ctype_table(*thpricurx) & 4) == 0 )
@@ -1604,7 +1610,6 @@ LABEL_34:
 				}
 			}
 			thirpcurxchr = *thpricurx;
-LABEL_27:
 			--ac_min_one;
 			if ( thirpcurxchr )
 				return do_print_help();
