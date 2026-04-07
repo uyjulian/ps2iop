@@ -1032,7 +1032,7 @@ struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name
 	}
 	if ( !err )
 	{
-	thparam.attr = 0x2000000;
+		thparam.attr = 0x2000000;
 		thparam.thread = inet_thread_proc;
 		thparam.option = 0;
 		thparam.priority = g_thpri;
