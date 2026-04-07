@@ -334,7 +334,7 @@ void an986_rx_done(int aresult, int acount, void *userdata)
 		printf("%s: -> 0x%x\n", "an986_rx_done", aresult);
 		printf("\n");
 	}
-	++priv->m_rx_packets;
+	priv->m_rx_packets += 1;
 	pkt->m_reserved1 = 0;
 	if ( priv->m_start_stop_flag || priv->m_val_for_inet_stop )
 	{
@@ -342,34 +342,34 @@ void an986_rx_done(int aresult, int acount, void *userdata)
 	}
 	else if ( acount < 68 )
 	{
-		++priv->m_rx_errors;
+		priv->m_rx_errors += 1;
 		sceInetFreePkt(&priv->m_devops, pkt);
 	}
 	else
 	{
 		if ( (pkt->rp[acount - 2] & 1) != 0 )
 		{
-			++priv->m_multicast;
+			priv->m_multicast += 1;
 		}
 		if ( (pkt->rp[acount - 2] & 2) != 0 )
 		{
-			++priv->m_err_rx_length;
+			priv->m_err_rx_length += 1;
 		}
 		if ( (pkt->rp[acount - 2] & 4) != 0 )
 		{
-			++priv->m_err_rx_length;
+			priv->m_err_rx_length += 1;
 		}
 		if ( (pkt->rp[acount - 2] & 8) != 0 )
 		{
-			++priv->m_err_rx_crc;
+			priv->m_err_rx_crc += 1;
 		}
 		if ( (pkt->rp[acount - 2] & 0x10) != 0 )
 		{
-			++priv->m_err_rx_frame;
+			priv->m_err_rx_frame += 1;
 		}
 		if ( (pkt->rp[acount - 2] & 0x1E) )
 		{
-			++priv->m_rx_errors;
+			priv->m_rx_errors += 1;
 			sceInetFreePkt(&priv->m_devops, pkt);
 		}
 		else
@@ -402,7 +402,7 @@ void bulk_xfer(struct an986_priv *priv)
 			printf("\n");
 		}
 		CpuSuspendIntr(&state);
-		++priv->m_cnt_for_bulk_xfer;
+		priv->m_cnt_for_bulk_xfer += 1;
 		CpuResumeIntr(state);
 		return;
 	}
@@ -520,10 +520,10 @@ int an986_inet_xmit(void *userdata, int unused)
     else
     {
       *((u16 *)rp - 1) = xrp2;
-      ++priv->m_tx_packets;
+      priv->m_tx_packets += 1;
       priv->m_tx_bytes += xrp2;
       if ( (((u8)xrp2 + 2) & 0x3F) == 0 )
-        ++xrp2;
+        xrp2 += 1;
       pkt->m_reserved1 = (void *)priv;
       while ( 1 )
       {
@@ -559,7 +559,7 @@ int an986_inet_xmit(void *userdata, int unused)
       printf("dropped");
       printf("\n");
     }
-    ++priv->m_tx_dropped;
+    priv->m_tx_dropped += 1;
     sceInetFreePkt(&priv->m_devops, pkt);
   }
   priv->m_val_for_alarm_cb = 10;
@@ -591,10 +591,11 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 				if ( (*ptr & 1) != 0 )
 				{
 					valcr2 = -1;
-					for ( i = 5; i >= 0; --i )
+					for ( i = 5; i >= 0; i -= 1 )
 					{
-						rshavle = *ptr++;
-						for ( j = 7; j >= 0; --j )
+						rshavle = *ptr;
+						ptr += 1;
+						for ( j = 7; j >= 0; j -= 1 )
 						{
 							xcurval = valcr2 >> 1;
 							if ( (((u8)valcr2 ^ rshavle) & 1) != 0 )
@@ -799,7 +800,7 @@ LABEL_8:
 							if ( (priv->m_usb_xfer_buf[35] & 4) != 0 )
 							{
 								result = control_negative_xfer(priv, 33, 3);
-								++xidx_1;
+								xidx_1 += 1;
 								if ( result )
 									return;
 								priv->m_hwaddr_tmp[(xidx_1 * 2) + 0] = priv->m_usb_xfer_buf[33];
@@ -854,7 +855,7 @@ LABEL_8:
 																		return;
 																	if ( outval_1 == 0xFFFF )
 																	{
-																		++idxcnt;
+																		idxcnt += 1;
 																		if ( idxcnt >= 32 )
 																		{
 																			result = g_verbose;
@@ -923,7 +924,7 @@ LABEL_8:
 																												priv->m_usb_xfer_buf[127] = 0x30,
 																												(result = control_positive_xfer(priv, 124, 4)) == 0) )
 																									{
-																										for ( i = 0; i < 8; ++i )
+																										for ( i = 0; i < 8; i += 1 )
 																											bulk_xfer(priv);
 																										priv->m_val_for_inet_start = 1;
 																										if ( !priv->m_start_stop_flag )
@@ -945,15 +946,15 @@ LABEL_8:
 																												{
 																													if ( (priv->m_usb_xfer_buf[43] & 0x60) != 0 )
 																													{
-																														++priv->m_collisions;
+																														priv->m_collisions += 1;
 																													}
 																													if ( (priv->m_usb_xfer_buf[43] & 0xC) != 0 )
-																														++priv->m_err_tx_carrier;
-																													++priv->m_tx_errors;
+																														priv->m_err_tx_carrier += 1;
+																													priv->m_tx_errors += 1;
 																												}
 																												if ( (priv->m_usb_xfer_buf[45] & 1) != 0 )
 																												{
-																													++priv->m_err_rx_over;
+																													priv->m_err_rx_over += 1;
 																													priv->m_rx_errors += 1;
 																												}
 																												if ( priv->m_usb_xfer_buf[47] )
@@ -962,13 +963,14 @@ LABEL_8:
 																													priv->m_rx_errors += priv->m_usb_xfer_buf[47];
 																												}
 																												DelayThread(100000);
-																												if ( ++indindx >= 11 )
+																												indindx += 1;
+																												if ( indindx >= 11 )
 																												{
 																													indindx = 0;
 																													if ( priv->m_cnt_for_bulk_xfer > 0 )
 																													{
 																														CpuSuspendIntr(&state);
-																														--priv->m_cnt_for_bulk_xfer;
+																														priv->m_cnt_for_bulk_xfer -= 1;
 																														CpuResumeIntr(state);
 																														bulk_xfer(priv);
 																													}
@@ -1008,7 +1010,7 @@ LABEL_8:
 																			return;
 																		}
 																		DelayThread(100000);
-																		++indindx2;
+																		indindx2 += 1;
 																		if ( indindx2 >= 30 )
 																			priv->m_link_status = 0;
 																	}
@@ -1456,7 +1458,7 @@ int an986_init(int ac, char **av)
 		else if ( !strcmp("-p", av[i]) || !strcmp("-P", av[i]) )
 		{
 			g_an986_devinfo[0].m_chip = av[i][1];
-			++i;
+			i += 1;
 			if ( i >= ac || scan_number((char *)av[i], &vidtmp) )
 				return do_print_help();
 			g_an986_devinfo[0].m_vendor_id = (vidtmp >> 16) & 0xFFFF;
@@ -1472,7 +1474,7 @@ int an986_init(int ac, char **av)
 				return do_print_help();
 			while ( *thpricurx && (look_ctype_table(*thpricurx) & 4) != 0 )
 			{
-				++thpricurx;
+				thpricurx += 1;
 			}
 			if ( *thpricurx )
 				return do_print_help();
@@ -1485,7 +1487,7 @@ int an986_init(int ac, char **av)
 			g_thstack = strtol(thpricurx, 0, 10);
 			while ( *thpricurx && ((look_ctype_table(*thpricurx) & 4) != 0) )
 			{
-				++thpricurx;
+				thpricurx += 1;
 			}
 			if ( !strcmp(thpricurx, "KB") )
 			{
