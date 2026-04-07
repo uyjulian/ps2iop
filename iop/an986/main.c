@@ -307,27 +307,27 @@ int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *ou
 	priv->m_usb_xfer_buf[39] = 0;
 	priv->m_usb_xfer_buf[40] = (xval & 0x1F) | 0x40;
 	result = control_positive_xfer(priv, 37, 4);
-	if ( !result )
+	if ( result )
 	{
-		while ( 1 )
+		return result;
+	}
+	while ( 1 )
+	{
+		result = control_negative_xfer(priv, 40, 1);
+		if ( result )
+			return result;
+		if ( (priv->m_usb_xfer_buf[40] & 0x80) != 0 )
 		{
-			result = control_negative_xfer(priv, 40, 1);
+			result = control_negative_xfer(priv, 37, 4);
 			if ( result )
-				break;
-			if ( (priv->m_usb_xfer_buf[40] & 0x80) != 0 )
 			{
-				result = control_negative_xfer(priv, 37, 4);
-				if ( !result )
-				{
-					result = 0;
-					*outptr = priv->m_usb_xfer_buf[38] | (priv->m_usb_xfer_buf[39] << 8);
-				}
 				return result;
 			}
-			DelayThread(10000);
+			*outptr = priv->m_usb_xfer_buf[38] | (priv->m_usb_xfer_buf[39] << 8);
+			return 0;
 		}
+		DelayThread(10000);
 	}
-	return result;
 }
 
 //----- (004003F4) --------------------------------------------------------
@@ -583,11 +583,8 @@ int an986_inet_xmit(void *userdata, int unused)
 //----- (00400AC4) --------------------------------------------------------
 int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len)
 {
-	int result; // $v0
-	int curindx; // $a3
 	int lendiv; // $v1
-	int lendivm1; // $t0
-	int lendivm1_1; // $v0
+	int k; // $t0
 	unsigned int valcr2; // $v1
 	int i; // $a3
 	u8 rshavle; // $v0
@@ -598,53 +595,40 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 	if ( len >= 0 )
 	{
 		lendiv = len / 6;
-		result = -512;
 		if ( len != 6 * (len / 6) )
-			return result;
+			return -512;
 		if ( ptr )
 		{
-			lendivm1 = lendiv - 1;
-			if ( lendiv > 0 )
+			for ( k = lendiv - 1; lendiv > 0; k -= 1 )
 			{
-				do
+				if ( (*ptr & 1) != 0 )
 				{
-					lendivm1_1 = lendivm1;
-					if ( (*ptr & 1) != 0 )
+					valcr2 = -1;
+					for ( i = 5; i >= 0; --i )
 					{
-						valcr2 = -1;
-						for ( i = 5; i >= 0; --i )
+						rshavle = *ptr++;
+						for ( j = 7; j >= 0; --j )
 						{
-							rshavle = *ptr++;
-							for ( j = 7; j >= 0; --j )
-							{
-								xcurval = valcr2 >> 1;
-								if ( (((u8)valcr2 ^ rshavle) & 1) != 0 )
-									xcurval ^= 0xEDB88320;
-								valcr2 = xcurval;
-								rshavle >>= 1;
-							}
+							xcurval = valcr2 >> 1;
+							if ( (((u8)valcr2 ^ rshavle) & 1) != 0 )
+								xcurval ^= 0xEDB88320;
+							valcr2 = xcurval;
+							rshavle >>= 1;
 						}
-						priv->m_usb_xfer_buf[((u8)(xcurval & 0x3F) >> 3) + 8] |= 1 << (xcurval & 7);
-						lendivm1_1 = lendivm1;
 					}
-					--lendivm1;
+					priv->m_usb_xfer_buf[((u8)(xcurval & 0x3F) >> 3) + 8] |= 1 << (xcurval & 7);
 				}
-				while ( lendivm1_1 > 0 );
 			}
 		}
 	}
 	else
 	{
-		result = -512;
 		if ( ptr )
-			return result;
-		curindx = 0;
-		do
+			return -512;
+		for ( k = 0; k < 8; k += 1 )
 		{
-			priv->m_usb_xfer_buf[8 + curindx] = -1;
-			++curindx;
+			priv->m_usb_xfer_buf[8 + k] = -1;
 		}
-		while ( curindx < 8 );
 	}
 	return control_positive_xfer(priv, 8, 8);
 }
@@ -1013,7 +997,7 @@ LABEL_8:
 																											if ( (outval_1 & 4) == 0 )
 																											{
 																												priv->m_link_status = 0;
-																												for ( ; ;  )
+																												while ( 1 )
 																												{
 																													result = control_inout_xfer(priv, idxcnt, 1, &outval_1);
 																													if ( result )
@@ -1167,57 +1151,59 @@ struct an986_devinfo *do_check_static_descriptor(
 				u16 id_vendor,
 				u16 id_product)
 {
-	struct an986_devinfo *cur_devinfo; // $s1
-	int cur_devinfo_count; // $s0
+	unsigned int i; // $s0
 
 	if ( is_probe && g_verbose )
 		printf("an986: idVendor=0x%04x idProduct=0x%04x\n", id_vendor, id_product);
-	cur_devinfo = g_an986_devinfo;
-	cur_devinfo_count = 52;
-	for ( ;
-				id_vendor != cur_devinfo->m_vendor_id || id_product != cur_devinfo->m_product_id;
-				)
+	// Unofficial: avoid out of bounds read when device not found
+	for ( i = 0; i < (sizeof(g_an986_devinfo)/sizeof(g_an986_devinfo[0])); i += 1 )
 	{
-		++cur_devinfo;
-		if ( cur_devinfo_count-- <= 0 )
-			return 0;
-	}
-	if ( is_probe && g_verbose )
-		printf("an986: %s, %s", cur_devinfo->m_vendor_name, cur_devinfo->m_device_name);
-	if ( cur_devinfo->m_chip == 'p' )
-	{
-		if ( is_probe )
+		if ( id_vendor == g_an986_devinfo[i].m_vendor_id && id_product == g_an986_devinfo[i].m_product_id )
 		{
-			if ( g_verbose )
+			if ( is_probe && g_verbose )
+				printf("an986: %s, %s", g_an986_devinfo[i].m_vendor_name, g_an986_devinfo[i].m_device_name);
+			switch ( g_an986_devinfo[i].m_chip )
 			{
-				printf(" [pegasus] -> supported\n");
-				return cur_devinfo;
+			case 'p':
+				if ( is_probe )
+				{
+					if ( g_verbose )
+					{
+						printf(" [pegasus] -> supported\n");
+					}
+				}
+				return &g_an986_devinfo[i];
+			case 'P':
+				if ( is_probe )
+				{
+					if ( g_verbose )
+					{
+						printf(" [pegasusII] -> supported\n");
+					}
+				}
+				return &g_an986_devinfo[i];
+			case 'k':
+				if ( is_probe )
+				{
+					if ( g_verbose )
+					{
+						printf(" [klsi] -> unsupported\n");
+					}
+				}
+				return NULL;
+			default:
+				break;
 			}
 		}
 	}
-	else if ( cur_devinfo->m_chip == 'P' )
+	if ( is_probe )
 	{
-		if ( is_probe )
+		if ( g_verbose )
 		{
-			if ( g_verbose )
-			{
-				printf(" [pegasusII] -> supported\n");
-				return cur_devinfo;
-			}
+			printf(" [unknown] -> unsupported\n");
 		}
 	}
-	else
-	{
-		cur_devinfo = 0;
-		if ( is_probe )
-		{
-			if ( g_verbose )
-			{
-				printf(" [%s] -> unsupported\n", ( cur_devinfo->m_chip == 'k' ) ? "klsi" : "unknown");
-			}
-		}
-	}
-	return cur_devinfo;
+	return NULL;
 }
 // 403090: using guessed type an986_devinfo g_an986_devinfo[53];
 // 403504: using guessed type int g_verbose;
@@ -1336,14 +1322,12 @@ int an986_ldd_disconnect(int devId)
 int an986_ldd_probe(int devId)
 {
 	UsbStringDescriptor *strdesc1; // $s2
-	int idx7; // $s0
-	int xlenx; // $s0
+	int i; // $s0
 	UsbDeviceDescriptor *devdesc; // $v0
 	char strlocbuf[16]; // [sp+10h] [-10h] BYREF
 
 	if ( g_verbose )
 	{
-		strdesc1 = 0;
 		printf("an986_probe,%d: called", devId);
 		if ( sceUsbdGetDeviceLocation(devId, (u8 *)strlocbuf) )
 		{
@@ -1351,31 +1335,23 @@ int an986_ldd_probe(int devId)
 		}
 		else
 		{
-			idx7 = 0;
+			
 			printf(" Loc:USB-");
-			do
+			for ( i = 0; i < 7 && strlocbuf[i]; i += 1 )
 			{
-				if ( !strlocbuf[idx7] )
-					break;
-				printf("%s%d", idx7 ? "," : "", strlocbuf[idx7]);
-				++idx7;
+				printf("%s%d", i ? "," : "", strlocbuf[i]);
 			}
-			while ( idx7 < 7 );
 		}
+		strdesc1 = NULL;
 		while ( 1 )
 		{
 			printf("\n");
 			strdesc1 = (UsbStringDescriptor *)sceUsbdScanStaticDescriptor(devId, strdesc1, 0);
 			if ( !strdesc1 )
 				break;
-			xlenx = 0;
-			if ( strdesc1->bLength )
+			for ( i = 0; i < strdesc1->bLength; i += 1 )
 			{
-				do
-				{
-					printf(" %02x", *(&strdesc1->bLength + xlenx++));
-				}
-				while ( xlenx < strdesc1->bLength );
+				printf(" %02x", ((u8 *)strdesc1)[i]);
 			}
 		}
 	}
@@ -1467,21 +1443,18 @@ int scan_number(char *inchr, int *outptr)
 //----- (00402188) --------------------------------------------------------
 int do_print_list()
 {
-	int total_devinfo; // $s2
-	struct an986_devinfo *cur_devinfo; // $s1
+	unsigned int i; // $s2
 
 	do_print_version();
-	total_devinfo = 52;
 	printf("  VID   PID   Vendor          Device          Chip\n");
 	printf("------------------------------------------------------\n");
-	cur_devinfo = g_an986_devinfo;
-	do
+	for ( i = 0; i < (sizeof(g_an986_devinfo)/sizeof(g_an986_devinfo[0])); i += 1 )
 	{
-		printf("  %04x", cur_devinfo->m_vendor_id);
-		printf("  %04x", cur_devinfo->m_product_id);
-		printf("  %-14s", cur_devinfo->m_vendor_name);
-		printf("  %-14s", cur_devinfo->m_device_name);
-		switch ( cur_devinfo->m_chip )
+		printf("  %04x", g_an986_devinfo[i].m_vendor_id);
+		printf("  %04x", g_an986_devinfo[i].m_product_id);
+		printf("  %-14s", g_an986_devinfo[i].m_vendor_name);
+		printf("  %-14s", g_an986_devinfo[i].m_device_name);
+		switch ( g_an986_devinfo[i].m_chip )
 		{
 		case 'p':
 			printf("  Pegasus");
@@ -1496,10 +1469,8 @@ int do_print_list()
 			printf("  Unknown");
 			break;
 		}
-		++cur_devinfo;
 		printf("\n");
 	}
-	while ( total_devinfo-- > 0 );
 	return 3;
 }
 // 403090: using guessed type an986_devinfo g_an986_devinfo[53];
@@ -1507,111 +1478,92 @@ int do_print_list()
 //----- (004022CC) --------------------------------------------------------
 int an986_init(int ac, char **av)
 {
-	int ac_min_one; // $s3
-	const char **i; // $s2
+	int i; // $s2
 	char *thpricurx; // $s0
-	int thirpcurxchr; // $v0
 	int loadmode_tmp; // $v0
 	unsigned int vidtmp; // [sp+10h] [-8h] BYREF
 
-	ac_min_one = ac - 1;
 	g_load_mode = 'n';
 	g_resident_flag = 1;
-	for ( i = (const char **)(av + 1); ac_min_one > 0; ++i )
+	for ( i = 1; i < ac; i += 1 )
 	{
-		if ( !strcmp("-help", *i) )
+		if ( !strcmp("-help", av[i]) )
 			return do_print_help();
-		if ( !strcmp("-version", *i) )
+		if ( !strcmp("-version", av[i]) )
 			return do_print_version();
-		if ( !strcmp("-verbose", *i) )
+		if ( !strcmp("-verbose", av[i]) )
 		{
 			g_verbose = 1;
-			--ac_min_one;
 		}
 		else
 		{
-			if ( !strcmp("-list", *i) )
+			if ( !strcmp("-list", av[i]) )
 				return do_print_list();
-			if ( (strcmp("-p", *i) == 0) || (strcmp("-P", *i) == 0) )
+			if ( (strcmp("-p", av[i]) == 0) || (strcmp("-P", av[i]) == 0) )
 			{
-				g_an986_devinfo[0].m_chip = (*i)[1];
-				--ac_min_one;
+				g_an986_devinfo[0].m_chip = av[i][1];
 				++i;
-				if ( ac_min_one <= 0 || scan_number((char *)*i, (int *)&vidtmp) )
+				if ( i >= ac || scan_number((char *)av[i], (int *)&vidtmp) )
 					return do_print_help();
 				g_an986_devinfo[0].m_vendor_id = (vidtmp >> 16) & 0xFFFF;
 				g_an986_devinfo[0].m_product_id = vidtmp & 0xFFFF;
-				--ac_min_one;
 				continue;
 			}
-			if ( !strncmp("thpri=", *i, 6) )
+			if ( !strncmp("thpri=", av[i], 6) )
 			{
-				thpricurx = (char *)(*i + 6);
+				thpricurx = &av[i][6];
 				if ( (look_ctype_table(*thpricurx) & 4) == 0 )
 					return do_print_help();
 				g_thpri = strtol(thpricurx, 0, 10);
 				if ( (unsigned int)(g_thpri - 9) >= 0x73 )
 					return do_print_help();
-				if ( !(*i)[6] )
+				if ( !*thpricurx )
 				{
-					--ac_min_one;
 					continue;
 				}
-				while ( (look_ctype_table(*thpricurx) & 4) != 0 )
+				while ( *thpricurx && (look_ctype_table(*thpricurx) & 4) != 0 )
 				{
-					thirpcurxchr = *++thpricurx;
-					if ( !thirpcurxchr )
-						break;
+					++thpricurx;
 				}
 			}
 			else
 			{
-				if ( strncmp("thstack=", *i, 8) )
+				if ( strncmp("thstack=", av[i], 8) )
 				{
 					loadmode_tmp = 'a';
-					if ( strcmp("AUTOLOAD", *i) != 0 )
+					if ( strcmp("AUTOLOAD", av[i]) != 0 )
 					{
 						loadmode_tmp = 'a';
-						if ( strcmp("lmode=AUTOLOAD", *i) != 0 )
+						if ( strcmp("lmode=AUTOLOAD", av[i]) != 0 )
 						{
 							loadmode_tmp = 't';
-							if ( strcmp("TESTLOAD", *i) != 0 )
+							if ( strcmp("TESTLOAD", av[i]) != 0 )
 							{
 								loadmode_tmp = 't';
-								if ( strcmp("lmode=TESTLOAD", *i) != 0 )
+								if ( strcmp("lmode=TESTLOAD", av[i]) != 0 )
 									return do_print_help();
 							}
 						}
 					}
 					g_load_mode = loadmode_tmp;
 					g_resident_flag = 0;
-					--ac_min_one;
 					continue;
 				}
-				thpricurx = (char *)(*i + 8);
+				thpricurx = &av[i][8];
 				if ( (look_ctype_table(*thpricurx) & 4) == 0 )
 					return do_print_help();
 				g_thstack = strtol(thpricurx, 0, 10);
-				if ( (*i)[8] )
+				while ( *thpricurx && ((look_ctype_table(*thpricurx) & 4) != 0) )
 				{
-					do
-					{
-						if ( (look_ctype_table(*thpricurx) & 4) == 0 )
-							break;
-						++thpricurx;
-					}
-					while ( *thpricurx );
+					++thpricurx;
 				}
 				if ( !strcmp(thpricurx, "KB") )
 				{
 					g_thstack <<= 10;
-					--ac_min_one;
 					continue;
 				}
 			}
-			thirpcurxchr = *thpricurx;
-			--ac_min_one;
-			if ( thirpcurxchr )
+			if ( *thpricurx )
 				return do_print_help();
 		}
 	}
