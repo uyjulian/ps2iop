@@ -498,7 +498,6 @@ int an986_inet_xmit(void *userdata, int unused)
   int xferres; // $s3
   sceInetPkt_t *pkt; // $s2
   u8 *rp; // $v1
-  u32 xrp2; // $s1
   struct an986_priv *priv;
   int dropped;
 
@@ -509,6 +508,8 @@ int an986_inet_xmit(void *userdata, int unused)
   pkt = sceInetPktDeQ(&priv->m_devops.sndq);
   if ( pkt )
   {
+  	u32 xrp2;
+
     if ( priv->m_start_stop_flag
       || priv->m_val_for_inet_stop
       || !priv->m_link_status
@@ -571,10 +572,6 @@ int an986_inet_xmit(void *userdata, int unused)
 int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len)
 {
 	int k; // $t0
-	unsigned int valcr2; // $v1
-	int i; // $a3
-	int j; // $a2
-	unsigned int xcurval; // $a0
 
 	bzero(&priv->m_usb_xfer_buf[8], 8);
 	if ( len >= 0 )
@@ -587,9 +584,15 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 			{
 				if ( (*ptr & 1) != 0 )
 				{
+					unsigned int valcr2;
+					int i;
+					unsigned int xcurval;
+
 					valcr2 = 0xFFFFFFFF;
 					for ( i = 0; i < 6; i += 1 )
 					{
+						int j;
+
 						for ( j = 0; j < 8; j += 1 )
 						{
 							xcurval = valcr2 >> 1;
@@ -1226,12 +1229,15 @@ int an986_ldd_disconnect(int devId)
 int an986_ldd_probe(int devId)
 {
 	UsbStringDescriptor *strdesc1; // $s2
-	int i; // $s0
+	
 	UsbDeviceDescriptor *devdesc; // $v0
-	char strlocbuf[16]; // [sp+10h] [-10h] BYREF
+	
 
 	if ( g_verbose )
 	{
+		int i;
+		char strlocbuf[16];
+
 		printf("an986_probe,%d: called", devId);
 		if ( sceUsbdGetDeviceLocation(devId, (u8 *)strlocbuf) )
 		{
