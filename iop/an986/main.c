@@ -576,73 +576,73 @@ int an986_inet_stop(struct an986_priv *priv)
 //----- (004008F4) --------------------------------------------------------
 int an986_inet_xmit(struct an986_priv *priv)
 {
-	int xferres; // $s3
-	sceInetPkt_t *pkt; // $s2
-	u8 *rp; // $v1
-	u8 *xrp2; // $s1
-	u8 *xrp3; // $v0
-	int rpbytesp; // $v1
-	sceInetDevOps_t *p_m_devops; // $a0
+  int xferres; // $s3
+  sceInetPkt_t *pkt; // $s2
+  u8 *rp; // $v1
+  u32 xrp2; // $s1
+  u8 *xrp3; // $v0
+  int rpbytesp; // $v1
+  sceInetDevOps_t *p_m_devops; // $a0
 
-	xferres = -1;
-	pkt = sceInetPktDeQ(&priv->m_devops.sndq);
-	if ( pkt )
-	{
-		if ( priv->m_start_stop_flag
-			|| priv->m_val_for_inet_stop
-			|| !priv->m_link_status
-			|| (rp = pkt->rp, xrp2 = (u8 *)(pkt->wp - rp), xrp3 = rp - 2, (unsigned int)(xrp2 - 60) >= 0x5AF)
-			|| (pkt->rp = xrp3, ((u8)xrp3 & 3) != 0) )
-		{
+  xferres = -1;
+  pkt = sceInetPktDeQ(&priv->m_devops.sndq);
+  if ( pkt )
+  {
+    if ( priv->m_start_stop_flag
+      || priv->m_val_for_inet_stop
+      || !priv->m_link_status
+      || (rp = pkt->rp, xrp2 = pkt->wp - rp, xrp3 = rp - 2, xrp2 - 60 >= 0x5AF)
+      || (pkt->rp = xrp3, ((uiptr)xrp3 & 3) != 0) )
+    {
 LABEL_15:
-			p_m_devops = &priv->m_devops;
-			if ( g_verbose )
-			{
-				printf("%s: ", priv->m_devops.interface);
-				printf("dropped");
-				printf("\n");
-				p_m_devops = &priv->m_devops;
-			}
+      p_m_devops = &priv->m_devops;
+      if ( g_verbose )
+      {
+        printf("%s: ", priv->m_devops.interface);
+        printf("dropped");
+        printf("\n");
+        p_m_devops = &priv->m_devops;
+      }
 LABEL_17:
-			++priv->m_tx_dropped;
-			sceInetFreePkt(p_m_devops, pkt);
-		}
-		else
-		{
-			*((u16 *)rp - 1) = (u16)xrp2;
-			rpbytesp = (int)&xrp2[priv->m_tx_bytes];
-			++priv->m_tx_packets;
-			priv->m_tx_bytes = rpbytesp;
-			if ( (((u8)xrp2 + 2) & 0x3F) == 0 )
-				++xrp2;
-			pkt->m_reserved1 = (void *)priv;
-			while ( 1 )
-			{
-				xferres = sceUsbdTransferPipe(
-										priv->m_bulk_out_pipe,
-										pkt->rp,
-										(u32)(xrp2 + 2),
-										0,
-										(sceUsbdDoneCallback)an986_tx_done,
-										pkt);
-				if ( !xferres )
-					break;
-				if ( xferres != 274 )
-				{
-					p_m_devops = &priv->m_devops;
-					if ( !g_verbose )
-						goto LABEL_17;
-					printf("%s: ", priv->m_devops.interface);
-					printf("sceUsbdBulkTransfer -> 0x%x", xferres);
-					printf("\n");
-					goto LABEL_15;
-				}
-				DelayThread(10000);
-			}
-		}
-	}
-	priv->m_val_for_alarm_cb = 10;
-	return xferres;
+      ++priv->m_tx_dropped;
+      sceInetFreePkt(p_m_devops, pkt);
+    }
+    else
+    {
+      *((u16 *)rp - 1) = xrp2;
+      rpbytesp = priv->m_tx_bytes + xrp2;
+      ++priv->m_tx_packets;
+      priv->m_tx_bytes = rpbytesp;
+      if ( (((u8)xrp2 + 2) & 0x3F) == 0 )
+        ++xrp2;
+      pkt->m_reserved1 = (void *)priv;
+      while ( 1 )
+      {
+        xferres = sceUsbdTransferPipe(
+                    priv->m_bulk_out_pipe,
+                    pkt->rp,
+                    xrp2 + 2,
+                    0,
+                    (sceUsbdDoneCallback)an986_tx_done,
+                    pkt);
+        if ( !xferres )
+          break;
+        if ( xferres != 274 )
+        {
+          p_m_devops = &priv->m_devops;
+          if ( !g_verbose )
+            goto LABEL_17;
+          printf("%s: ", priv->m_devops.interface);
+          printf("sceUsbdBulkTransfer -> 0x%x", xferres);
+          printf("\n");
+          goto LABEL_15;
+        }
+        DelayThread(10000);
+      }
+    }
+  }
+  priv->m_val_for_alarm_cb = 10;
+  return xferres;
 }
 // 403504: using guessed type int g_verbose;
 
@@ -1357,7 +1357,6 @@ struct an986_devinfo *do_check_static_descriptor(
 {
 	struct an986_devinfo *cur_devinfo; // $s1
 	int cur_devinfo_count; // $s0
-	const char **i; // $a2
 	int m_chip; // $v1
 	struct an986_devinfo *result; // $v0
 	const char *cur_chipname; // $a1
@@ -1366,16 +1365,16 @@ struct an986_devinfo *do_check_static_descriptor(
 		printf("an986: idVendor=0x%04x idProduct=0x%04x\n", id_vendor, id_product);
 	cur_devinfo = g_an986_devinfo;
 	cur_devinfo_count = 52;
-	for ( i = &g_an986_devinfo[0].m_device_name;
-				(const char *)id_vendor != *(i - 3) || (const char *)id_product != *(i - 1);
-				i += 5 )
+	for ( ;
+				id_vendor != cur_devinfo->m_vendor_id || id_product != cur_devinfo->m_product_id;
+				)
 	{
 		++cur_devinfo;
 		if ( cur_devinfo_count-- <= 0 )
 			return 0;
 	}
 	if ( is_probe && g_verbose )
-		printf("an986: %s, %s", *(i - 2), *i);
+		printf("an986: %s, %s", cur_devinfo->m_vendor_name, cur_devinfo->m_device_name);
 	m_chip = cur_devinfo->m_chip;
 	if ( cur_devinfo->m_chip == 'p' )
 	{
