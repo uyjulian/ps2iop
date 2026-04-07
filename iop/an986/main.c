@@ -503,6 +503,7 @@ void an986_tx_done(int aresult, int acount, void *userdata)
 	sceInetPkt_t *pkt_1; // $a1
 	sceInetPkt_t *pkt;
 
+	(void)acount;
 	pkt = (sceInetPkt_t *)userdata;
 	priv = (struct an986_priv *)pkt->m_reserved1;
 	condtmp = aresult == 0;
