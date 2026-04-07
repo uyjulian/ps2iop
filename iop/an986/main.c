@@ -1060,7 +1060,7 @@ struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name
 	{
 		if ( priv->m_thid > 0 )
 			DeleteThread(priv->m_thid);
-		if ( priv->m_thid > 0 )
+		if ( priv->m_efid > 0 )
 			DeleteEventFlag(priv->m_efid);
 		sceInetFreeMem(&priv->m_devops, priv);
 		priv = NULL;
