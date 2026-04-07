@@ -570,39 +570,34 @@ int an986_inet_xmit(void *userdata, int unused)
 //----- (00400AC4) --------------------------------------------------------
 int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len)
 {
-	int lendiv; // $v1
 	int k; // $t0
 	unsigned int valcr2; // $v1
 	int i; // $a3
-	u8 rshavle; // $v0
 	int j; // $a2
 	unsigned int xcurval; // $a0
 
 	bzero(&priv->m_usb_xfer_buf[8], 8);
 	if ( len >= 0 )
 	{
-		lendiv = len / 6;
 		if ( len != 6 * (len / 6) )
 			return -512;
 		if ( ptr )
 		{
-			for ( k = lendiv - 1; lendiv > 0; k -= 1 )
+			for ( k = 0; k < (len / 6); k += 1 )
 			{
 				if ( (*ptr & 1) != 0 )
 				{
-					valcr2 = -1;
-					for ( i = 5; i >= 0; i -= 1 )
+					valcr2 = 0xFFFFFFFF;
+					for ( i = 0; i < 6; i += 1 )
 					{
-						rshavle = *ptr;
-						ptr += 1;
-						for ( j = 7; j >= 0; j -= 1 )
+						for ( j = 0; j < 8; j += 1 )
 						{
 							xcurval = valcr2 >> 1;
-							if ( (((u8)valcr2 ^ rshavle) & 1) != 0 )
+							if ( (((u8)valcr2 ^ (u8)(*ptr >> j)) & 1) != 0 )
 								xcurval ^= 0xEDB88320;
 							valcr2 = xcurval;
-							rshavle >>= 1;
 						}
+						ptr += 1;
 					}
 					priv->m_usb_xfer_buf[((u8)(xcurval & 0x3F) >> 3) + 8] |= 1 << (xcurval & 7);
 				}
@@ -614,9 +609,7 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 		if ( ptr )
 			return -512;
 		for ( k = 0; k < 8; k += 1 )
-		{
-			priv->m_usb_xfer_buf[8 + k] = -1;
-		}
+			priv->m_usb_xfer_buf[k + 8] = 0xFF;
 	}
 	return control_positive_xfer(priv, 8, 8);
 }
