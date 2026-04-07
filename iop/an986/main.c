@@ -65,7 +65,7 @@ struct an986_devinfo
 // Function declarations
 
 int ef_wait_wrap(struct an986_priv *priv, u32 efbits);
-int ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits);
+void ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits);
 void an986_done(int efbits, int doneval, void *userdata);
 int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
 int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
@@ -179,46 +179,37 @@ int g_load_mode; // weak
 int ef_wait_wrap(struct an986_priv *priv, u32 efbits)
 {
 	int efret; // $s1
-	int result; // $v0
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
 
 	efret = WaitEventFlag(priv->m_efid, efbits, 17, efres);
 	if ( !efret )
 		return priv->m_ef_wait_retval;
-	result = -1;
 	if ( g_verbose )
 	{
 		printf("%s: ", priv->m_devops.interface);
 		printf("WaitEventFlag (%d)", efret);
 		printf("\n");
-		return -1;
 	}
-	return result;
+	return -1;
 }
 // 403504: using guessed type int g_verbose;
 
 //----- (00400088) --------------------------------------------------------
-int ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
+void ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
 {
-	int m_efid; // $a0
-	int retval; // $v0
 	int efret; // $s1
 
-	m_efid = priv->m_efid;
 	priv->m_ef_wait_retval = wait_retval;
-	retval = SetEventFlag(m_efid, efbits);
-	efret = retval;
-	if ( retval )
+	efret = SetEventFlag(priv->m_efid, efbits);
+	if ( efret )
 	{
-		retval = g_verbose;
 		if ( g_verbose )
 		{
 			printf("%s: ", priv->m_devops.interface);
 			printf("SetEventFlag (%d)", efret);
-			return printf("\n");
+			printf("\n");
 		}
 	}
-	return retval;
 }
 // 403504: using guessed type int g_verbose;
 
@@ -246,7 +237,6 @@ LABEL_4:
 int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
-	int result; // $v0
 	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
 	if ( xferlen < 2 )
@@ -265,15 +255,13 @@ int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 							priv);
 	if ( !xferret )
 		return ef_wait_wrap(priv, 4u);
-	result = -1;
 	if ( g_verbose )
 	{
 		printf("%s: ", priv->m_devops.interface);
 		printf("sceUsbdControlTransfer -> 0x%x", xferret);
 		printf("\n");
-		return -1;
 	}
-	return result;
+	return -1;
 }
 // 403504: using guessed type int g_verbose;
 
@@ -281,7 +269,6 @@ int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
-	int result; // $v0
 	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
 	if ( xferlen < 2 )
@@ -300,15 +287,13 @@ int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 							priv);
 	if ( !xferret )
 		return ef_wait_wrap(priv, 4u);
-	result = -1;
 	if ( g_verbose )
 	{
 		printf("%s: ", priv->m_devops.interface);
 		printf("sceUsbdControlTransfer -> 0x%x", xferret);
 		printf("\n");
-		return -1;
 	}
-	return result;
+	return -1;
 }
 // 403504: using guessed type int g_verbose;
 
@@ -316,19 +301,17 @@ int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *outptr)
 {
 	int result; // $v0
-	struct an986_priv *priv_tmp; // $a0
 
 	priv->m_usb_xfer_buf[37] = linkval & 0x1F;
 	priv->m_usb_xfer_buf[38] = 0;
 	priv->m_usb_xfer_buf[39] = 0;
 	priv->m_usb_xfer_buf[40] = (xval & 0x1F) | 0x40;
 	result = control_positive_xfer(priv, 37, 4);
-	priv_tmp = priv;
 	if ( !result )
 	{
 		while ( 1 )
 		{
-			result = control_negative_xfer(priv_tmp, 40, 1);
+			result = control_negative_xfer(priv, 40, 1);
 			if ( result )
 				break;
 			if ( (priv->m_usb_xfer_buf[40] & 0x80) != 0 )
@@ -342,7 +325,6 @@ int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *ou
 				return result;
 			}
 			DelayThread(10000);
-			priv_tmp = priv;
 		}
 	}
 	return result;
@@ -352,15 +334,6 @@ int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *ou
 void an986_rx_done(int aresult, int acount, void *userdata)
 {
 	struct an986_priv *priv; // $s0
-	sceInetDevOps_t *p_m_devops; // $a0
-	u8 rp_cur; // $v1
-	int rp_mask; // $v0
-	bool condtmp; // dc
-	int rpcur_4; // $v0
-	int rpcur_8; // $v0
-	int rpcur_10; // $v0
-	int rpcur_1e; // $v0
-	struct sceInetPktQ *p_rcvq; // $a0
 	sceInetPkt_t *pkt;
 
 	pkt = (sceInetPkt_t *)userdata;
@@ -373,66 +346,44 @@ void an986_rx_done(int aresult, int acount, void *userdata)
 	}
 	++priv->m_rx_packets;
 	pkt->m_reserved1 = 0;
-	p_m_devops = &priv->m_devops;
 	if ( priv->m_start_stop_flag || priv->m_val_for_inet_stop )
 		goto LABEL_23;
 	if ( acount < 68 )
 	{
 LABEL_19:
 		++priv->m_rx_errors;
-		p_m_devops = &priv->m_devops;
 LABEL_23:
-		sceInetFreePkt(p_m_devops, pkt);
+		sceInetFreePkt(&priv->m_devops, pkt);
 		goto LABEL_22;
 	}
-	rp_cur = pkt->rp[acount - 2];
-	if ( (rp_cur & 0x1F) != 0 )
+	if ( (pkt->rp[acount - 2] & 0x1F) != 0 )
 	{
-		rp_mask = rp_cur & 2;
 		if ( (pkt->rp[acount - 2] & 1) != 0 )
 		{
 			++priv->m_multicast;
-			rp_mask = rp_cur & 2;
 		}
-		condtmp = rp_mask == 0;
-		rpcur_4 = rp_cur & 4;
-		if ( !condtmp )
+		if ( (pkt->rp[acount - 2] & 2) != 0 )
 		{
 			++priv->m_err_rx_length;
-			rpcur_4 = rp_cur & 4;
 		}
-		condtmp = rpcur_4 == 0;
-		rpcur_8 = rp_cur & 8;
-		if ( !condtmp )
+		if ( (pkt->rp[acount - 2] & 4) != 0 )
 		{
 			++priv->m_err_rx_length;
-			rpcur_8 = rp_cur & 8;
 		}
-		condtmp = rpcur_8 == 0;
-		rpcur_10 = rp_cur & 0x10;
-		if ( !condtmp )
+		if ( (pkt->rp[acount - 2] & 8) != 0 )
 		{
 			++priv->m_err_rx_crc;
-			rpcur_10 = rp_cur & 0x10;
 		}
-		condtmp = rpcur_10 == 0;
-		rpcur_1e = rp_cur & 0x1E;
-		if ( !condtmp )
+		if ( (pkt->rp[acount - 2] & 0x10) != 0 )
 		{
 			++priv->m_err_rx_frame;
-			rpcur_1e = rp_cur & 0x1E;
 		}
-		p_rcvq = &priv->m_devops.rcvq;
-		if ( rpcur_1e )
+		if ( (pkt->rp[acount - 2] & 0x1E) )
 			goto LABEL_19;
-	}
-	else
-	{
-		p_rcvq = &priv->m_devops.rcvq;
 	}
 	priv->m_rx_bytes = priv->m_rx_bytes - 8 + acount;
 	pkt->wp += acount - 8;
-	sceInetPktEnQ(p_rcvq, pkt);
+	sceInetPktEnQ(&priv->m_devops.rcvq, pkt);
 	SetEventFlag(priv->m_devops.evfid, 4u);
 LABEL_22:
 	bulk_xfer(priv);
@@ -443,38 +394,26 @@ LABEL_22:
 //----- (004005E0) --------------------------------------------------------
 void bulk_xfer(struct an986_priv *priv)
 {
-	sceInetDevOps_t *devops_1; // $s3
-	sceInetPkt_t *pkt_1; // $v0
-	sceInetPkt_t *pkt_2; // $s0
-	int state_1; // $a0
-	u8 *rp; // $v0
-	u8 *wp; // $v1
+	sceInetPkt_t *pkt; // $v0
 	int xferret; // $s1
-	sceInetDevOps_t *devops_2; // $a0
 	int state; // [sp+18h] [-8h] BYREF
 
-	devops_1 = &priv->m_devops;
-	pkt_1 = sceInetAllocPkt(&priv->m_devops, 1524);
-	pkt_2 = pkt_1;
-	if ( pkt_1 )
+	pkt = sceInetAllocPkt(&priv->m_devops, 1524);
+	if ( pkt )
 	{
-		rp = pkt_1->rp;
-		wp = pkt_2->wp;
-		pkt_2->m_reserved1 = (void *)priv;
-		pkt_2->rp = rp + 2;
-		pkt_2->wp = wp + 2;
-		xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt_2->wp, 0x5F2u, 0, an986_rx_done, pkt_2);
+		pkt->m_reserved1 = (void *)priv;
+		pkt->rp += 2;
+		pkt->wp += 2;
+		xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt->wp, 0x5F2u, 0, an986_rx_done, pkt);
 		if ( xferret )
 		{
-			devops_2 = devops_1;
 			if ( g_verbose )
 			{
 				printf("%s: ", priv->m_devops.interface);
 				printf("sceUsbdBulkTransfer -> 0x%x\n", xferret);
 				printf("\n");
-				devops_2 = devops_1;
 			}
-			sceInetFreePkt(devops_2, pkt_2);
+			sceInetFreePkt(&priv->m_devops, pkt);
 		}
 	}
 	else
@@ -486,9 +425,8 @@ void bulk_xfer(struct an986_priv *priv)
 			printf("\n");
 		}
 		CpuSuspendIntr(&state);
-		state_1 = state;
 		++priv->m_cnt_for_bulk_xfer;
-		CpuResumeIntr(state_1);
+		CpuResumeIntr(state);
 	}
 }
 // 403504: using guessed type int g_verbose;
@@ -497,61 +435,45 @@ void bulk_xfer(struct an986_priv *priv)
 void an986_tx_done(int aresult, int acount, void *userdata)
 {
 	struct an986_priv *priv; // $s1
-	bool condtmp; // dc
-	sceInetDevOps_t *p_m_devops; // $a0
-	sceInetPkt_t *pkt_1; // $a1
 	sceInetPkt_t *pkt;
 
 	(void)acount;
 	pkt = (sceInetPkt_t *)userdata;
 	priv = (struct an986_priv *)pkt->m_reserved1;
-	condtmp = aresult == 0;
-	p_m_devops = &priv->m_devops;
-	if ( condtmp )
+	if ( aresult == 0 )
 		goto LABEL_4;
-	pkt_1 = pkt;
 	if ( g_verbose )
 	{
 		printf("%s: ", priv->m_devops.interface);
 		printf("%s: -> 0x%x\n", "an986_tx_done", aresult);
 		printf("\n");
-		p_m_devops = &priv->m_devops;
 LABEL_4:
-		pkt_1 = pkt;
 	}
 	pkt->m_reserved1 = 0;
-	sceInetFreePkt(p_m_devops, pkt_1);
+	sceInetFreePkt(&priv->m_devops, pkt);
 }
 // 403504: using guessed type int g_verbose;
 
 //----- (004007AC) --------------------------------------------------------
 unsigned int alarm_cb(void *userdata)
 {
-	int m_val_for_alarm_cb; // $v0
-	bool tmpneg; // dc
-	int tmpval; // $v0
 	struct an986_priv *priv;
 
 	priv = (struct an986_priv *)userdata;
-	m_val_for_alarm_cb = priv->m_val_for_alarm_cb;
-	tmpneg = m_val_for_alarm_cb <= 0;
-	tmpval = m_val_for_alarm_cb - 1;
-	if ( !tmpneg )
-		priv->m_val_for_alarm_cb = tmpval;
+	if ( (int)(priv->m_val_for_alarm_cb) > 0 )
+		priv->m_val_for_alarm_cb -= 1;
 	return priv->m_sysclk.lo;
 }
 
 //----- (004007DC) --------------------------------------------------------
 int an986_inet_start(void *userdata, int unused)
 {
-	int m_val_for_inet_start; // $v0
 	struct an986_priv *priv;
 
 	(void)unused;
 	priv = (struct an986_priv *)userdata;
-	m_val_for_inet_start = priv->m_val_for_inet_start;
 	priv->m_start_stop_flag = 0;
-	if ( m_val_for_inet_start )
+	if ( priv->m_val_for_inet_start )
 		SetEventFlag(priv->m_devops.evfid, 1u);
 	else
 		ef_set_wrap(priv, 0, 2u);
@@ -561,14 +483,12 @@ int an986_inet_start(void *userdata, int unused)
 //----- (00400840) --------------------------------------------------------
 int an986_inet_stop(void *userdata, int unused)
 {
-	int m_val_for_inet_stop; // $v1
 	struct an986_priv *priv;
 
 	(void)unused;
 	priv = (struct an986_priv *)userdata;
-	m_val_for_inet_stop = priv->m_val_for_inet_stop;
 	priv->m_start_stop_flag = 1;
-	if ( m_val_for_inet_stop )
+	if ( priv->m_val_for_inet_stop )
 	{
 		TerminateThread(priv->m_thid);
 		DeleteThread(priv->m_thid);
@@ -588,9 +508,6 @@ int an986_inet_xmit(void *userdata, int unused)
   sceInetPkt_t *pkt; // $s2
   u8 *rp; // $v1
   u32 xrp2; // $s1
-  u8 *xrp3; // $v0
-  int rpbytesp; // $v1
-  sceInetDevOps_t *p_m_devops; // $a0
   struct an986_priv *priv;
 
 	(void)unused;
@@ -602,28 +519,25 @@ int an986_inet_xmit(void *userdata, int unused)
     if ( priv->m_start_stop_flag
       || priv->m_val_for_inet_stop
       || !priv->m_link_status
-      || (rp = pkt->rp, xrp2 = pkt->wp - rp, xrp3 = rp - 2, xrp2 - 60 >= 0x5AF)
-      || (pkt->rp = xrp3, ((uiptr)xrp3 & 3) != 0) )
+      || (rp = pkt->rp, xrp2 = pkt->wp - rp, xrp2 - 60 >= 0x5AF)
+      || (pkt->rp = rp - 2, ((uiptr)(pkt->rp) & 3) != 0) )
     {
 LABEL_15:
-      p_m_devops = &priv->m_devops;
       if ( g_verbose )
       {
         printf("%s: ", priv->m_devops.interface);
         printf("dropped");
         printf("\n");
-        p_m_devops = &priv->m_devops;
       }
 LABEL_17:
       ++priv->m_tx_dropped;
-      sceInetFreePkt(p_m_devops, pkt);
+      sceInetFreePkt(&priv->m_devops, pkt);
     }
     else
     {
       *((u16 *)rp - 1) = xrp2;
-      rpbytesp = priv->m_tx_bytes + xrp2;
       ++priv->m_tx_packets;
-      priv->m_tx_bytes = rpbytesp;
+      priv->m_tx_bytes += xrp2;
       if ( (((u8)xrp2 + 2) & 0x3F) == 0 )
         ++xrp2;
       pkt->m_reserved1 = (void *)priv;
@@ -640,7 +554,6 @@ LABEL_17:
           break;
         if ( xferres != 274 )
         {
-          p_m_devops = &priv->m_devops;
           if ( !g_verbose )
             goto LABEL_17;
           printf("%s: ", priv->m_devops.interface);
@@ -662,8 +575,6 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 {
 	int result; // $v0
 	int curindx; // $a3
-	struct an986_priv *priv_1; // $v0
-	struct an986_priv *priv_2; // $a0
 	int lendiv; // $v1
 	int lendivm1; // $t0
 	int lendivm1_1; // $v0
@@ -680,7 +591,6 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 		result = -512;
 		if ( len != 6 * (len / 6) )
 			return result;
-		priv_2 = priv;
 		if ( ptr )
 		{
 			lendivm1 = lendiv - 1;
@@ -701,7 +611,7 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 								if ( (((u8)valcr2 ^ rshavle) & 1) != 0 )
 									xcurval ^= 0xEDB88320;
 								valcr2 = xcurval;
-								rshavle = rshavle >> 1;
+								rshavle >>= 1;
 							}
 						}
 						priv->m_usb_xfer_buf[((u8)(xcurval & 0x3F) >> 3) + 8] |= 1 << (xcurval & 7);
@@ -710,7 +620,6 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 					--lendivm1;
 				}
 				while ( lendivm1_1 > 0 );
-				priv_2 = priv;
 			}
 		}
 	}
@@ -720,16 +629,14 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 		if ( ptr )
 			return result;
 		curindx = 0;
-		priv_1 = priv;
 		do
 		{
-			priv_1->m_usb_xfer_buf[8] = -1;
-			priv_1 = (struct an986_priv *)((char *)priv + ++curindx);
+			priv->m_usb_xfer_buf[8 + curindx] = -1;
+			++curindx;
 		}
 		while ( curindx < 8 );
-		priv_2 = priv;
 	}
-	return control_positive_xfer(priv_2, 8, 8);
+	return control_positive_xfer(priv, 8, 8);
 }
 
 //----- (00400C28) --------------------------------------------------------
@@ -737,7 +644,6 @@ int an986_inet_control(void *userdata, int code, void *ptr, int len)
 {
 	int m_nego_status; // $v1
 	int *p_m_err_rx_over; // $s0
-	int m_thid; // $a0
 	int priority; // [sp+10h] [-8h] BYREF
 	struct an986_priv *priv;
 
@@ -830,9 +736,8 @@ int an986_inet_control(void *userdata, int code, void *ptr, int len)
 					m_nego_status = -403;
 					if ( (unsigned int)(priority - 9) < 0x73 )
 					{
-						m_thid = priv->m_thid;
 						g_thpri = priority;
-						m_nego_status = ChangeThreadPriority(m_thid, priority);
+						m_nego_status = ChangeThreadPriority(priv->m_thid, priority);
 					}
 				}
 			}
@@ -856,34 +761,13 @@ int an986_inet_control(void *userdata, int code, void *ptr, int len)
 void inet_thread_proc(void *userdata)
 {
 	int result; // $v0
-	u16 m_subclass; // $v0
 	int xferret; // $s0
 	int xidx_1; // $s0
-	struct an986_priv *priv_tmp4; // $s2
-	struct an986_priv *priv_tmp5; // $a0
 	int regres; // $s0
-	bool resres; // dc
-	struct an986_priv *priv_tmp6; // $a0
 	int idxcnt; // $s2
 	int indindx2; // $s0
-	struct an986_priv *priv_tmp3; // $a0
-	int outval_1_1; // $a3
-	u16 cxtr1; // $v0
-	u16 cxtr2; // $v1
-	int negoval_tmp; // $a0
-	const char *spdstr; // $a2
-	const char *dupval; // $a3
 	int i; // $s0
-	int m_start_stop_flag; // $v0
 	int indindx; // $s0
-	struct an986_priv *priv_tmp7; // $a0
-	u8 xfer43buftmp; // $v1
-	int masktmp; // $v0
-	int plusone_1; // $v1
-	int valuse; // $a0
-	int plusaddx; // $v1
-	int state_1; // $a0
-	struct an986_priv *priv_tmp2; // $a0
 	UsbDeviceRequest devreq; // [sp+20h] [-18h] BYREF
 	u16 outval_1; // [sp+28h] [-10h] BYREF
 	u16 outval_2; // [sp+2Ah] [-Eh] BYREF
@@ -897,10 +781,9 @@ void inet_thread_proc(void *userdata)
 	{
 		devreq.requesttype = 0;
 		devreq.request = 9;
-		m_subclass = priv->m_subclass;
 		devreq.index = 0;
 		devreq.length = 0;
-		devreq.value = m_subclass;
+		devreq.value = priv->m_subclass;
 		xferret = sceUsbdTransferPipe(priv->m_ctrl_pipe, 0, 0, &devreq, an986_done, priv);
 		if ( xferret )
 		{
@@ -922,19 +805,17 @@ void inet_thread_proc(void *userdata)
 				xidx_1 = 0;
 				if ( !result )
 				{
-					priv_tmp4 = priv;
 LABEL_8:
 					priv->m_usb_xfer_buf[32] = xidx_1;
 					priv->m_usb_xfer_buf[33] = 0;
 					priv->m_usb_xfer_buf[34] = 0;
 					priv->m_usb_xfer_buf[35] = 2;
 					result = control_positive_xfer(priv, 32, 4);
-					priv_tmp5 = priv;
 					if ( !result )
 					{
 						while ( 1 )
 						{
-							result = control_negative_xfer(priv_tmp5, 35, 1);
+							result = control_negative_xfer(priv, 35, 1);
 							if ( result )
 								break;
 							if ( (priv->m_usb_xfer_buf[35] & 4) != 0 )
@@ -943,9 +824,8 @@ LABEL_8:
 								++xidx_1;
 								if ( result )
 									return;
-								priv_tmp4->m_hwaddr_tmp[0] = priv->m_usb_xfer_buf[33];
-								priv_tmp4->m_hwaddr_tmp[1] = priv->m_usb_xfer_buf[34];
-								priv_tmp4 = (struct an986_priv *)((char *)priv_tmp4 + 2);
+								priv->m_hwaddr_tmp[(xidx_1 * 2) + 0] = priv->m_usb_xfer_buf[33];
+								priv->m_hwaddr_tmp[(xidx_1 * 2) + 1] = priv->m_usb_xfer_buf[34];
 								if ( xidx_1 < 3 )
 									goto LABEL_8;
 								bcopy(priv->m_hwaddr_tmp, &priv->m_usb_xfer_buf[16], 6);
@@ -972,35 +852,31 @@ LABEL_8:
 											{
 												if ( !priv->m_is_pegasus2
 													|| ((priv->m_usb_xfer_buf[123] = 3,
-															resres = control_positive_xfer(priv, 123, 1) != 0,
 															result = 2,
-															!resres)
+															control_positive_xfer(priv, 123, 1) == 0)
 													&& (priv->m_usb_xfer_buf[123] = 2, (result = control_positive_xfer(priv, 123, 1)) == 0)) )
 												{
 													priv->m_usb_xfer_buf[1] = 8;
 													result = control_positive_xfer(priv, 1, 1);
-													priv_tmp6 = priv;
 													if ( !result )
 													{
 														while ( 1 )
 														{
-															result = control_negative_xfer(priv_tmp6, 1, 1);
+															result = control_negative_xfer(priv, 1, 1);
 															if ( result )
 																break;
 															idxcnt = 0;
 															if ( (priv->m_usb_xfer_buf[1] & 8) == 0 )
 															{
 																indindx2 = 0;
-																priv_tmp3 = priv;
 																while ( 1 )
 																{
-																	result = control_inout_xfer(priv_tmp3, idxcnt, 1, &outval_1);
+																	result = control_inout_xfer(priv, idxcnt, 1, &outval_1);
 																	if ( result )
 																		return;
 																	if ( outval_1 == 0xFFFF )
 																	{
 																		++idxcnt;
-																		priv_tmp3 = priv;
 																		if ( idxcnt >= 32 )
 																		{
 																			result = g_verbose;
@@ -1016,54 +892,33 @@ LABEL_8:
 																	{
 																		if ( (outval_1 & 0x24) == 36 )
 																		{
-																			outval_1_1 = outval_1;
 																			priv->m_link_status = 1;
 																			printf(
 																				"%s: Auto-Nego complete and valid link detected (%d,BMSR=%04x)\n",
 																				priv->m_devops.interface,
 																				idxcnt,
-																				outval_1_1);
+																				outval_1);
 																			result = control_inout_xfer(priv, idxcnt, 4, priv->m_usb_ctrl_buf);
 																			if ( !result )
 																			{
 																				result = control_inout_xfer(priv, idxcnt, 5, &priv->m_usb_ctrl_buf[1]);
 																				if ( !result )
 																				{
-																					cxtr1 = priv->m_usb_ctrl_buf[0];
-																					cxtr2 = priv->m_usb_ctrl_buf[1];
+																					outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
 																					priv->m_usb_xfer_buf[1] = 0;
-																					outval_1 = cxtr1 & cxtr2;
-																					if ( (cxtr1 & cxtr2 & 0x140) != 0 )
+																					if ( (outval_1 & 0x140) != 0 )
 																						priv->m_usb_xfer_buf[1] |= 0x20u;
 																					if ( (outval_1 & 0x180) != 0 )
 																						priv->m_usb_xfer_buf[1] |= 0x10u;
 																					result = control_positive_xfer(priv, 1, 1);
 																					if ( !result )
 																					{
-																						if ( (outval_1 & 0x180) != 0 )
-																						{
-																							negoval_tmp = 4;
-																							if ( (outval_1 & 0x140) != 0 )
-																								negoval_tmp = 8;
-																						}
-																						else
-																						{
-																							negoval_tmp = 1;
-																							if ( (outval_1 & 0x140) != 0 )
-																								negoval_tmp = 2;
-																						}
-																						priv->m_nego_status = negoval_tmp;
-																						spdstr = "10BaseT";
-																						if ( (outval_1 & 0x180) != 0 )
-																							spdstr = "100BaseTX";
-																						dupval = "Half";
-																						if ( (outval_1 & 0x140) != 0 )
-																							dupval = "Full";
+																						priv->m_nego_status = ( (outval_1 & 0x180) != 0 ) ? (( (outval_1 & 0x140) != 0 ) ? 8 : 4) : (( (outval_1 & 0x140) != 0 ) ? 2 : 1);
 																						printf(
 																							"%s: %s %s Duplex Mode (ANAR=0x%04x ANLPAR=0x%04x)\n",
 																							priv->m_devops.interface,
-																							spdstr,
-																							dupval,
+																							( (outval_1 & 0x180) != 0 ) ? "100BaseTX" : "10BaseT",
+																							( (outval_1 & 0x140) != 0 ) ? "Full" : "Half",
 																							priv->m_usb_ctrl_buf[0],
 																							priv->m_usb_ctrl_buf[1]);
 																						result = control_inout_xfer(priv, idxcnt, 2, &outval_2);
@@ -1092,9 +947,8 @@ LABEL_8:
 																									{
 																										for ( i = 0; i < 8; ++i )
 																											bulk_xfer(priv);
-																										m_start_stop_flag = priv->m_start_stop_flag;
 																										priv->m_val_for_inet_start = 1;
-																										if ( !m_start_stop_flag )
+																										if ( !priv->m_start_stop_flag )
 																											SetEventFlag(priv->m_devops.evfid, 1u);
 																										priv->m_val_for_alarm_cb = 10;
 																										USec2SysClock(0xF4240u, &priv->m_sysclk);
@@ -1106,35 +960,28 @@ LABEL_8:
 																										priv->m_timer_active = 1;
 																										while ( 1 )
 																										{
-																											priv_tmp7 = priv;
 																											do
 																											{
-																												control_negative_xfer(priv_tmp7, 43, 5);
-																												xfer43buftmp = priv->m_usb_xfer_buf[43];
-																												if ( (xfer43buftmp & 0x6C) != 0 )
+																												control_negative_xfer(priv, 43, 5);
+																												if ( (priv->m_usb_xfer_buf[43] & 0x6C) != 0 )
 																												{
-																													masktmp = xfer43buftmp & 0xC;
 																													if ( (priv->m_usb_xfer_buf[43] & 0x60) != 0 )
 																													{
 																														++priv->m_collisions;
-																														masktmp = xfer43buftmp & 0xC;
 																													}
-																													if ( masktmp )
+																													if ( (priv->m_usb_xfer_buf[43] & 0xC) != 0 )
 																														++priv->m_err_tx_carrier;
 																													++priv->m_tx_errors;
 																												}
 																												if ( (priv->m_usb_xfer_buf[45] & 1) != 0 )
 																												{
-																													plusone_1 = priv->m_rx_errors + 1;
 																													++priv->m_err_rx_over;
-																													priv->m_rx_errors = plusone_1;
+																													priv->m_rx_errors += 1;
 																												}
-																												valuse = priv->m_usb_xfer_buf[47];
 																												if ( priv->m_usb_xfer_buf[47] )
 																												{
-																													plusaddx = priv->m_rx_errors + valuse;
-																													priv->m_err_rx_missed += valuse;
-																													priv->m_rx_errors = plusaddx;
+																													priv->m_err_rx_missed += priv->m_usb_xfer_buf[47];
+																													priv->m_rx_errors += priv->m_usb_xfer_buf[47];
 																												}
 																												DelayThread(100000);
 																												if ( ++indindx >= 11 )
@@ -1143,13 +990,11 @@ LABEL_8:
 																													if ( priv->m_cnt_for_bulk_xfer > 0 )
 																													{
 																														CpuSuspendIntr(&state);
-																														state_1 = state;
 																														--priv->m_cnt_for_bulk_xfer;
-																														CpuResumeIntr(state_1);
+																														CpuResumeIntr(state);
 																														bulk_xfer(priv);
 																													}
 																												}
-																												priv_tmp7 = priv;
 																											}
 																											while ( priv->m_val_for_alarm_cb > 0 );
 																											result = control_inout_xfer(priv, idxcnt, 1, &outval_1);
@@ -1158,9 +1003,9 @@ LABEL_8:
 																											if ( (outval_1 & 4) == 0 )
 																											{
 																												priv->m_link_status = 0;
-																												for ( priv_tmp2 = priv; ; priv_tmp2 = priv )
+																												for ( ; ;  )
 																												{
-																													result = control_inout_xfer(priv_tmp2, idxcnt, 1, &outval_1);
+																													result = control_inout_xfer(priv, idxcnt, 1, &outval_1);
 																													if ( result )
 																														break;
 																													if ( (outval_1 & 0x24) == 36 )
@@ -1186,14 +1031,12 @@ LABEL_86:
 																		}
 																		DelayThread(100000);
 																		++indindx2;
-																		priv_tmp3 = priv;
 																		if ( indindx2 >= 30 )
 																			priv->m_link_status = 0;
 																	}
 																}
 															}
 															DelayThread(10000);
-															priv_tmp6 = priv;
 														}
 													}
 												}
@@ -1211,7 +1054,6 @@ LABEL_86:
 								return;
 							}
 							DelayThread(10000);
-							priv_tmp5 = priv;
 						}
 					}
 				}
@@ -1224,98 +1066,85 @@ LABEL_86:
 //----- (00401760) --------------------------------------------------------
 struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2)
 {
-	struct an986_priv *priv_1; // $s0
-	struct an986_priv *priv_2; // $v0
-	int magictmp1; // $v0
-	int efid; // $v0
-	sceInetDevOps_t *p_m_devops; // $a0
-	int thid; // $v0
+	struct an986_priv *priv; // $s0
 	int started; // $s1
 	iop_event_t efparam; // [sp+10h] [-28h] BYREF
 	iop_thread_t thparam; // [sp+20h] [-18h] BYREF
 
-	priv_1 = (struct an986_priv *)sceInetAllocMem(0, 888);
-	if ( priv_1 )
+	priv = (struct an986_priv *)sceInetAllocMem(0, 888);
+	if ( priv )
 	{
-		bzero(priv_1, 888);
-		magictmp1 = g_magic_count;
-		priv_1->m_is_pegasus2 = is_pegasus2;
-		priv_1->m_magic_cur = magictmp1;
-		g_magic_count = magictmp1 + 1;
-		sprintf(priv_1->m_devops.interface, "an986,%d", magictmp1);
-		priv_1->m_devops.module_name = "an986";
-		priv_1->m_devops.prot_ver = 2;
-		priv_1->m_devops.flags = 1040;
-		priv_1->m_devops.start = an986_inet_start;
-		priv_1->m_devops.stop = an986_inet_stop;
-		priv_1->m_devops.xmit = an986_inet_xmit;
-		priv_1->m_devops.control = an986_inet_control;
-		priv_1->m_devops.vendor_name = vendor_name;
-		priv_1->m_devops.device_name = device_name;
-		priv_1->m_devops.impl_ver = 0;
-		priv_1->m_devops.priv = priv_1;
-		priv_1->m_devops.mtu = 1500;
+		bzero(priv, 888);
+		priv->m_is_pegasus2 = is_pegasus2;
+		priv->m_magic_cur = g_magic_count;
+		sprintf(priv->m_devops.interface, "an986,%d", priv->m_magic_cur);
+		g_magic_count += 1;
+		priv->m_devops.module_name = "an986";
+		priv->m_devops.prot_ver = 2;
+		priv->m_devops.flags = 1040;
+		priv->m_devops.start = an986_inet_start;
+		priv->m_devops.stop = an986_inet_stop;
+		priv->m_devops.xmit = an986_inet_xmit;
+		priv->m_devops.control = an986_inet_control;
+		priv->m_devops.vendor_name = vendor_name;
+		priv->m_devops.device_name = device_name;
+		priv->m_devops.impl_ver = 0;
+		priv->m_devops.priv = priv;
+		priv->m_devops.mtu = 1500;
 		memset(&efparam, 0, sizeof(efparam));
-		efid = CreateEventFlag(&efparam);
-		priv_1->m_efid = efid;
-		if ( efid > 0 )
+		priv->m_efid = CreateEventFlag(&efparam);
+		if ( priv->m_efid > 0 )
 		{
 			thparam.attr = 0x2000000;
 			thparam.thread = inet_thread_proc;
 			thparam.option = 0;
 			thparam.priority = g_thpri;
 			thparam.stacksize = g_thstack;
-			thid = CreateThread(&thparam);
-			priv_1->m_thid = thid;
-			if ( thid > 0 )
+			priv->m_thid = CreateThread(&thparam);
+			if ( priv->m_thid > 0 )
 			{
-				started = StartThread(thid, priv_1);
-				priv_2 = priv_1;
+				started = StartThread(priv->m_thid, priv);
 				if ( !started )
-					return priv_2;
+					return priv;
 				if ( g_verbose )
 				{
-					printf("%s: ", priv_1->m_devops.interface);
+					printf("%s: ", priv->m_devops.interface);
 					printf("StartThread -> %d", started);
 					printf("\n");
 				}
-				DeleteThread(priv_1->m_thid);
+				DeleteThread(priv->m_thid);
 			}
 			else if ( g_verbose )
 			{
-				printf("%s: ", priv_1->m_devops.interface);
-				printf("CreateThread -> %d", priv_1->m_thid);
+				printf("%s: ", priv->m_devops.interface);
+				printf("CreateThread -> %d", priv->m_thid);
 				printf("\n");
 			}
-			DeleteEventFlag(priv_1->m_efid);
-			p_m_devops = &priv_1->m_devops;
+			DeleteEventFlag(priv->m_efid);
 		}
 		else
 		{
-			p_m_devops = &priv_1->m_devops;
 			if ( g_verbose )
 			{
-				printf("%s: ", priv_1->m_devops.interface);
-				printf("CreateEventFlag -> %d", priv_1->m_efid);
+				printf("%s: ", priv->m_devops.interface);
+				printf("CreateEventFlag -> %d", priv->m_efid);
 				printf("\n");
-				p_m_devops = &priv_1->m_devops;
 			}
 		}
-		sceInetFreeMem(p_m_devops, priv_1);
+		sceInetFreeMem(&priv->m_devops, priv);
 		return 0;
 	}
 	else
 	{
-		priv_2 = 0;
+		priv = 0;
 		if ( g_verbose )
 		{
 			printf("%s: ", (const char *)320);
 			printf("sceInetAllocMem(%d) -> no space or not ready", 888);
 			printf("\n");
-			return 0;
 		}
 	}
-	return priv_2;
+	return priv;
 }
 // 4034F8: using guessed type int g_thpri;
 // 4034FC: using guessed type int g_thstack;
@@ -1330,9 +1159,6 @@ struct an986_devinfo *do_check_static_descriptor(
 {
 	struct an986_devinfo *cur_devinfo; // $s1
 	int cur_devinfo_count; // $s0
-	int m_chip; // $v1
-	struct an986_devinfo *result; // $v0
-	const char *cur_chipname; // $a1
 
 	if ( is_probe && g_verbose )
 		printf("an986: idVendor=0x%04x idProduct=0x%04x\n", id_vendor, id_product);
@@ -1348,13 +1174,10 @@ struct an986_devinfo *do_check_static_descriptor(
 	}
 	if ( is_probe && g_verbose )
 		printf("an986: %s, %s", cur_devinfo->m_vendor_name, cur_devinfo->m_device_name);
-	m_chip = cur_devinfo->m_chip;
 	if ( cur_devinfo->m_chip == 'p' )
 	{
-		result = cur_devinfo;
 		if ( is_probe )
 		{
-			result = cur_devinfo;
 			if ( g_verbose )
 			{
 				printf(" [pegasus] -> supported\n");
@@ -1362,12 +1185,10 @@ struct an986_devinfo *do_check_static_descriptor(
 			}
 		}
 	}
-	else if ( m_chip == 'P' )
+	else if ( cur_devinfo->m_chip == 'P' )
 	{
-		result = cur_devinfo;
 		if ( is_probe )
 		{
-			result = cur_devinfo;
 			if ( g_verbose )
 			{
 				printf(" [pegasusII] -> supported\n");
@@ -1377,21 +1198,16 @@ struct an986_devinfo *do_check_static_descriptor(
 	}
 	else
 	{
-		result = 0;
+		cur_devinfo = 0;
 		if ( is_probe )
 		{
-			result = 0;
 			if ( g_verbose )
 			{
-				cur_chipname = "unknown";
-				if ( m_chip == 'k' )
-					cur_chipname = "klsi";
-				printf(" [%s] -> unsupported\n", cur_chipname);
-				return 0;
+				printf(" [%s] -> unsupported\n", ( cur_devinfo->m_chip == 'k' ) ? "klsi" : "unknown");
 			}
 		}
 	}
-	return result;
+	return cur_devinfo;
 }
 // 403090: using guessed type an986_devinfo g_an986_devinfo[53];
 // 403504: using guessed type int g_verbose;
@@ -1400,103 +1216,81 @@ struct an986_devinfo *do_check_static_descriptor(
 int an986_ldd_connect(int devId)
 {
 	UsbDeviceDescriptor *devdesc2; // $s0
-	int result; // $v0
-	struct an986_devinfo *v4; // $s5
+	struct an986_devinfo *cur_devinfo; // $s5
 	UsbDeviceDescriptor *devdesc; // $s6
 	UsbInterfaceDescriptor *intfdesc; // $a1
 	UsbEndpointDescriptor *bulk_in_desc; // $s3
 	UsbEndpointDescriptor *bulk_out_desc; // $s1
 	UsbEndpointDescriptor *int_in_desc; // $s2
 	struct an986_priv *mem_for_inet; // $s0
-	int pipe1; // $v0
-	int pipe2; // $v0
-	int pipe3; // $v0
-	int pipe4; // $v0
 
 	if ( g_verbose )
 		printf("an986_attach,%d: called\n", devId);
 	devdesc2 = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, 0, 1u);
-	result = -1;
 	if ( devdesc2 )
 	{
-		v4 = do_check_static_descriptor(0, devdesc2->idVendor, devdesc2->idProduct);
-		if ( !v4 )
+		cur_devinfo = do_check_static_descriptor(0, devdesc2->idVendor, devdesc2->idProduct);
+		if ( !cur_devinfo )
 			return -1;
 		devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc2, 2u);
 		if ( !devdesc )
 			return -1;
-		result = -1;
 		if ( devdesc->bDeviceClass != 1 )
-			return result;
+			return -1;
 		intfdesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc, 4u);
 		if ( !intfdesc )
 			return -1;
-		result = -1;
 		if ( intfdesc->bNumEndpoints == 3 )
 		{
 			bulk_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, intfdesc, 5u);
-			result = -1;
 			if ( bulk_in_desc )
 			{
-				result = -1;
 				if ( (bulk_in_desc->bEndpointAddress & 0x80) != 0 )
 				{
-					result = -1;
 					if ( (bulk_in_desc->bmAttributes & 3) == 2 )
 					{
 						bulk_out_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_in_desc, 5u);
-						result = -1;
 						if ( bulk_out_desc )
 						{
-							result = -1;
 							if ( (bulk_out_desc->bEndpointAddress & 0x80) == 0 )
 							{
-								result = -1;
 								if ( (bulk_out_desc->bmAttributes & 3) == 2 )
 								{
 									int_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_out_desc, 5u);
-									result = -1;
 									if ( int_in_desc )
 									{
-										result = -1;
 										if ( (int_in_desc->bEndpointAddress & 0x80) != 0 )
 										{
-											result = -1;
 											if ( (int_in_desc->bmAttributes & 3) == 3 )
 											{
 												mem_for_inet = do_allocate_mem_for_inet(
-																				 (char *)v4->m_vendor_name,
-																				 (char *)v4->m_device_name,
-																				 v4->m_chip == 'P');
+																				 (char *)cur_devinfo->m_vendor_name,
+																				 (char *)cur_devinfo->m_device_name,
+																				 cur_devinfo->m_chip == 'P');
 												if ( !mem_for_inet )
 													return -1;
-												pipe1 = sceUsbdOpenPipe(devId, 0);
-												mem_for_inet->m_ctrl_pipe = pipe1;
-												if ( pipe1 < 0 )
+												mem_for_inet->m_ctrl_pipe = sceUsbdOpenPipe(devId, 0);
+												if ( mem_for_inet->m_ctrl_pipe < 0 )
 													return -1;
-												pipe2 = sceUsbdOpenPipe(devId, bulk_in_desc);
-												mem_for_inet->m_bulk_in_pipe = pipe2;
-												if ( pipe2 < 0 )
+												mem_for_inet->m_bulk_in_pipe = sceUsbdOpenPipe(devId, bulk_in_desc);
+												if ( mem_for_inet->m_bulk_in_pipe < 0 )
 													return -1;
-												pipe3 = sceUsbdOpenPipeAligned(devId, bulk_out_desc);
-												mem_for_inet->m_bulk_out_pipe = pipe3;
-												if ( pipe3 < 0 )
+												mem_for_inet->m_bulk_out_pipe = sceUsbdOpenPipeAligned(devId, bulk_out_desc);
+												if ( mem_for_inet->m_bulk_out_pipe < 0 )
 													return -1;
-												pipe4 = sceUsbdOpenPipe(devId, int_in_desc);
-												mem_for_inet->m_int_in_pipe = pipe4;
-												if ( pipe4 < 0 )
+												mem_for_inet->m_int_in_pipe = sceUsbdOpenPipe(devId, int_in_desc);
+												if ( mem_for_inet->m_int_in_pipe < 0 )
 													return -1;
 												sceUsbdSetPrivateData(devId, mem_for_inet);
 												mem_for_inet->m_devops.bus_type = 1;
 												sceUsbdGetDeviceLocation(devId, mem_for_inet->m_devops.bus_loc);
 												mem_for_inet->m_subclass = devdesc->bDeviceSubClass;
 												ef_set_wrap(mem_for_inet, 0, 1u);
-												result = 0;
 												if ( g_verbose )
 												{
 													printf("an986_attach,%d: -> attached\n", devId);
-													return 0;
 												}
+												return 0;
 											}
 										}
 									}
@@ -1508,7 +1302,7 @@ int an986_ldd_connect(int devId)
 			}
 		}
 	}
-	return result;
+	return -1;
 }
 // 403504: using guessed type int g_verbose;
 
@@ -1516,16 +1310,14 @@ int an986_ldd_connect(int devId)
 int an986_ldd_disconnect(int devId)
 {
 	struct an986_priv *priv; // $v0
-	int evfid; // $a0
 
 	if ( g_verbose )
 		printf("an986_detach,%d: -> detached\n", devId);
 	priv = (struct an986_priv *)sceUsbdGetPrivateData(devId);
 	if ( !priv )
 		return -1;
-	evfid = priv->m_devops.evfid;
 	priv->m_val_for_inet_stop = 1;
-	SetEventFlag(evfid, 2u);
+	SetEventFlag(priv->m_devops.evfid, 2u);
 	return 0;
 }
 // 403504: using guessed type int g_verbose;
@@ -1533,64 +1325,47 @@ int an986_ldd_disconnect(int devId)
 //----- (00401EA4) --------------------------------------------------------
 int an986_ldd_probe(int devId)
 {
-	int devid_tmp; // $s3
 	UsbStringDescriptor *strdesc1; // $s2
 	int idx7; // $s0
-	char *curstre; // $v1
-	const char *nul_or_com; // $a1
-	UsbStringDescriptor *strdesc2; // $v0
-	int bLength; // $s1
 	int xlenx; // $s0
-	int hxstr; // $a1
 	UsbDeviceDescriptor *devdesc; // $v0
-	int result; // $v0
 	char strlocbuf[16]; // [sp+10h] [-10h] BYREF
 
-	devid_tmp = devId;
 	if ( g_verbose )
 	{
 		strdesc1 = 0;
 		printf("an986_probe,%d: called", devId);
-		if ( sceUsbdGetDeviceLocation(devid_tmp, (u8 *)strlocbuf) )
+		if ( sceUsbdGetDeviceLocation(devId, (u8 *)strlocbuf) )
 		{
-			printf(" dev_id=%d\n", devid_tmp);
+			printf(" dev_id=%d\n", devId);
 		}
 		else
 		{
 			idx7 = 0;
 			printf(" Loc:USB-");
-			curstre = strlocbuf;
 			do
 			{
-				if ( !*curstre )
+				if ( !strlocbuf[idx7] )
 					break;
-				nul_or_com = "";
-				if ( idx7 )
-					nul_or_com = ",";
+				printf("%s%d", idx7 ? "," : "", strlocbuf[idx7]);
 				++idx7;
-				printf("%s%d", nul_or_com, (u8)*curstre);
-				curstre = &strlocbuf[idx7];
 			}
 			while ( idx7 < 7 );
 		}
 		while ( 1 )
 		{
 			printf("\n");
-			strdesc2 = (UsbStringDescriptor *)sceUsbdScanStaticDescriptor(devid_tmp, strdesc1, 0);
-			strdesc1 = strdesc2;
-			devId = devid_tmp;
-			if ( !strdesc2 )
+			strdesc1 = (UsbStringDescriptor *)sceUsbdScanStaticDescriptor(devId, strdesc1, 0);
+			if ( !strdesc1 )
 				break;
-			bLength = strdesc2->bLength;
 			xlenx = 0;
-			if ( strdesc2->bLength )
+			if ( strdesc1->bLength )
 			{
 				do
 				{
-					hxstr = *(&strdesc1->bLength + xlenx++);
-					printf(" %02x", hxstr);
+					printf(" %02x", *(&strdesc1->bLength + xlenx++));
 				}
-				while ( xlenx < bLength );
+				while ( xlenx < strdesc1->bLength );
 			}
 		}
 	}
@@ -1602,13 +1377,11 @@ int an986_ldd_probe(int devId)
 	g_resident_flag = 1;
 	if ( g_load_mode == 't' )
 		return 0;
-	result = 1;
 	if ( g_verbose )
 	{
-		printf("an986_probe,%d: -> accepted\n", devid_tmp);
-		return 1;
+		printf("an986_probe,%d: -> accepted\n", devId);
 	}
-	return result;
+	return 1;
 }
 // 403504: using guessed type int g_verbose;
 // 403700: using guessed type int g_resident_flag;
@@ -1636,7 +1409,6 @@ int scan_number(char *inchr, int *outptr)
 {
 	char *curchrptr; // $a3
 	int base; // $t1
-	int curchrchr; // $v1
 	int curval; // $t0
 	int currel; // $a0
 
@@ -1645,32 +1417,31 @@ int scan_number(char *inchr, int *outptr)
 	if ( *inchr == '0' && inchr[1] )
 	{
 		base = 8;
-		curchrptr = inchr + 1;
+		curchrptr += 1;
 		if ( inchr[1] == 'x' )
 		{
-			curchrptr = inchr + 2;
+			curchrptr += 1;
 			base = 16;
 		}
 	}
-	curchrchr = (u8)*curchrptr;
 	curval = 0;
 	if ( *curchrptr )
 	{
 		while ( 1 )
 		{
-			if ( (unsigned int)(curchrchr - 48) >= 0xA )
+			if ( (unsigned int)((u8)*curchrptr - 48) >= 0xA )
 			{
-				if ( (unsigned int)(curchrchr - 97) >= 6 )
+				if ( (unsigned int)((u8)*curchrptr - 97) >= 6 )
 					break;
-				currel = (char)curchrchr - 87;
+				currel = (char)(u8)*curchrptr - 87;
 			}
 			else
 			{
-				currel = (char)curchrchr - 48;
+				currel = (char)(u8)*curchrptr - 48;
 			}
 			if ( currel >= base )
 				break;
-			curchrchr = (u8)*++curchrptr;
+			++curchrptr;
 			curval = curval * base + currel;
 			if ( !*curchrptr )
 			{
@@ -1688,47 +1459,40 @@ int do_print_list()
 {
 	int total_devinfo; // $s2
 	struct an986_devinfo *cur_devinfo; // $s1
-	const char **p_m_device_name; // $s0
-	int m_chip; // $v1
-	const char *cur_devname; // $a0
 
 	do_print_version();
 	total_devinfo = 52;
 	printf("  VID   PID   Vendor          Device          Chip\n");
 	printf("------------------------------------------------------\n");
 	cur_devinfo = g_an986_devinfo;
-	p_m_device_name = &g_an986_devinfo[0].m_device_name;
 	do
 	{
-		printf("  %04x", *(p_m_device_name - 3));
-		printf("  %04x", *(p_m_device_name - 1));
-		printf("  %-14s", *(p_m_device_name - 2));
-		printf("  %-14s", *p_m_device_name);
-		m_chip = cur_devinfo->m_chip;
+		printf("  %04x", cur_devinfo->m_vendor_id);
+		printf("  %04x", cur_devinfo->m_product_id);
+		printf("  %-14s", cur_devinfo->m_vendor_name);
+		printf("  %-14s", cur_devinfo->m_device_name);
 		if ( cur_devinfo->m_chip == 'k' )
 		{
-			cur_devname = "  KLSI";
+			printf("  KLSI");
 		}
 		else
 		{
 			if ( cur_devinfo->m_chip >= 0x6C )
 			{
-				if ( m_chip == 'p' )
+				if ( cur_devinfo->m_chip == 'p' )
 				{
-					cur_devname = "  Pegasus";
+					printf("  Pegasus");
 					goto LABEL_11;
 				}
 			}
-			else if ( m_chip == 'P' )
+			else if ( cur_devinfo->m_chip == 'P' )
 			{
-				cur_devname = "  PegasusII";
+				printf("  PegasusII");
 				goto LABEL_11;
 			}
-			cur_devname = "  Unknown";
+			printf("  Unknown");
 		}
 LABEL_11:
-		p_m_device_name += 5;
-		printf(cur_devname);
 		++cur_devinfo;
 		printf("\n");
 	}
@@ -1742,13 +1506,8 @@ int an986_init(int ac, char **av)
 {
 	int ac_min_one; // $s3
 	const char **i; // $s2
-	bool condtmp1; // dc
-	int chipforce; // $v0
-	const char *thpricur; // $s1
 	char *thpricurx; // $s0
 	int thirpcurxchr; // $v0
-	const char *stkval; // $s1
-	int result; // $v0
 	int loadmode_tmp; // $v0
 	unsigned int vidtmp; // [sp+10h] [-8h] BYREF
 
@@ -1770,11 +1529,9 @@ int an986_init(int ac, char **av)
 		{
 			if ( !strcmp("-list", *i) )
 				return do_print_list();
-			condtmp1 = strcmp("-p", *i) != 0;
-			chipforce = 'p';
-			if ( !condtmp1 || (condtmp1 = strcmp("-P", *i) == 0, chipforce = 'P', condtmp1) )
+			if ( (strcmp("-p", *i) == 0) || (strcmp("-P", *i) == 0) )
 			{
-				g_an986_devinfo[0].m_chip = chipforce;
+				g_an986_devinfo[0].m_chip = (*i)[1];
 				--ac_min_one;
 				++i;
 				if ( ac_min_one <= 0 || scan_number((char *)*i, (int *)&vidtmp) )
@@ -1787,14 +1544,13 @@ LABEL_34:
 			}
 			if ( !strncmp("thpri=", *i, 6) )
 			{
-				thpricur = *i;
 				thpricurx = (char *)(*i + 6);
 				if ( (look_ctype_table(*thpricurx) & 4) == 0 )
 					return do_print_help();
 				g_thpri = strtol(thpricurx, 0, 10);
 				if ( (unsigned int)(g_thpri - 9) >= 0x73 )
 					return do_print_help();
-				if ( !thpricur[6] )
+				if ( !(*i)[6] )
 					goto LABEL_34;
 				while ( (look_ctype_table(*thpricurx) & 4) != 0 )
 				{
@@ -1807,21 +1563,17 @@ LABEL_34:
 			{
 				if ( strncmp("thstack=", *i, 8) )
 				{
-					condtmp1 = strcmp("AUTOLOAD", *i) == 0;
 					loadmode_tmp = 'a';
-					if ( !condtmp1 )
+					if ( strcmp("AUTOLOAD", *i) != 0 )
 					{
-						condtmp1 = strcmp("lmode=AUTOLOAD", *i) == 0;
 						loadmode_tmp = 'a';
-						if ( !condtmp1 )
+						if ( strcmp("lmode=AUTOLOAD", *i) != 0 )
 						{
-							condtmp1 = strcmp("TESTLOAD", *i) == 0;
 							loadmode_tmp = 't';
-							if ( !condtmp1 )
+							if ( strcmp("TESTLOAD", *i) != 0 )
 							{
-								condtmp1 = strcmp("lmode=TESTLOAD", *i) != 0;
 								loadmode_tmp = 't';
-								if ( condtmp1 )
+								if ( strcmp("lmode=TESTLOAD", *i) != 0 )
 									return do_print_help();
 							}
 						}
@@ -1830,12 +1582,11 @@ LABEL_34:
 					g_resident_flag = 0;
 					goto LABEL_34;
 				}
-				stkval = *i;
 				thpricurx = (char *)(*i + 8);
 				if ( (look_ctype_table(*thpricurx) & 4) == 0 )
 					return do_print_help();
 				g_thstack = strtol(thpricurx, 0, 10);
-				if ( stkval[8] )
+				if ( (*i)[8] )
 				{
 					do
 					{
@@ -1859,9 +1610,7 @@ LABEL_27:
 				return do_print_help();
 		}
 	}
-	condtmp1 = sceUsbdRegisterLdd(&g_an986_ldd) != 0;
-	result = 4;
-	if ( !condtmp1 )
+	if ( sceUsbdRegisterLdd(&g_an986_ldd) == 0 )
 	{
 		if ( g_verbose )
 			printf("an986_start: load_mode='%c' resident_flag=%d\n", g_load_mode, g_resident_flag);
@@ -1881,7 +1630,7 @@ LABEL_27:
 			return 6;
 		}
 	}
-	return result;
+	return 4;
 }
 // 403090: using guessed type an986_devinfo g_an986_devinfo[53];
 // 4034B4: using guessed type sceUsbdLddOps g_an986_ldd;
@@ -1894,10 +1643,7 @@ LABEL_27:
 //----- (00402694) --------------------------------------------------------
 int _start(int ac, char **av)
 {
-	int result; // $v0
 	int initval; // $v0
-	int initval_rshift; // $s0
-	int initval_shifted; // $a1
 
 	if ( RegisterLibraryEntries(&_exp_an986) )
 	{
@@ -1907,21 +1653,15 @@ int _start(int ac, char **av)
 	else
 	{
 		initval = an986_init(ac, av);
-		initval_rshift = initval;
 		if ( g_verbose )
 			printf("an986: an986_init() -> 0x%x\n", initval);
-		result = 0;
-		if ( initval_rshift )
+		if ( initval )
 		{
 			ReleaseLibraryEntries(&_exp_an986);
-			initval_shifted = 16 * initval_rshift;
-			if ( g_resident_flag )
-				return initval_shifted | 5;
-			else
-				return initval_shifted | 1;
+			return (initval << 4) | (g_resident_flag ? 4 : 0) | 1;
 		}
 	}
-	return result;
+	return 0;
 }
 // 402750: using guessed type int exports[2];
 // 403504: using guessed type int g_verbose;
