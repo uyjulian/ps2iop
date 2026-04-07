@@ -745,146 +745,102 @@ int an986_inet_control(void *userdata, int code, void *ptr, int len)
 	priv = (struct an986_priv *)userdata;
 	m_nego_status = -512;
 	p_m_err_rx_over = 0;
-	if ( code == 0x80011003 )
+	switch ( code )
 	{
-		p_m_err_rx_over = &priv->m_err_rx_over;
-	}
-	else if ( code > (int)0x80011003 )
-	{
-		if ( code == 0x8001100A )
-		{
+		case 0x80000000:
+			m_nego_status = g_thpri;
+			break;
+		case 0x80000100:
+			m_nego_status = 1;
+			break;
+		case 0x80010000:
+			p_m_err_rx_over = &priv->m_rx_packets;
+			break;
+		case 0x80010001:
+			p_m_err_rx_over = &priv->m_tx_packets;
+			break;
+		case 0x80010002:
+			p_m_err_rx_over = &priv->m_rx_bytes;
+			break;
+		case 0x80010003:
+			p_m_err_rx_over = &priv->m_tx_bytes;
+			break;
+		case 0x80010004:
+			p_m_err_rx_over = &priv->m_rx_errors;
+			break;
+		case 0x80010005:
+			p_m_err_rx_over = &priv->m_tx_errors;
+			break;
+		case 0x80010006:
+			p_m_err_rx_over = &priv->m_rx_dropped;
+			break;
+		case 0x80010007:
+			p_m_err_rx_over = &priv->m_tx_dropped;
+			break;
+		case 0x80011000:
+			p_m_err_rx_over = &priv->m_multicast;
+			break;
+		case 0x80011001:
+			p_m_err_rx_over = &priv->m_collisions;
+			break;
+		case 0x80011002:
+			p_m_err_rx_over = &priv->m_err_rx_length;
+			break;
+		case 0x80011003:
+			p_m_err_rx_over = &priv->m_err_rx_over;
+			break;
+		case 0x80011004:
+			p_m_err_rx_over = &priv->m_err_rx_crc;
+			break;
+		case 0x80011005:
+			p_m_err_rx_over = &priv->m_err_rx_frame;
+			break;
+		case 0x80011006:
+			p_m_err_rx_over = &priv->m_err_rx_fifo;
+			break;
+		case 0x80011007:
+			p_m_err_rx_over = &priv->m_err_rx_missed;
+			break;
+		case 0x80011008:
+			p_m_err_rx_over = &priv->m_err_tx_aborted;
+			break;
+		case 0x80011009:
+			p_m_err_rx_over = &priv->m_err_tx_carrier;
+			break;
+		case 0x8001100A:
 			p_m_err_rx_over = &priv->m_err_tx_fifo;
-		}
-		else if ( code > (int)0x8001100A )
-		{
-			if ( code == 0x80020001 )
+			break;
+		case 0x8001100B:
+			p_m_err_rx_over = &priv->m_err_tx_heartbeat;
+			break;
+		case 0x8001100C:
+			p_m_err_rx_over = &priv->m_err_tx_window;
+			break;
+		case 0x80020001:
+			m_nego_status = ( priv->m_link_status > 0 ) ? priv->m_nego_status : 0;
+			break;
+		case 0x80030000:
+			m_nego_status = priv->m_link_status;
+			break;
+		case 0x81000000:
+			if ( ptr )
 			{
-				m_nego_status = 0;
-				if ( priv->m_link_status > 0 )
-					m_nego_status = priv->m_nego_status;
-			}
-			else if ( code > (int)0x80020001 )
-			{
-				if ( code == 0x81000000 )
+				if ( len == 4 )
 				{
-					if ( ptr )
+					bcopy(ptr, &priority, 4);
+					m_nego_status = -403;
+					if ( (unsigned int)(priority - 9) < 0x73 )
 					{
-						if ( len == 4 )
-						{
-							bcopy(ptr, &priority, 4);
-							m_nego_status = -403;
-							if ( (unsigned int)(priority - 9) < 0x73 )
-							{
-								m_thid = priv->m_thid;
-								g_thpri = priority;
-								m_nego_status = ChangeThreadPriority(m_thid, priority);
-							}
-						}
+						m_thid = priv->m_thid;
+						g_thpri = priority;
+						m_nego_status = ChangeThreadPriority(m_thid, priority);
 					}
 				}
-				else if ( code > (int)0x81000000 )
-				{
-					if ( code == 0x81040000 )
-						m_nego_status = inet_81040000_multicast_list_handler(priv, ptr, len);
-				}
-				else if ( code == 0x80030000 )
-				{
-					m_nego_status = priv->m_link_status;
-				}
 			}
-			else if ( code == 0x8001100B )
-			{
-				p_m_err_rx_over = &priv->m_err_tx_heartbeat;
-			}
-			else if ( code == 0x8001100C )
-			{
-				p_m_err_rx_over = &priv->m_err_tx_window;
-			}
-		}
-		else if ( code == 0x80011006 )
-		{
-			p_m_err_rx_over = &priv->m_err_rx_fifo;
-		}
-		else if ( code > (int)0x80011006 )
-		{
-			if ( code == 0x80011008 )
-			{
-				p_m_err_rx_over = &priv->m_err_tx_aborted;
-			}
-			else
-			{
-				p_m_err_rx_over = &priv->m_err_tx_carrier;
-				if ( code <= (int)0x80011008 )
-					p_m_err_rx_over = &priv->m_err_rx_missed;
-			}
-		}
-		else if ( code == 0x80011004 )
-		{
-			p_m_err_rx_over = &priv->m_err_rx_crc;
-		}
-		else
-		{
-			p_m_err_rx_over = &priv->m_err_rx_frame;
-		}
-	}
-	else if ( code == 0x80010004 )
-	{
-		p_m_err_rx_over = &priv->m_rx_errors;
-	}
-	else if ( code > (int)0x80010004 )
-	{
-		if ( code == 0x80010007 )
-		{
-			p_m_err_rx_over = &priv->m_tx_dropped;
-		}
-		else if ( code > (int)0x80010007 )
-		{
-			if ( code == 0x80011001 )
-			{
-				p_m_err_rx_over = &priv->m_collisions;
-			}
-			else if ( code > (int)0x80011001 )
-			{
-				p_m_err_rx_over = &priv->m_err_rx_length;
-			}
-			else if ( code == 0x80011000 )
-			{
-				p_m_err_rx_over = &priv->m_multicast;
-			}
-		}
-		else if ( code == 0x80010005 )
-		{
-			p_m_err_rx_over = &priv->m_tx_errors;
-		}
-		else
-		{
-			p_m_err_rx_over = &priv->m_rx_dropped;
-		}
-	}
-	else if ( code == 0x80010000 )
-	{
-		p_m_err_rx_over = &priv->m_rx_packets;
-	}
-	else if ( code > (int)0x80010000 )
-	{
-		if ( code == 0x80010002 )
-		{
-			p_m_err_rx_over = &priv->m_rx_bytes;
-		}
-		else
-		{
-			p_m_err_rx_over = &priv->m_tx_bytes;
-			if ( code <= (int)0x80010002 )
-				p_m_err_rx_over = &priv->m_tx_packets;
-		}
-	}
-	else if ( code == 0x80000000 )
-	{
-		m_nego_status = g_thpri;
-	}
-	else if ( code == 0x80000100 )
-	{
-		m_nego_status = 1;
+			break;
+		case 0x81040000:
+			m_nego_status = inet_81040000_multicast_list_handler(priv, ptr, len);
+			break;
 	}
 	if ( p_m_err_rx_over && ptr && len == 4 )
 	{
