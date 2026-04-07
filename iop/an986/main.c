@@ -64,38 +64,16 @@ struct an986_devinfo
 //-------------------------------------------------------------------------
 // Function declarations
 
-int ef_wait_wrap(struct an986_priv *priv, u32 efbits);
-void ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits);
-void an986_done(int efbits, int doneval, void *userdata);
-int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
-int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
-int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *outptr);
-void an986_rx_done(int aresult, int acount, void *userdata);
-void bulk_xfer(struct an986_priv *priv);
-void an986_tx_done(int aresult, int acount, void *userdata);
-unsigned int alarm_cb(void *userdata);
-int an986_inet_start(void *userdata, int unused);
-int an986_inet_stop(void *userdata, int unused);
-int an986_inet_xmit(void *userdata, int unused);
-int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len);
-int an986_inet_control(void *userdata, int code, void *ptr, int len);
-void inet_thread_proc(void *userdata);
-struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2);
-struct an986_devinfo *do_check_static_descriptor(int is_probe, u16 id_vendor, u16 id_product);
-int an986_ldd_connect(int devId);
-int an986_ldd_disconnect(int devId);
-int an986_ldd_probe(int devId);
-int do_print_version();
-int do_print_help();
-int scan_number(const char *e_arg, unsigned int *n_result);
-int do_print_list();
-int an986_init(int ac, char **av);
+static void bulk_xfer(struct an986_priv *priv);
+static int an986_ldd_connect(int devId);
+static int an986_ldd_disconnect(int devId);
+static int an986_ldd_probe(int devId);
 
 //-------------------------------------------------------------------------
 // Data declarations
 
 extern struct irx_export_table _exp_an986;
-struct an986_devinfo g_an986_devinfo[53] =
+static struct an986_devinfo g_an986_devinfo[] =
 {
 	{ 45, 0, "Unknown", 0, "Unknown" },
 	{ 107, 1000, "AOX", 8, "101" },
@@ -151,7 +129,7 @@ struct an986_devinfo g_an986_devinfo[53] =
 	{ 80, 8193, "D-Link", 16395, "DSB-650TX B1" },
 	{ 112, 8193, "D-Link", 43969, "DSB-650" }
 }; // weak
-sceUsbdLddOps g_an986_ldd =
+static sceUsbdLddOps g_an986_ldd =
 {
 	NULL,
 	NULL,
@@ -166,17 +144,17 @@ sceUsbdLddOps g_an986_ldd =
 	0u,
 	NULL
 }; // weak
-int g_thpri = 40; // weak
-int g_thstack = 16384; // weak
-int g_magic_count = 0; // weak
-int g_verbose = 0; // weak
-char *version_ptr = "Version 1.75.0"; // weak
-int g_resident_flag; // weak
-int g_load_mode; // weak
+static int g_thpri = 40; // weak
+static int g_thstack = 16384; // weak
+static int g_magic_count = 0; // weak
+static int g_verbose = 0; // weak
+static char *version_ptr = "Version 1.75.0"; // weak
+static int g_resident_flag; // weak
+static int g_load_mode; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-int ef_wait_wrap(struct an986_priv *priv, u32 efbits)
+static int ef_wait_wrap(struct an986_priv *priv, u32 efbits)
 {
 	int efret; // $s1
 	u32 efres[2]; // [sp+10h] [-8h] BYREF
@@ -195,7 +173,7 @@ int ef_wait_wrap(struct an986_priv *priv, u32 efbits)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400088) --------------------------------------------------------
-void ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
+static void ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
 {
 	int efret; // $s1
 
@@ -211,7 +189,7 @@ void ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400104) --------------------------------------------------------
-void an986_done(int efbits, int doneval, void *userdata)
+static void an986_done(int efbits, int doneval, void *userdata)
 {
 	struct an986_priv *priv_tmp; // $a0
 
@@ -228,7 +206,7 @@ void an986_done(int efbits, int doneval, void *userdata)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400194) --------------------------------------------------------
-int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
+static int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
 	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
@@ -260,7 +238,7 @@ int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400264) --------------------------------------------------------
-int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
+static int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
 	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
@@ -292,7 +270,7 @@ int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400334) --------------------------------------------------------
-int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *outptr)
+static int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *outptr)
 {
 	int result; // $v0
 
@@ -321,7 +299,7 @@ int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *ou
 }
 
 //----- (004003F4) --------------------------------------------------------
-void an986_rx_done(int aresult, int acount, void *userdata)
+static void an986_rx_done(int aresult, int acount, void *userdata)
 {
 	struct an986_priv *priv; // $s0
 	sceInetPkt_t *pkt;
@@ -424,7 +402,7 @@ void bulk_xfer(struct an986_priv *priv)
 // 403504: using guessed type int g_verbose;
 
 //----- (0040071C) --------------------------------------------------------
-void an986_tx_done(int aresult, int acount, void *userdata)
+static void an986_tx_done(int aresult, int acount, void *userdata)
 {
 	struct an986_priv *priv; // $s1
 	sceInetPkt_t *pkt;
@@ -447,7 +425,7 @@ void an986_tx_done(int aresult, int acount, void *userdata)
 // 403504: using guessed type int g_verbose;
 
 //----- (004007AC) --------------------------------------------------------
-unsigned int alarm_cb(void *userdata)
+static unsigned int alarm_cb(void *userdata)
 {
 	struct an986_priv *priv;
 
@@ -458,7 +436,7 @@ unsigned int alarm_cb(void *userdata)
 }
 
 //----- (004007DC) --------------------------------------------------------
-int an986_inet_start(void *userdata, int unused)
+static int an986_inet_start(void *userdata, int unused)
 {
 	struct an986_priv *priv;
 
@@ -473,7 +451,7 @@ int an986_inet_start(void *userdata, int unused)
 }
 
 //----- (00400840) --------------------------------------------------------
-int an986_inet_stop(void *userdata, int unused)
+static int an986_inet_stop(void *userdata, int unused)
 {
 	struct an986_priv *priv;
 
@@ -493,7 +471,7 @@ int an986_inet_stop(void *userdata, int unused)
 }
 
 //----- (004008F4) --------------------------------------------------------
-int an986_inet_xmit(void *userdata, int unused)
+static int an986_inet_xmit(void *userdata, int unused)
 {
   int xferres; // $s3
   sceInetPkt_t *pkt; // $s2
@@ -569,7 +547,7 @@ int an986_inet_xmit(void *userdata, int unused)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400AC4) --------------------------------------------------------
-int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len)
+static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len)
 {
 	int k; // $t0
 
@@ -618,10 +596,10 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 }
 
 //----- (00400C28) --------------------------------------------------------
-int an986_inet_control(void *userdata, int code, void *ptr, int len)
+static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 {
 	int m_nego_status; // $v1
-	int *p_m_err_rx_over; // $s0
+	const int *p_m_err_rx_over; // $s0
 	int priority; // [sp+10h] [-8h] BYREF
 	struct an986_priv *priv;
 
@@ -733,7 +711,7 @@ int an986_inet_control(void *userdata, int code, void *ptr, int len)
 // 4034F8: using guessed type int g_thpri;
 
 //----- (00400F78) --------------------------------------------------------
-void inet_thread_proc(void *userdata)
+static void inet_thread_proc(void *userdata)
 {
 	int xferret; // $s0
 	int regres; // $s0
@@ -978,7 +956,7 @@ void inet_thread_proc(void *userdata)
 // 403504: using guessed type int g_verbose;
 
 //----- (00401760) --------------------------------------------------------
-struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2)
+static struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2)
 {
 	struct an986_priv *priv; // $s0
 	int err; // $s1
@@ -1077,7 +1055,7 @@ struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name
 // 403504: using guessed type int g_verbose;
 
 //----- (004019E4) --------------------------------------------------------
-struct an986_devinfo *do_check_static_descriptor(
+static struct an986_devinfo *do_check_static_descriptor(
 				int is_probe,
 				u16 id_vendor,
 				u16 id_product)
@@ -1229,9 +1207,7 @@ int an986_ldd_disconnect(int devId)
 int an986_ldd_probe(int devId)
 {
 	UsbStringDescriptor *strdesc1; // $s2
-	
-	UsbDeviceDescriptor *devdesc; // $v0
-	
+	const UsbDeviceDescriptor *devdesc; // $v0
 
 	if ( g_verbose )
 	{
@@ -1285,7 +1261,7 @@ int an986_ldd_probe(int devId)
 // 401EA4: using guessed type u8 strlocbuf[16];
 
 //----- (00402050) --------------------------------------------------------
-int do_print_version()
+static int do_print_version(void)
 {
 	printf("AN986 (%s)\n", version_ptr);
 	return 1;
@@ -1293,7 +1269,7 @@ int do_print_version()
 // 4036F0: using guessed type char *version_ptr;
 
 //----- (0040207C) --------------------------------------------------------
-int do_print_help()
+static int do_print_help(void)
 {
 	do_print_version();
 	printf("Usage: an986 [-verbose] [-list] [thpri=<prio>] [thstack=<stack>] [-p <id>] [-P <id>]\n");
@@ -1301,7 +1277,7 @@ int do_print_help()
 }
 
 //----- (004020A8) --------------------------------------------------------
-int scan_number(const char *e_arg, unsigned int *n_result)
+static int scan_number(const char *e_arg, unsigned int *n_result)
 {
 	const char *e_arg_1;
 	unsigned int curbasex;
@@ -1349,7 +1325,7 @@ int scan_number(const char *e_arg, unsigned int *n_result)
 }
 
 //----- (00402188) --------------------------------------------------------
-int do_print_list()
+static int do_print_list(void)
 {
 	unsigned int i; // $s2
 
@@ -1384,7 +1360,7 @@ int do_print_list()
 // 403090: using guessed type an986_devinfo g_an986_devinfo[53];
 
 //----- (004022CC) --------------------------------------------------------
-int an986_init(int ac, char **av)
+static int an986_init(int ac, char **av)
 {
 	int i; // $s2
 	char *thpricurx; // $s0
