@@ -61,43 +61,35 @@ struct an986_devinfo
 	const char *m_device_name;
 };
 
-#define __fastcall
-#define __cdecl
-#define _BYTE u8
-#define _WORD u16
-#define __int8 char
-#define __int16 short
-#define u_char unsigned char
-
 //-------------------------------------------------------------------------
 // Function declarations
 
-int __fastcall ef_wait_wrap(struct an986_priv *priv, u32 efbits);
-int __fastcall ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits);
-int __fastcall an986_done(int efbits, int doneval, struct an986_priv *priv);
-int __fastcall control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
-int __fastcall control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
-int __fastcall control_inout_xfer(struct an986_priv *priv, char linkval, char xval, _WORD *outptr);
-int __fastcall an986_rx_done(int aresult, int acount, sceInetPkt_t *pkt);
-void __fastcall bulk_xfer(struct an986_priv *priv);
-void __fastcall an986_tx_done(int aresult, int acount, sceInetPkt_t *pkt);
-u32 __fastcall alarm_cb(struct an986_priv *priv);
-int __fastcall an986_inet_start(struct an986_priv *priv);
-int __fastcall an986_inet_stop(struct an986_priv *priv);
-int __fastcall an986_inet_xmit(struct an986_priv *priv);
-int __fastcall inet_81040000_multicast_list_handler(struct an986_priv *priv, _BYTE *ptr, int len);
-int __fastcall an986_inet_control(struct an986_priv *priv, int code, _BYTE *ptr, int len);
-int __fastcall inet_thread_proc(struct an986_priv *priv);
-struct an986_priv *__fastcall do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2);
-struct an986_devinfo *__fastcall do_check_static_descriptor(int is_probe, unsigned __int16 id_vendor, unsigned __int16 id_product);
-int __fastcall an986_ldd_connect(int devId);
-int __fastcall an986_ldd_disconnect(int devId);
-int __fastcall an986_ldd_probe(int devId);
+int ef_wait_wrap(struct an986_priv *priv, u32 efbits);
+int ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits);
+int an986_done(int efbits, int doneval, struct an986_priv *priv);
+int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
+int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
+int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *outptr);
+int an986_rx_done(int aresult, int acount, sceInetPkt_t *pkt);
+void bulk_xfer(struct an986_priv *priv);
+void an986_tx_done(int aresult, int acount, sceInetPkt_t *pkt);
+u32 alarm_cb(struct an986_priv *priv);
+int an986_inet_start(struct an986_priv *priv);
+int an986_inet_stop(struct an986_priv *priv);
+int an986_inet_xmit(struct an986_priv *priv);
+int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len);
+int an986_inet_control(struct an986_priv *priv, int code, u8 *ptr, int len);
+int inet_thread_proc(struct an986_priv *priv);
+struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2);
+struct an986_devinfo *do_check_static_descriptor(int is_probe, u16 id_vendor, u16 id_product);
+int an986_ldd_connect(int devId);
+int an986_ldd_disconnect(int devId);
+int an986_ldd_probe(int devId);
 int do_print_version();
 int do_print_help();
-int __fastcall scan_number(char *inchr, int *outptr);
+int scan_number(char *inchr, int *outptr);
 int do_print_list();
-int __fastcall an986_init(int ac, char **av);
+int an986_init(int ac, char **av);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -185,7 +177,7 @@ int g_load_mode; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-int __fastcall ef_wait_wrap(struct an986_priv *priv, u32 efbits)
+int ef_wait_wrap(struct an986_priv *priv, u32 efbits)
 {
 	int efret; // $s1
 	int result; // $v0
@@ -207,7 +199,7 @@ int __fastcall ef_wait_wrap(struct an986_priv *priv, u32 efbits)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400088) --------------------------------------------------------
-int __fastcall ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
+int ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
 {
 	int m_efid; // $a0
 	int retval; // $v0
@@ -232,7 +224,7 @@ int __fastcall ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400104) --------------------------------------------------------
-int __fastcall an986_done(int efbits, int doneval, struct an986_priv *priv)
+int an986_done(int efbits, int doneval, struct an986_priv *priv)
 {
 	struct an986_priv *priv_tmp; // $a0
 
@@ -253,7 +245,7 @@ LABEL_4:
 // 403504: using guessed type int g_verbose;
 
 //----- (00400194) --------------------------------------------------------
-int __fastcall control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
+int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
 	int result; // $v0
@@ -269,7 +261,7 @@ int __fastcall control_negative_xfer(struct an986_priv *priv, int xferoffs, int 
 	xferret = sceUsbdTransferPipe(
 							priv->m_ctrl_pipe,
 							&priv->m_usb_xfer_buf[xferoffs],
-							(unsigned __int16)xferlen,
+							(u16)xferlen,
 							&devreq,
 							(sceUsbdDoneCallback)an986_done,
 							priv);
@@ -288,7 +280,7 @@ int __fastcall control_negative_xfer(struct an986_priv *priv, int xferoffs, int 
 // 403504: using guessed type int g_verbose;
 
 //----- (00400264) --------------------------------------------------------
-int __fastcall control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
+int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
 	int result; // $v0
@@ -304,7 +296,7 @@ int __fastcall control_positive_xfer(struct an986_priv *priv, int xferoffs, int 
 	xferret = sceUsbdTransferPipe(
 							priv->m_ctrl_pipe,
 							&priv->m_usb_xfer_buf[xferoffs],
-							(unsigned __int16)xferlen,
+							(u16)xferlen,
 							&devreq,
 							(sceUsbdDoneCallback)an986_done,
 							priv);
@@ -323,7 +315,7 @@ int __fastcall control_positive_xfer(struct an986_priv *priv, int xferoffs, int 
 // 403504: using guessed type int g_verbose;
 
 //----- (00400334) --------------------------------------------------------
-int __fastcall control_inout_xfer(struct an986_priv *priv, char linkval, char xval, _WORD *outptr)
+int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *outptr)
 {
 	int result; // $v0
 	struct an986_priv *priv_tmp; // $a0
@@ -359,11 +351,11 @@ int __fastcall control_inout_xfer(struct an986_priv *priv, char linkval, char xv
 }
 
 //----- (004003F4) --------------------------------------------------------
-int __fastcall an986_rx_done(int aresult, int acount, sceInetPkt_t *pkt)
+int an986_rx_done(int aresult, int acount, sceInetPkt_t *pkt)
 {
 	struct an986_priv *priv; // $s0
 	sceInetDevOps_t *p_m_devops; // $a0
-	u_char rp_cur; // $v1
+	u8 rp_cur; // $v1
 	int rp_mask; // $v0
 	bool condtmp; // dc
 	int rpcur_4; // $v0
@@ -452,14 +444,14 @@ LABEL_22:
 // 403504: using guessed type int g_verbose;
 
 //----- (004005E0) --------------------------------------------------------
-void __fastcall bulk_xfer(struct an986_priv *priv)
+void bulk_xfer(struct an986_priv *priv)
 {
 	sceInetDevOps_t *devops_1; // $s3
 	sceInetPkt_t *pkt_1; // $v0
 	sceInetPkt_t *pkt_2; // $s0
 	int state_1; // $a0
-	u_char *rp; // $v0
-	u_char *wp; // $v1
+	u8 *rp; // $v0
+	u8 *wp; // $v1
 	int xferret; // $s1
 	sceInetDevOps_t *devops_2; // $a0
 	int state; // [sp+18h] [-8h] BYREF
@@ -505,7 +497,7 @@ void __fastcall bulk_xfer(struct an986_priv *priv)
 // 403504: using guessed type int g_verbose;
 
 //----- (0040071C) --------------------------------------------------------
-void __fastcall an986_tx_done(int aresult, int acount, sceInetPkt_t *pkt)
+void an986_tx_done(int aresult, int acount, sceInetPkt_t *pkt)
 {
 	struct an986_priv *priv; // $s1
 	bool condtmp; // dc
@@ -533,7 +525,7 @@ LABEL_4:
 // 403504: using guessed type int g_verbose;
 
 //----- (004007AC) --------------------------------------------------------
-u32 __fastcall alarm_cb(struct an986_priv *priv)
+u32 alarm_cb(struct an986_priv *priv)
 {
 	int m_val_for_alarm_cb; // $v0
 	bool tmpneg; // dc
@@ -548,7 +540,7 @@ u32 __fastcall alarm_cb(struct an986_priv *priv)
 }
 
 //----- (004007DC) --------------------------------------------------------
-int __fastcall an986_inet_start(struct an986_priv *priv)
+int an986_inet_start(struct an986_priv *priv)
 {
 	int m_val_for_inet_start; // $v0
 
@@ -562,7 +554,7 @@ int __fastcall an986_inet_start(struct an986_priv *priv)
 }
 
 //----- (00400840) --------------------------------------------------------
-int __fastcall an986_inet_stop(struct an986_priv *priv)
+int an986_inet_stop(struct an986_priv *priv)
 {
 	int m_val_for_inet_stop; // $v1
 
@@ -574,7 +566,7 @@ int __fastcall an986_inet_stop(struct an986_priv *priv)
 		DeleteThread(priv->m_thid);
 		DeleteEventFlag(priv->m_efid);
 		if ( priv->m_timer_active )
-			CancelAlarm((unsigned int (__cdecl *)(void *))alarm_cb, priv);
+			CancelAlarm((unsigned int (*)(void *))alarm_cb, priv);
 		sceInetUnregisterNetDevice(&priv->m_devops);
 		sceInetFreeMem(&priv->m_devops, priv);
 	}
@@ -582,13 +574,13 @@ int __fastcall an986_inet_stop(struct an986_priv *priv)
 }
 
 //----- (004008F4) --------------------------------------------------------
-int __fastcall an986_inet_xmit(struct an986_priv *priv)
+int an986_inet_xmit(struct an986_priv *priv)
 {
 	int xferres; // $s3
 	sceInetPkt_t *pkt; // $s2
-	u_char *rp; // $v1
-	u_char *xrp2; // $s1
-	u_char *xrp3; // $v0
+	u8 *rp; // $v1
+	u8 *xrp2; // $s1
+	u8 *xrp3; // $v0
 	int rpbytesp; // $v1
 	sceInetDevOps_t *p_m_devops; // $a0
 
@@ -599,8 +591,8 @@ int __fastcall an986_inet_xmit(struct an986_priv *priv)
 		if ( priv->m_start_stop_flag
 			|| priv->m_val_for_inet_stop
 			|| !priv->m_link_status
-			|| (rp = pkt->rp, xrp2 = (u_char *)(pkt->wp - rp), xrp3 = rp - 2, (unsigned int)(xrp2 - 60) >= 0x5AF)
-			|| (pkt->rp = xrp3, ((unsigned __int8)xrp3 & 3) != 0) )
+			|| (rp = pkt->rp, xrp2 = (u8 *)(pkt->wp - rp), xrp3 = rp - 2, (unsigned int)(xrp2 - 60) >= 0x5AF)
+			|| (pkt->rp = xrp3, ((u8)xrp3 & 3) != 0) )
 		{
 LABEL_15:
 			p_m_devops = &priv->m_devops;
@@ -617,11 +609,11 @@ LABEL_17:
 		}
 		else
 		{
-			*((_WORD *)rp - 1) = (_WORD)xrp2;
+			*((u16 *)rp - 1) = (u16)xrp2;
 			rpbytesp = (int)&xrp2[priv->m_tx_bytes];
 			++priv->m_tx_packets;
 			priv->m_tx_bytes = rpbytesp;
-			if ( (((_BYTE)xrp2 + 2) & 0x3F) == 0 )
+			if ( (((u8)xrp2 + 2) & 0x3F) == 0 )
 				++xrp2;
 			pkt->m_reserved1 = (void *)priv;
 			while ( 1 )
@@ -655,7 +647,7 @@ LABEL_17:
 // 403504: using guessed type int g_verbose;
 
 //----- (00400AC4) --------------------------------------------------------
-int __fastcall inet_81040000_multicast_list_handler(struct an986_priv *priv, _BYTE *ptr, int len)
+int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len)
 {
 	int result; // $v0
 	int curindx; // $a3
@@ -695,13 +687,13 @@ int __fastcall inet_81040000_multicast_list_handler(struct an986_priv *priv, _BY
 							for ( j = 7; j >= 0; --j )
 							{
 								xcurval = valcr2 >> 1;
-								if ( (((unsigned __int8)valcr2 ^ rshavle) & 1) != 0 )
+								if ( (((u8)valcr2 ^ rshavle) & 1) != 0 )
 									xcurval ^= 0xEDB88320;
 								valcr2 = xcurval;
 								rshavle = rshavle >> 1;
 							}
 						}
-						priv->m_usb_xfer_buf[((unsigned __int8)(xcurval & 0x3F) >> 3) + 8] |= 1 << (xcurval & 7);
+						priv->m_usb_xfer_buf[((u8)(xcurval & 0x3F) >> 3) + 8] |= 1 << (xcurval & 7);
 						lendivm1_1 = lendivm1;
 					}
 					--lendivm1;
@@ -730,7 +722,7 @@ int __fastcall inet_81040000_multicast_list_handler(struct an986_priv *priv, _BY
 }
 
 //----- (00400C28) --------------------------------------------------------
-int __fastcall an986_inet_control(struct an986_priv *priv, int code, _BYTE *ptr, int len)
+int an986_inet_control(struct an986_priv *priv, int code, u8 *ptr, int len)
 {
 	int m_nego_status; // $v1
 	int *p_m_err_rx_over; // $s0
@@ -892,7 +884,7 @@ int __fastcall an986_inet_control(struct an986_priv *priv, int code, _BYTE *ptr,
 // 4034F8: using guessed type int g_thpri;
 
 //----- (00400F78) --------------------------------------------------------
-int __fastcall inet_thread_proc(struct an986_priv *priv)
+int inet_thread_proc(struct an986_priv *priv)
 {
 	int result; // $v0
 	u16 m_subclass; // $v0
@@ -924,9 +916,9 @@ int __fastcall inet_thread_proc(struct an986_priv *priv)
 	int state_1; // $a0
 	struct an986_priv *priv_tmp2; // $a0
 	UsbDeviceRequest devreq; // [sp+20h] [-18h] BYREF
-	unsigned __int16 outval_1; // [sp+28h] [-10h] BYREF
-	unsigned __int16 outval_2; // [sp+2Ah] [-Eh] BYREF
-	unsigned __int16 outval_3; // [sp+2Ch] [-Ch] BYREF
+	u16 outval_1; // [sp+28h] [-10h] BYREF
+	u16 outval_2; // [sp+2Ah] [-Eh] BYREF
+	u16 outval_3; // [sp+2Ch] [-Ch] BYREF
 	int state; // [sp+30h] [-8h] BYREF
 
 	result = ef_wait_wrap(priv, 1u);
@@ -1135,7 +1127,7 @@ LABEL_8:
 																										USec2SysClock(0xF4240u, &priv->m_sysclk);
 																										SetAlarm(
 																											&priv->m_sysclk,
-																											(unsigned int (__cdecl *)(void *))alarm_cb,
+																											(unsigned int (*)(void *))alarm_cb,
 																											priv);
 																										indindx = 0;
 																										priv->m_timer_active = 1;
@@ -1257,7 +1249,7 @@ LABEL_86:
 // 403504: using guessed type int g_verbose;
 
 //----- (00401760) --------------------------------------------------------
-struct an986_priv *__fastcall do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2)
+struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2)
 {
 	struct an986_priv *priv_1; // $s0
 	struct an986_priv *priv_2; // $v0
@@ -1281,10 +1273,10 @@ struct an986_priv *__fastcall do_allocate_mem_for_inet(char *vendor_name, char *
 		priv_1->m_devops.module_name = "an986";
 		priv_1->m_devops.prot_ver = 2;
 		priv_1->m_devops.flags = 1040;
-		priv_1->m_devops.start = (int (__cdecl *)(void *, int))an986_inet_start;
-		priv_1->m_devops.stop = (int (__cdecl *)(void *, int))an986_inet_stop;
-		priv_1->m_devops.xmit = (int (__cdecl *)(void *, int))an986_inet_xmit;
-		priv_1->m_devops.control = (int (__cdecl *)(void *, int, void *, int))an986_inet_control;
+		priv_1->m_devops.start = (int (*)(void *, int))an986_inet_start;
+		priv_1->m_devops.stop = (int (*)(void *, int))an986_inet_stop;
+		priv_1->m_devops.xmit = (int (*)(void *, int))an986_inet_xmit;
+		priv_1->m_devops.control = (int (*)(void *, int, void *, int))an986_inet_control;
 		priv_1->m_devops.vendor_name = vendor_name;
 		priv_1->m_devops.device_name = device_name;
 		priv_1->m_devops.impl_ver = 0;
@@ -1296,7 +1288,7 @@ struct an986_priv *__fastcall do_allocate_mem_for_inet(char *vendor_name, char *
 		if ( efid > 0 )
 		{
 			thparam.attr = 0x2000000;
-			thparam.thread = (void (__cdecl *)(void *))inet_thread_proc;
+			thparam.thread = (void (*)(void *))inet_thread_proc;
 			thparam.option = 0;
 			thparam.priority = g_thpri;
 			thparam.stacksize = g_thstack;
@@ -1358,10 +1350,10 @@ struct an986_priv *__fastcall do_allocate_mem_for_inet(char *vendor_name, char *
 // 403504: using guessed type int g_verbose;
 
 //----- (004019E4) --------------------------------------------------------
-struct an986_devinfo *__fastcall do_check_static_descriptor(
+struct an986_devinfo *do_check_static_descriptor(
 				int is_probe,
-				unsigned __int16 id_vendor,
-				unsigned __int16 id_product)
+				u16 id_vendor,
+				u16 id_product)
 {
 	struct an986_devinfo *cur_devinfo; // $s1
 	int cur_devinfo_count; // $s0
@@ -1433,7 +1425,7 @@ struct an986_devinfo *__fastcall do_check_static_descriptor(
 // 403504: using guessed type int g_verbose;
 
 //----- (00401BA0) --------------------------------------------------------
-int __fastcall an986_ldd_connect(int devId)
+int an986_ldd_connect(int devId)
 {
 	UsbDeviceDescriptor *devdesc2; // $s0
 	int result; // $v0
@@ -1549,7 +1541,7 @@ int __fastcall an986_ldd_connect(int devId)
 // 403504: using guessed type int g_verbose;
 
 //----- (00401E3C) --------------------------------------------------------
-int __fastcall an986_ldd_disconnect(int devId)
+int an986_ldd_disconnect(int devId)
 {
 	struct an986_priv *priv; // $v0
 	int evfid; // $a0
@@ -1567,7 +1559,7 @@ int __fastcall an986_ldd_disconnect(int devId)
 // 403504: using guessed type int g_verbose;
 
 //----- (00401EA4) --------------------------------------------------------
-int __fastcall an986_ldd_probe(int devId)
+int an986_ldd_probe(int devId)
 {
 	int devid_tmp; // $s3
 	UsbStringDescriptor *strdesc1; // $s2
@@ -1604,7 +1596,7 @@ int __fastcall an986_ldd_probe(int devId)
 				if ( idx7 )
 					nul_or_com = ",";
 				++idx7;
-				printf("%s%d", nul_or_com, (unsigned __int8)*curstre);
+				printf("%s%d", nul_or_com, (u8)*curstre);
 				curstre = &strlocbuf[idx7];
 			}
 			while ( idx7 < 7 );
@@ -1669,7 +1661,7 @@ int do_print_help()
 }
 
 //----- (004020A8) --------------------------------------------------------
-int __fastcall scan_number(char *inchr, int *outptr)
+int scan_number(char *inchr, int *outptr)
 {
 	char *curchrptr; // $a3
 	int base; // $t1
@@ -1689,7 +1681,7 @@ int __fastcall scan_number(char *inchr, int *outptr)
 			base = 16;
 		}
 	}
-	curchrchr = (unsigned __int8)*curchrptr;
+	curchrchr = (u8)*curchrptr;
 	curval = 0;
 	if ( *curchrptr )
 	{
@@ -1707,7 +1699,7 @@ int __fastcall scan_number(char *inchr, int *outptr)
 			}
 			if ( currel >= base )
 				break;
-			curchrchr = (unsigned __int8)*++curchrptr;
+			curchrchr = (u8)*++curchrptr;
 			curval = curval * base + currel;
 			if ( !*curchrptr )
 			{
@@ -1775,7 +1767,7 @@ LABEL_11:
 // 403090: using guessed type an986_devinfo g_an986_devinfo[53];
 
 //----- (004022CC) --------------------------------------------------------
-int __fastcall an986_init(int ac, char **av)
+int an986_init(int ac, char **av)
 {
 	int ac_min_one; // $s3
 	const char **i; // $s2
