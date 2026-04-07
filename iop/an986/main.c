@@ -323,7 +323,7 @@ int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *ou
 	priv->m_usb_xfer_buf[37] = linkval & 0x1F;
 	priv->m_usb_xfer_buf[38] = 0;
 	priv->m_usb_xfer_buf[39] = 0;
-	priv->m_usb_xfer_buf[40] = xval & 0x1F | 0x40;
+	priv->m_usb_xfer_buf[40] = (xval & 0x1F) | 0x40;
 	result = control_positive_xfer(priv, 37, 4);
 	priv_tmp = priv;
 	if ( !result )
@@ -999,11 +999,11 @@ LABEL_8:
 											if ( !result )
 											{
 												if ( !priv->m_is_pegasus2
-													|| (priv->m_usb_xfer_buf[123] = 3,
+													|| ((priv->m_usb_xfer_buf[123] = 3,
 															resres = control_positive_xfer(priv, 123, 1) != 0,
 															result = 2,
 															!resres)
-													&& (priv->m_usb_xfer_buf[123] = 2, (result = control_positive_xfer(priv, 123, 1)) == 0) )
+													&& (priv->m_usb_xfer_buf[123] = 2, (result = control_positive_xfer(priv, 123, 1)) == 0)) )
 												{
 													priv->m_usb_xfer_buf[1] = 8;
 													result = control_positive_xfer(priv, 1, 1);
