@@ -988,7 +988,8 @@ struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name
 	{
 		if ( g_verbose )
 		{
-			printf("%s: ", (const char *)320);
+			// Unofficial: don't reference null priv->m_devops.interface
+			printf("%s: ", "an986");
 			printf("sceInetAllocMem(%d) -> no space or not ready", 888);
 			printf("\n");
 		}
