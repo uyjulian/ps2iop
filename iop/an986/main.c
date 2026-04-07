@@ -66,20 +66,20 @@ struct an986_devinfo
 
 int ef_wait_wrap(struct an986_priv *priv, u32 efbits);
 int ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits);
-int an986_done(int efbits, int doneval, struct an986_priv *priv);
+void an986_done(int efbits, int doneval, void *userdata);
 int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
 int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen);
 int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *outptr);
-int an986_rx_done(int aresult, int acount, sceInetPkt_t *pkt);
+void an986_rx_done(int aresult, int acount, void *userdata);
 void bulk_xfer(struct an986_priv *priv);
-void an986_tx_done(int aresult, int acount, sceInetPkt_t *pkt);
-u32 alarm_cb(struct an986_priv *priv);
-int an986_inet_start(struct an986_priv *priv);
-int an986_inet_stop(struct an986_priv *priv);
-int an986_inet_xmit(struct an986_priv *priv);
+void an986_tx_done(int aresult, int acount, void *userdata);
+unsigned int alarm_cb(void *userdata);
+int an986_inet_start(void *userdata, int unused);
+int an986_inet_stop(void *userdata, int unused);
+int an986_inet_xmit(void *userdata, int unused);
 int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len);
-int an986_inet_control(struct an986_priv *priv, int code, u8 *ptr, int len);
-int inet_thread_proc(struct an986_priv *priv);
+int an986_inet_control(void *userdata, int code, void *ptr, int len);
+void inet_thread_proc(void *userdata);
 struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name, int is_pegasus2);
 struct an986_devinfo *do_check_static_descriptor(int is_probe, u16 id_vendor, u16 id_product);
 int an986_ldd_connect(int devId);
@@ -224,23 +224,22 @@ int ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400104) --------------------------------------------------------
-int an986_done(int efbits, int doneval, struct an986_priv *priv)
+void an986_done(int efbits, int doneval, void *userdata)
 {
 	struct an986_priv *priv_tmp; // $a0
 
+	priv_tmp = (struct an986_priv *)userdata;
 	if ( !efbits )
 		goto LABEL_4;
-	priv_tmp = priv;
 	if ( g_verbose )
 	{
-		printf("%s: ", priv->m_devops.interface);
+		printf("%s: ", priv_tmp->m_devops.interface);
 		printf("%s: -> 0x%x\n", "an986_done", efbits);
 		printf("\n");
-LABEL_4:
-		priv_tmp = priv;
 	}
-	priv->m_done_related = doneval;
-	return ef_set_wrap(priv_tmp, efbits, 4u);
+LABEL_4:
+	priv_tmp->m_done_related = doneval;
+	ef_set_wrap(priv_tmp, efbits, 4u);
 }
 // 403504: using guessed type int g_verbose;
 
@@ -263,7 +262,7 @@ int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 							&priv->m_usb_xfer_buf[xferoffs],
 							(u16)xferlen,
 							&devreq,
-							(sceUsbdDoneCallback)an986_done,
+							an986_done,
 							priv);
 	if ( !xferret )
 		return ef_wait_wrap(priv, 4u);
@@ -298,7 +297,7 @@ int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 							&priv->m_usb_xfer_buf[xferoffs],
 							(u16)xferlen,
 							&devreq,
-							(sceUsbdDoneCallback)an986_done,
+							an986_done,
 							priv);
 	if ( !xferret )
 		return ef_wait_wrap(priv, 4u);
@@ -351,7 +350,7 @@ int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *ou
 }
 
 //----- (004003F4) --------------------------------------------------------
-int an986_rx_done(int aresult, int acount, sceInetPkt_t *pkt)
+void an986_rx_done(int aresult, int acount, void *userdata)
 {
 	struct an986_priv *priv; // $s0
 	sceInetDevOps_t *p_m_devops; // $a0
@@ -363,8 +362,9 @@ int an986_rx_done(int aresult, int acount, sceInetPkt_t *pkt)
 	int rpcur_10; // $v0
 	int rpcur_1e; // $v0
 	struct sceInetPktQ *p_rcvq; // $a0
-	int result; // $v0
+	sceInetPkt_t *pkt;
 
+	pkt = (sceInetPkt_t *)userdata;
 	priv = (struct an986_priv *)pkt->m_reserved1;
 	if ( aresult && g_verbose )
 	{
@@ -437,9 +437,7 @@ LABEL_23:
 	SetEventFlag(priv->m_devops.evfid, 4u);
 LABEL_22:
 	bulk_xfer(priv);
-	result = 10;
 	priv->m_val_for_alarm_cb = 10;
-	return result;
 }
 // 403504: using guessed type int g_verbose;
 
@@ -466,7 +464,7 @@ void bulk_xfer(struct an986_priv *priv)
 		pkt_2->m_reserved1 = (void *)priv;
 		pkt_2->rp = rp + 2;
 		pkt_2->wp = wp + 2;
-		xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt_2->wp, 0x5F2u, 0, (sceUsbdDoneCallback)an986_rx_done, pkt_2);
+		xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt_2->wp, 0x5F2u, 0, an986_rx_done, pkt_2);
 		if ( xferret )
 		{
 			devops_2 = devops_1;
@@ -497,13 +495,15 @@ void bulk_xfer(struct an986_priv *priv)
 // 403504: using guessed type int g_verbose;
 
 //----- (0040071C) --------------------------------------------------------
-void an986_tx_done(int aresult, int acount, sceInetPkt_t *pkt)
+void an986_tx_done(int aresult, int acount, void *userdata)
 {
 	struct an986_priv *priv; // $s1
 	bool condtmp; // dc
 	sceInetDevOps_t *p_m_devops; // $a0
 	sceInetPkt_t *pkt_1; // $a1
+	sceInetPkt_t *pkt;
 
+	pkt = (sceInetPkt_t *)userdata;
 	priv = (struct an986_priv *)pkt->m_reserved1;
 	condtmp = aresult == 0;
 	p_m_devops = &priv->m_devops;
@@ -525,12 +525,14 @@ LABEL_4:
 // 403504: using guessed type int g_verbose;
 
 //----- (004007AC) --------------------------------------------------------
-u32 alarm_cb(struct an986_priv *priv)
+unsigned int alarm_cb(void *userdata)
 {
 	int m_val_for_alarm_cb; // $v0
 	bool tmpneg; // dc
 	int tmpval; // $v0
+	struct an986_priv *priv;
 
+	priv = (struct an986_priv *)userdata;
 	m_val_for_alarm_cb = priv->m_val_for_alarm_cb;
 	tmpneg = m_val_for_alarm_cb <= 0;
 	tmpval = m_val_for_alarm_cb - 1;
@@ -540,10 +542,13 @@ u32 alarm_cb(struct an986_priv *priv)
 }
 
 //----- (004007DC) --------------------------------------------------------
-int an986_inet_start(struct an986_priv *priv)
+int an986_inet_start(void *userdata, int unused)
 {
 	int m_val_for_inet_start; // $v0
+	struct an986_priv *priv;
 
+	(void)unused;
+	priv = (struct an986_priv *)userdata;
 	m_val_for_inet_start = priv->m_val_for_inet_start;
 	priv->m_start_stop_flag = 0;
 	if ( m_val_for_inet_start )
@@ -554,10 +559,13 @@ int an986_inet_start(struct an986_priv *priv)
 }
 
 //----- (00400840) --------------------------------------------------------
-int an986_inet_stop(struct an986_priv *priv)
+int an986_inet_stop(void *userdata, int unused)
 {
 	int m_val_for_inet_stop; // $v1
+	struct an986_priv *priv;
 
+	(void)unused;
+	priv = (struct an986_priv *)userdata;
 	m_val_for_inet_stop = priv->m_val_for_inet_stop;
 	priv->m_start_stop_flag = 1;
 	if ( m_val_for_inet_stop )
@@ -566,7 +574,7 @@ int an986_inet_stop(struct an986_priv *priv)
 		DeleteThread(priv->m_thid);
 		DeleteEventFlag(priv->m_efid);
 		if ( priv->m_timer_active )
-			CancelAlarm((unsigned int (*)(void *))alarm_cb, priv);
+			CancelAlarm(alarm_cb, priv);
 		sceInetUnregisterNetDevice(&priv->m_devops);
 		sceInetFreeMem(&priv->m_devops, priv);
 	}
@@ -574,7 +582,7 @@ int an986_inet_stop(struct an986_priv *priv)
 }
 
 //----- (004008F4) --------------------------------------------------------
-int an986_inet_xmit(struct an986_priv *priv)
+int an986_inet_xmit(void *userdata, int unused)
 {
   int xferres; // $s3
   sceInetPkt_t *pkt; // $s2
@@ -583,7 +591,10 @@ int an986_inet_xmit(struct an986_priv *priv)
   u8 *xrp3; // $v0
   int rpbytesp; // $v1
   sceInetDevOps_t *p_m_devops; // $a0
+  struct an986_priv *priv;
 
+	(void)unused;
+	priv = (struct an986_priv *)userdata;
   xferres = -1;
   pkt = sceInetPktDeQ(&priv->m_devops.sndq);
   if ( pkt )
@@ -623,7 +634,7 @@ LABEL_17:
                     pkt->rp,
                     xrp2 + 2,
                     0,
-                    (sceUsbdDoneCallback)an986_tx_done,
+                    an986_tx_done,
                     pkt);
         if ( !xferres )
           break;
@@ -722,13 +733,15 @@ int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int l
 }
 
 //----- (00400C28) --------------------------------------------------------
-int an986_inet_control(struct an986_priv *priv, int code, u8 *ptr, int len)
+int an986_inet_control(void *userdata, int code, void *ptr, int len)
 {
 	int m_nego_status; // $v1
 	int *p_m_err_rx_over; // $s0
 	int m_thid; // $a0
 	int priority; // [sp+10h] [-8h] BYREF
+	struct an986_priv *priv;
 
+	priv = (struct an986_priv *)userdata;
 	m_nego_status = -512;
 	p_m_err_rx_over = 0;
 	if ( code == 0x80011003 )
@@ -884,7 +897,7 @@ int an986_inet_control(struct an986_priv *priv, int code, u8 *ptr, int len)
 // 4034F8: using guessed type int g_thpri;
 
 //----- (00400F78) --------------------------------------------------------
-int inet_thread_proc(struct an986_priv *priv)
+void inet_thread_proc(void *userdata)
 {
 	int result; // $v0
 	u16 m_subclass; // $v0
@@ -920,7 +933,9 @@ int inet_thread_proc(struct an986_priv *priv)
 	u16 outval_2; // [sp+2Ah] [-Eh] BYREF
 	u16 outval_3; // [sp+2Ch] [-Ch] BYREF
 	int state; // [sp+30h] [-8h] BYREF
+	struct an986_priv *priv;
 
+	priv = (struct an986_priv *)userdata;
 	result = ef_wait_wrap(priv, 1u);
 	if ( !result )
 	{
@@ -930,7 +945,7 @@ int inet_thread_proc(struct an986_priv *priv)
 		devreq.index = 0;
 		devreq.length = 0;
 		devreq.value = m_subclass;
-		xferret = sceUsbdTransferPipe(priv->m_ctrl_pipe, 0, 0, &devreq, (sceUsbdDoneCallback)an986_done, priv);
+		xferret = sceUsbdTransferPipe(priv->m_ctrl_pipe, 0, 0, &devreq, an986_done, priv);
 		if ( xferret )
 		{
 			result = g_verbose;
@@ -938,7 +953,8 @@ int inet_thread_proc(struct an986_priv *priv)
 			{
 				printf("%s: ", priv->m_devops.interface);
 				printf("sceUsbdSetConfiguration -> 0x%x", xferret);
-				return printf("\n");
+				printf("\n");
+				return;
 			}
 		}
 		else
@@ -970,7 +986,7 @@ LABEL_8:
 								result = control_negative_xfer(priv, 33, 3);
 								++xidx_1;
 								if ( result )
-									return result;
+									return;
 								priv_tmp4->m_hwaddr_tmp[0] = priv->m_usb_xfer_buf[33];
 								priv_tmp4->m_hwaddr_tmp[1] = priv->m_usb_xfer_buf[34];
 								priv_tmp4 = (struct an986_priv *)((char *)priv_tmp4 + 2);
@@ -979,7 +995,7 @@ LABEL_8:
 								bcopy(priv->m_hwaddr_tmp, &priv->m_usb_xfer_buf[16], 6);
 								result = control_positive_xfer(priv, 16, 6);
 								if ( result )
-									return result;
+									return;
 								bcopy(priv->m_hwaddr_tmp, priv->m_devops.hw_addr, 6);
 								priv->m_link_status = -1;
 								regres = sceInetRegisterNetDevice(&priv->m_devops);
@@ -1024,7 +1040,7 @@ LABEL_8:
 																{
 																	result = control_inout_xfer(priv_tmp3, idxcnt, 1, &outval_1);
 																	if ( result )
-																		return result;
+																		return;
 																	if ( outval_1 == 0xFFFF )
 																	{
 																		++idxcnt;
@@ -1033,10 +1049,11 @@ LABEL_8:
 																		{
 																			result = g_verbose;
 																			if ( !g_verbose )
-																				return result;
+																				return;
 																			printf("%s: ", priv->m_devops.interface);
 																			printf("Valid PHY chip not found");
-																			return printf("\n");
+																			printf("\n");
+																			return;
 																		}
 																	}
 																	else
@@ -1127,7 +1144,7 @@ LABEL_8:
 																										USec2SysClock(0xF4240u, &priv->m_sysclk);
 																										SetAlarm(
 																											&priv->m_sysclk,
-																											(unsigned int (*)(void *))alarm_cb,
+																											alarm_cb,
 																											priv);
 																										indindx = 0;
 																										priv->m_timer_active = 1;
@@ -1197,7 +1214,7 @@ LABEL_8:
 																													}
 																													DelayThread(100000);
 																												}
-																												return result;
+																												return;
 																											}
 LABEL_86:
 																											priv->m_val_for_alarm_cb = 10;
@@ -1209,7 +1226,7 @@ LABEL_86:
 																					}
 																				}
 																			}
-																			return result;
+																			return;
 																		}
 																		DelayThread(100000);
 																		++indindx2;
@@ -1227,14 +1244,15 @@ LABEL_86:
 											}
 										}
 									}
-									return result;
+									return;
 								}
 								result = g_verbose;
 								if ( !g_verbose )
-									return result;
+									return;
 								printf("%s: ", priv->m_devops.interface);
 								printf("sceInetRegisterNetDevice -> %d", regres);
-								return printf("\n");
+								printf("\n");
+								return;
 							}
 							DelayThread(10000);
 							priv_tmp5 = priv;
@@ -1244,7 +1262,6 @@ LABEL_86:
 			}
 		}
 	}
-	return result;
 }
 // 403504: using guessed type int g_verbose;
 
@@ -1273,10 +1290,10 @@ struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name
 		priv_1->m_devops.module_name = "an986";
 		priv_1->m_devops.prot_ver = 2;
 		priv_1->m_devops.flags = 1040;
-		priv_1->m_devops.start = (int (*)(void *, int))an986_inet_start;
-		priv_1->m_devops.stop = (int (*)(void *, int))an986_inet_stop;
-		priv_1->m_devops.xmit = (int (*)(void *, int))an986_inet_xmit;
-		priv_1->m_devops.control = (int (*)(void *, int, void *, int))an986_inet_control;
+		priv_1->m_devops.start = an986_inet_start;
+		priv_1->m_devops.stop = an986_inet_stop;
+		priv_1->m_devops.xmit = an986_inet_xmit;
+		priv_1->m_devops.control = an986_inet_control;
 		priv_1->m_devops.vendor_name = vendor_name;
 		priv_1->m_devops.device_name = device_name;
 		priv_1->m_devops.impl_ver = 0;
@@ -1288,7 +1305,7 @@ struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *device_name
 		if ( efid > 0 )
 		{
 			thparam.attr = 0x2000000;
-			thparam.thread = (void (*)(void *))inet_thread_proc;
+			thparam.thread = inet_thread_proc;
 			thparam.option = 0;
 			thparam.priority = g_thpri;
 			thparam.stacksize = g_thstack;
