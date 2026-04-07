@@ -170,7 +170,6 @@ int g_thpri = 40; // weak
 int g_thstack = 16384; // weak
 int g_magic_count = 0; // weak
 int g_verbose = 0; // weak
-int dword_4036A8 = 0; // weak
 char *version_ptr = "Version 1.75.0"; // weak
 int g_resident_flag; // weak
 int g_load_mode; // weak
@@ -1565,7 +1564,7 @@ int an986_ldd_probe(int devId)
 			{
 				if ( !*curstre )
 					break;
-				nul_or_com = (const char *)&dword_4036A8;
+				nul_or_com = "";
 				if ( idx7 )
 					nul_or_com = ",";
 				++idx7;
@@ -1612,7 +1611,6 @@ int an986_ldd_probe(int devId)
 	return result;
 }
 // 403504: using guessed type int g_verbose;
-// 4036A8: using guessed type int dword_4036A8;
 // 403700: using guessed type int g_resident_flag;
 // 403704: using guessed type int g_load_mode;
 // 401EA4: using guessed type u8 strlocbuf[16];
