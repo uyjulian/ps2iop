@@ -682,7 +682,7 @@ static void inet_thread_proc(void *userdata)
 	priv = (struct an986_priv *)userdata;
 	if ( ef_wait_wrap(priv, 1) )
 		return;
-	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, 0, 9, priv->m_cfgval, 0, 0, NULL, an986_done, priv);
+	xferret = sceUsbdSetConfiguration(priv->m_ctrl_pipe, priv->m_cfgval, an986_done, priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
