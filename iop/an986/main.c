@@ -1,6 +1,7 @@
 
 #include "irx_imports.h"
 #include <usbd_macro.h>
+#include <ctype.h>
 
 IRX_ID("INET_AN986_driver", 1, 75);
 
@@ -1316,12 +1317,12 @@ static int an986_init(int ac, char **av)
 		else if ( !strncmp("thpri=", av[i], 6) )
 		{
 			thpricurx = &av[i][6];
-			if ( !(look_ctype_table(*thpricurx) & 4) )
+			if ( !isdigit(*thpricurx) )
 				return do_print_help();
 			g_thpri = strtol(thpricurx, NULL, 10);
 			if ( (unsigned int)(g_thpri - 9) >= 0x73 )
 				return do_print_help();
-			while ( *thpricurx && !!(look_ctype_table(*thpricurx) & 4) )
+			while ( *thpricurx && isdigit(*thpricurx) )
 			{
 				thpricurx += 1;
 			}
@@ -1331,10 +1332,10 @@ static int an986_init(int ac, char **av)
 		else if ( !strncmp("thstack=", av[i], 8) )
 		{
 			thpricurx = &av[i][8];
-			if ( !(look_ctype_table(*thpricurx) & 4) )
+			if ( !isdigit(*thpricurx) )
 				return do_print_help();
 			g_thstack = strtol(thpricurx, NULL, 10);
-			while ( *thpricurx && !!(look_ctype_table(*thpricurx) & 4) )
+			while ( *thpricurx && isdigit(*thpricurx) )
 			{
 				thpricurx += 1;
 			}
