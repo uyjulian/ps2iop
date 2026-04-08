@@ -165,9 +165,9 @@ static int g_load_mode; // weak
 static int ef_wait_wrap(struct an986_priv *priv, u32 efbits)
 {
 	int efret; // $s1
-	u32 efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efres; // [sp+10h] [-8h] BYREF
 
-	efret = WaitEventFlag(priv->m_efid, efbits, 17, efres);
+	efret = WaitEventFlag(priv->m_efid, efbits, 17, &efres);
 	if ( efret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
