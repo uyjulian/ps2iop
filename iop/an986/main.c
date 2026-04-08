@@ -264,7 +264,7 @@ static int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, 
 		result = control_negative_xfer(priv, 40, 1);
 		if ( result )
 			return result;
-		if ( (priv->m_usb_xfer_buf[40] & 0x80) != 0 )
+		if ( !!(priv->m_usb_xfer_buf[40] & 0x80) )
 			break;
 		DelayThread(10000);
 	}
@@ -302,23 +302,23 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 	}
 	else
 	{
-		if ( (pkt->rp[acount - 2] & 1) != 0 )
+		if ( !!(pkt->rp[acount - 2] & 1) )
 		{
 			priv->m_multicast += 1;
 		}
-		if ( (pkt->rp[acount - 2] & 2) != 0 )
+		if ( !!(pkt->rp[acount - 2] & 2) )
 		{
 			priv->m_err_rx_length += 1;
 		}
-		if ( (pkt->rp[acount - 2] & 4) != 0 )
+		if ( !!(pkt->rp[acount - 2] & 4) )
 		{
 			priv->m_err_rx_length += 1;
 		}
-		if ( (pkt->rp[acount - 2] & 8) != 0 )
+		if ( !!(pkt->rp[acount - 2] & 8) )
 		{
 			priv->m_err_rx_crc += 1;
 		}
-		if ( (pkt->rp[acount - 2] & 0x10) != 0 )
+		if ( !!(pkt->rp[acount - 2] & 0x10) )
 		{
 			priv->m_err_rx_frame += 1;
 		}
@@ -469,7 +469,7 @@ static int an986_inet_xmit(void *userdata, int unused)
   if ( !dropped )
   {
   	pkt->rp -= 2;
-  	if ( ((uiptr)(pkt->rp) & 3) != 0 )
+  	if ( !!((uiptr)(pkt->rp) & 3) )
   		dropped = 1;
   }
   if ( !dropped )
@@ -478,7 +478,7 @@ static int an986_inet_xmit(void *userdata, int unused)
     priv->m_tx_packets += 1;
     priv->m_tx_bytes += xrp2;
     xrp2 += 2;
-    if ( (((u8)xrp2) & 0x3F) == 0 )
+    if ( !(((u8)xrp2) & 0x3F) )
       xrp2 += 1;
     pkt->m_reserved1 = (void *)priv;
     while ( 1 )
@@ -530,7 +530,7 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 		{
 			for ( k = 0; k < (len / 6); k += 1 )
 			{
-				if ( (*ptr & 1) != 0 )
+				if ( !!(*ptr & 1) )
 				{
 					unsigned int valcr2;
 					int i;
@@ -544,7 +544,7 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 						for ( j = 0; j < 8; j += 1 )
 						{
 							xcurval = valcr2 >> 1;
-							if ( (((u8)valcr2 ^ (u8)(*ptr >> j)) & 1) != 0 )
+							if ( !!(((u8)valcr2 ^ (u8)(*ptr >> j)) & 1) )
 								xcurval ^= 0xEDB88320;
 							valcr2 = xcurval;
 						}
@@ -720,7 +720,7 @@ static void inet_thread_proc(void *userdata)
 			return;
 		while ( !control_negative_xfer(priv, 35, 1) )
 		{
-			if ( (priv->m_usb_xfer_buf[35] & 4) != 0 )
+			if ( !!(priv->m_usb_xfer_buf[35] & 4) )
 			{
 				if ( control_negative_xfer(priv, 33, 3) )
 					return;
@@ -766,7 +766,7 @@ static void inet_thread_proc(void *userdata)
 	priv->m_usb_xfer_buf[1] = 8;
 	if ( control_positive_xfer(priv, 1, 1) )
 		return;
-	while ( !control_negative_xfer(priv, 1, 1) && (priv->m_usb_xfer_buf[1] & 8) != 0 )
+	while ( !control_negative_xfer(priv, 1, 1) && !!(priv->m_usb_xfer_buf[1] & 8) )
 	{
 		DelayThread(10000);
 	}
@@ -808,18 +808,18 @@ static void inet_thread_proc(void *userdata)
 		return;
 	priv->m_usb_xfer_buf[1] = 0;
 	outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
-	if ( (outval_1 & 0x140) != 0 )
+	if ( !!(outval_1 & 0x140) )
 		priv->m_usb_xfer_buf[1] |= 0x20u;
-	if ( (outval_1 & 0x180) != 0 )
+	if ( !!(outval_1 & 0x180) )
 		priv->m_usb_xfer_buf[1] |= 0x10u;
 	if ( control_positive_xfer(priv, 1, 1) )
 		return;
-	priv->m_nego_status = (( (outval_1 & 0x140) != 0 ) ? 2 : 1) << (( (outval_1 & 0x180) != 0 ) ? 2 : 0);
+	priv->m_nego_status = (( !!(outval_1 & 0x140) ) ? 2 : 1) << (( !!(outval_1 & 0x180) ) ? 2 : 0);
 	printf(
 		"%s: %s %s Duplex Mode (ANAR=0x%04x ANLPAR=0x%04x)\n",
 		priv->m_devops.interface,
-		( (outval_1 & 0x180) != 0 ) ? "100BaseTX" : "10BaseT",
-		( (outval_1 & 0x140) != 0 ) ? "Full" : "Half",
+		( !!(outval_1 & 0x180) ) ? "100BaseTX" : "10BaseT",
+		( !!(outval_1 & 0x140) ) ? "Full" : "Half",
 		priv->m_usb_ctrl_buf[0],
 		priv->m_usb_ctrl_buf[1]);
 	if ( control_inout_xfer(priv, idxcnt, 2, &outval_2) || control_inout_xfer(priv, idxcnt, 3, &outval_3) )
@@ -861,15 +861,15 @@ static void inet_thread_proc(void *userdata)
 		while ( priv->m_val_for_alarm_cb > 0 )
 		{
 			control_negative_xfer(priv, 43, 5);
-			if ( (priv->m_usb_xfer_buf[43] & 0x6C) != 0 )
+			if ( !!(priv->m_usb_xfer_buf[43] & 0x6C) )
 			{
-				if ( (priv->m_usb_xfer_buf[43] & 0x60) != 0 )
+				if ( !!(priv->m_usb_xfer_buf[43] & 0x60) )
 					priv->m_collisions += 1;
-				if ( (priv->m_usb_xfer_buf[43] & 0xC) != 0 )
+				if ( !!(priv->m_usb_xfer_buf[43] & 0xC) )
 					priv->m_err_tx_carrier += 1;
 				priv->m_tx_errors += 1;
 			}
-			if ( (priv->m_usb_xfer_buf[45] & 1) != 0 )
+			if ( !!(priv->m_usb_xfer_buf[45] & 1) )
 			{
 				priv->m_err_rx_over += 1;
 				priv->m_rx_errors += 1;
@@ -892,7 +892,7 @@ static void inet_thread_proc(void *userdata)
 		}
 		if ( control_inout_xfer(priv, idxcnt, 1, &outval_1) )
 			return;
-		if ( (outval_1 & 4) == 0 )
+		if ( !(outval_1 & 4) )
 		{
 			priv->m_link_status = 0;
 			while ( (outval_1 & 0x24) != 0x24 )
@@ -1072,21 +1072,21 @@ static int an986_ldd_connect(int devId)
 	bulk_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, intfdesc, 5u);
 	if ( !bulk_in_desc )
 		return -1;
-	if ( (bulk_in_desc->bEndpointAddress & 0x80) == 0 )
+	if ( !(bulk_in_desc->bEndpointAddress & 0x80) )
 		return -1;
 	if ( (bulk_in_desc->bmAttributes & 3) != 2 )
 		return -1;
 	bulk_out_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_in_desc, 5u);
 	if ( !bulk_out_desc )
 		return -1;
-	if ( (bulk_out_desc->bEndpointAddress & 0x80) != 0 )
+	if ( !!(bulk_out_desc->bEndpointAddress & 0x80) )
 		return -1;
 	if ( (bulk_out_desc->bmAttributes & 3) != 2 )
 		return -1;
 	int_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_out_desc, 5u);
 	if ( !int_in_desc )
 		return -1;
-	if ( (int_in_desc->bEndpointAddress & 0x80) == 0 )
+	if ( !(int_in_desc->bEndpointAddress & 0x80) )
 		return -1;
 	if ( (int_in_desc->bmAttributes & 3) != 3 )
 		return -1;
@@ -1316,12 +1316,12 @@ static int an986_init(int ac, char **av)
 		else if ( !strncmp("thpri=", av[i], 6) )
 		{
 			thpricurx = &av[i][6];
-			if ( (look_ctype_table(*thpricurx) & 4) == 0 )
+			if ( !(look_ctype_table(*thpricurx) & 4) )
 				return do_print_help();
 			g_thpri = strtol(thpricurx, NULL, 10);
 			if ( (unsigned int)(g_thpri - 9) >= 0x73 )
 				return do_print_help();
-			while ( *thpricurx && (look_ctype_table(*thpricurx) & 4) != 0 )
+			while ( *thpricurx && !!(look_ctype_table(*thpricurx) & 4) )
 			{
 				thpricurx += 1;
 			}
@@ -1331,10 +1331,10 @@ static int an986_init(int ac, char **av)
 		else if ( !strncmp("thstack=", av[i], 8) )
 		{
 			thpricurx = &av[i][8];
-			if ( (look_ctype_table(*thpricurx) & 4) == 0 )
+			if ( !(look_ctype_table(*thpricurx) & 4) )
 				return do_print_help();
 			g_thstack = strtol(thpricurx, NULL, 10);
-			while ( *thpricurx && ((look_ctype_table(*thpricurx) & 4) != 0) )
+			while ( *thpricurx && !!(look_ctype_table(*thpricurx) & 4) )
 			{
 				thpricurx += 1;
 			}
@@ -1355,7 +1355,7 @@ static int an986_init(int ac, char **av)
 	}
 	if ( g_load_mode != 'n' )
 		g_resident_flag = 0;
-	if ( sceUsbdRegisterLdd(&g_an986_ldd) != 0 )
+	if ( sceUsbdRegisterLdd(&g_an986_ldd) )
 	{
 		return 4;
 	}
