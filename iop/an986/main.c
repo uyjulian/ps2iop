@@ -726,9 +726,7 @@ static void inet_thread_proc(void *userdata)
 		VERBOSE_PRINTF("\n");
 		return;
 	}
-	if ( ef_wait_wrap(priv, 4) )
-		return;
-	if ( control_in_xfer(priv, 16, 6) )
+	if ( ef_wait_wrap(priv, 4) || control_in_xfer(priv, 16, 6) )
 		return;
 #ifdef AN986_UEPCB
 	priv->m_usb_xfer_buf[2] = 0x20;
@@ -748,21 +746,21 @@ static void inet_thread_proc(void *userdata)
 		priv->m_usb_xfer_buf[35] = 2;
 		if ( control_out_xfer(priv, 32, 4) )
 			return;
-		while ( !control_in_xfer(priv, 35, 1) )
+		while ( 1 )
 		{
+			if ( control_in_xfer(priv, 35, 1) )
+				return;
 			if ( !!(priv->m_usb_xfer_buf[35] & 4) )
-			{
-				if ( control_in_xfer(priv, 33, 3) )
-					return;
-				priv->m_hwaddr_tmp[(i * 2) + 0] = priv->m_usb_xfer_buf[33];
-				priv->m_hwaddr_tmp[(i * 2) + 1] = priv->m_usb_xfer_buf[34];
-#ifdef AN986_UEPCB
-				printf("%d %x %x\n", i, priv->m_usb_xfer_buf[33], priv->m_usb_xfer_buf[34]);
-#endif
 				break;
-			}
 			DelayThread(10000);
 		}
+		if ( control_in_xfer(priv, 33, 3) )
+			return;
+		priv->m_hwaddr_tmp[(i * 2) + 0] = priv->m_usb_xfer_buf[33];
+		priv->m_hwaddr_tmp[(i * 2) + 1] = priv->m_usb_xfer_buf[34];
+#ifdef AN986_UEPCB
+		printf("%d %x %x\n", i, priv->m_usb_xfer_buf[33], priv->m_usb_xfer_buf[34]);
+#endif
 	}
 	bcopy(priv->m_hwaddr_tmp, &priv->m_usb_xfer_buf[16], 6);
 	if ( control_out_xfer(priv, 16, 6) )
@@ -819,8 +817,12 @@ static void inet_thread_proc(void *userdata)
 	priv->m_usb_xfer_buf[1] = 8;
 	if ( control_out_xfer(priv, 1, 1) )
 		return;
-	while ( !control_in_xfer(priv, 1, 1) && !!(priv->m_usb_xfer_buf[1] & 8) )
+	while ( 1 )
 	{
+		if ( control_in_xfer(priv, 1, 1) )
+			return;
+		if ( !(priv->m_usb_xfer_buf[1] & 8) )
+			break;
 		DelayThread(10000);
 	}
 	k = 0;
