@@ -84,9 +84,9 @@ static int an986_ldd_probe(int devId);
 // Data declarations
 
 extern struct irx_export_table _exp_an986;
-static struct an986_devinfo g_an986_devinfo[] =
+static struct an986_devinfo g_an986_devinfo_custom = { '-', 0x0000, "Unknown", 0x0000, "Unknown" };
+static const struct an986_devinfo g_an986_devinfo[] =
 {
-	{ '-', 0x0000, "Unknown", 0x0000, "Unknown" },
 	{ 'k', 0x03e8, "AOX", 0x0008, "101" },
 	{ 'p', 0x0411, "Melco", 0x0001, "LUA-TX" },
 	{ 'p', 0x0411, "Melco", 0x0005, "LUA-TX" },
@@ -994,39 +994,54 @@ static struct an986_priv *do_allocate_mem_for_inet(const char *vendor_name, cons
 // 403504: using guessed type int g_verbose;
 
 //----- (004019E4) --------------------------------------------------------
-static struct an986_devinfo *do_check_static_descriptor(
+static const struct an986_devinfo *do_check_static_descriptor(
 				int is_probe,
 				u16 id_vendor,
 				u16 id_product)
 {
-	unsigned int i; // $s0
+	const struct an986_devinfo *cur_devinfo;
 
 	if ( is_probe )
 		VERBOSE_PRINTF("an986: idVendor=0x%04x idProduct=0x%04x\n", id_vendor, id_product);
-	// Unofficial: avoid out of bounds read when device not found
-	for ( i = 0; i < (sizeof(g_an986_devinfo)/sizeof(g_an986_devinfo[0])); i += 1 )
+	cur_devinfo = NULL;
+	if ( id_vendor == g_an986_devinfo_custom.m_vendor_id && id_product == g_an986_devinfo_custom.m_product_id )
 	{
-		if ( id_vendor == g_an986_devinfo[i].m_vendor_id && id_product == g_an986_devinfo[i].m_product_id )
+		cur_devinfo = &g_an986_devinfo_custom;
+	}
+	if ( !cur_devinfo )
+	{
+		unsigned int i;
+
+		// Unofficial: avoid out of bounds read when device not found
+		for ( i = 0; i < (sizeof(g_an986_devinfo)/sizeof(g_an986_devinfo[0])); i += 1 )
 		{
-			if ( is_probe )
-				VERBOSE_PRINTF("an986: %s, %s", g_an986_devinfo[i].m_vendor_name, g_an986_devinfo[i].m_device_name);
-			switch ( g_an986_devinfo[i].m_chip )
+			if ( id_vendor == g_an986_devinfo[i].m_vendor_id && id_product == g_an986_devinfo[i].m_product_id )
 			{
-			case 'p':
-				if ( is_probe )
-					VERBOSE_PRINTF(" [pegasus] -> supported\n");
-				return &g_an986_devinfo[i];
-			case 'P':
-				if ( is_probe )
-					VERBOSE_PRINTF(" [pegasusII] -> supported\n");
-				return &g_an986_devinfo[i];
-			case 'k':
-				if ( is_probe )
-					VERBOSE_PRINTF(" [klsi] -> unsupported\n");
-				return NULL;
-			default:
+				cur_devinfo = &g_an986_devinfo[i];
 				break;
 			}
+		}
+	}
+	if ( cur_devinfo )
+	{
+		if ( is_probe )
+			VERBOSE_PRINTF("an986: %s, %s", cur_devinfo->m_vendor_name, cur_devinfo->m_device_name);
+		switch ( cur_devinfo->m_chip )
+		{
+		case 'p':
+			if ( is_probe )
+				VERBOSE_PRINTF(" [pegasus] -> supported\n");
+			return cur_devinfo;
+		case 'P':
+			if ( is_probe )
+				VERBOSE_PRINTF(" [pegasusII] -> supported\n");
+			return cur_devinfo;
+		case 'k':
+			if ( is_probe )
+				VERBOSE_PRINTF(" [klsi] -> unsupported\n");
+			return NULL;
+		default:
+			break;
 		}
 	}
 	if ( is_probe )
@@ -1302,12 +1317,12 @@ static int an986_init(int ac, char **av)
 			return do_print_list();
 		else if ( !strcmp("-p", av[i]) || !strcmp("-P", av[i]) )
 		{
-			g_an986_devinfo[0].m_chip = av[i][1];
+			g_an986_devinfo_custom.m_chip = av[i][1];
 			i += 1;
 			if ( i >= ac || scan_number((char *)av[i], &vidtmp) )
 				return do_print_help();
-			g_an986_devinfo[0].m_vendor_id = (vidtmp >> 16) & 0xFFFF;
-			g_an986_devinfo[0].m_product_id = vidtmp & 0xFFFF;
+			g_an986_devinfo_custom.m_vendor_id = (vidtmp >> 16) & 0xFFFF;
+			g_an986_devinfo_custom.m_product_id = vidtmp & 0xFFFF;
 		}
 		else if ( !strncmp("thpri=", av[i], 6) )
 		{
