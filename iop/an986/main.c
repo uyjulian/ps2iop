@@ -76,9 +76,6 @@ struct an986_devinfo
 // Function declarations
 
 static void bulk_xfer(struct an986_priv *priv);
-static int an986_ldd_connect(int devId);
-static int an986_ldd_disconnect(int devId);
-static int an986_ldd_probe(int devId);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -140,25 +137,16 @@ static const struct an986_devinfo g_an986_devinfo[] =
 	{ 'P', 0x2001, "D-Link", 0x400b, "DSB-650TX B1" },
 	{ 'p', 0x2001, "D-Link", 0xabc1, "DSB-650" },
 }; // weak
-static sceUsbdLddOps g_an986_ldd =
-{
-	NULL,
-	NULL,
-	"an986",
-	&an986_ldd_probe,
-	&an986_ldd_connect,
-	&an986_ldd_disconnect,
-	0,
-	0,
-	0,
-	0,
-	0,
-	NULL,
-}; // weak
-static int g_thpri = 40; // weak
-static int g_thstack = 0x4000; // weak
-static int g_magic_count = 0; // weak
-static int g_verbose = 0; // weak
+// Unofficial: move to bss
+static sceUsbdLddOps g_an986_ldd;
+// Unofficial: move to bss
+static int g_thpri;
+// Unofficial: move to bss
+static int g_thstack;
+// Unofficial: move to bss
+static int g_magic_count;
+// Unofficial: move to bss
+static int g_verbose;
 static const char *version_ptr = "Version 1.75.0"; // weak
 static int g_resident_flag; // weak
 static int g_load_mode; // weak
@@ -1301,6 +1289,10 @@ static int an986_init(int ac, char **av)
 	char *thpricurx; // $s0
 	unsigned int vidtmp; // [sp+10h] [-8h] BYREF
 
+	g_thpri = 40;
+	g_thstack = 0x4000;
+	g_magic_count = 0;
+	g_verbose = 0;
 	g_load_mode = 'n';
 	g_resident_flag = 1;
 	for ( i = 1; i < ac; i += 1 )
@@ -1366,6 +1358,11 @@ static int an986_init(int ac, char **av)
 	}
 	if ( g_load_mode != 'n' )
 		g_resident_flag = 0;
+	memset(&g_an986_ldd, 0, sizeof(g_an986_ldd));
+	g_an986_ldd.name = "an986";
+	g_an986_ldd.probe = &an986_ldd_probe;
+	g_an986_ldd.connect = &an986_ldd_connect;
+	g_an986_ldd.disconnect = &an986_ldd_disconnect;
 	if ( sceUsbdRegisterLdd(&g_an986_ldd) )
 	{
 		return 4;
