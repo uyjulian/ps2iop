@@ -810,7 +810,7 @@ static void inet_thread_proc(void *userdata)
 		priv->m_usb_xfer_buf[1] |= 0x10u;
 	if ( control_positive_xfer(priv, 1, 1) )
 		return;
-	priv->m_nego_status = (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_10_FD : sceInetNDNEGO_10) << (( !!(outval_1 & 0x180) ) ? 2 : 0);
+	priv->m_nego_status = ( !!(outval_1 & 0x180) ) ? (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_TX_FD : sceInetNDNEGO_TX) : (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_10_FD : sceInetNDNEGO_10);
 	printf(
 		"%s: %s %s Duplex Mode (ANAR=0x%04x ANLPAR=0x%04x)\n",
 		priv->m_devops.interface,
