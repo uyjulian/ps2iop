@@ -317,7 +317,7 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 		VERBOSE_PRINTF("\n");
 	}
 	priv->m_rx_packets += 1;
-	pkt->m_reserved1 = 0;
+	pkt->m_reserved1 = NULL;
 	if ( priv->m_start_stop_flag || priv->m_val_for_inet_stop )
 	{
 		sceInetFreePkt(&priv->m_devops, pkt);
@@ -388,7 +388,7 @@ static void bulk_xfer(struct an986_priv *priv)
 	pkt->m_reserved1 = (void *)priv;
 	pkt->rp += 2;
 	pkt->wp += 2;
-	xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt->wp, 0x5F2u, 0, an986_rx_done, pkt);
+	xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt->wp, 0x5F2u, NULL, an986_rx_done, pkt);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -414,7 +414,7 @@ static void an986_tx_done(int aresult, int acount, void *userdata)
 		VERBOSE_PRINTF("%s: -> 0x%x\n", "an986_tx_done", aresult);
 		VERBOSE_PRINTF("\n");
 	}
-	pkt->m_reserved1 = 0;
+	pkt->m_reserved1 = NULL;
 	sceInetFreePkt(&priv->m_devops, pkt);
 }
 // 403504: using guessed type int g_verbose;
@@ -514,7 +514,7 @@ static int an986_inet_xmit(void *userdata, int unused)
                   priv->m_bulk_out_pipe,
                   pkt->rp + 2,
                   xrp2,
-                  0,
+                  NULL,
                   an986_tx_done,
                   pkt);
       if ( !xferres )
@@ -602,7 +602,7 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 
 	priv = (struct an986_priv *)userdata;
 	m_nego_status = -512;
-	p_m_err_rx_over = 0;
+	p_m_err_rx_over = NULL;
 	switch ( code )
 	{
 		case 0x80000000:
@@ -731,7 +731,7 @@ static void inet_thread_proc(void *userdata)
 	devreq.index = 0;
 	devreq.length = 0;
 	devreq.value = priv->m_subclass;
-	xferret = sceUsbdTransferPipe(priv->m_ctrl_pipe, 0, 0, &devreq, an986_done, priv);
+	xferret = sceUsbdTransferPipe(priv->m_ctrl_pipe, NULL, 0, &devreq, an986_done, priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -952,7 +952,7 @@ static struct an986_priv *do_allocate_mem_for_inet(const char *vendor_name, cons
 	iop_thread_t thparam; // [sp+20h] [-18h] BYREF
 
 	err = 0;
-	priv = (struct an986_priv *)sceInetAllocMem(0, 888);
+	priv = (struct an986_priv *)sceInetAllocMem(NULL, 888);
 	if ( !priv )
 	{
 		// Unofficial: don't reference null priv->m_devops.interface
@@ -1086,7 +1086,7 @@ static int an986_ldd_connect(int devId)
 	struct an986_priv *mem_for_inet; // $s0
 
 	VERBOSE_PRINTF("an986_attach,%d: called\n", devId);
-	devdesc2 = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, 0, 1u);
+	devdesc2 = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, 1u);
 	if ( !devdesc2 )
 		return -1;
 	cur_devinfo = do_check_static_descriptor(0, devdesc2->idVendor, devdesc2->idProduct);
@@ -1126,7 +1126,7 @@ static int an986_ldd_connect(int devId)
 	mem_for_inet = do_allocate_mem_for_inet(cur_devinfo->m_vendor_name, cur_devinfo->m_device_name, cur_devinfo->m_chip == 'P');
 	if ( !mem_for_inet )
 		return -1;
-	mem_for_inet->m_ctrl_pipe = sceUsbdOpenPipe(devId, 0);
+	mem_for_inet->m_ctrl_pipe = sceUsbdOpenPipe(devId, NULL);
 	if ( mem_for_inet->m_ctrl_pipe < 0 )
 		return -1;
 	mem_for_inet->m_bulk_in_pipe = sceUsbdOpenPipe(devId, bulk_in_desc);
@@ -1201,7 +1201,7 @@ static int an986_ldd_probe(int devId)
 			}
 		}
 	}
-	devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, 0, 1u);
+	devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, 1u);
 	if ( !devdesc )
 		return 0;
 	if ( !do_check_static_descriptor(1, devdesc->idVendor, devdesc->idProduct) )
@@ -1351,7 +1351,7 @@ static int an986_init(int ac, char **av)
 			thpricurx = &av[i][6];
 			if ( (look_ctype_table(*thpricurx) & 4) == 0 )
 				return do_print_help();
-			g_thpri = strtol(thpricurx, 0, 10);
+			g_thpri = strtol(thpricurx, NULL, 10);
 			if ( (unsigned int)(g_thpri - 9) >= 0x73 )
 				return do_print_help();
 			while ( *thpricurx && (look_ctype_table(*thpricurx) & 4) != 0 )
@@ -1366,7 +1366,7 @@ static int an986_init(int ac, char **av)
 			thpricurx = &av[i][8];
 			if ( (look_ctype_table(*thpricurx) & 4) == 0 )
 				return do_print_help();
-			g_thstack = strtol(thpricurx, 0, 10);
+			g_thstack = strtol(thpricurx, NULL, 10);
 			while ( *thpricurx && ((look_ctype_table(*thpricurx) & 4) != 0) )
 			{
 				thpricurx += 1;
