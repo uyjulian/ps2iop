@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <kerr.h>
 
+// Based on module from SDK 2.5.3
 IRX_ID("INET_AN986_driver", 1, 75);
 
 struct an986_priv
@@ -84,6 +85,10 @@ extern struct irx_export_table _exp_an986;
 static struct an986_devinfo g_an986_devinfo_custom = { '-', 0x0000, "Unknown", 0x0000, "Unknown" };
 static const struct an986_devinfo g_an986_devinfo[] =
 {
+#ifdef AN986_UEPCB
+	{ 'P', 0x07a6, "ADMtek", 0x8513, "PegasusIII" },
+	{ 'P', 0x0b9a, "namco", 0x0500, "System246 UE PCB" },
+#else
 	{ 'k', 0x03e8, "AOX", 0x0008, "101" },
 	{ 'p', 0x0411, "Melco", 0x0001, "LUA-TX" },
 	{ 'p', 0x0411, "Melco", 0x0005, "LUA-TX" },
@@ -136,6 +141,7 @@ static const struct an986_devinfo g_an986_devinfo[] =
 	{ 'p', 0x2001, "D-Link", 0x4003, "DSB-650TX-PNA" },
 	{ 'P', 0x2001, "D-Link", 0x400b, "DSB-650TX B1" },
 	{ 'p', 0x2001, "D-Link", 0xabc1, "DSB-650" },
+#endif
 }; // weak
 // Unofficial: move to bss
 static sceUsbdLddOps g_an986_ldd;
@@ -270,6 +276,7 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 {
 	struct an986_priv *priv; // $s0
 	sceInetPkt_t *pkt;
+	u8 rp_cur;
 
 	pkt = (sceInetPkt_t *)userdata;
 	priv = (struct an986_priv *)pkt->m_reserved1;
@@ -292,35 +299,49 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 	}
 	else
 	{
-		if ( !!(pkt->rp[acount - 2] & 1) )
+#ifdef AN986_UEPCB
+		int rp_xe;
+
+		rp_xe = (pkt->rp[1] << 8) + pkt->rp[0];
+		rp_cur = pkt->rp[rp_xe - 2];
+#else
+		rp_cur = pkt->rp[acount - 2];
+#endif
+		if ( !!(rp_cur & 1) )
 		{
 			priv->m_multicast += 1;
 		}
-		if ( !!(pkt->rp[acount - 2] & 2) )
+		if ( !!(rp_cur & 2) )
 		{
 			priv->m_err_rx_length += 1;
 		}
-		if ( !!(pkt->rp[acount - 2] & 4) )
+		if ( !!(rp_cur & 4) )
 		{
 			priv->m_err_rx_length += 1;
 		}
-		if ( !!(pkt->rp[acount - 2] & 8) )
+		if ( !!(rp_cur & 8) )
 		{
 			priv->m_err_rx_crc += 1;
 		}
-		if ( !!(pkt->rp[acount - 2] & 0x10) )
+		if ( !!(rp_cur & 0x10) )
 		{
 			priv->m_err_rx_frame += 1;
 		}
-		if ( (pkt->rp[acount - 2] & 0x1E) )
+		if ( (rp_cur & 0x1E) )
 		{
 			priv->m_rx_errors += 1;
 			sceInetFreePkt(&priv->m_devops, pkt);
 		}
 		else
 		{
+#ifdef AN986_UEPCB
+			priv->m_rx_bytes += rp_xe - 8;
+			pkt->wp = &pkt->wp[rp_xe - 6];
+			pkt->rp += 2;
+#else
 			priv->m_rx_bytes += acount - 8;
 			pkt->wp += acount - 8;
+#endif
 			sceInetPktEnQ(&priv->m_devops.rcvq, pkt);
 			SetEventFlag(priv->m_devops.evfid, sceInetDevEFP_Recv);
 		}
@@ -337,11 +358,19 @@ static void bulk_xfer(struct an986_priv *priv)
 	int xferret; // $s1
 	int state; // [sp+18h] [-8h] BYREF
 
+#ifdef AN986_UEPCB
+	pkt = sceInetAllocPkt(&priv->m_devops, sizeof(sceInetPkt_t) + 1500 + 2);
+#else
 	pkt = sceInetAllocPkt(&priv->m_devops, sizeof(sceInetPkt_t) + 1500);
+#endif
 	if ( !pkt )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+#ifdef AN986_UEPCB
+		VERBOSE_PRINTF("sceInetAllocPkt(%d) - no space", (int)(sizeof(sceInetPkt_t) + 1500 + 2));
+#else
 		VERBOSE_PRINTF("sceInetAllocPkt(%d) - no space", (int)(sizeof(sceInetPkt_t) + 1500));
+#endif
 		VERBOSE_PRINTF("\n");
 		CpuSuspendIntr(&state);
 		priv->m_cnt_for_bulk_xfer += 1;
@@ -349,14 +378,21 @@ static void bulk_xfer(struct an986_priv *priv)
 		return;
 	}
 	pkt->m_reserved1 = (void *)priv;
+#ifdef AN986_UEPCB
+	xferret = sceUsbdBulkTransfer(priv->m_bulk_in_pipe, pkt->wp, sizeof(sceInetPkt_t) + 1500, an986_rx_done, pkt);
+#else
 	pkt->rp += 2;
 	pkt->wp += 2;
 	xferret = sceUsbdBulkTransfer(priv->m_bulk_in_pipe, pkt->wp, sizeof(sceInetPkt_t) + 1500 - 2, an986_rx_done, pkt);
+#endif
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
 		VERBOSE_PRINTF("sceUsbdBulkTransfer -> 0x%x\n", xferret);
 		VERBOSE_PRINTF("\n");
+#ifdef AN986_UEPCB
+		printf("sceUsbdBulkTransfer -> 0x%x\n", xferret);
+#endif
 		sceInetFreePkt(&priv->m_devops, pkt);
 	}
 }
@@ -694,6 +730,16 @@ static void inet_thread_proc(void *userdata)
 		return;
 	if ( control_in_xfer(priv, 16, 6) )
 		return;
+#ifdef AN986_UEPCB
+	priv->m_usb_xfer_buf[2] = 0x20;
+	priv->m_usb_xfer_buf[3] = 0;
+	if ( control_out_xfer(priv, 2, 2) )
+		return;
+	priv->m_usb_xfer_buf[2] = 0;
+	if ( control_out_xfer(priv, 2, 2) )
+		return;
+	// AN986_UEPCB note: An unsed variable is set to 0xB2500010
+#endif
 	for ( i = 0; i < 3; i += 1 )
 	{
 		priv->m_usb_xfer_buf[32] = i;
@@ -710,6 +756,9 @@ static void inet_thread_proc(void *userdata)
 					return;
 				priv->m_hwaddr_tmp[(i * 2) + 0] = priv->m_usb_xfer_buf[33];
 				priv->m_hwaddr_tmp[(i * 2) + 1] = priv->m_usb_xfer_buf[34];
+#ifdef AN986_UEPCB
+				printf("%d %x %x\n", i, priv->m_usb_xfer_buf[33], priv->m_usb_xfer_buf[34]);
+#endif
 				break;
 			}
 			DelayThread(10000);
@@ -738,14 +787,34 @@ static void inet_thread_proc(void *userdata)
 	priv->m_usb_xfer_buf[127] = 4;
 	if ( control_out_xfer(priv, 126, 2) )
 		return;
+#ifdef AN986_UEPCB
+	priv->m_usb_xfer_buf[131] = 0xFF;
+	priv->m_usb_xfer_buf[132] = 1;
+	if ( control_out_xfer(priv, 131, 2) )
+		return;
+#endif
 	if ( priv->m_is_pegasus2 )
 	{
+#ifdef AN986_UEPCB
+		printf("set reset\n");
+		priv->m_usb_xfer_buf[123] = 1;
+		if ( control_out_xfer(priv, 123, 1) )
+			return;
+		priv->m_usb_xfer_buf[123] = 2;
+		if ( control_out_xfer(priv, 123, 1) )
+		{
+			printf("set ng\n");
+			return;
+		}
+		printf("set ok\n");
+#else
 		priv->m_usb_xfer_buf[123] = 3;
 		if ( control_out_xfer(priv, 123, 1) )
 			return;
 		priv->m_usb_xfer_buf[123] = 2;
 		if ( control_out_xfer(priv, 123, 1) )
 			return;
+#endif
 	}
 	priv->m_usb_xfer_buf[1] = 8;
 	if ( control_out_xfer(priv, 1, 1) )
@@ -816,6 +885,12 @@ static void inet_thread_proc(void *userdata)
 		outval_3 & 0xF,
 		outval_2,
 		outval_3);
+#ifdef AN986_UEPCB
+	priv->m_usb_xfer_buf[128] = 0xE5;
+	priv->m_usb_xfer_buf[129] = 2;
+	if ( control_out_xfer(priv, 128, 2) )
+		return;
+#endif
 	priv->m_usb_xfer_buf[0] = 0xC9;
 	if ( control_out_xfer(priv, 0, 1) )
 		return;
@@ -829,6 +904,9 @@ static void inet_thread_proc(void *userdata)
 	}
 	for ( i = 0; i < 8; i += 1 )
 		bulk_xfer(priv);
+#ifdef AN986_UEPCB
+	printf("rxstart1\n");
+#endif
 	priv->m_val_for_inet_start = 1;
 	if ( !priv->m_start_stop_flag )
 		SetEventFlag(priv->m_devops.evfid, sceInetDevEFP_StartDone);
@@ -871,6 +949,9 @@ static void inet_thread_proc(void *userdata)
 					priv->m_cnt_for_bulk_xfer -= 1;
 					CpuResumeIntr(state);
 					bulk_xfer(priv);
+#ifdef AN986_UEPCB
+					printf("rxstart2\n");
+#endif
 				}
 			}
 		}
@@ -989,6 +1070,9 @@ static const struct an986_devinfo *do_check_static_descriptor(
 {
 	const struct an986_devinfo *cur_devinfo;
 
+#ifdef AN986_UEPCB
+	printf("andev %d %x %x\n", is_probe, id_vendor, id_product);
+#endif
 	if ( is_probe )
 		VERBOSE_PRINTF("an986: idVendor=0x%04x idProduct=0x%04x\n", id_vendor, id_product);
 	cur_devinfo = NULL;
@@ -1051,6 +1135,9 @@ static int an986_attach(int devId)
 	UsbEndpointDescriptor *int_in_desc; // $s2
 	struct an986_priv *mem_for_inet; // $s0
 
+#ifdef AN986_UEPCB
+	printf("an986_attach start\n");
+#endif
 	VERBOSE_PRINTF("an986_attach,%d: called\n", devId);
 	devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, USB_DT_DEVICE);
 	if ( !devdesc )
@@ -1110,6 +1197,9 @@ static int an986_attach(int devId)
 	mem_for_inet->m_cfgval = cfgdesc->bConfigurationValue;
 	ef_set_wrap(mem_for_inet, 0, 1);
 	VERBOSE_PRINTF("an986_attach,%d: -> attached\n", devId);
+#ifdef AN986_UEPCB
+	printf("an986_attach end\n");
+#endif
 	return 0;
 }
 // 403504: using guessed type int g_verbose;
@@ -1173,6 +1263,7 @@ static int an986_probe(int devId)
 	if ( !do_check_static_descriptor(1, devdesc->idVendor, devdesc->idProduct) )
 		return 0;
 	g_resident_flag = 1;
+	// AN986_UEPCB note: add 16 to unused variable
 	if ( g_load_mode == 't' )
 		return 0;
 	VERBOSE_PRINTF("an986_probe,%d: -> accepted\n", devId);
@@ -1186,7 +1277,11 @@ static int an986_probe(int devId)
 //----- (00402050) --------------------------------------------------------
 static int do_print_version(void)
 {
+#ifdef AN986_UEPCB
+	printf("AN986 1.80.0\n");
+#else
 	printf("AN986 (%s)\n", version_ptr);
+#endif
 	return 1;
 }
 // 4036F0: using guessed type char *version_ptr;
@@ -1295,6 +1390,9 @@ static int an986_init(int ac, char **av)
 	g_verbose = 0;
 	g_load_mode = 'n';
 	g_resident_flag = 1;
+#ifdef AN986_UEPCB
+	printf("debug %s\n", av[0]);
+#endif
 	for ( i = 1; i < ac; i += 1 )
 	{
 		if ( !strcmp("-help", av[i]) )
