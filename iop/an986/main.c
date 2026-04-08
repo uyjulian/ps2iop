@@ -683,9 +683,9 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 		case 0x81000000:
 			if ( !ptr )
 				break;
-			if ( len != 4 )
+			if ( len != sizeof(priority) )
 				break;
-			bcopy(ptr, &priority, 4);
+			bcopy(ptr, &priority, sizeof(priority));
 			m_nego_status = -403;
 			if ( (unsigned int)(priority - 9) >= 0x73 )
 				break;
@@ -696,9 +696,9 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 			m_nego_status = inet_81040000_multicast_list_handler(priv, ptr, len);
 			break;
 	}
-	if ( p_m_err_rx_over && ptr && len == 4 )
+	if ( p_m_err_rx_over && ptr && len == sizeof(*p_m_err_rx_over) )
 	{
-		bcopy(p_m_err_rx_over, ptr, 4);
+		bcopy(p_m_err_rx_over, ptr, sizeof(*p_m_err_rx_over));
 		m_nego_status = 0;
 	}
 	return m_nego_status;
@@ -952,16 +952,16 @@ static struct an986_priv *do_allocate_mem_for_inet(const char *vendor_name, cons
 	iop_thread_t thparam; // [sp+20h] [-18h] BYREF
 
 	err = 0;
-	priv = (struct an986_priv *)sceInetAllocMem(NULL, 888);
+	priv = (struct an986_priv *)sceInetAllocMem(NULL, sizeof(struct an986_priv));
 	if ( !priv )
 	{
 		// Unofficial: don't reference null priv->m_devops.interface
 		VERBOSE_PRINTF("%s: ", "an986");
-		VERBOSE_PRINTF("sceInetAllocMem(%d) -> no space or not ready", 888);
+		VERBOSE_PRINTF("sceInetAllocMem(%d) -> no space or not ready", (int)sizeof(struct an986_priv));
 		VERBOSE_PRINTF("\n");
 		return priv;
 	}
-	bzero(priv, 888);
+	bzero(priv, sizeof(struct an986_priv));
 	priv->m_is_pegasus2 = is_pegasus2;
 	priv->m_magic_cur = g_magic_count;
 	sprintf(priv->m_devops.interface, "an986,%d", priv->m_magic_cur);
