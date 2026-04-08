@@ -1,5 +1,6 @@
 
 #include "irx_imports.h"
+#include <usbd_macro.h>
 
 IRX_ID("INET_AN986_driver", 1, 75);
 
@@ -216,22 +217,8 @@ static void an986_done(int efbits, int doneval, void *userdata)
 static int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
-	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
-	if ( xferlen < 2 )
-		xferlen = 2;
-	devreq.requesttype = 0xC0;
-	devreq.length = xferlen;
-	devreq.request = 0xF0;
-	devreq.value = 0;
-	devreq.index = xferoffs;
-	xferret = sceUsbdTransferPipe(
-							priv->m_ctrl_pipe,
-							&priv->m_usb_xfer_buf[xferoffs],
-							(u16)xferlen,
-							&devreq,
-							an986_done,
-							priv);
+	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, 0xC0, 0xF0, 0, xferoffs, ( xferlen < 2 ) ? 2 : xferlen, &priv->m_usb_xfer_buf[xferoffs], an986_done, priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -247,22 +234,8 @@ static int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xfer
 static int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
-	UsbDeviceRequest devreq; // [sp+18h] [-8h] BYREF
 
-	if ( xferlen < 2 )
-		xferlen = 2;
-	devreq.requesttype = 0x40;
-	devreq.length = xferlen;
-	devreq.request = 0xF1;
-	devreq.value = 0;
-	devreq.index = xferoffs;
-	xferret = sceUsbdTransferPipe(
-							priv->m_ctrl_pipe,
-							&priv->m_usb_xfer_buf[xferoffs],
-							(u16)xferlen,
-							&devreq,
-							an986_done,
-							priv);
+	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, 0x40, 0xF1, 0, xferoffs, ( xferlen < 2 ) ? 2 : xferlen, &priv->m_usb_xfer_buf[xferoffs], an986_done, priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -716,7 +689,6 @@ static void inet_thread_proc(void *userdata)
 	int indindx2; // $s0
 	int i; // $s0
 	int indindx; // $s0
-	UsbDeviceRequest devreq; // [sp+20h] [-18h] BYREF
 	u16 outval_1; // [sp+28h] [-10h] BYREF
 	u16 outval_2; // [sp+2Ah] [-Eh] BYREF
 	u16 outval_3; // [sp+2Ch] [-Ch] BYREF
@@ -726,12 +698,7 @@ static void inet_thread_proc(void *userdata)
 	priv = (struct an986_priv *)userdata;
 	if ( ef_wait_wrap(priv, 1u) )
 		return;
-	devreq.requesttype = 0;
-	devreq.request = 9;
-	devreq.index = 0;
-	devreq.length = 0;
-	devreq.value = priv->m_subclass;
-	xferret = sceUsbdTransferPipe(priv->m_ctrl_pipe, NULL, 0, &devreq, an986_done, priv);
+	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, 0, 9, priv->m_subclass, 0, 0, NULL, an986_done, priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
