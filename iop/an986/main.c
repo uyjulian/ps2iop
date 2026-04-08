@@ -204,7 +204,7 @@ static void an986_done(int efbits, int doneval, void *userdata)
 // 403504: using guessed type int g_verbose;
 
 //----- (00400194) --------------------------------------------------------
-static int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
+static int control_in_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
 
@@ -221,7 +221,7 @@ static int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xfer
 // 403504: using guessed type int g_verbose;
 
 //----- (00400264) --------------------------------------------------------
-static int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
+static int control_out_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret; // $s0
 
@@ -240,27 +240,27 @@ static int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xfer
 //----- (00400334) --------------------------------------------------------
 static int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, u16 *outptr)
 {
-	int result; // $v0
+	int retres; // $v0
 
 	priv->m_usb_xfer_buf[37] = linkval & 0x1F;
 	priv->m_usb_xfer_buf[38] = 0;
 	priv->m_usb_xfer_buf[39] = 0;
 	priv->m_usb_xfer_buf[40] = (xval & 0x1F) | 0x40;
-	result = control_positive_xfer(priv, 37, 4);
-	if ( result )
-		return result;
+	retres = control_out_xfer(priv, 37, 4);
+	if ( retres )
+		return retres;
 	while ( 1 )
 	{
-		result = control_negative_xfer(priv, 40, 1);
-		if ( result )
-			return result;
+		retres = control_in_xfer(priv, 40, 1);
+		if ( retres )
+			return retres;
 		if ( !!(priv->m_usb_xfer_buf[40] & 0x80) )
 			break;
 		DelayThread(10000);
 	}
-	result = control_negative_xfer(priv, 37, 4);
-	if ( result )
-		return result;
+	retres = control_in_xfer(priv, 37, 4);
+	if ( retres )
+		return retres;
 	*outptr = priv->m_usb_xfer_buf[38] | (priv->m_usb_xfer_buf[39] << 8);
 	return 0;
 }
@@ -433,7 +433,7 @@ static int an986_inet_xmit(void *userdata, int unused)
 {
   int xferres; // $s3
   sceInetPkt_t *pkt; // $s2
-  u32 xrp2;
+  u32 pktsz;
   struct an986_priv *priv;
   int dropped;
 
@@ -452,8 +452,8 @@ static int an986_inet_xmit(void *userdata, int unused)
   }
   if ( !dropped )
   {
-  	xrp2 = pkt->wp - pkt->rp;
-  	if ( xrp2 - 60 >= 1455 )
+  	pktsz = pkt->wp - pkt->rp;
+  	if ( pktsz - 60 >= 1455 )
   		dropped = 1;
   }
   if ( !dropped )
@@ -464,16 +464,16 @@ static int an986_inet_xmit(void *userdata, int unused)
   }
   if ( !dropped )
   {
-    *((u16 *)(pkt->rp)) = xrp2;
+    *((u16 *)(pkt->rp)) = pktsz;
     priv->m_tx_packets += 1;
-    priv->m_tx_bytes += xrp2;
-    xrp2 += 2;
-    if ( !(((u8)xrp2) & 0x3F) )
-      xrp2 += 1;
+    priv->m_tx_bytes += pktsz;
+    pktsz += 2;
+    if ( !(((u8)pktsz) & 0x3F) )
+      pktsz += 1;
     pkt->m_reserved1 = (void *)priv;
     while ( 1 )
     {
-      xferres = sceUsbdBulkTransfer(priv->m_bulk_out_pipe, pkt->rp + 2, xrp2, an986_tx_done, pkt);
+      xferres = sceUsbdBulkTransfer(priv->m_bulk_out_pipe, pkt->rp + 2, pktsz, an986_tx_done, pkt);
       if ( !xferres )
         break;
       if ( xferres != USB_RC_IOREQ )
@@ -546,96 +546,96 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 		for ( k = 0; k < 8; k += 1 )
 			priv->m_usb_xfer_buf[k + 8] = 0xFF;
 	}
-	return control_positive_xfer(priv, 8, 8);
+	return control_out_xfer(priv, 8, 8);
 }
 
 //----- (00400C28) --------------------------------------------------------
 static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 {
-	int m_nego_status; // $v1
-	const int *p_m_err_rx_over; // $s0
+	int retres; // $v1
+	const int *src_int_ptr; // $s0
 	int priority; // [sp+10h] [-8h] BYREF
 	struct an986_priv *priv;
 
 	priv = (struct an986_priv *)userdata;
-	m_nego_status = -512;
-	p_m_err_rx_over = NULL;
+	retres = -512;
+	src_int_ptr = NULL;
 	switch ( code )
 	{
 		case sceInetNDCC_GET_THPRI:
-			m_nego_status = g_thpri;
+			retres = g_thpri;
 			break;
 		case sceInetNDCC_GET_IF_TYPE:
-			m_nego_status = sceInetNDIFT_ETHERNET;
+			retres = sceInetNDIFT_ETHERNET;
 			break;
 		case sceInetNDCC_GET_RX_PACKETS:
-			p_m_err_rx_over = &priv->m_rx_packets;
+			src_int_ptr = &priv->m_rx_packets;
 			break;
 		case sceInetNDCC_GET_TX_PACKETS:
-			p_m_err_rx_over = &priv->m_tx_packets;
+			src_int_ptr = &priv->m_tx_packets;
 			break;
 		case sceInetNDCC_GET_RX_BYTES:
-			p_m_err_rx_over = &priv->m_rx_bytes;
+			src_int_ptr = &priv->m_rx_bytes;
 			break;
 		case sceInetNDCC_GET_TX_BYTES:
-			p_m_err_rx_over = &priv->m_tx_bytes;
+			src_int_ptr = &priv->m_tx_bytes;
 			break;
 		case sceInetNDCC_GET_RX_ERRORS:
-			p_m_err_rx_over = &priv->m_rx_errors;
+			src_int_ptr = &priv->m_rx_errors;
 			break;
 		case sceInetNDCC_GET_TX_ERRORS:
-			p_m_err_rx_over = &priv->m_tx_errors;
+			src_int_ptr = &priv->m_tx_errors;
 			break;
 		case sceInetNDCC_GET_RX_DROPPED:
-			p_m_err_rx_over = &priv->m_rx_dropped;
+			src_int_ptr = &priv->m_rx_dropped;
 			break;
 		case sceInetNDCC_GET_TX_DROPPED:
-			p_m_err_rx_over = &priv->m_tx_dropped;
+			src_int_ptr = &priv->m_tx_dropped;
 			break;
 		case sceInetNDCC_GET_MULTICAST:
-			p_m_err_rx_over = &priv->m_multicast;
+			src_int_ptr = &priv->m_multicast;
 			break;
 		case sceInetNDCC_GET_COLLISIONS:
-			p_m_err_rx_over = &priv->m_collisions;
+			src_int_ptr = &priv->m_collisions;
 			break;
 		case sceInetNDCC_GET_RX_LENGTH_ER:
-			p_m_err_rx_over = &priv->m_err_rx_length;
+			src_int_ptr = &priv->m_err_rx_length;
 			break;
 		case sceInetNDCC_GET_RX_OVER_ER:
-			p_m_err_rx_over = &priv->m_err_rx_over;
+			src_int_ptr = &priv->m_err_rx_over;
 			break;
 		case sceInetNDCC_GET_RX_CRC_ER:
-			p_m_err_rx_over = &priv->m_err_rx_crc;
+			src_int_ptr = &priv->m_err_rx_crc;
 			break;
 		case sceInetNDCC_GET_RX_FRAME_ER:
-			p_m_err_rx_over = &priv->m_err_rx_frame;
+			src_int_ptr = &priv->m_err_rx_frame;
 			break;
 		case sceInetNDCC_GET_RX_FIFO_ER:
-			p_m_err_rx_over = &priv->m_err_rx_fifo;
+			src_int_ptr = &priv->m_err_rx_fifo;
 			break;
 		case sceInetNDCC_GET_RX_MISSED_ER:
-			p_m_err_rx_over = &priv->m_err_rx_missed;
+			src_int_ptr = &priv->m_err_rx_missed;
 			break;
 		case sceInetNDCC_GET_TX_ABORTED_ER:
-			p_m_err_rx_over = &priv->m_err_tx_aborted;
+			src_int_ptr = &priv->m_err_tx_aborted;
 			break;
 		case sceInetNDCC_GET_TX_CARRIER_ER:
-			p_m_err_rx_over = &priv->m_err_tx_carrier;
+			src_int_ptr = &priv->m_err_tx_carrier;
 			break;
 		case sceInetNDCC_GET_TX_FIFO_ER:
-			p_m_err_rx_over = &priv->m_err_tx_fifo;
+			src_int_ptr = &priv->m_err_tx_fifo;
 			break;
 		case sceInetNDCC_GET_TX_HEARTBEAT_ER:
-			p_m_err_rx_over = &priv->m_err_tx_heartbeat;
+			src_int_ptr = &priv->m_err_tx_heartbeat;
 			break;
 		case sceInetNDCC_GET_TX_WINDOW_ER:
-			p_m_err_rx_over = &priv->m_err_tx_window;
+			src_int_ptr = &priv->m_err_tx_window;
 			break;
 		case sceInetNDCC_GET_NEGO_STATUS:
-			m_nego_status = ( priv->m_link_status > 0 ) ? priv->m_nego_status : 0;
+			retres = ( priv->m_link_status > 0 ) ? priv->m_nego_status : 0;
 			break;
 		case sceInetNDCC_GET_LINK_STATUS:
-			m_nego_status = priv->m_link_status;
+			retres = priv->m_link_status;
 			break;
 		case sceInetNDCC_SET_THPRI:
 			if ( !ptr )
@@ -643,22 +643,22 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 			if ( len != sizeof(priority) )
 				break;
 			bcopy(ptr, &priority, sizeof(priority));
-			m_nego_status = KE_ILLEGAL_PRIORITY;
+			retres = KE_ILLEGAL_PRIORITY;
 			if ( (unsigned int)(priority - 9) >= 0x73 )
 				break;
 			g_thpri = priority;
-			m_nego_status = ChangeThreadPriority(priv->m_thid, priority);
+			retres = ChangeThreadPriority(priv->m_thid, priority);
 			break;
 		case sceInetNDCC_SET_MULTICAST_LIST:
-			m_nego_status = inet_81040000_multicast_list_handler(priv, ptr, len);
+			retres = inet_81040000_multicast_list_handler(priv, ptr, len);
 			break;
 	}
-	if ( p_m_err_rx_over && ptr && len == sizeof(*p_m_err_rx_over) )
+	if ( src_int_ptr && ptr && len == sizeof(*src_int_ptr) )
 	{
-		bcopy(p_m_err_rx_over, ptr, sizeof(*p_m_err_rx_over));
-		m_nego_status = 0;
+		bcopy(src_int_ptr, ptr, sizeof(*src_int_ptr));
+		retres = 0;
 	}
-	return m_nego_status;
+	return retres;
 }
 // 400CFC: conditional instruction was optimized away because $a1.4==80010006
 // 400D70: conditional instruction was optimized away because $a1.4==80011005
@@ -669,10 +669,10 @@ static void inet_thread_proc(void *userdata)
 {
 	int xferret; // $s0
 	int regres; // $s0
-	int idxcnt; // $s2
-	int indindx2; // $s0
+	int k; // $s2
+	int j; // $s0
 	int i; // $s0
-	int indindx; // $s0
+	int l; // $s0
 	u16 outval_1; // [sp+28h] [-10h] BYREF
 	u16 outval_2; // [sp+2Ah] [-Eh] BYREF
 	u16 outval_3; // [sp+2Ch] [-Ch] BYREF
@@ -692,7 +692,7 @@ static void inet_thread_proc(void *userdata)
 	}
 	if ( ef_wait_wrap(priv, 4) )
 		return;
-	if ( control_negative_xfer(priv, 16, 6) )
+	if ( control_in_xfer(priv, 16, 6) )
 		return;
 	for ( i = 0; i < 3; i += 1 )
 	{
@@ -700,13 +700,13 @@ static void inet_thread_proc(void *userdata)
 		priv->m_usb_xfer_buf[33] = 0;
 		priv->m_usb_xfer_buf[34] = 0;
 		priv->m_usb_xfer_buf[35] = 2;
-		if ( control_positive_xfer(priv, 32, 4) )
+		if ( control_out_xfer(priv, 32, 4) )
 			return;
-		while ( !control_negative_xfer(priv, 35, 1) )
+		while ( !control_in_xfer(priv, 35, 1) )
 		{
 			if ( !!(priv->m_usb_xfer_buf[35] & 4) )
 			{
-				if ( control_negative_xfer(priv, 33, 3) )
+				if ( control_in_xfer(priv, 33, 3) )
 					return;
 				priv->m_hwaddr_tmp[(i * 2) + 0] = priv->m_usb_xfer_buf[33];
 				priv->m_hwaddr_tmp[(i * 2) + 1] = priv->m_usb_xfer_buf[34];
@@ -716,7 +716,7 @@ static void inet_thread_proc(void *userdata)
 		}
 	}
 	bcopy(priv->m_hwaddr_tmp, &priv->m_usb_xfer_buf[16], 6);
-	if ( control_positive_xfer(priv, 16, 6) )
+	if ( control_out_xfer(priv, 16, 6) )
 		return;
 	bcopy(priv->m_hwaddr_tmp, priv->m_devops.hw_addr, 6);
 	priv->m_link_status = -1;
@@ -732,39 +732,39 @@ static void inet_thread_proc(void *userdata)
 		return;
 	priv->m_usb_xfer_buf[126] = 36;
 	priv->m_usb_xfer_buf[127] = 6;
-	if ( control_positive_xfer(priv, 126, 2) )
+	if ( control_out_xfer(priv, 126, 2) )
 		return;
 	priv->m_usb_xfer_buf[126] = 38;
 	priv->m_usb_xfer_buf[127] = 4;
-	if ( control_positive_xfer(priv, 126, 2) )
+	if ( control_out_xfer(priv, 126, 2) )
 		return;
 	if ( priv->m_is_pegasus2 )
 	{
 		priv->m_usb_xfer_buf[123] = 3;
-		if ( control_positive_xfer(priv, 123, 1) )
+		if ( control_out_xfer(priv, 123, 1) )
 			return;
 		priv->m_usb_xfer_buf[123] = 2;
-		if ( control_positive_xfer(priv, 123, 1) )
+		if ( control_out_xfer(priv, 123, 1) )
 			return;
 	}
 	priv->m_usb_xfer_buf[1] = 8;
-	if ( control_positive_xfer(priv, 1, 1) )
+	if ( control_out_xfer(priv, 1, 1) )
 		return;
-	while ( !control_negative_xfer(priv, 1, 1) && !!(priv->m_usb_xfer_buf[1] & 8) )
+	while ( !control_in_xfer(priv, 1, 1) && !!(priv->m_usb_xfer_buf[1] & 8) )
 	{
 		DelayThread(10000);
 	}
-	idxcnt = 0;
-	indindx2 = 0;
+	k = 0;
+	j = 0;
 	outval_1 = 0;
 	while ( (outval_1 & 0x24) != 0x24 )
 	{
-		if ( control_inout_xfer(priv, idxcnt, 1, &outval_1) )
+		if ( control_inout_xfer(priv, k, 1, &outval_1) )
 			return;
 		if ( outval_1 == 0xFFFF )
 		{
-			idxcnt += 1;
-			if ( idxcnt >= 32 )
+			k += 1;
+			if ( k >= 32 )
 			{
 				VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
 				VERBOSE_PRINTF("Valid PHY chip not found");
@@ -777,8 +777,8 @@ static void inet_thread_proc(void *userdata)
 			if ( (outval_1 & 0x24) == 0x24 )
 				break;
 			DelayThread(100000);
-			indindx2 += 1;
-			if ( indindx2 >= 30 )
+			j += 1;
+			if ( j >= 30 )
 				priv->m_link_status = 0;
 		}
 	}
@@ -786,9 +786,9 @@ static void inet_thread_proc(void *userdata)
 	printf(
 		"%s: Auto-Nego complete and valid link detected (%d,BMSR=%04x)\n",
 		priv->m_devops.interface,
-		idxcnt,
+		k,
 		outval_1);
-	if ( control_inout_xfer(priv, idxcnt, 4, priv->m_usb_ctrl_buf) || control_inout_xfer(priv, idxcnt, 5, &priv->m_usb_ctrl_buf[1]) )
+	if ( control_inout_xfer(priv, k, 4, priv->m_usb_ctrl_buf) || control_inout_xfer(priv, k, 5, &priv->m_usb_ctrl_buf[1]) )
 		return;
 	priv->m_usb_xfer_buf[1] = 0;
 	outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
@@ -796,7 +796,7 @@ static void inet_thread_proc(void *userdata)
 		priv->m_usb_xfer_buf[1] |= 0x20;
 	if ( !!(outval_1 & 0x180) )
 		priv->m_usb_xfer_buf[1] |= 0x10;
-	if ( control_positive_xfer(priv, 1, 1) )
+	if ( control_out_xfer(priv, 1, 1) )
 		return;
 	priv->m_nego_status = ( !!(outval_1 & 0x180) ) ? (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_TX_FD : sceInetNDNEGO_TX) : (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_10_FD : sceInetNDNEGO_10);
 	printf(
@@ -806,7 +806,7 @@ static void inet_thread_proc(void *userdata)
 		( !!(outval_1 & 0x140) ) ? "Full" : "Half",
 		priv->m_usb_ctrl_buf[0],
 		priv->m_usb_ctrl_buf[1]);
-	if ( control_inout_xfer(priv, idxcnt, 2, &outval_2) || control_inout_xfer(priv, idxcnt, 3, &outval_3) )
+	if ( control_inout_xfer(priv, k, 2, &outval_2) || control_inout_xfer(priv, k, 3, &outval_3) )
 		return;
 	printf(
 		"%s: PHY OUI=0x%06x MODEL=0x%02x REV=0x%x (0x%04x,0x%04x)\n",
@@ -817,14 +817,14 @@ static void inet_thread_proc(void *userdata)
 		outval_2,
 		outval_3);
 	priv->m_usb_xfer_buf[0] = 0xC9;
-	if ( control_positive_xfer(priv, 0, 1) )
+	if ( control_out_xfer(priv, 0, 1) )
 		return;
 	if ( priv->m_is_pegasus2 )
 	{
 		priv->m_usb_xfer_buf[124] = 0x34;
 		priv->m_usb_xfer_buf[126] = 0x26;
 		priv->m_usb_xfer_buf[127] = 0x30;
-		if ( control_positive_xfer(priv, 124, 4) )
+		if ( control_out_xfer(priv, 124, 4) )
 			return;
 	}
 	for ( i = 0; i < 8; i += 1 )
@@ -838,13 +838,13 @@ static void inet_thread_proc(void *userdata)
 		&priv->m_sysclk,
 		alarm_cb,
 		priv);
-	indindx = 0;
+	l = 0;
 	priv->m_timer_active = 1;
 	while ( 1 )
 	{
 		while ( priv->m_val_for_alarm_cb > 0 )
 		{
-			control_negative_xfer(priv, 43, 5);
+			control_in_xfer(priv, 43, 5);
 			if ( !!(priv->m_usb_xfer_buf[43] & 0x6C) )
 			{
 				if ( !!(priv->m_usb_xfer_buf[43] & 0x60) )
@@ -861,10 +861,10 @@ static void inet_thread_proc(void *userdata)
 			priv->m_err_rx_missed += priv->m_usb_xfer_buf[47];
 			priv->m_rx_errors += priv->m_usb_xfer_buf[47];
 			DelayThread(100000);
-			indindx += 1;
-			if ( indindx >= 11 )
+			l += 1;
+			if ( l >= 11 )
 			{
-				indindx = 0;
+				l = 0;
 				if ( priv->m_cnt_for_bulk_xfer > 0 )
 				{
 					CpuSuspendIntr(&state);
@@ -874,14 +874,14 @@ static void inet_thread_proc(void *userdata)
 				}
 			}
 		}
-		if ( control_inout_xfer(priv, idxcnt, 1, &outval_1) )
+		if ( control_inout_xfer(priv, k, 1, &outval_1) )
 			return;
 		if ( !(outval_1 & 4) )
 		{
 			priv->m_link_status = 0;
 			while ( (outval_1 & 0x24) != 0x24 )
 			{
-				if ( control_inout_xfer(priv, idxcnt, 1, &outval_1) )
+				if ( control_inout_xfer(priv, k, 1, &outval_1) )
 					return;
 				if ( (outval_1 & 0x24) == 0x24 )
 					break;
@@ -1040,9 +1040,9 @@ static const struct an986_devinfo *do_check_static_descriptor(
 // 403504: using guessed type int g_verbose;
 
 //----- (00401BA0) --------------------------------------------------------
-static int an986_ldd_connect(int devId)
+static int an986_attach(int devId)
 {
-	UsbDeviceDescriptor *devdesc2; // $s0
+	UsbDeviceDescriptor *devdesc; // $s0
 	const struct an986_devinfo *cur_devinfo; // $s5
 	UsbConfigDescriptor *cfgdesc; // $s6
 	UsbInterfaceDescriptor *intfdesc; // $a1
@@ -1052,13 +1052,13 @@ static int an986_ldd_connect(int devId)
 	struct an986_priv *mem_for_inet; // $s0
 
 	VERBOSE_PRINTF("an986_attach,%d: called\n", devId);
-	devdesc2 = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, USB_DT_DEVICE);
-	if ( !devdesc2 )
+	devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, USB_DT_DEVICE);
+	if ( !devdesc )
 		return -1;
-	cur_devinfo = do_check_static_descriptor(0, devdesc2->idVendor, devdesc2->idProduct);
+	cur_devinfo = do_check_static_descriptor(0, devdesc->idVendor, devdesc->idProduct);
 	if ( !cur_devinfo )
 		return -1;
-	cfgdesc = (UsbConfigDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc2, USB_DT_CONFIG);
+	cfgdesc = (UsbConfigDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc, USB_DT_CONFIG);
 	if ( !cfgdesc )
 		return -1;
 	if ( cfgdesc->bNumInterfaces != 1 )
@@ -1115,7 +1115,7 @@ static int an986_ldd_connect(int devId)
 // 403504: using guessed type int g_verbose;
 
 //----- (00401E3C) --------------------------------------------------------
-static int an986_ldd_disconnect(int devId)
+static int an986_detach(int devId)
 {
 	struct an986_priv *priv; // $v0
 
@@ -1130,9 +1130,9 @@ static int an986_ldd_disconnect(int devId)
 // 403504: using guessed type int g_verbose;
 
 //----- (00401EA4) --------------------------------------------------------
-static int an986_ldd_probe(int devId)
+static int an986_probe(int devId)
 {
-	UsbStringDescriptor *strdesc1; // $s2
+	UsbStringDescriptor *gendesc; // $s2
 	const UsbDeviceDescriptor *devdesc; // $v0
 
 	if ( g_verbose )
@@ -1154,16 +1154,16 @@ static int an986_ldd_probe(int devId)
 				printf("%s%d", i ? "," : "", strlocbuf[i]);
 			}
 		}
-		strdesc1 = NULL;
+		gendesc = NULL;
 		while ( 1 )
 		{
 			printf("\n");
-			strdesc1 = (UsbStringDescriptor *)sceUsbdScanStaticDescriptor(devId, strdesc1, 0);
-			if ( !strdesc1 )
+			gendesc = (UsbStringDescriptor *)sceUsbdScanStaticDescriptor(devId, gendesc, 0);
+			if ( !gendesc )
 				break;
-			for ( i = 0; i < strdesc1->bLength; i += 1 )
+			for ( i = 0; i < gendesc->bLength; i += 1 )
 			{
-				printf(" %02x", ((u8 *)strdesc1)[i]);
+				printf(" %02x", ((u8 *)gendesc)[i]);
 			}
 		}
 	}
@@ -1286,8 +1286,8 @@ static int do_print_list(void)
 static int an986_init(int ac, char **av)
 {
 	int i; // $s2
-	char *thpricurx; // $s0
-	unsigned int vidtmp; // [sp+10h] [-8h] BYREF
+	const char *chr_num_ptr; // $s0
+	unsigned int vidpidtmp; // [sp+10h] [-8h] BYREF
 
 	g_thpri = 40;
 	g_thstack = 0x4000;
@@ -1311,42 +1311,42 @@ static int an986_init(int ac, char **av)
 		{
 			g_an986_devinfo_custom.m_chip = av[i][1];
 			i += 1;
-			if ( i >= ac || scan_number((char *)av[i], &vidtmp) )
+			if ( i >= ac || scan_number((char *)av[i], &vidpidtmp) )
 				return do_print_help();
-			g_an986_devinfo_custom.m_vendor_id = (vidtmp >> 16) & 0xFFFF;
-			g_an986_devinfo_custom.m_product_id = vidtmp & 0xFFFF;
+			g_an986_devinfo_custom.m_vendor_id = (vidpidtmp >> 16) & 0xFFFF;
+			g_an986_devinfo_custom.m_product_id = vidpidtmp & 0xFFFF;
 		}
 		else if ( !strncmp("thpri=", av[i], 6) )
 		{
-			thpricurx = &av[i][6];
-			if ( !isdigit(*thpricurx) )
+			chr_num_ptr = &av[i][6];
+			if ( !isdigit(*chr_num_ptr) )
 				return do_print_help();
-			g_thpri = strtol(thpricurx, NULL, 10);
+			g_thpri = strtol(chr_num_ptr, NULL, 10);
 			if ( (unsigned int)(g_thpri - 9) >= 0x73 )
 				return do_print_help();
-			while ( *thpricurx && isdigit(*thpricurx) )
+			while ( *chr_num_ptr && isdigit(*chr_num_ptr) )
 			{
-				thpricurx += 1;
+				chr_num_ptr += 1;
 			}
-			if ( *thpricurx )
+			if ( *chr_num_ptr )
 				return do_print_help();
 		}
 		else if ( !strncmp("thstack=", av[i], 8) )
 		{
-			thpricurx = &av[i][8];
-			if ( !isdigit(*thpricurx) )
+			chr_num_ptr = &av[i][8];
+			if ( !isdigit(*chr_num_ptr) )
 				return do_print_help();
-			g_thstack = strtol(thpricurx, NULL, 10);
-			while ( *thpricurx && isdigit(*thpricurx) )
+			g_thstack = strtol(chr_num_ptr, NULL, 10);
+			while ( *chr_num_ptr && isdigit(*chr_num_ptr) )
 			{
-				thpricurx += 1;
+				chr_num_ptr += 1;
 			}
-			if ( !strcmp(thpricurx, "KB") )
+			if ( !strcmp(chr_num_ptr, "KB") )
 			{
 				g_thstack <<= 10;
-				thpricurx += 2;
+				chr_num_ptr += 2;
 			}
-			if ( *thpricurx )
+			if ( *chr_num_ptr )
 				return do_print_help();
 		}
 		else if ( !strcmp("AUTOLOAD", av[i]) || !strcmp("lmode=AUTOLOAD", av[i]) )
@@ -1360,9 +1360,9 @@ static int an986_init(int ac, char **av)
 		g_resident_flag = 0;
 	memset(&g_an986_ldd, 0, sizeof(g_an986_ldd));
 	g_an986_ldd.name = "an986";
-	g_an986_ldd.probe = &an986_ldd_probe;
-	g_an986_ldd.connect = &an986_ldd_connect;
-	g_an986_ldd.disconnect = &an986_ldd_disconnect;
+	g_an986_ldd.probe = &an986_probe;
+	g_an986_ldd.connect = &an986_attach;
+	g_an986_ldd.disconnect = &an986_detach;
 	if ( sceUsbdRegisterLdd(&g_an986_ldd) )
 	{
 		return 4;
@@ -1392,19 +1392,19 @@ static int an986_init(int ac, char **av)
 //----- (00402694) --------------------------------------------------------
 int _start(int ac, char **av)
 {
-	int initval; // $v0
+	int retres; // $v0
 
 	if ( RegisterLibraryEntries(&_exp_an986) )
 	{
 		printf("an986: module already loaded\n");
 		return 1;
 	}
-	initval = an986_init(ac, av);
-	VERBOSE_PRINTF("an986: an986_init() -> 0x%x\n", initval);
-	if ( initval )
+	retres = an986_init(ac, av);
+	VERBOSE_PRINTF("an986: an986_init() -> 0x%x\n", retres);
+	if ( retres )
 	{
 		ReleaseLibraryEntries(&_exp_an986);
-		return (initval << 4) | (g_resident_flag ? 4 : 0) | 1;
+		return (retres << 4) | (g_resident_flag ? 4 : 0) | 1;
 	}
 	return 0;
 }
