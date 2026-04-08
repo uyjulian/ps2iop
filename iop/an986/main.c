@@ -148,15 +148,15 @@ static sceUsbdLddOps g_an986_ldd =
 	&an986_ldd_probe,
 	&an986_ldd_connect,
 	&an986_ldd_disconnect,
-	0u,
-	0u,
-	0u,
-	0u,
-	0u,
+	0,
+	0,
+	0,
+	0,
+	0,
 	NULL,
 }; // weak
 static int g_thpri = 40; // weak
-static int g_thstack = 16384; // weak
+static int g_thstack = 0x4000; // weak
 static int g_magic_count = 0; // weak
 static int g_verbose = 0; // weak
 static const char *version_ptr = "Version 1.75.0"; // weak
@@ -211,7 +211,7 @@ static void an986_done(int efbits, int doneval, void *userdata)
 		VERBOSE_PRINTF("\n");
 	}
 	priv->m_done_related = doneval;
-	ef_set_wrap(priv, efbits, 4u);
+	ef_set_wrap(priv, efbits, 4);
 }
 // 403504: using guessed type int g_verbose;
 
@@ -228,7 +228,7 @@ static int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xfer
 		VERBOSE_PRINTF("\n");
 		return -1;
 	}
-	return ef_wait_wrap(priv, 4u);
+	return ef_wait_wrap(priv, 4);
 }
 // 403504: using guessed type int g_verbose;
 
@@ -245,7 +245,7 @@ static int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xfer
 		VERBOSE_PRINTF("\n");
 		return -1;
 	}
-	return ef_wait_wrap(priv, 4u);
+	return ef_wait_wrap(priv, 4);
 }
 // 403504: using guessed type int g_verbose;
 
@@ -416,7 +416,7 @@ static int an986_inet_start(void *userdata, int unused)
 	if ( priv->m_val_for_inet_start )
 		SetEventFlag(priv->m_devops.evfid, sceInetDevEFP_StartDone);
 	else
-		ef_set_wrap(priv, 0, 2u);
+		ef_set_wrap(priv, 0, 2);
 	return 0;
 }
 
@@ -692,7 +692,7 @@ static void inet_thread_proc(void *userdata)
 	struct an986_priv *priv;
 
 	priv = (struct an986_priv *)userdata;
-	if ( ef_wait_wrap(priv, 1u) )
+	if ( ef_wait_wrap(priv, 1) )
 		return;
 	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, 0, 9, priv->m_cfgval, 0, 0, NULL, an986_done, priv);
 	if ( xferret )
@@ -702,7 +702,7 @@ static void inet_thread_proc(void *userdata)
 		VERBOSE_PRINTF("\n");
 		return;
 	}
-	if ( ef_wait_wrap(priv, 4u) )
+	if ( ef_wait_wrap(priv, 4) )
 		return;
 	if ( control_negative_xfer(priv, 16, 6) )
 		return;
@@ -740,7 +740,7 @@ static void inet_thread_proc(void *userdata)
 		VERBOSE_PRINTF("\n");
 		return;
 	}
-	if ( ef_wait_wrap(priv, 2u) )
+	if ( ef_wait_wrap(priv, 2) )
 		return;
 	priv->m_usb_xfer_buf[126] = 36;
 	priv->m_usb_xfer_buf[127] = 6;
@@ -805,9 +805,9 @@ static void inet_thread_proc(void *userdata)
 	priv->m_usb_xfer_buf[1] = 0;
 	outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
 	if ( !!(outval_1 & 0x140) )
-		priv->m_usb_xfer_buf[1] |= 0x20u;
+		priv->m_usb_xfer_buf[1] |= 0x20;
 	if ( !!(outval_1 & 0x180) )
-		priv->m_usb_xfer_buf[1] |= 0x10u;
+		priv->m_usb_xfer_buf[1] |= 0x10;
 	if ( control_positive_xfer(priv, 1, 1) )
 		return;
 	priv->m_nego_status = ( !!(outval_1 & 0x180) ) ? (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_TX_FD : sceInetNDNEGO_TX) : (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_10_FD : sceInetNDNEGO_10);
@@ -845,7 +845,7 @@ static void inet_thread_proc(void *userdata)
 	if ( !priv->m_start_stop_flag )
 		SetEventFlag(priv->m_devops.evfid, sceInetDevEFP_StartDone);
 	priv->m_val_for_alarm_cb = 10;
-	USec2SysClock(0xF4240u, &priv->m_sysclk);
+	USec2SysClock(1000000, &priv->m_sysclk);
 	SetAlarm(
 		&priv->m_sysclk,
 		alarm_cb,
@@ -1105,7 +1105,7 @@ static int an986_ldd_connect(int devId)
 	mem_for_inet->m_devops.bus_type = sceInetBus_USB;
 	sceUsbdGetDeviceLocation(devId, mem_for_inet->m_devops.bus_loc);
 	mem_for_inet->m_cfgval = cfgdesc->bConfigurationValue;
-	ef_set_wrap(mem_for_inet, 0, 1u);
+	ef_set_wrap(mem_for_inet, 0, 1);
 	VERBOSE_PRINTF("an986_attach,%d: -> attached\n", devId);
 	return 0;
 }
