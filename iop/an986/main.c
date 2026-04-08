@@ -2,6 +2,7 @@
 #include "irx_imports.h"
 #include <usbd_macro.h>
 #include <ctype.h>
+#include <kerr.h>
 
 IRX_ID("INET_AN986_driver", 1, 75);
 
@@ -11,7 +12,7 @@ struct an986_priv
 	int m_is_pegasus2;
 	int m_thid;
 	int m_efid;
-	int m_subclass;
+	int m_cfgval;
 	int m_ef_wait_retval;
 	int m_done_related;
 	int m_ctrl_pipe;
@@ -152,13 +153,13 @@ static sceUsbdLddOps g_an986_ldd =
 	0u,
 	0u,
 	0u,
-	NULL
+	NULL,
 }; // weak
 static int g_thpri = 40; // weak
 static int g_thstack = 16384; // weak
 static int g_magic_count = 0; // weak
 static int g_verbose = 0; // weak
-static char *version_ptr = "Version 1.75.0"; // weak
+static const char *version_ptr = "Version 1.75.0"; // weak
 static int g_resident_flag; // weak
 static int g_load_mode; // weak
 
@@ -169,7 +170,7 @@ static int ef_wait_wrap(struct an986_priv *priv, u32 efbits)
 	int efret; // $s1
 	u32 efres; // [sp+10h] [-8h] BYREF
 
-	efret = WaitEventFlag(priv->m_efid, efbits, 17, &efres);
+	efret = WaitEventFlag(priv->m_efid, efbits, WEF_OR | WEF_CLEAR, &efres);
 	if ( efret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -219,7 +220,7 @@ static int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xfer
 {
 	int xferret; // $s0
 
-	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, 0xC0, 0xF0, 0, xferoffs, ( xferlen < 2 ) ? 2 : xferlen, &priv->m_usb_xfer_buf[xferoffs], an986_done, priv);
+	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, USB_DIR_IN | 0x40, 0xF0, 0, xferoffs, ( xferlen < 2 ) ? 2 : xferlen, &priv->m_usb_xfer_buf[xferoffs], an986_done, priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -236,7 +237,7 @@ static int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xfer
 {
 	int xferret; // $s0
 
-	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, 0x40, 0xF1, 0, xferoffs, ( xferlen < 2 ) ? 2 : xferlen, &priv->m_usb_xfer_buf[xferoffs], an986_done, priv);
+	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, USB_DIR_OUT | 0x40, 0xF1, 0, xferoffs, ( xferlen < 2 ) ? 2 : xferlen, &priv->m_usb_xfer_buf[xferoffs], an986_done, priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -330,10 +331,10 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 		}
 		else
 		{
-			priv->m_rx_bytes = priv->m_rx_bytes - 8 + acount;
+			priv->m_rx_bytes += acount - 8;
 			pkt->wp += acount - 8;
 			sceInetPktEnQ(&priv->m_devops.rcvq, pkt);
-			SetEventFlag(priv->m_devops.evfid, 4u);
+			SetEventFlag(priv->m_devops.evfid, sceInetDevEFP_Recv);
 		}
 	}
 	bulk_xfer(priv);
@@ -348,11 +349,11 @@ static void bulk_xfer(struct an986_priv *priv)
 	int xferret; // $s1
 	int state; // [sp+18h] [-8h] BYREF
 
-	pkt = sceInetAllocPkt(&priv->m_devops, 1524);
+	pkt = sceInetAllocPkt(&priv->m_devops, sizeof(sceInetPkt_t) + 1500);
 	if ( !pkt )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
-		VERBOSE_PRINTF("sceInetAllocPkt(%d) - no space", 1524);
+		VERBOSE_PRINTF("sceInetAllocPkt(%d) - no space", (int)(sizeof(sceInetPkt_t) + 1500));
 		VERBOSE_PRINTF("\n");
 		CpuSuspendIntr(&state);
 		priv->m_cnt_for_bulk_xfer += 1;
@@ -362,7 +363,7 @@ static void bulk_xfer(struct an986_priv *priv)
 	pkt->m_reserved1 = (void *)priv;
 	pkt->rp += 2;
 	pkt->wp += 2;
-	xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt->wp, 0x5F2u, NULL, an986_rx_done, pkt);
+	xferret = sceUsbdBulkTransfer(priv->m_bulk_in_pipe, pkt->wp, sizeof(sceInetPkt_t) + 1500 - 2, an986_rx_done, pkt);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -413,7 +414,7 @@ static int an986_inet_start(void *userdata, int unused)
 	priv = (struct an986_priv *)userdata;
 	priv->m_start_stop_flag = 0;
 	if ( priv->m_val_for_inet_start )
-		SetEventFlag(priv->m_devops.evfid, 1u);
+		SetEventFlag(priv->m_devops.evfid, sceInetDevEFP_StartDone);
 	else
 		ef_set_wrap(priv, 0, 2u);
 	return 0;
@@ -464,7 +465,7 @@ static int an986_inet_xmit(void *userdata, int unused)
   if ( !dropped )
   {
   	xrp2 = pkt->wp - pkt->rp;
-  	if ( xrp2 - 60 >= 0x5AF )
+  	if ( xrp2 - 60 >= 1455 )
   		dropped = 1;
   }
   if ( !dropped )
@@ -484,16 +485,10 @@ static int an986_inet_xmit(void *userdata, int unused)
     pkt->m_reserved1 = (void *)priv;
     while ( 1 )
     {
-      xferres = sceUsbdTransferPipe(
-                  priv->m_bulk_out_pipe,
-                  pkt->rp + 2,
-                  xrp2,
-                  NULL,
-                  an986_tx_done,
-                  pkt);
+      xferres = sceUsbdBulkTransfer(priv->m_bulk_out_pipe, pkt->rp + 2, xrp2, an986_tx_done, pkt);
       if ( !xferres )
         break;
-      if ( xferres != 274 )
+      if ( xferres != USB_RC_IOREQ )
       {
         VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
         VERBOSE_PRINTF("sceUsbdBulkTransfer -> 0x%x", xferres);
@@ -579,94 +574,94 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 	p_m_err_rx_over = NULL;
 	switch ( code )
 	{
-		case 0x80000000:
+		case sceInetNDCC_GET_THPRI:
 			m_nego_status = g_thpri;
 			break;
-		case 0x80000100:
-			m_nego_status = 1;
+		case sceInetNDCC_GET_IF_TYPE:
+			m_nego_status = sceInetNDIFT_ETHERNET;
 			break;
-		case 0x80010000:
+		case sceInetNDCC_GET_RX_PACKETS:
 			p_m_err_rx_over = &priv->m_rx_packets;
 			break;
-		case 0x80010001:
+		case sceInetNDCC_GET_TX_PACKETS:
 			p_m_err_rx_over = &priv->m_tx_packets;
 			break;
-		case 0x80010002:
+		case sceInetNDCC_GET_RX_BYTES:
 			p_m_err_rx_over = &priv->m_rx_bytes;
 			break;
-		case 0x80010003:
+		case sceInetNDCC_GET_TX_BYTES:
 			p_m_err_rx_over = &priv->m_tx_bytes;
 			break;
-		case 0x80010004:
+		case sceInetNDCC_GET_RX_ERRORS:
 			p_m_err_rx_over = &priv->m_rx_errors;
 			break;
-		case 0x80010005:
+		case sceInetNDCC_GET_TX_ERRORS:
 			p_m_err_rx_over = &priv->m_tx_errors;
 			break;
-		case 0x80010006:
+		case sceInetNDCC_GET_RX_DROPPED:
 			p_m_err_rx_over = &priv->m_rx_dropped;
 			break;
-		case 0x80010007:
+		case sceInetNDCC_GET_TX_DROPPED:
 			p_m_err_rx_over = &priv->m_tx_dropped;
 			break;
-		case 0x80011000:
+		case sceInetNDCC_GET_MULTICAST:
 			p_m_err_rx_over = &priv->m_multicast;
 			break;
-		case 0x80011001:
+		case sceInetNDCC_GET_COLLISIONS:
 			p_m_err_rx_over = &priv->m_collisions;
 			break;
-		case 0x80011002:
+		case sceInetNDCC_GET_RX_LENGTH_ER:
 			p_m_err_rx_over = &priv->m_err_rx_length;
 			break;
-		case 0x80011003:
+		case sceInetNDCC_GET_RX_OVER_ER:
 			p_m_err_rx_over = &priv->m_err_rx_over;
 			break;
-		case 0x80011004:
+		case sceInetNDCC_GET_RX_CRC_ER:
 			p_m_err_rx_over = &priv->m_err_rx_crc;
 			break;
-		case 0x80011005:
+		case sceInetNDCC_GET_RX_FRAME_ER:
 			p_m_err_rx_over = &priv->m_err_rx_frame;
 			break;
-		case 0x80011006:
+		case sceInetNDCC_GET_RX_FIFO_ER:
 			p_m_err_rx_over = &priv->m_err_rx_fifo;
 			break;
-		case 0x80011007:
+		case sceInetNDCC_GET_RX_MISSED_ER:
 			p_m_err_rx_over = &priv->m_err_rx_missed;
 			break;
-		case 0x80011008:
+		case sceInetNDCC_GET_TX_ABORTED_ER:
 			p_m_err_rx_over = &priv->m_err_tx_aborted;
 			break;
-		case 0x80011009:
+		case sceInetNDCC_GET_TX_CARRIER_ER:
 			p_m_err_rx_over = &priv->m_err_tx_carrier;
 			break;
-		case 0x8001100A:
+		case sceInetNDCC_GET_TX_FIFO_ER:
 			p_m_err_rx_over = &priv->m_err_tx_fifo;
 			break;
-		case 0x8001100B:
+		case sceInetNDCC_GET_TX_HEARTBEAT_ER:
 			p_m_err_rx_over = &priv->m_err_tx_heartbeat;
 			break;
-		case 0x8001100C:
+		case sceInetNDCC_GET_TX_WINDOW_ER:
 			p_m_err_rx_over = &priv->m_err_tx_window;
 			break;
-		case 0x80020001:
+		case sceInetNDCC_GET_NEGO_STATUS:
 			m_nego_status = ( priv->m_link_status > 0 ) ? priv->m_nego_status : 0;
 			break;
-		case 0x80030000:
+		case sceInetNDCC_GET_LINK_STATUS:
 			m_nego_status = priv->m_link_status;
 			break;
-		case 0x81000000:
+		case sceInetNDCC_SET_THPRI:
 			if ( !ptr )
 				break;
 			if ( len != sizeof(priority) )
 				break;
 			bcopy(ptr, &priority, sizeof(priority));
-			m_nego_status = -403;
+			m_nego_status = KE_ILLEGAL_PRIORITY;
 			if ( (unsigned int)(priority - 9) >= 0x73 )
 				break;
 			g_thpri = priority;
 			m_nego_status = ChangeThreadPriority(priv->m_thid, priority);
 			break;
-		case 0x81040000:
+		case sceInetNDCC_SET_MULTICAST_LIST:
 			m_nego_status = inet_81040000_multicast_list_handler(priv, ptr, len);
 			break;
 	}
@@ -699,7 +694,7 @@ static void inet_thread_proc(void *userdata)
 	priv = (struct an986_priv *)userdata;
 	if ( ef_wait_wrap(priv, 1u) )
 		return;
-	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, 0, 9, priv->m_subclass, 0, 0, NULL, an986_done, priv);
+	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, 0, 9, priv->m_cfgval, 0, 0, NULL, an986_done, priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -815,7 +810,7 @@ static void inet_thread_proc(void *userdata)
 		priv->m_usb_xfer_buf[1] |= 0x10u;
 	if ( control_positive_xfer(priv, 1, 1) )
 		return;
-	priv->m_nego_status = (( !!(outval_1 & 0x140) ) ? 2 : 1) << (( !!(outval_1 & 0x180) ) ? 2 : 0);
+	priv->m_nego_status = (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_10_FD : sceInetNDNEGO_10) << (( !!(outval_1 & 0x180) ) ? 2 : 0);
 	printf(
 		"%s: %s %s Duplex Mode (ANAR=0x%04x ANLPAR=0x%04x)\n",
 		priv->m_devops.interface,
@@ -848,7 +843,7 @@ static void inet_thread_proc(void *userdata)
 		bulk_xfer(priv);
 	priv->m_val_for_inet_start = 1;
 	if ( !priv->m_start_stop_flag )
-		SetEventFlag(priv->m_devops.evfid, 1u);
+		SetEventFlag(priv->m_devops.evfid, sceInetDevEFP_StartDone);
 	priv->m_val_for_alarm_cb = 10;
 	USec2SysClock(0xF4240u, &priv->m_sysclk);
 	SetAlarm(
@@ -935,8 +930,8 @@ static struct an986_priv *do_allocate_mem_for_inet(const char *vendor_name, cons
 	sprintf(priv->m_devops.interface, "an986,%d", priv->m_magic_cur);
 	g_magic_count += 1;
 	priv->m_devops.module_name = "an986";
-	priv->m_devops.prot_ver = 2;
-	priv->m_devops.flags = 1040;
+	priv->m_devops.prot_ver = sceInetDevProtVer;
+	priv->m_devops.flags = sceInetDevF_Multicast | sceInetDevF_ARP;
 	priv->m_devops.start = an986_inet_start;
 	priv->m_devops.stop = an986_inet_stop;
 	priv->m_devops.xmit = an986_inet_xmit;
@@ -957,7 +952,7 @@ static struct an986_priv *do_allocate_mem_for_inet(const char *vendor_name, cons
 	}
 	if ( !err )
 	{
-		thparam.attr = 0x2000000;
+		thparam.attr = TH_C;
 		thparam.thread = inet_thread_proc;
 		thparam.option = 0;
 		thparam.priority = g_thpri;
@@ -1046,7 +1041,7 @@ static int an986_ldd_connect(int devId)
 {
 	UsbDeviceDescriptor *devdesc2; // $s0
 	const struct an986_devinfo *cur_devinfo; // $s5
-	UsbDeviceDescriptor *devdesc; // $s6
+	UsbConfigDescriptor *cfgdesc; // $s6
 	UsbInterfaceDescriptor *intfdesc; // $a1
 	UsbEndpointDescriptor *bulk_in_desc; // $s3
 	UsbEndpointDescriptor *bulk_out_desc; // $s1
@@ -1054,42 +1049,42 @@ static int an986_ldd_connect(int devId)
 	struct an986_priv *mem_for_inet; // $s0
 
 	VERBOSE_PRINTF("an986_attach,%d: called\n", devId);
-	devdesc2 = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, 1u);
+	devdesc2 = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, USB_DT_DEVICE);
 	if ( !devdesc2 )
 		return -1;
 	cur_devinfo = do_check_static_descriptor(0, devdesc2->idVendor, devdesc2->idProduct);
 	if ( !cur_devinfo )
 		return -1;
-	devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc2, 2u);
-	if ( !devdesc )
+	cfgdesc = (UsbConfigDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc2, USB_DT_CONFIG);
+	if ( !cfgdesc )
 		return -1;
-	if ( devdesc->bDeviceClass != 1 )
+	if ( cfgdesc->bNumInterfaces != 1 )
 		return -1;
-	intfdesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(devId, devdesc, 4u);
+	intfdesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(devId, cfgdesc, USB_DT_INTERFACE);
 	if ( !intfdesc )
 		return -1;
 	if ( intfdesc->bNumEndpoints != 3 )
 		return -1;
-	bulk_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, intfdesc, 5u);
+	bulk_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, intfdesc, USB_DT_ENDPOINT);
 	if ( !bulk_in_desc )
 		return -1;
-	if ( !(bulk_in_desc->bEndpointAddress & 0x80) )
+	if ( (bulk_in_desc->bEndpointAddress & USB_ENDPOINT_DIR_MASK) != USB_DIR_IN )
 		return -1;
-	if ( (bulk_in_desc->bmAttributes & 3) != 2 )
+	if ( (bulk_in_desc->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) != USB_ENDPOINT_XFER_BULK )
 		return -1;
-	bulk_out_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_in_desc, 5u);
+	bulk_out_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_in_desc, USB_DT_ENDPOINT);
 	if ( !bulk_out_desc )
 		return -1;
-	if ( !!(bulk_out_desc->bEndpointAddress & 0x80) )
+	if ( (bulk_out_desc->bEndpointAddress & USB_ENDPOINT_DIR_MASK) != USB_DIR_OUT )
 		return -1;
-	if ( (bulk_out_desc->bmAttributes & 3) != 2 )
+	if ( (bulk_out_desc->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) != USB_ENDPOINT_XFER_BULK )
 		return -1;
-	int_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_out_desc, 5u);
+	int_in_desc = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, bulk_out_desc, USB_DT_ENDPOINT);
 	if ( !int_in_desc )
 		return -1;
-	if ( !(int_in_desc->bEndpointAddress & 0x80) )
+	if ( (int_in_desc->bEndpointAddress & USB_ENDPOINT_DIR_MASK) != USB_DIR_IN )
 		return -1;
-	if ( (int_in_desc->bmAttributes & 3) != 3 )
+	if ( (int_in_desc->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) != USB_ENDPOINT_XFER_INT )
 		return -1;
 	mem_for_inet = do_allocate_mem_for_inet(cur_devinfo->m_vendor_name, cur_devinfo->m_device_name, cur_devinfo->m_chip == 'P');
 	if ( !mem_for_inet )
@@ -1107,9 +1102,9 @@ static int an986_ldd_connect(int devId)
 	if ( mem_for_inet->m_int_in_pipe < 0 )
 		return -1;
 	sceUsbdSetPrivateData(devId, mem_for_inet);
-	mem_for_inet->m_devops.bus_type = 1;
+	mem_for_inet->m_devops.bus_type = sceInetBus_USB;
 	sceUsbdGetDeviceLocation(devId, mem_for_inet->m_devops.bus_loc);
-	mem_for_inet->m_subclass = devdesc->bDeviceSubClass;
+	mem_for_inet->m_cfgval = cfgdesc->bConfigurationValue;
 	ef_set_wrap(mem_for_inet, 0, 1u);
 	VERBOSE_PRINTF("an986_attach,%d: -> attached\n", devId);
 	return 0;
@@ -1126,7 +1121,7 @@ static int an986_ldd_disconnect(int devId)
 	if ( !priv )
 		return -1;
 	priv->m_val_for_inet_stop = 1;
-	SetEventFlag(priv->m_devops.evfid, 2u);
+	SetEventFlag(priv->m_devops.evfid, sceInetDevEFP_PlugOut);
 	return 0;
 }
 // 403504: using guessed type int g_verbose;
@@ -1169,7 +1164,7 @@ static int an986_ldd_probe(int devId)
 			}
 		}
 	}
-	devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, 1u);
+	devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, USB_DT_DEVICE);
 	if ( !devdesc )
 		return 0;
 	if ( !do_check_static_descriptor(1, devdesc->idVendor, devdesc->idProduct) )
