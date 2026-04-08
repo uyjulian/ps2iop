@@ -198,17 +198,17 @@ static void ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
 //----- (00400104) --------------------------------------------------------
 static void an986_done(int efbits, int doneval, void *userdata)
 {
-	struct an986_priv *priv_tmp; // $a0
+	struct an986_priv *priv; // $a0
 
-	priv_tmp = (struct an986_priv *)userdata;
+	priv = (struct an986_priv *)userdata;
 	if ( efbits )
 	{
-		VERBOSE_PRINTF("%s: ", priv_tmp->m_devops.interface);
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
 		VERBOSE_PRINTF("%s: -> 0x%x\n", "an986_done", efbits);
 		VERBOSE_PRINTF("\n");
 	}
-	priv_tmp->m_done_related = doneval;
-	ef_set_wrap(priv_tmp, efbits, 4u);
+	priv->m_done_related = doneval;
+	ef_set_wrap(priv, efbits, 4u);
 }
 // 403504: using guessed type int g_verbose;
 
