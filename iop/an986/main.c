@@ -61,6 +61,14 @@ struct an986_devinfo
 	const char *m_device_name;
 };
 
+#define VERBOSE_PRINTF(...) \
+	{ \
+		if ( g_verbose ) \
+		{ \
+			printf(__VA_ARGS__);\
+		} \
+	}
+
 //-------------------------------------------------------------------------
 // Function declarations
 
@@ -162,12 +170,9 @@ static int ef_wait_wrap(struct an986_priv *priv, u32 efbits)
 	efret = WaitEventFlag(priv->m_efid, efbits, 17, efres);
 	if ( !efret )
 		return priv->m_ef_wait_retval;
-	if ( g_verbose )
-	{
-		printf("%s: ", priv->m_devops.interface);
-		printf("WaitEventFlag (%d)", efret);
-		printf("\n");
-	}
+	VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+	VERBOSE_PRINTF("WaitEventFlag (%d)", efret);
+	VERBOSE_PRINTF("\n");
 	return -1;
 }
 // 403504: using guessed type int g_verbose;
@@ -179,11 +184,11 @@ static void ef_set_wrap(struct an986_priv *priv, int wait_retval, u32 efbits)
 
 	priv->m_ef_wait_retval = wait_retval;
 	efret = SetEventFlag(priv->m_efid, efbits);
-	if ( efret && g_verbose )
+	if ( efret )
 	{
-		printf("%s: ", priv->m_devops.interface);
-		printf("SetEventFlag (%d)", efret);
-		printf("\n");
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+		VERBOSE_PRINTF("SetEventFlag (%d)", efret);
+		VERBOSE_PRINTF("\n");
 	}
 }
 // 403504: using guessed type int g_verbose;
@@ -194,11 +199,11 @@ static void an986_done(int efbits, int doneval, void *userdata)
 	struct an986_priv *priv_tmp; // $a0
 
 	priv_tmp = (struct an986_priv *)userdata;
-	if ( efbits && g_verbose )
+	if ( efbits )
 	{
-		printf("%s: ", priv_tmp->m_devops.interface);
-		printf("%s: -> 0x%x\n", "an986_done", efbits);
-		printf("\n");
+		VERBOSE_PRINTF("%s: ", priv_tmp->m_devops.interface);
+		VERBOSE_PRINTF("%s: -> 0x%x\n", "an986_done", efbits);
+		VERBOSE_PRINTF("\n");
 	}
 	priv_tmp->m_done_related = doneval;
 	ef_set_wrap(priv_tmp, efbits, 4u);
@@ -227,12 +232,9 @@ static int control_negative_xfer(struct an986_priv *priv, int xferoffs, int xfer
 							priv);
 	if ( !xferret )
 		return ef_wait_wrap(priv, 4u);
-	if ( g_verbose )
-	{
-		printf("%s: ", priv->m_devops.interface);
-		printf("sceUsbdControlTransfer -> 0x%x", xferret);
-		printf("\n");
-	}
+	VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+	VERBOSE_PRINTF("sceUsbdControlTransfer -> 0x%x", xferret);
+	VERBOSE_PRINTF("\n");
 	return -1;
 }
 // 403504: using guessed type int g_verbose;
@@ -259,12 +261,9 @@ static int control_positive_xfer(struct an986_priv *priv, int xferoffs, int xfer
 							priv);
 	if ( !xferret )
 		return ef_wait_wrap(priv, 4u);
-	if ( g_verbose )
-	{
-		printf("%s: ", priv->m_devops.interface);
-		printf("sceUsbdControlTransfer -> 0x%x", xferret);
-		printf("\n");
-	}
+	VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+	VERBOSE_PRINTF("sceUsbdControlTransfer -> 0x%x", xferret);
+	VERBOSE_PRINTF("\n");
 	return -1;
 }
 // 403504: using guessed type int g_verbose;
@@ -306,11 +305,11 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 
 	pkt = (sceInetPkt_t *)userdata;
 	priv = (struct an986_priv *)pkt->m_reserved1;
-	if ( aresult && g_verbose )
+	if ( aresult )
 	{
-		printf("%s: ", priv->m_devops.interface);
-		printf("%s: -> 0x%x\n", "an986_rx_done", aresult);
-		printf("\n");
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+		VERBOSE_PRINTF("%s: -> 0x%x\n", "an986_rx_done", aresult);
+		VERBOSE_PRINTF("\n");
 	}
 	priv->m_rx_packets += 1;
 	pkt->m_reserved1 = 0;
@@ -373,12 +372,9 @@ void bulk_xfer(struct an986_priv *priv)
 	pkt = sceInetAllocPkt(&priv->m_devops, 1524);
 	if ( !pkt )
 	{
-		if ( g_verbose )
-		{
-			printf("%s: ", priv->m_devops.interface);
-			printf("sceInetAllocPkt(%d) - no space", 1524);
-			printf("\n");
-		}
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+		VERBOSE_PRINTF("sceInetAllocPkt(%d) - no space", 1524);
+		VERBOSE_PRINTF("\n");
 		CpuSuspendIntr(&state);
 		priv->m_cnt_for_bulk_xfer += 1;
 		CpuResumeIntr(state);
@@ -390,12 +386,9 @@ void bulk_xfer(struct an986_priv *priv)
 	xferret = sceUsbdTransferPipe(priv->m_bulk_in_pipe, pkt->wp, 0x5F2u, 0, an986_rx_done, pkt);
 	if ( xferret )
 	{
-		if ( g_verbose )
-		{
-			printf("%s: ", priv->m_devops.interface);
-			printf("sceUsbdBulkTransfer -> 0x%x\n", xferret);
-			printf("\n");
-		}
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+		VERBOSE_PRINTF("sceUsbdBulkTransfer -> 0x%x\n", xferret);
+		VERBOSE_PRINTF("\n");
 		sceInetFreePkt(&priv->m_devops, pkt);
 	}
 }
@@ -412,12 +405,9 @@ static void an986_tx_done(int aresult, int acount, void *userdata)
 	priv = (struct an986_priv *)pkt->m_reserved1;
 	if ( aresult )
 	{
-		if ( g_verbose )
-		{
-			printf("%s: ", priv->m_devops.interface);
-			printf("%s: -> 0x%x\n", "an986_tx_done", aresult);
-			printf("\n");
-		}
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+		VERBOSE_PRINTF("%s: -> 0x%x\n", "an986_tx_done", aresult);
+		VERBOSE_PRINTF("\n");
 	}
 	pkt->m_reserved1 = 0;
 	sceInetFreePkt(&priv->m_devops, pkt);
@@ -517,12 +507,9 @@ static int an986_inet_xmit(void *userdata, int unused)
           break;
         if ( xferres != 274 )
         {
-          if ( g_verbose )
-          {
-	          printf("%s: ", priv->m_devops.interface);
-	          printf("sceUsbdBulkTransfer -> 0x%x", xferres);
-	          printf("\n");
-          }
+          VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+          VERBOSE_PRINTF("sceUsbdBulkTransfer -> 0x%x", xferres);
+          VERBOSE_PRINTF("\n");
         	dropped = 1;
         	break;
         }
@@ -532,12 +519,9 @@ static int an986_inet_xmit(void *userdata, int unused)
   }
   if ( dropped )
   {
-    if ( g_verbose )
-    {
-      printf("%s: ", priv->m_devops.interface);
-      printf("dropped");
-      printf("\n");
-    }
+    VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+    VERBOSE_PRINTF("dropped");
+    VERBOSE_PRINTF("\n");
     priv->m_tx_dropped += 1;
     sceInetFreePkt(&priv->m_devops, pkt);
   }
@@ -737,12 +721,9 @@ static void inet_thread_proc(void *userdata)
 	xferret = sceUsbdTransferPipe(priv->m_ctrl_pipe, 0, 0, &devreq, an986_done, priv);
 	if ( xferret )
 	{
-		if ( g_verbose )
-		{
-			printf("%s: ", priv->m_devops.interface);
-			printf("sceUsbdSetConfiguration -> 0x%x", xferret);
-			printf("\n");
-		}
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+		VERBOSE_PRINTF("sceUsbdSetConfiguration -> 0x%x", xferret);
+		VERBOSE_PRINTF("\n");
 		return;
 	}
 	if ( ef_wait_wrap(priv, 4u) )
@@ -778,12 +759,9 @@ static void inet_thread_proc(void *userdata)
 	regres = sceInetRegisterNetDevice(&priv->m_devops);
 	if ( regres < 0 )
 	{
-		if ( g_verbose )
-		{
-			printf("%s: ", priv->m_devops.interface);
-			printf("sceInetRegisterNetDevice -> %d", regres);
-			printf("\n");
-		}
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+		VERBOSE_PRINTF("sceInetRegisterNetDevice -> %d", regres);
+		VERBOSE_PRINTF("\n");
 		return;
 	}
 	if ( ef_wait_wrap(priv, 2u) )
@@ -824,12 +802,9 @@ static void inet_thread_proc(void *userdata)
 			idxcnt += 1;
 			if ( idxcnt >= 32 )
 			{
-				if ( g_verbose )
-				{
-					printf("%s: ", priv->m_devops.interface);
-					printf("Valid PHY chip not found");
-					printf("\n");
-				}
+				VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+				VERBOSE_PRINTF("Valid PHY chip not found");
+				VERBOSE_PRINTF("\n");
 				return;
 			}
 		}
@@ -967,13 +942,10 @@ static struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *devi
 	priv = (struct an986_priv *)sceInetAllocMem(0, 888);
 	if ( !priv )
 	{
-		if ( g_verbose )
-		{
-			// Unofficial: don't reference null priv->m_devops.interface
-			printf("%s: ", "an986");
-			printf("sceInetAllocMem(%d) -> no space or not ready", 888);
-			printf("\n");
-		}
+		// Unofficial: don't reference null priv->m_devops.interface
+		VERBOSE_PRINTF("%s: ", "an986");
+		VERBOSE_PRINTF("sceInetAllocMem(%d) -> no space or not ready", 888);
+		VERBOSE_PRINTF("\n");
 		return priv;
 	}
 	bzero(priv, 888);
@@ -997,12 +969,9 @@ static struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *devi
 	priv->m_efid = CreateEventFlag(&efparam);
 	if ( priv->m_efid <= 0 )
 	{
-		if ( g_verbose )
-		{
-			printf("%s: ", priv->m_devops.interface);
-			printf("CreateEventFlag -> %d", priv->m_efid);
-			printf("\n");
-		}
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+		VERBOSE_PRINTF("CreateEventFlag -> %d", priv->m_efid);
+		VERBOSE_PRINTF("\n");
 		err = 1;
 	}
 	if ( !err )
@@ -1015,12 +984,9 @@ static struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *devi
 		priv->m_thid = CreateThread(&thparam);
 		if ( priv->m_thid <= 0 )
 		{
-			if ( g_verbose )
-			{
-				printf("%s: ", priv->m_devops.interface);
-				printf("CreateThread -> %d", priv->m_thid);
-				printf("\n");
-			}
+			VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+			VERBOSE_PRINTF("CreateThread -> %d", priv->m_thid);
+			VERBOSE_PRINTF("\n");
 			err = 1;
 		}
 	}
@@ -1029,12 +995,9 @@ static struct an986_priv *do_allocate_mem_for_inet(char *vendor_name, char *devi
 		err = StartThread(priv->m_thid, priv);
 		if ( err )
 		{
-			if ( g_verbose )
-			{
-				printf("%s: ", priv->m_devops.interface);
-				printf("StartThread -> %d", err);
-				printf("\n");
-			}
+			VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+			VERBOSE_PRINTF("StartThread -> %d", err);
+			VERBOSE_PRINTF("\n");
 			err = 1;
 		}
 	}
@@ -1062,44 +1025,36 @@ static struct an986_devinfo *do_check_static_descriptor(
 {
 	unsigned int i; // $s0
 
-	if ( is_probe && g_verbose )
-		printf("an986: idVendor=0x%04x idProduct=0x%04x\n", id_vendor, id_product);
+	if ( is_probe )
+		VERBOSE_PRINTF("an986: idVendor=0x%04x idProduct=0x%04x\n", id_vendor, id_product);
 	// Unofficial: avoid out of bounds read when device not found
 	for ( i = 0; i < (sizeof(g_an986_devinfo)/sizeof(g_an986_devinfo[0])); i += 1 )
 	{
 		if ( id_vendor == g_an986_devinfo[i].m_vendor_id && id_product == g_an986_devinfo[i].m_product_id )
 		{
-			if ( is_probe && g_verbose )
-				printf("an986: %s, %s", g_an986_devinfo[i].m_vendor_name, g_an986_devinfo[i].m_device_name);
+			if ( is_probe )
+				VERBOSE_PRINTF("an986: %s, %s", g_an986_devinfo[i].m_vendor_name, g_an986_devinfo[i].m_device_name);
 			switch ( g_an986_devinfo[i].m_chip )
 			{
 			case 'p':
-				if ( is_probe && g_verbose )
-				{
-					printf(" [pegasus] -> supported\n");
-				}
+				if ( is_probe )
+					VERBOSE_PRINTF(" [pegasus] -> supported\n");
 				return &g_an986_devinfo[i];
 			case 'P':
-				if ( is_probe && g_verbose )
-				{
-					printf(" [pegasusII] -> supported\n");
-				}
+				if ( is_probe )
+					VERBOSE_PRINTF(" [pegasusII] -> supported\n");
 				return &g_an986_devinfo[i];
 			case 'k':
-				if ( is_probe && g_verbose )
-				{
-					printf(" [klsi] -> unsupported\n");
-				}
+				if ( is_probe )
+					VERBOSE_PRINTF(" [klsi] -> unsupported\n");
 				return NULL;
 			default:
 				break;
 			}
 		}
 	}
-	if ( is_probe && g_verbose )
-	{
-		printf(" [unknown] -> unsupported\n");
-	}
+	if ( is_probe )
+		VERBOSE_PRINTF(" [unknown] -> unsupported\n");
 	return NULL;
 }
 // 403090: using guessed type an986_devinfo g_an986_devinfo[53];
@@ -1117,8 +1072,7 @@ int an986_ldd_connect(int devId)
 	UsbEndpointDescriptor *int_in_desc; // $s2
 	struct an986_priv *mem_for_inet; // $s0
 
-	if ( g_verbose )
-		printf("an986_attach,%d: called\n", devId);
+	VERBOSE_PRINTF("an986_attach,%d: called\n", devId);
 	devdesc2 = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, 0, 1u);
 	if ( !devdesc2 )
 		return -1;
@@ -1179,10 +1133,7 @@ int an986_ldd_connect(int devId)
 	sceUsbdGetDeviceLocation(devId, mem_for_inet->m_devops.bus_loc);
 	mem_for_inet->m_subclass = devdesc->bDeviceSubClass;
 	ef_set_wrap(mem_for_inet, 0, 1u);
-	if ( g_verbose )
-	{
-		printf("an986_attach,%d: -> attached\n", devId);
-	}
+	VERBOSE_PRINTF("an986_attach,%d: -> attached\n", devId);
 	return 0;
 }
 // 403504: using guessed type int g_verbose;
@@ -1192,8 +1143,7 @@ int an986_ldd_disconnect(int devId)
 {
 	struct an986_priv *priv; // $v0
 
-	if ( g_verbose )
-		printf("an986_detach,%d: -> detached\n", devId);
+	VERBOSE_PRINTF("an986_detach,%d: -> detached\n", devId);
 	priv = (struct an986_priv *)sceUsbdGetPrivateData(devId);
 	if ( !priv )
 		return -1;
@@ -1249,10 +1199,7 @@ int an986_ldd_probe(int devId)
 	g_resident_flag = 1;
 	if ( g_load_mode == 't' )
 		return 0;
-	if ( g_verbose )
-	{
-		printf("an986_probe,%d: -> accepted\n", devId);
-	}
+	VERBOSE_PRINTF("an986_probe,%d: -> accepted\n", devId);
 	return 1;
 }
 // 403504: using guessed type int g_verbose;
@@ -1435,8 +1382,7 @@ static int an986_init(int ac, char **av)
 	{
 		return 4;
 	}
-	if ( g_verbose )
-		printf("an986_start: load_mode='%c' resident_flag=%d\n", g_load_mode, g_resident_flag);
+	VERBOSE_PRINTF("an986_start: load_mode='%c' resident_flag=%d\n", g_load_mode, g_resident_flag);
 	if ( g_load_mode == 't' )
 	{
 		sceUsbdUnregisterLdd(&g_an986_ldd);
@@ -1469,8 +1415,7 @@ int _start(int ac, char **av)
 		return 1;
 	}
 	initval = an986_init(ac, av);
-	if ( g_verbose )
-		printf("an986: an986_init() -> 0x%x\n", initval);
+	VERBOSE_PRINTF("an986: an986_init() -> 0x%x\n", initval);
 	if ( initval )
 	{
 		ReleaseLibraryEntries(&_exp_an986);
