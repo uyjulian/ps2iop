@@ -248,9 +248,11 @@ static int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, 
 {
 	int retres; // $v0
 
+	// PHY address
 	priv->m_usb_xfer_buf[37] = linkval & 0x1F;
 	priv->m_usb_xfer_buf[38] = 0;
 	priv->m_usb_xfer_buf[39] = 0;
+	// PHY access control
 	priv->m_usb_xfer_buf[40] = (xval & 0x1F) | 0x40;
 	retres = control_out_xfer(priv, 37, 4);
 	if ( retres )
@@ -541,6 +543,7 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 {
 	int k; // $t0
 
+	// Multicast address
 	bzero(&priv->m_usb_xfer_buf[8], 8);
 	if ( len >= 0 )
 	{
@@ -729,7 +732,8 @@ static void inet_thread_proc(void *userdata)
 	if ( ef_wait_wrap(priv, 4) || control_in_xfer(priv, 16, 6) )
 		return;
 #ifdef AN986_UEPCB
-	priv->m_usb_xfer_buf[2] = 0x20;
+	// Ethernet_control_2 load EEPROM start
+	priv->m_usb_xfer_buf[2] = (1 << 5);
 	priv->m_usb_xfer_buf[3] = 0;
 	if ( control_out_xfer(priv, 2, 2) )
 		return;
@@ -740,9 +744,11 @@ static void inet_thread_proc(void *userdata)
 #endif
 	for ( i = 0; i < 3; i += 1 )
 	{
+		// EEPROM offset
 		priv->m_usb_xfer_buf[32] = i;
 		priv->m_usb_xfer_buf[33] = 0;
 		priv->m_usb_xfer_buf[34] = 0;
+		// EEPROM access control
 		priv->m_usb_xfer_buf[35] = 2;
 		if ( control_out_xfer(priv, 32, 4) )
 			return;
@@ -777,15 +783,18 @@ static void inet_thread_proc(void *userdata)
 	}
 	if ( ef_wait_wrap(priv, 2) )
 		return;
+	// GPIO
 	priv->m_usb_xfer_buf[126] = 36;
 	priv->m_usb_xfer_buf[127] = 6;
 	if ( control_out_xfer(priv, 126, 2) )
 		return;
+	// GPIO
 	priv->m_usb_xfer_buf[126] = 38;
 	priv->m_usb_xfer_buf[127] = 4;
 	if ( control_out_xfer(priv, 126, 2) )
 		return;
 #ifdef AN986_UEPCB
+	// Reserved (undocumented)
 	priv->m_usb_xfer_buf[131] = 0xFF;
 	priv->m_usb_xfer_buf[132] = 1;
 	if ( control_out_xfer(priv, 131, 2) )
@@ -794,6 +803,7 @@ static void inet_thread_proc(void *userdata)
 	if ( priv->m_is_pegasus2 )
 	{
 #ifdef AN986_UEPCB
+		// PHY control
 		printf("set reset\n");
 		priv->m_usb_xfer_buf[123] = 1;
 		if ( control_out_xfer(priv, 123, 1) )
@@ -806,6 +816,7 @@ static void inet_thread_proc(void *userdata)
 		}
 		printf("set ok\n");
 #else
+		// PHY control
 		priv->m_usb_xfer_buf[123] = 3;
 		if ( control_out_xfer(priv, 123, 1) )
 			return;
@@ -814,6 +825,7 @@ static void inet_thread_proc(void *userdata)
 			return;
 #endif
 	}
+	// Ethernet_control_1 reset_mac
 	priv->m_usb_xfer_buf[1] = 8;
 	if ( control_out_xfer(priv, 1, 1) )
 		return;
@@ -864,8 +876,10 @@ static void inet_thread_proc(void *userdata)
 	priv->m_usb_xfer_buf[1] = 0;
 	outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
 	if ( !!(outval_1 & 0x140) )
+		// Ethernet_control_1 full_duplex
 		priv->m_usb_xfer_buf[1] |= 0x20;
 	if ( !!(outval_1 & 0x180) )
+		// Ethernet_control_1 10mode
 		priv->m_usb_xfer_buf[1] |= 0x10;
 	if ( control_out_xfer(priv, 1, 1) )
 		return;
@@ -888,16 +902,19 @@ static void inet_thread_proc(void *userdata)
 		outval_2,
 		outval_3);
 #ifdef AN986_UEPCB
+	// Reserved (undocumented)
 	priv->m_usb_xfer_buf[128] = 0xE5;
 	priv->m_usb_xfer_buf[129] = 2;
 	if ( control_out_xfer(priv, 128, 2) )
 		return;
 #endif
+	// Ethernet_control_0
 	priv->m_usb_xfer_buf[0] = 0xC9;
 	if ( control_out_xfer(priv, 0, 1) )
 		return;
 	if ( priv->m_is_pegasus2 )
 	{
+		// GPIOs
 		priv->m_usb_xfer_buf[124] = 0x34;
 		priv->m_usb_xfer_buf[126] = 0x26;
 		priv->m_usb_xfer_buf[127] = 0x30;
@@ -925,6 +942,7 @@ static void inet_thread_proc(void *userdata)
 		while ( priv->m_val_for_alarm_cb > 0 )
 		{
 			control_in_xfer(priv, 43, 5);
+			// transmit_status_1
 			if ( !!(priv->m_usb_xfer_buf[43] & 0x6C) )
 			{
 				if ( !!(priv->m_usb_xfer_buf[43] & 0x60) )
@@ -933,11 +951,13 @@ static void inet_thread_proc(void *userdata)
 					priv->m_err_tx_carrier += 1;
 				priv->m_tx_errors += 1;
 			}
+			// receive_status
 			if ( !!(priv->m_usb_xfer_buf[45] & 1) )
 			{
 				priv->m_err_rx_over += 1;
 				priv->m_rx_errors += 1;
 			}
+			// receive lost packet low
 			priv->m_err_rx_missed += priv->m_usb_xfer_buf[47];
 			priv->m_rx_errors += priv->m_usb_xfer_buf[47];
 			DelayThread(100000);
