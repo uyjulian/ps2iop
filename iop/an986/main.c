@@ -331,7 +331,7 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 		{
 #ifdef AN986_UEPCB
 			priv->m_rx_bytes += rp_xe - 8;
-			pkt->wp = &pkt->wp[rp_xe - 6];
+			pkt->wp += rp_xe - 6;
 			pkt->rp += 2;
 #else
 			priv->m_rx_bytes += acount - 8;
