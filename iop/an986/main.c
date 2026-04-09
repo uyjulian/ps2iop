@@ -526,7 +526,8 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 	int k;
 
 	// Multicast address
-	bzero(&priv->m_usb_xfer_buf[8], 8);
+	// Unofficial: use memset
+	memset(&priv->m_usb_xfer_buf[8], 0, 8);
 	if ( len >= 0 )
 	{
 		if ( len != 6 * (len / 6) )
@@ -662,7 +663,8 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 				break;
 			if ( len != sizeof(priority) )
 				break;
-			bcopy(ptr, &priority, sizeof(priority));
+			// Unofficial: use memcpy
+			memcpy(&priority, ptr, sizeof(priority));
 			retres = KE_ILLEGAL_PRIORITY;
 			if ( (unsigned int)(priority - 9) >= 0x73 )
 				break;
@@ -675,7 +677,8 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 	}
 	if ( src_int_ptr && ptr && len == sizeof(*src_int_ptr) )
 	{
-		bcopy(src_int_ptr, ptr, sizeof(*src_int_ptr));
+		// Unofficial: use memcpy
+		memcpy(ptr, src_int_ptr, sizeof(*src_int_ptr));
 		retres = 0;
 	}
 	return retres;
@@ -745,10 +748,12 @@ static void inet_thread_proc(void *userdata)
 		printf("%d %x %x\n", i, priv->m_usb_xfer_buf[33], priv->m_usb_xfer_buf[34]);
 #endif
 	}
-	bcopy(priv->m_hwaddr_tmp, &priv->m_usb_xfer_buf[16], 6);
+	// Unofficial: use memcpy
+	memcpy(&priv->m_usb_xfer_buf[16], priv->m_hwaddr_tmp, 6);
 	if ( control_out_xfer(priv, 16, 6) )
 		return;
-	bcopy(priv->m_hwaddr_tmp, priv->m_devops.hw_addr, 6);
+	// Unofficial: use memcpy
+	memcpy(priv->m_devops.hw_addr, priv->m_hwaddr_tmp, 6);
 	priv->m_link_status = -1;
 	regres = sceInetRegisterNetDevice(&priv->m_devops);
 	if ( regres < 0 )
@@ -990,7 +995,8 @@ static struct an986_priv *do_allocate_mem_for_inet(const char *vendor_name, cons
 		VERBOSE_PRINTF("\n");
 		return priv;
 	}
-	bzero(priv, sizeof(struct an986_priv));
+	// Unofficial: use memset
+	memset(priv, 0, sizeof(struct an986_priv));
 	priv->m_is_pegasus2 = is_pegasus2;
 	priv->m_magic_cur = g_an986_idata.m_magic_count;
 	sprintf(priv->m_devops.interface, "an986,%d", priv->m_magic_cur);
