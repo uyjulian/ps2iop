@@ -24,7 +24,7 @@ struct an986_priv
 	int m_bulk_in_pipe;
 	int m_bulk_out_pipe;
 	int m_int_in_pipe;
-	u8 m_usb_xfer_buf[268];
+	u8 m_usb_xfer_buf[0x10C];
 	sceInetDevOps_t m_devops;
 	u8 m_hwaddr_tmp[8];
 	int m_val_for_inet_stop;
@@ -243,27 +243,27 @@ static int control_inout_xfer(struct an986_priv *priv, char linkval, char xval, 
 	int retres;
 
 	// PHY address
-	priv->m_usb_xfer_buf[37] = linkval & 0x1F;
-	priv->m_usb_xfer_buf[38] = 0;
-	priv->m_usb_xfer_buf[39] = 0;
+	priv->m_usb_xfer_buf[0x25] = linkval & 0x1F;
+	priv->m_usb_xfer_buf[0x26] = 0;
+	priv->m_usb_xfer_buf[0x27] = 0;
 	// PHY access control
-	priv->m_usb_xfer_buf[40] = (xval & 0x1F) | 0x40;
-	retres = control_out_xfer(priv, 37, 4);
+	priv->m_usb_xfer_buf[0x28] = (xval & 0x1F) | 0x40;
+	retres = control_out_xfer(priv, 0x25, 4);
 	if ( retres )
 		return retres;
 	while ( 1 )
 	{
-		retres = control_in_xfer(priv, 40, 1);
+		retres = control_in_xfer(priv, 0x28, 1);
 		if ( retres )
 			return retres;
-		if ( !!(priv->m_usb_xfer_buf[40] & 0x80) )
+		if ( !!(priv->m_usb_xfer_buf[0x28] & 0x80) )
 			break;
 		DelayThread(10000);
 	}
-	retres = control_in_xfer(priv, 37, 4);
+	retres = control_in_xfer(priv, 0x25, 4);
 	if ( retres )
 		return retres;
-	*outptr = priv->m_usb_xfer_buf[38] | (priv->m_usb_xfer_buf[39] << 8);
+	*outptr = priv->m_usb_xfer_buf[0x26] | (priv->m_usb_xfer_buf[0x27] << 8);
 	return 0;
 }
 
@@ -527,7 +527,7 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 
 	// Multicast address
 	// Unofficial: use memset
-	memset(&priv->m_usb_xfer_buf[8], 0, 8);
+	memset(&priv->m_usb_xfer_buf[0x08], 0, 8);
 	if ( len >= 0 )
 	{
 		if ( len != 6 * (len / 6) )
@@ -566,9 +566,9 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 		if ( ptr )
 			return -512;
 		for ( k = 0; k < 8; k += 1 )
-			priv->m_usb_xfer_buf[k + 8] = 0xFF;
+			priv->m_usb_xfer_buf[0x08 + k] = 0xFF;
 	}
-	return control_out_xfer(priv, 8, 8);
+	return control_out_xfer(priv, 0x08, 8);
 }
 
 static int an986_inet_control(void *userdata, int code, void *ptr, int len)
@@ -709,48 +709,48 @@ static void inet_thread_proc(void *userdata)
 		VERBOSE_PRINTF("\n");
 		return;
 	}
-	if ( ef_wait_wrap(priv, 4) || control_in_xfer(priv, 16, 6) )
+	if ( ef_wait_wrap(priv, 4) || control_in_xfer(priv, 0x10, 6) )
 		return;
 #ifdef AN986_UEPCB
 	// Ethernet_control_2 load EEPROM start
-	priv->m_usb_xfer_buf[2] = (1 << 5);
-	priv->m_usb_xfer_buf[3] = 0;
-	if ( control_out_xfer(priv, 2, 2) )
+	priv->m_usb_xfer_buf[0x02] = (1 << 5);
+	priv->m_usb_xfer_buf[0x03] = 0;
+	if ( control_out_xfer(priv, 0x02, 2) )
 		return;
-	priv->m_usb_xfer_buf[2] = 0;
-	if ( control_out_xfer(priv, 2, 2) )
+	priv->m_usb_xfer_buf[0x02] = 0;
+	if ( control_out_xfer(priv, 0x02, 2) )
 		return;
 	// AN986_UEPCB note: An unsed variable is set to 0xB2500010
 #endif
 	for ( i = 0; i < 3; i += 1 )
 	{
 		// EEPROM offset
-		priv->m_usb_xfer_buf[32] = i;
-		priv->m_usb_xfer_buf[33] = 0;
-		priv->m_usb_xfer_buf[34] = 0;
+		priv->m_usb_xfer_buf[0x20] = i;
+		priv->m_usb_xfer_buf[0x21] = 0;
+		priv->m_usb_xfer_buf[0x22] = 0;
 		// EEPROM access control
-		priv->m_usb_xfer_buf[35] = 2;
-		if ( control_out_xfer(priv, 32, 4) )
+		priv->m_usb_xfer_buf[0x23] = 2;
+		if ( control_out_xfer(priv, 0x20, 4) )
 			return;
 		while ( 1 )
 		{
-			if ( control_in_xfer(priv, 35, 1) )
+			if ( control_in_xfer(priv, 0x23, 1) )
 				return;
-			if ( !!(priv->m_usb_xfer_buf[35] & 4) )
+			if ( !!(priv->m_usb_xfer_buf[0x23] & 4) )
 				break;
 			DelayThread(10000);
 		}
-		if ( control_in_xfer(priv, 33, 3) )
+		if ( control_in_xfer(priv, 0x21, 3) )
 			return;
-		priv->m_hwaddr_tmp[(i * 2) + 0] = priv->m_usb_xfer_buf[33];
-		priv->m_hwaddr_tmp[(i * 2) + 1] = priv->m_usb_xfer_buf[34];
+		priv->m_hwaddr_tmp[(i * 2) + 0] = priv->m_usb_xfer_buf[0x21];
+		priv->m_hwaddr_tmp[(i * 2) + 1] = priv->m_usb_xfer_buf[0x22];
 #ifdef AN986_UEPCB
-		printf("%d %x %x\n", i, priv->m_usb_xfer_buf[33], priv->m_usb_xfer_buf[34]);
+		printf("%d %x %x\n", i, priv->m_usb_xfer_buf[0x21], priv->m_usb_xfer_buf[0x22]);
 #endif
 	}
 	// Unofficial: use memcpy
-	memcpy(&priv->m_usb_xfer_buf[16], priv->m_hwaddr_tmp, 6);
-	if ( control_out_xfer(priv, 16, 6) )
+	memcpy(&priv->m_usb_xfer_buf[0x10], priv->m_hwaddr_tmp, 6);
+	if ( control_out_xfer(priv, 0x10, 6) )
 		return;
 	// Unofficial: use memcpy
 	memcpy(priv->m_devops.hw_addr, priv->m_hwaddr_tmp, 6);
@@ -766,20 +766,20 @@ static void inet_thread_proc(void *userdata)
 	if ( ef_wait_wrap(priv, 2) )
 		return;
 	// GPIO
-	priv->m_usb_xfer_buf[126] = 36;
-	priv->m_usb_xfer_buf[127] = 6;
-	if ( control_out_xfer(priv, 126, 2) )
+	priv->m_usb_xfer_buf[0x7E] = 36;
+	priv->m_usb_xfer_buf[0x7F] = 6;
+	if ( control_out_xfer(priv, 0x7E, 2) )
 		return;
 	// GPIO
-	priv->m_usb_xfer_buf[126] = 38;
-	priv->m_usb_xfer_buf[127] = 4;
-	if ( control_out_xfer(priv, 126, 2) )
+	priv->m_usb_xfer_buf[0x7E] = 38;
+	priv->m_usb_xfer_buf[0x7F] = 4;
+	if ( control_out_xfer(priv, 0x7E, 2) )
 		return;
 #ifdef AN986_UEPCB
 	// Reserved (undocumented)
-	priv->m_usb_xfer_buf[131] = 0xFF;
-	priv->m_usb_xfer_buf[132] = 1;
-	if ( control_out_xfer(priv, 131, 2) )
+	priv->m_usb_xfer_buf[0x83] = 0xFF;
+	priv->m_usb_xfer_buf[0x84] = 1;
+	if ( control_out_xfer(priv, 0x83, 2) )
 		return;
 #endif
 	if ( priv->m_is_pegasus2 )
@@ -787,11 +787,11 @@ static void inet_thread_proc(void *userdata)
 #ifdef AN986_UEPCB
 		// PHY control
 		printf("set reset\n");
-		priv->m_usb_xfer_buf[123] = 1;
-		if ( control_out_xfer(priv, 123, 1) )
+		priv->m_usb_xfer_buf[0x7B] = 1;
+		if ( control_out_xfer(priv, 0x7B, 1) )
 			return;
-		priv->m_usb_xfer_buf[123] = 2;
-		if ( control_out_xfer(priv, 123, 1) )
+		priv->m_usb_xfer_buf[0x7B] = 2;
+		if ( control_out_xfer(priv, 0x7B, 1) )
 		{
 			printf("set ng\n");
 			return;
@@ -799,23 +799,23 @@ static void inet_thread_proc(void *userdata)
 		printf("set ok\n");
 #else
 		// PHY control
-		priv->m_usb_xfer_buf[123] = 3;
-		if ( control_out_xfer(priv, 123, 1) )
+		priv->m_usb_xfer_buf[0x7B] = 3;
+		if ( control_out_xfer(priv, 0x7B, 1) )
 			return;
-		priv->m_usb_xfer_buf[123] = 2;
-		if ( control_out_xfer(priv, 123, 1) )
+		priv->m_usb_xfer_buf[0x7B] = 2;
+		if ( control_out_xfer(priv, 0x7B, 1) )
 			return;
 #endif
 	}
 	// Ethernet_control_1 reset_mac
-	priv->m_usb_xfer_buf[1] = 8;
-	if ( control_out_xfer(priv, 1, 1) )
+	priv->m_usb_xfer_buf[0x01] = 8;
+	if ( control_out_xfer(priv, 0x01, 1) )
 		return;
 	while ( 1 )
 	{
-		if ( control_in_xfer(priv, 1, 1) )
+		if ( control_in_xfer(priv, 0x01, 1) )
 			return;
-		if ( !(priv->m_usb_xfer_buf[1] & 8) )
+		if ( !(priv->m_usb_xfer_buf[0x01] & 8) )
 			break;
 		DelayThread(10000);
 	}
@@ -855,15 +855,15 @@ static void inet_thread_proc(void *userdata)
 		outval_1);
 	if ( control_inout_xfer(priv, k, 4, priv->m_usb_ctrl_buf) || control_inout_xfer(priv, k, 5, &priv->m_usb_ctrl_buf[1]) )
 		return;
-	priv->m_usb_xfer_buf[1] = 0;
+	priv->m_usb_xfer_buf[0x01] = 0;
 	outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
 	if ( !!(outval_1 & 0x140) )
 		// Ethernet_control_1 full_duplex
-		priv->m_usb_xfer_buf[1] |= 0x20;
+		priv->m_usb_xfer_buf[0x01] |= 0x20;
 	if ( !!(outval_1 & 0x180) )
 		// Ethernet_control_1 10mode
-		priv->m_usb_xfer_buf[1] |= 0x10;
-	if ( control_out_xfer(priv, 1, 1) )
+		priv->m_usb_xfer_buf[0x01] |= 0x10;
+	if ( control_out_xfer(priv, 0x01, 1) )
 		return;
 	priv->m_nego_status = ( !!(outval_1 & 0x180) ) ? (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_TX_FD : sceInetNDNEGO_TX) : (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_10_FD : sceInetNDNEGO_10);
 	printf(
@@ -885,22 +885,22 @@ static void inet_thread_proc(void *userdata)
 		outval_3);
 #ifdef AN986_UEPCB
 	// Reserved (undocumented)
-	priv->m_usb_xfer_buf[128] = 0xE5;
-	priv->m_usb_xfer_buf[129] = 2;
-	if ( control_out_xfer(priv, 128, 2) )
+	priv->m_usb_xfer_buf[0x80] = 0xE5;
+	priv->m_usb_xfer_buf[0x81] = 2;
+	if ( control_out_xfer(priv, 0x80, 2) )
 		return;
 #endif
 	// Ethernet_control_0
-	priv->m_usb_xfer_buf[0] = 0xC9;
-	if ( control_out_xfer(priv, 0, 1) )
+	priv->m_usb_xfer_buf[0x00] = 0xC9;
+	if ( control_out_xfer(priv, 0x00, 1) )
 		return;
 	if ( priv->m_is_pegasus2 )
 	{
 		// GPIOs
-		priv->m_usb_xfer_buf[124] = 0x34;
-		priv->m_usb_xfer_buf[126] = 0x26;
-		priv->m_usb_xfer_buf[127] = 0x30;
-		if ( control_out_xfer(priv, 124, 4) )
+		priv->m_usb_xfer_buf[0x7C] = 0x34;
+		priv->m_usb_xfer_buf[0x7E] = 0x26;
+		priv->m_usb_xfer_buf[0x7F] = 0x30;
+		if ( control_out_xfer(priv, 0x7C, 4) )
 			return;
 	}
 	for ( i = 0; i < 8; i += 1 )
@@ -923,25 +923,25 @@ static void inet_thread_proc(void *userdata)
 	{
 		while ( priv->m_val_for_alarm_cb > 0 )
 		{
-			control_in_xfer(priv, 43, 5);
+			control_in_xfer(priv, 0x2B, 5);
 			// transmit_status_1
-			if ( !!(priv->m_usb_xfer_buf[43] & 0x6C) )
+			if ( !!(priv->m_usb_xfer_buf[0x2B] & 0x6C) )
 			{
-				if ( !!(priv->m_usb_xfer_buf[43] & 0x60) )
+				if ( !!(priv->m_usb_xfer_buf[0x2B] & 0x60) )
 					priv->m_collisions += 1;
-				if ( !!(priv->m_usb_xfer_buf[43] & 0xC) )
+				if ( !!(priv->m_usb_xfer_buf[0x2B] & 0xC) )
 					priv->m_err_tx_carrier += 1;
 				priv->m_tx_errors += 1;
 			}
 			// receive_status
-			if ( !!(priv->m_usb_xfer_buf[45] & 1) )
+			if ( !!(priv->m_usb_xfer_buf[0x2D] & 1) )
 			{
 				priv->m_err_rx_over += 1;
 				priv->m_rx_errors += 1;
 			}
 			// receive lost packet low
-			priv->m_err_rx_missed += priv->m_usb_xfer_buf[47];
-			priv->m_rx_errors += priv->m_usb_xfer_buf[47];
+			priv->m_err_rx_missed += priv->m_usb_xfer_buf[0x2F];
+			priv->m_rx_errors += priv->m_usb_xfer_buf[0x2F];
 			DelayThread(100000);
 			l += 1;
 			if ( l >= 11 )
