@@ -523,8 +523,6 @@ static int an986_inet_xmit(void *userdata, int unused)
 
 static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len)
 {
-	int k;
-
 	// Multicast address
 	// Unofficial: use memset
 	memset(&priv->m_usb_xfer_buf[0x08], 0, 8);
@@ -534,6 +532,7 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 			return -512;
 		if ( ptr )
 		{
+			int k;
 			for ( k = 0; k < (len / 6); k += 1 )
 			{
 				if ( !!(*ptr & 1) )
@@ -565,8 +564,7 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 	{
 		if ( ptr )
 			return -512;
-		for ( k = 0; k < 8; k += 1 )
-			priv->m_usb_xfer_buf[0x08 + k] = 0xFF;
+		memset(&priv->m_usb_xfer_buf[0x08], 0xFF, 8);
 	}
 	return control_out_xfer(priv, 0x08, 8);
 }
