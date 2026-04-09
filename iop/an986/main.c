@@ -69,9 +69,25 @@ struct an986_devinfo
 	const char *m_device_name;
 };
 
+struct an986_idata
+{
+	// Unofficial: move to bss
+	sceUsbdLddOps m_an986_ldd;
+	// Unofficial: move to bss
+	int m_thpri;
+	// Unofficial: move to bss
+	int m_thstack;
+	// Unofficial: move to bss
+	int m_magic_count;
+	// Unofficial: move to bss
+	int m_verbose;
+	int m_resident_flag;
+	int m_load_mode;
+};
+
 #define VERBOSE_PRINTF(...) \
 	{ \
-		if ( g_verbose ) \
+		if ( g_an986_idata.m_verbose ) \
 		{ \
 			printf(__VA_ARGS__);\
 		} \
@@ -141,20 +157,11 @@ static const struct an986_devinfo g_an986_devinfo[] =
 	{ 'p', 0x2001, "D-Link", 0xabc1, "DSB-650" },
 #endif
 };
-// Unofficial: move to bss
-static sceUsbdLddOps g_an986_ldd;
-// Unofficial: move to bss
-static int g_thpri;
-// Unofficial: move to bss
-static int g_thstack;
-// Unofficial: move to bss
-static int g_magic_count;
-// Unofficial: move to bss
-static int g_verbose;
-static const char *version_ptr = "Version 1.75.0";
-static int g_resident_flag;
-static int g_load_mode;
-
+#ifndef AN986_UEPCB
+static const char *g_version_ptr = "Version 1.75.0";
+#endif
+// Unofficial: move into structure
+static struct an986_idata g_an986_idata;
 
 static int ef_wait_wrap(struct an986_priv *priv, u32 efbits)
 {
@@ -576,7 +583,7 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 	switch ( code )
 	{
 		case sceInetNDCC_GET_THPRI:
-			retres = g_thpri;
+			retres = g_an986_idata.m_thpri;
 			break;
 		case sceInetNDCC_GET_IF_TYPE:
 			retres = sceInetNDIFT_ETHERNET;
@@ -659,7 +666,7 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 			retres = KE_ILLEGAL_PRIORITY;
 			if ( (unsigned int)(priority - 9) >= 0x73 )
 				break;
-			g_thpri = priority;
+			g_an986_idata.m_thpri = priority;
 			retres = ChangeThreadPriority(priv->m_thid, priority);
 			break;
 		case sceInetNDCC_SET_MULTICAST_LIST:
@@ -985,9 +992,9 @@ static struct an986_priv *do_allocate_mem_for_inet(const char *vendor_name, cons
 	}
 	bzero(priv, sizeof(struct an986_priv));
 	priv->m_is_pegasus2 = is_pegasus2;
-	priv->m_magic_cur = g_magic_count;
+	priv->m_magic_cur = g_an986_idata.m_magic_count;
 	sprintf(priv->m_devops.interface, "an986,%d", priv->m_magic_cur);
-	g_magic_count += 1;
+	g_an986_idata.m_magic_count += 1;
 	priv->m_devops.module_name = "an986";
 	priv->m_devops.prot_ver = sceInetDevProtVer;
 	priv->m_devops.flags = sceInetDevF_Multicast | sceInetDevF_ARP;
@@ -1014,8 +1021,8 @@ static struct an986_priv *do_allocate_mem_for_inet(const char *vendor_name, cons
 		thparam.attr = TH_C;
 		thparam.thread = inet_thread_proc;
 		thparam.option = 0;
-		thparam.priority = g_thpri;
-		thparam.stacksize = g_thstack;
+		thparam.priority = g_an986_idata.m_thpri;
+		thparam.stacksize = g_an986_idata.m_thstack;
 		priv->m_thid = CreateThread(&thparam);
 		if ( priv->m_thid <= 0 )
 		{
@@ -1203,7 +1210,7 @@ static int an986_probe(int devId)
 	UsbStringDescriptor *gendesc;
 	const UsbDeviceDescriptor *devdesc;
 
-	if ( g_verbose )
+	if ( g_an986_idata.m_verbose )
 	{
 		int i;
 		char strlocbuf[16];
@@ -1240,9 +1247,9 @@ static int an986_probe(int devId)
 		return 0;
 	if ( !do_check_static_descriptor(1, devdesc->idVendor, devdesc->idProduct) )
 		return 0;
-	g_resident_flag = 1;
+	g_an986_idata.m_resident_flag = 1;
 	// AN986_UEPCB note: add 16 to unused variable
-	if ( g_load_mode == 't' )
+	if ( g_an986_idata.m_load_mode == 't' )
 		return 0;
 	VERBOSE_PRINTF("an986_probe,%d: -> accepted\n", devId);
 	return 1;
@@ -1253,7 +1260,7 @@ static int do_print_version(void)
 #ifdef AN986_UEPCB
 	printf("AN986 1.80.0\n");
 #else
-	printf("AN986 (%s)\n", version_ptr);
+	printf("AN986 (%s)\n", g_version_ptr);
 #endif
 	return 1;
 }
@@ -1351,12 +1358,12 @@ static int an986_init(int ac, char **av)
 	const char *chr_num_ptr;
 	unsigned int vidpidtmp;
 
-	g_thpri = 40;
-	g_thstack = 0x4000;
-	g_magic_count = 0;
-	g_verbose = 0;
-	g_load_mode = 'n';
-	g_resident_flag = 1;
+	g_an986_idata.m_thpri = 40;
+	g_an986_idata.m_thstack = 0x4000;
+	g_an986_idata.m_magic_count = 0;
+	g_an986_idata.m_verbose = 0;
+	g_an986_idata.m_load_mode = 'n';
+	g_an986_idata.m_resident_flag = 1;
 #ifdef AN986_UEPCB
 	printf("debug %s\n", av[0]);
 #endif
@@ -1368,7 +1375,7 @@ static int an986_init(int ac, char **av)
 			return do_print_version();
 		else if ( !strcmp("-verbose", av[i]) )
 		{
-			g_verbose = 1;
+			g_an986_idata.m_verbose = 1;
 		}
 		else if ( !strcmp("-list", av[i]) )
 			return do_print_list();
@@ -1386,8 +1393,8 @@ static int an986_init(int ac, char **av)
 			chr_num_ptr = &av[i][6];
 			if ( !isdigit(*chr_num_ptr) )
 				return do_print_help();
-			g_thpri = strtol(chr_num_ptr, NULL, 10);
-			if ( (unsigned int)(g_thpri - 9) >= 0x73 )
+			g_an986_idata.m_thpri = strtol(chr_num_ptr, NULL, 10);
+			if ( (unsigned int)(g_an986_idata.m_thpri - 9) >= 0x73 )
 				return do_print_help();
 			while ( *chr_num_ptr && isdigit(*chr_num_ptr) )
 			{
@@ -1401,49 +1408,49 @@ static int an986_init(int ac, char **av)
 			chr_num_ptr = &av[i][8];
 			if ( !isdigit(*chr_num_ptr) )
 				return do_print_help();
-			g_thstack = strtol(chr_num_ptr, NULL, 10);
+			g_an986_idata.m_thstack = strtol(chr_num_ptr, NULL, 10);
 			while ( *chr_num_ptr && isdigit(*chr_num_ptr) )
 			{
 				chr_num_ptr += 1;
 			}
 			if ( !strcmp(chr_num_ptr, "KB") )
 			{
-				g_thstack <<= 10;
+				g_an986_idata.m_thstack <<= 10;
 				chr_num_ptr += 2;
 			}
 			if ( *chr_num_ptr )
 				return do_print_help();
 		}
 		else if ( !strcmp("AUTOLOAD", av[i]) || !strcmp("lmode=AUTOLOAD", av[i]) )
-			g_load_mode = 'a';
+			g_an986_idata.m_load_mode = 'a';
 		else if ( !strcmp("TESTLOAD", av[i]) || !strcmp("lmode=TESTLOAD", av[i]) )
-			g_load_mode = 't';
+			g_an986_idata.m_load_mode = 't';
 		else
 			return do_print_help();
 	}
-	if ( g_load_mode != 'n' )
-		g_resident_flag = 0;
-	memset(&g_an986_ldd, 0, sizeof(g_an986_ldd));
-	g_an986_ldd.name = "an986";
-	g_an986_ldd.probe = &an986_probe;
-	g_an986_ldd.connect = &an986_attach;
-	g_an986_ldd.disconnect = &an986_detach;
-	if ( sceUsbdRegisterLdd(&g_an986_ldd) )
+	if ( g_an986_idata.m_load_mode != 'n' )
+		g_an986_idata.m_resident_flag = 0;
+	memset(&g_an986_idata.m_an986_ldd, 0, sizeof(g_an986_idata.m_an986_ldd));
+	g_an986_idata.m_an986_ldd.name = "an986";
+	g_an986_idata.m_an986_ldd.probe = &an986_probe;
+	g_an986_idata.m_an986_ldd.connect = &an986_attach;
+	g_an986_idata.m_an986_ldd.disconnect = &an986_detach;
+	if ( sceUsbdRegisterLdd(&g_an986_idata.m_an986_ldd) )
 	{
 		return 4;
 	}
-	VERBOSE_PRINTF("an986_start: load_mode='%c' resident_flag=%d\n", g_load_mode, g_resident_flag);
-	if ( g_load_mode == 't' )
+	VERBOSE_PRINTF("an986_start: load_mode='%c' resident_flag=%d\n", g_an986_idata.m_load_mode, g_an986_idata.m_resident_flag);
+	if ( g_an986_idata.m_load_mode == 't' )
 	{
-		sceUsbdUnregisterLdd(&g_an986_ldd);
+		sceUsbdUnregisterLdd(&g_an986_idata.m_an986_ldd);
 		return 5;
 	}
-	else if ( g_resident_flag )
+	else if ( g_an986_idata.m_resident_flag )
 	{
 		do_print_version();
 		return 0;
 	}
-	sceUsbdUnregisterLdd(&g_an986_ldd);
+	sceUsbdUnregisterLdd(&g_an986_idata.m_an986_ldd);
 	return 6;
 }
 
@@ -1461,7 +1468,7 @@ int _start(int ac, char **av)
 	if ( retres )
 	{
 		ReleaseLibraryEntries(&_exp_an986);
-		return (retres << 4) | (g_resident_flag ? 4 : 0) | 1;
+		return (retres << 4) | (g_an986_idata.m_resident_flag ? 4 : 0) | 1;
 	}
 	return 0;
 }
