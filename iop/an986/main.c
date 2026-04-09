@@ -4,8 +4,12 @@
 #include <ctype.h>
 #include <kerr.h>
 
-// Based on module from SDK 2.5.3
+#ifdef AN986_UEPCB
+IRX_ID("INET_AN986_driver", 1, 80);
+#else
 IRX_ID("INET_AN986_driver", 1, 75);
+// Based on the module from SCE SDK 2.5.3
+#endif
 
 struct an986_priv
 {
