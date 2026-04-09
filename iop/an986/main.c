@@ -453,7 +453,7 @@ static int an986_inet_stop(void *userdata, int unused)
 
 static int an986_inet_xmit(void *userdata, int unused)
 {
-  int xferres;
+  int xferret;
   sceInetPkt_t *pkt;
   u32 pktsz;
   struct an986_priv *priv;
@@ -462,7 +462,7 @@ static int an986_inet_xmit(void *userdata, int unused)
 	(void)unused;
 	priv = (struct an986_priv *)userdata;
 	dropped = 0;
-  xferres = -1;
+  xferret = -1;
   pkt = sceInetPktDeQ(&priv->m_devops.sndq);
   if ( !pkt )
   {
@@ -495,13 +495,13 @@ static int an986_inet_xmit(void *userdata, int unused)
     pkt->m_reserved1 = (void *)priv;
     while ( 1 )
     {
-      xferres = sceUsbdBulkTransfer(priv->m_bulk_out_pipe, pkt->rp + 2, pktsz, an986_tx_done, pkt);
-      if ( !xferres )
+      xferret = sceUsbdBulkTransfer(priv->m_bulk_out_pipe, pkt->rp + 2, pktsz, an986_tx_done, pkt);
+      if ( !xferret )
         break;
-      if ( xferres != USB_RC_IOREQ )
+      if ( xferret != USB_RC_IOREQ )
       {
         VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
-        VERBOSE_PRINTF("sceUsbdBulkTransfer -> 0x%x", xferres);
+        VERBOSE_PRINTF("sceUsbdBulkTransfer -> 0x%x", xferret);
         VERBOSE_PRINTF("\n");
       	dropped = 1;
       	break;
@@ -518,7 +518,7 @@ static int an986_inet_xmit(void *userdata, int unused)
     sceInetFreePkt(&priv->m_devops, pkt);
   }
   priv->m_val_for_alarm_cb = 10;
-  return xferres;
+  return xferret;
 }
 
 static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len)
@@ -1122,7 +1122,7 @@ static int an986_attach(int devId)
 	UsbEndpointDescriptor *bulk_in_desc;
 	UsbEndpointDescriptor *bulk_out_desc;
 	UsbEndpointDescriptor *int_in_desc;
-	struct an986_priv *mem_for_inet;
+	struct an986_priv *priv;
 
 #ifdef AN986_UEPCB
 	printf("an986_attach start\n");
@@ -1165,26 +1165,26 @@ static int an986_attach(int devId)
 		return -1;
 	if ( (int_in_desc->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) != USB_ENDPOINT_XFER_INT )
 		return -1;
-	mem_for_inet = do_allocate_mem_for_inet(cur_devinfo->m_vendor_name, cur_devinfo->m_device_name, cur_devinfo->m_chip == 'P');
-	if ( !mem_for_inet )
+	priv = do_allocate_mem_for_inet(cur_devinfo->m_vendor_name, cur_devinfo->m_device_name, cur_devinfo->m_chip == 'P');
+	if ( !priv )
 		return -1;
-	mem_for_inet->m_ctrl_pipe = sceUsbdOpenPipe(devId, NULL);
-	if ( mem_for_inet->m_ctrl_pipe < 0 )
+	priv->m_ctrl_pipe = sceUsbdOpenPipe(devId, NULL);
+	if ( priv->m_ctrl_pipe < 0 )
 		return -1;
-	mem_for_inet->m_bulk_in_pipe = sceUsbdOpenPipe(devId, bulk_in_desc);
-	if ( mem_for_inet->m_bulk_in_pipe < 0 )
+	priv->m_bulk_in_pipe = sceUsbdOpenPipe(devId, bulk_in_desc);
+	if ( priv->m_bulk_in_pipe < 0 )
 		return -1;
-	mem_for_inet->m_bulk_out_pipe = sceUsbdOpenPipeAligned(devId, bulk_out_desc);
-	if ( mem_for_inet->m_bulk_out_pipe < 0 )
+	priv->m_bulk_out_pipe = sceUsbdOpenPipeAligned(devId, bulk_out_desc);
+	if ( priv->m_bulk_out_pipe < 0 )
 		return -1;
-	mem_for_inet->m_int_in_pipe = sceUsbdOpenPipe(devId, int_in_desc);
-	if ( mem_for_inet->m_int_in_pipe < 0 )
+	priv->m_int_in_pipe = sceUsbdOpenPipe(devId, int_in_desc);
+	if ( priv->m_int_in_pipe < 0 )
 		return -1;
-	sceUsbdSetPrivateData(devId, mem_for_inet);
-	mem_for_inet->m_devops.bus_type = sceInetBus_USB;
-	sceUsbdGetDeviceLocation(devId, mem_for_inet->m_devops.bus_loc);
-	mem_for_inet->m_cfgval = cfgdesc->bConfigurationValue;
-	ef_set_wrap(mem_for_inet, 0, 1);
+	sceUsbdSetPrivateData(devId, priv);
+	priv->m_devops.bus_type = sceInetBus_USB;
+	sceUsbdGetDeviceLocation(devId, priv->m_devops.bus_loc);
+	priv->m_cfgval = cfgdesc->bConfigurationValue;
+	ef_set_wrap(priv, 0, 1);
 	VERBOSE_PRINTF("an986_attach,%d: -> attached\n", devId);
 #ifdef AN986_UEPCB
 	printf("an986_attach end\n");
