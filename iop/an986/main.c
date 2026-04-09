@@ -1461,14 +1461,14 @@ int _start(int ac, char **av)
 	if ( RegisterLibraryEntries(&_exp_an986) )
 	{
 		printf("an986: module already loaded\n");
-		return 1;
+		return MODULE_NO_RESIDENT_END;
 	}
 	retres = an986_init(ac, av);
 	VERBOSE_PRINTF("an986: an986_init() -> 0x%x\n", retres);
 	if ( retres )
 	{
 		ReleaseLibraryEntries(&_exp_an986);
-		return (retres << 4) | (g_an986_idata.m_resident_flag ? 4 : 0) | 1;
+		return (retres << 4) | (g_an986_idata.m_resident_flag ? 4 : 0) | MODULE_NO_RESIDENT_END;
 	}
-	return 0;
+	return MODULE_RESIDENT_END;
 }
