@@ -61,6 +61,10 @@ thevent_IMPORTS_end
 thsemap_IMPORTS_start
 I_SignalSema
 I_iSignalSema
+#if 1
+I_CreateSema
+I_WaitSema
+#endif
 thsemap_IMPORTS_end
 
 sysclib_IMPORTS_start
@@ -88,3 +92,12 @@ I_DelDrv
 I_devctl
 I_ioctl2
 iomanX_IMPORTS_end
+
+#if 1
+ssbusc_IMPORTS_start
+I_SetDelay
+I_GetDelay
+I_SetBaseAddress
+I_GetBaseAddress
+ssbusc_IMPORTS_end
+#endif

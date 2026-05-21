@@ -27,7 +27,9 @@
 #define _QWORD unsigned long long
 #endif
 
+#if 0
 #define MEMORY ((volatile unsigned int *)0x10000000)
+#endif
 
 #if 0
 #define LAST_IND(x, part_type) (sizeof(x) / sizeof(part_type) - 1)
@@ -724,9 +726,19 @@ typedef union cdvdfsv_rpc5_outpacket_
 	}
 #endif
 
-#if 1
+#if 0
 #ifndef CDVD_VARIANT_DNAS
 #define CDVD_VARIANT_DNAS 1
+#endif
+#if 0
+#ifndef CDVD_VARIANT_OSD
+#define CDVD_VARIANT_OSD 1
+#endif
+#endif
+#if 0
+#ifndef CDVD_VARIANT_XOSD
+#define CDVD_VARIANT_XOSD 1
+#endif
 #endif
 #endif
 

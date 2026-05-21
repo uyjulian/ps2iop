@@ -1,4 +1,67 @@
 
+#if 1
+#define sceCdReadDiskID _retzero
+#define sceCdReadGUID _retzero
+#define sceCdReadModelID _retzero
+#define sceCdDoesUniqueKeyExist _retzero
+#endif
+
+#if 1
+#define sceCdGetToc2 _retzero
+#define sceCdReadDVDV _retzero
+#define sceCdWriteClock _retzero
+#define sceCdReadNVM _retzero
+#define sceCdWriteNVM _retzero
+#define sceCdSetHDMode _retzero
+#define sceCdOpenConfig _retzero
+#define sceCdCloseConfig _retzero
+#define sceCdReadConfig _retzero
+#define sceCdWriteConfig _retzero
+#define sceCdReadKey _retzero
+#define sceCdDecSet _retzero
+#define sceCdReadConsoleID _retzero
+#define sceCdMV _retzero
+#define sceCdForbidDVDP _retzero
+#define sceCdReadSUBQ _retzero
+#define sceCdAutoAdjustCtrl _retzero
+#define sceCdForbidRead _retzero
+#define sceCdBootCertify _retzero
+#define sceCdSpinCtrlIOP _retzero
+#define sceCdBlueLEDCtl _retzero
+#define sceCdCancelPOffRdy _retzero
+#define sceCdReadFull _retzero
+#define sceCdStatus2 _retzero
+#define sceCdReadWakeUpTime _retzero
+#define sceCdWriteWakeUpTime _retzero
+#define sceCdRcBypassCtl _retzero
+#define sceCdSendSCmd1D _retzero
+#define sceRemote2_7 _retzero
+#define sceCdSetLEDsMode _retzero
+#define sceCdApplySCmd3 _retzero
+#define sceRemote2_7Get _retzero
+#define sceCdReadPS1BootParam _retzero
+#define sceCdSetFanProfile _retzero
+#define cdvdman_152 _retzero
+#define sceCdChgSys _retzero
+#define sceCdNoticeGameStart _retzero
+#define sceCdDeobfuscateUsingUniqueKey _retzero
+#define sceCdXLEDCtl _retzero
+#define sceCdBuzzerCtl _retzero
+#define sceCdResetWakeupReason _retzero
+#define cdvdman_169 _retzero
+#define sceCdXBSPowerCtl _retzero
+#define sceCdSetAtapiEjectCallback _retzero
+#define sceCdSetMediumRemoval _retzero
+#define sceCdGetMediumRemoval _retzero
+#define sceCdXDVRPReset _retzero
+#define sceCdGetWakeUpReason _retzero
+#define sceCdReadRegionParams _retzero
+#define sceCdWI _retzero
+#define sceCdWriteConsoleID _retzero
+#define sceCdWM _retzero
+#define sceCdWriteRegionParams _retzero
+#endif
+
 DECLARE_EXPORT_TABLE(cdvdman, 1, 1)
 DECLARE_EXPORT(_start)
 DECLARE_EXPORT(_retonly)
@@ -19,31 +82,31 @@ DECLARE_EXPORT(sceCdStop)
 DECLARE_EXPORT(sceCdPosToInt)
 DECLARE_EXPORT(sceCdIntToPos)
 DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdGetToc2)
+DECLARE_EXPORT(sceCdReadDVDV)
 DECLARE_EXPORT(sceCdCheckCmd)
 DECLARE_EXPORT(sceCdRI)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdWI)
 DECLARE_EXPORT(sceCdReadClock)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdWriteClock)
+DECLARE_EXPORT(sceCdReadNVM)
+DECLARE_EXPORT(sceCdWriteNVM)
 DECLARE_EXPORT(sceCdStatus)
 DECLARE_EXPORT(sceCdApplySCmd)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdSetHDMode)
+DECLARE_EXPORT(sceCdOpenConfig)
+DECLARE_EXPORT(sceCdCloseConfig)
+DECLARE_EXPORT(sceCdReadConfig)
+DECLARE_EXPORT(sceCdWriteConfig)
+DECLARE_EXPORT(sceCdReadKey)
+DECLARE_EXPORT(sceCdDecSet)
 DECLARE_EXPORT(sceCdCallback)
 DECLARE_EXPORT(sceCdPause)
 DECLARE_EXPORT(sceCdBreak)
 DECLARE_EXPORT(sceCdReadCDDA)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdReadConsoleID)
+DECLARE_EXPORT(sceCdWriteConsoleID)
+DECLARE_EXPORT(sceCdMV)
 DECLARE_EXPORT(sceCdGetReadPos)
 DECLARE_EXPORT(sceCdCtrlADout)
 DECLARE_EXPORT(sceCdNop)
@@ -52,10 +115,10 @@ DECLARE_EXPORT(sceCdstm0Cb)
 DECLARE_EXPORT(sceCdstm1Cb)
 DECLARE_EXPORT(sceCdSC)
 DECLARE_EXPORT(sceCdRC)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdForbidDVDP)
+DECLARE_EXPORT(sceCdReadSUBQ)
 DECLARE_EXPORT(sceCdApplyNCmd)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdAutoAdjustCtrl)
 DECLARE_EXPORT(sceCdStInit)
 DECLARE_EXPORT(sceCdStRead)
 DECLARE_EXPORT(sceCdStSeek)
@@ -65,18 +128,18 @@ DECLARE_EXPORT(sceCdStStop)
 DECLARE_EXPORT(sceCdRead0)
 DECLARE_EXPORT(sceCdRV)
 DECLARE_EXPORT(sceCdRM)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdWM)
 DECLARE_EXPORT(sceCdReadChain)
 DECLARE_EXPORT(sceCdStPause)
 DECLARE_EXPORT(sceCdStResume)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdForbidRead)
+DECLARE_EXPORT(sceCdBootCertify)
+DECLARE_EXPORT(sceCdSpinCtrlIOP)
+DECLARE_EXPORT(sceCdBlueLEDCtl)
+DECLARE_EXPORT(sceCdCancelPOffRdy)
 DECLARE_EXPORT(sceCdPowerOff)
 DECLARE_EXPORT(sceCdMmode)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdReadFull)
 DECLARE_EXPORT(sceCdStSeekF)
 DECLARE_EXPORT(sceCdPOffCallback)
 DECLARE_EXPORT(sceCdReadDiskID)
@@ -90,6 +153,7 @@ DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdStatus2)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
@@ -108,13 +172,26 @@ DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdReadWakeUpTime)
+DECLARE_EXPORT(sceCdWriteWakeUpTime)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(sceCdApplySCmd2)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(sceCdRE)
+DECLARE_EXPORT(sceCdRcBypassCtl)
+DECLARE_EXPORT(sceCdSendSCmd1D)
+DECLARE_EXPORT(sceRemote2_7)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdSetLEDsMode)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdApplySCmd3)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceRemote2_7Get)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
@@ -134,62 +211,50 @@ DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdReadPS1BootParam)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdSetFanProfile)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(cdvdman_152)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdChgSys)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdNoticeGameStart)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdDeobfuscateUsingUniqueKey)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdXLEDCtl)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdBuzzerCtl)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdResetWakeupReason)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(cdvdman_169)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdXBSPowerCtl)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdSetAtapiEjectCallback)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdSetMediumRemoval)
 DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdGetMediumRemoval)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(sceCdDoesUniqueKeyExist)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdXDVRPReset)
+DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdGetWakeUpReason)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
 DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdReadRegionParams)
 DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
-DECLARE_EXPORT(_retzero)
+DECLARE_EXPORT(sceCdWriteRegionParams)
 DECLARE_EXPORT(_retzero)
 END_EXPORT_TABLE
 

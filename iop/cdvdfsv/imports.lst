@@ -113,4 +113,53 @@ I_sceCdReadDvdDualInfo
 I_sceCdLayerSearchFile
 I_sceCdRE
 I_sceCdDoesUniqueKeyExist
+#if 1
+I_sceCdReadDVDV
+I_sceCdWriteClock
+I_sceCdReadNVM
+I_sceCdWriteNVM
+I_sceCdWI
+I_sceCdWriteConsoleID
+I_sceCdWM
+I_sceCdSetHDMode
+I_sceCdOpenConfig
+I_sceCdCloseConfig
+I_sceCdReadConfig
+I_sceCdWriteConfig
+I_sceCdReadKey
+I_sceCdDecSet
+I_sceCdReadConsoleID
+I_sceCdMV
+I_sceCdForbidDVDP
+I_sceCdReadSUBQ
+I_sceCdAutoAdjustCtrl
+I_sceCdForbidRead
+I_sceCdBootCertify
+I_sceCdBlueLEDCtl
+I_sceCdCancelPOffRdy
+I_sceCdReadFull
+I_sceCdReadWakeUpTime
+I_sceCdWriteWakeUpTime
+I_sceCdRcBypassCtl
+I_sceCdSendSCmd1D
+I_sceRemote2_7
+I_sceCdSetLEDsMode
+I_sceRemote2_7Get
+I_sceCdReadPS1BootParam
+I_sceCdSetFanProfile
+// I_cdvdman_152
+I_sceCdChgSys
+I_sceCdNoticeGameStart
+I_sceCdXLEDCtl
+I_sceCdBuzzerCtl
+// I_sceCdResetWakeupReason
+// I_cdvdman_169
+I_sceCdXBSPowerCtl
+I_sceCdSetMediumRemoval
+I_sceCdGetMediumRemoval
+I_sceCdXDVRPReset
+I_sceCdGetWakeUpReason
+I_sceCdReadRegionParams
+I_sceCdWriteRegionParams
+#endif
 cdvdman_IMPORTS_end

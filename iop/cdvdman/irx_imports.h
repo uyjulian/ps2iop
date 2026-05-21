@@ -8,6 +8,9 @@
 #include <intrman.h>
 #include <iomanX.h>
 #include <loadcore.h>
+#if 1
+#include <ssbusc.h>
+#endif
 #include <stdio.h>
 #include <sysclib.h>
 #include <sysmem.h>
