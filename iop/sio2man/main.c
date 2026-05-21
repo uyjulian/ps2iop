@@ -1,1 +1,519 @@
-// FIXME: stub
+
+#include <irx_imports.h>
+
+#include <rsio2man.h>
+#include <iop_mmio_hwport.h>
+
+#ifdef SIO2LOG
+#include "log.h"
+#endif
+
+#ifdef SIO2LOG
+IRX_ID("sio2man_logger", 3, 17);
+#else
+IRX_ID("sio2man", 3, 17);
+#endif
+// Based on the module from SDK 3.1.0.
+
+extern struct irx_export_table _exp_sio2man;
+extern struct irx_export_table _exp_sio2man1;
+
+// Unofficial: remove unused structure members
+struct sio2man_internal_data
+{
+	// Unofficial: move inited into bss section
+	int m_inited;
+	int m_intr_sema;
+	int m_transfer_semaphore;
+	// Unofficial: backwards compatibility for libraries using 1.3 SDK
+	int m_sdk13x_flag;
+	sio2_mtap_change_slot_cb_t m_mtap_change_slot_cb;
+	sio2_mtap_get_slot_max_cb_t m_mtap_get_slot_max_cb;
+	sio2_mtap_get_slot_max2_cb_t m_mtap_get_slot_max2_cb;
+	sio2_mtap_update_slots_t m_mtap_update_slots_cb;
+};
+
+#define EPRINTF(format, args...) printf("%s: " format, _irx_id.n , ## args)
+
+void sio2_ctrl_set(u32 val);
+u32 sio2_ctrl_get(void);
+u32 sio2_stat6c_get(void);
+void sio2_portN_ctrl1_set(int N, u32 val);
+u32 sio2_portN_ctrl1_get(int N);
+void sio2_portN_ctrl2_set(int N, u32 val);
+u32 sio2_portN_ctrl2_get(int N);
+u32 sio2_stat70_get(void);
+void sio2_regN_set(int N, u32 val);
+u32 sio2_regN_get(int N);
+u32 sio2_stat74_get(void);
+void sio2_unkn78_set(u32 val);
+u32 sio2_unkn78_get(void);
+void sio2_unkn7c_set(u32 val);
+u32 sio2_unkn7c_get(void);
+void sio2_data_out(u8 val);
+u8 sio2_data_in(void);
+void sio2_stat_set(u32 val);
+u32 sio2_stat_get(void);
+int _start(int ac, char **av);
+void _deinit();
+void sio2_set_intr_handler(int (*handler)(void *), void *userdata);
+int sio2_transfer(sio2_transfer_data_t *td);
+void sio2_set_ctrl_c();
+void sio2_set_ctrl_1();
+void sio2_wait_for_intr();
+void sio2_pad_transfer_init(void);
+void sio2_transfer_reset(void);
+void sio2_mtap_change_slot_set(sio2_mtap_change_slot_cb_t cb);
+void sio2_mtap_get_slot_max_set(sio2_mtap_get_slot_max_cb_t cb);
+void sio2_mtap_get_slot_max2_set(sio2_mtap_get_slot_max2_cb_t cb);
+void sio2_mtap_update_slots_set(sio2_mtap_update_slots_t cb);
+int sio2_mtap_change_slot(s32 *arg);
+int sio2_mtap_get_slot_max(int port);
+int sio2_mtap_get_slot_max2(int port);
+void sio2_mtap_update_slots(void);
+
+static struct sio2man_internal_data g_sio2man_data;
+
+// #define SIO2MAN_MINI
+
+#ifdef SIO2MAN_MINI
+#define sio2_ctrl_set inl_sio2_ctrl_set
+#define sio2_ctrl_get inl_sio2_ctrl_get
+#define sio2_stat6c_get inl_sio2_stat6c_get
+#define sio2_portN_ctrl1_set inl_sio2_portN_ctrl1_set
+#define sio2_portN_ctrl2_set inl_sio2_portN_ctrl2_set
+#define sio2_regN_set inl_sio2_regN_set
+#define sio2_stat74_get inl_sio2_stat74_get
+#define sio2_data_out inl_sio2_data_out
+#define sio2_data_in inl_sio2_data_in
+#define sio2_stat_set inl_sio2_stat_set
+#define sio2_stat_get inl_sio2_stat_get
+#define sio2_set_ctrl_c inl_sio2_set_ctrl_c
+#define sio2_set_ctrl_1 inl_sio2_set_ctrl_1
+#define MINI_STATIC static inline
+#else
+#define MINI_STATIC
+#endif
+
+MINI_STATIC void sio2_ctrl_set(u32 val)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	iop_mmio_hwport->sio2.ctrl = val;
+}
+
+MINI_STATIC u32 sio2_ctrl_get(void)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return iop_mmio_hwport->sio2.ctrl;
+}
+
+MINI_STATIC u32 sio2_stat6c_get(void)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return iop_mmio_hwport->sio2.recv1;
+}
+
+MINI_STATIC void sio2_portN_ctrl1_set(int N, u32 val)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	*(vu32 *)&iop_mmio_hwport->sio2.send1_2_buf[N * 8] = val;
+}
+
+#ifndef SIO2MAN_MINI
+u32 sio2_portN_ctrl1_get(int N)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return *(vu32 *)&iop_mmio_hwport->sio2.send1_2_buf[N * 8];
+}
+#endif
+
+MINI_STATIC void sio2_portN_ctrl2_set(int N, u32 val)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	*(vu32 *)&iop_mmio_hwport->sio2.send1_2_buf[(N * 8) + 4] = val;
+}
+
+#ifndef SIO2MAN_MINI
+u32 sio2_portN_ctrl2_get(int N)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return *(vu32 *)&iop_mmio_hwport->sio2.send1_2_buf[(N * 8) + 4];
+}
+#endif
+
+u32 sio2_stat70_get(void)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return iop_mmio_hwport->sio2.recv2;
+}
+
+MINI_STATIC void sio2_regN_set(int N, u32 val)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	iop_mmio_hwport->sio2.send3_buf[N] = val;
+}
+
+#ifndef SIO2MAN_MINI
+u32 sio2_regN_get(int N)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return iop_mmio_hwport->sio2.send3_buf[N];
+}
+#endif
+
+MINI_STATIC u32 sio2_stat74_get(void)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return iop_mmio_hwport->sio2.recv3;
+}
+
+#ifndef SIO2MAN_MINI
+void sio2_unkn78_set(u32 val)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	iop_mmio_hwport->sio2.unk_78 = val;
+}
+#endif
+
+#ifndef SIO2MAN_MINI
+u32 sio2_unkn78_get(void)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return iop_mmio_hwport->sio2.unk_78;
+}
+#endif
+
+#ifndef SIO2MAN_MINI
+void sio2_unkn7c_set(u32 val)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	iop_mmio_hwport->sio2.unk_7c = val;
+}
+#endif
+
+#ifndef SIO2MAN_MINI
+u32 sio2_unkn7c_get(void)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return iop_mmio_hwport->sio2.unk_7c;
+}
+#endif
+
+MINI_STATIC void sio2_data_out(u8 val)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	*((vu8 *)&iop_mmio_hwport->sio2.out_fifo) = val;
+}
+
+MINI_STATIC u8 sio2_data_in(void)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return *((vu8 *)&iop_mmio_hwport->sio2.in_fifo);
+}
+
+MINI_STATIC void sio2_stat_set(u32 val)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	iop_mmio_hwport->sio2.stat = val;
+}
+
+MINI_STATIC u32 sio2_stat_get(void)
+{
+	USE_IOP_MMIO_HWPORT();
+
+	return iop_mmio_hwport->sio2.stat;
+}
+
+static void send_td(sio2_transfer_data_t *td)
+{
+	int i;
+
+#ifdef SIO2LOG
+	log_default(LOG_TRS);
+#endif
+
+	for ( i = 0; i < 4; i += 1 )
+	{
+		sio2_portN_ctrl1_set(i, td->port_ctrl1[i]);
+		sio2_portN_ctrl2_set(i, td->port_ctrl2[i]);
+	}
+
+#ifdef SIO2LOG
+	log_portdata(td->port_ctrl1, td->port_ctrl2);
+#endif
+
+	for ( i = 0; i < 16; i += 1 )
+		sio2_regN_set(i, td->regdata[i]);
+
+#ifdef SIO2LOG
+	log_regdata(td->regdata);
+#endif
+
+	for ( i = 0; i < (int)td->in_size; i += 1 )
+		sio2_data_out(td->in[i]);
+#ifdef SIO2LOG
+	if (td->in_size)
+		log_data(LOG_TRS_DATA, td->in, td->in_size);
+#endif
+	if ( td->in_dma.addr )
+	{
+		sceSetSliceDMA(IOP_DMAC_SIO2in, td->in_dma.addr, td->in_dma.size, td->in_dma.count, DMAC_FROM_MEM);
+		sceStartDMA(IOP_DMAC_SIO2in);
+#ifdef SIO2LOG
+		log_dma(LOG_TRS_DMA_IN, &td->in_dma);
+#endif
+	}
+	if ( td->out_dma.addr )
+	{
+		sceSetSliceDMA(IOP_DMAC_SIO2out, td->out_dma.addr, td->out_dma.size, td->out_dma.count, DMAC_TO_MEM);
+		sceStartDMA(IOP_DMAC_SIO2out);
+#ifdef SIO2LOG
+		log_dma(LOG_TRS_DMA_OUT, &td->out_dma);
+#endif
+	}
+}
+
+static void recv_td(sio2_transfer_data_t *td)
+{
+	int i;
+
+#ifdef SIO2LOG
+	log_default(LOG_TRR);
+#endif
+	td->stat6c = sio2_stat6c_get();
+	td->stat70 = sio2_stat70_get();
+	td->stat74 = sio2_stat74_get();
+#ifdef SIO2LOG
+	log_stat(td->stat6c, td->stat70, td->stat74);
+#endif
+	for ( i = 0; i < (int)td->out_size; i += 1 )
+		td->out[i] = sio2_data_in();
+#ifdef SIO2LOG
+	if (td->out_size)
+		log_data(LOG_TRR_DATA, td->out, td->out_size);
+#endif
+}
+
+static int sio2_intr_handler(const struct sio2man_internal_data *arg)
+{
+	sio2_stat_set(sio2_stat_get());
+	iSignalSema(arg->m_intr_sema);
+	return 1;
+}
+
+int _start(int ac, char **av)
+{
+	iop_sema_t semaparam;
+	int state;
+
+	(void)ac;
+	(void)av;
+
+	if ( RegisterLibraryEntries(&_exp_sio2man) != 0 )
+		return 1;
+	// Unofficial: register same name but older major version for backwards compatibility
+	_exp_sio2man1.name[7] = '\x00';
+	if ( RegisterLibraryEntries(&_exp_sio2man1) != 0 )
+		return 1;
+	if ( g_sio2man_data.m_inited )
+		return 1;
+	g_sio2man_data.m_inited = 1;
+	g_sio2man_data.m_sdk13x_flag = 0;
+	// Unofficial: remove unneeded thread priority argument handler
+	g_sio2man_data.m_mtap_change_slot_cb = 0;
+	g_sio2man_data.m_mtap_get_slot_max_cb = 0;
+	g_sio2man_data.m_mtap_get_slot_max2_cb = 0;
+	g_sio2man_data.m_mtap_update_slots_cb = 0;
+	// Unofficial: inlined
+	sio2_ctrl_set(0x3BC);
+	CpuSuspendIntr(&state);
+	RegisterIntrHandler(IOP_IRQ_SIO2, 1, (int (*)(void *))sio2_intr_handler, &g_sio2man_data);
+	EnableIntr(IOP_IRQ_SIO2);
+	CpuResumeIntr(state);
+	sceSetDMAPriority(IOP_DMAC_SIO2in, 3);
+	sceSetDMAPriority(IOP_DMAC_SIO2out, 3);
+	sceEnableDMAChannel(IOP_DMAC_SIO2in);
+	sceEnableDMAChannel(IOP_DMAC_SIO2out);
+	semaparam.attr = 0;
+	semaparam.initial = 1;
+	semaparam.max = 64;
+	g_sio2man_data.m_transfer_semaphore = CreateSema(&semaparam);
+	semaparam.attr = 0;
+	semaparam.initial = 0;
+	semaparam.max = 64;
+	g_sio2man_data.m_intr_sema = CreateSema(&semaparam);
+#ifdef SIO2LOG
+	EPRINTF("Logging started.\n");
+#endif
+	return 0;
+}
+
+void _deinit()
+{
+	int state;
+
+	// Unofficial: check inited
+	if ( !g_sio2man_data.m_inited )
+		return;
+#ifdef SIO2LOG
+	log_flush(1);
+#endif
+	// Unofficial: unset inited
+	g_sio2man_data.m_inited = 0;
+	// Unofficial: remove unused GetThreadId
+	CpuSuspendIntr(&state);
+	DisableIntr(IOP_IRQ_SIO2, 0);
+	ReleaseIntrHandler(IOP_IRQ_SIO2);
+	CpuResumeIntr(state);
+	sceDisableDMAChannel(IOP_DMAC_SIO2in);
+	sceDisableDMAChannel(IOP_DMAC_SIO2out);
+	DeleteSema(g_sio2man_data.m_intr_sema);
+	DeleteSema(g_sio2man_data.m_transfer_semaphore);
+}
+
+#ifndef SIO2MAN_MINI
+void sio2_set_intr_handler(int (*handler)(void *), void *userdata)
+{
+	int state;
+
+	CpuSuspendIntr(&state);
+	DisableIntr(IOP_IRQ_SIO2, 0);
+	ReleaseIntrHandler(IOP_IRQ_SIO2);
+	RegisterIntrHandler(IOP_IRQ_SIO2, 1, handler ? handler : (int (*)(void *))sio2_intr_handler, handler ? userdata : &g_sio2man_data);
+	EnableIntr(IOP_IRQ_SIO2);
+	CpuResumeIntr(state);
+}
+#endif
+
+MINI_STATIC void sio2_set_ctrl_c()
+{
+	// Unofficial: inlined
+	sio2_ctrl_set(sio2_ctrl_get() | 0xC);
+}
+
+MINI_STATIC void sio2_set_ctrl_1()
+{
+	// Unofficial: inlined
+	sio2_ctrl_set(sio2_ctrl_get() | 1);
+}
+
+void sio2_wait_for_intr()
+{
+	WaitSema(g_sio2man_data.m_intr_sema);
+}
+
+int sio2_transfer(sio2_transfer_data_t *td)
+{
+	// Unofficial: remove unused transfer data global
+	// Unofficial: replace with inlined func
+	sio2_set_ctrl_c();
+	send_td(td);
+	// Unofficial: replace with inlined func
+	sio2_set_ctrl_1();
+	WaitSema(g_sio2man_data.m_intr_sema);
+	recv_td(td);
+	if ( g_sio2man_data.m_sdk13x_flag )
+		sio2_transfer_reset();
+#ifdef SIO2LOG
+	log_flush(0);
+#endif
+	return 1;
+}
+
+void sio2_pad_transfer_init(void)
+{
+#ifdef SIO2LOG
+	log_flush(0);
+#endif
+	WaitSema(g_sio2man_data.m_transfer_semaphore);
+#ifdef SIO2LOG
+	log_default(LOG_PAD_READY);
+#endif
+	g_sio2man_data.m_sdk13x_flag = 0;
+}
+
+void sio2_pad_transfer_init_possiblysdk13x(void)
+{
+	sio2_pad_transfer_init();
+	g_sio2man_data.m_sdk13x_flag = 1;
+}
+
+void sio2_transfer_reset(void)
+{
+	g_sio2man_data.m_sdk13x_flag = 0;
+	SignalSema(g_sio2man_data.m_transfer_semaphore);
+#ifdef SIO2LOG
+	log_default(LOG_RESET);
+#endif
+}
+
+void sio2_mtap_change_slot_set(sio2_mtap_change_slot_cb_t cb)
+{
+	g_sio2man_data.m_mtap_change_slot_cb = cb;
+}
+
+void sio2_mtap_get_slot_max_set(sio2_mtap_get_slot_max_cb_t cb)
+{
+	g_sio2man_data.m_mtap_get_slot_max_cb = cb;
+}
+
+void sio2_mtap_get_slot_max2_set(sio2_mtap_get_slot_max2_cb_t cb)
+{
+	g_sio2man_data.m_mtap_get_slot_max2_cb = cb;
+}
+
+void sio2_mtap_update_slots_set(sio2_mtap_update_slots_t cb)
+{
+	g_sio2man_data.m_mtap_update_slots_cb = cb;
+}
+
+int sio2_mtap_change_slot(s32 *arg)
+{
+	int sum;
+	int i;
+
+	g_sio2man_data.m_sdk13x_flag = 0;
+	if ( g_sio2man_data.m_mtap_change_slot_cb )
+		return g_sio2man_data.m_mtap_change_slot_cb(arg);
+	sum = 0;
+	for ( i = 0; i < 4; i += 1 )
+	{
+		arg[i + 4] = ( (unsigned int)(arg[i] + 1) < 2 );
+		sum += arg[i + 4];
+	}
+	return sum == 4;
+}
+
+int sio2_mtap_get_slot_max(int port)
+{
+	return g_sio2man_data.m_mtap_get_slot_max_cb ? g_sio2man_data.m_mtap_get_slot_max_cb(port) : 1;
+}
+
+int sio2_mtap_get_slot_max2(int port)
+{
+	return g_sio2man_data.m_mtap_get_slot_max2_cb ? g_sio2man_data.m_mtap_get_slot_max2_cb(port) : 1;
+}
+
+void sio2_mtap_update_slots(void)
+{
+	if ( g_sio2man_data.m_mtap_update_slots_cb )
+		g_sio2man_data.m_mtap_update_slots_cb();
+}

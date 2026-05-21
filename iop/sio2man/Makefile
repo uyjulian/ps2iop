@@ -1,6 +1,7 @@
 IOP_BIN = sio2man.irx
 
-IOP_OBJS = _start.o imports.o exports.o main.o
+IOP_WARNFLAGS += -Wall -Wextra
+IOP_OBJS = imports.o exports.o main.o
 
 all: $(IOP_BIN)
 

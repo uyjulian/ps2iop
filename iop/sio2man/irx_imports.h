@@ -4,11 +4,9 @@
 
 #include "irx.h"
 
-#include "loadcore.h"
-#include "intrman.h"
-#include "stdio.h"
-#include "dmacman.h"
-#include "thbase.h"
-#include "thevent.h"
+#include <dmacman.h>
+#include <intrman.h>
+#include <loadcore.h>
+#include <thsemap.h>
 
 #endif /* IOP_IRX_IMPORTS_H */
