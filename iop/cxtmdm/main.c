@@ -506,22 +506,23 @@ static char g_dialconf; // idb
 //----- (00400000) --------------------------------------------------------
 static int __fastcall wrap_set_event_flag_modem(PDEVICE_EXTENSION dev_ext, u32 flagval)
 {
-  const char *curstr1; // $a2
-  char *curres1; // $s0
-  const char *curstr2; // $a2
-  char *curres2; // $s0
-  const char *curstr3; // $a2
-  char *curres3; // $s0
-  const char *curstr4; // $a2
-  char *curres4; // $s0
-  const char *curstr5; // $a2
-  char *curres5; // $s0
-  const char *curstr6; // $a2
-  int curres6; // $v0
   char outbuf[104]; // [sp+10h] [-68h] BYREF
 
   if ( (flagval & 0x200) == 0 )
   {
+    const char *curstr1; // $a2
+    char *curres1; // $s0
+    const char *curstr2; // $a2
+    char *curres2; // $s0
+    const char *curstr3; // $a2
+    char *curres3; // $s0
+    const char *curstr4; // $a2
+    char *curres4; // $s0
+    const char *curstr5; // $a2
+    char *curres5; // $s0
+    const char *curstr6; // $a2
+    int curres6; // $v0
+
     curstr1 = "";
     outbuf[0] = 0;
     if ( (flagval & 1) != 0 )
@@ -766,7 +767,6 @@ static int __fastcall ModemStart(PDEVICE_EXTENSION dev_ext, int unused)
   int i; // $s1
   UsbDeviceDescriptor *data; // $a1
   int result; // $v0
-  int idProduct; // $v1
 
   (void)unused;
   i = 0;
@@ -776,8 +776,7 @@ static int __fastcall ModemStart(PDEVICE_EXTENSION dev_ext, int unused)
   result = 0;
   if ( data->idVendor == 1394 )
   {
-    idProduct = data->idProduct;
-    if ( idProduct == 4658 || (result = 0, idProduct == 4722) )
+    if ( data->idProduct == 4658 || (result = 0, data->idProduct == 4722) )
     {
       if ( sceUsbdScanStaticDescriptor(dev_ext->Handle, data, 4u) )
       {
@@ -836,25 +835,22 @@ static int __fastcall get_ef_bits(PDEVICE_EXTENSION dev_ext)
 //----- (004008B4) --------------------------------------------------------
 static u32 __fastcall wait_for_ef_bits(PDEVICE_EXTENSION dev_ext, u32 bits)
 {
-  bool condtmp; // dc
   u32 result; // $v0
   int m_ef_bits; // $v1
-  int efbits[2]; // [sp+10h] [-8h] BYREF
+  u32 efbits; // [sp+10h] [-8h] BYREF
 
   if ( (dev_ext->m_ef_bits & bits) == 0 )
   {
-    condtmp = WaitEventFlag(dev_ext->m_evid_main, bits, 17, (u32 *)efbits) != 0;
     result = -1;
-    if ( condtmp )
+    if ( WaitEventFlag(dev_ext->m_evid_main, bits, 17, &efbits) != 0 )
       return result;
-    dev_ext->m_ef_bits |= efbits[0];
+    dev_ext->m_ef_bits |= efbits;
   }
   m_ef_bits = dev_ext->m_ef_bits;
   result = m_ef_bits & bits;
   dev_ext->m_ef_bits = m_ef_bits & ~bits;
   return result;
 }
-// 4008B4: using guessed type u32 efbits[2];
 
 //----- (0040092C) --------------------------------------------------------
 static void __fastcall __noreturn th_2_proc_modem_status(PDEVICE_EXTENSION dev_ext)
@@ -1308,7 +1304,6 @@ static int __fastcall UsbAcfModemProbe(int dev_id)
 {
   UsbDeviceDescriptor *data; // $a1
   int result; // $v0
-  int idProduct; // $v1
 
   data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, 1u);
   if ( !data )
@@ -1316,8 +1311,7 @@ static int __fastcall UsbAcfModemProbe(int dev_id)
   result = 0;
   if ( data->idVendor == 1394 )
   {
-    idProduct = data->idProduct;
-    if ( idProduct == 4658 || (result = 0, idProduct == 4722) )
+    if ( data->idProduct == 4658 || (result = 0, data->idProduct == 4722) )
     {
       resident_flag = 1;
       return sceUsbdScanStaticDescriptor(dev_id, data, 4u) && load_mode != 2;
@@ -1707,10 +1701,10 @@ LABEL_23:
 //----- (00401DD8) --------------------------------------------------------
 static void __fastcall USBACF_Write16550Reg(PDEVICE_EXTENSION pUsb, int reg, char data)
 {
-  char *regtmp1; // $v0
-
   if ( (unsigned int)reg < 8 )
   {
+    char *regtmp1; // $v0
+
     regtmp1 = (char *)pUsb + reg;
     regtmp1[5356] = data;
     regtmp1[5364] = -1;
@@ -1803,12 +1797,12 @@ static int __fastcall USBACF_GetRxChar(PDEVICE_EXTENSION pUsb)
 {
   int nBytesAvail; // $a1
   int result; // $v0
-  signed __int8 c; // $a2
 
   nBytesAvail = pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx;
   result = 0;
   if ( nBytesAvail > 0 )
   {
+    signed __int8 c; // $a2
     c = pUsb->RxFIFO[pUsb->RxFifoGetIdx++];
     if ( nBytesAvail == 1 )
     {
@@ -1857,7 +1851,6 @@ static void __fastcall UsbTransmitRegisterCompletionRoutine(int result, int coun
 static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, PDEVICE_EXTENSION context)
 {
   int Started; // $v1
-  int TxFIFOIdx; // $v1
   int state; // [sp+10h] [-8h] BYREF
 
   Started = context->Started;
@@ -1868,10 +1861,9 @@ static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, P
     CpuSuspendIntr(&state);
     context->m_unkab += count;
     CpuResumeIntr(state);
-    TxFIFOIdx = context->TxFIFOIdx;
-    if ( TxFIFOIdx < 256 )
+    if ( context->TxFIFOIdx < 256 )
     {
-      context->modem_ops.snd_len = 1024 - TxFIFOIdx;
+      context->modem_ops.snd_len = 1024 - context->TxFIFOIdx;
       wrap_set_event_flag_modem(context, 0x200u);
     }
   }
@@ -1881,23 +1873,22 @@ static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, P
 static void __fastcall UsbReceiveRegisterCompletionRoutine(int result, int count, PDEVICE_EXTENSION context)
 {
   int count_1; // $s1
-  int bPowerState; // $v1
-  unsigned int count_rev; // $v0
   int state; // [sp+10h] [-8h] BYREF
 
   count_1 = count;
   --context->PipeList[5].nActiveRequests;
   if ( context->Started )
   {
-    bPowerState = context->bPowerState;
-    if ( (bPowerState & 2) != 0 )
+    if ( (context->bPowerState & 2) != 0 )
     {
       if ( result )
       {
-        context->bPowerState = bPowerState & 0xFFFFFFFD;
+        context->bPowerState &= 0xFFFFFFFD;
       }
       else
       {
+        unsigned int count_rev; // $v0
+
         count_rev = count - 1;
         if ( (unsigned int)count >= 0x20 )
         {
@@ -2026,17 +2017,18 @@ static void __fastcall MakeReceiveRequest(PDEVICE_EXTENSION pUsb)
 //----- (0040247C) --------------------------------------------------------
 static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
 {
-  unsigned int i; // $a0
-  unsigned int TmpTxRegIndex; // $a2
-  char *curptr1; // $v1
   PDEVICE_EXTENSION curptr2; // $a1
-  unsigned __int8 curregval; // $v0
-  int size; // $s1
 
   if ( pUsb->PipeList[0].nActiveRequests <= 0 )
   {
     while ( pUsb->RegChangeFlag || pUsb->TmpTxRegIndex )
     {
+      char *curptr1; // $v1
+
+      unsigned int i; // $a0
+      unsigned int TmpTxRegIndex; // $a2
+      int size; // $s1
+
       if ( !pUsb->Started )
         break;
       i = 0;
@@ -2049,6 +2041,8 @@ static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
       {
         if ( curptr2->RegChanged[0] )
         {
+          unsigned __int8 curregval; // $v0
+
           if ( TmpTxRegIndex >= 0x10 )
             break;
           curregval = curptr2->RegShadow[0];
