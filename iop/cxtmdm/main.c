@@ -665,8 +665,6 @@ static size_t __fastcall ModemControl(PDEVICE_EXTENSION userdata, int cmd, void 
 {
   size_t retres; // $s1
   int *p_m_unkaa; // $a0
-  int state_1; // $a0
-  int state_2; // $a0
   int m_thid1; // $a0
   int m_thid2; // $a0
   int zerotmp; // [sp+10h] [-10h] BYREF
@@ -679,10 +677,9 @@ static size_t __fastcall ModemControl(PDEVICE_EXTENSION userdata, int cmd, void 
   if ( cmd == (int)0xC0000111 )
   {
     CpuSuspendIntr(&state);
-    state_2 = state;
     userdata->TxFIFOIdx = 0;
     userdata->modem_ops.snd_len = 1024;
-    CpuResumeIntr(state_2);
+    CpuResumeIntr(state);
     return retres;
   }
   if ( cmd > (int)0xC0000111 )
@@ -749,11 +746,10 @@ LABEL_28:
   if ( cmd != (int)0xC0000110 )
     return -513;
   CpuSuspendIntr(&state);
-  state_1 = state;
   userdata->modem_ops.rcv_len = 0;
   userdata->RxFifoGetIdx = 0;
   userdata->RxFifoPutIdx = 0;
-  CpuResumeIntr(state_1);
+  CpuResumeIntr(state);
   return retres;
 }
 // 4034E8: using guessed type int thread_priority;
@@ -1179,7 +1175,6 @@ static void __fastcall do_delete_threads(PDEVICE_EXTENSION edv_ext)
 //----- (00401130) --------------------------------------------------------
 static int __fastcall ModemStop(PDEVICE_EXTENSION dev_ext, int unused)
 {
-  int state_1; // $a0
   int state; // [sp+10h] [-8h] BYREF
 
   (void)unused;
@@ -1202,13 +1197,12 @@ static int __fastcall ModemStop(PDEVICE_EXTENSION dev_ext, int unused)
     wrap_set_event_flag_main(dev_ext, 2u);
   }
   CpuSuspendIntr(&state);
-  state_1 = state;
   dev_ext->modem_ops.rcv_len = 0;
   dev_ext->RxFifoGetIdx = 0;
   dev_ext->RxFifoPutIdx = 0;
   dev_ext->TxFIFOIdx = 0;
   dev_ext->modem_ops.snd_len = 1024;
-  CpuResumeIntr(state_1);
+  CpuResumeIntr(state);
   dev_ext->f_started = 0;
   return 0;
 }
@@ -1236,7 +1230,6 @@ LABEL_7:
 static int __fastcall ModemRead(PDEVICE_EXTENSION dev_ext, char *buff, int size)
 {
   int len; // $s3
-  int state_1; // $a0
   int state; // [sp+10h] [-8h] BYREF
 
   len = 0;
@@ -1251,9 +1244,8 @@ static int __fastcall ModemRead(PDEVICE_EXTENSION dev_ext, char *buff, int size)
       --size;
       ++len;
     }
-    state_1 = state;
     dev_ext->modem_ops.rcv_len = dev_ext->RxFifoPutIdx - dev_ext->RxFifoGetIdx;
-    CpuResumeIntr(state_1);
+    CpuResumeIntr(state);
     USBACF_RxFlowControl(dev_ext);
   }
   return len;
@@ -1263,7 +1255,6 @@ static int __fastcall ModemRead(PDEVICE_EXTENSION dev_ext, char *buff, int size)
 static int __fastcall PatchRead(PDEVICE_EXTENSION dev_ext, char *buff, int size)
 {
   int len; // $s3
-  int state_1; // $a0
   int state; // [sp+10h] [-8h] BYREF
 
   len = 0;
@@ -1276,9 +1267,8 @@ static int __fastcall PatchRead(PDEVICE_EXTENSION dev_ext, char *buff, int size)
     --size;
     ++len;
   }
-  state_1 = state;
   dev_ext->modem_ops.rcv_len = dev_ext->RxFifoPutIdx - dev_ext->RxFifoGetIdx;
-  CpuResumeIntr(state_1);
+  CpuResumeIntr(state);
   USBACF_RxFlowControl(dev_ext);
   return len;
 }
@@ -1867,7 +1857,6 @@ static void __fastcall UsbTransmitRegisterCompletionRoutine(int result, int coun
 static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, PDEVICE_EXTENSION context)
 {
   int Started; // $v1
-  int state_1; // $a0
   int TxFIFOIdx; // $v1
   int state; // [sp+10h] [-8h] BYREF
 
@@ -1877,9 +1866,8 @@ static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, P
   {
     MakeDataTransferRequest(context, 1u);
     CpuSuspendIntr(&state);
-    state_1 = state;
     context->m_unkab += count;
-    CpuResumeIntr(state_1);
+    CpuResumeIntr(state);
     TxFIFOIdx = context->TxFIFOIdx;
     if ( TxFIFOIdx < 256 )
     {
@@ -1895,7 +1883,6 @@ static void __fastcall UsbReceiveRegisterCompletionRoutine(int result, int count
   int count_1; // $s1
   int bPowerState; // $v1
   unsigned int count_rev; // $v0
-  int state_1; // $a0
   int state; // [sp+10h] [-8h] BYREF
 
   count_1 = count;
@@ -1921,9 +1908,8 @@ static void __fastcall UsbReceiveRegisterCompletionRoutine(int result, int count
           OnNewStatusReceived(context, &context->RecvRegs, count_rev >> 1);
         MakeReceiveRequest(context);
         CpuSuspendIntr(&state);
-        state_1 = state;
         context->m_unkaa += count_1;
-        CpuResumeIntr(state_1);
+        CpuResumeIntr(state);
       }
     }
   }
