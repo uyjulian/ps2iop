@@ -591,7 +591,6 @@ static int __fastcall ModemWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
 {
   int cnt; // $s3
   int xsend_len; // $v0
-  PDEVICE_EXTENSION dev_ext_1; // $a0
   int state; // [sp+10h] [-8h] BYREF
 
   cnt = 0;
@@ -603,7 +602,6 @@ static int __fastcall ModemWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
     xsend_len = 1024;
   dev_ext->modem_ops.snd_len = xsend_len;
   CpuResumeIntr(state);
-  dev_ext_1 = dev_ext;
   if ( len > 0 )
   {
     do
@@ -622,9 +620,8 @@ static int __fastcall ModemWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
       ++data;
     }
     while ( len > 0 );
-    dev_ext_1 = dev_ext;
   }
-  MakeDataTransferRequest(dev_ext_1, 0);
+  MakeDataTransferRequest(dev_ext, 0);
   return cnt;
 }
 
@@ -633,7 +630,6 @@ static int __fastcall PatchWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
 {
   int cnt; // $s3
   int xsend_len; // $v0
-  PDEVICE_EXTENSION dev_ext_1; // $a0
   int state; // [sp+10h] [-8h] BYREF
 
   cnt = 0;
@@ -643,7 +639,6 @@ static int __fastcall PatchWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
     xsend_len = 1024;
   dev_ext->modem_ops.snd_len = xsend_len;
   CpuResumeIntr(state);
-  dev_ext_1 = dev_ext;
   if ( len > 0 )
   {
     do
@@ -660,9 +655,8 @@ static int __fastcall PatchWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
       ++data;
     }
     while ( len > 0 );
-    dev_ext_1 = dev_ext;
   }
-  MakeDataTransferRequest(dev_ext_1, 0);
+  MakeDataTransferRequest(dev_ext, 0);
   return cnt;
 }
 
@@ -931,7 +925,6 @@ LABEL_16:
 //----- (00400A2C) --------------------------------------------------------
 static void __fastcall th_1_proc_ef_bits(void *userdata)
 {
-  PDEVICE_EXTENSION tmp_dev_ext; // $a0
   signed __int32 efbits_ret; // $v0
   __int16 efbits_trimmed; // $s1
   bool condtmp; // dc
@@ -942,10 +935,9 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
   dev_Ext->modem_ops.snd_len = 1024;
   dev_Ext->m_unkbb = 0;
 LABEL_2:
-  tmp_dev_ext = dev_Ext;
   while ( 1 )
   {
-    efbits_ret = wait_for_ef_bits(tmp_dev_ext, 0x7FFu);
+    efbits_ret = wait_for_ef_bits(dev_Ext, 0x7FFu);
     efbits_trimmed = efbits_ret;
     condtmp = efbits_ret < 0;
     if ( condtmp )
@@ -961,17 +953,14 @@ LABEL_2:
     {
       dev_Ext->m_unkbb = 0;
       USBMODEM_ModifyLed(dev_Ext, 0, 1u);
-      tmp_dev_ext = dev_Ext;
     }
     else
     {
       if ( (efbits_trimmed & 0x400) != 0 )
         get_ef_bits(dev_Ext);
-      tmp_dev_ext = dev_Ext;
       if ( !dev_Ext->m_unkbd && dev_Ext->m_unkbe == 1 )
       {
         wrap_set_event_flag_modem(dev_Ext, 0x40u);
-        tmp_dev_ext = dev_Ext;
       }
     }
   }
