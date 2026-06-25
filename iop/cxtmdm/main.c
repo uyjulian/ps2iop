@@ -510,45 +510,7 @@ static int __fastcall wrap_set_event_flag_modem(PDEVICE_EXTENSION dev_ext, u32 f
 
   if ( (flagval & 0x200) == 0 )
   {
-    const char *curstr1; // $a2
-    char *curres1; // $s0
-    const char *curstr2; // $a2
-    char *curres2; // $s0
-    const char *curstr3; // $a2
-    char *curres3; // $s0
-    const char *curstr4; // $a2
-    char *curres4; // $s0
-    const char *curstr5; // $a2
-    char *curres5; // $s0
-    const char *curstr6; // $a2
-    int curres6; // $v0
-
-    curstr1 = "";
-    outbuf[0] = 0;
-    if ( (flagval & 1) != 0 )
-      curstr1 = " StartDone";
-    curres1 = &outbuf[sprintf(outbuf, "%s", curstr1)];
-    curstr2 = "";
-    if ( (flagval & 2) != 0 )
-      curstr2 = " PlugOut";
-    curres2 = &curres1[sprintf(curres1, "%s", curstr2)];
-    curstr3 = "";
-    if ( (flagval & 0x10) != 0 )
-      curstr3 = " Connect";
-    curres3 = &curres2[sprintf(curres2, "%s", curstr3)];
-    curstr4 = "";
-    if ( (flagval & 0x20) != 0 )
-      curstr4 = " Disconnect";
-    curres4 = &curres3[sprintf(curres3, "%s", curstr4)];
-    curstr5 = "";
-    if ( (flagval & 0x40) != 0 )
-      curstr5 = " Ring";
-    curres5 = &curres4[sprintf(curres4, "%s", curstr5)];
-    curstr6 = "";
-    if ( (flagval & 0x100) != 0 )
-      curstr6 = " Recv";
-    curres6 = sprintf(curres5, "%s", curstr6);
-    sprintf(&curres5[curres6], "%s", "");
+    sprintf(outbuf, "%s%s%s%s%s%s", ( (flagval & 1) != 0 ) ? " StartDone" : "", ( (flagval & 2) != 0 ) ? " PlugOut" : "", ( (flagval & 0x10) != 0 ) ? " Connect" : "", ( (flagval & 0x20) != 0 ) ? " Disconnect" : "", ( (flagval & 0x40) != 0 ) ? " Ring" : "", ( (flagval & 0x100) != 0 ) ? " Recv" : "");
   }
   return SetEventFlag(dev_ext->modem_ops.evfid, flagval);
 }
@@ -557,32 +519,9 @@ static int __fastcall wrap_set_event_flag_modem(PDEVICE_EXTENSION dev_ext, u32 f
 //----- (00400138) --------------------------------------------------------
 static int __fastcall wrap_set_event_flag_main(PDEVICE_EXTENSION dev_ext, u32 flagval)
 {
-  const char *curstr1; // $a2
-  char *curres1; // $s0
-  const char *curstr2; // $a2
-  char *curres2; // $s0
-  const char *curstr3; // $a2
-  int curres3; // $v0
-  const char *curstr4; // $a2
   char curbuf[104]; // [sp+10h] [-68h] BYREF
 
-  curstr1 = "";
-  curbuf[0] = 0;
-  if ( (flagval & 1) != 0 )
-    curstr1 = " START";
-  curres1 = &curbuf[sprintf(curbuf, "%s", curstr1)];
-  curstr2 = "";
-  if ( (flagval & 2) != 0 )
-    curstr2 = " STOP";
-  curres2 = &curres1[sprintf(curres1, "%s", curstr2)];
-  curstr3 = "";
-  if ( (flagval & 8) != 0 )
-    curstr3 = " STATE";
-  curres3 = sprintf(curres2, "%s", curstr3);
-  curstr4 = "";
-  if ( (flagval & 0x400) != 0 )
-    curstr4 = " BREAK";
-  sprintf(&curres2[curres3], "%s", curstr4);
+  sprintf(curbuf, "%s%s%s%s", ( (flagval & 1) != 0 ) ? " START" : "", ( (flagval & 2) != 0 ) ? " STOP" : "", ( (flagval & 8) != 0 ) ? " STATE" : "", ( (flagval & 0x400) != 0 ) ? " BREAK" : "");
   return SetEventFlag(dev_ext->m_evid_main, flagval);
 }
 // 400138: using guessed type char curbuf[104];
