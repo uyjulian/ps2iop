@@ -766,23 +766,20 @@ static int __fastcall ModemStart(PDEVICE_EXTENSION dev_ext, int unused)
 {
   int i; // $s1
   UsbDeviceDescriptor *data; // $a1
-  int result; // $v0
 
   (void)unused;
   i = 0;
   data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(dev_ext->Handle, 0, 1u);
   if ( !data )
     return 0;
-  result = 0;
   if ( data->idVendor == 1394 )
   {
-    if ( data->idProduct == 4658 || (result = 0, data->idProduct == 4722) )
+    if ( data->idProduct == 4658 || data->idProduct == 4722 )
     {
       if ( sceUsbdScanStaticDescriptor(dev_ext->Handle, data, 4u) )
       {
-        result = 0;
         if ( dev_ext->m_unkbb == 5 )
-          return result;
+          return 0;
         for ( ; !dev_ext->f_patch; ++i )
         {
           DelayThread(500000);
@@ -806,7 +803,7 @@ static int __fastcall ModemStart(PDEVICE_EXTENSION dev_ext, int unused)
       return 0;
     }
   }
-  return result;
+  return 0;
 }
 
 //----- (00400854) --------------------------------------------------------
@@ -841,9 +838,8 @@ static u32 __fastcall wait_for_ef_bits(PDEVICE_EXTENSION dev_ext, u32 bits)
 
   if ( (dev_ext->m_ef_bits & bits) == 0 )
   {
-    result = -1;
     if ( WaitEventFlag(dev_ext->m_evid_main, bits, 17, &efbits) != 0 )
-      return result;
+      return -1;
     dev_ext->m_ef_bits |= efbits;
   }
   m_ef_bits = dev_ext->m_ef_bits;
@@ -1303,21 +1299,19 @@ static void __fastcall set_config_done(int result, int count, PDEVICE_EXTENSION 
 static int __fastcall UsbAcfModemProbe(int dev_id)
 {
   UsbDeviceDescriptor *data; // $a1
-  int result; // $v0
 
   data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, 1u);
   if ( !data )
     return 1;
-  result = 0;
   if ( data->idVendor == 1394 )
   {
-    if ( data->idProduct == 4658 || (result = 0, data->idProduct == 4722) )
+    if ( data->idProduct == 4658 || data->idProduct == 4722 )
     {
       resident_flag = 1;
       return sceUsbdScanStaticDescriptor(dev_id, data, 4u) && load_mode != 2;
     }
   }
-  return result;
+  return 0;
 }
 // 403560: using guessed type int resident_flag;
 // 403564: using guessed type int load_mode;
@@ -1326,7 +1320,6 @@ static int __fastcall UsbAcfModemProbe(int dev_id)
 static int __fastcall UsbAcfModemAttach(int dev_id)
 {
   UsbConfigDescriptor *data; // $s4
-  int result; // $v0
   UsbInterfaceDescriptor *idesc; // $s0
   PDEVICE_EXTENSION dev_ext; // $v0
   PDEVICE_EXTENSION cbArg; // $s3
@@ -1369,15 +1362,13 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   data = (UsbConfigDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, 2u);
   if ( data )
   {
-    result = -1;
     if ( data->bNumInterfaces != 1 )
-      return result;
+      return -1;
     idesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, data, 4u);
     if ( idesc )
     {
-      result = -1;
       if ( idesc->bNumEndpoints != 8 )
-        return result;
+        return -1;
       dev_ext = do_alloc_mem_for_dev_ext();
       cbArg = dev_ext;
       if ( dev_ext )
@@ -1421,11 +1412,10 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
               devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(cbArg->Handle, 0, 1u);
               if ( devdesc )
               {
-                result = -1;
                 if ( devdesc->idVendor == 1394 )
                 {
                   pid_tmp = devdesc->idProduct;
-                  if ( pid_tmp == 4658 || (result = -1, pid_tmp == 4722) )
+                  if ( pid_tmp == 4658 || pid_tmp == 4722 )
                   {
                     manuf = devdesc->iManufacturer;
                     prod = devdesc->iProduct;
@@ -1510,7 +1500,6 @@ LABEL_38:
                     cbArg->modem_ops.device_name = (char *)cbArg->m_pro;
                     cbArg->modem_ops.bus_type = 1;
                     regres = sceUsbdGetDeviceLocation(dev_id, cbArg->modem_ops.bus_loc) != 0;
-                    result = -1;
                     if ( !regres )
                     {
                       cbArg->modem_ops.start = (int (__cdecl *)(void *, int))ModemStart;
@@ -1522,7 +1511,6 @@ LABEL_38:
                       cbArg->modem_ops.priv = cbArg;
                       cbArg->modem_ops.control = (int (__cdecl *)(void *, int, void *, int))ModemControl;
                       regres = sceModemRegisterDevice(&cbArg->modem_ops) < 0;
-                      result = -1;
                       if ( !regres )
                       {
                         DelayThread(100);
@@ -1537,18 +1525,17 @@ LABEL_38:
                         thparam.stacksize = stksz_1;
                         thid_patchload = CreateThread(&thparam);
                         cbArg->m_thid_patchload = thid_patchload;
-                        result = 0;
                         if ( thid_patchload <= 0
                           || StartThread(thid_patchload, cbArg) )
                         {
                           DeleteThread(cbArg->m_thid_patchload);
-                          return 0;
                         }
+                        return 0;
                       }
                     }
                   }
                 }
-                return result;
+                return -1;
               }
               return -1;
             }
@@ -1566,7 +1553,6 @@ LABEL_38:
 static int __fastcall UsbAcfModemDetach(int dev_id)
 {
   PDEVICE_EXTENSION PrivateData; // $s0
-  int result; // $v0
   int m_unkbb; // $v1
   PDEVICE_EXTENSION ptr; // $a0
 
@@ -1594,18 +1580,16 @@ LABEL_10:
         wrap_set_event_flag_modem(ptr, 2u);
         sceModemUnregisterDevice(&PrivateData->modem_ops);
         do_delete_threads(PrivateData);
-        result = 0;
         goto LABEL_11;
       }
     }
   }
   PrivateData->m_unkbb = 5;
   wrap_set_event_flag_modem(PrivateData, 2u);
-  result = 0;
 LABEL_11:
   PrivateData->f_patch = 0;
   PrivateData->f_started = 0;
-  return result;
+  return 0;
 }
 
 //----- (00401BE4) --------------------------------------------------------
@@ -1615,7 +1599,6 @@ int __fastcall _start(int argc, char **argv)
   int eqcount; // $s0
   char *eq_pos_tmp; // $a0
   const char *eq_chkafter; // $v1
-  int result; // $v0
 
   load_mode = 0;
   g_dialconf = 0;
@@ -1679,20 +1662,19 @@ LABEL_23:
   if ( load_mode == 2 )
   {
     sceUsbdUnregisterLdd(&UsbAcfDriverDescriptor);
-    result = 5;
     if ( resident_flag != 1 )
       return 1;
+    return 5;
   }
   else
   {
-    result = 0;
     if ( !resident_flag )
     {
       sceUsbdUnregisterLdd(&UsbAcfDriverDescriptor);
       return 1;
     }
+    return 0;
   }
-  return result;
 }
 // 4034A4: using guessed type sceUsbdLddOps UsbAcfDriverDescriptor;
 // 403560: using guessed type int resident_flag;
@@ -1796,10 +1778,8 @@ LABEL_19:
 static int __fastcall USBACF_GetRxChar(PDEVICE_EXTENSION pUsb)
 {
   int nBytesAvail; // $a1
-  int result; // $v0
 
   nBytesAvail = pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx;
-  result = 0;
   if ( nBytesAvail > 0 )
   {
     signed __int8 c; // $a2
@@ -1816,7 +1796,7 @@ static int __fastcall USBACF_GetRxChar(PDEVICE_EXTENSION pUsb)
     pUsb->RxFifoGetIdx = 0;
     pUsb->RxFifoPutIdx = 0;
   }
-  return result;
+  return 0;
 }
 
 //----- (00401FE8) --------------------------------------------------------
