@@ -825,14 +825,10 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
             read_res_main_rounded = read_res_main >> 6 << 6;
             read_sz_end = read_res_main - read_res_main_rounded;
             eedestptr2 = (int)&eedest[read_res_main_rounded];
-            if ( read_sz_end > outbuf_ind )
+            while ( outbuf_ind < read_sz_end )
             {
-              do
-              {
-                fbuf.m_buf2[outbuf_ind] = ((_BYTE *)rwbuf)[read_res_main_rounded + outbuf_ind];
-                outbuf_ind += 1;
-              }
-              while ( outbuf_ind < read_sz_end );
+              fbuf.m_buf2[outbuf_ind] = ((_BYTE *)rwbuf)[read_res_main_rounded + outbuf_ind];
+              outbuf_ind += 1;
             }
             if ( read_res_main_rounded )
             {
@@ -1605,7 +1601,7 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
   }
   i = 0;
   thids_per_fd_idx = -1;
-  do
+  while ( i < 32 )
   {
     if ( g_thids_per_fd[i] == -1 )
     {
@@ -1623,7 +1619,6 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
     }
     ++i;
   }
-  while ( i < 32 );
   if ( thids_per_fd_idx == -1 )
   {
     printf("fileio: Thread alloc fail\n");
