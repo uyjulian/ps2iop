@@ -1610,7 +1610,7 @@ void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf)
       ReceiveMbx((void **)&threadbuf_1, m_mbxid);
       threadbuf_2 = threadbuf_1;
       if ( g_fileio_verbose > 0 )
-        printf("ReceiveMbx mbxid= %08x fno= %d addr %08x\n", m_mbxid, threadbuf_1->m_common.m_in_fno, threadbuf_1);
+        printf("ReceiveMbx mbxid= %08x fno= %d addr %08x\n", m_mbxid, threadbuf_1->m_common.m_in_fno, (unsigned int)threadbuf_1);
       switch ( threadbuf_2->m_common.m_in_fno )
       {
         case 1:
@@ -1840,7 +1840,7 @@ LABEL_51:
         {
           ee_fds = *((_DWORD *)buffer + 261);
           if ( g_fileio_verbose > 0 )
-            printf("SCE_OPEN: ee_fds= %d mbxid= %08x\n", *((_DWORD *)buffer + 261), mbxid_for_creation);
+            printf("SCE_OPEN: ee_fds= %d mbxid= %08x\n", (int)*((_DWORD *)buffer + 261), mbxid_for_creation);
           g_mbxid_for_ee_fds[ee_fds] = threadbuf->m_mbxid;
           threadbuf->m_common.m_in_fno = 0;
 LABEL_47:
@@ -1907,7 +1907,7 @@ LABEL_43:
     threadbuf->m_mbxid = mbxid;
     g_thids_per_fd[thids_per_fd_idx] = -1;
     if ( fileio_verbose > 0 )
-      printf("SendMbx ee_fds= %d mbxid= %08x fno= %d addr= %08x\n", param_for_mbx, threadbuf->m_mbxid, fno, threadbuf);
+      printf("SendMbx ee_fds= %d mbxid= %08x fno= %d addr= %08x\n", param_for_mbx, threadbuf->m_mbxid, fno, (unsigned int)threadbuf);
     if ( !SendMbx(threadbuf->m_mbxid, threadbuf) )
       return &g_fileio_rpc_outbuf;
     goto LABEL_50;
