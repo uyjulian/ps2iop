@@ -433,8 +433,8 @@ typedef unsigned __int8 BYTE;
 
 static int __fastcall wrap_set_event_flag_modem(PDEVICE_EXTENSION dev_ext, u32 flagval);
 static int __fastcall wrap_set_event_flag_main(PDEVICE_EXTENSION dev_ext, u32 flagval);
-static int __fastcall ModemWrite(PDEVICE_EXTENSION dev_ext, char *data, int len);
-static int __fastcall PatchWrite(PDEVICE_EXTENSION dev_ext, char *data, int len);
+static int __fastcall ModemWrite(PDEVICE_EXTENSION dev_ext, const char *data, int len);
+static int __fastcall PatchWrite(PDEVICE_EXTENSION dev_ext, const char *data, int len);
 static size_t __fastcall ModemControl(PDEVICE_EXTENSION userdata, int cmd, void *buf, int bufsz);
 static int __fastcall ModemGetStatus(PDEVICE_EXTENSION dev_ext);
 static int __fastcall ModemStart(PDEVICE_EXTENSION dev_ext, int unused);
@@ -587,7 +587,7 @@ static int __fastcall wrap_set_event_flag_main(PDEVICE_EXTENSION dev_ext, u32 fl
 // 400138: using guessed type char curbuf[104];
 
 //----- (00400208) --------------------------------------------------------
-static int __fastcall ModemWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
+static int __fastcall ModemWrite(PDEVICE_EXTENSION dev_ext, const char *data, int len)
 {
   int cnt; // $s3
   int xsend_len; // $v0
@@ -626,7 +626,7 @@ static int __fastcall ModemWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
 }
 
 //----- (00400338) --------------------------------------------------------
-static int __fastcall PatchWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
+static int __fastcall PatchWrite(PDEVICE_EXTENSION dev_ext, const char *data, int len)
 {
   int cnt; // $s3
   int xsend_len; // $v0
@@ -664,7 +664,7 @@ static int __fastcall PatchWrite(PDEVICE_EXTENSION dev_ext, char *data, int len)
 static size_t __fastcall ModemControl(PDEVICE_EXTENSION userdata, int cmd, void *buf, int bufsz)
 {
   size_t retres; // $s1
-  int *p_m_unkaa; // $a0
+  const int *p_m_unkaa; // $a0
   int m_thid1; // $a0
   int m_thid2; // $a0
   int zerotmp; // [sp+10h] [-10h] BYREF
@@ -1345,7 +1345,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   int pipe0_id; // $v0
   __int16 bConfigurationValue; // $v0
   int xferres; // $v0
-  UsbDeviceDescriptor *devdesc; // $a1
+  const UsbDeviceDescriptor *devdesc; // $a1
   int pid_tmp; // $v1
   signed __int8 manuf; // $s0
   signed __int8 prod; // $s4
@@ -1353,12 +1353,12 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   int manufflg1; // $s1
   int manufflg2; // $v0
   bool regres; // dc
-  UCHAR *manufchk1; // $v0
+  const UCHAR *manufchk1; // $v0
   int manufx1; // $v1
   int prodind; // $s2
   int prodflg1; // $s1
   int prodflg2; // $v0
-  UCHAR *prodchk1; // $v0
+  const UCHAR *prodchk1; // $v0
   int prodx1; // $v1
   u32 thprior_1; // $v1
   u32 stksz_1; // $a1
@@ -1620,7 +1620,7 @@ int __fastcall _start(int argc, char **argv)
   int ac_cur; // $s2
   int eqcount; // $s0
   char *eq_pos_tmp; // $a0
-  char *eq_chkafter; // $v1
+  const char *eq_chkafter; // $v1
   int result; // $v0
 
   load_mode = 0;
@@ -1730,7 +1730,7 @@ static void __fastcall MakeDataTransferRequest(PDEVICE_EXTENSION pUsb, BOOLEAN C
   unsigned __int8 txfifochr1; // $v0
   int j; // $a1
   int Length; // $s1
-  char *txfifochr2; // $v0
+  const char *txfifochr2; // $v0
   int xreentw; // $v0
 
   (void)CallTxHandler;
