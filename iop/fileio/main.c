@@ -462,7 +462,6 @@ static int g_mbxid_for_ee_fds[32];
 int _start()
 {
   const int *BootMode; // $v0
-  int bm3; // $v1
   int thid_fio; // $a0
   int thid_heap; // $a0
   iop_thread_t thparam; // [sp+10h] [-18h] BYREF
@@ -470,6 +469,7 @@ int _start()
   BootMode = QueryBootMode(3);
   if ( BootMode )
   {
+    int bm3; // $v1
     bm3 = BootMode[1];
     if ( (bm3 & 1) != 0 )
     {
@@ -1044,13 +1044,6 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
   void *in_addr; // $t2
   int in_blksize; // $t3
   int in_mode; // $t1
-  unsigned int rwbuf_size_in_blocks; // $s6
-  unsigned int in_nblk_2; // $v0
-  unsigned int size_in_rwbuf_block_units; // $s5
-  unsigned int size_in_rwbuf_remainder_block_units; // $fp
-  unsigned int cur_block_unit; // $s1
-  int trid; // $s0
-  int i; // $v0
   struct fio_largebuf_outbuf fbuf; // [sp+20h] [-478h] BYREF
   struct devctl_fs_blkio_param in_lbn; // [sp+440h] [-58h] BYREF
   SifDmaTransfer_t dmat; // [sp+458h] [-40h] BYREF
@@ -1090,6 +1083,12 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
   rwbuf = fileio_alloc_rwbuf(&rwbuf_size);
   if ( rwbuf )
   {
+    unsigned int rwbuf_size_in_blocks; // $s6
+    unsigned int in_nblk_2; // $v0
+    unsigned int size_in_rwbuf_block_units; // $s5
+    unsigned int size_in_rwbuf_remainder_block_units; // $fp
+    unsigned int cur_block_unit; // $s1
+
     in_lbn.m_lbn = *(_DWORD *)inbuf->m_arg;
     rwbuf_size_in_blocks = (unsigned int)rwbuf_size / *((_DWORD *)m_arg + 3);
     in_nblk_2 = *((_DWORD *)m_arg + 1);
@@ -1114,6 +1113,8 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
       dmat.size = in_lbn.m_nblk * *((_DWORD *)m_arg + 3);
       if ( *((_DWORD *)m_arg + 4) )
       {
+        int i; // $v0
+
         for ( i = sceSifGetOtherData(&rdata, dmat.dest, dmat.src, dmat.size, 0);
               i < 0;
               i = sceSifGetOtherData(&rdata, dmat.dest, dmat.src, dmat.size, 0) )
@@ -1127,6 +1128,8 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
       }
       else
       {
+        int trid; // $s0
+
         devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &in_lbn, inbuf->m_arglen, 0, 0);
         if ( devctl_res < 0 )
           break;
@@ -2025,22 +2028,17 @@ static int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf
 {
   int fd; // $s2
   int result; // $v0
-  int endsz; // $s0
-  void *buf; // $a1
-  int outres; // $s1
 
   (void)length;
   fd = iomanX_open((const char *)(buffer + 4), 1);
   if ( fd >= 0 )
   {
+    int endsz; // $s0
+
     endsz = iomanX_lseek(fd, 0, 2);
     iomanX_lseek(fd, 0, 0);
-    buf = *(void **)buffer;
-    outres = 0;
-    if ( endsz != iomanX_read(fd, buf, endsz) )
-      outres = -2;
+    *outbuf = ( endsz != iomanX_read(fd, *(void **)buffer, endsz) ) ? -2 : 0;
     result = iomanX_close(fd);
-    *outbuf = outres;
   }
   else
   {
