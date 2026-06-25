@@ -371,19 +371,19 @@ static void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))();
 static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int length);
 static void __noreturn power_off_event_handler();
 static void fileio_rpc_start_thread(void *userdata);
-static int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf);
-static int __fastcall heap_rpc_alloc_iop_heap(const int *buffer, int length, void **outbuf);
-static int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf);
-static int __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf);
-static int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf);
-static int __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *outbuf);
-static int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *outbuf);
-static int __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void **outbuf);
-static int __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf);
+static void __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf);
+static void __fastcall heap_rpc_alloc_iop_heap(const int *buffer, int length, void **outbuf);
+static void __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf);
+static void __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf);
+static void __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf);
+static void __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *outbuf);
+static void __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *outbuf);
+static void __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void **outbuf);
+static void __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf);
 static int *__fastcall heap_rpc_service_handler(int fno, void *buffer, int length);
 static void heap_rpc_start_thread(void *userdata);
 #ifdef UNUSED_FUNC
-static int __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf);
+static void __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf);
 static int *__fastcall iopinfo_rpc_service_handler(int fno, void *buffer, int length);
 static int iopinfo_rpc_service_start_thread_unused();
 #endif
@@ -1652,91 +1652,63 @@ LABEL_11:
 //----- (00401CA4) --------------------------------------------------------
 static void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))()
 {
-  void (__noreturn *result)(); // $v0
-
   switch ( cmd )
   {
     case 0:
-      result = (void (__noreturn *)())fileio_rpc_open;
-      break;
+      return (void (__noreturn *)())fileio_rpc_open;
     case 5:
-      result = (void (__noreturn *)())fileio_rpc_ioctl;
-      break;
+      return (void (__noreturn *)())fileio_rpc_ioctl;
     case 6:
-      result = (void (__noreturn *)())fileio_rpc_remove;
-      break;
+      return (void (__noreturn *)())fileio_rpc_remove;
     case 7:
-      result = (void (__noreturn *)())fileio_rpc_mkdir;
-      break;
+      return (void (__noreturn *)())fileio_rpc_mkdir;
     case 8:
-      result = (void (__noreturn *)())fileio_rpc_rmdir;
-      break;
+      return (void (__noreturn *)())fileio_rpc_rmdir;
     case 9:
-      result = (void (__noreturn *)())fileio_rpc_dopen;
-      break;
+      return (void (__noreturn *)())fileio_rpc_dopen;
     case 10:
-      result = (void (__noreturn *)())fileio_rpc_dclose;
-      break;
+      return (void (__noreturn *)())fileio_rpc_dclose;
     case 11:
-      result = (void (__noreturn *)())fileio_rpc_dread;
-      break;
+      return (void (__noreturn *)())fileio_rpc_dread;
     case 12:
-      result = (void (__noreturn *)())fileio_rpc_getstat;
-      break;
+      return (void (__noreturn *)())fileio_rpc_getstat;
     case 13:
-      result = (void (__noreturn *)())fileio_rpc_chstat;
-      break;
+      return (void (__noreturn *)())fileio_rpc_chstat;
     case 14:
-      result = (void (__noreturn *)())fileio_rpc_format;
-      break;
+      return (void (__noreturn *)())fileio_rpc_format;
     case 15:
-      result = (void (__noreturn *)())fileio_rpc_adddrv;
-      break;
+      return (void (__noreturn *)())fileio_rpc_adddrv;
     case 16:
-      result = (void (__noreturn *)())fileio_rpc_deldrv;
-      break;
+      return (void (__noreturn *)())fileio_rpc_deldrv;
     case 17:
-      result = (void (__noreturn *)())fileio_rpc_rename;
-      break;
+      return (void (__noreturn *)())fileio_rpc_rename;
     case 18:
-      result = (void (__noreturn *)())fileio_rpc_chdir;
-      break;
+      return (void (__noreturn *)())fileio_rpc_chdir;
     case 19:
-      result = (void (__noreturn *)())fileio_rpc_sync;
-      break;
+      return (void (__noreturn *)())fileio_rpc_sync;
     case 20:
-      result = (void (__noreturn *)())fileio_rpc_mount;
-      break;
+      return (void (__noreturn *)())fileio_rpc_mount;
     case 21:
-      result = (void (__noreturn *)())fileio_rpc_umount;
-      break;
+      return (void (__noreturn *)())fileio_rpc_umount;
     case 23:
-      result = (void (__noreturn *)())fileio_rpc_devctl;
-      break;
+      return (void (__noreturn *)())fileio_rpc_devctl;
     case 24:
-      result = (void (__noreturn *)())fileio_rpc_symlink;
-      break;
+      return (void (__noreturn *)())fileio_rpc_symlink;
     case 25:
-      result = (void (__noreturn *)())fileio_rpc_readlink;
-      break;
+      return (void (__noreturn *)())fileio_rpc_readlink;
     case 26:
-      result = (void (__noreturn *)())fileio_rpc_ioctl2;
-      break;
+      return (void (__noreturn *)())fileio_rpc_ioctl2;
     case 28:
-      result = (void (__noreturn *)())fileio_rpc_devctl_blkio;
-      break;
+      return (void (__noreturn *)())fileio_rpc_devctl_blkio;
     default:
       printf("sce_fileio: unrecognized code %x\n", cmd);
-      result = 0;
-      break;
+      return 0;
   }
-  return result;
 }
 
 //----- (00401E68) --------------------------------------------------------
 static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int length)
 {
-  int *result; // $v0
   int rwbuf_retres; // $s1
   int rwbuf_ptr_count_allowed; // $v1
   int priority_retres; // $s1
@@ -1770,10 +1742,9 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
       g_result_destbuf_ee[1] = *(void **)buffer;
       g_result_destbuf_ee[0] = g_result_destbuf_ee[1];
     }
-    result = &g_fileio_rpc_outbuf;
     g_fileio_rpc_outbuf_verres = 2;
     g_fileio_rpc_outbuf = g_verstr;
-    return result;
+    return &g_fileio_rpc_outbuf;
   }
   if ( fno == 254 )
   {
@@ -1829,9 +1800,8 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
     if ( !threadbuf )
     {
 LABEL_51:
-      result = &g_fileio_rpc_outbuf;
       g_fileio_rpc_outbuf = 0;
-      return result;
+      return &g_fileio_rpc_outbuf;
     }
     if ( (unsigned int)fno < 5 )
     {
@@ -1929,9 +1899,8 @@ LABEL_43:
     g_th_priority = *(_DWORD *)buffer;
     ChangeThreadPriority(0, (int)thid_for_priority);
   }
-  result = &g_fileio_rpc_outbuf;
   g_fileio_rpc_outbuf = priority_retres;
-  return result;
+  return &g_fileio_rpc_outbuf;
 }
 // 402168: conditional instruction was optimized away because $s4.4==16
 // 40323C: using guessed type int g_verstr;
@@ -2024,10 +1993,9 @@ static void fileio_rpc_start_thread(void *userdata)
 // 4033A0: using guessed type int fileio_rpc_service_in_buf[784];
 
 //----- (004024C0) --------------------------------------------------------
-static int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf)
+static void __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf)
 {
   int fd; // $s2
-  int result; // $v0
 
   (void)length;
   fd = iomanX_open((const char *)(buffer + 4), 1);
@@ -2038,59 +2006,54 @@ static int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf
     endsz = iomanX_lseek(fd, 0, 2);
     iomanX_lseek(fd, 0, 0);
     *outbuf = ( endsz != iomanX_read(fd, *(void **)buffer, endsz) ) ? -2 : 0;
-    result = iomanX_close(fd);
+    iomanX_close(fd);
   }
   else
   {
-    result = printf("load heap :error \n");
+    printf("load heap :error \n");
     *outbuf = -1;
   }
-  return result;
 }
 
 //----- (00402578) --------------------------------------------------------
-static int __fastcall heap_rpc_alloc_iop_heap(const int *buffer, int length, void **outbuf)
+static void __fastcall heap_rpc_alloc_iop_heap(const int *buffer, int length, void **outbuf)
 {
-  int result; // $v0
   void *ptr; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
   (void)length;
   CpuSuspendIntr(&state);
   ptr = AllocSysMemory(0, *buffer, 0);
-  result = CpuResumeIntr(state);
+  CpuResumeIntr(state);
   *outbuf = ptr;
-  return result;
 }
 
 //----- (004025CC) --------------------------------------------------------
-static int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf)
+static void __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf)
 {
-  int result; // $v0
   void *ptr; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
   (void)length;
   CpuSuspendIntr(&state);
   ptr = AllocSysMemory(*(_DWORD *)(buffer + 4), *(_DWORD *)buffer, *(void **)(buffer + 8));
-  result = CpuResumeIntr(state);
+  CpuResumeIntr(state);
   *outbuf = ptr;
-  return result;
 }
 
 //----- (00402624) --------------------------------------------------------
-static int __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf)
+static void __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
   (void)length;
   CpuSuspendIntr(&state);
   *outbuf = FreeSysMemory(*buffer);
-  return CpuResumeIntr(state);
+  CpuResumeIntr(state);
 }
 
 //----- (00402674) --------------------------------------------------------
-static int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf)
+static void __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2098,11 +2061,11 @@ static int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbu
   (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryMemSize();
-  return CpuResumeIntr(state);
+  CpuResumeIntr(state);
 }
 
 //----- (004026B4) --------------------------------------------------------
-static int __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *outbuf)
+static void __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2110,11 +2073,11 @@ static int __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u
   (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryMaxFreeMemSize();
-  return CpuResumeIntr(state);
+  CpuResumeIntr(state);
 }
 
 //----- (004026F4) --------------------------------------------------------
-static int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *outbuf)
+static void __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2122,29 +2085,29 @@ static int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length,
   (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryTotalFreeMemSize();
-  return CpuResumeIntr(state);
+  CpuResumeIntr(state);
 }
 
 //----- (00402734) --------------------------------------------------------
-static int __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void **outbuf)
+static void __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void **outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
   (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryBlockTopAddress(*buffer);
-  return CpuResumeIntr(state);
+  CpuResumeIntr(state);
 }
 
 //----- (00402784) --------------------------------------------------------
-static int __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf)
+static void __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
   (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryBlockSize(*buffer);
-  return CpuResumeIntr(state);
+  CpuResumeIntr(state);
 }
 
 //----- (004027D4) --------------------------------------------------------
@@ -2214,20 +2177,17 @@ static void heap_rpc_start_thread(void *userdata)
 
 #ifdef UNUSED_FUNC
 //----- (004029B0) --------------------------------------------------------
-static int __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf)
+static void __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf)
 {
   int *BootMode; // $v0
-  int result; // $v0
 
   (void)buffer;
   (void)length;
   BootMode = QueryBootMode(6);
   if ( BootMode )
-    result = *(_WORD *)BootMode & 0xFFFC;
+    *outbuf = *(_WORD *)BootMode & 0xFFFC;
   else
-    result = 2048;
-  *outbuf = result;
-  return result;
+    *outbuf = 2048;
 }
 
 //----- (004029F8) --------------------------------------------------------
