@@ -542,24 +542,20 @@ static int __fastcall ModemWrite(PDEVICE_EXTENSION dev_ext, const char *data, in
     xsend_len = 1024;
   dev_ext->modem_ops.snd_len = xsend_len;
   CpuResumeIntr(state);
-  if ( len > 0 )
+  while ( len > 0 )
   {
-    do
+    if ( USBACF_TxBufferFull(dev_ext) )
     {
-      if ( USBACF_TxBufferFull(dev_ext) )
-      {
-        MakeDataTransferRequest(dev_ext, 0);
-        DelayThread(10000);
-      }
-      if ( USBACF_TxBufferFull(dev_ext) )
-        break;
-      bcopy(data, (void *)"X", 1);
-      ++cnt;
-      USBACF_PutTxChar(dev_ext, aX[0]);
-      --len;
-      ++data;
+      MakeDataTransferRequest(dev_ext, 0);
+      DelayThread(10000);
     }
-    while ( len > 0 );
+    if ( USBACF_TxBufferFull(dev_ext) )
+      break;
+    bcopy(data, (void *)"X", 1);
+    ++cnt;
+    USBACF_PutTxChar(dev_ext, aX[0]);
+    --len;
+    ++data;
   }
   MakeDataTransferRequest(dev_ext, 0);
   return cnt;
@@ -579,22 +575,18 @@ static int __fastcall PatchWrite(PDEVICE_EXTENSION dev_ext, const char *data, in
     xsend_len = 1024;
   dev_ext->modem_ops.snd_len = xsend_len;
   CpuResumeIntr(state);
-  if ( len > 0 )
+  while ( len > 0 )
   {
-    do
+    while ( USBACF_TxBufferFull(dev_ext) )
     {
-      while ( USBACF_TxBufferFull(dev_ext) )
-      {
-        MakeDataTransferRequest(dev_ext, 0);
-        WaitSema(dev_ext->sm_xmit);
-      }
-      bcopy(data, (void *)"X", 1);
-      ++cnt;
-      USBACF_PutTxChar(dev_ext, aX[0]);
-      --len;
-      ++data;
+      MakeDataTransferRequest(dev_ext, 0);
+      WaitSema(dev_ext->sm_xmit);
     }
-    while ( len > 0 );
+    bcopy(data, (void *)"X", 1);
+    ++cnt;
+    USBACF_PutTxChar(dev_ext, aX[0]);
+    --len;
+    ++data;
   }
   MakeDataTransferRequest(dev_ext, 0);
   return cnt;
@@ -897,7 +889,7 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
   DelayThread(1000000);
   tempbuf_read1 = 0;
   trycnt2 = 0;
-  do
+  while ( trycnt2 <= 99999 )
   {
     patchread_bytes1 = PatchRead(dev_ext, &tempbuf[tempbuf_read1], 50 - tempbuf_read1);
     if ( patchread_bytes1 )
@@ -963,7 +955,6 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
     }
     ++trycnt2;
   }
-  while ( trycnt2 <= 99999 );
   USBACF_Write16550Reg(dev_ext, 2, 3);
   if ( !dev_ext->m_unkbb )
   {
@@ -1295,19 +1286,20 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                     sceUsbdTransferPipe(dev_ext->EP0Pipe, man, 0x3Du, epocfg, 0, dev_ext);
                     DelayThread(100);
                     manufflg2 = 1;
-                    do
+                    while ( manufflg1 < 32 )
                     {
-                      if ( 2 * manufflg2 >= 65 )
+                      manufflg2 = manufflg1 + manufind;
+                      if ( manufflg2 > 32 )
                         break;
                       manufx1 = *(const UCHAR *)&man[2 * manufflg2];
                       if ( (unsigned int)(manufx1 - 32) >= 0x5F )
                       {
-                        if ( manufflg1 == 1 )
+                        if ( manufflg1 != 1 )
                         {
-                          xflg = 0;
+                          *((_BYTE *)&dev_ext->f_started + manufflg1 + 3) = 0;
                           break;
                         }
-                        *((_BYTE *)&dev_ext->f_started + manufflg1 + 3) = 0;
+                        xflg = 0;
                         break;
                       }
                       if ( (char)manufx1 == ',' || (char)manufx1 == '=' )
@@ -1319,9 +1311,8 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                       {
                         *((_BYTE *)&dev_ext->f_started + manufflg1 + 3) = manufx1;
                       }
-                      manufflg2 = ++manufflg1 + manufind;
+                      manufflg1 += 1;
                     }
-                    while ( manufflg1 < 32 );
                     if ( xflg )
                     {
                       prodind = 0;
@@ -1335,9 +1326,10 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                       sceUsbdTransferPipe(dev_ext->EP0Pipe, pro, 0x3Du, epocfg, 0, dev_ext);
                       DelayThread(100);
                       prodflg2 = 1;
-                      do
+                      while ( prodflg1 < 32 )
                       {
-                        if ( 2 * prodflg2 >= 65 )
+                        prodflg2 = prodflg1 + prodind;
+                        if ( prodflg2 > 32 )
                           break;
                         prodx1 = *(const UCHAR *)&pro[2 * prodflg2];
                         if ( (unsigned int)(prodx1 - 32) >= 0x5F )
@@ -1355,9 +1347,8 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                         {
                           dev_ext->m_man[prodflg1 + 30] = prodx1;
                         }
-                        prodflg2 = ++prodflg1 + prodind;
+                        prodflg1 += 1;
                       }
-                      while ( prodflg1 < 32 );
                     }
                     dev_ext->modem_ops.module_name = "cxtmdm";
                     dev_ext->modem_ops.vendor_name = (char *)dev_ext->m_man;
@@ -1570,14 +1561,10 @@ static void __fastcall MakeDataTransferRequest(PDEVICE_EXTENSION pUsb, BOOLEAN C
         i = 0;
         if ( NumOfBytes >= 15 )
           NumOfBytes = 14;
-        if ( NumOfBytes > 0 )
+        while ( i < NumOfBytes )
         {
-          do
-          {
-            pUsb->TxSendBuf[i] = pUsb->TxFIFO[i];
-            i += 1;
-          }
-          while ( i < NumOfBytes );
+          pUsb->TxSendBuf[i] = pUsb->TxFIFO[i];
+          i += 1;
         }
         j = 0;
         for ( Length = i; i < pUsb->TxFIFOIdx; ++j )
@@ -1754,14 +1741,10 @@ static void __fastcall OnNewStatusReceived(PDEVICE_EXTENSION pUsb, struct USBACF
       {
         RxFifoGetIdx = pUsb->RxFifoGetIdx;
         j = 0;
-        if ( RxFifoGetIdx < pUsb->RxFifoPutIdx )
+        while ( RxFifoGetIdx < pUsb->RxFifoPutIdx )
         {
-          do
-          {
-            ++j;
-            pUsb->RxFIFO[j] = pUsb->RxFIFO[RxFifoGetIdx++];
-          }
-          while ( RxFifoGetIdx < pUsb->RxFifoPutIdx );
+          ++j;
+          pUsb->RxFIFO[j] = pUsb->RxFIFO[RxFifoGetIdx++];
         }
         pUsb->RxFifoPutIdx = j;
         pUsb->RxFifoGetIdx = 0;
@@ -1848,7 +1831,7 @@ static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
         break;
       TmpTxRegIndex = pUsb->TmpTxRegIndex;
       curptr1 = (char *)pUsb + 3 * TmpTxRegIndex;
-      do
+      while ( i < 8 )
       {
         if ( pUsb->RegChanged[i] )
         {
@@ -1866,7 +1849,6 @@ static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
         }
         ++i;
       }
-      while ( i < 8 );
       if ( i == 8 )
         pUsb->RegChangeFlag = 0;
       size = 3 * TmpTxRegIndex;
