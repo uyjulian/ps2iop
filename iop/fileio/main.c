@@ -331,75 +331,77 @@ struct fio_readlink_inbuf
 //-------------------------------------------------------------------------
 // Function declarations
 
-int start();
-void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size);
-int __fastcall fileio_free_rwbuf(void *ptr);
-int fileio_rpc_dealloc_rwbuf();
-void *fileio_rpc_threadbuf_alloc();
-int __fastcall fileio_rpc_threadbuf_free(void *ptr);
-int __fastcall do_call_ee_rcv_res_intr(void *ptr, int sz);
-int __fastcall fileio_rpc_fd_open(struct fio_fd_open_inbuf *inbuf);
-int __fastcall fileio_rpc_fd_close(struct fio_fd_close_inbuf *inbuf);
-int __fastcall fileio_rpc_fd_lseek(struct fio_fd_lseek_inbuf *inbuf);
-int __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf);
-int __fastcall fileio_rpc_fd_write(struct fio_fd_write_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_ioctl(struct fio_ioctl_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_ioctl2(struct fio_ioctl2_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_remove(struct fio_remove_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_mkdir(struct fio_mkdir_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_rmdir(struct fio_rmdir_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_format(struct fio_format_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_adddrv(struct fio_adddrv_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_deldrv(struct fio_deldrv_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_dopen(struct fio_dopen_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_dclose(struct fio_dclose_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_dread(struct fio_dread_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_getstat(struct fio_getstat_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_chstat(struct fio_chstat_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_rename(struct fio_rename_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_chdir(struct fio_chdir_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_sync(struct fio_sync_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_mount(struct fio_mount_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_umount(struct fio_umount_inbuf *inbuf);
-int __fastcall fileio_rpc_fd_lseek64(struct fio_fd_lseek64_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_devctl(struct fio_devctl_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_symlink(struct fio_symlink_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_readlink(struct fio_readlink_inbuf *inbuf);
-void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf);
-void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))();
-int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int length);
-void __noreturn power_off_event_handler();
-void fileio_rpc_start_thread(void *userdata);
-int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf);
-int __fastcall heap_rpc_alloc_iop_heap(int *buffer, int length, void **outbuf);
-int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf);
-int __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf);
-int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf);
-int __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *outbuf);
-int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *outbuf);
-int __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void **outbuf);
-int __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf);
-int *__fastcall heap_rpc_service_handler(int fno, void *buffer, int length);
-void heap_rpc_start_thread(void *userdata);
-int __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf);
-int *__fastcall iopinfo_rpc_service_handler(int fno, void *buffer, int length);
-int iopinfo_rpc_service_start_thread_unused();
+int _start();
+static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size);
+static int __fastcall fileio_free_rwbuf(void *ptr);
+static int fileio_rpc_dealloc_rwbuf();
+static void *fileio_rpc_threadbuf_alloc();
+static int __fastcall fileio_rpc_threadbuf_free(void *ptr);
+static int __fastcall do_call_ee_rcv_res_intr(void *ptr, int sz);
+static int __fastcall fileio_rpc_fd_open(struct fio_fd_open_inbuf *inbuf);
+static int __fastcall fileio_rpc_fd_close(struct fio_fd_close_inbuf *inbuf);
+static int __fastcall fileio_rpc_fd_lseek(struct fio_fd_lseek_inbuf *inbuf);
+static int __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf);
+static int __fastcall fileio_rpc_fd_write(struct fio_fd_write_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_ioctl(struct fio_ioctl_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_ioctl2(struct fio_ioctl2_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_remove(struct fio_remove_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_mkdir(struct fio_mkdir_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_rmdir(struct fio_rmdir_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_format(struct fio_format_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_adddrv(struct fio_adddrv_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_deldrv(struct fio_deldrv_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_dopen(struct fio_dopen_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_dclose(struct fio_dclose_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_dread(struct fio_dread_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_getstat(struct fio_getstat_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_chstat(struct fio_chstat_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_rename(struct fio_rename_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_chdir(struct fio_chdir_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_sync(struct fio_sync_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_mount(struct fio_mount_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_umount(struct fio_umount_inbuf *inbuf);
+static int __fastcall fileio_rpc_fd_lseek64(struct fio_fd_lseek64_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_devctl(struct fio_devctl_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_symlink(struct fio_symlink_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_readlink(struct fio_readlink_inbuf *inbuf);
+static void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf);
+static void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))();
+static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int length);
+static void __noreturn power_off_event_handler();
+static void fileio_rpc_start_thread(void *userdata);
+static int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf);
+static int __fastcall heap_rpc_alloc_iop_heap(int *buffer, int length, void **outbuf);
+static int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf);
+static int __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf);
+static int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf);
+static int __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *outbuf);
+static int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *outbuf);
+static int __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void **outbuf);
+static int __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf);
+static int *__fastcall heap_rpc_service_handler(int fno, void *buffer, int length);
+static void heap_rpc_start_thread(void *userdata);
+#ifdef UNUSED_FUNC
+static int __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf);
+static int *__fastcall iopinfo_rpc_service_handler(int fno, void *buffer, int length);
+static int iopinfo_rpc_service_start_thread_unused();
+#endif
 
 //-------------------------------------------------------------------------
 // Data declarations
 
-int g_verstr = 808464691; // weak
-int g_fileio_verbose = 0; // weak
-int g_rwbuf_max_size = 16384; // weak
-int g_th_priority = 96; // weak
-int g_result_destbuf_ee_idx = 0; // weak
-unsigned int g_rwbuf_ptr_count_allowed = 4; // weak
-unsigned int g_rwbuf_uses = 0; // weak
-void *g_rwbuf_cur_ptr = NULL; // idb
-int g_rwbuf_size = 0; // weak
-int g_rwbuf_is_allocated = 0; // weak
-int g_thids_per_fd[32] =
+static int g_verstr = 808464691; // weak
+static int g_fileio_verbose = 0; // weak
+static int g_rwbuf_max_size = 16384; // weak
+static int g_th_priority = 96; // weak
+static int g_result_destbuf_ee_idx = 0; // weak
+static unsigned int g_rwbuf_ptr_count_allowed = 4; // weak
+static unsigned int g_rwbuf_uses = 0; // weak
+static void *g_rwbuf_cur_ptr = NULL; // idb
+static int g_rwbuf_size = 0; // weak
+static int g_rwbuf_is_allocated = 0; // weak
+static int g_thids_per_fd[32] =
 {
   -1,
   -1,
@@ -434,28 +436,30 @@ int g_thids_per_fd[32] =
   -1,
   -1
 };
-void *g_result_destbuf_ee[2];
-int g_sema_for_result_destbuf_ee; // idb
-int g_rwbuf_ef; // idb
-void *g_rwbuf_ptrs[10];
-int g_fileio_rpc_outbuf; // weak
-int g_fileio_rpc_outbuf_verres; // weak
-SifRpcDataQueue_t g_fileio_sif_qd; // weak
-SifRpcServerData_t g_fileio_sif_sd; // idb
-int fileio_rpc_service_in_buf[784]; // weak
-int heap_rpc_outbuf[4]; // weak
-SifRpcDataQueue_t g_heap_sif_qd; // weak
-SifRpcServerData_t g_heap_sif_sd; // idb
-int heap_rpc_service_in_buf[64]; // weak
-int iopinfo_rpc_outbuf[4]; // weak
-int iopinfo_rpc_service_in_buf[16]; // weak
-SifRpcDataQueue_t g_iopinfo_sif_qd; // weak
-SifRpcServerData_t g_iopinfo_sif_sd; // idb
-int g_mbxid_for_ee_fds[32];
+static void *g_result_destbuf_ee[2];
+static int g_sema_for_result_destbuf_ee; // idb
+static int g_rwbuf_ef; // idb
+static void *g_rwbuf_ptrs[10];
+static int g_fileio_rpc_outbuf; // weak
+static int g_fileio_rpc_outbuf_verres; // weak
+static SifRpcDataQueue_t g_fileio_sif_qd; // weak
+static SifRpcServerData_t g_fileio_sif_sd; // idb
+static int fileio_rpc_service_in_buf[784]; // weak
+static int heap_rpc_outbuf[4]; // weak
+static SifRpcDataQueue_t g_heap_sif_qd; // weak
+static SifRpcServerData_t g_heap_sif_sd; // idb
+static int heap_rpc_service_in_buf[64]; // weak
+#ifdef UNUSED_FUNC
+static int iopinfo_rpc_outbuf[4]; // weak
+static int iopinfo_rpc_service_in_buf[16]; // weak
+static SifRpcDataQueue_t g_iopinfo_sif_qd; // weak
+static SifRpcServerData_t g_iopinfo_sif_sd; // idb
+#endif
+static int g_mbxid_for_ee_fds[32];
 
 
 //----- (00400000) --------------------------------------------------------
-int start()
+int _start()
 {
   int *BootMode; // $v0
   int bm3; // $v1
@@ -501,7 +505,7 @@ int start()
 }
 
 //----- (00400100) --------------------------------------------------------
-void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
+static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
 {
   int try_cnt; // $s1
   void *rwbuf_cur_ptr; // $s2
@@ -577,7 +581,7 @@ LABEL_17:
 // 403260: using guessed type int g_rwbuf_is_allocated;
 
 //----- (00400328) --------------------------------------------------------
-int __fastcall fileio_free_rwbuf(void *ptr)
+static int __fastcall fileio_free_rwbuf(void *ptr)
 {
   int rwbuf_ef; // $a0
   unsigned int cur_ptr_count; // $a0
@@ -623,7 +627,7 @@ LABEL_10:
 // 403260: using guessed type int g_rwbuf_is_allocated;
 
 //----- (00400434) --------------------------------------------------------
-int fileio_rpc_dealloc_rwbuf()
+static int fileio_rpc_dealloc_rwbuf()
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -639,7 +643,7 @@ int fileio_rpc_dealloc_rwbuf()
 // 403260: using guessed type int g_rwbuf_is_allocated;
 
 //----- (004004A8) --------------------------------------------------------
-void *fileio_rpc_threadbuf_alloc()
+static void *fileio_rpc_threadbuf_alloc()
 {
   void *ptr; // $s0
   int state; // [sp+10h] [-8h] BYREF
@@ -651,7 +655,7 @@ void *fileio_rpc_threadbuf_alloc()
 }
 
 //----- (004004EC) --------------------------------------------------------
-int __fastcall fileio_rpc_threadbuf_free(void *ptr)
+static int __fastcall fileio_rpc_threadbuf_free(void *ptr)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -661,7 +665,7 @@ int __fastcall fileio_rpc_threadbuf_free(void *ptr)
 }
 
 //----- (00400528) --------------------------------------------------------
-int __fastcall do_call_ee_rcv_res_intr(void *ptr, int sz)
+static int __fastcall do_call_ee_rcv_res_intr(void *ptr, int sz)
 {
   void *dest_extra; // $v1
   int dmat; // $s0
@@ -689,7 +693,7 @@ int __fastcall do_call_ee_rcv_res_intr(void *ptr, int sz)
 // 40324C: using guessed type int g_result_destbuf_ee_idx;
 
 //----- (0040061C) --------------------------------------------------------
-int __fastcall fileio_rpc_fd_open(struct fio_fd_open_inbuf *inbuf)
+static int __fastcall fileio_rpc_fd_open(struct fio_fd_open_inbuf *inbuf)
 {
   int fd; // $v0
   int m_taskdata1; // $v1
@@ -715,7 +719,7 @@ int __fastcall fileio_rpc_fd_open(struct fio_fd_open_inbuf *inbuf)
 // 403240: using guessed type int g_fileio_verbose;
 
 //----- (004006B4) --------------------------------------------------------
-int __fastcall fileio_rpc_fd_close(struct fio_fd_close_inbuf *inbuf)
+static int __fastcall fileio_rpc_fd_close(struct fio_fd_close_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -734,7 +738,7 @@ int __fastcall fileio_rpc_fd_close(struct fio_fd_close_inbuf *inbuf)
 // 403240: using guessed type int g_fileio_verbose;
 
 //----- (00400744) --------------------------------------------------------
-int __fastcall fileio_rpc_fd_lseek(struct fio_fd_lseek_inbuf *inbuf)
+static int __fastcall fileio_rpc_fd_lseek(struct fio_fd_lseek_inbuf *inbuf)
 {
   int m_taskdata1; // $a0
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -750,7 +754,7 @@ int __fastcall fileio_rpc_fd_lseek(struct fio_fd_lseek_inbuf *inbuf)
 }
 
 //----- (004007B8) --------------------------------------------------------
-int __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
+static int __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
 {
   int read_res_begin_end_1; // $s2
   void *rwbuf; // $fp
@@ -942,7 +946,7 @@ LABEL_39:
 }
 
 //----- (00400B14) --------------------------------------------------------
-int __fastcall fileio_rpc_fd_write(struct fio_fd_write_inbuf *inbuf)
+static int __fastcall fileio_rpc_fd_write(struct fio_fd_write_inbuf *inbuf)
 {
   int write_res_begin_x; // $s0
   void *rwbuf; // $s6
@@ -1031,7 +1035,7 @@ LABEL_18:
 // 400B14: using guessed type SifRpcReceiveData_t rdata;
 
 //----- (00400CCC) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   int devctl_res; // $s2
@@ -1159,7 +1163,7 @@ void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbu
 // 400CCC: using guessed type SifRpcReceiveData_t rdata;
 
 //----- (00400FE4) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_ioctl(struct fio_ioctl_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_ioctl(struct fio_ioctl_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   char *m_buf; // $a2
@@ -1193,7 +1197,7 @@ void __fastcall __noreturn fileio_rpc_ioctl(struct fio_ioctl_inbuf *inbuf)
 }
 
 //----- (00401094) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_ioctl2(struct fio_ioctl2_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_ioctl2(struct fio_ioctl2_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   int ioctl2_res; // $v0
@@ -1223,7 +1227,7 @@ void __fastcall __noreturn fileio_rpc_ioctl2(struct fio_ioctl2_inbuf *inbuf)
 }
 
 //----- (0040116C) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_remove(struct fio_remove_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_remove(struct fio_remove_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1241,7 +1245,7 @@ void __fastcall __noreturn fileio_rpc_remove(struct fio_remove_inbuf *inbuf)
 }
 
 //----- (004011E4) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_mkdir(struct fio_mkdir_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_mkdir(struct fio_mkdir_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1259,7 +1263,7 @@ void __fastcall __noreturn fileio_rpc_mkdir(struct fio_mkdir_inbuf *inbuf)
 }
 
 //----- (00401264) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_rmdir(struct fio_rmdir_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_rmdir(struct fio_rmdir_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1277,7 +1281,7 @@ void __fastcall __noreturn fileio_rpc_rmdir(struct fio_rmdir_inbuf *inbuf)
 }
 
 //----- (004012DC) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_format(struct fio_format_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_format(struct fio_format_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1295,7 +1299,7 @@ void __fastcall __noreturn fileio_rpc_format(struct fio_format_inbuf *inbuf)
 }
 
 //----- (0040135C) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_adddrv(struct fio_adddrv_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_adddrv(struct fio_adddrv_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1313,7 +1317,7 @@ void __fastcall __noreturn fileio_rpc_adddrv(struct fio_adddrv_inbuf *inbuf)
 }
 
 //----- (004013DC) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_deldrv(struct fio_deldrv_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_deldrv(struct fio_deldrv_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1331,7 +1335,7 @@ void __fastcall __noreturn fileio_rpc_deldrv(struct fio_deldrv_inbuf *inbuf)
 }
 
 //----- (00401454) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_dopen(struct fio_dopen_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_dopen(struct fio_dopen_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1349,7 +1353,7 @@ void __fastcall __noreturn fileio_rpc_dopen(struct fio_dopen_inbuf *inbuf)
 }
 
 //----- (004014CC) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_dclose(struct fio_dclose_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_dclose(struct fio_dclose_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1367,7 +1371,7 @@ void __fastcall __noreturn fileio_rpc_dclose(struct fio_dclose_inbuf *inbuf)
 }
 
 //----- (0040154C) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_dread(struct fio_dread_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_dread(struct fio_dread_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_dirent_outbuf fbuf; // [sp+10h] [-160h] BYREF
@@ -1385,7 +1389,7 @@ void __fastcall __noreturn fileio_rpc_dread(struct fio_dread_inbuf *inbuf)
 }
 
 //----- (004015C8) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_getstat(struct fio_getstat_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_getstat(struct fio_getstat_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_dirent_outbuf fbuf; // [sp+10h] [-160h] BYREF
@@ -1403,7 +1407,7 @@ void __fastcall __noreturn fileio_rpc_getstat(struct fio_getstat_inbuf *inbuf)
 }
 
 //----- (0040163C) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_chstat(struct fio_chstat_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_chstat(struct fio_chstat_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1421,7 +1425,7 @@ void __fastcall __noreturn fileio_rpc_chstat(struct fio_chstat_inbuf *inbuf)
 }
 
 //----- (004016BC) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_rename(struct fio_rename_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_rename(struct fio_rename_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1439,7 +1443,7 @@ void __fastcall __noreturn fileio_rpc_rename(struct fio_rename_inbuf *inbuf)
 }
 
 //----- (00401734) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_chdir(struct fio_chdir_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_chdir(struct fio_chdir_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1457,7 +1461,7 @@ void __fastcall __noreturn fileio_rpc_chdir(struct fio_chdir_inbuf *inbuf)
 }
 
 //----- (004017AC) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_sync(struct fio_sync_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_sync(struct fio_sync_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1475,7 +1479,7 @@ void __fastcall __noreturn fileio_rpc_sync(struct fio_sync_inbuf *inbuf)
 }
 
 //----- (0040182C) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_mount(struct fio_mount_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_mount(struct fio_mount_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+18h] [-20h] BYREF
@@ -1493,7 +1497,7 @@ void __fastcall __noreturn fileio_rpc_mount(struct fio_mount_inbuf *inbuf)
 }
 
 //----- (004018B8) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_umount(struct fio_umount_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_umount(struct fio_umount_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1511,7 +1515,7 @@ void __fastcall __noreturn fileio_rpc_umount(struct fio_umount_inbuf *inbuf)
 }
 
 //----- (00401930) --------------------------------------------------------
-int __fastcall fileio_rpc_fd_lseek64(struct fio_fd_lseek64_inbuf *inbuf)
+static int __fastcall fileio_rpc_fd_lseek64(struct fio_fd_lseek64_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf64_outbuf fbuf; // [sp+18h] [-20h] BYREF
@@ -1528,7 +1532,7 @@ int __fastcall fileio_rpc_fd_lseek64(struct fio_fd_lseek64_inbuf *inbuf)
 }
 
 //----- (004019A8) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_devctl(struct fio_devctl_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_devctl(struct fio_devctl_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   int devctl_res; // $v0
@@ -1552,7 +1556,7 @@ void __fastcall __noreturn fileio_rpc_devctl(struct fio_devctl_inbuf *inbuf)
 }
 
 //----- (00401A7C) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_symlink(struct fio_symlink_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_symlink(struct fio_symlink_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
@@ -1570,7 +1574,7 @@ void __fastcall __noreturn fileio_rpc_symlink(struct fio_symlink_inbuf *inbuf)
 }
 
 //----- (00401AF4) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_readlink(struct fio_readlink_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_readlink(struct fio_readlink_inbuf *inbuf)
 {
   int m_taskdata1; // $v1
   struct fio_largebuf_outbuf fbuf; // [sp+10h] [-420h] BYREF
@@ -1589,7 +1593,7 @@ void __fastcall __noreturn fileio_rpc_readlink(struct fio_readlink_inbuf *inbuf)
 }
 
 //----- (00401B78) --------------------------------------------------------
-void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf)
+static void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf)
 {
   int m_mbxid; // $s1
   int fd; // $v0
@@ -1643,7 +1647,7 @@ LABEL_11:
 // 403240: using guessed type int g_fileio_verbose;
 
 //----- (00401CA4) --------------------------------------------------------
-void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))()
+static void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))()
 {
   void (__noreturn *result)(); // $v0
 
@@ -1727,7 +1731,7 @@ void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))()
 }
 
 //----- (00401E68) --------------------------------------------------------
-int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int length)
+static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int length)
 {
   int *result; // $v0
   int rwbuf_retres; // $s1
@@ -1937,7 +1941,7 @@ LABEL_43:
 // 403334: using guessed type int g_fileio_rpc_outbuf_verres;
 
 //----- (00402298) --------------------------------------------------------
-void __noreturn power_off_event_handler()
+static void __noreturn power_off_event_handler()
 {
   int trid; // $s0
   char pkt[16]; // [sp+18h] [-18h] BYREF
@@ -1969,7 +1973,7 @@ void __noreturn power_off_event_handler()
 // 402298: using guessed type char pkt[16];
 
 //----- (00402384) --------------------------------------------------------
-void fileio_rpc_start_thread(void *userdata)
+static void fileio_rpc_start_thread(void *userdata)
 {
   int thid; // $v0
   int ThreadId; // $v0
@@ -2017,7 +2021,7 @@ void fileio_rpc_start_thread(void *userdata)
 // 4033A0: using guessed type int fileio_rpc_service_in_buf[784];
 
 //----- (004024C0) --------------------------------------------------------
-int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf)
+static int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf)
 {
   int fd; // $s2
   int result; // $v0
@@ -2047,7 +2051,7 @@ int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf)
 }
 
 //----- (00402578) --------------------------------------------------------
-int __fastcall heap_rpc_alloc_iop_heap(int *buffer, int length, void **outbuf)
+static int __fastcall heap_rpc_alloc_iop_heap(int *buffer, int length, void **outbuf)
 {
   int result; // $v0
   void *ptr; // $s0
@@ -2062,7 +2066,7 @@ int __fastcall heap_rpc_alloc_iop_heap(int *buffer, int length, void **outbuf)
 }
 
 //----- (004025CC) --------------------------------------------------------
-int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf)
+static int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf)
 {
   int result; // $v0
   void *ptr; // $s0
@@ -2077,7 +2081,7 @@ int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf)
 }
 
 //----- (00402624) --------------------------------------------------------
-int __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf)
+static int __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2088,7 +2092,7 @@ int __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf)
 }
 
 //----- (00402674) --------------------------------------------------------
-int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf)
+static int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2100,7 +2104,7 @@ int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf)
 }
 
 //----- (004026B4) --------------------------------------------------------
-int __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *outbuf)
+static int __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2112,7 +2116,7 @@ int __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *out
 }
 
 //----- (004026F4) --------------------------------------------------------
-int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *outbuf)
+static int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2124,7 +2128,7 @@ int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *o
 }
 
 //----- (00402734) --------------------------------------------------------
-int __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void **outbuf)
+static int __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void **outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2135,7 +2139,7 @@ int __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void 
 }
 
 //----- (00402784) --------------------------------------------------------
-int __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf)
+static int __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
@@ -2146,7 +2150,7 @@ int __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf)
 }
 
 //----- (004027D4) --------------------------------------------------------
-int *__fastcall heap_rpc_service_handler(int fno, void *buffer, int length)
+static int *__fastcall heap_rpc_service_handler(int fno, void *buffer, int length)
 {
   switch ( fno )
   {
@@ -2186,7 +2190,7 @@ int *__fastcall heap_rpc_service_handler(int fno, void *buffer, int length)
 // 403FE0: using guessed type int heap_rpc_outbuf[4];
 
 //----- (0040290C) --------------------------------------------------------
-void heap_rpc_start_thread(void *userdata)
+static void heap_rpc_start_thread(void *userdata)
 {
   int ThreadId; // $v0
 
@@ -2210,8 +2214,9 @@ void heap_rpc_start_thread(void *userdata)
 // 403FF0: using guessed type SifRpcDataQueue_t g_heap_sif_qd;
 // 404050: using guessed type int heap_rpc_service_in_buf[64];
 
+#ifdef UNUSED_FUNC
 //----- (004029B0) --------------------------------------------------------
-int __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf)
+static int __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf)
 {
   int *BootMode; // $v0
   int result; // $v0
@@ -2228,7 +2233,7 @@ int __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf)
 }
 
 //----- (004029F8) --------------------------------------------------------
-int *__fastcall iopinfo_rpc_service_handler(int fno, void *buffer, int length)
+static int *__fastcall iopinfo_rpc_service_handler(int fno, void *buffer, int length)
 {
   if ( fno == 1 )
     iopinfo_rpc_querybootmode((int)buffer, length, iopinfo_rpc_outbuf);
@@ -2239,7 +2244,7 @@ int *__fastcall iopinfo_rpc_service_handler(int fno, void *buffer, int length)
 // 404150: using guessed type int iopinfo_rpc_outbuf[4];
 
 //----- (00402A50) --------------------------------------------------------
-int iopinfo_rpc_service_start_thread_unused()
+static int iopinfo_rpc_service_start_thread_unused()
 {
   int ThreadId; // $v0
 
@@ -2262,3 +2267,4 @@ int iopinfo_rpc_service_start_thread_unused()
 }
 // 404160: using guessed type int iopinfo_rpc_service_in_buf[16];
 // 4041A0: using guessed type SifRpcDataQueue_t g_iopinfo_sif_qd;
+#endif
