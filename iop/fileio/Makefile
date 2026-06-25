@@ -1,6 +1,6 @@
 IOP_BIN = fileio.irx
 
-IOP_OBJS = _start.o imports.o main.o
+IOP_OBJS = imports.o main.o
 
 all: $(IOP_BIN)
 
