@@ -370,7 +370,7 @@ void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf);
 void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))();
 int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int length);
 void __noreturn power_off_event_handler();
-int fileio_rpc_start_thread();
+void fileio_rpc_start_thread(void *userdata);
 int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf);
 int __fastcall heap_rpc_alloc_iop_heap(int *buffer, int length, void **outbuf);
 int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf);
@@ -381,7 +381,7 @@ int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *o
 int __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void **outbuf);
 int __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf);
 int *__fastcall heap_rpc_service_handler(int fno, void *buffer, int length);
-int heap_rpc_start_thread();
+void heap_rpc_start_thread(void *userdata);
 int __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf);
 int *__fastcall iopinfo_rpc_service_handler(int fno, void *buffer, int length);
 int iopinfo_rpc_service_start_thread_unused();
@@ -394,8 +394,8 @@ int g_fileio_verbose = 0; // weak
 int g_rwbuf_max_size = 16384; // weak
 int g_th_priority = 96; // weak
 int g_result_destbuf_ee_idx = 0; // weak
-int g_rwbuf_ptr_count_allowed = 4; // weak
-int g_rwbuf_uses = 0; // weak
+unsigned int g_rwbuf_ptr_count_allowed = 4; // weak
+unsigned int g_rwbuf_uses = 0; // weak
 void *g_rwbuf_cur_ptr = NULL; // idb
 int g_rwbuf_size = 0; // weak
 int g_rwbuf_is_allocated = 0; // weak
@@ -479,7 +479,7 @@ int start()
     }
   }
   CpuEnableIntr();
-  thparam.thread = (void (__cdecl *)(void *))fileio_rpc_start_thread;
+  thparam.thread = fileio_rpc_start_thread;
   thparam.attr = 0x2000000;
   thparam.priority = 96;
   thparam.stacksize = 4096;
@@ -488,7 +488,7 @@ int start()
   if ( thid_fio <= 0 )
     return 1;
   StartThread(thid_fio, 0);
-  thparam.thread = (void (__cdecl *)(void *))heap_rpc_start_thread;
+  thparam.thread = heap_rpc_start_thread;
   thparam.attr = 0x2000000;
   thparam.priority = 96;
   thparam.stacksize = 2048;
@@ -1969,7 +1969,7 @@ void __noreturn power_off_event_handler()
 // 402298: using guessed type char pkt[16];
 
 //----- (00402384) --------------------------------------------------------
-int fileio_rpc_start_thread()
+void fileio_rpc_start_thread(void *userdata)
 {
   int thid; // $v0
   int ThreadId; // $v0
@@ -1978,6 +1978,7 @@ int fileio_rpc_start_thread()
   iop_thread_t thparam; // [sp+40h] [-60h] BYREF
   iop_thread_info_t thinfo; // [sp+58h] [-48h] BYREF
 
+  (void)userdata;
   if ( !sceSifCheckInit() )
     sceSifInit();
   printf("Multi Threaded Fileio module.(99/11/15) \n");
@@ -2011,7 +2012,6 @@ int fileio_rpc_start_thread()
     0,
     &g_fileio_sif_qd);
   sceSifRpcLoop(&g_fileio_sif_qd);
-  return 0;
 }
 // 403340: using guessed type SifRpcDataQueue_t g_fileio_sif_qd;
 // 4033A0: using guessed type int fileio_rpc_service_in_buf[784];
@@ -2025,6 +2025,7 @@ int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf)
   void *buf; // $a1
   int outres; // $s1
 
+  (void)length;
   fd = iomanX_open((const char *)(buffer + 4), 1);
   if ( fd >= 0 )
   {
@@ -2052,6 +2053,7 @@ int __fastcall heap_rpc_alloc_iop_heap(int *buffer, int length, void **outbuf)
   void *ptr; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)length;
   CpuSuspendIntr(&state);
   ptr = AllocSysMemory(0, *buffer, 0);
   result = CpuResumeIntr(state);
@@ -2066,6 +2068,7 @@ int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf)
   void *ptr; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)length;
   CpuSuspendIntr(&state);
   ptr = AllocSysMemory(*(_DWORD *)(buffer + 4), *(_DWORD *)buffer, *(void **)(buffer + 8));
   result = CpuResumeIntr(state);
@@ -2078,6 +2081,7 @@ int __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)length;
   CpuSuspendIntr(&state);
   *outbuf = FreeSysMemory(*buffer);
   return CpuResumeIntr(state);
@@ -2088,6 +2092,8 @@ int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)buffer;
+  (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryMemSize();
   return CpuResumeIntr(state);
@@ -2098,6 +2104,8 @@ int __fastcall heap_rpc_query_max_free_mem_size(int buffer, int length, u32 *out
 {
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)buffer;
+  (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryMaxFreeMemSize();
   return CpuResumeIntr(state);
@@ -2108,6 +2116,8 @@ int __fastcall heap_rpc_query_total_free_mem_size(int buffer, int length, u32 *o
 {
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)buffer;
+  (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryTotalFreeMemSize();
   return CpuResumeIntr(state);
@@ -2118,6 +2128,7 @@ int __fastcall heap_rpc_query_block_top_address(void **buffer, int length, void 
 {
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryBlockTopAddress(*buffer);
   return CpuResumeIntr(state);
@@ -2128,6 +2139,7 @@ int __fastcall heap_rpc_query_block_size(void **buffer, int length, int *outbuf)
 {
   int state; // [sp+10h] [-8h] BYREF
 
+  (void)length;
   CpuSuspendIntr(&state);
   *outbuf = QueryBlockSize(*buffer);
   return CpuResumeIntr(state);
@@ -2174,10 +2186,11 @@ int *__fastcall heap_rpc_service_handler(int fno, void *buffer, int length)
 // 403FE0: using guessed type int heap_rpc_outbuf[4];
 
 //----- (0040290C) --------------------------------------------------------
-int heap_rpc_start_thread()
+void heap_rpc_start_thread(void *userdata)
 {
   int ThreadId; // $v0
 
+  (void)userdata;
   if ( !sceSifCheckInit() )
     sceSifInit();
   printf("iop heap service (99/11/03)\n");
@@ -2193,7 +2206,6 @@ int heap_rpc_start_thread()
     0,
     &g_heap_sif_qd);
   sceSifRpcLoop(&g_heap_sif_qd);
-  return 0;
 }
 // 403FF0: using guessed type SifRpcDataQueue_t g_heap_sif_qd;
 // 404050: using guessed type int heap_rpc_service_in_buf[64];
@@ -2204,6 +2216,8 @@ int __fastcall iopinfo_rpc_querybootmode(int buffer, int length, int *outbuf)
   int *BootMode; // $v0
   int result; // $v0
 
+  (void)buffer;
+  (void)length;
   BootMode = QueryBootMode(6);
   if ( BootMode )
     result = *(_WORD *)BootMode & 0xFFFC;

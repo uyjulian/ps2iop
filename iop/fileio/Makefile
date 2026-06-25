@@ -2,6 +2,8 @@ IOP_BIN = fileio.irx
 
 IOP_OBJS = imports.o main.o
 
+IOP_CFLAGS += -Wall -Wextra
+
 all: $(IOP_BIN)
 
 clean:
