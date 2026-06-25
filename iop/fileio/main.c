@@ -372,7 +372,7 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
 static void __noreturn power_off_event_handler();
 static void fileio_rpc_start_thread(void *userdata);
 static int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf);
-static int __fastcall heap_rpc_alloc_iop_heap(int *buffer, int length, void **outbuf);
+static int __fastcall heap_rpc_alloc_iop_heap(const int *buffer, int length, void **outbuf);
 static int __fastcall heap_rpc_alloc_iop_heap_ex(int buffer, int length, void **outbuf);
 static int __fastcall heap_rpc_free_iop_heap(void **buffer, int length, int *outbuf);
 static int __fastcall heap_rpc_query_mem_size(int buffer, int length, u32 *outbuf);
@@ -461,7 +461,7 @@ static int g_mbxid_for_ee_fds[32];
 //----- (00400000) --------------------------------------------------------
 int _start()
 {
-  int *BootMode; // $v0
+  const int *BootMode; // $v0
   int bm3; // $v1
   int thid_fio; // $a0
   int thid_heap; // $a0
@@ -1737,7 +1737,7 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
   int rwbuf_retres; // $s1
   int rwbuf_ptr_count_allowed; // $v1
   int priority_retres; // $s1
-  void *thid_for_priority; // $a1
+  const void *thid_for_priority; // $a1
   int thids_per_fd_idx; // $s5
   int *p_cur_thid; // $s0
   struct fio_msgbox_inbuf *threadbuf; // $s3
@@ -2051,7 +2051,7 @@ static int __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf
 }
 
 //----- (00402578) --------------------------------------------------------
-static int __fastcall heap_rpc_alloc_iop_heap(int *buffer, int length, void **outbuf)
+static int __fastcall heap_rpc_alloc_iop_heap(const int *buffer, int length, void **outbuf)
 {
   int result; // $v0
   void *ptr; // $s0
