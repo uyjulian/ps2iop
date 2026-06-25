@@ -1564,8 +1564,9 @@ LABEL_38:
                         thparam.stacksize = stksz_1;
                         thid_patchload = CreateThread(&thparam);
                         cbArg->m_thid_patchload = thid_patchload;
+                        result = 0;
                         if ( thid_patchload <= 0
-                          || (regres = StartThread(thid_patchload, cbArg) == 0, result = 0, !regres) )
+                          || StartThread(thid_patchload, cbArg) )
                         {
                           DeleteThread(cbArg->m_thid_patchload);
                           return 0;
