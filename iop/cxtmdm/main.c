@@ -688,14 +688,16 @@ static size_t __fastcall ModemControl(PDEVICE_EXTENSION userdata, int cmd, void 
     if ( cmd == (int)0xC0010000 )
     {
       p_m_unkaa = &userdata->m_unkaa;
-      goto LABEL_28;
+      bcopy(p_m_unkaa, buf, 4);
+      return retres;
     }
     if ( cmd > (int)0xC0010000 )
     {
       if ( cmd == (int)0xC0010001 )
       {
         p_m_unkaa = &userdata->m_unkab;
-        goto LABEL_28;
+        bcopy(p_m_unkaa, buf, 4);
+        return retres;
       }
       if ( cmd != (int)0xC1000000 )
         return -513;
@@ -733,14 +735,14 @@ static size_t __fastcall ModemControl(PDEVICE_EXTENSION userdata, int cmd, void 
   {
     zerotmp = 0;
     p_m_unkaa = &zerotmp;
-    goto LABEL_28;
+    bcopy(p_m_unkaa, buf, 4);
+    return retres;
   }
   if ( cmd <= (int)0xC0000100 )
   {
     if ( cmd != (int)0xC0000000 )
       return -513;
     p_m_unkaa = &thread_priority;
-LABEL_28:
     bcopy(p_m_unkaa, buf, 4);
     return retres;
   }
@@ -852,11 +854,6 @@ static u32 __fastcall wait_for_ef_bits(PDEVICE_EXTENSION dev_ext, u32 bits)
 static void __fastcall __noreturn th_2_proc_modem_status(PDEVICE_EXTENSION dev_ext)
 {
   char Status; // $s1
-  int masktmp; // $v0
-  PDEVICE_EXTENSION dev_ext_tmp1; // $a0
-  BYTE arg1tmp; // $a1
-  BYTE arg2tmp; // $a2
-  PDEVICE_EXTENSION dev_ext_tmp2; // $a0
 
   while ( 1 )
   {
@@ -865,47 +862,40 @@ static void __fastcall __noreturn th_2_proc_modem_status(PDEVICE_EXTENSION dev_e
     {
       if ( dev_ext->m_unkbd )
       {
-        masktmp = Status & 0x40;
-        if ( (Status & 0x80) != 0 )
-          goto LABEL_9;
-        dev_ext->m_unkbd = 0;
-        wrap_set_event_flag_main(dev_ext, 8u);
-        dev_ext_tmp1 = dev_ext;
-        arg1tmp = 0;
-        arg2tmp = 2;
+        if ( (Status & 0x80) == 0 )
+        {
+          dev_ext->m_unkbd = 0;
+          wrap_set_event_flag_main(dev_ext, 8u);
+          USBMODEM_ModifyLed(dev_ext, 0, 2);
+        }
       }
       else
       {
-        masktmp = Status & 0x40;
-        if ( (Status & 0x80) == 0 )
-          goto LABEL_9;
-        dev_ext->m_unkbd = 1;
-        wrap_set_event_flag_main(dev_ext, 8u);
-        dev_ext_tmp1 = dev_ext;
-        arg1tmp = 2;
-        arg2tmp = 0;
+        if ( (Status & 0x80) != 0 )
+        {
+          dev_ext->m_unkbd = 1;
+          wrap_set_event_flag_main(dev_ext, 8u);
+          USBMODEM_ModifyLed(dev_ext, 2, 0);
+        }
       }
-      USBMODEM_ModifyLed(dev_ext_tmp1, arg1tmp, arg2tmp);
     }
-    masktmp = Status & 0x40;
-LABEL_9:
     if ( dev_ext->m_unkbe )
     {
-      dev_ext_tmp2 = dev_ext;
-      if ( masktmp )
-        goto LABEL_16;
-      dev_ext->m_unkbe = 0;
-      goto LABEL_14;
+      if ( (Status & 0x40) == 0 )
+      {
+        dev_ext->m_unkbe = 0;
+        wrap_set_event_flag_main(dev_ext, 8u);
+      }
     }
-    if ( masktmp != 0 )
+    else
     {
-      dev_ext->m_unkbe = 1;
-LABEL_14:
-      wrap_set_event_flag_main(dev_ext, 8u);
+      if ( (Status & 0x40) != 0 )
+      {
+        dev_ext->m_unkbe = 1;
+        wrap_set_event_flag_main(dev_ext, 8u);
+      }
     }
-    dev_ext_tmp2 = dev_ext;
-LABEL_16:
-    MakeDataTransferRequest(dev_ext_tmp2, 0);
+    MakeDataTransferRequest(dev_ext, 0);
     DelayThread(1000000);
   }
 }
@@ -922,7 +912,6 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
   dev_Ext = (PDEVICE_EXTENSION)userdata;
   dev_Ext->modem_ops.snd_len = 1024;
   dev_Ext->m_unkbb = 0;
-LABEL_2:
   while ( 1 )
   {
     efbits_ret = wait_for_ef_bits(dev_Ext, 0x7FFu);
@@ -932,11 +921,11 @@ LABEL_2:
       return;
     m_unkbb = dev_Ext->m_unkbb;
     if ( m_unkbb == 5 )
-      goto LABEL_2;
+      continue;
     if ( m_unkbb < 5 )
-      return;
+      continue; // TODO: jr $v0 (but v0 not referenced)
     if ( (unsigned int)(dev_Ext->m_unkbb - 2) >= 2 )
-      goto LABEL_2;
+      continue;
     if ( (efbits_trimmed & 2) != 0 )
     {
       dev_Ext->m_unkbb = 0;
@@ -960,13 +949,11 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
   int readcmp1; // $s6
   int tempbuf_read1; // $s1
   int trycnt2; // $s3
-  PDEVICE_EXTENSION dev_ext_1; // $a0
   int patchread_bytes1; // $v0
   int tempbuf_ind1; // $s0
   char *tempbuf_cur1; // $a0
   int tempbuf_read2; // $s1
   int trycnt1; // $s3
-  PDEVICE_EXTENSION dev_ext_2; // $a0
   int patchread_bytes2; // $v0
   int tempbuf_ind2; // $s0
   char *tempbuf_cur2; // $a0
@@ -994,10 +981,9 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
   DelayThread(1000000);
   tempbuf_read1 = 0;
   trycnt2 = 0;
-  dev_ext_1 = dev_ext;
   do
   {
-    patchread_bytes1 = PatchRead(dev_ext_1, &tempbuf[tempbuf_read1], 50 - tempbuf_read1);
+    patchread_bytes1 = PatchRead(dev_ext, &tempbuf[tempbuf_read1], 50 - tempbuf_read1);
     if ( patchread_bytes1 )
     {
       tempbuf_read1 += patchread_bytes1;
@@ -1005,25 +991,27 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
       if ( tempbuf_read1 - 1 > 0 )
       {
         tempbuf_cur1 = tempbuf;
-        while ( memcmp(tempbuf_cur1, tempstr, 9) )
+        while ( 1 )
         {
+          if ( !memcmp(tempbuf_cur1, tempstr, 9) )
+          {
+            readcmp1 = 1;
+            break;
+          }
           tempbuf_cur1 = &tempbuf[++tempbuf_ind1];
           if ( tempbuf_ind1 >= tempbuf_read1 - 1 )
-            goto LABEL_8;
+            break;
         }
-        readcmp1 = 1;
       }
-LABEL_8:
       if ( readcmp1 == 1 )
       {
         PatchWrite(dev_ext, atload, 6);
         DelayThread(1000000);
         tempbuf_read2 = 0;
         trycnt1 = 0;
-        dev_ext_2 = dev_ext;
         while ( 1 )
         {
-          patchread_bytes2 = PatchRead(dev_ext_2, &tempbuf[tempbuf_read2], 50 - tempbuf_read2);
+          patchread_bytes2 = PatchRead(dev_ext, &tempbuf[tempbuf_read2], 50 - tempbuf_read2);
           if ( patchread_bytes2 )
           {
             tempbuf_read2 += patchread_bytes2;
@@ -1031,37 +1019,36 @@ LABEL_8:
             if ( tempbuf_read2 - 1 > 0 )
             {
               tempbuf_cur2 = tempbuf;
-              while ( memcmp(tempbuf_cur2, "..", 2) )
+              while ( 1 )
               {
+                if ( !memcmp(tempbuf_cur2, "..", 2) )
+                {
+                  readcmp1 = 2;
+                  break;
+                }
                 tempbuf_cur2 = &tempbuf[++tempbuf_ind2];
                 if ( tempbuf_ind2 >= tempbuf_read2 - 1 )
-                  goto LABEL_18;
+                  break;
               }
-              readcmp1 = 2;
             }
-LABEL_18:
             if ( readcmp1 == 2 )
             {
-LABEL_21:
-              PatchWrite(dev_ext, usbacf_patch, 2274);
-              dev_ext_1 = dev_ext;
-              goto LABEL_22;
+              break;
             }
             DelayThread(5000000);
           }
           ++trycnt1;
-          dev_ext_2 = dev_ext;
           if ( trycnt1 >= 100 )
-            goto LABEL_21;
+            break;
         }
+        PatchWrite(dev_ext, usbacf_patch, 2274);
+        break;
       }
     }
     ++trycnt2;
-    dev_ext_1 = dev_ext;
   }
   while ( trycnt2 <= 99999 );
-LABEL_22:
-  USBACF_Write16550Reg(dev_ext_1, 2, 3);
+  USBACF_Write16550Reg(dev_ext, 2, 3);
   if ( !dev_ext->m_unkbb )
   {
     USBACF_Write16550Reg(dev_ext, 4, 0);
@@ -1114,34 +1101,30 @@ static PDEVICE_EXTENSION do_alloc_mem_for_dev_ext()
     dev_ext->m_thid1 = thid1;
     if ( thid1 > 0 )
     {
-      if ( StartThread(thid1, dev_ext) )
+      if ( !StartThread(thid1, dev_ext) )
       {
-LABEL_8:
-        DeleteThread(dev_ext->m_thid2);
-        goto LABEL_9;
-      }
-      thprior_1 = thread_priority;
-      stksz_1 = stack_size;
-      dev_ext->m_unkbd = 0;
-      dev_ext->m_unkbe = 0;
-      thparam2.attr = 0x2000000;
-      thparam2.thread = (void (__cdecl *)(void *))th_2_proc_modem_status;
-      thparam2.option = 0;
-      thparam2.priority = thprior_1;
-      thparam2.stacksize = stksz_1;
-      thid2 = CreateThread(&thparam2);
-      dev_ext->m_thid2 = thid2;
-      if ( thid2 > 0 )
-      {
-        if ( !StartThread(thid2, dev_ext) )
+        thprior_1 = thread_priority;
+        stksz_1 = stack_size;
+        dev_ext->m_unkbd = 0;
+        dev_ext->m_unkbe = 0;
+        thparam2.attr = 0x2000000;
+        thparam2.thread = (void (__cdecl *)(void *))th_2_proc_modem_status;
+        thparam2.option = 0;
+        thparam2.priority = thprior_1;
+        thparam2.stacksize = stksz_1;
+        thid2 = CreateThread(&thparam2);
+        dev_ext->m_thid2 = thid2;
+        if ( thid2 > 0 )
         {
-          USec2SysClock(0x2710u, &dev_ext->sys_clock);
-          return dev_ext;
+          if ( !StartThread(thid2, dev_ext) )
+          {
+            USec2SysClock(0x2710u, &dev_ext->sys_clock);
+            return dev_ext;
+          }
         }
-        goto LABEL_8;
       }
+      DeleteThread(dev_ext->m_thid2);
     }
-LABEL_9:
     DeleteEventFlag(dev_ext->m_evid_main);
   }
   sceInetFreeMem(0, dev_ext);
@@ -1207,15 +1190,16 @@ static void __fastcall USBACF_RxFlowControl(PDEVICE_EXTENSION pUsb)
   if ( pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx < 1024 && (pUsb->RegShadow[4] & 2) == 0 )
   {
     valtmp = pUsb->RegShadow[4] | 2;
-LABEL_7:
-    USBACF_Write16550Reg(pUsb, 4, valtmp);
-    return;
   }
-  if ( pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx >= 3073 && (pUsb->RegShadow[4] & 2) != 0 )
+  else if ( pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx >= 3073 && (pUsb->RegShadow[4] & 2) != 0 )
   {
     valtmp = pUsb->RegShadow[4] & 0xFD;
-    goto LABEL_7;
   }
+  else
+  {
+    return;
+  }
+  USBACF_Write16550Reg(pUsb, 4, valtmp);
 }
 
 //----- (004012B4) --------------------------------------------------------
@@ -1417,6 +1401,8 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                   pid_tmp = devdesc->idProduct;
                   if ( pid_tmp == 4658 || pid_tmp == 4722 )
                   {
+                    int xflg;
+                    xflg = 1;
                     manuf = devdesc->iManufacturer;
                     prod = devdesc->iProduct;
                     DelayThread(100);
@@ -1442,7 +1428,10 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                       if ( (unsigned int)(manufx1 - 32) >= 0x5F )
                       {
                         if ( manufflg1 == 1 )
-                          goto LABEL_38;
+                        {
+                          xflg = 0;
+                          break;
+                        }
                         *((_BYTE *)&cbArg->f_started + manufflg1 + 3) = 0;
                         break;
                       }
@@ -1458,43 +1447,45 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                       manufflg2 = ++manufflg1 + manufind;
                     }
                     while ( manufflg1 < 32 );
-                    prodind = 0;
-                    cbArg->m_pro[0] = 0;
-                    epocfg[0] = 0x80;
-                    epocfg[1] = 6;
-                    *(_WORD *)&epocfg[2] = prod | 0x300;
-                    *(_WORD *)&epocfg[4] = 0;
-                    strcpy(&epocfg[6], "=");
-                    prodflg1 = 1;
-                    sceUsbdTransferPipe(cbArg->EP0Pipe, pro, 0x3Du, epocfg, 0, cbArg);
-                    DelayThread(100);
-                    prodflg2 = 1;
-                    do
+                    if ( xflg )
                     {
-                      regres = 2 * prodflg2 >= 65;
-                      prodchk1 = &pro[2 * prodflg2];
-                      if ( regres )
-                        break;
-                      prodx1 = *prodchk1;
-                      if ( (unsigned int)(prodx1 - 32) >= 0x5F )
+                      prodind = 0;
+                      cbArg->m_pro[0] = 0;
+                      epocfg[0] = 0x80;
+                      epocfg[1] = 6;
+                      *(_WORD *)&epocfg[2] = prod | 0x300;
+                      *(_WORD *)&epocfg[4] = 0;
+                      strcpy(&epocfg[6], "=");
+                      prodflg1 = 1;
+                      sceUsbdTransferPipe(cbArg->EP0Pipe, pro, 0x3Du, epocfg, 0, cbArg);
+                      DelayThread(100);
+                      prodflg2 = 1;
+                      do
                       {
-                        if ( prodflg1 != 1 )
-                          cbArg->m_man[prodflg1 + 30] = 0;
-                        break;
+                        regres = 2 * prodflg2 >= 65;
+                        prodchk1 = &pro[2 * prodflg2];
+                        if ( regres )
+                          break;
+                        prodx1 = *prodchk1;
+                        if ( (unsigned int)(prodx1 - 32) >= 0x5F )
+                        {
+                          if ( prodflg1 != 1 )
+                            cbArg->m_man[prodflg1 + 30] = 0;
+                          break;
+                        }
+                        if ( (char)prodx1 == 44 || (char)prodx1 == 61 )
+                        {
+                          ++prodind;
+                          --prodflg1;
+                        }
+                        else
+                        {
+                          cbArg->m_man[prodflg1 + 30] = prodx1;
+                        }
+                        prodflg2 = ++prodflg1 + prodind;
                       }
-                      if ( (char)prodx1 == 44 || (char)prodx1 == 61 )
-                      {
-                        ++prodind;
-                        --prodflg1;
-                      }
-                      else
-                      {
-                        cbArg->m_man[prodflg1 + 30] = prodx1;
-                      }
-                      prodflg2 = ++prodflg1 + prodind;
+                      while ( prodflg1 < 32 );
                     }
-                    while ( prodflg1 < 32 );
-LABEL_38:
                     cbArg->modem_ops.module_name = "cxtmdm";
                     cbArg->modem_ops.vendor_name = (char *)cbArg->m_man;
                     cbArg->modem_ops.device_name = (char *)cbArg->m_pro;
@@ -1554,39 +1545,22 @@ static int __fastcall UsbAcfModemDetach(int dev_id)
 {
   PDEVICE_EXTENSION PrivateData; // $s0
   int m_unkbb; // $v1
-  PDEVICE_EXTENSION ptr; // $a0
 
   PrivateData = (PDEVICE_EXTENSION)sceUsbdGetPrivateData(dev_id);
   if ( !PrivateData )
     return -1;
   m_unkbb = PrivateData->m_unkbb;
-  if ( m_unkbb != 2 )
+  if ( m_unkbb != 1 && m_unkbb != 2 && m_unkbb != 3 && m_unkbb != 4 )
   {
-    if ( m_unkbb >= 3 )
-    {
-      if ( m_unkbb != 3 )
-      {
-        ptr = PrivateData;
-        if ( m_unkbb != 4 )
-          goto LABEL_10;
-      }
-    }
-    else
-    {
-      ptr = PrivateData;
-      if ( m_unkbb != 1 )
-      {
-LABEL_10:
-        wrap_set_event_flag_modem(ptr, 2u);
-        sceModemUnregisterDevice(&PrivateData->modem_ops);
-        do_delete_threads(PrivateData);
-        goto LABEL_11;
-      }
-    }
+    wrap_set_event_flag_modem(PrivateData, 2u);
+    sceModemUnregisterDevice(&PrivateData->modem_ops);
+    do_delete_threads(PrivateData);
   }
-  PrivateData->m_unkbb = 5;
-  wrap_set_event_flag_modem(PrivateData, 2u);
-LABEL_11:
+  else
+  {
+    PrivateData->m_unkbb = 5;
+    wrap_set_event_flag_modem(PrivateData, 2u);
+  }
   PrivateData->f_patch = 0;
   PrivateData->f_started = 0;
   return 0;
@@ -1617,47 +1591,48 @@ int __fastcall _start(int argc, char **argv)
         {
           eq_chkafter = eq_pos_tmp;
           if ( *eq_pos_tmp == '=' )
+          {
+            *eq_pos_tmp = 0;
+            ++eqcount;
             break;
+          }
           ++eq_pos_tmp;
           ++eqcount;
           if ( !eq_chkafter[1] )
-            goto LABEL_8;
+            break;
         }
-        *eq_pos_tmp = 0;
-        ++eqcount;
       }
-LABEL_8:
       if ( !strcmp(*argv, "lmode") )
       {
         if ( !strcmp(&(*argv)[eqcount], "AUTOLOAD") )
         {
           load_mode = 1;
-          goto LABEL_14;
+          break;
         }
         if ( !strcmp(&(*argv)[eqcount], "TESTLOAD") )
+        {
+          load_mode = 2;
           break;
+        }
       }
       ++ac_cur;
       ++argv;
       if ( ac_cur >= argc )
-        goto LABEL_14;
+        break;
     }
-    load_mode = 2;
   }
-LABEL_14:
-  if ( load_mode == 1 )
-    goto LABEL_22;
-  if ( load_mode >= 2 )
+  switch ( load_mode )
   {
-    if ( load_mode != 2 )
-      goto LABEL_23;
-LABEL_22:
-    resident_flag = 0;
-    goto LABEL_23;
-  }
-  if ( !load_mode )
+  case 0:
     resident_flag = 1;
-LABEL_23:
+    break;
+  case 1:
+  case 2:
+    resident_flag = 0;
+    break;
+  default:
+    break;
+  }
   sceUsbdRegisterLdd(&UsbAcfDriverDescriptor);
   if ( load_mode == 2 )
   {
@@ -1717,59 +1692,57 @@ static void __fastcall MakeDataTransferRequest(PDEVICE_EXTENSION pUsb, BOOLEAN C
   {
     while ( 1 )
     {
-      while ( 1 )
+      if ( pUsb->PipeList[4].nActiveRequests > 0 )
       {
-        if ( pUsb->PipeList[4].nActiveRequests > 0 )
+        reent1 = 1;
+      }
+      else if ( !pUsb->PipeList[4].NeedReset && pUsb->Started )
+      {
+        NumOfBytes = pUsb->TxFIFOIdx;
+        i = 0;
+        if ( NumOfBytes >= 15 )
+          NumOfBytes = 14;
+        if ( NumOfBytes > 0 )
         {
-          reent1 = 1;
-          goto LABEL_19;
+          Buf = pUsb->TxSendBuf;
+          do
+          {
+            txfifochr1 = pUsb->TxFIFO[i++];
+            *Buf = txfifochr1;
+            Buf = &pUsb->TxSendBuf[i];
+          }
+          while ( i < NumOfBytes );
         }
-        if ( !pUsb->PipeList[4].NeedReset && pUsb->Started )
-          break;
-LABEL_19:
-        if ( reent1 == 1 )
-          reent1 = 0;
-        xreentw = pUsb->MakeDataTransmitReentrancy - 1;
-        pUsb->MakeDataTransmitReentrancy = xreentw;
-        if ( xreentw < 0 )
-          return;
-      }
-      NumOfBytes = pUsb->TxFIFOIdx;
-      i = 0;
-      if ( NumOfBytes >= 15 )
-        NumOfBytes = 14;
-      if ( NumOfBytes > 0 )
-      {
-        Buf = pUsb->TxSendBuf;
-        do
+        j = 0;
+        for ( Length = i; i < pUsb->TxFIFOIdx; ++j )
         {
-          txfifochr1 = pUsb->TxFIFO[i++];
-          *Buf = txfifochr1;
-          Buf = &pUsb->TxSendBuf[i];
+          txfifochr2 = (char *)pUsb + i++;
+          pUsb->TxFIFO[j] = txfifochr2[216];
         }
-        while ( i < NumOfBytes );
+        pUsb->TxFIFOIdx = j;
+        if ( !j )
+          SignalSema(pUsb->sm_xmit);
+        if ( Length > 0 || !pUsb->TxFIFOIdx )
+        {
+          if ( Length > 0 )
+            CallUsbd(
+              pUsb,
+              &pUsb->PipeList[4],
+              pUsb->TxSendBuf,
+              Length,
+              (sceUsbdDoneCallback)UsbTransmitDataCompletionRoutine);
+        }
+        else
+        {
+          continue;
+        }
       }
-      j = 0;
-      for ( Length = i; i < pUsb->TxFIFOIdx; ++j )
-      {
-        txfifochr2 = (char *)pUsb + i++;
-        pUsb->TxFIFO[j] = txfifochr2[216];
-      }
-      pUsb->TxFIFOIdx = j;
-      if ( !j )
-        SignalSema(pUsb->sm_xmit);
-      if ( Length > 0 )
-      {
-        CallUsbd(
-          pUsb,
-          &pUsb->PipeList[4],
-          pUsb->TxSendBuf,
-          Length,
-          (sceUsbdDoneCallback)UsbTransmitDataCompletionRoutine);
-        goto LABEL_19;
-      }
-      if ( !pUsb->TxFIFOIdx )
-        goto LABEL_19;
+      if ( reent1 == 1 )
+        reent1 = 0;
+      xreentw = pUsb->MakeDataTransmitReentrancy - 1;
+      pUsb->MakeDataTransmitReentrancy = xreentw;
+      if ( xreentw < 0 )
+        return;
     }
   }
 }
@@ -1907,37 +1880,36 @@ static void __fastcall OnNewStatusReceived(PDEVICE_EXTENSION pUsb, struct USBACF
     while ( 1 )
     {
       if ( (curptr1->RxData[0].Reg05 & 1) == 0 )
-        goto LABEL_12;
-      if ( (unsigned int)(pUsb->RxFifoPutIdx) < 0xFFFu )
-        goto LABEL_10;
-      if ( pUsb->RxFifoGetIdx )
         break;
-LABEL_11:
+      if ( (unsigned int)(pUsb->RxFifoPutIdx) < 0xFFFu )
+      {
+        pUsb->RxFIFO[pUsb->RxFifoPutIdx++] = curptr1->RxData[0].Reg00;
+      }
+      else if ( pUsb->RxFifoGetIdx )
+      {
+        RxFifoGetIdx = pUsb->RxFifoGetIdx;
+        j = 0;
+        if ( RxFifoGetIdx < pUsb->RxFifoPutIdx )
+        {
+          curptr2 = pUsb;
+          do
+          {
+            ++j;
+            curptr2->RxFIFO[0] = pUsb->RxFIFO[RxFifoGetIdx++];
+            curptr2 = (PDEVICE_EXTENSION)((char *)pUsb + j);
+          }
+          while ( RxFifoGetIdx < pUsb->RxFifoPutIdx );
+        }
+        pUsb->RxFifoPutIdx = j;
+        pUsb->RxFifoGetIdx = 0;
+        pUsb->RxFIFO[pUsb->RxFifoPutIdx++] = curptr1->RxData[0].Reg00;
+      }
       ++i;
       curptr1 = (struct USBACF_Recv *)((char *)curptr1 + 2);
       if ( i >= nFifoCharsReceived )
-        goto LABEL_12;
+        break;
     }
-    RxFifoGetIdx = pUsb->RxFifoGetIdx;
-    j = 0;
-    if ( RxFifoGetIdx < pUsb->RxFifoPutIdx )
-    {
-      curptr2 = pUsb;
-      do
-      {
-        ++j;
-        curptr2->RxFIFO[0] = pUsb->RxFIFO[RxFifoGetIdx++];
-        curptr2 = (PDEVICE_EXTENSION)((char *)pUsb + j);
-      }
-      while ( RxFifoGetIdx < pUsb->RxFifoPutIdx );
-    }
-    pUsb->RxFifoPutIdx = j;
-    pUsb->RxFifoGetIdx = 0;
-LABEL_10:
-    pUsb->RxFIFO[pUsb->RxFifoPutIdx++] = curptr1->RxData[0].Reg00;
-    goto LABEL_11;
   }
-LABEL_12:
   if ( i > 0 )
   {
     condval = pUsb->m_unkba;
