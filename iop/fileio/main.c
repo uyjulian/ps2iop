@@ -11,6 +11,16 @@ IRX_ID("FILEIO_service", 2, 18);
 #define _WORD u16
 #define _DWORD u32
 
+struct devctl_fs_blkio_param
+{
+  int m_lbn;
+  unsigned int m_nblk;
+  void *m_addr;
+  int m_blksize;
+  int m_type;
+  int m_mode;
+};
+
 /* 174 */
 struct fio_common_outbuf
 {
@@ -1026,24 +1036,19 @@ void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbu
   int m_taskdata1; // $v1
   int devctl_res; // $s2
   char *m_arg; // $s3
-  int in_nblk; // $t1
+  unsigned int in_nblk; // $t1
   void *in_addr; // $t2
   int in_blksize; // $t3
   int in_mode; // $t1
   unsigned int rwbuf_size_in_blocks; // $s6
   unsigned int in_nblk_2; // $v0
   unsigned int size_in_rwbuf_block_units; // $s5
-  int size_in_rwbuf_remainder_block_units; // $fp
+  unsigned int size_in_rwbuf_remainder_block_units; // $fp
   unsigned int cur_block_unit; // $s1
   int trid; // $s0
   int i; // $v0
   struct fio_largebuf_outbuf fbuf; // [sp+20h] [-478h] BYREF
-  int in_lbn; // [sp+440h] [-58h] BYREF
-  unsigned int in_nblk_1; // [sp+444h] [-54h]
-  void *rwbuf_1; // [sp+448h] [-50h]
-  int in_blksize_1; // [sp+44Ch] [-4Ch]
-  int in_type; // [sp+450h] [-48h]
-  int in_mode_1; // [sp+454h] [-44h]
+  struct devctl_fs_blkio_param in_lbn; // [sp+440h] [-58h] BYREF
   SifDmaTransfer_t dmat; // [sp+458h] [-40h] BYREF
   SifRpcReceiveData_t rdata; // [sp+468h] [-30h] BYREF
   int rwbuf_size; // [sp+488h] [-10h] BYREF
@@ -1071,17 +1076,17 @@ void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbu
   in_nblk = *(_DWORD *)&inbuf->m_arg[4];
   in_addr = *(void **)&inbuf->m_arg[8];
   in_blksize = *(_DWORD *)&inbuf->m_arg[12];
-  in_lbn = *(_DWORD *)inbuf->m_arg;
-  in_nblk_1 = in_nblk;
-  rwbuf_1 = in_addr;
-  in_blksize_1 = in_blksize;
+  in_lbn.m_lbn = *(_DWORD *)inbuf->m_arg;
+  in_lbn.m_nblk = in_nblk;
+  in_lbn.m_addr = in_addr;
+  in_lbn.m_blksize = in_blksize;
   in_mode = *(_DWORD *)&inbuf->m_arg[20];
-  in_type = *(_DWORD *)&inbuf->m_arg[16];
-  in_mode_1 = in_mode;
+  in_lbn.m_type = *(_DWORD *)&inbuf->m_arg[16];
+  in_lbn.m_mode = in_mode;
   rwbuf = fileio_alloc_rwbuf(&rwbuf_size);
   if ( rwbuf )
   {
-    in_lbn = *(_DWORD *)inbuf->m_arg;
+    in_lbn.m_lbn = *(_DWORD *)inbuf->m_arg;
     rwbuf_size_in_blocks = (unsigned int)rwbuf_size / *((_DWORD *)m_arg + 3);
     in_nblk_2 = *((_DWORD *)m_arg + 1);
     size_in_rwbuf_block_units = in_nblk_2 / rwbuf_size_in_blocks;
@@ -1092,17 +1097,17 @@ void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbu
       size_in_rwbuf_remainder_block_units = (unsigned int)rwbuf_size / *((_DWORD *)m_arg + 3);
     dmat.attr = 0;
     dmat.src = rwbuf;
-    rwbuf_1 = rwbuf;
+    in_lbn.m_addr = rwbuf;
     cur_block_unit = 0;
     for ( dmat.dest = (void *)*((_DWORD *)m_arg + 2);
           cur_block_unit < size_in_rwbuf_block_units;
           dmat.dest = (char *)dmat.dest + dmat.size )
     {
       if ( cur_block_unit + 1 == size_in_rwbuf_block_units )
-        in_nblk_1 = size_in_rwbuf_remainder_block_units;
+        in_lbn.m_nblk = size_in_rwbuf_remainder_block_units;
       else
-        in_nblk_1 = rwbuf_size_in_blocks;
-      dmat.size = in_nblk_1 * *((_DWORD *)m_arg + 3);
+        in_lbn.m_nblk = rwbuf_size_in_blocks;
+      dmat.size = in_lbn.m_nblk * *((_DWORD *)m_arg + 3);
       if ( *((_DWORD *)m_arg + 4) )
       {
         for ( i = sceSifGetOtherData(&rdata, dmat.dest, dmat.src, dmat.size, 0);
@@ -1111,14 +1116,14 @@ void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbu
         {
           DelayThread(2000);
         }
-        devctl_res = iomanX_devctl(inbuf->m_name, inbuf->m_cmd, &in_lbn, inbuf->m_arglen, 0, 0);
+        devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &in_lbn, inbuf->m_arglen, 0, 0);
         ++cur_block_unit;
         if ( devctl_res < 0 )
           break;
       }
       else
       {
-        devctl_res = iomanX_devctl(inbuf->m_name, inbuf->m_cmd, &in_lbn, inbuf->m_arglen, 0, 0);
+        devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &in_lbn, inbuf->m_arglen, 0, 0);
         if ( devctl_res < 0 )
           break;
         while ( 1 )
@@ -1134,7 +1139,7 @@ void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbuf *inbu
           ;
         ++cur_block_unit;
       }
-      in_lbn += in_nblk_1;
+      in_lbn.m_lbn += in_lbn.m_nblk;
     }
     fileio_free_rwbuf(rwbuf);
   }
