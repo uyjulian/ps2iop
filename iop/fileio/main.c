@@ -1971,7 +1971,7 @@ static int *__fastcall iopinfo_rpc_service_handler(int fno, void *buffer, int le
 // 404150: using guessed type int iopinfo_rpc_outbuf[4];
 
 //----- (00402A50) --------------------------------------------------------
-static int iopinfo_rpc_service_start_thread_unused()
+static void iopinfo_rpc_service_start_thread_unused()
 {
   if ( !sceSifCheckInit() )
     sceSifInit();
@@ -1987,7 +1987,6 @@ static int iopinfo_rpc_service_start_thread_unused()
     0,
     &g_iopinfo_sif_qd);
   sceSifRpcLoop(&g_iopinfo_sif_qd);
-  return 0;
 }
 // 404160: using guessed type int iopinfo_rpc_service_in_buf[16];
 // 4041A0: using guessed type SifRpcDataQueue_t g_iopinfo_sif_qd;
