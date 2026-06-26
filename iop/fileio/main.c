@@ -160,6 +160,7 @@ struct fio_ioctl_inbuf
   char m_buf[1024];
   int m_outbufsz;
   int m_inbufsz;
+  int m_inoutbufsz;
 };
 
 /* 189 */
@@ -171,6 +172,7 @@ struct fio_ioctl2_inbuf
   char m_buf[1024];
   int m_outbufsz;
   int m_inbufsz;
+  int m_inoutbufsz;
 };
 
 /* 190 */
@@ -1061,7 +1063,7 @@ static void __fastcall __noreturn fileio_rpc_ioctl(struct fio_ioctl_inbuf *inbuf
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
-  fbuf.m_retres = iomanX_ioctl(inbuf->m_fd, inbuf->m_cmd, inbuf[1].m_common.m_taskdata1 ? inbuf->m_buf : 0);
+  fbuf.m_retres = iomanX_ioctl(inbuf->m_fd, inbuf->m_cmd, inbuf->m_inoutbufsz ? inbuf->m_buf : 0);
   do_call_ee_rcv_res_intr(&fbuf, 1052);
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
@@ -1078,7 +1080,7 @@ static void __fastcall __noreturn fileio_rpc_ioctl2(struct fio_ioctl2_inbuf *inb
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
-  fbuf.m_retres = iomanX_ioctl2(inbuf->m_fd, inbuf->m_cmd, inbuf[1].m_common.m_taskdata1 ? inbuf->m_buf : 0, inbuf[1].m_common.m_taskdata1, fbuf.m_buf, fbuf.m_inbufsz);
+  fbuf.m_retres = iomanX_ioctl2(inbuf->m_fd, inbuf->m_cmd, inbuf->m_inoutbufsz ? inbuf->m_buf : 0, inbuf->m_inoutbufsz, fbuf.m_buf, fbuf.m_inbufsz);
   do_call_ee_rcv_res_intr(&fbuf, 1052);
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
