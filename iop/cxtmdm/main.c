@@ -431,8 +431,8 @@ typedef unsigned __int8 BYTE;
 //-------------------------------------------------------------------------
 // Function declarations
 
-static int __fastcall wrap_set_event_flag_modem(PDEVICE_EXTENSION pUsb, u32 flagval);
-static int __fastcall wrap_set_event_flag_main(PDEVICE_EXTENSION pUsb, u32 flagval);
+static void __fastcall wrap_set_event_flag_modem(PDEVICE_EXTENSION pUsb, u32 flagval);
+static void __fastcall wrap_set_event_flag_main(PDEVICE_EXTENSION pUsb, u32 flagval);
 static int __fastcall ModemWrite(void *userdata, void *data, int len);
 static int __fastcall PatchWrite(PDEVICE_EXTENSION pUsb, const char *data, int len);
 static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz);
@@ -503,7 +503,7 @@ static char g_dialconf; // idb
 
 
 //----- (00400000) --------------------------------------------------------
-static int __fastcall wrap_set_event_flag_modem(PDEVICE_EXTENSION pUsb, u32 flagval)
+static void __fastcall wrap_set_event_flag_modem(PDEVICE_EXTENSION pUsb, u32 flagval)
 {
   char outbuf[104]; // [sp+10h] [-68h] BYREF
 
@@ -511,17 +511,17 @@ static int __fastcall wrap_set_event_flag_modem(PDEVICE_EXTENSION pUsb, u32 flag
   {
     sprintf(outbuf, "%s%s%s%s%s%s", ( (flagval & 1) != 0 ) ? " StartDone" : "", ( (flagval & 2) != 0 ) ? " PlugOut" : "", ( (flagval & 0x10) != 0 ) ? " Connect" : "", ( (flagval & 0x20) != 0 ) ? " Disconnect" : "", ( (flagval & 0x40) != 0 ) ? " Ring" : "", ( (flagval & 0x100) != 0 ) ? " Recv" : "");
   }
-  return SetEventFlag(pUsb->modem_ops.evfid, flagval);
+  SetEventFlag(pUsb->modem_ops.evfid, flagval);
 }
 // 400000: using guessed type char outbuf[104];
 
 //----- (00400138) --------------------------------------------------------
-static int __fastcall wrap_set_event_flag_main(PDEVICE_EXTENSION pUsb, u32 flagval)
+static void __fastcall wrap_set_event_flag_main(PDEVICE_EXTENSION pUsb, u32 flagval)
 {
   char curbuf[104]; // [sp+10h] [-68h] BYREF
 
   sprintf(curbuf, "%s%s%s%s", ( (flagval & 1) != 0 ) ? " START" : "", ( (flagval & 2) != 0 ) ? " STOP" : "", ( (flagval & 8) != 0 ) ? " STATE" : "", ( (flagval & 0x400) != 0 ) ? " BREAK" : "");
-  return SetEventFlag(pUsb->m_evid_main, flagval);
+  SetEventFlag(pUsb->m_evid_main, flagval);
 }
 // 400138: using guessed type char curbuf[104];
 
