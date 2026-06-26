@@ -592,32 +592,34 @@ static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz
   int priority; // [sp+18h] [-8h] BYREF
 
   pUsb = userdata;
-  if ( (unsigned int)(cmd + 0x3FFFFEF0) >= 2 && cmd != (int)0xC0000200 && bufsz != 4 )
-    return -512;
-  if ( cmd == (int)0xC0000111 )
+  switch ( cmd )
   {
-    CpuSuspendIntr(&state);
-    pUsb->TxFIFOIdx = 0;
-    pUsb->modem_ops.snd_len = 1024;
-    CpuResumeIntr(state);
-    return 0;
-  }
-  if ( cmd > (int)0xC0000111 )
-  {
-    if ( cmd == (int)0xC0010000 )
+  case 0xC0000111:
     {
+      CpuSuspendIntr(&state);
+      pUsb->TxFIFOIdx = 0;
+      pUsb->modem_ops.snd_len = 1024;
+      CpuResumeIntr(state);
+      return 0;
+    }
+  case 0xC0010000:
+    {
+      if ( bufsz != 4 )
+        return -512;
       bcopy(&pUsb->m_unkaa, buf, 4);
       return 0;
     }
-    if ( cmd > (int)0xC0010000 )
+  case 0xC0010001:
     {
-      if ( cmd == (int)0xC0010001 )
-      {
-        bcopy(&pUsb->m_unkab, buf, 4);
-        return 0;
-      }
-      if ( cmd != (int)0xC1000000 )
-        return -513;
+      if ( bufsz != 4 )
+        return -512;
+      bcopy(&pUsb->m_unkab, buf, 4);
+      return 0;
+    }
+  case 0xC1000000:
+    {
+      if ( bufsz != 4 )
+        return -512;
       bcopy(buf, &priority, 4);
       retres = 0;
       if ( pUsb->m_thid1 > 0 )
@@ -636,37 +638,41 @@ static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz
         thread_priority = priority;
       return retres;
     }
-    if ( cmd != (int)0xC0000200 )
-      return -513;
-    retres = strlen(&g_dialconf) + 1;
-    if ( bufsz >= (int)retres )
+  case 0xC0000200:
     {
+      retres = strlen(&g_dialconf) + 1;
+      if ( bufsz < (int)retres )
+        return -512;
       bcopy(&g_dialconf, buf, retres);
       return retres;
     }
-    return -512;
-  }
-  if ( cmd == (int)0xC0000100 )
-  {
-    zerotmp = 0;
-    bcopy(&zerotmp, buf, 4);
-    return 0;
-  }
-  if ( cmd <= (int)0xC0000100 )
-  {
-    if ( cmd != (int)0xC0000000 )
-      return -513;
-    bcopy(&thread_priority, buf, 4);
-    return 0;
-  }
-  if ( cmd != (int)0xC0000110 )
+  case 0xC0000100:
+    {
+      if ( bufsz != 4 )
+        return -512;
+      zerotmp = 0;
+      bcopy(&zerotmp, buf, 4);
+      return 0;
+    }
+  case 0xC0000000:
+    {
+      if ( bufsz != 4 )
+        return -512;
+      bcopy(&thread_priority, buf, 4);
+      return 0;
+    }
+  case 0xC0000110:
+    {
+      CpuSuspendIntr(&state);
+      pUsb->modem_ops.rcv_len = 0;
+      pUsb->RxFifoGetIdx = 0;
+      pUsb->RxFifoPutIdx = 0;
+      CpuResumeIntr(state);
+      return 0;
+    }
+  default:
     return -513;
-  CpuSuspendIntr(&state);
-  pUsb->modem_ops.rcv_len = 0;
-  pUsb->RxFifoGetIdx = 0;
-  pUsb->RxFifoPutIdx = 0;
-  CpuResumeIntr(state);
-  return 0;
+  }
 }
 // 4034E8: using guessed type int thread_priority;
 
@@ -1002,26 +1008,20 @@ static PDEVICE_EXTENSION do_alloc_mem_for_dev_ext()
     thparam1.priority = thread_priority;
     thparam1.stacksize = stack_size;
     pUsb->m_thid1 = CreateThread(&thparam1);
-    if ( pUsb->m_thid1 > 0 )
+    if ( pUsb->m_thid1 > 0 && !StartThread(pUsb->m_thid1, pUsb) )
     {
-      if ( !StartThread(pUsb->m_thid1, pUsb) )
+      pUsb->m_unkbd = 0;
+      pUsb->m_unkbe = 0;
+      thparam2.attr = 0x2000000;
+      thparam2.thread = th_2_proc_modem_status;
+      thparam2.option = 0;
+      thparam2.priority = thread_priority;
+      thparam2.stacksize = stack_size;
+      pUsb->m_thid2 = CreateThread(&thparam2);
+      if ( pUsb->m_thid2 > 0 && !StartThread(pUsb->m_thid2, pUsb) )
       {
-        pUsb->m_unkbd = 0;
-        pUsb->m_unkbe = 0;
-        thparam2.attr = 0x2000000;
-        thparam2.thread = th_2_proc_modem_status;
-        thparam2.option = 0;
-        thparam2.priority = thread_priority;
-        thparam2.stacksize = stack_size;
-        pUsb->m_thid2 = CreateThread(&thparam2);
-        if ( pUsb->m_thid2 > 0 )
-        {
-          if ( !StartThread(pUsb->m_thid2, pUsb) )
-          {
-            USec2SysClock(0x2710u, &pUsb->sys_clock);
-            return pUsb;
-          }
-        }
+        USec2SysClock(0x2710u, &pUsb->sys_clock);
+        return pUsb;
       }
       DeleteThread(pUsb->m_thid2);
     }
@@ -1070,9 +1070,7 @@ static int __fastcall ModemStop(void *userdata, int unused)
     do_delete_threads(pUsb);
   }
   else
-  {
     wrap_set_event_flag_main(pUsb, 2u);
-  }
   CpuSuspendIntr(&state);
   pUsb->modem_ops.rcv_len = 0;
   pUsb->RxFifoGetIdx = 0;
@@ -1088,13 +1086,9 @@ static int __fastcall ModemStop(void *userdata, int unused)
 static void __fastcall USBACF_RxFlowControl(PDEVICE_EXTENSION pUsb)
 {
   if ( pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx < 1024 && (pUsb->RegShadow[4] & 2) == 0 )
-  {
     USBACF_Write16550Reg(pUsb, 4, pUsb->RegShadow[4] | 2);
-  }
   else if ( pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx >= 3073 && (pUsb->RegShadow[4] & 2) != 0 )
-  {
     USBACF_Write16550Reg(pUsb, 4, pUsb->RegShadow[4] & 0xFD);
-  }
 }
 
 //----- (004012B4) --------------------------------------------------------
@@ -1126,15 +1120,12 @@ static int __fastcall PatchRead(PDEVICE_EXTENSION pUsb, char *buff, int size)
   int len; // $s3
   int state; // [sp+10h] [-8h] BYREF
 
-  len = 0;
   CpuSuspendIntr(&state);
-  for ( ; size > 0; ++buff )
+  for ( len = 0; len < size; len += 1 )
   {
     if ( !USBACF_RxBufferNotEmpty(pUsb) )
       break;
-    *buff = USBACF_GetRxChar(pUsb);
-    --size;
-    ++len;
+    buff[len] = USBACF_GetRxChar(pUsb);
   }
   pUsb->modem_ops.rcv_len = pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx;
   CpuResumeIntr(state);
@@ -1185,15 +1176,12 @@ static int __fastcall UsbAcfModemProbe(int dev_id)
   data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, 1u);
   if ( !data )
     return 1;
-  if ( data->idVendor == 1394 )
-  {
-    if ( data->idProduct == 4658 || data->idProduct == 4722 )
-    {
-      resident_flag = 1;
-      return sceUsbdScanStaticDescriptor(dev_id, data, 4u) && load_mode != 2;
-    }
-  }
-  return 0;
+  if ( data->idVendor != 1394 )
+    return 0;
+  if ( data->idProduct != 4658 && data->idProduct != 4722 )
+    return 0;
+  resident_flag = 1;
+  return sceUsbdScanStaticDescriptor(dev_id, data, 4u) && load_mode != 2;
 }
 // 403560: using guessed type int resident_flag;
 // 403564: using guessed type int load_mode;
@@ -1368,9 +1356,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   thparam.stacksize = stack_size;
   pUsb->m_thid_patchload = CreateThread(&thparam);
   if ( pUsb->m_thid_patchload <= 0 || StartThread(pUsb->m_thid_patchload, pUsb) )
-  {
     DeleteThread(pUsb->m_thid_patchload);
-  }
   return 0;
 }
 // 4034E8: using guessed type int thread_priority;
@@ -1379,29 +1365,29 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
 //----- (00401B34) --------------------------------------------------------
 static int __fastcall UsbAcfModemDetach(int dev_id)
 {
-  PDEVICE_EXTENSION PrivateData; // $s0
+  PDEVICE_EXTENSION pUsb; // $s0
 
-  PrivateData = (PDEVICE_EXTENSION)sceUsbdGetPrivateData(dev_id);
-  if ( !PrivateData )
+  pUsb = (PDEVICE_EXTENSION)sceUsbdGetPrivateData(dev_id);
+  if ( !pUsb )
     return -1;
-  switch ( PrivateData->m_unkbb )
+  switch ( pUsb->m_unkbb )
   {
   case 1:
   case 2:
   case 3:
   case 4:
-    PrivateData->m_unkbb = 5;
-    wrap_set_event_flag_modem(PrivateData, 2u);
+    pUsb->m_unkbb = 5;
+    wrap_set_event_flag_modem(pUsb, 2u);
     break;
   default:
   case 5:
-    wrap_set_event_flag_modem(PrivateData, 2u);
-    sceModemUnregisterDevice(&PrivateData->modem_ops);
-    do_delete_threads(PrivateData);
+    wrap_set_event_flag_modem(pUsb, 2u);
+    sceModemUnregisterDevice(&pUsb->modem_ops);
+    do_delete_threads(pUsb);
     break;
   }
-  PrivateData->f_patch = 0;
-  PrivateData->f_started = 0;
+  pUsb->f_patch = 0;
+  pUsb->f_started = 0;
   return 0;
 }
 
@@ -1410,8 +1396,6 @@ int __fastcall _start(int argc, char **argv)
 {
   int ac_cur; // $s2
   int eqcount; // $s0
-  char *eq_pos_tmp; // $a0
-  const char *eq_chkafter; // $v1
 
   load_mode = 0;
   g_dialconf = 0;
@@ -1419,23 +1403,13 @@ int __fastcall _start(int argc, char **argv)
   {
     if ( !strncmp("dial=", argv[ac_cur], 5) )
       strcpy(&g_dialconf, argv[ac_cur] + 5);
-    eqcount = 0;
-    if ( argv[ac_cur][0] )
+    for ( eqcount = 0; argv[ac_cur][eqcount]; eqcount += 1 )
     {
-      eq_pos_tmp = argv[ac_cur];
-      while ( 1 )
+      if ( argv[ac_cur][eqcount] == '=' )
       {
-        eq_chkafter = eq_pos_tmp;
-        if ( *eq_pos_tmp == '=' )
-        {
-          *eq_pos_tmp = 0;
-          ++eqcount;
-          break;
-        }
-        ++eq_pos_tmp;
-        ++eqcount;
-        if ( !eq_chkafter[1] )
-          break;
+        argv[ac_cur][eqcount] = 0;
+        eqcount += 1;
+        break;
       }
     }
     if ( !strcmp(argv[ac_cur], "lmode") )
@@ -1470,15 +1444,12 @@ int __fastcall _start(int argc, char **argv)
     sceUsbdUnregisterLdd(&UsbAcfDriverDescriptor);
     return ( resident_flag != 1 ) ? 1 : 5;
   }
-  else
+  if ( !resident_flag )
   {
-    if ( !resident_flag )
-    {
-      sceUsbdUnregisterLdd(&UsbAcfDriverDescriptor);
-      return 1;
-    }
-    return 0;
+    sceUsbdUnregisterLdd(&UsbAcfDriverDescriptor);
+    return 1;
   }
+  return 0;
 }
 // 4034A4: using guessed type sceUsbdLddOps UsbAcfDriverDescriptor;
 // 403560: using guessed type int resident_flag;
@@ -1513,9 +1484,7 @@ static void __fastcall MakeDataTransferRequest(PDEVICE_EXTENSION pUsb, BOOLEAN C
     for ( ; pUsb->MakeDataTransmitReentrancy >= 0; pUsb->MakeDataTransmitReentrancy -= 1 )
     {
       if ( pUsb->PipeList[4].nActiveRequests > 0 )
-      {
         reent1 = 1;
-      }
       else if ( !pUsb->PipeList[4].NeedReset && pUsb->Started )
       {
         NumOfBytes = pUsb->TxFIFOIdx;
@@ -1591,13 +1560,11 @@ static void __fastcall USBACF_PutTxChar(PDEVICE_EXTENSION pUsb, char data)
 //----- (00402038) --------------------------------------------------------
 static void __fastcall UsbTransmitRegisterCompletionRoutine(int result, int count, void *context)
 {
-  int Started; // $v1
   PDEVICE_EXTENSION pUsb;
 
   pUsb = context;
-  Started = pUsb->Started;
   --pUsb->PipeList[0].nActiveRequests;
-  if ( Started )
+  if ( pUsb->Started )
   {
     OnTransmitCompleted(pUsb, count);
     if ( !result )
@@ -1608,14 +1575,12 @@ static void __fastcall UsbTransmitRegisterCompletionRoutine(int result, int coun
 //----- (00402090) --------------------------------------------------------
 static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, void *context)
 {
-  int Started; // $v1
   int state; // [sp+10h] [-8h] BYREF
   PDEVICE_EXTENSION pUsb;
 
   pUsb = context;
-  Started = pUsb->Started;
   --pUsb->PipeList[4].nActiveRequests;
-  if ( Started && !result )
+  if ( pUsb->Started && !result )
   {
     MakeDataTransferRequest(pUsb, 1u);
     CpuSuspendIntr(&state);
@@ -1639,28 +1604,23 @@ static void __fastcall UsbReceiveRegisterCompletionRoutine(int result, int count
   pUsb = context;
   count_1 = count;
   --pUsb->PipeList[5].nActiveRequests;
-  if ( pUsb->Started )
+  if ( pUsb->Started && (pUsb->bPowerState & 2) != 0 )
   {
-    if ( (pUsb->bPowerState & 2) != 0 )
+    if ( result )
+      pUsb->bPowerState &= 0xFFFFFFFD;
+    else
     {
-      if ( result )
-      {
-        pUsb->bPowerState &= 0xFFFFFFFD;
-      }
-      else
-      {
-        unsigned int count_rev; // $v0
+      unsigned int count_rev; // $v0
 
-        if ( (unsigned int)count_1 >= 0x20 )
-          count_1 = 31;
-        count_rev = count_1 - 1;
-        if ( count_rev >> 1 < 0x11 )
-          OnNewStatusReceived(pUsb, &pUsb->RecvRegs, count_rev >> 1);
-        MakeReceiveRequest(pUsb);
-        CpuSuspendIntr(&state);
-        pUsb->m_unkaa += count_1;
-        CpuResumeIntr(state);
-      }
+      if ( (unsigned int)count_1 >= 0x20 )
+        count_1 = 31;
+      count_rev = count_1 - 1;
+      if ( count_rev >> 1 < 0x11 )
+        OnNewStatusReceived(pUsb, &pUsb->RecvRegs, count_rev >> 1);
+      MakeReceiveRequest(pUsb);
+      CpuSuspendIntr(&state);
+      pUsb->m_unkaa += count_1;
+      CpuResumeIntr(state);
     }
   }
 }
@@ -1689,9 +1649,7 @@ static void __fastcall OnNewStatusReceived(PDEVICE_EXTENSION pUsb, struct USBACF
     {
       RxFifoGetIdx = pUsb->RxFifoGetIdx;
       for ( j = 0; (j + RxFifoGetIdx) < pUsb->RxFifoPutIdx; j += 1 )
-      {
         pUsb->RxFIFO[j] = pUsb->RxFIFO[j + RxFifoGetIdx];
-      }
       pUsb->RxFifoPutIdx = j;
       pUsb->RxFifoGetIdx = 0;
       pUsb->RxFIFO[pUsb->RxFifoPutIdx] = pUsbRecv->RxData[i].Reg00;
@@ -1747,9 +1705,7 @@ static int __fastcall CallUsbd(
 static void __fastcall MakeReceiveRequest(PDEVICE_EXTENSION pUsb)
 {
   if ( pUsb->PipeList[5].nActiveRequests <= 0 && !pUsb->PipeList[5].NeedReset && pUsb->Started )
-  {
     CallUsbd(pUsb, &pUsb->PipeList[5], &pUsb->RecvRegs, 31, UsbReceiveRegisterCompletionRoutine);
-  }
 }
 
 //----- (0040247C) --------------------------------------------------------
@@ -1811,9 +1767,7 @@ static void __fastcall UsbTransmitGpioCompletionRoutine(int result, int count, v
   pUsb = context;
   --pUsb->PipeList[6].nActiveRequests;
   if ( pUsb->Started && !result )
-  {
     SendGpioLedRequest(pUsb);
-  }
 }
 
 //----- (00402604) --------------------------------------------------------
@@ -1845,29 +1799,36 @@ static void __fastcall USBMODEM_ModifyLed(PDEVICE_EXTENSION pUsb, BYTE SetMode, 
 //----- (004026D8) --------------------------------------------------------
 static void __fastcall SetUsbModemPollState(PDEVICE_EXTENSION pUsb, int state)
 {
-  if ( state == 1 )
+  switch ( state )
   {
-    pUsb->bPowerState &= ~2u;
-    USBMODEM_ModifyLed(pUsb, 0, 1u);
-    USBMODEM_ModifyLed(pUsb, 0, 2u);
-    USBMODEM_ModifyLed(pUsb, 0, 4u);
-  }
-  else if ( state == 2 )
-  {
-    pUsb->bPowerState |= 2u;
-    USBMODEM_ModifyMode(pUsb, 0xC9u, 0);
-    USBMODEM_ModifyLed(pUsb, 1u, 0);
-    DelayThread(10000);
-    USBMODEM_ModifyMode(pUsb, 0, 8u);
-    DelayThread(10000);
-    pUsb->LedB1_Flag = 0;
-    USBACF_Write16550Reg(pUsb, 3, -128);
-    USBACF_Write16550Reg(pUsb, 0, 1);
-    USBACF_Write16550Reg(pUsb, 1, 0);
-    USBACF_Write16550Reg(pUsb, 3, 3);
-    USBACF_Write16550Reg(pUsb, 2, -31);
-    USBACF_Write16550Reg(pUsb, 4, 3);
-    pUsb->PipeList[5].nActiveRequests = 0;
-    MakeReceiveRequest(pUsb);
+  case 1:
+    {
+      pUsb->bPowerState &= ~2u;
+      USBMODEM_ModifyLed(pUsb, 0, 1u);
+      USBMODEM_ModifyLed(pUsb, 0, 2u);
+      USBMODEM_ModifyLed(pUsb, 0, 4u);
+      break;
+    }
+  case 2:
+    {
+      pUsb->bPowerState |= 2u;
+      USBMODEM_ModifyMode(pUsb, 0xC9u, 0);
+      USBMODEM_ModifyLed(pUsb, 1u, 0);
+      DelayThread(10000);
+      USBMODEM_ModifyMode(pUsb, 0, 8u);
+      DelayThread(10000);
+      pUsb->LedB1_Flag = 0;
+      USBACF_Write16550Reg(pUsb, 3, -128);
+      USBACF_Write16550Reg(pUsb, 0, 1);
+      USBACF_Write16550Reg(pUsb, 1, 0);
+      USBACF_Write16550Reg(pUsb, 3, 3);
+      USBACF_Write16550Reg(pUsb, 2, -31);
+      USBACF_Write16550Reg(pUsb, 4, 3);
+      pUsb->PipeList[5].nActiveRequests = 0;
+      MakeReceiveRequest(pUsb);
+      break;
+    }
+  default:
+    break;
   }
 }
