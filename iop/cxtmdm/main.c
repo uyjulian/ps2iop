@@ -845,9 +845,7 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
       if ( (efbits_ret & 0x400) != 0 )
         get_ef_bits(pUsb);
       if ( !pUsb->m_unkbd && pUsb->m_unkbe == 1 )
-      {
         wrap_set_event_flag_modem(pUsb, 0x40u);
-      }
     }
   }
 }
@@ -1176,10 +1174,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   UsbConfigDescriptor *data; // $s4
   UsbInterfaceDescriptor *idesc; // $s0
   PDEVICE_EXTENSION pUsb; // $v0
-  UsbInterfaceDescriptor *idesc_1; // $a1
   int xind; // $s1
-  PDEVICE_EXTENSION dev_ext_tmp1; // $s2
-  UsbEndpointDescriptor *desc0; // $v0
   int xferres; // $v0
   const UsbDeviceDescriptor *devdesc; // $a1
   int manufind; // $s2
@@ -1216,20 +1211,16 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
         pUsb->EP0Pipe = sceUsbdOpenPipe(dev_id, 0);
         if ( pUsb->EP0Pipe >= 0 )
         {
-          idesc_1 = idesc;
           xind = 0;
-          dev_ext_tmp1 = pUsb;
           while ( 1 )
           {
-            desc0 = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(dev_id, idesc_1, 5u);
-            if ( !desc0 )
+            idesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, idesc, 5u);
+            if ( !idesc )
               break;
-            dev_ext_tmp1->PipeList[0].PipeHandle = sceUsbdOpenPipe(dev_id, desc0);
-            if ( dev_ext_tmp1->PipeList[0].PipeHandle < 0 )
+            pUsb->PipeList[xind].PipeHandle = sceUsbdOpenPipe(dev_id, (UsbEndpointDescriptor *)idesc);
+            if ( pUsb->PipeList[xind].PipeHandle < 0 )
               break;
-            idesc_1 = (UsbInterfaceDescriptor *)desc0;
             ++xind;
-            dev_ext_tmp1 = (PDEVICE_EXTENSION)((char *)dev_ext_tmp1 + 12);
             if ( xind >= 8 )
             {
               sceUsbdSetPrivateData(dev_id, pUsb);
@@ -1274,7 +1265,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                       {
                         if ( manufflg1 != 1 )
                         {
-                          *((_BYTE *)&pUsb->f_started + manufflg1 + 3) = 0;
+                          pUsb->m_man[manufflg1 - 1] = 0;
                           break;
                         }
                         xflg = 0;
@@ -1287,7 +1278,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                       }
                       else
                       {
-                        *((_BYTE *)&pUsb->f_started + manufflg1 + 3) = manufx1;
+                        pUsb->m_man[manufflg1 - 1] = manufx1;
                       }
                     }
                     if ( xflg )
@@ -1310,7 +1301,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                         if ( (unsigned int)(prodx1 - 32) >= 0x5F )
                         {
                           if ( prodflg1 != 1 )
-                            pUsb->m_man[prodflg1 + 30] = 0;
+                            pUsb->m_pro[prodflg1 - 1] = 0;
                           break;
                         }
                         if ( (char)prodx1 == 44 || (char)prodx1 == 61 )
@@ -1320,7 +1311,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
                         }
                         else
                         {
-                          pUsb->m_man[prodflg1 + 30] = prodx1;
+                          pUsb->m_pro[prodflg1 - 1] = prodx1;
                         }
                       }
                     }
@@ -1488,11 +1479,8 @@ static void __fastcall USBACF_Write16550Reg(PDEVICE_EXTENSION pUsb, int reg, cha
 {
   if ( (unsigned int)reg < 8 )
   {
-    char *regtmp1; // $v0
-
-    regtmp1 = (char *)pUsb + reg;
-    regtmp1[5356] = data;
-    regtmp1[5364] = -1;
+    pUsb->RegShadow[reg] = data;
+    pUsb->RegChanged[reg] = -1;
     pUsb->RegChangeFlag = 1;
     MakeRegisterTransmitRequest(pUsb);
   }
@@ -1531,7 +1519,7 @@ static void __fastcall MakeDataTransferRequest(PDEVICE_EXTENSION pUsb, BOOLEAN C
         Length = i;
         for ( j = 0; (i + j) < pUsb->TxFIFOIdx; j += 1 )
         {
-          pUsb->TxFIFO[j] = ((char *)pUsb + i + j)[216];
+          pUsb->TxFIFO[j] = pUsb->TxFIFO[i + j];
         }
         pUsb->TxFIFOIdx = j;
         if ( !j )
@@ -1773,7 +1761,6 @@ static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
   {
     while ( pUsb->RegChangeFlag || pUsb->TmpTxRegIndex )
     {
-      char *curptr1; // $v1
       unsigned int i; // $a0
       unsigned int TmpTxRegIndex; // $a2
       int size; // $s1
@@ -1784,21 +1771,16 @@ static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
       if ( pUsb->PipeList[0].NeedReset )
         break;
       TmpTxRegIndex = pUsb->TmpTxRegIndex;
-      curptr1 = (char *)pUsb + 3 * TmpTxRegIndex;
       for ( i = 0; i < 8; i += 1 )
       {
         if ( pUsb->RegChanged[i] )
         {
-          unsigned __int8 curregval; // $v0
-
           if ( TmpTxRegIndex >= 0x10 )
             break;
-          curregval = pUsb->RegShadow[i];
-          curptr1[5437] = i;
-          curptr1[5438] = curregval;
+          pUsb->TmpTxRegs[TmpTxRegIndex].addrH = pUsb->bHighAddr;
+          pUsb->TmpTxRegs[TmpTxRegIndex].addrL = i;
+          pUsb->TmpTxRegs[TmpTxRegIndex].data = pUsb->RegShadow[i];
           ++TmpTxRegIndex;
-          curptr1[5436] = pUsb->bHighAddr;
-          curptr1 += 3;
           pUsb->RegChanged[i] = 0;
         }
       }
@@ -1808,7 +1790,7 @@ static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
       pUsb->TmpTxRegIndex = TmpTxRegIndex;
       if ( size )
       {
-        memcpy(pUsb->TxRegs, pUsb->TmpTxRegs, 3 * TmpTxRegIndex);
+        memcpy(pUsb->TxRegs, pUsb->TmpTxRegs, size);
         pUsb->TmpTxRegIndex = 0;
         CallUsbd(pUsb, pUsb->PipeList, pUsb->TxRegs, size, UsbTransmitRegisterCompletionRoutine);
       }
