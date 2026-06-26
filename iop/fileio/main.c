@@ -527,9 +527,9 @@ static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
     int try_cnt; // $s1
 
     *out_rwbuf_size = 0;
-    rwbuf_size = g_rwbuf_max_size;
     for ( try_cnt = 0; try_cnt < 8; try_cnt += 1 )
     {
+      rwbuf_size = g_rwbuf_max_size >> try_cnt;
       rwbuf_cur_ptr = AllocSysMemory(1, rwbuf_size, 0);
       if ( rwbuf_cur_ptr )
       {
@@ -551,7 +551,6 @@ static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
         }
         break;
       }
-      rwbuf_size /= 2;
     }
     if ( try_cnt == 8 )
     {
@@ -786,70 +785,63 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
       }
       read_sz_total += read_sz_begin;
     }
-    if ( cur_read_remain > 0 )
+    while ( cur_read_remain > 0 )
     {
+      int cur_rwbuf_sz; // $s1
+      int read_res_main; // $v0
+
+      cur_rwbuf_sz = ( rwbuf_size < cur_read_remain ) ? rwbuf_size : cur_read_remain;
+      while ( sceSifDmaStat(trid) >= 0 );
+      read_res_main = iomanX_read(inbuf->m_fd, rwbuf, cur_rwbuf_sz);
+      read_res_last = read_res_main;
+      if ( cur_rwbuf_sz != read_res_main )
+      {
+        if ( read_res_main > 0 )
+        {
+          int read_res_main_rounded; // $v0
+          int outbuf_ind; // $a0
+
+          read_res_main_rounded = read_res_main >> 6 << 6;
+          read_sz_end = read_res_main - read_res_main_rounded;
+          eedestptr2 = (int)&eedest[read_res_main_rounded];
+          for ( outbuf_ind = 0; outbuf_ind < read_sz_end; outbuf_ind += 1 )
+            fbuf.m_buf2[outbuf_ind] = ((_BYTE *)rwbuf)[read_res_main_rounded + outbuf_ind];
+          if ( read_res_main_rounded )
+          {
+            dmat.src = rwbuf;
+            dmat.dest = eedest;
+            dmat.size = read_res_main_rounded;
+            dmat.attr = 0;
+            while ( 1 )
+            {
+              CpuSuspendIntr(&state);
+              trid = sceSifSetDma(&dmat, 1);
+              CpuResumeIntr(state);
+              if ( trid )
+                break;
+              DelayThread(2000);
+            }
+          }
+          read_sz_total += read_res_main;
+        }
+        break;
+      }
+      dmat.src = rwbuf;
+      dmat.dest = eedest;
+      dmat.size = read_res_main;
+      dmat.attr = 0;
       while ( 1 )
       {
-        int cur_rwbuf_sz; // $s1
-        int read_res_main; // $v0
-
-        cur_rwbuf_sz = ( rwbuf_size < cur_read_remain ) ? rwbuf_size : cur_read_remain;
-        while ( sceSifDmaStat(trid) >= 0 );
-        read_res_main = iomanX_read(inbuf->m_fd, rwbuf, cur_rwbuf_sz);
-        read_res_last = read_res_main;
-        if ( cur_rwbuf_sz != read_res_main )
-        {
-          if ( read_res_main > 0 )
-          {
-            int read_res_main_rounded; // $v0
-            int outbuf_ind; // $a0
-
-            read_res_main_rounded = read_res_main >> 6 << 6;
-            read_sz_end = read_res_main - read_res_main_rounded;
-            eedestptr2 = (int)&eedest[read_res_main_rounded];
-            for ( outbuf_ind = 0; outbuf_ind < read_sz_end; outbuf_ind += 1 )
-            {
-              fbuf.m_buf2[outbuf_ind] = ((_BYTE *)rwbuf)[read_res_main_rounded + outbuf_ind];
-            }
-            if ( read_res_main_rounded )
-            {
-              dmat.src = rwbuf;
-              dmat.dest = eedest;
-              dmat.size = read_res_main_rounded;
-              dmat.attr = 0;
-              while ( 1 )
-              {
-                CpuSuspendIntr(&state);
-                trid = sceSifSetDma(&dmat, 1);
-                CpuResumeIntr(state);
-                if ( trid )
-                  break;
-                DelayThread(2000);
-              }
-            }
-            read_sz_total += read_res_main;
-          }
+        CpuSuspendIntr(&state);
+        trid = sceSifSetDma(&dmat, 1);
+        CpuResumeIntr(state);
+        if ( trid )
           break;
-        }
-        dmat.src = rwbuf;
-        dmat.dest = eedest;
-        dmat.size = read_res_main;
-        dmat.attr = 0;
-        while ( 1 )
-        {
-          CpuSuspendIntr(&state);
-          trid = sceSifSetDma(&dmat, 1);
-          CpuResumeIntr(state);
-          if ( trid )
-            break;
-          DelayThread(2000);
-        }
-        read_sz_total += read_res_main;
-        cur_read_remain -= read_res_main;
-        eedest += read_res_main;
-        if ( cur_read_remain <= 0 )
-          break;
+        DelayThread(2000);
       }
+      read_sz_total += read_res_main;
+      cur_read_remain -= read_res_main;
+      eedest += read_res_main;
     }
     if ( cur_read_remain <= 0 && read_sz_end > 0 )
     {
@@ -910,29 +902,24 @@ static void __fastcall fileio_rpc_fd_write(struct fio_fd_write_inbuf *inbuf)
         rwbuf_remain_sz = 0;
       write_sz_total += ( write_res_begin > 0 ) ? write_res_begin : 0;
     }
-    if ( rwbuf_remain_sz )
+    while ( rwbuf_remain_sz )
     {
-      while ( 1 )
-      {
-        int bufsz; // $s1
-        int write_res_main; // $v0
+      int bufsz; // $s1
+      int write_res_main; // $v0
 
-        bufsz = ( rwbuf_size < rwbuf_remain_sz ) ? rwbuf_size : rwbuf_remain_sz;
-        while ( sceSifGetOtherData(&rdata, eebuffer_xptr, rwbuf, bufsz, 0) < 0 )
-          DelayThread(2000);
-        write_res_main = iomanX_write(inbuf->m_fd, rwbuf, bufsz);
-        write_res_last = write_res_main;
-        if ( write_res_main != bufsz )
-        {
-          write_sz_total += ( write_res_main > 0 ) ? write_res_main : 0;
-          break;
-        }
-        write_sz_total += write_res_main;
-        rwbuf_remain_sz -= write_res_main;
-        eebuffer_xptr += write_res_main;
-        if ( !rwbuf_remain_sz )
-          break;
+      bufsz = ( rwbuf_size < rwbuf_remain_sz ) ? rwbuf_size : rwbuf_remain_sz;
+      while ( sceSifGetOtherData(&rdata, eebuffer_xptr, rwbuf, bufsz, 0) < 0 )
+        DelayThread(2000);
+      write_res_main = iomanX_write(inbuf->m_fd, rwbuf, bufsz);
+      write_res_last = write_res_main;
+      if ( write_res_main != bufsz )
+      {
+        write_sz_total += ( write_res_main > 0 ) ? write_res_main : 0;
+        break;
       }
+      write_sz_total += write_res_main;
+      rwbuf_remain_sz -= write_res_main;
+      eebuffer_xptr += write_res_main;
     }
   }
   fbuf.m_common.m_out_fno = 3;
@@ -998,10 +985,8 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
     dmat.attr = 0;
     dmat.src = rwbuf;
     in_lbn.m_addr = rwbuf;
-    cur_block_unit = 0;
-    for ( dmat.dest = (void *)in_lbn.m_addr;
-          cur_block_unit < size_in_rwbuf_block_units;
-          dmat.dest = (char *)dmat.dest + dmat.size )
+    dmat.dest = (void *)in_lbn.m_addr;
+    for ( cur_block_unit = 0; cur_block_unit < size_in_rwbuf_block_units; cur_block_unit += 1 )
     {
       in_lbn.m_nblk = ( cur_block_unit + 1 == size_in_rwbuf_block_units ) ? size_in_rwbuf_remainder_block_units : rwbuf_size_in_blocks;
       dmat.size = in_lbn.m_nblk * in_lbn.m_blksize;
@@ -1010,7 +995,6 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
         while ( sceSifGetOtherData(&rdata, dmat.dest, dmat.src, dmat.size, 0) < 0 )
           DelayThread(2000);
         devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &in_lbn, inbuf->m_arglen, 0, 0);
-        ++cur_block_unit;
         if ( devctl_res < 0 )
           break;
       }
@@ -1031,9 +1015,9 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
           DelayThread(2000);
         }
         while ( sceSifDmaStat(trid) >= 0 );
-        ++cur_block_unit;
       }
       in_lbn.m_lbn += in_lbn.m_nblk;
+      dmat.dest = (char *)dmat.dest + dmat.size;
     }
     fileio_free_rwbuf(rwbuf);
   }
