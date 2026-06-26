@@ -520,7 +520,7 @@ static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
   if ( rwbuf_cur_ptr && rwbuf_size && !g_rwbuf_is_allocated )
   {
     g_rwbuf_is_allocated = 1;
-    ++g_rwbuf_uses;
+    g_rwbuf_uses += 1;
   }
   else
   {
@@ -534,7 +534,7 @@ static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
       if ( rwbuf_cur_ptr )
       {
         unsigned int cur_ptr_count; // $v1
-        ++g_rwbuf_uses;
+        g_rwbuf_uses += 1;
         if ( !g_rwbuf_cur_ptr || !g_rwbuf_size )
         {
           g_rwbuf_cur_ptr = rwbuf_cur_ptr;
@@ -580,14 +580,14 @@ static void __fastcall fileio_free_rwbuf(void *ptr)
   if ( ptr == g_rwbuf_cur_ptr && ptr )
   {
     g_rwbuf_is_allocated = 0;
-    --g_rwbuf_uses;
+    g_rwbuf_uses -= 1;
     SetEventFlag(g_rwbuf_ef, 1u);
   }
   else if ( !FreeSysMemory(ptr) )
   {
     unsigned int cur_ptr_count; // $a0
 
-    --g_rwbuf_uses;
+    g_rwbuf_uses -= 1;
     for ( cur_ptr_count = 0; cur_ptr_count < g_rwbuf_ptr_count_allowed; cur_ptr_count += 1 )
     {
       if ( g_rwbuf_ptrs[cur_ptr_count] == ptr )
