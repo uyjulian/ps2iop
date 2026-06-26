@@ -733,7 +733,7 @@ static unsigned int __fastcall alarm_cb(void *userdata)
   pUsb->m_unkba = 0;
   pUsb->modem_ops.rcv_len = pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx;
   iSetEventFlag(pUsb->modem_ops.evfid, 0x100u);
-  ++pUsb->m_unkca;
+  pUsb->m_unkca += 1;
   return 0;
 }
 
@@ -1288,8 +1288,8 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
     }
     if ( (char)manufx1 == ',' || (char)manufx1 == '=' )
     {
-      ++manufind;
-      --manufflg1;
+      manufind += 1;
+      manufflg1 -= 1;
     }
     else
     {
@@ -1321,8 +1321,8 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
       }
       if ( (char)prodx1 == 44 || (char)prodx1 == 61 )
       {
-        ++prodind;
-        --prodflg1;
+        prodind += 1;
+        prodflg1 -= 1;
       }
       else
       {
@@ -1528,7 +1528,8 @@ static int __fastcall USBACF_GetRxChar(PDEVICE_EXTENSION pUsb)
   if ( nBytesAvail > 0 )
   {
     signed __int8 c; // $a2
-    c = pUsb->RxFIFO[pUsb->RxFifoGetIdx++];
+    c = pUsb->RxFIFO[pUsb->RxFifoGetIdx];
+    pUsb->RxFifoGetIdx += 1;
     if ( nBytesAvail == 1 )
     {
       pUsb->RxFifoGetIdx = 0;
@@ -1554,7 +1555,10 @@ static BOOLEAN __fastcall USBACF_TxBufferFull(PDEVICE_EXTENSION pUsb)
 static void __fastcall USBACF_PutTxChar(PDEVICE_EXTENSION pUsb, char data)
 {
   if ( (unsigned int)(pUsb->TxFIFOIdx) < 0x400u )
-    pUsb->TxFIFO[pUsb->TxFIFOIdx++] = data;
+  {
+    pUsb->TxFIFO[pUsb->TxFIFOIdx] = data;
+    pUsb->TxFIFOIdx += 1;
+  }
 }
 
 //----- (00402038) --------------------------------------------------------
@@ -1563,7 +1567,7 @@ static void __fastcall UsbTransmitRegisterCompletionRoutine(int result, int coun
   PDEVICE_EXTENSION pUsb;
 
   pUsb = context;
-  --pUsb->PipeList[0].nActiveRequests;
+  pUsb->PipeList[0].nActiveRequests -= 1;
   if ( pUsb->Started )
   {
     OnTransmitCompleted(pUsb, count);
@@ -1579,7 +1583,7 @@ static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, v
   PDEVICE_EXTENSION pUsb;
 
   pUsb = context;
-  --pUsb->PipeList[4].nActiveRequests;
+  pUsb->PipeList[4].nActiveRequests -= 1;
   if ( pUsb->Started && !result )
   {
     MakeDataTransferRequest(pUsb, 1u);
@@ -1603,7 +1607,7 @@ static void __fastcall UsbReceiveRegisterCompletionRoutine(int result, int count
 
   pUsb = context;
   count_1 = count;
-  --pUsb->PipeList[5].nActiveRequests;
+  pUsb->PipeList[5].nActiveRequests -= 1;
   if ( pUsb->Started && (pUsb->bPowerState & 2) != 0 )
   {
     if ( result )
@@ -1673,7 +1677,7 @@ static void __fastcall OnNewStatusReceived(PDEVICE_EXTENSION pUsb, struct USBACF
     {
       pUsb->modem_ops.rcv_len = pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx;
       wrap_set_event_flag_modem(pUsb, 0x100u);
-      ++pUsb->m_unkca;
+      pUsb->m_unkca += 1;
     }
   }
   CpuResumeIntr(state);
@@ -1697,7 +1701,7 @@ static int __fastcall CallUsbd(
 {
   if ( !pUsb->Started )
     return 306;
-  ++Pipe->nActiveRequests;
+  Pipe->nActiveRequests += 1;
   return sceUsbdTransferPipe(Pipe->PipeHandle, Buf, Length, 0, CompletionRoutine, pUsb);
 }
 
@@ -1733,7 +1737,7 @@ static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
           pUsb->TmpTxRegs[TmpTxRegIndex].addrH = pUsb->bHighAddr;
           pUsb->TmpTxRegs[TmpTxRegIndex].addrL = i;
           pUsb->TmpTxRegs[TmpTxRegIndex].data = pUsb->RegShadow[i];
-          ++TmpTxRegIndex;
+          TmpTxRegIndex += 1;
           pUsb->RegChanged[i] = 0;
         }
       }
@@ -1765,7 +1769,7 @@ static void __fastcall UsbTransmitGpioCompletionRoutine(int result, int count, v
 
   (void)count;
   pUsb = context;
-  --pUsb->PipeList[6].nActiveRequests;
+  pUsb->PipeList[6].nActiveRequests -= 1;
   if ( pUsb->Started && !result )
     SendGpioLedRequest(pUsb);
 }
