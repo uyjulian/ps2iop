@@ -984,8 +984,8 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
       size_in_rwbuf_remainder_block_units = rwbuf_size_in_blocks;
     dmat.attr = 0;
     dmat.src = rwbuf;
-    in_lbn.m_addr = rwbuf;
     dmat.dest = (void *)in_lbn.m_addr;
+    in_lbn.m_addr = rwbuf;
     for ( cur_block_unit = 0; cur_block_unit < size_in_rwbuf_block_units; cur_block_unit += 1 )
     {
       in_lbn.m_nblk = ( cur_block_unit + 1 == size_in_rwbuf_block_units ) ? size_in_rwbuf_remainder_block_units : rwbuf_size_in_blocks;
