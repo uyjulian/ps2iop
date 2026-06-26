@@ -130,8 +130,8 @@ struct DEVICE_EXTENSION
   BOOLEAN LedB1_Flag;
   BOOLEAN LedB2_Flag;
   sceModemOps_t modem_ops;
-  int m_unkaa;
-  int m_unkab;
+  int m_rx_count;
+  int m_tx_count;
   int m_ef_bits;
   int m_evid_main;
   int m_thid1;
@@ -606,14 +606,14 @@ static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz
     {
       if ( bufsz != 4 )
         return -512;
-      bcopy(&pUsb->m_unkaa, buf, 4);
+      bcopy(&pUsb->m_rx_count, buf, 4);
       return 0;
     }
   case 0xC0010001:
     {
       if ( bufsz != 4 )
         return -512;
-      bcopy(&pUsb->m_unkab, buf, 4);
+      bcopy(&pUsb->m_tx_count, buf, 4);
       return 0;
     }
   case 0xC1000000:
@@ -1584,7 +1584,7 @@ static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, v
   {
     MakeDataTransferRequest(pUsb, 1u);
     CpuSuspendIntr(&state);
-    pUsb->m_unkab += count;
+    pUsb->m_tx_count += count;
     CpuResumeIntr(state);
     if ( pUsb->TxFIFOIdx < 256 )
     {
@@ -1619,7 +1619,7 @@ static void __fastcall UsbReceiveRegisterCompletionRoutine(int result, int count
         OnNewStatusReceived(pUsb, &pUsb->RecvRegs, count_rev >> 1);
       MakeReceiveRequest(pUsb);
       CpuSuspendIntr(&state);
-      pUsb->m_unkaa += count_1;
+      pUsb->m_rx_count += count_1;
       CpuResumeIntr(state);
     }
   }
@@ -1658,7 +1658,7 @@ static void __fastcall OnNewStatusReceived(PDEVICE_EXTENSION pUsb, struct USBACF
   }
   if ( i > 0 )
   {
-    pUsb->m_unkaa += pUsb->RxFifoPutIdx;
+    pUsb->m_rx_count += pUsb->RxFifoPutIdx;
     if ( pUsb->m_unkba )
     {
       CancelAlarm(alarm_cb, pUsb);
