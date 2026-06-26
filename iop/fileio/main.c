@@ -1524,163 +1524,158 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
   int state; // [sp+80h] [-8h] BYREF
 
   g_fileio_rpc_outbuf = 1;
-  if ( fno == 255 )
+  switch ( fno )
   {
-    if ( length == 8 )
+  case 253:
+    {
+      int priority_retres; // $s1
+
+      priority_retres = 0;
+      if ( (unsigned int)(*(_DWORD *)buffer - 9) >= 0x73 )
+      {
+        priority_retres = -22;
+      }
+      else
+      {
+        g_th_priority = *(_DWORD *)buffer;
+        ChangeThreadPriority(0, g_th_priority);
+      }
+      g_fileio_rpc_outbuf = priority_retres;
+      return &g_fileio_rpc_outbuf;
+    }
+  case 254:
+    {
+      int rwbuf_retres; // $s1
+
+      CpuSuspendIntr(&state);
+      rwbuf_retres = 0;
+      if ( g_rwbuf_uses )
+      {
+        rwbuf_retres = -16;
+      }
+      else
+      {
+        fileio_rpc_dealloc_rwbuf();
+        g_rwbuf_max_size = *(_DWORD *)buffer;
+        g_rwbuf_ptr_count_allowed = *((_DWORD *)buffer + 1);
+      }
+      g_fileio_rpc_outbuf = rwbuf_retres;
+      CpuResumeIntr(state);
+      return &g_fileio_rpc_outbuf;
+    }
+  case 255:
     {
       g_result_destbuf_ee[0] = *(void **)buffer;
-      g_result_destbuf_ee[1] = *((void **)buffer + 1);
+      g_result_destbuf_ee[1] = ( length == 8 ) ? *((void **)buffer + 1) : g_result_destbuf_ee[0];
+      g_fileio_rpc_outbuf_verres = 2;
+      g_fileio_rpc_outbuf = g_verstr;
+      return &g_fileio_rpc_outbuf;
     }
-    else
-    {
-      g_result_destbuf_ee[1] = *(void **)buffer;
-      g_result_destbuf_ee[0] = g_result_destbuf_ee[1];
-    }
-    g_fileio_rpc_outbuf_verres = 2;
-    g_fileio_rpc_outbuf = g_verstr;
-    return &g_fileio_rpc_outbuf;
-  }
-  if ( fno == 254 )
-  {
-    int rwbuf_retres; // $s1
-
-    CpuSuspendIntr(&state);
-    rwbuf_retres = 0;
-    if ( g_rwbuf_uses )
-    {
-      rwbuf_retres = -16;
-    }
-    else
-    {
-      fileio_rpc_dealloc_rwbuf();
-      g_rwbuf_max_size = *(_DWORD *)buffer;
-      g_rwbuf_ptr_count_allowed = *((_DWORD *)buffer + 1);
-    }
-    g_fileio_rpc_outbuf = rwbuf_retres;
-    CpuResumeIntr(state);
-    return &g_fileio_rpc_outbuf;
-  }
-  if ( fno == 253 )
-  {
-    int priority_retres; // $s1
-
-    priority_retres = 0;
-    if ( (unsigned int)(*(_DWORD *)buffer - 9) >= 0x73 )
-    {
-      priority_retres = -22;
-    }
-    else
-    {
-      g_th_priority = *(_DWORD *)buffer;
-      ChangeThreadPriority(0, g_th_priority);
-    }
-    g_fileio_rpc_outbuf = priority_retres;
-    return &g_fileio_rpc_outbuf;
+  default:
+    break;
   }
   thids_per_fd_idx = -1;
   for ( i = 0; i < 32; i += 1 )
   {
-    if ( g_thids_per_fd[i] == -1 )
-    {
-      thids_per_fd_idx = i;
-    }
-    else
+    if ( g_thids_per_fd[i] != -1 )
     {
       ReferThreadStatus(g_thids_per_fd[i], &thstatus);
       if ( thstatus.status == 16 )
       {
-        thids_per_fd_idx = i;
         DeleteThread(g_thids_per_fd[i]);
         g_thids_per_fd[i] = -1;
       }
     }
+    if ( g_thids_per_fd[i] == -1 )
+      thids_per_fd_idx = i;
   }
+  threadbuf = NULL;
   if ( thids_per_fd_idx == -1 )
   {
     printf("fileio: Thread alloc fail\n");
-    g_fileio_rpc_outbuf = 0;
-    return &g_fileio_rpc_outbuf;
   }
-  threadbuf = (struct fio_msgbox_inbuf *)fileio_rpc_threadbuf_alloc();
-  if ( !threadbuf )
+  else
   {
-    g_fileio_rpc_outbuf = 0;
-    return &g_fileio_rpc_outbuf;
-  }
-  if ( (unsigned int)fno < 5 && fno != 22 )
-  {
-    if ( !fno )
+    threadbuf = (struct fio_msgbox_inbuf *)fileio_rpc_threadbuf_alloc();
+    if ( threadbuf )
     {
-      int ee_fds; // $s0
-
-      memcpy(threadbuf->m_taskbuf, buffer, length);
-      mbxparam.attr = 0;
-      mbxparam.option = 255;
-      threadbuf->m_mbxid = CreateMbx(&mbxparam);
-      if ( threadbuf->m_mbxid < 0 )
+      if ( (unsigned int)fno < 5 && fno != 22 )
       {
-        fileio_rpc_threadbuf_free(threadbuf);
-        g_fileio_rpc_outbuf = 0;
-        return &g_fileio_rpc_outbuf;
+        if ( !fno )
+        {
+          int ee_fds; // $s0
+
+          memcpy(threadbuf->m_taskbuf, buffer, length);
+          mbxparam.attr = 0;
+          mbxparam.option = 255;
+          threadbuf->m_mbxid = CreateMbx(&mbxparam);
+          if ( threadbuf->m_mbxid < 0 )
+          {
+            fileio_rpc_threadbuf_free(threadbuf);
+            g_fileio_rpc_outbuf = 0;
+            return &g_fileio_rpc_outbuf;
+          }
+          ee_fds = *((_DWORD *)buffer + 261);
+          if ( g_fileio_verbose > 0 )
+            printf("SCE_OPEN: ee_fds= %d mbxid= %08x\n", (int)ee_fds, threadbuf->m_mbxid);
+          g_mbxid_for_ee_fds[ee_fds] = threadbuf->m_mbxid;
+          threadbuf->m_common.m_in_fno = 0;
+        }
+        else
+        {
+          memcpy(threadbuf, buffer, length);
+        }
+        thparam.attr = 0x2000000;
+        thparam.thread = (void (__cdecl *)(void *))get_fileio_rpc_command_thfn(fno);
+        thparam.stacksize = 6144;
+        thparam.option = 0;
+        thparam.priority = g_th_priority;
+        if ( thparam.thread )
+        {
+          int thid; // $s1
+
+          thid = CreateThread(&thparam);
+          if ( thid >= 0 )
+          {
+            g_thids_per_fd[thids_per_fd_idx] = thid;
+            if ( StartThread(thid, threadbuf) >= 0 )
+              return &g_fileio_rpc_outbuf;
+          }
+        }
       }
-      ee_fds = *((_DWORD *)buffer + 261);
-      if ( g_fileio_verbose > 0 )
-        printf("SCE_OPEN: ee_fds= %d mbxid= %08x\n", (int)ee_fds, threadbuf->m_mbxid);
-      g_mbxid_for_ee_fds[ee_fds] = threadbuf->m_mbxid;
-      threadbuf->m_common.m_in_fno = 0;
-    }
-    else
-    {
-      memcpy(threadbuf, buffer, length);
-    }
-    thparam.attr = 0x2000000;
-    thparam.thread = (void (__cdecl *)(void *))get_fileio_rpc_command_thfn(fno);
-    thparam.stacksize = 6144;
-    thparam.option = 0;
-    thparam.priority = g_th_priority;
-    if ( thparam.thread )
-    {
-      int thid; // $s1
-
-      thid = CreateThread(&thparam);
-      if ( thid >= 0 )
+      else
       {
-        g_thids_per_fd[thids_per_fd_idx] = thid;
-        if ( StartThread(thid, threadbuf) >= 0 )
+        memcpy(threadbuf->m_taskbuf, buffer, length);
+        switch ( fno )
+        {
+          case 1:
+            param_for_mbx = *((_DWORD *)buffer + 4);
+            break;
+          case 2:
+          case 22:
+          default:
+            param_for_mbx = *((_DWORD *)buffer + 7);
+            break;
+          case 3:
+            param_for_mbx = *((_DWORD *)buffer + 11);
+            break;
+          case 4:
+            param_for_mbx = *((_DWORD *)buffer + 6);
+            break;
+        }
+        *(u8 *)&(threadbuf->m_common.m_taskdata2) = 0;
+        threadbuf->m_common.m_in_fno = fno;
+        threadbuf->m_mbxid = g_mbxid_for_ee_fds[param_for_mbx];
+        g_thids_per_fd[thids_per_fd_idx] = -1;
+        if ( g_fileio_verbose > 0 )
+          printf("SendMbx ee_fds= %d mbxid= %08x fno= %d addr= %08x\n", param_for_mbx, threadbuf->m_mbxid, fno, (unsigned int)threadbuf);
+        if ( !SendMbx(threadbuf->m_mbxid, threadbuf) )
           return &g_fileio_rpc_outbuf;
       }
     }
+  }
+  if ( threadbuf )
     fileio_rpc_threadbuf_free(threadbuf);
-    g_fileio_rpc_outbuf = 0;
-    return &g_fileio_rpc_outbuf;
-  }
-  memcpy(threadbuf->m_taskbuf, buffer, length);
-  switch ( fno )
-  {
-    case 1:
-      param_for_mbx = *((_DWORD *)buffer + 4);
-      break;
-    case 2:
-    case 22:
-    default:
-      param_for_mbx = *((_DWORD *)buffer + 7);
-      break;
-    case 3:
-      param_for_mbx = *((_DWORD *)buffer + 11);
-      break;
-    case 4:
-      param_for_mbx = *((_DWORD *)buffer + 6);
-      break;
-  }
-  *(u8 *)&(threadbuf->m_common.m_taskdata2) = 0;
-  threadbuf->m_common.m_in_fno = fno;
-  threadbuf->m_mbxid = g_mbxid_for_ee_fds[param_for_mbx];
-  g_thids_per_fd[thids_per_fd_idx] = -1;
-  if ( g_fileio_verbose > 0 )
-    printf("SendMbx ee_fds= %d mbxid= %08x fno= %d addr= %08x\n", param_for_mbx, threadbuf->m_mbxid, fno, (unsigned int)threadbuf);
-  if ( !SendMbx(threadbuf->m_mbxid, threadbuf) )
-    return &g_fileio_rpc_outbuf;
-  fileio_rpc_threadbuf_free(threadbuf);
   g_fileio_rpc_outbuf = 0;
   return &g_fileio_rpc_outbuf;
 }
