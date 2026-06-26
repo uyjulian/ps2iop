@@ -497,7 +497,6 @@ static sceUsbdLddOps UsbAcfDriverDescriptor =
 }; // weak
 static int thread_priority = 28; // weak
 static int stack_size = 4096; // weak
-static const char aX[] = "X";
 static int resident_flag; // weak
 static int load_mode; // weak
 static char g_dialconf; // idb
@@ -552,8 +551,7 @@ static int __fastcall ModemWrite(void *userdata, void *data, int len)
     }
     if ( USBACF_TxBufferFull(pUsb) )
       break;
-    bcopy(&((char *)data)[cnt], (void *)"X", 1);
-    USBACF_PutTxChar(pUsb, aX[0]);
+    USBACF_PutTxChar(pUsb, ((char *)data)[cnt]);
   }
   MakeDataTransferRequest(pUsb, 0);
   return cnt;
@@ -580,8 +578,7 @@ static int __fastcall PatchWrite(PDEVICE_EXTENSION pUsb, const char *data, int l
       MakeDataTransferRequest(pUsb, 0);
       WaitSema(pUsb->sm_xmit);
     }
-    bcopy(&data[cnt], (void *)"X", 1);
-    USBACF_PutTxChar(pUsb, aX[0]);
+    USBACF_PutTxChar(pUsb, data[cnt]);
   }
   MakeDataTransferRequest(pUsb, 0);
   return cnt;
