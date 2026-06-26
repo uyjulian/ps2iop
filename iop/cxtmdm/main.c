@@ -807,99 +807,75 @@ static void __fastcall __noreturn th_2_proc_modem_status(void *userdata)
 //----- (00400A2C) --------------------------------------------------------
 static void __fastcall th_1_proc_ef_bits(void *userdata)
 {
-  struct DEVICE_EXTENSION *tmp_dev_ext; // $a0
   signed __int32 efbits_ret; // $v0
-  __int16 efbits_trimmed; // $s1
-  bool condtmp; // dc
-  unsigned int m_unkbb; // $v1
-  struct DEVICE_EXTENSION *v8; // $a0
-  BYTE v9; // $a1
-  BYTE v10; // $a2
   PDEVICE_EXTENSION pUsb;
 
   pUsb = (PDEVICE_EXTENSION)userdata;
   pUsb->modem_ops.snd_len = 1024;
   pUsb->m_unkbb = 0;
-LABEL_2:
-  tmp_dev_ext = pUsb;
   while ( 1 )
   {
-    efbits_ret = wait_for_ef_bits(tmp_dev_ext, 0x7FFu);
-    efbits_trimmed = efbits_ret;
-    condtmp = efbits_ret < 0;
-    if ( condtmp )
+    efbits_ret = wait_for_ef_bits(pUsb, 0x7FFu);
+    if ( efbits_ret < 0 )
       return;
-    m_unkbb = pUsb->m_unkbb;
-    if ( m_unkbb == 5 )
-      goto LABEL_2;
-    if ( m_unkbb < 5 )
+    switch ( pUsb->m_unkbb )
     {
-      switch ( m_unkbb )
-      {
-        case 0u:
-          if ( (efbits_trimmed & 1) != 0 )
-          {
-            if ( pUsb->f_patch == 1 )
-              goto LABEL_12;
-            pUsb->m_unkbb = 1;
-          }
-          break;
-        case 1u:
-          if ( (efbits_trimmed & 8) != 0 && pUsb->f_patch == 1 )
-          {
-LABEL_12:
-            pUsb->m_unkbb = 2;
-            wrap_set_event_flag_modem(pUsb, 1u);
-          }
-          break;
-        case 2u:
-          if ( (efbits_trimmed & 8) != 0 && pUsb->m_unkbd )
-          {
-            pUsb->m_unkbb = 3;
-            wrap_set_event_flag_modem(pUsb, 0x10u);
-            v8 = pUsb;
-            v9 = 2;
-            v10 = 0;
-            goto LABEL_21;
-          }
-          break;
-        case 3u:
-          if ( (efbits_trimmed & 8) != 0 && !pUsb->m_unkbd )
-          {
-            pUsb->m_unkbb = 2;
-            goto LABEL_20;
-          }
-          break;
-        case 4u:
-          pUsb->m_unkbb = 0;
-LABEL_20:
+      case 0u:
+        if ( (efbits_ret & 1) != 0 && pUsb->f_patch == 1 )
+        {
+          pUsb->m_unkbb = 2;
+          wrap_set_event_flag_modem(pUsb, 1u);
+        }
+        else if ( (efbits_ret & 1) != 0 )
+        {
+          pUsb->m_unkbb = 1;
+        }
+        break;
+      case 1u:
+        if ( (efbits_ret & 8) != 0 && pUsb->f_patch == 1 )
+        {
+          pUsb->m_unkbb = 2;
+          wrap_set_event_flag_modem(pUsb, 1u);
+        }
+        break;
+      case 2u:
+        if ( (efbits_ret & 8) != 0 && pUsb->m_unkbd )
+        {
+          pUsb->m_unkbb = 3;
+          wrap_set_event_flag_modem(pUsb, 0x10u);
+          USBMODEM_ModifyLed(pUsb, 2, 0);
+        }
+        break;
+      case 3u:
+        if ( (efbits_ret & 8) != 0 && !pUsb->m_unkbd )
+        {
+          pUsb->m_unkbb = 2;
           wrap_set_event_flag_modem(pUsb, 0x20u);
-          v8 = pUsb;
-          v9 = 0;
-          v10 = 2;
-LABEL_21:
-          USBMODEM_ModifyLed(v8, v9, v10);
-          break;
-      }
+          USBMODEM_ModifyLed(pUsb, 0, 2);
+        }
+        break;
+      case 4u:
+        pUsb->m_unkbb = 0;
+        wrap_set_event_flag_modem(pUsb, 0x20u);
+        USBMODEM_ModifyLed(pUsb, 0, 2);
+        break;
+      case 5u:
+      default:
+        continue;
     }
     if ( (unsigned int)(pUsb->m_unkbb - 2) >= 2 )
-      goto LABEL_2;
-    if ( (efbits_trimmed & 2) != 0 )
+      continue;
+    if ( (efbits_ret & 2) != 0 )
     {
       pUsb->m_unkbb = 0;
       USBMODEM_ModifyLed(pUsb, 0, 1u);
-      tmp_dev_ext = pUsb;
     }
     else
     {
-      if ( (efbits_trimmed & 0x400) != 0 )
+      if ( (efbits_ret & 0x400) != 0 )
         get_ef_bits(pUsb);
-      tmp_dev_ext = pUsb;
       if ( !pUsb->m_unkbd && pUsb->m_unkbe == 1 )
-      {
         wrap_set_event_flag_modem(pUsb, 0x40u);
-        tmp_dev_ext = pUsb;
-      }
     }
   }
 }
