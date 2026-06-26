@@ -1503,7 +1503,6 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
   int i;
   int thids_per_fd_idx; // $s5
   struct fio_msgbox_inbuf *threadbuf; // $s3
-  int param_for_mbx; // $s0
   iop_thread_t thparam; // [sp+18h] [-70h] BYREF
   iop_mbx_t mbxparam; // [sp+30h] [-58h] BYREF
   iop_thread_info_t thstatus; // [sp+38h] [-50h] BYREF
@@ -1603,7 +1602,7 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
           }
           ee_fds = *((_DWORD *)buffer + 261);
           if ( g_fileio_verbose > 0 )
-            printf("SCE_OPEN: ee_fds= %d mbxid= %08x\n", (int)ee_fds, threadbuf->m_mbxid);
+            printf("SCE_OPEN: ee_fds= %d mbxid= %08x\n", ee_fds, threadbuf->m_mbxid);
           g_mbxid_for_ee_fds[ee_fds] = threadbuf->m_mbxid;
           threadbuf->m_common.m_in_fno = 0;
         }
@@ -1631,30 +1630,32 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
       }
       else
       {
+        int ee_fds; // $s0
+
         memcpy(threadbuf->m_taskbuf, buffer, length);
         switch ( fno )
         {
           case 1:
-            param_for_mbx = *((_DWORD *)buffer + 4);
+            ee_fds = *((_DWORD *)buffer + 4);
             break;
           case 2:
           case 22:
           default:
-            param_for_mbx = *((_DWORD *)buffer + 7);
+            ee_fds = *((_DWORD *)buffer + 7);
             break;
           case 3:
-            param_for_mbx = *((_DWORD *)buffer + 11);
+            ee_fds = *((_DWORD *)buffer + 11);
             break;
           case 4:
-            param_for_mbx = *((_DWORD *)buffer + 6);
+            ee_fds = *((_DWORD *)buffer + 6);
             break;
         }
         *(u8 *)&(threadbuf->m_common.m_taskdata2) = 0;
         threadbuf->m_common.m_in_fno = fno;
-        threadbuf->m_mbxid = g_mbxid_for_ee_fds[param_for_mbx];
+        threadbuf->m_mbxid = g_mbxid_for_ee_fds[ee_fds];
         g_thids_per_fd[thids_per_fd_idx] = -1;
         if ( g_fileio_verbose > 0 )
-          printf("SendMbx ee_fds= %d mbxid= %08x fno= %d addr= %08x\n", param_for_mbx, threadbuf->m_mbxid, fno, (unsigned int)threadbuf);
+          printf("SendMbx ee_fds= %d mbxid= %08x fno= %d addr= %08x\n", ee_fds, threadbuf->m_mbxid, fno, (unsigned int)threadbuf);
         if ( !SendMbx(threadbuf->m_mbxid, threadbuf) )
           return &g_fileio_rpc_outbuf;
       }
