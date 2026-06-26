@@ -505,31 +505,33 @@ int _start()
 //----- (00400100) --------------------------------------------------------
 static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
 {
-  int try_cnt; // $s1
   void *rwbuf_cur_ptr; // $s2
   int rwbuf_size; // $s0
-  
   u32 efbits; // [sp+10h] [-8h] BYREF
   int state; // [sp+14h] [-4h] BYREF
 
   WaitEventFlag(g_rwbuf_ef, 1u, 16, &efbits);
   CpuSuspendIntr(&state);
-  try_cnt = 0;
-  if ( g_rwbuf_cur_ptr && g_rwbuf_size && (rwbuf_cur_ptr = g_rwbuf_cur_ptr, !g_rwbuf_is_allocated) )
+  
+  rwbuf_cur_ptr = g_rwbuf_cur_ptr;
+  rwbuf_size = g_rwbuf_size;
+  if ( rwbuf_cur_ptr && rwbuf_size && !g_rwbuf_is_allocated )
   {
     g_rwbuf_is_allocated = 1;
     ++g_rwbuf_uses;
-    rwbuf_size = g_rwbuf_size;
   }
   else
   {
+    int try_cnt; // $s1
+
     *out_rwbuf_size = 0;
     rwbuf_size = g_rwbuf_max_size;
-    while ( 1 )
+    for ( try_cnt = 0; try_cnt < 8; try_cnt += 1 )
     {
       rwbuf_cur_ptr = AllocSysMemory(1, rwbuf_size, 0);
       if ( rwbuf_cur_ptr )
       {
+        unsigned int cur_ptr_count; // $v1
         ++g_rwbuf_uses;
         if ( !g_rwbuf_cur_ptr || !g_rwbuf_size )
         {
@@ -537,29 +539,17 @@ static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
           g_rwbuf_size = rwbuf_size;
           g_rwbuf_is_allocated = 1;
         }
-        if ( g_rwbuf_ptr_count_allowed )
+        for ( cur_ptr_count = 0; cur_ptr_count < g_rwbuf_ptr_count_allowed; cur_ptr_count += 1 )
         {
-          unsigned int cur_ptr_count; // $v1
-
-          cur_ptr_count = 0;
-          while ( 1 )
+          if ( !g_rwbuf_ptrs[cur_ptr_count] )
           {
-            if ( !g_rwbuf_ptrs[cur_ptr_count] )
-            {
-              g_rwbuf_ptrs[cur_ptr_count] = rwbuf_cur_ptr;
-              break;
-            }
-            ++cur_ptr_count;
-            if ( cur_ptr_count >= g_rwbuf_ptr_count_allowed )
-              break;
+            g_rwbuf_ptrs[cur_ptr_count] = rwbuf_cur_ptr;
+            break;
           }
         }
         break;
       }
-      ++try_cnt;
       rwbuf_size /= 2;
-      if ( try_cnt >= 8 )
-        break;
     }
     if ( try_cnt == 8 )
     {
@@ -597,19 +587,12 @@ static void __fastcall fileio_free_rwbuf(void *ptr)
     unsigned int cur_ptr_count; // $a0
 
     --g_rwbuf_uses;
-    cur_ptr_count = 0;
-    if ( g_rwbuf_ptr_count_allowed )
+    for ( cur_ptr_count = 0; cur_ptr_count < g_rwbuf_ptr_count_allowed; cur_ptr_count += 1 )
     {
-      while ( 1 )
+      if ( g_rwbuf_ptrs[cur_ptr_count] == ptr )
       {
-        if ( g_rwbuf_ptrs[cur_ptr_count] == ptr )
-        {
-          g_rwbuf_ptrs[cur_ptr_count] = 0;
-          break;
-        }
-        ++cur_ptr_count;
-        if ( cur_ptr_count >= g_rwbuf_ptr_count_allowed )
-          break;
+        g_rwbuf_ptrs[cur_ptr_count] = 0;
+        break;
       }
     }
     SetEventFlag(g_rwbuf_ef, 1u);
@@ -678,8 +661,7 @@ static void __fastcall do_call_ee_rcv_res_intr(void *ptr, int sz)
       break;
     DelayThread(2000);
   }
-  while ( sceSifDmaStat(dmat) >= 0 )
-    ;
+  while ( sceSifDmaStat(dmat) >= 0 );
   SignalSema(g_sema_for_result_destbuf_ee);
 }
 // 40324C: using guessed type int g_result_destbuf_ee_idx;
@@ -810,8 +792,7 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
         int read_res_main; // $v0
 
         cur_rwbuf_sz = ( rwbuf_size < cur_read_remain ) ? rwbuf_size : cur_read_remain;
-        while ( sceSifDmaStat(trid) >= 0 )
-          ;
+        while ( sceSifDmaStat(trid) >= 0 );
         read_res_main = iomanX_read(inbuf->m_fd, rwbuf, cur_rwbuf_sz);
         read_res_last = read_res_main;
         if ( cur_rwbuf_sz != read_res_main )
@@ -821,14 +802,12 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
             int read_res_main_rounded; // $v0
             int outbuf_ind; // $a0
 
-            outbuf_ind = 0;
             read_res_main_rounded = read_res_main >> 6 << 6;
             read_sz_end = read_res_main - read_res_main_rounded;
             eedestptr2 = (int)&eedest[read_res_main_rounded];
-            while ( outbuf_ind < read_sz_end )
+            for ( outbuf_ind = 0; outbuf_ind < read_sz_end; outbuf_ind += 1 )
             {
               fbuf.m_buf2[outbuf_ind] = ((_BYTE *)rwbuf)[read_res_main_rounded + outbuf_ind];
-              outbuf_ind += 1;
             }
             if ( read_res_main_rounded )
             {
@@ -937,7 +916,7 @@ static void __fastcall fileio_rpc_fd_write(struct fio_fd_write_inbuf *inbuf)
         int write_res_main; // $v0
 
         bufsz = ( rwbuf_size < rwbuf_remain_sz ) ? rwbuf_size : rwbuf_remain_sz;
-        while ( sceSifGetOtherData(&rdata, eebuffer_xptr, rwbuf, bufsz, 0) < 0  )
+        while ( sceSifGetOtherData(&rdata, eebuffer_xptr, rwbuf, bufsz, 0) < 0 )
           DelayThread(2000);
         write_res_main = iomanX_write(inbuf->m_fd, rwbuf, bufsz);
         write_res_last = write_res_main;
@@ -1026,7 +1005,7 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
       dmat.size = in_lbn.m_nblk * in_lbn.m_blksize;
       if ( in_lbn.m_type )
       {
-        while (  sceSifGetOtherData(&rdata, dmat.dest, dmat.src, dmat.size, 0) < 0  )
+        while ( sceSifGetOtherData(&rdata, dmat.dest, dmat.src, dmat.size, 0) < 0 )
           DelayThread(2000);
         devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &in_lbn, inbuf->m_arglen, 0, 0);
         ++cur_block_unit;
@@ -1049,8 +1028,7 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
             break;
           DelayThread(2000);
         }
-        while ( sceSifDmaStat(trid) >= 0 )
-          ;
+        while ( sceSifDmaStat(trid) >= 0 );
         ++cur_block_unit;
       }
       in_lbn.m_lbn += in_lbn.m_nblk;
@@ -1442,7 +1420,7 @@ static void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf
   {
     while ( 1 )
     {
-      if (threadbuf_2)
+      if ( threadbuf_2 )
         fileio_rpc_threadbuf_free(threadbuf_2);
       ReceiveMbx((void **)&threadbuf_2, m_mbxid);
       if ( g_fileio_verbose > 0 )
@@ -1599,9 +1577,8 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
     g_fileio_rpc_outbuf = priority_retres;
     return &g_fileio_rpc_outbuf;
   }
-  i = 0;
   thids_per_fd_idx = -1;
-  while ( i < 32 )
+  for ( i = 0; i < 32; i += 1 )
   {
     if ( g_thids_per_fd[i] == -1 )
     {
@@ -1617,7 +1594,6 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
         g_thids_per_fd[i] = -1;
       }
     }
-    ++i;
   }
   if ( thids_per_fd_idx == -1 )
   {
@@ -1743,8 +1719,7 @@ static void __noreturn power_off_event_handler()
         break;
       DelayThread(2000);
     }
-    while ( sceSifDmaStat(trid) >= 0 )
-      ;
+    while ( sceSifDmaStat(trid) >= 0 );
   }
 }
 // 403240: using guessed type int g_fileio_verbose;
