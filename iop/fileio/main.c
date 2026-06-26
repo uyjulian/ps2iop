@@ -367,9 +367,9 @@ static void __fastcall __noreturn fileio_rpc_devctl(struct fio_devctl_inbuf *inb
 static void __fastcall __noreturn fileio_rpc_symlink(struct fio_symlink_inbuf *inbuf);
 static void __fastcall __noreturn fileio_rpc_readlink(struct fio_readlink_inbuf *inbuf);
 static void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf);
-static void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))();
+static void *get_fileio_rpc_command_thfn(int cmd);
 static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int length);
-static void __noreturn power_off_event_handler();
+static void __noreturn power_off_event_handler(void *userdata);
 static void fileio_rpc_start_thread(void *userdata);
 static void __fastcall heap_rpc_load_iop_heap(int buffer, int length, int *outbuf);
 static void __fastcall heap_rpc_alloc_iop_heap(const int *buffer, int length, void **outbuf);
@@ -1455,56 +1455,56 @@ static void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf
 // 403240: using guessed type int g_fileio_verbose;
 
 //----- (00401CA4) --------------------------------------------------------
-static void (__noreturn *__fastcall get_fileio_rpc_command_thfn(int cmd))()
+static void *get_fileio_rpc_command_thfn(int cmd)
 {
   switch ( cmd )
   {
     case 0:
-      return (void (__noreturn *)())fileio_rpc_open;
+      return fileio_rpc_open;
     case 5:
-      return (void (__noreturn *)())fileio_rpc_ioctl;
+      return fileio_rpc_ioctl;
     case 6:
-      return (void (__noreturn *)())fileio_rpc_remove;
+      return fileio_rpc_remove;
     case 7:
-      return (void (__noreturn *)())fileio_rpc_mkdir;
+      return fileio_rpc_mkdir;
     case 8:
-      return (void (__noreturn *)())fileio_rpc_rmdir;
+      return fileio_rpc_rmdir;
     case 9:
-      return (void (__noreturn *)())fileio_rpc_dopen;
+      return fileio_rpc_dopen;
     case 10:
-      return (void (__noreturn *)())fileio_rpc_dclose;
+      return fileio_rpc_dclose;
     case 11:
-      return (void (__noreturn *)())fileio_rpc_dread;
+      return fileio_rpc_dread;
     case 12:
-      return (void (__noreturn *)())fileio_rpc_getstat;
+      return fileio_rpc_getstat;
     case 13:
-      return (void (__noreturn *)())fileio_rpc_chstat;
+      return fileio_rpc_chstat;
     case 14:
-      return (void (__noreturn *)())fileio_rpc_format;
+      return fileio_rpc_format;
     case 15:
-      return (void (__noreturn *)())fileio_rpc_adddrv;
+      return fileio_rpc_adddrv;
     case 16:
-      return (void (__noreturn *)())fileio_rpc_deldrv;
+      return fileio_rpc_deldrv;
     case 17:
-      return (void (__noreturn *)())fileio_rpc_rename;
+      return fileio_rpc_rename;
     case 18:
-      return (void (__noreturn *)())fileio_rpc_chdir;
+      return fileio_rpc_chdir;
     case 19:
-      return (void (__noreturn *)())fileio_rpc_sync;
+      return fileio_rpc_sync;
     case 20:
-      return (void (__noreturn *)())fileio_rpc_mount;
+      return fileio_rpc_mount;
     case 21:
-      return (void (__noreturn *)())fileio_rpc_umount;
+      return fileio_rpc_umount;
     case 23:
-      return (void (__noreturn *)())fileio_rpc_devctl;
+      return fileio_rpc_devctl;
     case 24:
-      return (void (__noreturn *)())fileio_rpc_symlink;
+      return fileio_rpc_symlink;
     case 25:
-      return (void (__noreturn *)())fileio_rpc_readlink;
+      return fileio_rpc_readlink;
     case 26:
-      return (void (__noreturn *)())fileio_rpc_ioctl2;
+      return fileio_rpc_ioctl2;
     case 28:
-      return (void (__noreturn *)())fileio_rpc_devctl_blkio;
+      return fileio_rpc_devctl_blkio;
     default:
       printf("sce_fileio: unrecognized code %x\n", cmd);
       return 0;
@@ -1695,13 +1695,14 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
 // 403334: using guessed type int g_fileio_rpc_outbuf_verres;
 
 //----- (00402298) --------------------------------------------------------
-static void __noreturn power_off_event_handler()
+static void __noreturn power_off_event_handler(void *userdata)
 {
   int trid; // $s0
   char pkt[16]; // [sp+18h] [-18h] BYREF
   int ef; // [sp+28h] [-8h] BYREF
   u32 efres; // [sp+2Ch] [-4h] BYREF
 
+  (void)userdata;
   while ( iomanX_devctl("cdrom0:", 0x4391, 0, 0, &ef, 4u) < 0 )
   {
     if ( g_fileio_verbose > 0 )
@@ -1750,7 +1751,7 @@ static void fileio_rpc_start_thread(void *userdata)
   g_sema_for_result_destbuf_ee = CreateSema(&semaparam);
   ReferThreadStatus(0, &thinfo);
   thparam.attr = 0x2000000;
-  thparam.thread = (void (__cdecl *)(void *))power_off_event_handler;
+  thparam.thread = power_off_event_handler;
   thparam.stacksize = 2048;
   thparam.option = 0;
   thparam.priority = thinfo.initPriority;
