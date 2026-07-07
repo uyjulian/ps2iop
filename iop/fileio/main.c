@@ -85,7 +85,7 @@ struct fio_msgbox_inbuf
 {
   struct fio_common_inbuf m_common;
   int m_mbxid;
-  char m_taskbuf[];
+  char m_taskbuf[3120];
 };
 
 /* 182 */
@@ -328,7 +328,7 @@ int _start();
 static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size);
 static void __fastcall fileio_free_rwbuf(void *ptr);
 static void fileio_rpc_dealloc_rwbuf();
-static void *fileio_rpc_threadbuf_alloc();
+static struct fio_msgbox_inbuf *fileio_rpc_threadbuf_alloc(void);
 static void __fastcall fileio_rpc_threadbuf_free(void *ptr);
 static void __fastcall do_call_ee_rcv_res_intr(void *ptr, int sz);
 static int __fastcall fileio_rpc_fd_open(struct fio_fd_open_inbuf *inbuf);
@@ -612,13 +612,13 @@ static void fileio_rpc_dealloc_rwbuf()
 // 403260: using guessed type int g_rwbuf_is_allocated;
 
 //----- (004004A8) --------------------------------------------------------
-static void *fileio_rpc_threadbuf_alloc()
+static struct fio_msgbox_inbuf *fileio_rpc_threadbuf_alloc(void)
 {
-  void *ptr; // $s0
+  struct fio_msgbox_inbuf *ptr; // $s0
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
-  ptr = AllocSysMemory(1, 3136, 0);
+  ptr = AllocSysMemory(1, sizeof(*ptr), 0);
   CpuResumeIntr(state);
   return ptr;
 }
@@ -645,7 +645,7 @@ static void __fastcall do_call_ee_rcv_res_intr(void *ptr, int sz)
   {
     CpuSuspendIntr(&state);
     *(_DWORD *)&cmdbuf[12] = g_result_destbuf_ee_idx;
-    dmat = isceSifSendCmd(0x80000011, cmdbuf, 16, ptr, g_result_destbuf_ee[g_result_destbuf_ee_idx], sz);
+    dmat = isceSifSendCmd(0x80000011, cmdbuf, sizeof(cmdbuf), ptr, g_result_destbuf_ee[g_result_destbuf_ee_idx], sz);
     if ( dmat )
       g_result_destbuf_ee_idx ^= 1u;
     CpuResumeIntr(state);
@@ -666,14 +666,14 @@ static int __fastcall fileio_rpc_fd_open(struct fio_fd_open_inbuf *inbuf)
 
   if ( g_fileio_verbose > 0 )
     printf("open name %s flag 0x%x mode 0x%x\n", inbuf->m_name, inbuf->m_flags, inbuf->m_mode);
+  memset(&fbuf, 0, sizeof(fbuf));
   fd = iomanX_open(inbuf->m_name, inbuf->m_flags, inbuf->m_mode);
   fbuf.m_common.m_out_fno = 0;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_retres = fd;
-  memset(&fbuf.m_x5, 0, 12);
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   return fd;
 }
 // 403240: using guessed type int g_fileio_verbose;
@@ -685,13 +685,13 @@ static void __fastcall fileio_rpc_fd_close(struct fio_fd_close_inbuf *inbuf)
 
   if ( g_fileio_verbose > 0 )
     printf("close fd = %d\n", inbuf->m_fd);
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 1;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_close(inbuf->m_fd);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
 }
 // 403240: using guessed type int g_fileio_verbose;
 
@@ -700,13 +700,13 @@ static void __fastcall fileio_rpc_fd_lseek(struct fio_fd_lseek_inbuf *inbuf)
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 4;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_lseek(inbuf->m_fd, inbuf->m_pos, inbuf->m_mode);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
 }
 
 //----- (004007B8) --------------------------------------------------------
@@ -717,13 +717,14 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
   int read_sz_end; // $s4
   int read_sz_begin; // $s7
   int read_sz_total; // $s6
-  SifDmaTransfer_t dmat; // [sp+10h] [-D8h] BYREF
+  SifDmaTransfer_t dmat[1]; // [sp+10h] [-D8h] BYREF
   struct fio_read_outbuf fbuf; // [sp+20h] [-C8h] BYREF
   int rwbuf_size; // [sp+C8h] [-20h] BYREF
   int state; // [sp+CCh] [-1Ch] BYREF
   int eedestptr1; // [sp+D4h] [-14h]
   int eedestptr2; // [sp+D8h] [-10h]
 
+  memset(&fbuf, 0, sizeof(fbuf));
   read_res_last = 0;
   read_sz_end = 0;
   read_sz_begin = 0;
@@ -753,13 +754,13 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
     cur_read_remain = 0;
     read_sz_end = 0;
     eedestptr2 = 0;
-    if ( m_eebuffersz >= 64 )
+    if ( m_eebuffersz >= (int)(sizeof(fbuf.m_buf2)) )
     {
-      read_sz_begin = ( (m_eebuffer & 0x3F) != 0 ) ? ((m_eebuffer >> 6 << 6) - (m_eebuffer - 64)) : 0;
+      read_sz_begin = ( (m_eebuffer & (sizeof(fbuf.m_buf2) - 1)) != 0 ) ? ((m_eebuffer & ~(sizeof(fbuf.m_buf2) - 1)) - (m_eebuffer - (sizeof(fbuf.m_buf2)))) : 0;
       eedest = (char *)(m_eebuffer + read_sz_begin);
-      cur_read_remain = ((m_eebuffer + m_eebuffersz) >> 6 << 6) - (m_eebuffer + read_sz_begin);
-      read_sz_end = m_eebuffer + m_eebuffersz - ((m_eebuffer + m_eebuffersz) >> 6 << 6);
-      eedestptr2 = (m_eebuffer + m_eebuffersz) >> 6 << 6;
+      cur_read_remain = ((m_eebuffer + m_eebuffersz) & ~(sizeof(fbuf.m_buf2) - 1)) - (m_eebuffer + read_sz_begin);
+      read_sz_end = m_eebuffer + m_eebuffersz - ((m_eebuffer + m_eebuffersz) & ~(sizeof(fbuf.m_buf2) - 1));
+      eedestptr2 = (m_eebuffer + m_eebuffersz) & ~(sizeof(fbuf.m_buf2) - 1);
     }
     trid = 0;
     if ( read_sz_begin > 0 )
@@ -792,21 +793,21 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
           int read_res_main_rounded; // $v0
           int outbuf_ind; // $a0
 
-          read_res_main_rounded = read_res_main >> 6 << 6;
+          read_res_main_rounded = read_res_main & ~(sizeof(fbuf.m_buf2) - 1);
           read_sz_end = read_res_main - read_res_main_rounded;
           eedestptr2 = (int)&eedest[read_res_main_rounded];
           for ( outbuf_ind = 0; outbuf_ind < read_sz_end; outbuf_ind += 1 )
             fbuf.m_buf2[outbuf_ind] = ((_BYTE *)rwbuf)[read_res_main_rounded + outbuf_ind];
           if ( read_res_main_rounded )
           {
-            dmat.src = rwbuf;
-            dmat.dest = eedest;
-            dmat.size = read_res_main_rounded;
-            dmat.attr = 0;
+            dmat[0].src = rwbuf;
+            dmat[0].dest = eedest;
+            dmat[0].size = read_res_main_rounded;
+            dmat[0].attr = 0;
             while ( 1 )
             {
               CpuSuspendIntr(&state);
-              trid = sceSifSetDma(&dmat, 1);
+              trid = sceSifSetDma(dmat, sizeof(dmat)/sizeof(dmat[0]));
               CpuResumeIntr(state);
               if ( trid )
                 break;
@@ -817,14 +818,14 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
         }
         break;
       }
-      dmat.src = rwbuf;
-      dmat.dest = eedest;
-      dmat.size = read_res_main;
-      dmat.attr = 0;
+      dmat[0].src = rwbuf;
+      dmat[0].dest = eedest;
+      dmat[0].size = read_res_main;
+      dmat[0].attr = 0;
       while ( 1 )
       {
         CpuSuspendIntr(&state);
-        trid = sceSifSetDma(&dmat, 1);
+        trid = sceSifSetDma(dmat, sizeof(dmat)/sizeof(dmat[0]));
         CpuResumeIntr(state);
         if ( trid )
           break;
@@ -854,7 +855,7 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = ( read_res_last < 0 && read_sz_total <= 0 ) ? read_res_last : read_sz_total;
-  do_call_ee_rcv_res_intr(&fbuf, 164);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_free_rwbuf(rwbuf);
 }
 
@@ -868,6 +869,7 @@ static void __fastcall fileio_rpc_fd_write(struct fio_fd_write_inbuf *inbuf)
   SifRpcReceiveData_t rdata; // [sp+38h] [-28h] BYREF
   int rwbuf_size; // [sp+58h] [-8h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   write_res_last = 0;
   write_sz_total = 0;
   rwbuf = fileio_alloc_rwbuf(&rwbuf_size);
@@ -918,8 +920,7 @@ static void __fastcall fileio_rpc_fd_write(struct fio_fd_write_inbuf *inbuf)
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = ( write_res_last >= 0 || write_sz_total > 0 ) ? write_sz_total : write_res_last;
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_free_rwbuf(rwbuf);
 }
 // 400B14: using guessed type SifRpcReceiveData_t rdata;
@@ -930,12 +931,13 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
   int devctl_res; // $s2
   struct fio_largebuf_outbuf fbuf; // [sp+20h] [-478h] BYREF
   sceFsDevctlBlkIO bio_arg; // [sp+440h] [-58h] BYREF
-  SifDmaTransfer_t dmat; // [sp+458h] [-40h] BYREF
+  SifDmaTransfer_t dmat[1]; // [sp+458h] [-40h] BYREF
   SifRpcReceiveData_t rdata; // [sp+468h] [-30h] BYREF
   int rwbuf_size; // [sp+488h] [-10h] BYREF
   int state; // [sp+48Ch] [-Ch] BYREF
   void *rwbuf; // [sp+490h] [-8h]
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 23;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
@@ -968,14 +970,14 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
       size_in_rwbuf_block_units += 1;
     else
       size_in_rwbuf_remainder_block_units = rwbuf_size_in_blocks;
-    dmat.attr = 0;
-    dmat.src = rwbuf;
-    dmat.dest = (void *)bio_arg.addr;
+    dmat[0].attr = 0;
+    dmat[0].src = rwbuf;
+    dmat[0].dest = (void *)bio_arg.addr;
     bio_arg.addr = rwbuf;
     for ( cur_block_unit = 0; cur_block_unit < size_in_rwbuf_block_units; cur_block_unit += 1 )
     {
       bio_arg.nblk = ( cur_block_unit + 1 == size_in_rwbuf_block_units ) ? size_in_rwbuf_remainder_block_units : rwbuf_size_in_blocks;
-      dmat.size = bio_arg.nblk * bio_arg.blksiz;
+      dmat[0].size = bio_arg.nblk * bio_arg.blksiz;
       switch ( bio_arg.type )
       {
       case sceFsREADING:
@@ -988,7 +990,7 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
           while ( 1 )
           {
             CpuSuspendIntr(&state);
-            trid = sceSifSetDma(&dmat, 1);
+            trid = sceSifSetDma(dmat, sizeof(dmat)/sizeof(dmat[0]));
             CpuResumeIntr(state);
             if ( trid )
               break;
@@ -1000,7 +1002,7 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
       case sceFsWRITING:
       default:
         {
-          while ( sceSifGetOtherData(&rdata, dmat.dest, dmat.src, dmat.size, 0) < 0 )
+          while ( sceSifGetOtherData(&rdata, dmat[0].dest, dmat[0].src, dmat[0].size, 0) < 0 )
             DelayThread(2000);
           devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &bio_arg, inbuf->m_arglen, 0, 0);
           break;
@@ -1009,7 +1011,7 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
       if ( devctl_res < 0 )
         break;
       bio_arg.lbn += bio_arg.nblk;
-      dmat.dest = (char *)dmat.dest + dmat.size;
+      dmat[0].dest = (char *)dmat[0].dest + dmat[0].size;
     }
     fileio_free_rwbuf(rwbuf);
   }
@@ -1019,7 +1021,7 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
     Kprintf("Error:Cannot alloc r/w buffer\n");
   }
   fbuf.m_retres = devctl_res;
-  do_call_ee_rcv_res_intr(&fbuf, 1052);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1033,6 +1035,7 @@ static void __fastcall __noreturn fileio_rpc_ioctl(struct fio_ioctl_inbuf *inbuf
 {
   struct fio_largebuf_outbuf fbuf; // [sp+10h] [-420h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 5;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
@@ -1040,7 +1043,7 @@ static void __fastcall __noreturn fileio_rpc_ioctl(struct fio_ioctl_inbuf *inbuf
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
   fbuf.m_retres = iomanX_ioctl(inbuf->m_fd, inbuf->m_cmd, inbuf->m_inoutbufsz ? inbuf->m_buf : 0);
-  do_call_ee_rcv_res_intr(&fbuf, 1052);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1050,6 +1053,7 @@ static void __fastcall __noreturn fileio_rpc_ioctl2(struct fio_ioctl2_inbuf *inb
 {
   struct fio_largebuf_outbuf fbuf; // [sp+18h] [-420h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 26;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
@@ -1057,7 +1061,7 @@ static void __fastcall __noreturn fileio_rpc_ioctl2(struct fio_ioctl2_inbuf *inb
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
   fbuf.m_retres = iomanX_ioctl2(inbuf->m_fd, inbuf->m_cmd, inbuf->m_inoutbufsz ? inbuf->m_buf : 0, inbuf->m_inoutbufsz, fbuf.m_buf, fbuf.m_inbufsz);
-  do_call_ee_rcv_res_intr(&fbuf, 1052);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1067,13 +1071,13 @@ static void __fastcall __noreturn fileio_rpc_remove(struct fio_remove_inbuf *inb
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 6;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_remove(inbuf->m_name);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1083,13 +1087,13 @@ static void __fastcall __noreturn fileio_rpc_mkdir(struct fio_mkdir_inbuf *inbuf
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 7;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_mkdir(inbuf->m_name, inbuf->m_mode);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1099,13 +1103,13 @@ static void __fastcall __noreturn fileio_rpc_rmdir(struct fio_rmdir_inbuf *inbuf
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 8;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_rmdir(inbuf->m_name);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1115,13 +1119,13 @@ static void __fastcall __noreturn fileio_rpc_format(struct fio_format_inbuf *inb
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 14;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_format(inbuf->m_dev, inbuf->m_blockdev, inbuf->m_arg, inbuf->m_arglen);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1131,13 +1135,13 @@ static void __fastcall __noreturn fileio_rpc_adddrv(struct fio_adddrv_inbuf *inb
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 15;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_AddDrv((iop_device_t *)inbuf->m_device);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1147,13 +1151,13 @@ static void __fastcall __noreturn fileio_rpc_deldrv(struct fio_deldrv_inbuf *inb
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 16;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_DelDrv((const char *)&inbuf->m_device);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1163,13 +1167,13 @@ static void __fastcall __noreturn fileio_rpc_dopen(struct fio_dopen_inbuf *inbuf
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 9;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_dopen(inbuf->m_name);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1179,13 +1183,13 @@ static void __fastcall __noreturn fileio_rpc_dclose(struct fio_dclose_inbuf *inb
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 10;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_dclose(inbuf->m_fd);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1195,13 +1199,14 @@ static void __fastcall __noreturn fileio_rpc_dread(struct fio_dread_inbuf *inbuf
 {
   struct fio_dirent_outbuf fbuf; // [sp+10h] [-160h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 11;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_dread(inbuf->m_fd, &fbuf.m_dirent);
   fbuf.m_eedestptr = inbuf->m_eedestptr;
-  do_call_ee_rcv_res_intr(&fbuf, 348);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1211,13 +1216,14 @@ static void __fastcall __noreturn fileio_rpc_getstat(struct fio_getstat_inbuf *i
 {
   struct fio_dirent_outbuf fbuf; // [sp+10h] [-160h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 12;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_getstat(inbuf->m_name, &fbuf.m_dirent.stat);
   fbuf.m_eedestptr = inbuf->m_eedestptr;
-  do_call_ee_rcv_res_intr(&fbuf, 348);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1227,13 +1233,13 @@ static void __fastcall __noreturn fileio_rpc_chstat(struct fio_chstat_inbuf *inb
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 13;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_chstat(inbuf->m_dirent.name, &inbuf->m_dirent.stat, inbuf->m_statmask);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1243,13 +1249,13 @@ static void __fastcall __noreturn fileio_rpc_rename(struct fio_rename_inbuf *inb
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 17;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_rename(inbuf->m_oldname, inbuf->m_newname);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1259,13 +1265,13 @@ static void __fastcall __noreturn fileio_rpc_chdir(struct fio_chdir_inbuf *inbuf
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 18;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_chdir(inbuf->m_name);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1275,13 +1281,13 @@ static void __fastcall __noreturn fileio_rpc_sync(struct fio_sync_inbuf *inbuf)
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 19;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_sync(inbuf->m_dev, inbuf->m_flag);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1291,13 +1297,13 @@ static void __fastcall __noreturn fileio_rpc_mount(struct fio_mount_inbuf *inbuf
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+18h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 20;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_mount(inbuf->m_fsname, inbuf->m_devname, inbuf->m_flag, inbuf->m_arg, inbuf->m_arglen);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1307,13 +1313,13 @@ static void __fastcall __noreturn fileio_rpc_umount(struct fio_umount_inbuf *inb
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 21;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_umount(inbuf->m_fsname);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1323,14 +1329,13 @@ static void __fastcall fileio_rpc_fd_lseek64(struct fio_fd_lseek64_inbuf *inbuf)
 {
   struct fio_smallbuf64_outbuf fbuf; // [sp+18h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 22;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_lseek64(inbuf->m_fd, inbuf->m_pos, inbuf->m_mode);
-  fbuf.m_x7 = 0;
-  fbuf.m_x6 = 0;
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
 }
 
 //----- (004019A8) --------------------------------------------------------
@@ -1338,6 +1343,7 @@ static void __fastcall __noreturn fileio_rpc_devctl(struct fio_devctl_inbuf *inb
 {
   struct fio_largebuf_outbuf fbuf; // [sp+18h] [-420h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 23;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
@@ -1345,7 +1351,7 @@ static void __fastcall __noreturn fileio_rpc_devctl(struct fio_devctl_inbuf *inb
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
   fbuf.m_retres = iomanX_devctl(inbuf->m_name, inbuf->m_cmd, inbuf->m_arglen ? inbuf->m_arg : 0, inbuf->m_arglen, fbuf.m_buf, fbuf.m_inbufsz);
-  do_call_ee_rcv_res_intr(&fbuf, 1052);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1355,13 +1361,13 @@ static void __fastcall __noreturn fileio_rpc_symlink(struct fio_symlink_inbuf *i
 {
   struct fio_smallbuf_outbuf fbuf; // [sp+10h] [-20h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 24;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_retres = iomanX_symlink(inbuf->m_oldname, inbuf->m_newname);
-  memset(&fbuf.m_x5, 0, 12);
-  do_call_ee_rcv_res_intr(&fbuf, 32);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1371,6 +1377,7 @@ static void __fastcall __noreturn fileio_rpc_readlink(struct fio_readlink_inbuf 
 {
   struct fio_largebuf_outbuf fbuf; // [sp+10h] [-420h] BYREF
 
+  memset(&fbuf, 0, sizeof(fbuf));
   fbuf.m_common.m_out_fno = 25;
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
@@ -1378,7 +1385,7 @@ static void __fastcall __noreturn fileio_rpc_readlink(struct fio_readlink_inbuf 
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
   fbuf.m_retres = iomanX_readlink(inbuf->m_path, fbuf.m_buf, fbuf.m_inbufsz);
-  do_call_ee_rcv_res_intr(&fbuf, 1052);
+  do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
 }
@@ -1573,7 +1580,7 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
   }
   else
   {
-    threadbuf = (struct fio_msgbox_inbuf *)fileio_rpc_threadbuf_alloc();
+    threadbuf = fileio_rpc_threadbuf_alloc();
     if ( threadbuf )
     {
       if ( (unsigned int)fno < 5 && fno != 22 )
@@ -1689,7 +1696,7 @@ static void __noreturn power_off_event_handler(void *userdata)
     WaitEventFlag(ef, 0x10u, 0, &efres);
     while ( 1 )
     {
-      trid = sceSifSendCmd(0x80000013, pkt, 16, 0, 0, 0);
+      trid = sceSifSendCmd(0x80000013, pkt, sizeof(pkt), 0, 0, 0);
       if ( trid )
         break;
       DelayThread(2000);
