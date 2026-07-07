@@ -587,14 +587,14 @@ static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz
 {
   size_t retres; // $s1
   PDEVICE_EXTENSION pUsb;
-  int zerotmp; // [sp+10h] [-10h] BYREF
+  int if_type; // [sp+10h] [-10h] BYREF
   int state; // [sp+14h] [-Ch] BYREF
   int priority; // [sp+18h] [-8h] BYREF
 
   pUsb = userdata;
   switch ( cmd )
   {
-  case 0xC0000111:
+  case sceModemCC_FLUSH_TXBUF:
     {
       CpuSuspendIntr(&state);
       pUsb->TxFIFOIdx = 0;
@@ -602,21 +602,21 @@ static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz
       CpuResumeIntr(state);
       return 0;
     }
-  case 0xC0010000:
+  case sceModemCC_GET_RX_COUNT:
     {
       if ( bufsz != 4 )
         return -512;
       bcopy(&pUsb->m_rx_count, buf, 4);
       return 0;
     }
-  case 0xC0010001:
+  case sceModemCC_GET_TX_COUNT:
     {
       if ( bufsz != 4 )
         return -512;
       bcopy(&pUsb->m_tx_count, buf, 4);
       return 0;
     }
-  case 0xC1000000:
+  case sceModemCC_SET_THPRI:
     {
       if ( bufsz != 4 )
         return -512;
@@ -638,7 +638,7 @@ static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz
         thread_priority = priority;
       return retres;
     }
-  case 0xC0000200:
+  case sceModemCC_GET_DIALCONF:
     {
       retres = strlen(&g_dialconf) + 1;
       if ( bufsz < (int)retres )
@@ -646,22 +646,22 @@ static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz
       bcopy(&g_dialconf, buf, retres);
       return retres;
     }
-  case 0xC0000100:
+  case sceModemCC_GET_IF_TYPE:
     {
       if ( bufsz != 4 )
         return -512;
-      zerotmp = 0;
-      bcopy(&zerotmp, buf, 4);
+      if_type = sceModemIFT_GENERIC;
+      bcopy(&if_type, buf, 4);
       return 0;
     }
-  case 0xC0000000:
+  case sceModemCC_GET_THPRI:
     {
       if ( bufsz != 4 )
         return -512;
       bcopy(&thread_priority, buf, 4);
       return 0;
     }
-  case 0xC0000110:
+  case sceModemCC_FLUSH_RXBUF:
     {
       CpuSuspendIntr(&state);
       pUsb->modem_ops.rcv_len = 0;
@@ -732,7 +732,7 @@ static unsigned int __fastcall alarm_cb(void *userdata)
   pUsb = userdata;
   pUsb->m_unkba = 0;
   pUsb->modem_ops.rcv_len = pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx;
-  iSetEventFlag(pUsb->modem_ops.evfid, 0x100u);
+  iSetEventFlag(pUsb->modem_ops.evfid, sceModemEFP_Recv);
   pUsb->m_unkca += 1;
   return 0;
 }
@@ -830,7 +830,7 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
         if ( (efbits_ret & 1) != 0 && pUsb->f_patch == 1 )
         {
           pUsb->m_unkbb = 2;
-          wrap_set_event_flag_modem(pUsb, 1u);
+          wrap_set_event_flag_modem(pUsb, sceModemEFP_StartDone);
         }
         else if ( (efbits_ret & 1) != 0 )
         {
@@ -841,14 +841,14 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
         if ( (efbits_ret & 8) != 0 && pUsb->f_patch == 1 )
         {
           pUsb->m_unkbb = 2;
-          wrap_set_event_flag_modem(pUsb, 1u);
+          wrap_set_event_flag_modem(pUsb, sceModemEFP_StartDone);
         }
         break;
       case 2u:
         if ( (efbits_ret & 8) != 0 && pUsb->m_unkbd )
         {
           pUsb->m_unkbb = 3;
-          wrap_set_event_flag_modem(pUsb, 0x10u);
+          wrap_set_event_flag_modem(pUsb, sceModemEFP_Connect);
           USBMODEM_ModifyLed(pUsb, 2, 0);
         }
         break;
@@ -856,13 +856,13 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
         if ( (efbits_ret & 8) != 0 && !pUsb->m_unkbd )
         {
           pUsb->m_unkbb = 2;
-          wrap_set_event_flag_modem(pUsb, 0x20u);
+          wrap_set_event_flag_modem(pUsb, sceModemEFP_Disconnect);
           USBMODEM_ModifyLed(pUsb, 0, 2);
         }
         break;
       case 4u:
         pUsb->m_unkbb = 0;
-        wrap_set_event_flag_modem(pUsb, 0x20u);
+        wrap_set_event_flag_modem(pUsb, sceModemEFP_Disconnect);
         USBMODEM_ModifyLed(pUsb, 0, 2);
         break;
       case 5u:
@@ -881,7 +881,7 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
       if ( (efbits_ret & 0x400) != 0 )
         get_ef_bits(pUsb);
       if ( !pUsb->m_unkbd && pUsb->m_unkbe == 1 )
-        wrap_set_event_flag_modem(pUsb, 0x40u);
+        wrap_set_event_flag_modem(pUsb, sceModemEFP_Ring);
     }
   }
 }
@@ -1333,14 +1333,14 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   pUsb->modem_ops.module_name = "cxtmdm";
   pUsb->modem_ops.vendor_name = (char *)pUsb->m_man;
   pUsb->modem_ops.device_name = (char *)pUsb->m_pro;
-  pUsb->modem_ops.bus_type = 1;
+  pUsb->modem_ops.bus_type = sceModemBus_USB;
   if ( sceUsbdGetDeviceLocation(dev_id, pUsb->modem_ops.bus_loc) != 0 )
     return -1;
   pUsb->modem_ops.start = ModemStart;
   pUsb->modem_ops.stop = ModemStop;
   pUsb->modem_ops.recv = ModemRead;
   pUsb->modem_ops.send = ModemWrite;
-  pUsb->modem_ops.prot_ver = 0;
+  pUsb->modem_ops.prot_ver = sceModemProtVer;
   pUsb->modem_ops.impl_ver = 0;
   pUsb->modem_ops.priv = pUsb;
   pUsb->modem_ops.control = ModemControl;
@@ -1377,11 +1377,11 @@ static int __fastcall UsbAcfModemDetach(int dev_id)
   case 3:
   case 4:
     pUsb->m_unkbb = 5;
-    wrap_set_event_flag_modem(pUsb, 2u);
+    wrap_set_event_flag_modem(pUsb, sceModemEFP_PlugOut);
     break;
   default:
   case 5:
-    wrap_set_event_flag_modem(pUsb, 2u);
+    wrap_set_event_flag_modem(pUsb, sceModemEFP_PlugOut);
     sceModemUnregisterDevice(&pUsb->modem_ops);
     do_delete_threads(pUsb);
     break;
@@ -1593,7 +1593,7 @@ static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, v
     if ( pUsb->TxFIFOIdx < 256 )
     {
       pUsb->modem_ops.snd_len = 1024 - pUsb->TxFIFOIdx;
-      wrap_set_event_flag_modem(pUsb, 0x200u);
+      wrap_set_event_flag_modem(pUsb, sceModemEFP_Send);
     }
   }
 }
@@ -1676,7 +1676,7 @@ static void __fastcall OnNewStatusReceived(PDEVICE_EXTENSION pUsb, struct USBACF
     else
     {
       pUsb->modem_ops.rcv_len = pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx;
-      wrap_set_event_flag_modem(pUsb, 0x100u);
+      wrap_set_event_flag_modem(pUsb, sceModemEFP_Recv);
       pUsb->m_unkca += 1;
     }
   }
