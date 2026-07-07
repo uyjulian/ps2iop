@@ -137,15 +137,15 @@ struct DEVICE_EXTENSION
   int m_thid1;
   int m_thid2;
   int m_thid_patchload;
-  int m_unkba;
-  int m_unkbb;
+  int m_recv_alarm_active;
+  int m_modem_init_state;
   int f_patch;
-  int m_unkbd;
-  int m_unkbe;
+  int m_status_80_flag;
+  int m_status_40_flag;
   int f_started;
   UCHAR m_man[31];
   UCHAR m_pro[31];
-  int m_unkca;
+  int m_recv_ev_count;
 };
 
 /* 505 */
@@ -438,7 +438,7 @@ static int __fastcall PatchWrite(PDEVICE_EXTENSION pUsb, const char *data, int l
 static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz);
 static int __fastcall ModemGetStatus(PDEVICE_EXTENSION pUsb);
 static int __fastcall ModemStart(void *userdata, int unused);
-static unsigned int __fastcall alarm_cb(void *userdata);
+static unsigned int __fastcall recv_alarm_callback(void *userdata);
 static int __fastcall get_ef_bits(PDEVICE_EXTENSION pUsb);
 static u32 __fastcall wait_for_ef_bits(PDEVICE_EXTENSION pUsb, u32 bits);
 static void __fastcall __noreturn th_2_proc_modem_status(void *userdata);
@@ -700,7 +700,7 @@ static int __fastcall ModemStart(void *userdata, int unused)
     return 0;
   if ( !sceUsbdScanStaticDescriptor(pUsb->Handle, data, 4u) )
     return 0;
-  if ( pUsb->m_unkbb == 5 )
+  if ( pUsb->m_modem_init_state == 5 )
     return 0;
   for ( i = 0; i < 20; i += 1 )
   {
@@ -725,15 +725,15 @@ static int __fastcall ModemStart(void *userdata, int unused)
 }
 
 //----- (00400854) --------------------------------------------------------
-static unsigned int __fastcall alarm_cb(void *userdata)
+static unsigned int __fastcall recv_alarm_callback(void *userdata)
 {
   PDEVICE_EXTENSION pUsb;
 
   pUsb = userdata;
-  pUsb->m_unkba = 0;
+  pUsb->m_recv_alarm_active = 0;
   pUsb->modem_ops.rcv_len = pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx;
   iSetEventFlag(pUsb->modem_ops.evfid, sceModemEFP_Recv);
-  pUsb->m_unkca += 1;
+  pUsb->m_recv_ev_count += 1;
   return 0;
 }
 
@@ -768,13 +768,13 @@ static void __fastcall __noreturn th_2_proc_modem_status(void *userdata)
   while ( 1 )
   {
     Status = ModemGetStatus(pUsb);
-    if ( (unsigned int)(pUsb->m_unkbb - 2) < 2 )
+    if ( (unsigned int)(pUsb->m_modem_init_state - 2) < 2 )
     {
-      if ( pUsb->m_unkbd )
+      if ( pUsb->m_status_80_flag )
       {
         if ( (Status & 0x80) == 0 )
         {
-          pUsb->m_unkbd = 0;
+          pUsb->m_status_80_flag = 0;
           wrap_set_event_flag_main(pUsb, 8u);
           USBMODEM_ModifyLed(pUsb, 0, 2);
         }
@@ -783,17 +783,17 @@ static void __fastcall __noreturn th_2_proc_modem_status(void *userdata)
       {
         if ( (Status & 0x80) != 0 )
         {
-          pUsb->m_unkbd = 1;
+          pUsb->m_status_80_flag = 1;
           wrap_set_event_flag_main(pUsb, 8u);
           USBMODEM_ModifyLed(pUsb, 2, 0);
         }
       }
     }
-    if ( pUsb->m_unkbe )
+    if ( pUsb->m_status_40_flag )
     {
       if ( (Status & 0x40) == 0 )
       {
-        pUsb->m_unkbe = 0;
+        pUsb->m_status_40_flag = 0;
         wrap_set_event_flag_main(pUsb, 8u);
       }
     }
@@ -801,7 +801,7 @@ static void __fastcall __noreturn th_2_proc_modem_status(void *userdata)
     {
       if ( (Status & 0x40) != 0 )
       {
-        pUsb->m_unkbe = 1;
+        pUsb->m_status_40_flag = 1;
         wrap_set_event_flag_main(pUsb, 8u);
       }
     }
@@ -818,50 +818,50 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
 
   pUsb = (PDEVICE_EXTENSION)userdata;
   pUsb->modem_ops.snd_len = 1024;
-  pUsb->m_unkbb = 0;
+  pUsb->m_modem_init_state = 0;
   while ( 1 )
   {
     efbits_ret = wait_for_ef_bits(pUsb, 0x7FFu);
     if ( efbits_ret < 0 )
       return;
-    switch ( pUsb->m_unkbb )
+    switch ( pUsb->m_modem_init_state )
     {
       case 0u:
         if ( (efbits_ret & 1) != 0 && pUsb->f_patch == 1 )
         {
-          pUsb->m_unkbb = 2;
+          pUsb->m_modem_init_state = 2;
           wrap_set_event_flag_modem(pUsb, sceModemEFP_StartDone);
         }
         else if ( (efbits_ret & 1) != 0 )
         {
-          pUsb->m_unkbb = 1;
+          pUsb->m_modem_init_state = 1;
         }
         break;
       case 1u:
         if ( (efbits_ret & 8) != 0 && pUsb->f_patch == 1 )
         {
-          pUsb->m_unkbb = 2;
+          pUsb->m_modem_init_state = 2;
           wrap_set_event_flag_modem(pUsb, sceModemEFP_StartDone);
         }
         break;
       case 2u:
-        if ( (efbits_ret & 8) != 0 && pUsb->m_unkbd )
+        if ( (efbits_ret & 8) != 0 && pUsb->m_status_80_flag )
         {
-          pUsb->m_unkbb = 3;
+          pUsb->m_modem_init_state = 3;
           wrap_set_event_flag_modem(pUsb, sceModemEFP_Connect);
           USBMODEM_ModifyLed(pUsb, 2, 0);
         }
         break;
       case 3u:
-        if ( (efbits_ret & 8) != 0 && !pUsb->m_unkbd )
+        if ( (efbits_ret & 8) != 0 && !pUsb->m_status_80_flag )
         {
-          pUsb->m_unkbb = 2;
+          pUsb->m_modem_init_state = 2;
           wrap_set_event_flag_modem(pUsb, sceModemEFP_Disconnect);
           USBMODEM_ModifyLed(pUsb, 0, 2);
         }
         break;
       case 4u:
-        pUsb->m_unkbb = 0;
+        pUsb->m_modem_init_state = 0;
         wrap_set_event_flag_modem(pUsb, sceModemEFP_Disconnect);
         USBMODEM_ModifyLed(pUsb, 0, 2);
         break;
@@ -869,18 +869,18 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
       default:
         continue;
     }
-    if ( (unsigned int)(pUsb->m_unkbb - 2) >= 2 )
+    if ( (unsigned int)(pUsb->m_modem_init_state - 2) >= 2 )
       continue;
     if ( (efbits_ret & 2) != 0 )
     {
-      pUsb->m_unkbb = 0;
+      pUsb->m_modem_init_state = 0;
       USBMODEM_ModifyLed(pUsb, 0, 1u);
     }
     else
     {
       if ( (efbits_ret & 0x400) != 0 )
         get_ef_bits(pUsb);
-      if ( !pUsb->m_unkbd && pUsb->m_unkbe == 1 )
+      if ( !pUsb->m_status_80_flag && pUsb->m_status_40_flag == 1 )
         wrap_set_event_flag_modem(pUsb, sceModemEFP_Ring);
     }
   }
@@ -965,12 +965,12 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
     }
   }
   USBACF_Write16550Reg(pUsb, 2, 3);
-  if ( !pUsb->m_unkbb )
+  if ( !pUsb->m_modem_init_state )
   {
     USBACF_Write16550Reg(pUsb, 4, 0);
     USBACF_Write16550Reg(pUsb, 2, 3);
   }
-  if ( pUsb->m_unkbb == 1 )
+  if ( pUsb->m_modem_init_state == 1 )
     wrap_set_event_flag_main(pUsb, 8u);
   pUsb->f_patch = 1;
 }
@@ -1010,8 +1010,8 @@ static PDEVICE_EXTENSION do_alloc_mem_for_dev_ext()
     pUsb->m_thid1 = CreateThread(&thparam1);
     if ( pUsb->m_thid1 > 0 && !StartThread(pUsb->m_thid1, pUsb) )
     {
-      pUsb->m_unkbd = 0;
-      pUsb->m_unkbe = 0;
+      pUsb->m_status_80_flag = 0;
+      pUsb->m_status_40_flag = 0;
       thparam2.attr = 0x2000000;
       thparam2.thread = th_2_proc_modem_status;
       thparam2.option = 0;
@@ -1058,13 +1058,13 @@ static int __fastcall ModemStop(void *userdata, int unused)
   USBACF_Write16550Reg(pUsb, 4, 0);
   USBACF_Write16550Reg(pUsb, 2, 3);
   USBMODEM_ModifyLed(pUsb, 0, 2u);
-  if ( pUsb->m_unkba )
+  if ( pUsb->m_recv_alarm_active )
   {
-    CancelAlarm(alarm_cb, pUsb);
-    pUsb->m_unkba = 0;
+    CancelAlarm(recv_alarm_callback, pUsb);
+    pUsb->m_recv_alarm_active = 0;
     wrap_set_event_flag_main(pUsb, 2u);
   }
-  if ( pUsb->m_unkbb == 5 )
+  if ( pUsb->m_modem_init_state == 5 )
   {
     sceModemUnregisterDevice(&pUsb->modem_ops);
     do_delete_threads(pUsb);
@@ -1370,13 +1370,13 @@ static int __fastcall UsbAcfModemDetach(int dev_id)
   pUsb = (PDEVICE_EXTENSION)sceUsbdGetPrivateData(dev_id);
   if ( !pUsb )
     return -1;
-  switch ( pUsb->m_unkbb )
+  switch ( pUsb->m_modem_init_state )
   {
   case 1:
   case 2:
   case 3:
   case 4:
-    pUsb->m_unkbb = 5;
+    pUsb->m_modem_init_state = 5;
     wrap_set_event_flag_modem(pUsb, sceModemEFP_PlugOut);
     break;
   default:
@@ -1663,21 +1663,21 @@ static void __fastcall OnNewStatusReceived(PDEVICE_EXTENSION pUsb, struct USBACF
   if ( i > 0 )
   {
     pUsb->m_rx_count += pUsb->RxFifoPutIdx;
-    if ( pUsb->m_unkba )
+    if ( pUsb->m_recv_alarm_active )
     {
-      CancelAlarm(alarm_cb, pUsb);
-      pUsb->m_unkba = 0;
+      CancelAlarm(recv_alarm_callback, pUsb);
+      pUsb->m_recv_alarm_active = 0;
     }
     if ( pUsb->RxFifoPutIdx < 1025 )
     {
-      SetAlarm(&pUsb->sys_clock, alarm_cb, pUsb);
-      pUsb->m_unkba = 1;
+      SetAlarm(&pUsb->sys_clock, recv_alarm_callback, pUsb);
+      pUsb->m_recv_alarm_active = 1;
     }
     else
     {
       pUsb->modem_ops.rcv_len = pUsb->RxFifoPutIdx - pUsb->RxFifoGetIdx;
       wrap_set_event_flag_modem(pUsb, sceModemEFP_Recv);
-      pUsb->m_unkca += 1;
+      pUsb->m_recv_ev_count += 1;
     }
   }
   CpuResumeIntr(state);
