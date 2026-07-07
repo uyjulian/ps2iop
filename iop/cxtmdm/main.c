@@ -537,7 +537,7 @@ static int __fastcall ModemWrite(void *userdata, void *data, int len)
   CpuSuspendIntr(&state);
   xsend_len = pUsb->modem_ops.snd_len - len;
   if ( xsend_len < 0 )
-    xsend_len = 1024;
+    xsend_len = sizeof(pUsb->TxFIFO);
   pUsb->modem_ops.snd_len = xsend_len;
   CpuResumeIntr(state);
   for ( cnt = 0; cnt < len; cnt += 1 )
@@ -566,7 +566,7 @@ static int __fastcall PatchWrite(PDEVICE_EXTENSION pUsb, const char *data, int l
   CpuSuspendIntr(&state);
   xsend_len = pUsb->modem_ops.snd_len - len;
   if ( xsend_len < 0 )
-    xsend_len = 1024;
+    xsend_len = sizeof(pUsb->TxFIFO);
   pUsb->modem_ops.snd_len = xsend_len;
   CpuResumeIntr(state);
   for ( cnt = 0; cnt < len; cnt += 1 )
@@ -598,7 +598,7 @@ static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz
     {
       CpuSuspendIntr(&state);
       pUsb->TxFIFOIdx = 0;
-      pUsb->modem_ops.snd_len = 1024;
+      pUsb->modem_ops.snd_len = sizeof(pUsb->TxFIFO);
       CpuResumeIntr(state);
       return 0;
     }
@@ -817,7 +817,7 @@ static void __fastcall th_1_proc_ef_bits(void *userdata)
   PDEVICE_EXTENSION pUsb;
 
   pUsb = (PDEVICE_EXTENSION)userdata;
-  pUsb->modem_ops.snd_len = 1024;
+  pUsb->modem_ops.snd_len = sizeof(pUsb->TxFIFO);
   pUsb->m_modem_init_state = 0;
   while ( 1 )
   {
@@ -986,10 +986,10 @@ static PDEVICE_EXTENSION do_alloc_mem_for_dev_ext()
   iop_thread_t thparam2; // [sp+38h] [-28h] BYREF
   iop_sema_t semaparam; // [sp+50h] [-10h] BYREF
 
-  pUsb = (PDEVICE_EXTENSION)sceInetAllocMem(0, 5816);
+  pUsb = (PDEVICE_EXTENSION)sceInetAllocMem(0, sizeof(*pUsb));
   if ( !pUsb )
     return 0;
-  bzero(pUsb, 5816);
+  bzero(pUsb, sizeof(*pUsb));
   pUsb->MakeDataTransmitReentrancy = -1;
   pUsb->PipeList[4].nActiveRequests = 0;
   semaparam.attr = 0;
@@ -1076,7 +1076,7 @@ static int __fastcall ModemStop(void *userdata, int unused)
   pUsb->RxFifoGetIdx = 0;
   pUsb->RxFifoPutIdx = 0;
   pUsb->TxFIFOIdx = 0;
-  pUsb->modem_ops.snd_len = 1024;
+  pUsb->modem_ops.snd_len = sizeof(pUsb->TxFIFO);
   CpuResumeIntr(state);
   pUsb->f_started = 0;
   return 0;
@@ -1209,10 +1209,10 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   char epocfg[9]; // [sp+B0h] [-8h] BYREF
   int xflg;
 
+  memset(man, 0, sizeof(man));
   strcpy((char *)man, "Conexant");
-  memset(&man[9], 0, 55);
+  memset(pro, 0, sizeof(pro));
   strcpy((char *)pro, "SMARTSCM");
-  memset(&pro[9], 0, 55);
   data = (UsbConfigDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, 2u);
   if ( !data )
     return -1;
@@ -1548,13 +1548,13 @@ static int __fastcall USBACF_GetRxChar(PDEVICE_EXTENSION pUsb)
 //----- (00401FE8) --------------------------------------------------------
 static BOOLEAN __fastcall USBACF_TxBufferFull(PDEVICE_EXTENSION pUsb)
 {
-  return (unsigned int)(pUsb->TxFIFOIdx) >= 0x400u;
+  return (unsigned int)(pUsb->TxFIFOIdx) >= sizeof(pUsb->TxFIFO);
 }
 
 //----- (00401FFC) --------------------------------------------------------
 static void __fastcall USBACF_PutTxChar(PDEVICE_EXTENSION pUsb, char data)
 {
-  if ( (unsigned int)(pUsb->TxFIFOIdx) < 0x400u )
+  if ( (unsigned int)(pUsb->TxFIFOIdx) < sizeof(pUsb->TxFIFO) )
   {
     pUsb->TxFIFO[pUsb->TxFIFOIdx] = data;
     pUsb->TxFIFOIdx += 1;
@@ -1592,7 +1592,7 @@ static void __fastcall UsbTransmitDataCompletionRoutine(int result, int count, v
     CpuResumeIntr(state);
     if ( pUsb->TxFIFOIdx < 256 )
     {
-      pUsb->modem_ops.snd_len = 1024 - pUsb->TxFIFOIdx;
+      pUsb->modem_ops.snd_len = sizeof(pUsb->TxFIFO) - pUsb->TxFIFOIdx;
       wrap_set_event_flag_modem(pUsb, sceModemEFP_Send);
     }
   }
