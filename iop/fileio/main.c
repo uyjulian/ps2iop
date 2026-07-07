@@ -11,15 +11,27 @@ IRX_ID("FILEIO_service", 2, 18);
 #define _WORD u16
 #define _DWORD u32
 
-struct devctl_fs_blkio_param
+#if 0
+#include <blkio-ioctl.h>
+#else
+#define FDIOC_BLKIO 0x4601
+
+typedef enum sceFsRWTYPE_
 {
-  int m_lbn;
-  unsigned int m_nblk;
-  void *m_addr;
-  int m_blksize;
-  int m_type;
-  int m_mode;
-};
+  sceFsREADING,
+  sceFsWRITING,
+} sceFsRWTYPE;
+
+typedef struct sceFsDevctlBlkIO_
+{
+  u32 lbn;
+  u32 nblk;
+  void *addr;
+  u32 blksiz;
+  sceFsRWTYPE type;
+  u32 mode;
+} sceFsDevctlBlkIO;
+#endif
 
 /* 174 */
 struct fio_common_outbuf
@@ -938,7 +950,7 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
 {
   int devctl_res; // $s2
   struct fio_largebuf_outbuf fbuf; // [sp+20h] [-478h] BYREF
-  struct devctl_fs_blkio_param in_lbn; // [sp+440h] [-58h] BYREF
+  sceFsDevctlBlkIO bio_arg; // [sp+440h] [-58h] BYREF
   SifDmaTransfer_t dmat; // [sp+458h] [-40h] BYREF
   SifRpcReceiveData_t rdata; // [sp+468h] [-30h] BYREF
   int rwbuf_size; // [sp+488h] [-10h] BYREF
@@ -952,21 +964,16 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
   devctl_res = 0;
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
+  bio_arg = *(sceFsDevctlBlkIO *)(inbuf->m_arg);
   if ( g_fileio_verbose > 0 )
     Kprintf(
       "FsBlkIO LBN:%d NBLK:%d addr:%x BLKSIZE:%d TYPE:%d mode:%x\n",
-      *(_DWORD *)inbuf->m_arg,
-      *(_DWORD *)&inbuf->m_arg[4],
-      *(_DWORD *)&inbuf->m_arg[8],
-      *(_DWORD *)&inbuf->m_arg[12],
-      *(_DWORD *)&inbuf->m_arg[16],
-      *(_DWORD *)&inbuf->m_arg[20]);
-  in_lbn.m_lbn = *(_DWORD *)inbuf->m_arg;
-  in_lbn.m_nblk = *(_DWORD *)&inbuf->m_arg[4];
-  in_lbn.m_addr = *(void **)&inbuf->m_arg[8];
-  in_lbn.m_blksize = *(_DWORD *)&inbuf->m_arg[12];
-  in_lbn.m_type = *(_DWORD *)&inbuf->m_arg[16];
-  in_lbn.m_mode = *(_DWORD *)&inbuf->m_arg[20];
+      bio_arg.lbn,
+      bio_arg.nblk,
+      (u32)bio_arg.addr,
+      bio_arg.blksiz,
+      bio_arg.type,
+      bio_arg.mode);
   rwbuf = fileio_alloc_rwbuf(&rwbuf_size);
   if ( rwbuf )
   {
@@ -975,48 +982,54 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
     unsigned int size_in_rwbuf_remainder_block_units; // $fp
     unsigned int cur_block_unit; // $s1
 
-    rwbuf_size_in_blocks = (unsigned int)rwbuf_size / in_lbn.m_blksize;
-    size_in_rwbuf_block_units = in_lbn.m_nblk / rwbuf_size_in_blocks;
-    size_in_rwbuf_remainder_block_units = in_lbn.m_nblk % rwbuf_size_in_blocks;
+    rwbuf_size_in_blocks = (unsigned int)rwbuf_size / bio_arg.blksiz;
+    size_in_rwbuf_block_units = bio_arg.nblk / rwbuf_size_in_blocks;
+    size_in_rwbuf_remainder_block_units = bio_arg.nblk % rwbuf_size_in_blocks;
     if ( size_in_rwbuf_remainder_block_units )
       size_in_rwbuf_block_units += 1;
     else
       size_in_rwbuf_remainder_block_units = rwbuf_size_in_blocks;
     dmat.attr = 0;
     dmat.src = rwbuf;
-    dmat.dest = (void *)in_lbn.m_addr;
-    in_lbn.m_addr = rwbuf;
+    dmat.dest = (void *)bio_arg.addr;
+    bio_arg.addr = rwbuf;
     for ( cur_block_unit = 0; cur_block_unit < size_in_rwbuf_block_units; cur_block_unit += 1 )
     {
-      in_lbn.m_nblk = ( cur_block_unit + 1 == size_in_rwbuf_block_units ) ? size_in_rwbuf_remainder_block_units : rwbuf_size_in_blocks;
-      dmat.size = in_lbn.m_nblk * in_lbn.m_blksize;
-      if ( in_lbn.m_type )
+      bio_arg.nblk = ( cur_block_unit + 1 == size_in_rwbuf_block_units ) ? size_in_rwbuf_remainder_block_units : rwbuf_size_in_blocks;
+      dmat.size = bio_arg.nblk * bio_arg.blksiz;
+      switch ( bio_arg.type )
       {
-        while ( sceSifGetOtherData(&rdata, dmat.dest, dmat.src, dmat.size, 0) < 0 )
-          DelayThread(2000);
-        devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &in_lbn, inbuf->m_arglen, 0, 0);
-        if ( devctl_res < 0 )
-          break;
-      }
-      else
-      {
-        int trid; // $s0
-
-        devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &in_lbn, inbuf->m_arglen, 0, 0);
-        if ( devctl_res < 0 )
-          break;
-        while ( 1 )
+      case sceFsREADING:
         {
-          CpuSuspendIntr(&state);
-          trid = sceSifSetDma(&dmat, 1);
-          CpuResumeIntr(state);
-          if ( trid )
+          int trid; // $s0
+
+          devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &bio_arg, inbuf->m_arglen, 0, 0);
+          if ( devctl_res < 0 )
             break;
-          DelayThread(2000);
+          while ( 1 )
+          {
+            CpuSuspendIntr(&state);
+            trid = sceSifSetDma(&dmat, 1);
+            CpuResumeIntr(state);
+            if ( trid )
+              break;
+            DelayThread(2000);
+          }
+          while ( sceSifDmaStat(trid) >= 0 );
+          break;
         }
-        while ( sceSifDmaStat(trid) >= 0 );
+      case sceFsWRITING:
+      default:
+        {
+          while ( sceSifGetOtherData(&rdata, dmat.dest, dmat.src, dmat.size, 0) < 0 )
+            DelayThread(2000);
+          devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &bio_arg, inbuf->m_arglen, 0, 0);
+          break;
+        }
       }
-      in_lbn.m_lbn += in_lbn.m_nblk;
+      if ( devctl_res < 0 )
+        break;
+      bio_arg.lbn += bio_arg.nblk;
       dmat.dest = (char *)dmat.dest + dmat.size;
     }
     fileio_free_rwbuf(rwbuf);
