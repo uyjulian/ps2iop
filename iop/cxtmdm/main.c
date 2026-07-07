@@ -499,7 +499,7 @@ static int thread_priority = 28; // weak
 static int stack_size = 4096; // weak
 static int resident_flag; // weak
 static int load_mode; // weak
-static char g_dialconf; // idb
+static char g_dialconf[400]; // idb
 
 
 //----- (00400000) --------------------------------------------------------
@@ -640,10 +640,10 @@ static int __fastcall ModemControl(void *userdata, int cmd, void *buf, int bufsz
     }
   case sceModemCC_GET_DIALCONF:
     {
-      retres = strlen(&g_dialconf) + 1;
+      retres = strlen(g_dialconf) + 1;
       if ( bufsz < (int)retres )
         return -512;
-      bcopy(&g_dialconf, buf, retres);
+      bcopy(g_dialconf, buf, retres);
       return retres;
     }
   case sceModemCC_GET_IF_TYPE:
@@ -1398,11 +1398,11 @@ int __fastcall _start(int argc, char **argv)
   int eqcount; // $s0
 
   load_mode = 0;
-  g_dialconf = 0;
+  g_dialconf[0] = 0;
   for ( ac_cur = 0; ac_cur < argc; ac_cur += 1 )
   {
     if ( !strncmp("dial=", argv[ac_cur], 5) )
-      strcpy(&g_dialconf, argv[ac_cur] + 5);
+      strcpy(g_dialconf, argv[ac_cur] + 5);
     for ( eqcount = 0; argv[ac_cur][eqcount]; eqcount += 1 )
     {
       if ( argv[ac_cur][eqcount] == '=' )
