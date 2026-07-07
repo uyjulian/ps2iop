@@ -1,5 +1,6 @@
 
 #include <irx_imports.h>
+#include <blkio-ioctl.h>
 
 IRX_ID("FILEIO_service", 2, 18);
 
@@ -10,28 +11,6 @@ IRX_ID("FILEIO_service", 2, 18);
 #define _BYTE u8
 #define _WORD u16
 #define _DWORD u32
-
-#if 0
-#include <blkio-ioctl.h>
-#else
-#define FDIOC_BLKIO 0x4601
-
-typedef enum sceFsRWTYPE_
-{
-  sceFsREADING,
-  sceFsWRITING,
-} sceFsRWTYPE;
-
-typedef struct sceFsDevctlBlkIO_
-{
-  u32 lbn;
-  u32 nblk;
-  void *addr;
-  u32 blksiz;
-  sceFsRWTYPE type;
-  u32 mode;
-} sceFsDevctlBlkIO;
-#endif
 
 /* 174 */
 struct fio_common_outbuf
