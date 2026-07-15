@@ -384,51 +384,21 @@ static int iopinfo_rpc_service_start_thread_unused();
 //-------------------------------------------------------------------------
 // Data declarations
 
-static int g_verstr = 808464691; // weak
+static const int g_verstr = 0x30303133; // weak
 static int g_fileio_verbose = 0; // weak
-static int g_rwbuf_max_size = 16384; // weak
-static int g_th_priority = 96; // weak
+// Unofficial: move to bss
+static int g_rwbuf_max_size; // weak
+// Unofficial: move to bss
+static int g_th_priority; // weak
 static int g_result_destbuf_ee_idx = 0; // weak
-static unsigned int g_rwbuf_ptr_count_allowed = 4; // weak
+// Unofficial: move to bss
+static unsigned int g_rwbuf_ptr_count_allowed; // weak
 static unsigned int g_rwbuf_uses = 0; // weak
 static void *g_rwbuf_cur_ptr = NULL; // idb
 static int g_rwbuf_size = 0; // weak
 static int g_rwbuf_is_allocated = 0; // weak
-static int g_thids_per_fd[32] =
-{
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1,
-  -1
-};
+// Unofficial: move to bss
+static int g_thids_per_fd[32];
 static void *g_result_destbuf_ee[2];
 static int g_sema_for_result_destbuf_ee; // idb
 static int g_rwbuf_ef; // idb
@@ -457,6 +427,7 @@ int _start()
   const int *BootMode; // $v0
   int thid_fio; // $a0
   int thid_heap; // $a0
+  int i;
   iop_thread_t thparam; // [sp+10h] [-18h] BYREF
 
   BootMode = QueryBootMode(3);
@@ -473,6 +444,11 @@ int _start()
       return 1;
     }
   }
+  g_rwbuf_max_size = 16384;
+  g_th_priority = 96;
+  g_rwbuf_ptr_count_allowed = 4;
+  for ( i = 0; i < (int)(sizeof(g_thids_per_fd)/sizeof(g_thids_per_fd[0])); i += 1 )
+    g_thids_per_fd[i] = -1;
   CpuEnableIntr();
   thparam.thread = fileio_rpc_start_thread;
   thparam.attr = TH_C;
