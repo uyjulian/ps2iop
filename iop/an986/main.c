@@ -66,7 +66,7 @@ struct an986_devinfo
 	int m_vendor_id;
 	const char *m_vendor_name;
 	int m_product_id;
-	const char *m_device_name;
+	const char *m_product_name;
 };
 
 struct an986_idata
@@ -96,7 +96,7 @@ struct an986_idata
 static void bulk_xfer(struct an986_priv *priv);
 
 extern struct irx_export_table _exp_an986;
-static struct an986_devinfo g_an986_devinfo_custom = { '-', 0x0000, "Unknown", 0x0000, "Unknown" };
+static struct an986_devinfo g_an986_devinfo_custom;
 static const struct an986_devinfo g_an986_devinfo[] =
 {
 #ifdef AN986_UEPCB
@@ -1093,7 +1093,7 @@ static const struct an986_devinfo *do_check_static_descriptor(
 	if ( cur_devinfo )
 	{
 		if ( is_probe )
-			VERBOSE_PRINTF("an986: %s, %s", cur_devinfo->m_vendor_name, cur_devinfo->m_device_name);
+			VERBOSE_PRINTF("an986: %s, %s", cur_devinfo->m_vendor_name, cur_devinfo->m_product_name);
 		switch ( cur_devinfo->m_chip )
 		{
 		case 'p':
@@ -1169,7 +1169,7 @@ static int an986_attach(int devId)
 		return -1;
 	if ( (int_in_desc->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) != USB_ENDPOINT_XFER_INT )
 		return -1;
-	priv = do_allocate_mem_for_inet(cur_devinfo->m_vendor_name, cur_devinfo->m_device_name, cur_devinfo->m_chip == 'P');
+	priv = do_allocate_mem_for_inet(cur_devinfo->m_vendor_name, cur_devinfo->m_product_name, cur_devinfo->m_chip == 'P');
 	if ( !priv )
 		return -1;
 	priv->m_ctrl_pipe = sceUsbdOpenPipe(devId, NULL);
@@ -1335,7 +1335,7 @@ static int do_print_list(void)
 		printf("  %04x", g_an986_devinfo[i].m_vendor_id);
 		printf("  %04x", g_an986_devinfo[i].m_product_id);
 		printf("  %-14s", g_an986_devinfo[i].m_vendor_name);
-		printf("  %-14s", g_an986_devinfo[i].m_device_name);
+		printf("  %-14s", g_an986_devinfo[i].m_product_name);
 		switch ( g_an986_devinfo[i].m_chip )
 		{
 		case 'p':
@@ -1368,6 +1368,11 @@ static int an986_init(int ac, char **av)
 	g_an986_idata.m_verbose = 0;
 	g_an986_idata.m_load_mode = 'n';
 	g_an986_idata.m_resident_flag = 1;
+	g_an986_devinfo_custom.m_chip = '-';
+	g_an986_devinfo_custom.m_vendor_id = 0x0000;
+	g_an986_devinfo_custom.m_vendor_name = "Unknown";
+	g_an986_devinfo_custom.m_product_id = 0x0000;
+	g_an986_devinfo_custom.m_product_name = "Unknown";
 #ifdef AN986_UEPCB
 	printf("debug %s\n", av[0]);
 #endif
