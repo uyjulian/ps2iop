@@ -1,5 +1,6 @@
 
 #include <irx_imports.h>
+#include <usbd_macro.h>
 
 IRX_ID("USB_Modem_Driver/Conexant", 16, 22);
 
@@ -479,7 +480,7 @@ static void __fastcall SetUsbModemPollState(PDEVICE_EXTENSION pUsb, int state);
 //-------------------------------------------------------------------------
 // Data declarations
 
-static char usbacf_patch[2275] = "S3100000A000B20269A9008DBC044C0EE101\r\nS31500009DA560606B606060606B6B6060606060606087\r\nS31500009DB56B60606B60606060606060606060606082\r\nS31500009DC56060606060606060606060606060606088\r\nS31500009DD5606060606060606B6B6060606060606062\r\nS31500009DE560606B606060606060606060606B606052\r\nS30700009DF5000066\r\nS31500009EB00000E500000000D02000000000000000C7\r\nS31500009EC0DD000003000000000000000000000000AC\r\nS31500009ED0000000000000000000000000000000007C\r\nS31500009EE00000000000000018DA000000000000007A\r\nS31500009EF00000E200000000000000000000A60000D4\r\nS30600009F00005A\r\nS31500009F010917FF4C11AD6487D00CA21820445A29B9\r\nS31500009F111F09804CF558604C83863D534C562BA93E\r\nS31500009F216B8DA79DA0FFA204C8B97B04C90DF03EA5\r\nS31500009F31DD1B9FD0F1CA10F0C8B97B04C934D00427\r\nS31500009F41A9388027C935D004A939801FC936D0D68A\r\nS31500009F51206A9FA200E8C8B97B04C90DD0F7B97B76\r\nS31500009F6104997C0488CAD0F6C8A931997B04A0FF5C\r\nS31500009F71A203C8B97B04C90DF026DDA29FD0F1CAA0\r\nS31500009F8110F0C8B97B04997704C90DD0F5ADCE049C\r\nS31500009F912901F009B28C40B200414CA3254CA02501\r\nS31500009FA1605652542DE25D0110244F6321AD3F8767\r\nS31500009FB1C9B1F015AD4D87C900F0132073E720D75D\r\nS31500009FC19FE2600110084CAE77A9008D4D8760A213\r\nS31500009FD103A9004C9BE44C019E4CF99DD20839061D\r\nS31500009FE1604C7886A900CDA102D00AA973CD0D01D6\r\nS31000009FF1B0038D0D01A9608DA79D60D7\r\nS31500009DF97F4C04D210600160AD43878540AD44872E\r\nS31500009E09854138A540E98C8540A541E9008541A5EC\r\nS31500009E1940ED52878540A541ED53878541A54148C7\r\nS31500009E29A5408542AD47878540AD48878541208B4A\r\nS31500009E3969B26444B20045B20043205022A5408D60\r\nS31500009E494D87A5418D4E87688542AD47878540ADCB\r\nS31500009E5948878541208B69B26444B20045B2004304\r\nS31500009E69205022A54148A54048B2FF42208B696887\r\nS31500009E798544688545A54065448540A54165458570\r\nS31500009E8941A54269008542A5406D4D878540A5419A\r\nS31400009E996D4E878541A54269008D4F874CA9867E\r\nS31500008678A950CD0286B0038D028660AD5702C93C6B\r\nS31500008688D01EB20747B25046B20A45B2B944209640\r\nS31500008698E3B20747B25046B20B45B2B9442096E357\r\nS315000086A860A5408D4D87A5418D4E87B2D040B20753\r\nS315000086B841B25A42208B69A542CD4F87F004B038A3\r\nS315000086C8800EA541CD4E87D005A540CD4D87B02853\r\nS315000086D8AD4B878540AD4C878541A541C900D0047F\r\nS315000086E8A540C996B012A9758D3F87A9778D408791\r\nS30E000086F8B200AEB248B1B75960F8\r\nS70500000000FA\r\n"; // weak
+static const char *usbacf_patch = "S3100000A000B20269A9008DBC044C0EE101\r\nS31500009DA560606B606060606B6B6060606060606087\r\nS31500009DB56B60606B60606060606060606060606082\r\nS31500009DC56060606060606060606060606060606088\r\nS31500009DD5606060606060606B6B6060606060606062\r\nS31500009DE560606B606060606060606060606B606052\r\nS30700009DF5000066\r\nS31500009EB00000E500000000D02000000000000000C7\r\nS31500009EC0DD000003000000000000000000000000AC\r\nS31500009ED0000000000000000000000000000000007C\r\nS31500009EE00000000000000018DA000000000000007A\r\nS31500009EF00000E200000000000000000000A60000D4\r\nS30600009F00005A\r\nS31500009F010917FF4C11AD6487D00CA21820445A29B9\r\nS31500009F111F09804CF558604C83863D534C562BA93E\r\nS31500009F216B8DA79DA0FFA204C8B97B04C90DF03EA5\r\nS31500009F31DD1B9FD0F1CA10F0C8B97B04C934D00427\r\nS31500009F41A9388027C935D004A939801FC936D0D68A\r\nS31500009F51206A9FA200E8C8B97B04C90DD0F7B97B76\r\nS31500009F6104997C0488CAD0F6C8A931997B04A0FF5C\r\nS31500009F71A203C8B97B04C90DF026DDA29FD0F1CAA0\r\nS31500009F8110F0C8B97B04997704C90DD0F5ADCE049C\r\nS31500009F912901F009B28C40B200414CA3254CA02501\r\nS31500009FA1605652542DE25D0110244F6321AD3F8767\r\nS31500009FB1C9B1F015AD4D87C900F0132073E720D75D\r\nS31500009FC19FE2600110084CAE77A9008D4D8760A213\r\nS31500009FD103A9004C9BE44C019E4CF99DD20839061D\r\nS31500009FE1604C7886A900CDA102D00AA973CD0D01D6\r\nS31000009FF1B0038D0D01A9608DA79D60D7\r\nS31500009DF97F4C04D210600160AD43878540AD44872E\r\nS31500009E09854138A540E98C8540A541E9008541A5EC\r\nS31500009E1940ED52878540A541ED53878541A54148C7\r\nS31500009E29A5408542AD47878540AD48878541208B4A\r\nS31500009E3969B26444B20045B20043205022A5408D60\r\nS31500009E494D87A5418D4E87688542AD47878540ADCB\r\nS31500009E5948878541208B69B26444B20045B2004304\r\nS31500009E69205022A54148A54048B2FF42208B696887\r\nS31500009E798544688545A54065448540A54165458570\r\nS31500009E8941A54269008542A5406D4D878540A5419A\r\nS31400009E996D4E878541A54269008D4F874CA9867E\r\nS31500008678A950CD0286B0038D028660AD5702C93C6B\r\nS31500008688D01EB20747B25046B20A45B2B944209640\r\nS31500008698E3B20747B25046B20B45B2B9442096E357\r\nS315000086A860A5408D4D87A5418D4E87B2D040B20753\r\nS315000086B841B25A42208B69A542CD4F87F004B038A3\r\nS315000086C8800EA541CD4E87D005A540CD4D87B02853\r\nS315000086D8AD4B878540AD4C878541A541C900D0047F\r\nS315000086E8A540C996B012A9758D3F87A9778D408791\r\nS30E000086F8B200AEB248B1B75960F8\r\nS70500000000FA\r\n"; // weak
 static sceUsbdLddOps UsbAcfDriverDescriptor =
 {
   NULL,
@@ -691,14 +692,14 @@ static int __fastcall ModemStart(void *userdata, int unused)
 
   (void)unused;
   pUsb = userdata;
-  data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(pUsb->Handle, 0, 1u);
+  data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(pUsb->Handle, 0, USB_DT_DEVICE);
   if ( !data )
     return 0;
   if ( data->idVendor != 1394 )
     return 0;
   if ( data->idProduct != 4658 && data->idProduct != 4722 )
     return 0;
-  if ( !sceUsbdScanStaticDescriptor(pUsb->Handle, data, 4u) )
+  if ( !sceUsbdScanStaticDescriptor(pUsb->Handle, data, USB_DT_INTERFACE) )
     return 0;
   if ( pUsb->m_modem_init_state == 5 )
     return 0;
@@ -898,8 +899,8 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
   int trycnt1; // $s3
   int patchread_bytes2; // $v0
   int tempbuf_ind2; // $s0
-  char ati3[8]; // [sp+10h] [-B8h] BYREF
-  char atload[8]; // [sp+18h] [-B0h] BYREF
+  char ati3[6]; // [sp+10h] [-B8h] BYREF
+  char atload[6]; // [sp+18h] [-B0h] BYREF
   char tempbuf[152]; // [sp+20h] [-A8h] BYREF
   char tempstr[16]; // [sp+B8h] [-10h] BYREF
   PDEVICE_EXTENSION pUsb;
@@ -918,7 +919,7 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
   USBACF_Write16550Reg(pUsb, 4, 3);
   USBMODEM_ModifyLed(pUsb, 1u, 0);
   DelayThread(2000000);
-  PatchWrite(pUsb, ati3, 6);
+  PatchWrite(pUsb, ati3, sizeof(ati3));
   DelayThread(1000000);
   tempbuf_read1 = 0;
   for ( trycnt2 = 0; trycnt2 <= 99999; trycnt2 += 1 )
@@ -937,7 +938,7 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
       }
       if ( readcmp1 == 1 )
       {
-        PatchWrite(pUsb, atload, 6);
+        PatchWrite(pUsb, atload, sizeof(atload));
         DelayThread(1000000);
         tempbuf_read2 = 0;
         for ( trycnt1 = 0; trycnt1 < 100; trycnt1 += 1 )
@@ -959,7 +960,7 @@ static void __fastcall cxtmdm_patchload_thread(void *userdata)
             DelayThread(5000000);
           }
         }
-        PatchWrite(pUsb, usbacf_patch, 2274);
+        PatchWrite(pUsb, usbacf_patch, strlen(usbacf_patch));
         break;
       }
     }
@@ -1002,7 +1003,7 @@ static PDEVICE_EXTENSION do_alloc_mem_for_dev_ext()
   pUsb->m_evid_main = CreateEventFlag(&evparam);
   if ( pUsb->m_evid_main > 0 )
   {
-    thparam1.attr = 0x2000000;
+    thparam1.attr = TH_C;
     thparam1.thread = th_1_proc_ef_bits;
     thparam1.option = 0;
     thparam1.priority = thread_priority;
@@ -1012,7 +1013,7 @@ static PDEVICE_EXTENSION do_alloc_mem_for_dev_ext()
     {
       pUsb->m_status_80_flag = 0;
       pUsb->m_status_40_flag = 0;
-      thparam2.attr = 0x2000000;
+      thparam2.attr = TH_C;
       thparam2.thread = th_2_proc_modem_status;
       thparam2.option = 0;
       thparam2.priority = thread_priority;
@@ -1151,19 +1152,13 @@ static void __fastcall set_interface_done(int result, int count, void *arg)
 static void __fastcall set_config_done(int result, int count, void *arg)
 {
   int r; // $v0
-  UsbDeviceRequest _dr; // [sp+18h] [-8h] BYREF
   PDEVICE_EXTENSION pUsb;
 
   (void)count;
   pUsb = arg;
   if ( result )
     printf("cxtmodem: %s -> 0x%x\n", "sceUsbdSetConfiguration", result);
-  _dr.requesttype = 1;
-  _dr.request = 11;
-  _dr.value = 0;
-  _dr.index = 0;
-  _dr.length = 0;
-  r = sceUsbdTransferPipe(pUsb->EP0Pipe, 0, 0, &_dr, set_interface_done, pUsb);
+  r = sceUsbdSetInterface(pUsb->EP0Pipe, 0, 0, set_interface_done, pUsb);
   if ( r )
     printf("cxtmodem: %s -> 0x%x\n", "sceUsbdSetInterface", r);
 }
@@ -1173,7 +1168,7 @@ static int __fastcall UsbAcfModemProbe(int dev_id)
 {
   UsbDeviceDescriptor *data; // $a1
 
-  data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, 1u);
+  data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, USB_DT_DEVICE);
   if ( !data )
     return 1;
   if ( data->idVendor != 1394 )
@@ -1181,7 +1176,7 @@ static int __fastcall UsbAcfModemProbe(int dev_id)
   if ( data->idProduct != 4658 && data->idProduct != 4722 )
     return 0;
   resident_flag = 1;
-  return sceUsbdScanStaticDescriptor(dev_id, data, 4u) && load_mode != 2;
+  return sceUsbdScanStaticDescriptor(dev_id, data, USB_DT_INTERFACE) && load_mode != 2;
 }
 // 403560: using guessed type int resident_flag;
 // 403564: using guessed type int load_mode;
@@ -1191,6 +1186,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
 {
   UsbConfigDescriptor *data; // $s4
   UsbInterfaceDescriptor *idesc; // $s0
+  void *curdesc;
   PDEVICE_EXTENSION pUsb; // $v0
   int xind; // $s1
   int xferres; // $v0
@@ -1206,19 +1202,18 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   UCHAR man[64]; // [sp+18h] [-A0h] BYREF
   UCHAR pro[64]; // [sp+58h] [-60h] BYREF
   iop_thread_t thparam; // [sp+98h] [-20h] BYREF
-  char epocfg[9]; // [sp+B0h] [-8h] BYREF
   int xflg;
 
   memset(man, 0, sizeof(man));
   strcpy((char *)man, "Conexant");
   memset(pro, 0, sizeof(pro));
   strcpy((char *)pro, "SMARTSCM");
-  data = (UsbConfigDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, 2u);
+  data = (UsbConfigDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, USB_DT_CONFIG);
   if ( !data )
     return -1;
   if ( data->bNumInterfaces != 1 )
     return -1;
-  idesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, data, 4u);
+  idesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, data, USB_DT_INTERFACE);
   if ( !idesc )
     return -1;
   if ( idesc->bNumEndpoints != 8 )
@@ -1230,28 +1225,24 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   pUsb->EP0Pipe = sceUsbdOpenPipe(dev_id, 0);
   if ( pUsb->EP0Pipe < 0 )
     return -1;
+  curdesc = idesc;
   for ( xind = 0; xind < 8; xind += 1 )
   {
-    idesc = (UsbInterfaceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, idesc, 5u);
-    if ( !idesc )
+    curdesc = sceUsbdScanStaticDescriptor(dev_id, curdesc, USB_DT_ENDPOINT);
+    if ( !curdesc )
       return -1;
-    pUsb->PipeList[xind].PipeHandle = sceUsbdOpenPipe(dev_id, (UsbEndpointDescriptor *)idesc);
+    pUsb->PipeList[xind].PipeHandle = sceUsbdOpenPipe(dev_id, (UsbEndpointDescriptor *)curdesc);
     if ( pUsb->PipeList[xind].PipeHandle < 0 )
       return -1;
   }
   sceUsbdSetPrivateData(dev_id, pUsb);
-  epocfg[0] = 0;
-  epocfg[1] = 9;
-  *(_WORD *)&epocfg[4] = 0;
-  *(_WORD *)&epocfg[6] = 0;
-  *(_WORD *)&epocfg[2] = data->bConfigurationValue;
-  xferres = sceUsbdTransferPipe(pUsb->EP0Pipe, 0, 0, epocfg, set_config_done, pUsb);
+  xferres = sceUsbdSetConfiguration(pUsb->EP0Pipe, data->bConfigurationValue, set_config_done, pUsb);
   if ( xferres )
   {
     printf("cxtmodem: %s -> 0x%x\n", "sceUsbdSetConfiguration", xferres);
     return -1;
   }
-  devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(pUsb->Handle, 0, 1u);
+  devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(pUsb->Handle, 0, USB_DT_DEVICE);
   if ( !devdesc )
     return -1;
   if ( devdesc->idVendor != 1394 )
@@ -1263,12 +1254,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   bcopy(man, pUsb->m_man, 32);
   bcopy(pro, pUsb->m_pro, 32);
   manufind = 0;
-  epocfg[0] = 0x80;
-  epocfg[1] = 6;
-  *(_WORD *)&epocfg[4] = 0;
-  strcpy(&epocfg[6], "=");
-  *(_WORD *)&epocfg[2] = devdesc->iManufacturer | 0x300;
-  sceUsbdTransferPipe(pUsb->EP0Pipe, man, 0x3Du, epocfg, 0, pUsb);
+  sceUsbdGetDescriptor(pUsb->EP0Pipe, 3, devdesc->iManufacturer, 0, man, 0x3D, NULL, pUsb);
   DelayThread(100);
   for ( manufflg1 = 1; manufflg1 < 32; manufflg1 += 1 )
   {
@@ -1300,12 +1286,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   {
     prodind = 0;
     pUsb->m_pro[0] = 0;
-    epocfg[0] = 0x80;
-    epocfg[1] = 6;
-    *(_WORD *)&epocfg[2] = devdesc->iProduct | 0x300;
-    *(_WORD *)&epocfg[4] = 0;
-    strcpy(&epocfg[6], "=");
-    sceUsbdTransferPipe(pUsb->EP0Pipe, pro, 0x3Du, epocfg, 0, pUsb);
+    sceUsbdGetDescriptor(pUsb->EP0Pipe, 3, devdesc->iProduct, 0, pro, 0x3D, NULL, pUsb);
     DelayThread(100);
     for ( prodflg1 = 1; prodflg1 < 32; prodflg1 += 1 )
     {
@@ -1319,7 +1300,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
           pUsb->m_pro[prodflg1 - 1] = 0;
         break;
       }
-      if ( (char)prodx1 == 44 || (char)prodx1 == 61 )
+      if ( (char)prodx1 == ',' || (char)prodx1 == '=' )
       {
         prodind += 1;
         prodflg1 -= 1;
@@ -1349,7 +1330,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   DelayThread(100);
   pUsb->f_patch = 0;
   pUsb->f_started = 0;
-  thparam.attr = 0x2000000;
+  thparam.attr = TH_C;
   thparam.thread = cxtmdm_patchload_thread;
   thparam.option = 0;
   thparam.priority = thread_priority;
@@ -1487,9 +1468,7 @@ static void __fastcall MakeDataTransferRequest(PDEVICE_EXTENSION pUsb, BOOLEAN C
         reent1 = 1;
       else if ( !pUsb->PipeList[4].NeedReset && pUsb->Started )
       {
-        NumOfBytes = pUsb->TxFIFOIdx;
-        if ( NumOfBytes >= 15 )
-          NumOfBytes = 14;
+        NumOfBytes = ( pUsb->TxFIFOIdx > 14 ) ? 14 : pUsb->TxFIFOIdx;
         for ( i = 0; i < NumOfBytes; i += 1 )
           pUsb->TxSendBuf[i] = pUsb->TxFIFO[i];
         Length = i;
@@ -1618,9 +1597,9 @@ static void __fastcall UsbReceiveRegisterCompletionRoutine(int result, int count
 
       if ( (unsigned int)count_1 >= 0x20 )
         count_1 = 31;
-      count_rev = count_1 - 1;
-      if ( count_rev >> 1 < 0x11 )
-        OnNewStatusReceived(pUsb, &pUsb->RecvRegs, count_rev >> 1);
+      count_rev = (count_1 - 1) >> 1;
+      if ( count_rev < 0x11 )
+        OnNewStatusReceived(pUsb, &pUsb->RecvRegs, count_rev);
       MakeReceiveRequest(pUsb);
       CpuSuspendIntr(&state);
       pUsb->m_rx_count += count_1;
@@ -1721,7 +1700,6 @@ static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
     {
       unsigned int i; // $a0
       unsigned int TmpTxRegIndex; // $a2
-      int size; // $s1
 
       if ( !pUsb->Started )
         break;
@@ -1743,10 +1721,12 @@ static void __fastcall MakeRegisterTransmitRequest(PDEVICE_EXTENSION pUsb)
       }
       if ( i == 8 )
         pUsb->RegChangeFlag = 0;
-      size = 3 * TmpTxRegIndex;
       pUsb->TmpTxRegIndex = TmpTxRegIndex;
-      if ( size )
+      if ( TmpTxRegIndex )
       {
+        int size; // $s1
+
+        size = sizeof(pUsb->TxRegs[0]) * TmpTxRegIndex;
         memcpy(pUsb->TxRegs, pUsb->TmpTxRegs, size);
         pUsb->TmpTxRegIndex = 0;
         CallUsbd(pUsb, pUsb->PipeList, pUsb->TxRegs, size, UsbTransmitRegisterCompletionRoutine);
@@ -1780,7 +1760,7 @@ static void __fastcall SendGpioLedRequest(PDEVICE_EXTENSION pUsb)
   if ( !pUsb->PipeList[6].nActiveRequests && pUsb->bGpioChanged && pUsb->Started )
   {
     pUsb->bGpioChanged = 0;
-    CallUsbd(pUsb, &pUsb->PipeList[6], &pUsb->u, 4, UsbTransmitGpioCompletionRoutine);
+    CallUsbd(pUsb, &pUsb->PipeList[6], pUsb->u.GpioBuf, sizeof(pUsb->u.GpioBuf), UsbTransmitGpioCompletionRoutine);
   }
 }
 
@@ -1788,7 +1768,7 @@ static void __fastcall SendGpioLedRequest(PDEVICE_EXTENSION pUsb)
 static void __fastcall USBMODEM_ModifyMode(PDEVICE_EXTENSION pUsb, BYTE SetMode, BYTE ResetMode)
 {
   pUsb->bGpioChanged = 1;
-  pUsb->u.GpioBuf[2] = (pUsb->u.GpioBuf[2] & ~ResetMode) | SetMode;
+  pUsb->u.s.UsbModeByte = (pUsb->u.s.UsbModeByte & ~ResetMode) | SetMode;
   SendGpioLedRequest(pUsb);
 }
 
@@ -1796,7 +1776,7 @@ static void __fastcall USBMODEM_ModifyMode(PDEVICE_EXTENSION pUsb, BYTE SetMode,
 static void __fastcall USBMODEM_ModifyLed(PDEVICE_EXTENSION pUsb, BYTE SetMode, BYTE ResetMode)
 {
   pUsb->bGpioChanged = 1;
-  pUsb->u.GpioBuf[3] = (pUsb->u.GpioBuf[3] & ~ResetMode) | SetMode;
+  pUsb->u.s.UsbLedByte = (pUsb->u.s.UsbLedByte & ~ResetMode) | SetMode;
   SendGpioLedRequest(pUsb);
 }
 
