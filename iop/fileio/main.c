@@ -475,7 +475,7 @@ int _start()
   }
   CpuEnableIntr();
   thparam.thread = fileio_rpc_start_thread;
-  thparam.attr = 0x2000000;
+  thparam.attr = TH_C;
   thparam.priority = 96;
   thparam.stacksize = 4096;
   thparam.option = 0;
@@ -484,7 +484,7 @@ int _start()
     return 1;
   StartThread(thid_fio, 0);
   thparam.thread = heap_rpc_start_thread;
-  thparam.attr = 0x2000000;
+  thparam.attr = TH_C;
   thparam.priority = 96;
   thparam.stacksize = 2048;
   thparam.option = 0;
@@ -503,7 +503,7 @@ static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
   u32 efbits; // [sp+10h] [-8h] BYREF
   int state; // [sp+14h] [-4h] BYREF
 
-  WaitEventFlag(g_rwbuf_ef, 1u, 16, &efbits);
+  WaitEventFlag(g_rwbuf_ef, 1u, WEF_AND | WEF_CLEAR, &efbits);
   CpuSuspendIntr(&state);
   
   rwbuf_cur_ptr = g_rwbuf_cur_ptr;
@@ -1514,13 +1514,10 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
     {
       int priority_retres; // $s1
 
-      priority_retres = 0;
-      if ( (unsigned int)(*(_DWORD *)buffer - 9) >= 0x73 )
+      priority_retres = -22;
+      if ( (unsigned int)(*(_DWORD *)buffer - 9) < 0x73 )
       {
-        priority_retres = -22;
-      }
-      else
-      {
+        priority_retres = 0;
         g_th_priority = *(_DWORD *)buffer;
         ChangeThreadPriority(0, g_th_priority);
       }
@@ -1532,13 +1529,10 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
       int rwbuf_retres; // $s1
 
       CpuSuspendIntr(&state);
-      rwbuf_retres = 0;
-      if ( g_rwbuf_uses )
+      rwbuf_retres = -16;
+      if ( !g_rwbuf_uses )
       {
-        rwbuf_retres = -16;
-      }
-      else
-      {
+        rwbuf_retres = 0;
         fileio_rpc_dealloc_rwbuf();
         g_rwbuf_max_size = *(_DWORD *)buffer;
         g_rwbuf_ptr_count_allowed = *((_DWORD *)buffer + 1);
@@ -1559,12 +1553,12 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
     break;
   }
   thids_per_fd_idx = -1;
-  for ( i = 0; i < 32; i += 1 )
+  for ( i = 0; i < (int)(sizeof(g_thids_per_fd)/sizeof(g_thids_per_fd[0])); i += 1 )
   {
     if ( g_thids_per_fd[i] != -1 )
     {
       ReferThreadStatus(g_thids_per_fd[i], &thstatus);
-      if ( thstatus.status == 16 )
+      if ( thstatus.status == THS_DORMANT )
       {
         DeleteThread(g_thids_per_fd[i]);
         g_thids_per_fd[i] = -1;
@@ -1609,7 +1603,7 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
         {
           memcpy(threadbuf, buffer, length);
         }
-        thparam.attr = 0x2000000;
+        thparam.attr = TH_C;
         thparam.thread = (void (__cdecl *)(void *))get_fileio_rpc_command_thfn(fno);
         thparam.stacksize = 6144;
         thparam.option = 0;
@@ -1693,7 +1687,7 @@ static void __noreturn power_off_event_handler(void *userdata)
   while ( 1 )
   {
     ClearEventFlag(ef, 0xFFFFFFEF);
-    WaitEventFlag(ef, 0x10u, 0, &efres);
+    WaitEventFlag(ef, 0x10u, WEF_AND, &efres);
     while ( 1 )
     {
       trid = sceSifSendCmd(0x80000013, pkt, sizeof(pkt), 0, 0, 0);
@@ -1720,18 +1714,18 @@ static void fileio_rpc_start_thread(void *userdata)
     sceSifInit();
   printf("Multi Threaded Fileio module.(99/11/15) \n");
   sceSifInitRpc(0);
-  efparam.attr = 2;
+  efparam.attr = EA_MULTI;
   efparam.bits = 0;
   efparam.option = 0;
   g_rwbuf_ef = CreateEventFlag(&efparam);
   SetEventFlag(g_rwbuf_ef, 1u);
-  semaparam.attr = 1;
+  semaparam.attr = SA_THPRI;
   semaparam.initial = 1;
   semaparam.max = 1;
   semaparam.option = 0;
   g_sema_for_result_destbuf_ee = CreateSema(&semaparam);
   ReferThreadStatus(0, &thinfo);
-  thparam.attr = 0x2000000;
+  thparam.attr = TH_C;
   thparam.thread = power_off_event_handler;
   thparam.stacksize = 2048;
   thparam.option = 0;
