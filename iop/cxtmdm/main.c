@@ -496,8 +496,10 @@ static sceUsbdLddOps UsbAcfDriverDescriptor =
   0u,
   NULL
 }; // weak
-static int thread_priority = 28; // weak
-static int stack_size = 4096; // weak
+// Unofficial: move to bss
+static int thread_priority; // weak
+// Unofficial: move to bss
+static int stack_size; // weak
 static int resident_flag; // weak
 static int load_mode; // weak
 static char g_dialconf[400]; // idb
@@ -1378,6 +1380,8 @@ int __fastcall _start(int argc, char **argv)
   int ac_cur; // $s2
   int eqcount; // $s0
 
+  thread_priority = 28;
+  stack_size = 4096;
   load_mode = 0;
   g_dialconf[0] = 0;
   for ( ac_cur = 0; ac_cur < argc; ac_cur += 1 )
