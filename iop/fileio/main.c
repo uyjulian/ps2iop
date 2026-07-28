@@ -95,7 +95,7 @@ struct fio_fd_open_inbuf
   struct fio_common_inbuf m_common;
   int m_flags;
   int m_mode;
-  char m_name[256];
+  char m_name[1024];
 };
 
 /* 183 */
@@ -171,7 +171,7 @@ struct fio_ioctl2_inbuf
 struct fio_remove_inbuf
 {
   struct fio_common_inbuf m_common;
-  char m_name[256];
+  char m_name[1024];
 };
 
 /* 191 */
@@ -179,14 +179,14 @@ struct fio_mkdir_inbuf
 {
   struct fio_common_inbuf m_common;
   int m_mode;
-  char m_name[256];
+  char m_name[1024];
 };
 
 /* 192 */
 struct fio_rmdir_inbuf
 {
   struct fio_common_inbuf m_common;
-  char m_name[256];
+  char m_name[1024];
 };
 
 /* 193 */
@@ -210,14 +210,14 @@ struct fio_adddrv_inbuf
 struct fio_deldrv_inbuf
 {
   struct fio_common_inbuf m_common;
-  void *m_device;
+  char m_name[1024];
 };
 
 /* 196 */
 struct fio_dopen_inbuf
 {
   struct fio_common_inbuf m_common;
-  char m_name[256];
+  char m_name[1024];
 };
 
 /* 197 */
@@ -240,7 +240,7 @@ struct fio_getstat_inbuf
 {
   struct fio_common_inbuf m_common;
   int m_eedestptr;
-  char m_name[256];
+  char m_name[1024];
 };
 
 /* 200 */
@@ -1169,7 +1169,7 @@ static void __fastcall __noreturn fileio_rpc_deldrv(struct fio_deldrv_inbuf *inb
   fbuf.m_common.m_taskdata1 = inbuf->m_common.m_taskdata1;
   fbuf.m_common.m_taskdata2 = inbuf->m_common.m_taskdata2;
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
-  fbuf.m_retres = iomanX_DelDrv((const char *)&inbuf->m_device);
+  fbuf.m_retres = iomanX_DelDrv(inbuf->m_name);
   do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
