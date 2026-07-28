@@ -1611,6 +1611,7 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
       break;
     default:
       ee_fds = -1;
+      memcpy(threadbuf, buffer, length);
       break;
     }
     if ( ee_fds >= 0 )
@@ -1648,10 +1649,6 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
         threadbuf->m_mbxid = -1;
       }
     }
-    else
-    {
-      memcpy(threadbuf, buffer, length);
-    }
     if ( fno >= 0 )
     {
       iop_thread_t thparam; // [sp+18h] [-70h] BYREF
@@ -1685,6 +1682,7 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
     g_thids_per_fd[thids_per_fd_idx] = -1;
   if ( threadbuf )
   {
+    // Unofficial: cleanup here
     if ( threadbuf->m_mbxid >= 0 )
       DeleteMbx(threadbuf->m_mbxid);
     fileio_rpc_threadbuf_free(threadbuf);
