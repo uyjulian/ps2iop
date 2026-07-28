@@ -1,6 +1,7 @@
 
 #include <irx_imports.h>
 #include <blkio-ioctl.h>
+#include <errno.h>
 
 IRX_ID("FILEIO_service", 2, 18);
 
@@ -629,7 +630,7 @@ static struct fio_msgbox_inbuf *fileio_rpc_threadbuf_alloc(void)
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
-  ptr = AllocSysMemory(1, sizeof(*ptr), 0);
+  ptr = AllocSysMemory(ALLOC_LAST, sizeof(*ptr), 0);
   CpuResumeIntr(state);
   return ptr;
 }
@@ -744,7 +745,7 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
   rwbuf = fileio_alloc_rwbuf(&rwbuf_size);
   if ( !rwbuf )
   {
-    read_res_last = -12;
+    read_res_last = -ENOMEM;
     Kprintf("Error:Cannot alloc r/w buffer\n");
   }
   else
@@ -887,7 +888,7 @@ static void __fastcall fileio_rpc_fd_write(struct fio_fd_write_inbuf *inbuf)
   if ( !rwbuf )
   {
     Kprintf("Error:Cannot alloc r/w buffer\n");
-    write_res_last = -12;
+    write_res_last = -ENOMEM;
   }
   else
   {
@@ -968,7 +969,12 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
       bio_arg.type,
       bio_arg.mode);
   rwbuf = fileio_alloc_rwbuf(&rwbuf_size);
-  if ( rwbuf )
+  if ( !rwbuf )
+  {
+    devctl_res = -ENOMEM;
+    Kprintf("Error:Cannot alloc r/w buffer\n");
+  }
+  else
   {
     unsigned int rwbuf_size_in_blocks; // $s6
     unsigned int size_in_rwbuf_block_units; // $s5
@@ -1026,11 +1032,6 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
       dmat[0].dest = (char *)dmat[0].dest + dmat[0].size;
     }
     fileio_free_rwbuf(rwbuf);
-  }
-  else
-  {
-    devctl_res = -12;
-    Kprintf("Error:Cannot alloc r/w buffer\n");
   }
   fbuf.m_retres = devctl_res;
   do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
@@ -1407,38 +1408,38 @@ static void __fastcall __noreturn fileio_rpc_open(struct fio_msgbox_inbuf *inbuf
 {
   int m_mbxid; // $s1
   int fd; // $v0
-  struct fio_msgbox_inbuf *threadbuf_2; // $s0
+  struct fio_msgbox_inbuf *threadbuf; // $s0
 
   m_mbxid = inbuf->m_mbxid;
   fd = fileio_rpc_fd_open((struct fio_fd_open_inbuf *)inbuf->m_taskbuf);
   fileio_rpc_threadbuf_free(inbuf);
-  threadbuf_2 = NULL;
+  threadbuf = NULL;
   if ( fd >= 0 )
   {
     while ( 1 )
     {
-      if ( threadbuf_2 )
-        fileio_rpc_threadbuf_free(threadbuf_2);
-      ReceiveMbx((void **)&threadbuf_2, m_mbxid);
+      if ( threadbuf )
+        fileio_rpc_threadbuf_free(threadbuf);
+      ReceiveMbx((void **)&threadbuf, m_mbxid);
       if ( g_fileio_verbose > 0 )
-        printf("ReceiveMbx mbxid= %08x fno= %d addr %08x\n", m_mbxid, threadbuf_2->m_common.m_in_fno, (unsigned int)threadbuf_2);
-      switch ( threadbuf_2->m_common.m_in_fno )
+        printf("ReceiveMbx mbxid= %08x fno= %d addr %08x\n", m_mbxid, threadbuf->m_common.m_in_fno, (unsigned int)threadbuf);
+      switch ( threadbuf->m_common.m_in_fno )
       {
         case FILEIO_FNO_CLOSE:
-          fileio_rpc_fd_close((struct fio_fd_close_inbuf *)threadbuf_2->m_taskbuf);
-          fileio_rpc_threadbuf_free(threadbuf_2);
+          fileio_rpc_fd_close((struct fio_fd_close_inbuf *)threadbuf->m_taskbuf);
+          fileio_rpc_threadbuf_free(threadbuf);
           break;
         case FILEIO_FNO_READ:
-          fileio_rpc_fd_read((struct fio_fd_read_inbuf *)threadbuf_2->m_taskbuf);
+          fileio_rpc_fd_read((struct fio_fd_read_inbuf *)threadbuf->m_taskbuf);
           continue;
         case FILEIO_FNO_WRITE:
-          fileio_rpc_fd_write((struct fio_fd_write_inbuf *)threadbuf_2->m_taskbuf);
+          fileio_rpc_fd_write((struct fio_fd_write_inbuf *)threadbuf->m_taskbuf);
           continue;
         case FILEIO_FNO_LSEEK:
-          fileio_rpc_fd_lseek((struct fio_fd_lseek_inbuf *)threadbuf_2->m_taskbuf);
+          fileio_rpc_fd_lseek((struct fio_fd_lseek_inbuf *)threadbuf->m_taskbuf);
           continue;
         case FILEIO_FNO_LSEEK64:
-          fileio_rpc_fd_lseek64((struct fio_fd_lseek64_inbuf *)threadbuf_2->m_taskbuf);
+          fileio_rpc_fd_lseek64((struct fio_fd_lseek64_inbuf *)threadbuf->m_taskbuf);
           continue;
         default:
           continue;
@@ -1522,11 +1523,11 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
     {
       int priority_retres; // $s1
 
-      priority_retres = ( (unsigned int)(*(_DWORD *)buffer - 9) < 0x73 ) ? 0 : -22;
+      priority_retres = ( (unsigned int)(*(_DWORD *)buffer - 9) < 0x73 ) ? 0 : -EINVAL;
       if ( !priority_retres )
       {
         g_th_priority = *(_DWORD *)buffer;
-        ChangeThreadPriority(0, g_th_priority);
+        ChangeThreadPriority(TH_SELF, g_th_priority);
       }
       g_fileio_rpc_outbuf = priority_retres;
       return &g_fileio_rpc_outbuf;
@@ -1536,7 +1537,7 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
       int rwbuf_retres; // $s1
 
       CpuSuspendIntr(&state);
-      rwbuf_retres = !g_rwbuf_uses ? 0 : -16;
+      rwbuf_retres = !g_rwbuf_uses ? 0 : -EBUSY;
       if ( !rwbuf_retres )
       {
         fileio_rpc_dealloc_rwbuf();
@@ -1710,7 +1711,7 @@ static void __noreturn power_off_event_handler(void *userdata)
   u32 efres; // [sp+2Ch] [-4h] BYREF
 
   (void)userdata;
-  while ( iomanX_devctl("cdrom0:", 0x4391, 0, 0, &ef, 4u) < 0 )
+  while ( iomanX_devctl("cdrom0:", 0x4391, 0, 0, &ef, sizeof(ef)) < 0 )
   {
     if ( g_fileio_verbose > 0 )
       printf("FILEIO:PowerOff event flag get fail\n");
@@ -1756,7 +1757,7 @@ static void fileio_rpc_start_thread(void *userdata)
   semaparam.max = 1;
   semaparam.option = 0;
   g_sema_for_result_destbuf_ee = CreateSema(&semaparam);
-  ReferThreadStatus(0, &thinfo);
+  ReferThreadStatus(TH_SELF, &thinfo);
   thparam.attr = TH_C;
   thparam.thread = power_off_event_handler;
   thparam.stacksize = 2048;
@@ -1788,8 +1789,8 @@ static void __fastcall heap_rpc_load_iop_heap(void *buffer, int length, void *ou
   {
     int endsz; // $s0
 
-    endsz = iomanX_lseek(fd, 0, 2);
-    iomanX_lseek(fd, 0, 0);
+    endsz = iomanX_lseek(fd, 0, FIO_SEEK_END);
+    iomanX_lseek(fd, 0, FIO_SEEK_SET);
     *(int *)outbuf = ( endsz != iomanX_read(fd, *(void **)buffer, endsz) ) ? -2 : 0;
     iomanX_close(fd);
   }
@@ -1808,7 +1809,7 @@ static void __fastcall heap_rpc_alloc_iop_heap(void *buffer, int length, void *o
 
   (void)length;
   CpuSuspendIntr(&state);
-  ptr = AllocSysMemory(0, *(int *)buffer, 0);
+  ptr = AllocSysMemory(ALLOC_FIRST, *(int *)buffer, 0);
   CpuResumeIntr(state);
   *(void **)outbuf = ptr;
 }
