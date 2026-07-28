@@ -96,6 +96,7 @@ struct fio_fd_open_inbuf
   int m_flags;
   int m_mode;
   char m_name[1024];
+  int m_ee_fds;
 };
 
 /* 183 */
@@ -103,6 +104,7 @@ struct fio_fd_close_inbuf
 {
   struct fio_common_inbuf m_common;
   int m_fd;
+  int m_ee_fds;
 };
 
 /* 184 */
@@ -112,6 +114,8 @@ struct fio_fd_read_inbuf
   int m_fd;
   int m_eebuffer;
   int m_eebuffersz;
+  int m_x7;
+  int m_ee_fds;
 };
 
 /* 185 */
@@ -122,7 +126,8 @@ struct fio_fd_write_inbuf
   int m_eebuffer;
   int m_eebuffersz;
   int m_remainsz;
-  char m_buf[64];
+  char m_buf[16];
+  int m_ee_fds;
 };
 
 /* 186 */
@@ -132,6 +137,7 @@ struct fio_fd_lseek_inbuf
   int m_fd;
   int m_pos;
   int m_mode;
+  int m_ee_fds;
 };
 
 /* 187 */
@@ -141,6 +147,7 @@ struct fio_fd_lseek64_inbuf
   int m_fd;
   s64 m_pos;
   int m_mode;
+  int m_ee_fds;
 };
 
 /* 188 */
@@ -1592,22 +1599,22 @@ static int *__fastcall fileio_rpc_service_handler(int fno, void *buffer, int len
     switch ( threadbuf->m_common.m_in_fno )
     {
     case FILEIO_FNO_OPEN:
-      ee_fds = *((_DWORD *)buffer + 261);
+      ee_fds = ((struct fio_fd_open_inbuf *)buffer)->m_ee_fds;
       break;
     case FILEIO_FNO_CLOSE:
-      ee_fds = *((_DWORD *)buffer + 4);
+      ee_fds = ((struct fio_fd_close_inbuf *)buffer)->m_ee_fds;
       break;
     case FILEIO_FNO_READ:
-      ee_fds = *((_DWORD *)buffer + 7);
+      ee_fds = ((struct fio_fd_read_inbuf *)buffer)->m_ee_fds;
       break;
     case FILEIO_FNO_WRITE:
-      ee_fds = *((_DWORD *)buffer + 11);
+      ee_fds = ((struct fio_fd_write_inbuf *)buffer)->m_ee_fds;
       break;
     case FILEIO_FNO_LSEEK:
-      ee_fds = *((_DWORD *)buffer + 6);
+      ee_fds = ((struct fio_fd_lseek_inbuf *)buffer)->m_ee_fds;
       break;
     case FILEIO_FNO_LSEEK64:
-      ee_fds = *((_DWORD *)buffer + 7);
+      ee_fds = ((struct fio_fd_lseek64_inbuf *)buffer)->m_ee_fds;
       break;
     default:
       ee_fds = -1;
