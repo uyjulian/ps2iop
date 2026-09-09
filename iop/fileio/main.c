@@ -540,7 +540,7 @@ static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
     for ( try_cnt = 0; try_cnt < 8; try_cnt += 1 )
     {
       rwbuf_size = g_rwbuf_max_size >> try_cnt;
-      rwbuf_cur_ptr = AllocSysMemory(1, rwbuf_size, NULL);
+      rwbuf_cur_ptr = AllocSysMemory(ALLOC_LAST, rwbuf_size, NULL);
       if ( rwbuf_cur_ptr )
       {
         unsigned int cur_ptr_count; // $v1
