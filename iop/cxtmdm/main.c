@@ -694,7 +694,7 @@ static int __fastcall ModemStart(void *userdata, int unused)
 
   (void)unused;
   pUsb = userdata;
-  data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(pUsb->Handle, 0, USB_DT_DEVICE);
+  data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(pUsb->Handle, NULL, USB_DT_DEVICE);
   if ( !data )
     return 0;
   if ( data->idVendor != 1394 )
@@ -989,9 +989,9 @@ static PDEVICE_EXTENSION do_alloc_mem_for_dev_ext()
   iop_thread_t thparam2; // [sp+38h] [-28h] BYREF
   iop_sema_t semaparam; // [sp+50h] [-10h] BYREF
 
-  pUsb = (PDEVICE_EXTENSION)sceInetAllocMem(0, sizeof(*pUsb));
+  pUsb = (PDEVICE_EXTENSION)sceInetAllocMem(NULL, sizeof(*pUsb));
   if ( !pUsb )
-    return 0;
+    return NULL;
   bzero(pUsb, sizeof(*pUsb));
   pUsb->MakeDataTransmitReentrancy = -1;
   pUsb->PipeList[4].nActiveRequests = 0;
@@ -1030,8 +1030,8 @@ static PDEVICE_EXTENSION do_alloc_mem_for_dev_ext()
     }
     DeleteEventFlag(pUsb->m_evid_main);
   }
-  sceInetFreeMem(0, pUsb);
-  return 0;
+  sceInetFreeMem(NULL, pUsb);
+  return NULL;
 }
 // 4034E8: using guessed type int thread_priority;
 // 4034EC: using guessed type int stack_size;
@@ -1047,7 +1047,7 @@ static void __fastcall do_delete_threads(PDEVICE_EXTENSION pUsb)
   DeleteThread(pUsb->m_thid_patchload);
   DeleteSema(pUsb->sm_xmit);
   DeleteEventFlag(pUsb->m_evid_main);
-  sceInetFreeMem(0, pUsb);
+  sceInetFreeMem(NULL, pUsb);
 }
 
 //----- (00401130) --------------------------------------------------------
@@ -1170,7 +1170,7 @@ static int __fastcall UsbAcfModemProbe(int dev_id)
 {
   UsbDeviceDescriptor *data; // $a1
 
-  data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, USB_DT_DEVICE);
+  data = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(dev_id, NULL, USB_DT_DEVICE);
   if ( !data )
     return 1;
   if ( data->idVendor != 1394 )
@@ -1210,7 +1210,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   strcpy((char *)man, "Conexant");
   memset(pro, 0, sizeof(pro));
   strcpy((char *)pro, "SMARTSCM");
-  data = (UsbConfigDescriptor *)sceUsbdScanStaticDescriptor(dev_id, 0, USB_DT_CONFIG);
+  data = (UsbConfigDescriptor *)sceUsbdScanStaticDescriptor(dev_id, NULL, USB_DT_CONFIG);
   if ( !data )
     return -1;
   if ( data->bNumInterfaces != 1 )
@@ -1224,7 +1224,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
   if ( !pUsb )
     return -1;
   pUsb->Handle = dev_id;
-  pUsb->EP0Pipe = sceUsbdOpenPipe(dev_id, 0);
+  pUsb->EP0Pipe = sceUsbdOpenPipe(dev_id, NULL);
   if ( pUsb->EP0Pipe < 0 )
     return -1;
   curdesc = idesc;
@@ -1244,7 +1244,7 @@ static int __fastcall UsbAcfModemAttach(int dev_id)
     printf("cxtmodem: %s -> 0x%x\n", "sceUsbdSetConfiguration", xferres);
     return -1;
   }
-  devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(pUsb->Handle, 0, USB_DT_DEVICE);
+  devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(pUsb->Handle, NULL, USB_DT_DEVICE);
   if ( !devdesc )
     return -1;
   if ( devdesc->idVendor != 1394 )
@@ -1685,7 +1685,7 @@ static int __fastcall CallUsbd(
   if ( !pUsb->Started )
     return 306;
   Pipe->nActiveRequests += 1;
-  return sceUsbdTransferPipe(Pipe->PipeHandle, Buf, Length, 0, CompletionRoutine, pUsb);
+  return sceUsbdTransferPipe(Pipe->PipeHandle, Buf, Length, NULL, CompletionRoutine, pUsb);
 }
 
 //----- (0040241C) --------------------------------------------------------
