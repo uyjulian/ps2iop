@@ -501,7 +501,7 @@ int _start()
   thid_fio = CreateThread(&thparam);
   if ( thid_fio <= 0 )
     return 1;
-  StartThread(thid_fio, 0);
+  StartThread(thid_fio, NULL);
   thparam.thread = heap_rpc_start_thread;
   thparam.attr = TH_C;
   thparam.priority = 96;
@@ -510,7 +510,7 @@ int _start()
   thid_heap = CreateThread(&thparam);
   if ( thid_heap <= 0 )
     return 1;
-  StartThread(thid_heap, 0);
+  StartThread(thid_heap, NULL);
   return 0;
 }
 
@@ -540,7 +540,7 @@ static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
     for ( try_cnt = 0; try_cnt < 8; try_cnt += 1 )
     {
       rwbuf_size = g_rwbuf_max_size >> try_cnt;
-      rwbuf_cur_ptr = AllocSysMemory(1, rwbuf_size, 0);
+      rwbuf_cur_ptr = AllocSysMemory(1, rwbuf_size, NULL);
       if ( rwbuf_cur_ptr )
       {
         unsigned int cur_ptr_count; // $v1
@@ -566,7 +566,7 @@ static void *__fastcall fileio_alloc_rwbuf(int *out_rwbuf_size)
     {
       SetEventFlag(g_rwbuf_ef, 1u);
       CpuResumeIntr(state);
-      return 0;
+      return NULL;
     }
   }
   *out_rwbuf_size = rwbuf_size;
@@ -602,7 +602,7 @@ static void __fastcall fileio_free_rwbuf(void *ptr)
     {
       if ( g_rwbuf_ptrs[cur_ptr_count] == ptr )
       {
-        g_rwbuf_ptrs[cur_ptr_count] = 0;
+        g_rwbuf_ptrs[cur_ptr_count] = NULL;
         break;
       }
     }
@@ -624,7 +624,7 @@ static void fileio_rpc_dealloc_rwbuf()
     FreeSysMemory(g_rwbuf_cur_ptr);
   g_rwbuf_is_allocated = 0;
   g_rwbuf_size = 0;
-  g_rwbuf_cur_ptr = 0;
+  g_rwbuf_cur_ptr = NULL;
   CpuResumeIntr(state);
 }
 // 40325C: using guessed type int g_rwbuf_size;
@@ -637,7 +637,7 @@ static struct fio_msgbox_inbuf *fileio_rpc_threadbuf_alloc(void)
   int state; // [sp+10h] [-8h] BYREF
 
   CpuSuspendIntr(&state);
-  ptr = AllocSysMemory(ALLOC_LAST, sizeof(*ptr), 0);
+  ptr = AllocSysMemory(ALLOC_LAST, sizeof(*ptr), NULL);
   CpuResumeIntr(state);
   return ptr;
 }
@@ -768,7 +768,7 @@ static void __fastcall fileio_rpc_fd_read(struct fio_fd_read_inbuf *inbuf)
     eedestptr1 = m_eebuffer;
     read_sz_begin = m_eebuffersz;
     read_sz_total = 0;
-    eedest = 0;
+    eedest = NULL;
     cur_read_remain = 0;
     read_sz_end = 0;
     eedestptr2 = 0;
@@ -1009,7 +1009,7 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
         {
           int trid; // $s0
 
-          devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &bio_arg, inbuf->m_arglen, 0, 0);
+          devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &bio_arg, inbuf->m_arglen, NULL, 0);
           if ( devctl_res < 0 )
             break;
           while ( 1 )
@@ -1029,7 +1029,7 @@ static void __fastcall __noreturn fileio_rpc_devctl_blkio(struct fio_devctl_inbu
         {
           while ( sceSifGetOtherData(&rdata, dmat[0].dest, dmat[0].src, dmat[0].size, 0) < 0 )
             DelayThread(2000);
-          devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &bio_arg, inbuf->m_arglen, 0, 0);
+          devctl_res = devctl(inbuf->m_name, inbuf->m_cmd, &bio_arg, inbuf->m_arglen, NULL, 0);
           break;
         }
       }
@@ -1062,7 +1062,7 @@ static void __fastcall __noreturn fileio_rpc_ioctl(struct fio_ioctl_inbuf *inbuf
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
-  fbuf.m_retres = iomanX_ioctl(inbuf->m_fd, inbuf->m_cmd, inbuf->m_inoutbufsz ? inbuf->m_buf : 0);
+  fbuf.m_retres = iomanX_ioctl(inbuf->m_fd, inbuf->m_cmd, inbuf->m_inoutbufsz ? inbuf->m_buf : NULL);
   do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
@@ -1080,7 +1080,7 @@ static void __fastcall __noreturn fileio_rpc_ioctl2(struct fio_ioctl2_inbuf *inb
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
-  fbuf.m_retres = iomanX_ioctl2(inbuf->m_fd, inbuf->m_cmd, inbuf->m_inoutbufsz ? inbuf->m_buf : 0, inbuf->m_inoutbufsz, fbuf.m_buf, fbuf.m_inbufsz);
+  fbuf.m_retres = iomanX_ioctl2(inbuf->m_fd, inbuf->m_cmd, inbuf->m_inoutbufsz ? inbuf->m_buf : NULL, inbuf->m_inoutbufsz, fbuf.m_buf, fbuf.m_inbufsz);
   do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
@@ -1370,7 +1370,7 @@ static void __fastcall __noreturn fileio_rpc_devctl(struct fio_devctl_inbuf *inb
   fbuf.m_common.m_in_fno = inbuf->m_common.m_in_fno;
   fbuf.m_outbufsz = inbuf->m_outbufsz;
   fbuf.m_inbufsz = inbuf->m_inbufsz;
-  fbuf.m_retres = iomanX_devctl(inbuf->m_name, inbuf->m_cmd, inbuf->m_arglen ? inbuf->m_arg : 0, inbuf->m_arglen, fbuf.m_buf, fbuf.m_inbufsz);
+  fbuf.m_retres = iomanX_devctl(inbuf->m_name, inbuf->m_cmd, inbuf->m_arglen ? inbuf->m_arg : NULL, inbuf->m_arglen, fbuf.m_buf, fbuf.m_inbufsz);
   do_call_ee_rcv_res_intr(&fbuf, sizeof(fbuf));
   fileio_rpc_threadbuf_free(inbuf);
   ExitThread();
@@ -1512,7 +1512,7 @@ static void *get_fileio_rpc_command_thfn(int cmd)
       return fileio_rpc_devctl_blkio;
     default:
       printf("sce_fileio: unrecognized code %x\n", cmd);
-      return 0;
+      return NULL;
   }
 }
 
@@ -1716,7 +1716,7 @@ static void __noreturn power_off_event_handler(void *userdata)
   u32 efres; // [sp+2Ch] [-4h] BYREF
 
   (void)userdata;
-  while ( iomanX_devctl("cdrom0:", 0x4391, 0, 0, &ef, sizeof(ef)) < 0 )
+  while ( iomanX_devctl("cdrom0:", 0x4391, NULL, 0, &ef, sizeof(ef)) < 0 )
   {
     if ( g_fileio_verbose > 0 )
       printf("FILEIO:PowerOff event flag get fail\n");
@@ -1728,7 +1728,7 @@ static void __noreturn power_off_event_handler(void *userdata)
     WaitEventFlag(ef, 0x10u, WEF_AND, &efres);
     while ( 1 )
     {
-      trid = sceSifSendCmd(0x80000013, pkt, sizeof(pkt), 0, 0, 0);
+      trid = sceSifSendCmd(0x80000013, pkt, sizeof(pkt), NULL, NULL, 0);
       if ( trid )
         break;
       DelayThread(2000);
@@ -1768,15 +1768,15 @@ static void fileio_rpc_start_thread(void *userdata)
   thparam.stacksize = 2048;
   thparam.option = 0;
   thparam.priority = thinfo.initPriority;
-  StartThread(CreateThread(&thparam), 0);
+  StartThread(CreateThread(&thparam), NULL);
   sceSifSetRpcQueue(&g_fileio_sif_qd, GetThreadId());
   sceSifRegisterRpc(
     &g_fileio_sif_sd,
     0x80000001,
     (SifRpcFunc_t)fileio_rpc_service_handler,
     fileio_rpc_service_in_buf,
-    0,
-    0,
+    NULL,
+    NULL,
     &g_fileio_sif_qd);
   sceSifRpcLoop(&g_fileio_sif_qd);
 }
@@ -1814,7 +1814,7 @@ static void __fastcall heap_rpc_alloc_iop_heap(void *buffer, int length, void *o
 
   (void)length;
   CpuSuspendIntr(&state);
-  ptr = AllocSysMemory(ALLOC_FIRST, *(int *)buffer, 0);
+  ptr = AllocSysMemory(ALLOC_FIRST, *(int *)buffer, NULL);
   CpuResumeIntr(state);
   *(void **)outbuf = ptr;
 }
@@ -1955,8 +1955,8 @@ static void heap_rpc_start_thread(void *userdata)
     0x80000003,
     (SifRpcFunc_t)heap_rpc_service_handler,
     heap_rpc_service_in_buf,
-    0,
-    0,
+    NULL,
+    NULL,
     &g_heap_sif_qd);
   sceSifRpcLoop(&g_heap_sif_qd);
 }
