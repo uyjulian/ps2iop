@@ -317,16 +317,11 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 #else
 		rp_cur = pkt->rp[acount - 2];
 #endif
-		if ( !!(rp_cur & 1) )
-			priv->m_multicast += 1;
-		if ( !!(rp_cur & 2) )
-			priv->m_err_rx_length += 1;
-		if ( !!(rp_cur & 4) )
-			priv->m_err_rx_length += 1;
-		if ( !!(rp_cur & 8) )
-			priv->m_err_rx_crc += 1;
-		if ( !!(rp_cur & 0x10) )
-			priv->m_err_rx_frame += 1;
+		priv->m_multicast += !!(rp_cur & 1);
+		priv->m_err_rx_length += !!(rp_cur & 2);
+		priv->m_err_rx_length += !!(rp_cur & 4);
+		priv->m_err_rx_crc += !!(rp_cur & 8);
+		priv->m_err_rx_frame += !!(rp_cur & 0x10);
 		if ( (rp_cur & 0x1E) )
 		{
 			priv->m_rx_errors += 1;
@@ -909,12 +904,9 @@ static void inet_thread_proc(void *userdata)
 		{
 			control_in_xfer(priv, 0x2B, 5);
 			// transmit_status_1
-			if ( !!(priv->m_usb_xfer_buf[0x2B] & 0x6C) )
-			{
-				priv->m_collisions += !!(priv->m_usb_xfer_buf[0x2B] & 0x60);
-				priv->m_err_tx_carrier += !!(priv->m_usb_xfer_buf[0x2B] & 0xC);
-				priv->m_tx_errors += 1;
-			}
+			priv->m_collisions += !!(priv->m_usb_xfer_buf[0x2B] & 0x60);
+			priv->m_err_tx_carrier += !!(priv->m_usb_xfer_buf[0x2B] & 0xC);
+			priv->m_tx_errors += !!(priv->m_usb_xfer_buf[0x2B] & 0x6C);
 			// receive_status
 			priv->m_err_rx_over += !!(priv->m_usb_xfer_buf[0x2D] & 1);
 			priv->m_rx_errors += !!(priv->m_usb_xfer_buf[0x2D] & 1);
