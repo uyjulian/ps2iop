@@ -284,9 +284,7 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 	priv->m_rx_packets += 1;
 	pkt->m_reserved1 = NULL;
 	if ( priv->m_start_stop_flag || priv->m_val_for_inet_stop )
-	{
 		sceInetFreePkt(&priv->m_devops, pkt);
-	}
 	else if ( acount < 68 )
 	{
 		priv->m_rx_errors += 1;
@@ -303,25 +301,15 @@ static void an986_rx_done(int aresult, int acount, void *userdata)
 		rp_cur = pkt->rp[acount - 2];
 #endif
 		if ( !!(rp_cur & 1) )
-		{
 			priv->m_multicast += 1;
-		}
 		if ( !!(rp_cur & 2) )
-		{
 			priv->m_err_rx_length += 1;
-		}
 		if ( !!(rp_cur & 4) )
-		{
 			priv->m_err_rx_length += 1;
-		}
 		if ( !!(rp_cur & 8) )
-		{
 			priv->m_err_rx_crc += 1;
-		}
 		if ( !!(rp_cur & 0x10) )
-		{
 			priv->m_err_rx_frame += 1;
-		}
 		if ( (rp_cur & 0x1E) )
 		{
 			priv->m_rx_errors += 1;
@@ -413,8 +401,7 @@ static unsigned int alarm_cb(void *userdata)
 	struct an986_priv *priv;
 
 	priv = (struct an986_priv *)userdata;
-	if ( (int)(priv->m_val_for_alarm_cb) > 0 )
-		priv->m_val_for_alarm_cb -= 1;
+	priv->m_val_for_alarm_cb -= !!( (int)(priv->m_val_for_alarm_cb) > 0 );
 	return priv->m_sysclk.lo;
 }
 
@@ -464,34 +451,24 @@ static int an986_inet_xmit(void *userdata, int unused)
 	dropped = 0;
   xferret = -1;
   pkt = sceInetPktDeQ(&priv->m_devops.sndq);
-  if ( !pkt )
-  {
-  	dropped = 1;
-  }
-  if ( !dropped && (priv->m_start_stop_flag || priv->m_val_for_inet_stop || !priv->m_link_status) )
-  {
-		dropped = 1;
-  }
+	dropped = !pkt;
+	dropped = !!( !dropped && (priv->m_start_stop_flag || priv->m_val_for_inet_stop || !priv->m_link_status) );
   if ( !dropped )
   {
   	pktsz = pkt->wp - pkt->rp;
-  	if ( pktsz - 60 >= 1455 )
-  		dropped = 1;
+		dropped = !!( pktsz - 60 >= 1455 );
   }
   if ( !dropped )
   {
   	pkt->rp -= 2;
-  	if ( !!((uiptr)(pkt->rp) & 3) )
-  		dropped = 1;
+		dropped = !!((uiptr)(pkt->rp) & 3);
   }
   if ( !dropped )
   {
     *((u16 *)(pkt->rp)) = pktsz;
     priv->m_tx_packets += 1;
     priv->m_tx_bytes += pktsz;
-    pktsz += 2;
-    if ( !(((u8)pktsz) & 0x3F) )
-      pktsz += 1;
+    pktsz += 2 + !(((u8)pktsz) & 0x3F);
     pkt->m_reserved1 = (void *)priv;
     while ( 1 )
     {
@@ -549,8 +526,7 @@ static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr
 						for ( j = 0; j < 8; j += 1 )
 						{
 							xcurval = valcr2 >> 1;
-							if ( !!(((u8)valcr2 ^ (u8)(*ptr >> j)) & 1) )
-								xcurval ^= 0xEDB88320;
+							xcurval ^= !!(((u8)valcr2 ^ (u8)(*ptr >> j)) & 1) ? 0xEDB88320 : 0;
 							valcr2 = xcurval;
 						}
 						ptr += 1;
@@ -855,12 +831,10 @@ static void inet_thread_proc(void *userdata)
 		return;
 	priv->m_usb_xfer_buf[0x01] = 0;
 	outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
-	if ( !!(outval_1 & 0x140) )
-		// Ethernet_control_1 full_duplex
-		priv->m_usb_xfer_buf[0x01] |= 0x20;
-	if ( !!(outval_1 & 0x180) )
-		// Ethernet_control_1 10mode
-		priv->m_usb_xfer_buf[0x01] |= 0x10;
+	// Ethernet_control_1 full_duplex
+	priv->m_usb_xfer_buf[0x01] |= !!(outval_1 & 0x140) ? 0x20 : 0;
+	// Ethernet_control_1 10mode
+	priv->m_usb_xfer_buf[0x01] |= !!(outval_1 & 0x180) ? 0x10 : 0;
 	if ( control_out_xfer(priv, 0x01, 1) )
 		return;
 	priv->m_nego_status = ( !!(outval_1 & 0x180) ) ? (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_TX_FD : sceInetNDNEGO_TX) : (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_10_FD : sceInetNDNEGO_10);
@@ -925,18 +899,13 @@ static void inet_thread_proc(void *userdata)
 			// transmit_status_1
 			if ( !!(priv->m_usb_xfer_buf[0x2B] & 0x6C) )
 			{
-				if ( !!(priv->m_usb_xfer_buf[0x2B] & 0x60) )
-					priv->m_collisions += 1;
-				if ( !!(priv->m_usb_xfer_buf[0x2B] & 0xC) )
-					priv->m_err_tx_carrier += 1;
+				priv->m_collisions += !!(priv->m_usb_xfer_buf[0x2B] & 0x60);
+				priv->m_err_tx_carrier += !!(priv->m_usb_xfer_buf[0x2B] & 0xC);
 				priv->m_tx_errors += 1;
 			}
 			// receive_status
-			if ( !!(priv->m_usb_xfer_buf[0x2D] & 1) )
-			{
-				priv->m_err_rx_over += 1;
-				priv->m_rx_errors += 1;
-			}
+			priv->m_err_rx_over += !!(priv->m_usb_xfer_buf[0x2D] & 1);
+			priv->m_rx_errors += !!(priv->m_usb_xfer_buf[0x2D] & 1);
 			// receive lost packet low
 			priv->m_err_rx_missed += priv->m_usb_xfer_buf[0x2F];
 			priv->m_rx_errors += priv->m_usb_xfer_buf[0x2F];
@@ -1073,9 +1042,7 @@ static const struct an986_devinfo *do_check_static_descriptor(
 		VERBOSE_PRINTF("an986: idVendor=0x%04x idProduct=0x%04x\n", id_vendor, id_product);
 	cur_devinfo = NULL;
 	if ( id_vendor == g_an986_devinfo_custom.m_vendor_id && id_product == g_an986_devinfo_custom.m_product_id )
-	{
 		cur_devinfo = &g_an986_devinfo_custom;
-	}
 	if ( !cur_devinfo )
 	{
 		unsigned int i;
@@ -1221,17 +1188,12 @@ static int an986_probe(int devId)
 
 		printf("an986_probe,%d: called", devId);
 		if ( sceUsbdGetDeviceLocation(devId, (u8 *)strlocbuf) )
-		{
 			printf(" dev_id=%d\n", devId);
-		}
 		else
 		{
-			
 			printf(" Loc:USB-");
 			for ( i = 0; i < 7 && strlocbuf[i]; i += 1 )
-			{
 				printf("%s%d", i ? "," : "", strlocbuf[i]);
-			}
 		}
 		gendesc = NULL;
 		while ( 1 )
@@ -1241,9 +1203,7 @@ static int an986_probe(int devId)
 			if ( !gendesc )
 				break;
 			for ( i = 0; i < gendesc->bLength; i += 1 )
-			{
 				printf(" %02x", ((u8 *)gendesc)[i]);
-			}
 		}
 	}
 	devdesc = (UsbDeviceDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, USB_DT_DEVICE);
@@ -1284,13 +1244,13 @@ static int scan_number(const char *e_arg, unsigned int *n_result)
 
 	e_arg_1 = e_arg;
 	curbasex = 10;
-	if ( *e_arg == '0' && e_arg[1] )
+	if ( *e_arg_1 == '0' && e_arg_1[1] )
 	{
-		e_arg_1 = e_arg + 1;
+		e_arg_1 += 1;
 		curbasex = 8;
-		if ( e_arg[1] == 'x' )
+		if ( *e_arg_1 == 'x' )
 		{
-			e_arg_1 = e_arg + 2;
+			e_arg_1 += 1;
 			curbasex = 16;
 		}
 	}
@@ -1383,9 +1343,7 @@ static int an986_init(int ac, char **av)
 		else if ( !strcmp("-version", av[i]) )
 			return do_print_version();
 		else if ( !strcmp("-verbose", av[i]) )
-		{
 			g_an986_idata.m_verbose = 1;
-		}
 		else if ( !strcmp("-list", av[i]) )
 			return do_print_list();
 		else if ( !strcmp("-p", av[i]) || !strcmp("-P", av[i]) )
@@ -1406,9 +1364,7 @@ static int an986_init(int ac, char **av)
 			if ( (unsigned int)(g_an986_idata.m_thpri - 9) >= 0x73 )
 				return do_print_help();
 			while ( *chr_num_ptr && isdigit(*chr_num_ptr) )
-			{
 				chr_num_ptr += 1;
-			}
 			if ( *chr_num_ptr )
 				return do_print_help();
 		}
@@ -1419,9 +1375,7 @@ static int an986_init(int ac, char **av)
 				return do_print_help();
 			g_an986_idata.m_thstack = strtol(chr_num_ptr, NULL, 10);
 			while ( *chr_num_ptr && isdigit(*chr_num_ptr) )
-			{
 				chr_num_ptr += 1;
-			}
 			if ( !strcmp(chr_num_ptr, "KB") )
 			{
 				g_an986_idata.m_thstack <<= 10;
@@ -1445,9 +1399,7 @@ static int an986_init(int ac, char **av)
 	g_an986_idata.m_an986_ldd.connect = &an986_attach;
 	g_an986_idata.m_an986_ldd.disconnect = &an986_detach;
 	if ( sceUsbdRegisterLdd(&g_an986_idata.m_an986_ldd) )
-	{
 		return 4;
-	}
 	VERBOSE_PRINTF("an986_start: load_mode='%c' resident_flag=%d\n", g_an986_idata.m_load_mode, g_an986_idata.m_resident_flag);
 	if ( g_an986_idata.m_load_mode == 't' )
 	{
