@@ -1,8 +1,8 @@
 
 #include "irx_imports.h"
-#include <usbd_macro.h>
 #include <ctype.h>
 #include <kerr.h>
+#include <usbd_macro.h>
 
 #ifdef AN986_UEPCB
 IRX_ID("INET_AN986_driver", 1, 80);
@@ -85,76 +85,75 @@ struct an986_idata
 	int m_load_mode;
 };
 
-#define VERBOSE_PRINTF(...) \
-	{ \
-		if ( g_an986_idata.m_verbose ) \
-		{ \
-			printf(__VA_ARGS__);\
-		} \
+#define VERBOSE_PRINTF(...)                                                                                            \
+	{                                                                                                                    \
+		if ( g_an986_idata.m_verbose )                                                                                     \
+		{                                                                                                                  \
+			printf(__VA_ARGS__);                                                                                             \
+		}                                                                                                                  \
 	}
 
 static void bulk_xfer(struct an986_priv *priv);
 
 extern struct irx_export_table _exp_an986;
 static struct an986_devinfo g_an986_devinfo_custom;
-static const struct an986_devinfo g_an986_devinfo[] =
-{
+static const struct an986_devinfo g_an986_devinfo[] = {
 #ifdef AN986_UEPCB
-	{ 'P', 0x07a6, "ADMtek", 0x8513, "PegasusIII" },
-	{ 'P', 0x0b9a, "namco", 0x0500, "System246 UE PCB" },
+	{'P', 0x07a6, "ADMtek", 0x8513, "PegasusIII"},
+	{'P', 0x0b9a, "namco", 0x0500, "System246 UE PCB"},
 #else
-	{ 'k', 0x03e8, "AOX", 0x0008, "101" },
-	{ 'p', 0x0411, "Melco", 0x0001, "LUA-TX" },
-	{ 'p', 0x0411, "Melco", 0x0005, "LUA-TX" },
-	{ 'P', 0x0411, "Melco", 0x0009, "LUA2-TX" },
-	{ '-', 0x0411, "Melco", 0x0012, "LUA-KTX" },
-	{ '-', 0x0423, "CATC", 0x000a, "NetMate" },
-	{ '-', 0x0423, "CATC", 0x000c, "NetMate2" },
-	{ 'k', 0x04bb, "I-O Data", 0x0901, "ET/T" },
-	{ 'p', 0x04bb, "I-O Data", 0x0904, "ET/TX" },
-	{ 'k', 0x0506, "3Com", 0x03e8, "3C19250" },
-	{ 'k', 0x0557, "ATEN", 0x2002, "UC-10T" },
-	{ 'k', 0x0557, "ATEN", 0x4000, "DSB-650" },
-	{ 'k', 0x0565, "Peracom", 0x0002, "Enet" },
-	{ 'k', 0x0565, "Peracom", 0x0005, "Enet2" },
-	{ 'k', 0x056e, "Elecom", 0x4000, "LD-USB/T" },
-	{ 'p', 0x056e, "Elecom", 0x4002, "LD-USB/TX" },
-	{ 'P', 0x056e, "Elecom", 0x4005, "LD-USBL/TX" },
-	{ 'k', 0x05e9, "KLSI", 0x0008, "KL5KUSB101B" },
-	{ 'p', 0x05e9, "KLSI", 0x0009, "Pegasus" },
-	{ 'k', 0x066b, "Linksys", 0x2202, "USB10T" },
-	{ 'p', 0x066b, "Linksys", 0x2203, "USB100TX" },
-	{ 'p', 0x066b, "Linksys", 0x2204, "USB100TX" },
-	{ 'p', 0x066b, "Linksys", 0x2206, "USB" },
-	{ 'P', 0x066b, "Linksys", 0x400b, "USB100TX B" },
-	{ 'k', 0x06e1, "ADS", 0x0008, "USBS-10B" },
-	{ 'k', 0x0707, "SMC", 0x0100, "2202" },
-	{ 'p', 0x0707, "SMC", 0x0200, "2202" },
-	{ 'p', 0x07a6, "ADMtek", 0x0986, "Pegasus" },
-	{ 'P', 0x07a6, "ADMtek", 0x8511, "PegasusII" },
-	{ 'k', 0x07aa, "Corega", 0x0001, "USB-T" },
-	{ 'p', 0x07aa, "Corega", 0x0004, "USB-TX" },
-	{ 'P', 0x07aa, "Corega", 0x000d, "USB-TXS" },
-	{ 'p', 0x07b8, "D-Link", 0xabc1, "DU-E10" },
-	{ 'k', 0x07b8, "D-Link", 0x4000, "DU-E10" },
-	{ 'p', 0x07b8, "D-Link", 0x4002, "DU-E100" },
-	{ 'P', 0x07b8, "D-Link", 0x4102, "DU-E100 B1" },
-	{ 'p', 0x083a, "Accton", 0x1046, "USB10/100" },
-	{ 'k', 0x0846, "NetGear", 0x1001, "EA101" },
-	{ 'p', 0x08dd, "Billionton", 0x0986, "USB100N" },
-	{ 'p', 0x08dd, "Billionton", 0x0987, "USBLP-100" },
-	{ 'p', 0x08dd, "Billionton", 0x0988, "USBEL-100" },
-	{ 'P', 0x08dd, "Billionton", 0x8511, "USBE-100" },
-	{ 'k', 0x13d2, "Shark", 0x0400, "Pocket" },
-	{ '-', 0x1485, "PSION DACOM", 0x0002, "Gold Port" },
-	{ 'p', 0x15e8, "SOHOware", 0x9100, "NUB100" },
-	{ 'k', 0x1645, "Entrega", 0x0005, "E45" },
-	{ 'k', 0x2001, "D-Link", 0x4000, "DSB-650C" },
-	{ 'p', 0x2001, "D-Link", 0x4001, "DSB-650TX" },
-	{ 'p', 0x2001, "D-Link", 0x4002, "DSB-650TX" },
-	{ 'p', 0x2001, "D-Link", 0x4003, "DSB-650TX-PNA" },
-	{ 'P', 0x2001, "D-Link", 0x400b, "DSB-650TX B1" },
-	{ 'p', 0x2001, "D-Link", 0xabc1, "DSB-650" },
+	{'k', 0x03e8, "AOX", 0x0008, "101"},
+	{'p', 0x0411, "Melco", 0x0001, "LUA-TX"},
+	{'p', 0x0411, "Melco", 0x0005, "LUA-TX"},
+	{'P', 0x0411, "Melco", 0x0009, "LUA2-TX"},
+	{'-', 0x0411, "Melco", 0x0012, "LUA-KTX"},
+	{'-', 0x0423, "CATC", 0x000a, "NetMate"},
+	{'-', 0x0423, "CATC", 0x000c, "NetMate2"},
+	{'k', 0x04bb, "I-O Data", 0x0901, "ET/T"},
+	{'p', 0x04bb, "I-O Data", 0x0904, "ET/TX"},
+	{'k', 0x0506, "3Com", 0x03e8, "3C19250"},
+	{'k', 0x0557, "ATEN", 0x2002, "UC-10T"},
+	{'k', 0x0557, "ATEN", 0x4000, "DSB-650"},
+	{'k', 0x0565, "Peracom", 0x0002, "Enet"},
+	{'k', 0x0565, "Peracom", 0x0005, "Enet2"},
+	{'k', 0x056e, "Elecom", 0x4000, "LD-USB/T"},
+	{'p', 0x056e, "Elecom", 0x4002, "LD-USB/TX"},
+	{'P', 0x056e, "Elecom", 0x4005, "LD-USBL/TX"},
+	{'k', 0x05e9, "KLSI", 0x0008, "KL5KUSB101B"},
+	{'p', 0x05e9, "KLSI", 0x0009, "Pegasus"},
+	{'k', 0x066b, "Linksys", 0x2202, "USB10T"},
+	{'p', 0x066b, "Linksys", 0x2203, "USB100TX"},
+	{'p', 0x066b, "Linksys", 0x2204, "USB100TX"},
+	{'p', 0x066b, "Linksys", 0x2206, "USB"},
+	{'P', 0x066b, "Linksys", 0x400b, "USB100TX B"},
+	{'k', 0x06e1, "ADS", 0x0008, "USBS-10B"},
+	{'k', 0x0707, "SMC", 0x0100, "2202"},
+	{'p', 0x0707, "SMC", 0x0200, "2202"},
+	{'p', 0x07a6, "ADMtek", 0x0986, "Pegasus"},
+	{'P', 0x07a6, "ADMtek", 0x8511, "PegasusII"},
+	{'k', 0x07aa, "Corega", 0x0001, "USB-T"},
+	{'p', 0x07aa, "Corega", 0x0004, "USB-TX"},
+	{'P', 0x07aa, "Corega", 0x000d, "USB-TXS"},
+	{'p', 0x07b8, "D-Link", 0xabc1, "DU-E10"},
+	{'k', 0x07b8, "D-Link", 0x4000, "DU-E10"},
+	{'p', 0x07b8, "D-Link", 0x4002, "DU-E100"},
+	{'P', 0x07b8, "D-Link", 0x4102, "DU-E100 B1"},
+	{'p', 0x083a, "Accton", 0x1046, "USB10/100"},
+	{'k', 0x0846, "NetGear", 0x1001, "EA101"},
+	{'p', 0x08dd, "Billionton", 0x0986, "USB100N"},
+	{'p', 0x08dd, "Billionton", 0x0987, "USBLP-100"},
+	{'p', 0x08dd, "Billionton", 0x0988, "USBEL-100"},
+	{'P', 0x08dd, "Billionton", 0x8511, "USBE-100"},
+	{'k', 0x13d2, "Shark", 0x0400, "Pocket"},
+	{'-', 0x1485, "PSION DACOM", 0x0002, "Gold Port"},
+	{'p', 0x15e8, "SOHOware", 0x9100, "NUB100"},
+	{'k', 0x1645, "Entrega", 0x0005, "E45"},
+	{'k', 0x2001, "D-Link", 0x4000, "DSB-650C"},
+	{'p', 0x2001, "D-Link", 0x4001, "DSB-650TX"},
+	{'p', 0x2001, "D-Link", 0x4002, "DSB-650TX"},
+	{'p', 0x2001, "D-Link", 0x4003, "DSB-650TX-PNA"},
+	{'P', 0x2001, "D-Link", 0x400b, "DSB-650TX B1"},
+	{'p', 0x2001, "D-Link", 0xabc1, "DSB-650"},
 #endif
 };
 #ifndef AN986_UEPCB
@@ -212,7 +211,16 @@ static int control_in_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret;
 
-	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, USB_DIR_IN | 0x40, 0xF0, 0, xferoffs, ( xferlen < 2 ) ? 2 : xferlen, &priv->m_usb_xfer_buf[xferoffs], an986_done, priv);
+	xferret = sceUsbdControlTransfer(
+		priv->m_ctrl_pipe,
+		USB_DIR_IN | 0x40,
+		0xF0,
+		0,
+		xferoffs,
+		(xferlen < 2) ? 2 : xferlen,
+		&priv->m_usb_xfer_buf[xferoffs],
+		an986_done,
+		priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -227,7 +235,16 @@ static int control_out_xfer(struct an986_priv *priv, int xferoffs, int xferlen)
 {
 	int xferret;
 
-	xferret = sceUsbdControlTransfer(priv->m_ctrl_pipe, USB_DIR_OUT | 0x40, 0xF1, 0, xferoffs, ( xferlen < 2 ) ? 2 : xferlen, &priv->m_usb_xfer_buf[xferoffs], an986_done, priv);
+	xferret = sceUsbdControlTransfer(
+		priv->m_ctrl_pipe,
+		USB_DIR_OUT | 0x40,
+		0xF1,
+		0,
+		xferoffs,
+		(xferlen < 2) ? 2 : xferlen,
+		&priv->m_usb_xfer_buf[xferoffs],
+		an986_done,
+		priv);
 	if ( xferret )
 	{
 		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
@@ -401,7 +418,7 @@ static unsigned int alarm_cb(void *userdata)
 	struct an986_priv *priv;
 
 	priv = (struct an986_priv *)userdata;
-	priv->m_val_for_alarm_cb -= !!( (int)(priv->m_val_for_alarm_cb) > 0 );
+	priv->m_val_for_alarm_cb -= !!((int)(priv->m_val_for_alarm_cb) > 0);
 	return priv->m_sysclk.lo;
 }
 
@@ -440,62 +457,62 @@ static int an986_inet_stop(void *userdata, int unused)
 
 static int an986_inet_xmit(void *userdata, int unused)
 {
-  int xferret;
-  sceInetPkt_t *pkt;
-  u32 pktsz;
-  struct an986_priv *priv;
-  int dropped;
+	int xferret;
+	sceInetPkt_t *pkt;
+	u32 pktsz;
+	struct an986_priv *priv;
+	int dropped;
 
 	(void)unused;
 	priv = (struct an986_priv *)userdata;
 	dropped = 0;
-  xferret = -1;
-  pkt = sceInetPktDeQ(&priv->m_devops.sndq);
+	xferret = -1;
+	pkt = sceInetPktDeQ(&priv->m_devops.sndq);
 	dropped = !pkt;
-	dropped = !!( !dropped && (priv->m_start_stop_flag || priv->m_val_for_inet_stop || !priv->m_link_status) );
-  if ( !dropped )
-  {
-  	pktsz = pkt->wp - pkt->rp;
-		dropped = !!( pktsz - 60 >= 1455 );
-  }
-  if ( !dropped )
-  {
-  	pkt->rp -= 2;
+	dropped = !!(!dropped && (priv->m_start_stop_flag || priv->m_val_for_inet_stop || !priv->m_link_status));
+	if ( !dropped )
+	{
+		pktsz = pkt->wp - pkt->rp;
+		dropped = !!(pktsz - 60 >= 1455);
+	}
+	if ( !dropped )
+	{
+		pkt->rp -= 2;
 		dropped = !!((uiptr)(pkt->rp) & 3);
-  }
-  if ( !dropped )
-  {
-    *((u16 *)(pkt->rp)) = pktsz;
-    priv->m_tx_packets += 1;
-    priv->m_tx_bytes += pktsz;
-    pktsz += 2 + !(((u8)pktsz) & 0x3F);
-    pkt->m_reserved1 = (void *)priv;
-    while ( 1 )
-    {
-      xferret = sceUsbdBulkTransfer(priv->m_bulk_out_pipe, pkt->rp + 2, pktsz, an986_tx_done, pkt);
-      if ( !xferret )
-        break;
-      if ( xferret != USB_RC_IOREQ )
-      {
-        VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
-        VERBOSE_PRINTF("sceUsbdBulkTransfer -> 0x%x", xferret);
-        VERBOSE_PRINTF("\n");
-      	dropped = 1;
-      	break;
-      }
-      DelayThread(10000);
-    }
-  }
-  if ( dropped )
-  {
-    VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
-    VERBOSE_PRINTF("dropped");
-    VERBOSE_PRINTF("\n");
-    priv->m_tx_dropped += 1;
-    sceInetFreePkt(&priv->m_devops, pkt);
-  }
-  priv->m_val_for_alarm_cb = 10;
-  return xferret;
+	}
+	if ( !dropped )
+	{
+		*((u16 *)(pkt->rp)) = pktsz;
+		priv->m_tx_packets += 1;
+		priv->m_tx_bytes += pktsz;
+		pktsz += 2 + !(((u8)pktsz) & 0x3F);
+		pkt->m_reserved1 = (void *)priv;
+		while ( 1 )
+		{
+			xferret = sceUsbdBulkTransfer(priv->m_bulk_out_pipe, pkt->rp + 2, pktsz, an986_tx_done, pkt);
+			if ( !xferret )
+				break;
+			if ( xferret != USB_RC_IOREQ )
+			{
+				VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+				VERBOSE_PRINTF("sceUsbdBulkTransfer -> 0x%x", xferret);
+				VERBOSE_PRINTF("\n");
+				dropped = 1;
+				break;
+			}
+			DelayThread(10000);
+		}
+	}
+	if ( dropped )
+	{
+		VERBOSE_PRINTF("%s: ", priv->m_devops.interface);
+		VERBOSE_PRINTF("dropped");
+		VERBOSE_PRINTF("\n");
+		priv->m_tx_dropped += 1;
+		sceInetFreePkt(&priv->m_devops, pkt);
+	}
+	priv->m_val_for_alarm_cb = 10;
+	return xferret;
 }
 
 static int inet_81040000_multicast_list_handler(struct an986_priv *priv, u8 *ptr, int len)
@@ -627,7 +644,7 @@ static int an986_inet_control(void *userdata, int code, void *ptr, int len)
 			src_int_ptr = &priv->m_err_tx_window;
 			break;
 		case sceInetNDCC_GET_NEGO_STATUS:
-			retres = ( priv->m_link_status > 0 ) ? priv->m_nego_status : 0;
+			retres = (priv->m_link_status > 0) ? priv->m_nego_status : 0;
 			break;
 		case sceInetNDCC_GET_LINK_STATUS:
 			retres = priv->m_link_status;
@@ -822,12 +839,9 @@ static void inet_thread_proc(void *userdata)
 		}
 	}
 	priv->m_link_status = 1;
-	printf(
-		"%s: Auto-Nego complete and valid link detected (%d,BMSR=%04x)\n",
-		priv->m_devops.interface,
-		k,
-		outval_1);
-	if ( control_inout_xfer(priv, k, 4, priv->m_usb_ctrl_buf) || control_inout_xfer(priv, k, 5, &priv->m_usb_ctrl_buf[1]) )
+	printf("%s: Auto-Nego complete and valid link detected (%d,BMSR=%04x)\n", priv->m_devops.interface, k, outval_1);
+	if (
+		control_inout_xfer(priv, k, 4, priv->m_usb_ctrl_buf) || control_inout_xfer(priv, k, 5, &priv->m_usb_ctrl_buf[1]) )
 		return;
 	priv->m_usb_xfer_buf[0x01] = 0;
 	outval_1 = priv->m_usb_ctrl_buf[0] & priv->m_usb_ctrl_buf[1];
@@ -837,12 +851,13 @@ static void inet_thread_proc(void *userdata)
 	priv->m_usb_xfer_buf[0x01] |= !!(outval_1 & 0x180) ? 0x10 : 0;
 	if ( control_out_xfer(priv, 0x01, 1) )
 		return;
-	priv->m_nego_status = ( !!(outval_1 & 0x180) ) ? (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_TX_FD : sceInetNDNEGO_TX) : (( !!(outval_1 & 0x140) ) ? sceInetNDNEGO_10_FD : sceInetNDNEGO_10);
+	priv->m_nego_status = (!!(outval_1 & 0x180)) ? ((!!(outval_1 & 0x140)) ? sceInetNDNEGO_TX_FD : sceInetNDNEGO_TX) :
+																								 ((!!(outval_1 & 0x140)) ? sceInetNDNEGO_10_FD : sceInetNDNEGO_10);
 	printf(
 		"%s: %s %s Duplex Mode (ANAR=0x%04x ANLPAR=0x%04x)\n",
 		priv->m_devops.interface,
-		( !!(outval_1 & 0x180) ) ? "100BaseTX" : "10BaseT",
-		( !!(outval_1 & 0x140) ) ? "Full" : "Half",
+		(!!(outval_1 & 0x180)) ? "100BaseTX" : "10BaseT",
+		(!!(outval_1 & 0x140)) ? "Full" : "Half",
 		priv->m_usb_ctrl_buf[0],
 		priv->m_usb_ctrl_buf[1]);
 	if ( control_inout_xfer(priv, k, 2, &outval_2) || control_inout_xfer(priv, k, 3, &outval_3) )
@@ -885,10 +900,7 @@ static void inet_thread_proc(void *userdata)
 		SetEventFlag(priv->m_devops.evfid, sceInetDevEFP_StartDone);
 	priv->m_val_for_alarm_cb = 10;
 	USec2SysClock(1000000, &priv->m_sysclk);
-	SetAlarm(
-		&priv->m_sysclk,
-		alarm_cb,
-		priv);
+	SetAlarm(&priv->m_sysclk, alarm_cb, priv);
 	l = 0;
 	priv->m_timer_active = 1;
 	while ( 1 )
@@ -1028,10 +1040,7 @@ static struct an986_priv *do_allocate_mem_for_inet(const char *vendor_name, cons
 	return priv;
 }
 
-static const struct an986_devinfo *do_check_static_descriptor(
-				int is_probe,
-				u16 id_vendor,
-				u16 id_product)
+static const struct an986_devinfo *do_check_static_descriptor(int is_probe, u16 id_vendor, u16 id_product)
 {
 	const struct an986_devinfo *cur_devinfo;
 
@@ -1048,7 +1057,7 @@ static const struct an986_devinfo *do_check_static_descriptor(
 		unsigned int i;
 
 		// Unofficial: avoid out of bounds read when device not found
-		for ( i = 0; i < (sizeof(g_an986_devinfo)/sizeof(g_an986_devinfo[0])); i += 1 )
+		for ( i = 0; i < (sizeof(g_an986_devinfo) / sizeof(g_an986_devinfo[0])); i += 1 )
 		{
 			if ( id_vendor == g_an986_devinfo[i].m_vendor_id && id_product == g_an986_devinfo[i].m_product_id )
 			{
@@ -1063,20 +1072,20 @@ static const struct an986_devinfo *do_check_static_descriptor(
 			VERBOSE_PRINTF("an986: %s, %s", cur_devinfo->m_vendor_name, cur_devinfo->m_product_name);
 		switch ( cur_devinfo->m_chip )
 		{
-		case 'p':
-			if ( is_probe )
-				VERBOSE_PRINTF(" [pegasus] -> supported\n");
-			return cur_devinfo;
-		case 'P':
-			if ( is_probe )
-				VERBOSE_PRINTF(" [pegasusII] -> supported\n");
-			return cur_devinfo;
-		case 'k':
-			if ( is_probe )
-				VERBOSE_PRINTF(" [klsi] -> unsupported\n");
-			return NULL;
-		default:
-			break;
+			case 'p':
+				if ( is_probe )
+					VERBOSE_PRINTF(" [pegasus] -> supported\n");
+				return cur_devinfo;
+			case 'P':
+				if ( is_probe )
+					VERBOSE_PRINTF(" [pegasusII] -> supported\n");
+				return cur_devinfo;
+			case 'k':
+				if ( is_probe )
+					VERBOSE_PRINTF(" [klsi] -> unsupported\n");
+				return NULL;
+			default:
+				break;
 		}
 	}
 	if ( is_probe )
@@ -1290,7 +1299,7 @@ static int do_print_list(void)
 	do_print_version();
 	printf("  VID   PID   Vendor          Device          Chip\n");
 	printf("------------------------------------------------------\n");
-	for ( i = 0; i < (sizeof(g_an986_devinfo)/sizeof(g_an986_devinfo[0])); i += 1 )
+	for ( i = 0; i < (sizeof(g_an986_devinfo) / sizeof(g_an986_devinfo[0])); i += 1 )
 	{
 		printf("  %04x", g_an986_devinfo[i].m_vendor_id);
 		printf("  %04x", g_an986_devinfo[i].m_product_id);
@@ -1298,18 +1307,18 @@ static int do_print_list(void)
 		printf("  %-14s", g_an986_devinfo[i].m_product_name);
 		switch ( g_an986_devinfo[i].m_chip )
 		{
-		case 'p':
-			printf("  Pegasus");
-			break;
-		case 'P':
-			printf("  PegasusII");
-			break;
-		case 'k':
-			printf("  KLSI");
-			break;
-		default:
-			printf("  Unknown");
-			break;
+			case 'p':
+				printf("  Pegasus");
+				break;
+			case 'P':
+				printf("  PegasusII");
+				break;
+			case 'k':
+				printf("  KLSI");
+				break;
+			default:
+				printf("  Unknown");
+				break;
 		}
 		printf("\n");
 	}
@@ -1400,7 +1409,8 @@ static int an986_init(int ac, char **av)
 	g_an986_idata.m_an986_ldd.disconnect = &an986_detach;
 	if ( sceUsbdRegisterLdd(&g_an986_idata.m_an986_ldd) )
 		return 4;
-	VERBOSE_PRINTF("an986_start: load_mode='%c' resident_flag=%d\n", g_an986_idata.m_load_mode, g_an986_idata.m_resident_flag);
+	VERBOSE_PRINTF(
+		"an986_start: load_mode='%c' resident_flag=%d\n", g_an986_idata.m_load_mode, g_an986_idata.m_resident_flag);
 	if ( g_an986_idata.m_load_mode == 't' )
 	{
 		sceUsbdUnregisterLdd(&g_an986_idata.m_an986_ldd);
