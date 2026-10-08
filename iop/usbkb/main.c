@@ -121,24 +121,24 @@ int _start(int ac, char **av)
 		}
 		if ( !strcmp(av[i], "keybd") )
 		{
-			g_usbkb_cfg_keybd = strtol(&av[i][j], 0, 10);
+			g_usbkb_cfg_keybd = strtol(&av[i][j], NULL, 10);
 			if ( g_usbkb_cfg_keybd <= 0 )
 				g_usbkb_cfg_keybd = 1;
 			if ( g_usbkb_cfg_keybd >= 128 )
 				g_usbkb_cfg_keybd = 127;
 		}
 		if ( !strcmp(av[i], "debug") )
-			g_usbkb_cfg_debug = strtol(&av[i][j], 0, 10);
+			g_usbkb_cfg_debug = strtol(&av[i][j], NULL, 10);
 	}
 	printf("Max Keyboards : %d\n", g_usbkb_cfg_keybd);
 	printf("Debug level : %d\n", g_usbkb_cfg_debug);
 	CpuSuspendIntr(&state);
-	g_usbkb_unit_buf = AllocSysMemory(0, 4 * g_usbkb_cfg_keybd, 0);
+	g_usbkb_unit_buf = AllocSysMemory(0, 4 * g_usbkb_cfg_keybd, NULL);
 	CpuResumeIntr(state);
 	if ( !g_usbkb_unit_buf )
 		return 1;
 	CpuSuspendIntr(&state);
-	g_usbkb_devloc_buf = AllocSysMemory(0, 4 * g_usbkb_cfg_keybd, 0);
+	g_usbkb_devloc_buf = AllocSysMemory(0, 4 * g_usbkb_cfg_keybd, NULL);
 	CpuResumeIntr(state);
 	if ( !g_usbkb_devloc_buf )
 	{
@@ -150,7 +150,7 @@ int _start(int ac, char **av)
 	for ( i = 0; i < g_usbkb_cfg_keybd; i += 1 )
 	{
 		CpuSuspendIntr(&state);
-		g_usbkb_devloc_buf[i] = AllocSysMemory(0, 7, 0);
+		g_usbkb_devloc_buf[i] = AllocSysMemory(0, 7, NULL);
 		CpuResumeIntr(state);
 		if ( !g_usbkb_devloc_buf[i] )
 		{
@@ -166,7 +166,7 @@ int _start(int ac, char **av)
 	g_usbkb_used_kb_count = 0;
 	for ( i = 0; i < g_usbkb_cfg_keybd; i += 1 )
 	{
-		g_usbkb_unit_buf[i] = 0;
+		g_usbkb_unit_buf[i] = NULL;
 		*g_usbkb_devloc_buf[i] = 0;
 	}
 	switch ( g_usbkb_cfg_lmode )
@@ -204,7 +204,7 @@ int _start(int ac, char **av)
 		usbkb_cleanup();
 		return 1;
 	}
-	StartThread(g_usbkb_thread_id, 0);
+	StartThread(g_usbkb_thread_id, NULL);
 	return 2;
 }
 // 402080: using guessed type int g_usbkb_used_kb_count;
@@ -263,7 +263,7 @@ void usbkb_thread_proc(void *userdata)
 
 	sceSifInitRpc(0);
 	sceSifSetRpcQueue(&g_usbkb_rpc_qd, GetThreadId());
-	sceSifRegisterRpc(&g_usbkb_rpc_sd, 0x80000211, usbkb_rpc_func, g_usbkb_rpc_buf, 0, 0, &g_usbkb_rpc_qd);
+	sceSifRegisterRpc(&g_usbkb_rpc_sd, 0x80000211, usbkb_rpc_func, g_usbkb_rpc_buf, NULL, NULL, &g_usbkb_rpc_qd);
 	sceSifRpcLoop(&g_usbkb_rpc_qd);
 }
 // 4020F8: using guessed type int g_usbkb_rpc_buf[36];
@@ -513,7 +513,7 @@ int usbkb_drv_probe(int devID)
 
 	if ( g_usbkb_used_kb_count >= g_usbkb_cfg_keybd )
 		return 0;
-	dev = sceUsbdScanStaticDescriptor(devID, 0, 1u);
+	dev = sceUsbdScanStaticDescriptor(devID, NULL, 1u);
 	if ( !dev )
 		return 0;
 	if ( dev->bDeviceClass )
@@ -551,7 +551,7 @@ int usbkb_drv_connect(int devID)
 	int xferret; // $s0
 	int DeviceLocation; // $s0
 
-	conf = sceUsbdScanStaticDescriptor(devID, 0, 2u);
+	conf = sceUsbdScanStaticDescriptor(devID, NULL, 2u);
 	if ( !conf )
 		return -1;
 	intf = sceUsbdScanStaticDescriptor(devID, conf, 4u);
@@ -578,7 +578,7 @@ int usbkb_drv_connect(int devID)
 	unit = usbkb_allocate_unit(devID, maxPacketSize, intf->bInterfaceNumber, intf->bAlternateSetting);
 	if ( !unit )
 		return -1;
-	unit->c_pipe = sceUsbdOpenPipe(devID, 0);
+	unit->c_pipe = sceUsbdOpenPipe(devID, NULL);
 	if ( unit->c_pipe < 0 )
 		return -1;
 	unit->d_pipe = sceUsbdOpenPipe(devID, endp);
@@ -628,16 +628,16 @@ ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumb
 	u8 devloc_stk[8]; // [sp+10h] [-8h] BYREF
 
 	if ( g_usbkb_used_kb_count >= g_usbkb_cfg_keybd )
-		return 0;
-	unit = AllocSysMemory(0, maxPacketSize + 0xF8, 0);
+		return NULL;
+	unit = AllocSysMemory(0, maxPacketSize + 0xF8, NULL);
 	if ( !unit )
-		return 0;
+		return NULL;
 	unit->dev_id = devID;
 	DeviceLocation = sceUsbdGetDeviceLocation(devID, devloc_stk);
 	if ( DeviceLocation )
 	{
 		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdGetDeviceLocation", DeviceLocation);
-		return 0;
+		return NULL;
 	}
 	for ( i = 0; i < g_usbkb_cfg_keybd; i += 1 )
 	{
@@ -655,7 +655,7 @@ ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumb
 		if ( i >= g_usbkb_cfg_keybd )
 		{
 			printf("logical error\n");
-			return 0;
+			return NULL;
 		}
 	}
 	unit->number = i;
@@ -709,7 +709,7 @@ void usbkb_set_idle_request(ps2kbd_unit *cbArg)
 {
 	int xferret; // $v0
 
-	xferret = sceUsbdControlTransfer(cbArg->c_pipe, 0x21, USB_REQ_SET_IDLE, 0, cbArg->ifnum, 0, 0, (sceUsbdDoneCallback)usbkb_donecb_set_idle_request, cbArg);
+	xferret = sceUsbdControlTransfer(cbArg->c_pipe, 0x21, USB_REQ_SET_IDLE, 0, cbArg->ifnum, 0, NULL, (sceUsbdDoneCallback)usbkb_donecb_set_idle_request, cbArg);
 	if ( xferret )
 		printf("usbkeybd%d: %s -> 0x%x\n", cbArg->number, "set_idle_request", xferret);
 }
@@ -729,7 +729,7 @@ void usbkb_data_transfer(ps2kbd_unit *cbArg)
 {
 	int xferret; // $v0
 
-	xferret = sceUsbdTransferPipe(cbArg->d_pipe, cbArg->data, cbArg->payload, 0, (sceUsbdDoneCallback)usbkb_donecb_data_transfer, cbArg);
+	xferret = sceUsbdTransferPipe(cbArg->d_pipe, cbArg->data, cbArg->payload, NULL, (sceUsbdDoneCallback)usbkb_donecb_data_transfer, cbArg);
 	if ( xferret )
 		printf("usbkeybd%d: %s -> 0x%x\n", cbArg->number, "sceUsbdInterruptTransfer", xferret);
 }
@@ -828,7 +828,7 @@ int usbkb_drv_disconnect(int devID)
 	if ( !unit )
 		return -1;
 	g_usbkb_used_kb_count -= 1;
-	g_usbkb_unit_buf[unit->number] = 0;
+	g_usbkb_unit_buf[unit->number] = NULL;
 	if ( g_usbkb_cfg_debug > 0 )
 		printf("usbkeybd%d: detached\n", unit->number);
 	FreeSysMemory(unit);
