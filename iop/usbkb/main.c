@@ -19,6 +19,7 @@ typedef struct _unit
 	int wp;
 	int rblen;
 	u8 ringbuf[3][66];
+	u8 m_padding[2];
 	u8 data[];
 } ps2kbd_unit;
 
@@ -26,33 +27,32 @@ typedef struct _unit
 // Function declarations
 
 int _start(int ac, char **av);
-int usbkb_cleanup();
-int usbkb_unload();
-void usbkb_thread_proc(void *userdata);
-void *usbkb_rpc_func(int fno, void *buffer, int length);
-void usbkb_rpc_fno_01_GetInfo(int fno, u8 *buffer);
-void usbkb_rpc_fno_02_Read(int fno, u8 *buffer);
-void usbkb_rpc_fno_03_GetLocation(int fno, u8 *buffer);
-void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer);
-void usbkb_donecb_SetLEDStatus(int result, int count, ps2kbd_unit *arg);
-void usbkb_rpc_fno_05_SetLEDMode(int fno, u8 *buffer);
-void usbkb_rpc_fno_06_ClearRbuf(int fno, u8 *buffer);
-int usbkb_drv_probe(int devID);
-int usbkb_drv_connect(int devID);
-ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumber, int alternateSetting);
-void usbkb_donecb_SetConfiguration(int result, int count, ps2kbd_unit *arg);
-void usbkb_donecb_SetInterface(int result, int count, ps2kbd_unit *arg);
-void usbkb_set_idle_request(ps2kbd_unit *cbArg);
-void usbkb_donecb_set_idle_request(int result, int count, ps2kbd_unit *arg);
-void usbkb_data_transfer(ps2kbd_unit *cbArg);
-void usbkb_donecb_data_transfer(int result, int count, ps2kbd_unit *arg);
-void usbkb_donecb_led_transfer(int result, int count, ps2kbd_unit *arg);
-int usbkb_drv_disconnect(int devID);
+static void usbkb_cleanup(void);
+static int usbkb_unload(void);
+static void usbkb_thread_proc(void *userdata);
+static void *usbkb_rpc_func(int fno, void *buffer, int length);
+static void usbkb_rpc_fno_01_GetInfo(int fno, u8 *buffer);
+static void usbkb_rpc_fno_02_Read(int fno, u8 *buffer);
+static void usbkb_rpc_fno_03_GetLocation(int fno, u8 *buffer);
+static void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer);
+static void usbkb_donecb_SetLEDStatus(int retres, int count, void *arg);
+static void usbkb_rpc_fno_05_SetLEDMode(int fno, u8 *buffer);
+static void usbkb_rpc_fno_06_ClearRbuf(int fno, const u8 *buffer);
+static int usbkb_drv_probe(int devID);
+static int usbkb_drv_connect(int devID);
+static ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumber, int alternateSetting);
+static void usbkb_donecb_SetConfiguration(int retres, int count, void *arg);
+static void usbkb_donecb_SetInterface(int retres, int count, void *arg);
+static void usbkb_set_idle_request(ps2kbd_unit *unit);
+static void usbkb_donecb_set_idle_request(int retres, int count, void *arg);
+static void usbkb_data_transfer(ps2kbd_unit *unit);
+static void usbkb_donecb_data_transfer(int retres, int count, void *arg);
+static void usbkb_donecb_led_transfer(int retres, int count, void *arg);
+static int usbkb_drv_disconnect(int devID);
 
 //-------------------------------------------------------------------------
 // Data declarations
 
-int nullstr = 0; // weak
 sceUsbdLddOps g_kbd_driver =
 {
 	NULL,
@@ -66,7 +66,7 @@ sceUsbdLddOps g_kbd_driver =
 	0u,
 	0u,
 	0u,
-	NULL
+	NULL,
 }; // idb
 int g_usbkb_used_kb_count; // weak
 int g_usbkb_cfg_keybd; // weak
@@ -98,9 +98,7 @@ int _start(int ac, char **av)
 	g_usbkb_cfg_debug = 0;
 	for ( i = 0; i < ac; i += 1 )
 	{
-		for ( j = 0; av[i][j] && av[i][j] != '='; j += 1 )
-		{
-		}
+		for ( j = 0; av[i][j] && av[i][j] != '='; j += 1 );
 		if ( av[i][j] )
 		{
 			av[i][j] = 0;
@@ -133,12 +131,12 @@ int _start(int ac, char **av)
 	printf("Max Keyboards : %d\n", g_usbkb_cfg_keybd);
 	printf("Debug level : %d\n", g_usbkb_cfg_debug);
 	CpuSuspendIntr(&state);
-	g_usbkb_unit_buf = AllocSysMemory(0, 4 * g_usbkb_cfg_keybd, NULL);
+	g_usbkb_unit_buf = AllocSysMemory(0, sizeof(*g_usbkb_unit_buf) * g_usbkb_cfg_keybd, NULL);
 	CpuResumeIntr(state);
 	if ( !g_usbkb_unit_buf )
 		return 1;
 	CpuSuspendIntr(&state);
-	g_usbkb_devloc_buf = AllocSysMemory(0, 4 * g_usbkb_cfg_keybd, NULL);
+	g_usbkb_devloc_buf = AllocSysMemory(0, sizeof(*g_usbkb_devloc_buf) * g_usbkb_cfg_keybd, NULL);
 	CpuResumeIntr(state);
 	if ( !g_usbkb_devloc_buf )
 	{
@@ -194,7 +192,7 @@ int _start(int ac, char **av)
 		return (g_usbkeybd_resident_flag != 1) ? 1 : 5;
 	}
 	thparam.attr = 0x2000000;
-	thparam.thread = usbkb_thread_proc;
+	thparam.thread = &usbkb_thread_proc;
 	thparam.priority = 50;
 	thparam.stacksize = 4096;
 	thparam.option = 0;
@@ -215,10 +213,9 @@ int _start(int ac, char **av)
 // 40218C: using guessed type int g_usbkb_cfg_lmode;
 
 //----- (00400554) --------------------------------------------------------
-int usbkb_cleanup()
+static void usbkb_cleanup(void)
 {
 	int i; // $s1
-	ps2kbd_unit *unit; // $v0
 	int state; // [sp+10h] [-8h] BYREF
 
 	for ( i = 0; i < g_usbkb_cfg_keybd; i += 1 )
@@ -226,25 +223,24 @@ int usbkb_cleanup()
 		CpuSuspendIntr(&state);
 		FreeSysMemory(g_usbkb_devloc_buf[i]);
 		CpuResumeIntr(state);
-		unit = g_usbkb_unit_buf[i];
-		if ( unit )
+		if ( g_usbkb_unit_buf[i] )
 		{
-			sceUsbdClosePipe(unit->c_pipe);
-			sceUsbdClosePipe(unit->d_pipe);
+			sceUsbdClosePipe(g_usbkb_unit_buf[i]->c_pipe);
+			sceUsbdClosePipe(g_usbkb_unit_buf[i]->d_pipe);
 			CpuSuspendIntr(&state);
-			FreeSysMemory(unit);
+			FreeSysMemory(g_usbkb_unit_buf[i]);
 			CpuResumeIntr(state);
 		}
 	}
 	CpuSuspendIntr(&state);
 	FreeSysMemory(g_usbkb_unit_buf);
 	FreeSysMemory(g_usbkb_devloc_buf);
-	return CpuResumeIntr(state);
+	CpuResumeIntr(state);
 }
 // 402084: using guessed type int g_usbkb_cfg_keybd;
 
 //----- (00400690) --------------------------------------------------------
-int usbkb_unload()
+static int usbkb_unload(void)
 {
 	usbkb_cleanup();
 	sceUsbdUnregisterLdd(&g_kbd_driver);
@@ -257,7 +253,7 @@ int usbkb_unload()
 // 402090: using guessed type int g_usbkb_thread_id;
 
 //----- (004006F8) --------------------------------------------------------
-void usbkb_thread_proc(void *userdata)
+static void usbkb_thread_proc(void *userdata)
 {
 	(void)userdata;
 
@@ -269,7 +265,7 @@ void usbkb_thread_proc(void *userdata)
 // 4020F8: using guessed type int g_usbkb_rpc_buf[36];
 
 //----- (0040076C) --------------------------------------------------------
-void *usbkb_rpc_func(int fno, void *buffer, int length)
+static void *usbkb_rpc_func(int fno, void *buffer, int length)
 {
 	(void)length;
 
@@ -301,7 +297,7 @@ void *usbkb_rpc_func(int fno, void *buffer, int length)
 }
 
 //----- (00400844) --------------------------------------------------------
-void usbkb_rpc_fno_01_GetInfo(int fno, u8 *buffer)
+static void usbkb_rpc_fno_01_GetInfo(int fno, u8 *buffer)
 {
 	u8 *infobuf; // $a0
 	int i; // $a2
@@ -318,7 +314,7 @@ void usbkb_rpc_fno_01_GetInfo(int fno, u8 *buffer)
 // 402084: using guessed type int g_usbkb_cfg_keybd;
 
 //----- (004008C4) --------------------------------------------------------
-void usbkb_rpc_fno_02_Read(int fno, u8 *buffer)
+static void usbkb_rpc_fno_02_Read(int fno, u8 *buffer)
 {
 	int unit_index; // $a1
 	ps2kbd_unit *unit; // $s0
@@ -366,20 +362,20 @@ void usbkb_rpc_fno_02_Read(int fno, u8 *buffer)
 // 402084: using guessed type int g_usbkb_cfg_keybd;
 
 //----- (00400A50) --------------------------------------------------------
-void usbkb_rpc_fno_03_GetLocation(int fno, u8 *buffer)
+static void usbkb_rpc_fno_03_GetLocation(int fno, u8 *buffer)
 {
 	int unit_index; // $a1
 	u8 *chrbuf; // $s0
 	ps2kbd_unit *unit; // $v0
 	int DeviceLocation; // $a3
 	int i; // $v1
-	u8 devloc_stk[8]; // [sp+10h] [-8h] BYREF
+	u8 devloc_stk[7]; // [sp+10h] [-8h] BYREF
 
 	(void)fno;
 
 	unit_index = *buffer;
 	chrbuf = buffer;
-	for ( i = 0; i < 7; i += 1 )
+	for ( i = 0; i < (int)sizeof(devloc_stk); i += 1 )
 		chrbuf[i] = 0;
 	if ( unit_index >= g_usbkb_cfg_keybd )
 	{
@@ -402,14 +398,14 @@ void usbkb_rpc_fno_03_GetLocation(int fno, u8 *buffer)
 			DeviceLocation);
 		return;
 	}
-	for ( i = 0; i < 7; i += 1 )
+	for ( i = 0; i < (int)sizeof(devloc_stk); i += 1 )
 		chrbuf[i] = devloc_stk[i];
 }
 // 402084: using guessed type int g_usbkb_cfg_keybd;
 // 400A50: using guessed type u8 devloc_stk[8];
 
 //----- (00400B8C) --------------------------------------------------------
-void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer)
+static void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer)
 {
 	int unit_index; // $a1
 	ps2kbd_unit *unit; // $s0
@@ -431,7 +427,7 @@ void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer)
 		return;
 	}
 	unit->ledptn = ~buffer[1];
-	xferret = sceUsbdControlTransfer(unit->c_pipe, 0x21, USB_REQ_SET_REPORT, 512, unit->ifnum, sizeof(unit->ledptn), &unit->ledptn, (sceUsbdDoneCallback)usbkb_donecb_SetLEDStatus, unit);
+	xferret = sceUsbdControlTransfer(unit->c_pipe, 0x21, USB_REQ_SET_REPORT, 512, unit->ifnum, sizeof(unit->ledptn), &unit->ledptn, &usbkb_donecb_SetLEDStatus, unit);
 	if ( !xferret )
 	{
 		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "SET_REPORT", xferret);
@@ -442,16 +438,18 @@ void usbkb_rpc_fno_04_SetLEDStatus(int fno, u8 *buffer)
 // 402084: using guessed type int g_usbkb_cfg_keybd;
 
 //----- (00400CBC) --------------------------------------------------------
-void usbkb_donecb_SetLEDStatus(int result, int count, ps2kbd_unit *arg)
+static void usbkb_donecb_SetLEDStatus(int retres, int count, void *arg)
 {
+	ps2kbd_unit *unit;
 	(void)count;
 
-	if ( result )
-		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "set_led_status", result);
+	unit = (ps2kbd_unit *)arg;
+	if ( retres )
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "set_led_status", retres);
 }
 
 //----- (00400CF4) --------------------------------------------------------
-void usbkb_rpc_fno_05_SetLEDMode(int fno, u8 *buffer)
+static void usbkb_rpc_fno_05_SetLEDMode(int fno, u8 *buffer)
 {
 	int unit_index; // $a1
 	ps2kbd_unit *unit; // $a0
@@ -462,13 +460,13 @@ void usbkb_rpc_fno_05_SetLEDMode(int fno, u8 *buffer)
 	buffer[1] = ~buffer[1];
 	if ( unit_index >= g_usbkb_cfg_keybd )
 	{
-		printf("Illegal USB keyboard number! : %d\n");
+		printf("Illegal USB keyboard number! : %d\n", unit_index);
 		return;
 	}
 	unit = g_usbkb_unit_buf[unit_index];
 	if ( !unit )
 	{
-		printf("Keyboard %d is not connected.\n");
+		printf("Keyboard %d is not connected.\n", unit_index);
 		return;
 	}
 	unit->old_ledbtn2 = ~buffer[1];
@@ -477,7 +475,7 @@ void usbkb_rpc_fno_05_SetLEDMode(int fno, u8 *buffer)
 // 402084: using guessed type int g_usbkb_cfg_keybd;
 
 //----- (00400D88) --------------------------------------------------------
-void usbkb_rpc_fno_06_ClearRbuf(int fno, u8 *buffer)
+static void usbkb_rpc_fno_06_ClearRbuf(int fno, const u8 *buffer)
 {
 	int unit_index; // $a1
 	ps2kbd_unit *unit; // $s0
@@ -488,13 +486,13 @@ void usbkb_rpc_fno_06_ClearRbuf(int fno, u8 *buffer)
 	unit_index = *buffer;
 	if ( unit_index >= g_usbkb_cfg_keybd )
 	{
-		printf("clear_rbuf() : Illegal USB keyboard number! : %d\n");
+		printf("clear_rbuf() : Illegal USB keyboard number! : %d\n", unit_index);
 		return;
 	}
 	unit = g_usbkb_unit_buf[unit_index];
 	if ( !unit )
 	{
-		printf("clear_rbuf() : Keyboard %d is not connected.\n");
+		printf("clear_rbuf() : Keyboard %d is not connected.\n", unit_index);
 		return;
 	}
 	CpuSuspendIntr(&state);
@@ -506,10 +504,10 @@ void usbkb_rpc_fno_06_ClearRbuf(int fno, u8 *buffer)
 // 402084: using guessed type int g_usbkb_cfg_keybd;
 
 //----- (00400E30) --------------------------------------------------------
-int usbkb_drv_probe(int devID)
+static int usbkb_drv_probe(int devID)
 {
 	UsbDeviceDescriptor *dev; // $a1
-	UsbInterfaceDescriptor *intf; // $a0
+	const UsbInterfaceDescriptor *intf; // $a0
 
 	if ( g_usbkb_used_kb_count >= g_usbkb_cfg_keybd )
 		return 0;
@@ -541,7 +539,7 @@ int usbkb_drv_probe(int devID)
 // 40218C: using guessed type int g_usbkb_cfg_lmode;
 
 //----- (00400F3C) --------------------------------------------------------
-int usbkb_drv_connect(int devID)
+static int usbkb_drv_connect(int devID)
 {
 	UsbConfigDescriptor *conf; // $v0
 	UsbInterfaceDescriptor *intf; // $s0
@@ -588,7 +586,7 @@ int usbkb_drv_connect(int devID)
 		return -1;
 	}
 	sceUsbdSetPrivateData(devID, unit);
-	xferret = sceUsbdSetConfiguration(unit->c_pipe, conf->bConfigurationValue, (sceUsbdDoneCallback)usbkb_donecb_SetConfiguration, unit);
+	xferret = sceUsbdSetConfiguration(unit->c_pipe, conf->bConfigurationValue, &usbkb_donecb_SetConfiguration, unit);
 	if ( xferret )
 	{
 		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdSetConfiguration", xferret);
@@ -614,22 +612,21 @@ int usbkb_drv_connect(int devID)
 	g_usbkb_unit_buf[unit->number] = unit;
 	return 0;
 }
-// 401F30: using guessed type int nullstr;
 // 402080: using guessed type int g_usbkb_used_kb_count;
 // 4020F0: using guessed type int g_usbkb_cfg_debug;
 
 //----- (00401244) --------------------------------------------------------
-ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumber, int alternateSetting)
+static ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumber, int alternateSetting)
 {
 	ps2kbd_unit *unit; // $v0
 	int DeviceLocation; // $v0
 	int i; // $a2
 	int j; // $a1
-	u8 devloc_stk[8]; // [sp+10h] [-8h] BYREF
+	u8 devloc_stk[7]; // [sp+10h] [-8h] BYREF
 
 	if ( g_usbkb_used_kb_count >= g_usbkb_cfg_keybd )
 		return NULL;
-	unit = AllocSysMemory(0, maxPacketSize + 0xF8, NULL);
+	unit = AllocSysMemory(0, sizeof(*unit) + maxPacketSize, NULL);
 	if ( !unit )
 		return NULL;
 	unit->dev_id = devID;
@@ -641,17 +638,13 @@ ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumb
 	}
 	for ( i = 0; i < g_usbkb_cfg_keybd; i += 1 )
 	{
-		for ( j = 0; j < 7; j += 1 )
-			if ( g_usbkb_devloc_buf[i][j] != devloc_stk[j] )
-				break;
-		if ( j == 7 )
+		for ( j = 0; j < (int)sizeof(devloc_stk) && g_usbkb_devloc_buf[i][j] == devloc_stk[j]; j += 1 );
+		if ( j == (int)sizeof(devloc_stk) )
 			break;
 	}
 	if ( i == g_usbkb_cfg_keybd )
 	{
-		for ( i = 0; i < g_usbkb_cfg_keybd; i += 1 )
-			if ( !g_usbkb_unit_buf[i] )
-				break;
+		for ( i = 0; i < g_usbkb_cfg_keybd && g_usbkb_unit_buf[i]; i += 1 );
 		if ( i >= g_usbkb_cfg_keybd )
 		{
 			printf("logical error\n");
@@ -676,93 +669,102 @@ ps2kbd_unit *usbkb_allocate_unit(int devID, int maxPacketSize, int interfaceNumb
 // 401244: using guessed type u8 devloc_stk[8];
 
 //----- (00401458) --------------------------------------------------------
-void usbkb_donecb_SetConfiguration(int result, int count, ps2kbd_unit *arg)
+static void usbkb_donecb_SetConfiguration(int retres, int count, void *arg)
 {
+	ps2kbd_unit *unit;
 	int xferret; // $v0
 
 	(void)count;
 
-	if ( result )
-		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "sceUsbdSetConfiguration", result);
-	if ( arg->as <= 0 )
+	unit = (ps2kbd_unit *)arg;
+	if ( retres )
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdSetConfiguration", retres);
+	if ( unit->as <= 0 )
 	{
-		usbkb_set_idle_request(arg);
+		usbkb_set_idle_request(unit);
 		return;
 	}
-	xferret = sceUsbdSetInterface(arg->c_pipe, arg->ifnum, arg->as, (sceUsbdDoneCallback)usbkb_donecb_SetInterface, arg);
+	xferret = sceUsbdSetInterface(unit->c_pipe, unit->ifnum, unit->as, &usbkb_donecb_SetInterface, unit);
 	if ( xferret )
-		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "sceUsbdSetInterface", xferret);
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdSetInterface", xferret);
 }
 
 //----- (0040152C) --------------------------------------------------------
-void usbkb_donecb_SetInterface(int result, int count, ps2kbd_unit *arg)
+static void usbkb_donecb_SetInterface(int retres, int count, void *arg)
 {
+	ps2kbd_unit *unit;
+
 	(void)count;
 
-	if ( result )
-		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "sceUsbdSetInterface", result);
-	usbkb_set_idle_request(arg);
+	unit = (ps2kbd_unit *)arg;
+	if ( retres )
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdSetInterface", retres);
+	usbkb_set_idle_request(unit);
 }
 
 //----- (00401574) --------------------------------------------------------
-void usbkb_set_idle_request(ps2kbd_unit *cbArg)
+static void usbkb_set_idle_request(ps2kbd_unit *unit)
 {
 	int xferret; // $v0
 
-	xferret = sceUsbdControlTransfer(cbArg->c_pipe, 0x21, USB_REQ_SET_IDLE, 0, cbArg->ifnum, 0, NULL, (sceUsbdDoneCallback)usbkb_donecb_set_idle_request, cbArg);
+	xferret = sceUsbdControlTransfer(unit->c_pipe, 0x21, USB_REQ_SET_IDLE, 0, unit->ifnum, 0, NULL, &usbkb_donecb_set_idle_request, unit);
 	if ( xferret )
-		printf("usbkeybd%d: %s -> 0x%x\n", cbArg->number, "set_idle_request", xferret);
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "set_idle_request", xferret);
 }
 
 //----- (004015FC) --------------------------------------------------------
-void usbkb_donecb_set_idle_request(int result, int count, ps2kbd_unit *arg)
+static void usbkb_donecb_set_idle_request(int retres, int count, void *arg)
 {
+	ps2kbd_unit *unit;
+
 	(void)count;
 
-	if ( result )
-		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "set_idle_request_done", result);
-	usbkb_data_transfer(arg);
+	unit = (ps2kbd_unit *)arg;
+	if ( retres )
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "set_idle_request_done", retres);
+	usbkb_data_transfer(unit);
 }
 
 //----- (00401644) --------------------------------------------------------
-void usbkb_data_transfer(ps2kbd_unit *cbArg)
+static void usbkb_data_transfer(ps2kbd_unit *unit)
 {
 	int xferret; // $v0
 
-	xferret = sceUsbdTransferPipe(cbArg->d_pipe, cbArg->data, cbArg->payload, NULL, (sceUsbdDoneCallback)usbkb_donecb_data_transfer, cbArg);
+	xferret = sceUsbdTransferPipe(unit->d_pipe, unit->data, unit->payload, NULL, &usbkb_donecb_data_transfer, unit);
 	if ( xferret )
-		printf("usbkeybd%d: %s -> 0x%x\n", cbArg->number, "sceUsbdInterruptTransfer", xferret);
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "sceUsbdInterruptTransfer", xferret);
 }
 
 //----- (004016AC) --------------------------------------------------------
-void usbkb_donecb_data_transfer(int result, int count, ps2kbd_unit *arg)
+static void usbkb_donecb_data_transfer(int retres, int count, void *arg)
 {
+	ps2kbd_unit *unit;
 	int ledmask; // $s1
 	int i; // $s0
-	int xferret; // $v0
 	int state; // [sp+20h] [-8h] BYREF
 
+	unit = (ps2kbd_unit *)arg;
 	ledmask = 0;
-	if ( result )
+	if ( retres )
 	{
-		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "data_transfer_done:sceUsbdInterruptTransfer", result);
-		usbkb_data_transfer(arg);
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "data_transfer_done:sceUsbdInterruptTransfer", retres);
+		usbkb_data_transfer(unit);
 		return;
 	}
 	if ( g_usbkb_cfg_debug > 0 )
 	{
-		arg->count += 1;
-		printf("usbkeybd%d: count=%d led=%02X data=(", arg->number, arg->count, arg->ledptn);
+		unit->count += 1;
+		printf("usbkeybd%d: count=%d led=%02X data=(", unit->number, unit->count, unit->ledptn);
 		for ( i = 0; i < count; i += 1 )
-			printf(" %02x", arg->data[i]);
+			printf(" %02x", unit->data[i]);
 		printf(" )\n");
 	}
 	for ( i = 2; i < count; i += 1 )
 	{
-		switch ( arg->data[i] )
+		switch ( unit->data[i] )
 		{
 			case 0x39:
-				if ( arg->old_ledbtn2 == 1 || (arg->old_ledbtn2 == 2 && (arg->data[0] & 0x22) != 0))
+				if ( unit->old_ledbtn2 == 1 || (unit->old_ledbtn2 == 2 && (unit->data[0] & 0x22) != 0))
 					ledmask |= 2u;
 				break;
 			case 0x47:
@@ -779,48 +781,53 @@ void usbkb_donecb_data_transfer(int result, int count, ps2kbd_unit *arg)
 				break;
 		}
 	}
-	if ( arg->old_ledbtn == ledmask || !arg->old_ledbtn2 )
-		usbkb_data_transfer(arg);
+	if ( unit->old_ledbtn == ledmask || !unit->old_ledbtn2 )
+		usbkb_data_transfer(unit);
 	else
 	{
-		arg->old_ledbtn = ledmask;
-		arg->ledptn ^= ledmask;
-		xferret = sceUsbdControlTransfer(arg->c_pipe, 0x21, USB_REQ_SET_REPORT, 512, arg->ifnum, sizeof(arg->ledptn), &arg->ledptn, (sceUsbdDoneCallback)usbkb_donecb_led_transfer, arg);
+		int xferret; // $v0
+
+		unit->old_ledbtn = ledmask;
+		unit->ledptn ^= ledmask;
+		xferret = sceUsbdControlTransfer(unit->c_pipe, 0x21, USB_REQ_SET_REPORT, 512, unit->ifnum, sizeof(unit->ledptn), &unit->ledptn, &usbkb_donecb_led_transfer, unit);
 		if ( xferret )
-			printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "SET_REPORT", xferret);
+			printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "SET_REPORT", xferret);
 	}
 	CpuSuspendIntr(&state);
-	arg->ringbuf[arg->wp][0] = arg->ledptn;
-	arg->ringbuf[arg->wp][1] = count;
+	unit->ringbuf[unit->wp][0] = unit->ledptn;
+	unit->ringbuf[unit->wp][1] = count;
 	for ( i = 0; i < count; i += 1 )
-		arg->ringbuf[i][2] = arg->data[i];
-	arg->wp += 1;
-	if ( arg->wp >= 3 )
-		arg->wp = 0;
-	if ( arg->rblen >= 3 )
+		unit->ringbuf[i][2] = unit->data[i];
+	unit->wp += 1;
+	if ( unit->wp >= 3 )
+		unit->wp = 0;
+	if ( unit->rblen >= 3 )
 	{
-		arg->rp += 1;
-		if ( arg->rp >= 3 )
-			arg->rp = 0;
+		unit->rp += 1;
+		if ( unit->rp >= 3 )
+			unit->rp = 0;
 	}
 	else
-		arg->rblen += 1;
+		unit->rblen += 1;
 	CpuResumeIntr(state);
 }
 // 4020F0: using guessed type int g_usbkb_cfg_debug;
 
 //----- (004019D8) --------------------------------------------------------
-void usbkb_donecb_led_transfer(int result, int count, ps2kbd_unit *arg)
+static void usbkb_donecb_led_transfer(int retres, int count, void *arg)
 {
+	ps2kbd_unit *unit;
+
 	(void)count;
 
-	if ( result )
-		printf("usbkeybd%d: %s -> 0x%x\n", arg->number, "led_transfer_done", result);
-	usbkb_data_transfer(arg);
+	unit = (ps2kbd_unit *)arg;
+	if ( retres )
+		printf("usbkeybd%d: %s -> 0x%x\n", unit->number, "led_transfer_done", retres);
+	usbkb_data_transfer(unit);
 }
 
 //----- (00401A20) --------------------------------------------------------
-int usbkb_drv_disconnect(int devID)
+static int usbkb_drv_disconnect(int devID)
 {
 	ps2kbd_unit *unit; // $s0
 
