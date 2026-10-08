@@ -28,7 +28,7 @@ typedef struct _unit
 int _start(int ac, char **av);
 int usbkb_cleanup();
 int usbkb_unload();
-void usbkb_thread_proc();
+void usbkb_thread_proc(void *userdata);
 void *usbkb_rpc_func(int fno, void *buffer, int length);
 void usbkb_rpc_fno_01_GetInfo(int fno, u8 *buffer);
 void usbkb_rpc_fno_02_Read(int fno, u8 *buffer);
@@ -257,8 +257,10 @@ int usbkb_unload()
 // 402090: using guessed type int g_usbkb_thread_id;
 
 //----- (004006F8) --------------------------------------------------------
-void usbkb_thread_proc()
+void usbkb_thread_proc(void *userdata)
 {
+	(void)userdata;
+
 	sceSifInitRpc(0);
 	sceSifSetRpcQueue(&g_usbkb_rpc_qd, GetThreadId());
 	sceSifRegisterRpc(&g_usbkb_rpc_sd, 0x80000211, usbkb_rpc_func, g_usbkb_rpc_buf, 0, 0, &g_usbkb_rpc_qd);
