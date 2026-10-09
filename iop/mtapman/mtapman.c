@@ -109,7 +109,6 @@ static s32 get_slot_number(u32 port, u32 retries)
 {
 	int i; // $s0
 	int j; // $v1
-	s32 slots; // $v0
 
 	if ( port >= 4 )
 		return -3;
@@ -117,6 +116,8 @@ static s32 get_slot_number(u32 port, u32 retries)
 		return -4;
 	for ( i = 0; i <= (int)retries; i += 1 )
 	{
+		s32 slots;
+
 		sio2_mtap_transfer_init();
 		g_tdata.in_size = 0;
 		g_tdata.out_size = 0;
@@ -227,33 +228,30 @@ static int send_mtap_state_to_ee(void)
 
 	// Unofficial: remove unneeded zeroing of state
 	WaitSema(g_sema_ee_set_work_addr);
-	if ( g_ee_work_addr_value && (!g_ee_work_addr_trid || (sceSifDmaStat(g_ee_work_addr_trid) < 0)) )
-	{
-		g_ee_magic_value += 1;
-		g_ee_data_contents[0] = g_ee_magic_value;
-		for ( i = 0; i < 4; i += 1 )
-		{
-			g_ee_data_contents[i + 2] = g_state_open[i];
-			g_ee_data_contents[i + 6] = mtapGetConnection(i);
-			g_ee_data_contents[i + 10] = get_slots(i);
-		}
-		g_ee_data_contents[1] = 1;
-		dmat.dest = (void *)g_ee_work_addr_value;
-		dmat.src = g_ee_data_contents;
-		dmat.size = 128;
-		dmat.attr = 0;
-		CpuSuspendIntr(&state);
-		trid = sceSifSetDma(&dmat, 1);
-		CpuResumeIntr(state);
-		g_ee_work_addr_trid = trid;
-		SignalSema(g_sema_ee_set_work_addr);
-		return 1;
-	}
-	else
+	if ( !g_ee_work_addr_value || (g_ee_work_addr_trid && (sceSifDmaStat(g_ee_work_addr_trid) >= 0)) )
 	{
 		SignalSema(g_sema_ee_set_work_addr);
 		return 0;
 	}
+	g_ee_magic_value += 1;
+	g_ee_data_contents[0] = g_ee_magic_value;
+	for ( i = 0; i < 4; i += 1 )
+	{
+		g_ee_data_contents[i + 2] = g_state_open[i];
+		g_ee_data_contents[i + 6] = mtapGetConnection(i);
+		g_ee_data_contents[i + 10] = get_slots(i);
+	}
+	g_ee_data_contents[1] = 1;
+	dmat.dest = (void *)g_ee_work_addr_value;
+	dmat.src = g_ee_data_contents;
+	dmat.size = 128;
+	dmat.attr = 0;
+	CpuSuspendIntr(&state);
+	trid = sceSifSetDma(&dmat, 1);
+	CpuResumeIntr(state);
+	g_ee_work_addr_trid = trid;
+	SignalSema(g_sema_ee_set_work_addr);
+	return 1;
 }
 // 401A88: using guessed type int g_ee_magic_value;
 // 401AB8: using guessed type int g_sema_ee_set_work_addr;
@@ -264,7 +262,6 @@ static int send_mtap_state_to_ee(void)
 static void update_slot_numbers_thread(void)
 {
 	int i; // $s3
-	s32 slots; // $v0
 	int resbits[2]; // [sp+10h] [-8h] BYREF
 
 	while ( 1 )
@@ -276,6 +273,8 @@ static void update_slot_numbers_thread(void)
 		{
 			if ( g_state_open[i] == 1 )
 			{
+				s32 slots;
+
 				slots = get_slot_number(i, ( mtapGetConnection(i) == 1 ) ? 10 : 0);
 				g_state_getcon[i] = ( slots >= 0 ) ? 1 : 0;
 				g_state_slots[i] = ( slots >= 0 ) ? slots : 1;
@@ -305,9 +304,6 @@ static void update_slot_numbers(void)
 //----- (00400B24) --------------------------------------------------------
 int _start(int ac, char **av)
 {
-	int cursifpriority; // $s3
-	int curmainpriority; // $s2
-	int j;
 	int thid; // $v0
 	int i; // $s1
 	iop_event_t evparam; // [sp+10h] [-38h] BYREF
@@ -323,6 +319,10 @@ int _start(int ac, char **av)
 	{
 		if ( !strncmp("thpri=", av[i], 6) )
 		{
+			int cursifpriority;
+			int curmainpriority;
+			int j;
+
 			j = 6;
 			curmainpriority = ( (look_ctype_table(av[i][j]) & 4) != 0 ) ? strtol(&av[i][j], NULL, 10) : -1;
 			for ( ; (look_ctype_table(av[i][j]) & 4) != 0; j += 1 );
