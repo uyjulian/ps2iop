@@ -510,7 +510,6 @@ int __cdecl _start(int ac, char **av)
 	bool reglibres; // dc
 	int result; // $v0
 	int curac; // $s1
-	const char **curav; // $s4
 	int cursifpriority; // $s3
 	int curmainpriority; // $s2
 	const char *val_plus_six; // $s0
@@ -533,63 +532,13 @@ int __cdecl _start(int ac, char **av)
 	g_ee_work_addr_value = 0;
 	g_ee_work_addr_trid = 0;
 	g_update_slot_numbers_thpriority = 20;
-	if ( ac <= 1 )
+	for ( curac = 1; curac < ac; curac += 1 )
 	{
-		if ( !InitRpcServers() )
-			// Unofficial: removed call to empty function
-			return 1;
-		evparam.attr = 2;
-		evparam.bits = 0;
-		g_event_flag = CreateEventFlag(&evparam);
-		if ( g_event_flag <= 0 )
-			// Unofficial: removed call to empty function
-			return 1;
-		thparam.attr = 0x2000000;
-		thparam.thread = (void (__cdecl *)(void *))update_slot_numbers_thread;
-		thparam.stacksize = 2048;
-		thparam.priority = g_update_slot_numbers_thpriority;
-		thid = CreateThread(&thparam);
-		g_threadid_main = thid;
-		if ( thid <= 0 )
-			// Unofficial: removed call to empty function
-			return 1;
-		StartThread(thid, 0);
-		semaparam.initial = 1;
-		semaparam.attr = 0;
-		semaparam.max = 16;
-		g_sema_ee_set_work_addr = CreateSema(&semaparam);
-		if ( g_sema_ee_set_work_addr < 0 )
-			// Unofficial: removed call to empty function
-			return 1;
-		i = 0;
-		i2 = 0;
-		do
-		{
-			++i;
-			g_state_open[i2] = 0;
-			g_state_getcon[i2] = 0;
-			g_state_slots[i2] = 1;
-			i2 = i;
-		}
-		while ( i < 4 );
-		sio2_mtap_change_slot_set(change_slot);
-		sio2_mtap_get_slot_max_set(get_slots1);
-		sio2_mtap_get_slot_max2_set(get_slots2);
-		sio2_mtap_update_slots_set(update_slot_numbers);
-		result = 0;
-		g_tdata.in = (u8 *)g_in_buffer;
-		g_tdata.out = (u8 *)g_out_buffer;
-		return result;
-	}
-	curac = 1;
-	curav = (const char **)(av + 1);
-	while ( curac < ac )
-	{
-		if ( !strncmp("thpri=", *curav, 6) )
+		if ( !strncmp("thpri=", av[curac], 6) )
 		{
 			cursifpriority = -1;
 			curmainpriority = -1;
-			val_plus_six = *curav + 6;
+			val_plus_six = av[curac] + 6;
 			if ( (look_ctype_table(*val_plus_six) & 4) != 0 )
 				curmainpriority = strtol(val_plus_six, 0, 10);
 			while ( (look_ctype_table(*val_plus_six) & 4) != 0 )
@@ -614,12 +563,59 @@ int __cdecl _start(int ac, char **av)
 			g_update_slot_numbers_thpriority = curmainpriority;
 			do_set_sif_priority_thread(cursifpriority);
 		}
-		++curac;
-		++curav;
+		else
+		{
+			// Unofficial: correct failure condition
+			// Unofficial: removed call to empty function
+			return 1;
+		}
 	}
-	// Unofficial: correct failure condition
-	// Unofficial: removed call to empty function
-	return 1;
+	// Unofficial: correct success condition when argv parsing loop ends
+	if ( !InitRpcServers() )
+		// Unofficial: removed call to empty function
+		return 1;
+	evparam.attr = 2;
+	evparam.bits = 0;
+	g_event_flag = CreateEventFlag(&evparam);
+	if ( g_event_flag <= 0 )
+		// Unofficial: removed call to empty function
+		return 1;
+	thparam.attr = 0x2000000;
+	thparam.thread = (void (__cdecl *)(void *))update_slot_numbers_thread;
+	thparam.stacksize = 2048;
+	thparam.priority = g_update_slot_numbers_thpriority;
+	thid = CreateThread(&thparam);
+	g_threadid_main = thid;
+	if ( thid <= 0 )
+		// Unofficial: removed call to empty function
+		return 1;
+	StartThread(thid, 0);
+	semaparam.initial = 1;
+	semaparam.attr = 0;
+	semaparam.max = 16;
+	g_sema_ee_set_work_addr = CreateSema(&semaparam);
+	if ( g_sema_ee_set_work_addr < 0 )
+		// Unofficial: removed call to empty function
+		return 1;
+	i = 0;
+	i2 = 0;
+	do
+	{
+		++i;
+		g_state_open[i2] = 0;
+		g_state_getcon[i2] = 0;
+		g_state_slots[i2] = 1;
+		i2 = i;
+	}
+	while ( i < 4 );
+	sio2_mtap_change_slot_set(change_slot);
+	sio2_mtap_get_slot_max_set(get_slots1);
+	sio2_mtap_get_slot_max2_set(get_slots2);
+	sio2_mtap_update_slots_set(update_slot_numbers);
+	result = 0;
+	g_tdata.in = (u8 *)g_in_buffer;
+	g_tdata.out = (u8 *)g_out_buffer;
+	return result;
 }
 // 401AB8: using guessed type int g_sema_ee_set_work_addr;
 // 401ABC: using guessed type int g_update_slot_numbers_thpriority;
