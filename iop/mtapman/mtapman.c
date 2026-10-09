@@ -299,9 +299,9 @@ int _start(int ac, char **av)
 			int j;
 
 			j = 6;
-			curmainpriority = ( (look_ctype_table(av[i][j]) & 4) ) ? strtol(&av[i][j], NULL, 10) : -1;
-			for ( ; (look_ctype_table(av[i][j]) & 4); j += 1 );
-			cursifpriority = ( av[i][j] == ','  && (look_ctype_table(av[i][j + 1]) & 4) ) ? strtol(&av[i][j + 1], NULL, 10) : -1;
+			curmainpriority = ( isdigit(av[i][j]) ) ? strtol(&av[i][j], NULL, 10) : -1;
+			for ( ; isdigit(av[i][j]); j += 1 );
+			cursifpriority = ( av[i][j] == ','  && isdigit(av[i][j + 1]) ) ? strtol(&av[i][j + 1], NULL, 10) : -1;
 			if ( (unsigned int)(curmainpriority - 9) >= 0x73 )
 			{
 				printf("MTAPMAN:invalid priority_main %d\n", curmainpriority);
