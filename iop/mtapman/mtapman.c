@@ -579,7 +579,6 @@ int __cdecl _start(int ac, char **av)
 		g_threadid_main = thid;
 		if ( thid <= 0 )
 			goto LABEL_21;
-LABEL_18:
 		StartThread(thid, 0);
 		semaparam.initial = 1;
 		semaparam.attr = 0;
@@ -621,7 +620,8 @@ LABEL_17:
 		++curac;
 		++curav;
 		if ( curac >= ac )
-			goto LABEL_18;
+			// Unofficial: correct failure condition
+			goto LABEL_21;
 	}
 	cursifpriority = -1;
 	curmainpriority = -1;
