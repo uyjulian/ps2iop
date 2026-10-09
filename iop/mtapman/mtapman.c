@@ -7,7 +7,7 @@ IRX_ID("multitap_manager", 3, 16);
 //-------------------------------------------------------------------------
 // Function declarations
 
-static s32 read_stat6c_bit(u32 bit, sio2_transfer_data_t *tdata);
+static s32 read_stat6c_bit(u32 bit, const sio2_transfer_data_t *tdata);
 static void get_slot_number_setup_td(u32 port, u32 reg);
 static s32 get_slot_number_check_td(u32 bit);
 static s32 get_slot_number(u32 port, u32 retries);
@@ -66,7 +66,7 @@ static int g_RpcServerSb[32]; // weak
 // Removed empty function with stack manipulation
 
 //----- (00400018) --------------------------------------------------------
-static s32 read_stat6c_bit(u32 bit, sio2_transfer_data_t *tdata)
+static s32 read_stat6c_bit(u32 bit, const sio2_transfer_data_t *tdata)
 {
 	// Unofficial: calculate shift
 	return ( bit < 16 ) ? ((tdata->stat6c >> (16 + bit)) & 1) : 0;
