@@ -244,7 +244,7 @@ static void update_slot_numbers_thread(void *userdata)
 	(void)userdata;
 	while ( 1 )
 	{
-		WaitEventFlag(g_event_flag, 3u, 0x11, &resbits);
+		WaitEventFlag(g_event_flag, 3, 0x11, &resbits);
 		if ( (resbits & 2) )
 			break;
 		for ( i = 0; i < 4; i += 1 )
@@ -260,7 +260,7 @@ static void update_slot_numbers_thread(void *userdata)
 		}
 		send_mtap_state_to_ee();
 	}
-	SetEventFlag(g_event_flag, 4u);
+	SetEventFlag(g_event_flag, 4);
 	ExitThread();
 }
 
@@ -273,7 +273,7 @@ static int get_slots(int port)
 
 static void update_slot_numbers(void)
 {
-	SetEventFlag(g_event_flag, 1u);
+	SetEventFlag(g_event_flag, 1);
 }
 
 int _start(int ac, char **av)
@@ -377,7 +377,7 @@ s32 mtapPortOpen(u32 port)
 	if ( port >= 4 )
 		return 0;
 	g_state_open[port] = 1;
-	slot = get_slot_number(port, 0xAu);
+	slot = get_slot_number(port, 10);
 	g_state_getcon[port] = !!( slot >= 0 );
 	g_state_slots[port] = ( slot >= 0 ) ? slot : 1;
 	return 1;
@@ -403,7 +403,7 @@ s32 mtapGetSlotNumber_unused(u32 port)
 		return -1;
 	if ( g_state_open[port] != 1 )
 		return 1;
-	retres = get_slot_number(port, 10u);
+	retres = get_slot_number(port, 10);
 	return ( retres < 0 ) ? 1 : retres;
 }
 
