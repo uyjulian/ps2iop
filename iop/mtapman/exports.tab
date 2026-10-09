@@ -1,0 +1,25 @@
+
+#if 0
+DECLARE_EXPORT_TABLE(mtapman, 1, 2)
+DECLARE_EXPORT(_start)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(_deinit)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(mtapPortOpen)
+DECLARE_EXPORT(mtapPortClose)
+DECLARE_EXPORT(mtapGetSlotNumber)
+DECLARE_EXPORT(mtapChangeSlot)
+END_EXPORT_TABLE
+#endif
+
+DECLARE_EXPORT_TABLE(mtapman, 2, 4)
+DECLARE_EXPORT(_start)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(_deinit)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(mtapPortOpen)
+DECLARE_EXPORT(mtapPortClose)
+DECLARE_EXPORT(mtapGetConnection)
+END_EXPORT_TABLE
+
+void _retonly() {}
