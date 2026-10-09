@@ -36,8 +36,8 @@ static void RpcServerHandlerGetSlotNumber(u32 *buffer);
 static void RpcServerHandlerSetThreadPriority(u32 *buffer);
 static void RpcServerHandlerGetVersion(u32 *buffer);
 static void *RpcServerHandler(int fno, void *buffer, int length);
-void MtapServCommon(void);
-int InitRpcServers(void);
+static void MtapServCommon(void);
+static int InitRpcServers(void);
 
 //-------------------------------------------------------------------------
 // Data declarations
@@ -600,7 +600,7 @@ static void *RpcServerHandler(int fno, void *buffer, int length)
 }
 
 //----- (00401414) --------------------------------------------------------
-void MtapServCommon(void)
+static void MtapServCommon(void)
 {
 	if ( !sceSifCheckInit() )
 	{
@@ -616,7 +616,7 @@ void MtapServCommon(void)
 // 401E70: using guessed type int g_RpcServerSb[32];
 
 //----- (004014B0) --------------------------------------------------------
-int InitRpcServers(void)
+static int InitRpcServers(void)
 {
 	iop_thread_t thparam; // [sp+10h] [-18h] BYREF
 
