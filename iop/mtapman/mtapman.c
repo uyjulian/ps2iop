@@ -34,14 +34,13 @@ int __cdecl do_set_main_priority_thread(int priority);
 int do_get_version(void);
 int __cdecl do_set_sif_priority_thread(int priority);
 int __cdecl do_set_sif_priority_thread_sif(int priority);
-u32 *__cdecl RpcServerHandlerInit(int fno, u32 *buffer);
-u32 *__cdecl RpcServerHandlerOpen(int fno, u32 *buffer);
-u32 *__cdecl RpcServerHandlerClose(int fno, u32 *buffer);
-u32 *__cdecl RpcServerHandlerSetWorkAddr(int fno, u32 *buffer);
-u32 *__cdecl RpcServerHandlerGetSlotNumber(int fno, u32 *buffer);
-u32 *__cdecl RpcServerHandlerSetThreadPriority(int fno, u32 *buffer);
-u32 *__cdecl RpcServerHandlerGetVersion(int fno, u32 *buffer);
-void *__cdecl RpcServerHandler(int fno, void *buffer, int length);
+static void RpcServerHandlerOpen(u32 *buffer);
+static void RpcServerHandlerClose(u32 *buffer);
+static void RpcServerHandlerSetWorkAddr(u32 *buffer);
+static void RpcServerHandlerGetSlotNumber(u32 *buffer);
+static void RpcServerHandlerSetThreadPriority(u32 *buffer);
+static void RpcServerHandlerGetVersion(u32 *buffer);
+static void *RpcServerHandler(int fno, void *buffer, int length);
 void MtapServCommon(void);
 int InitRpcServers(void);
 
@@ -509,135 +508,100 @@ int __cdecl do_set_sif_priority_thread_sif(int priority)
 	return ( retres >= 0 ) ? 0 : retres;
 }
 
-//----- (0040114C) --------------------------------------------------------
-u32 *__cdecl RpcServerHandlerInit(int fno, u32 *buffer)
-{
-	(void)fno;
-
-	return buffer;
-}
+// Unofficial: remove empty function
 
 //----- (00401154) --------------------------------------------------------
-u32 *__cdecl RpcServerHandlerOpen(int fno, u32 *buffer)
+static void RpcServerHandlerOpen(u32 *buffer)
 {
-	(void)fno;
-
-	buffer[1] = mtapPortOpen(*buffer);
-	return buffer;
+	buffer[1] = mtapPortOpen(buffer[0]);
 }
 
 //----- (00401188) --------------------------------------------------------
-u32 *__cdecl RpcServerHandlerClose(int fno, u32 *buffer)
+static void RpcServerHandlerClose(u32 *buffer)
 {
-	(void)fno;
-
-	buffer[1] = mtapPortClose(*buffer);
-	return buffer;
+	buffer[1] = mtapPortClose(buffer[0]);
 }
 
 //----- (004011BC) --------------------------------------------------------
-u32 *__cdecl RpcServerHandlerSetWorkAddr(int fno, u32 *buffer)
+static void RpcServerHandlerSetWorkAddr(u32 *buffer)
 {
-	(void)fno;
-
-	*buffer = do_set_work_addr_ee(buffer[1]);
-	return buffer;
+	buffer[0] = do_set_work_addr_ee(buffer[1]);
 }
 
 //----- (004011F0) --------------------------------------------------------
-u32 *__cdecl RpcServerHandlerGetSlotNumber(int fno, u32 *buffer)
+static void RpcServerHandlerGetSlotNumber(u32 *buffer)
 {
-	(void)fno;
-
-	buffer[1] = mtapGetConnection(*buffer);
-	return buffer;
+	buffer[1] = mtapGetConnection(buffer[0]);
 }
 
 //----- (00401224) --------------------------------------------------------
-u32 *__cdecl RpcServerHandlerSetThreadPriority(int fno, u32 *buffer)
+static void RpcServerHandlerSetThreadPriority(u32 *buffer)
 {
 	u32 priority_main; // $a1
 	u32 priority_sif; // $a1
 
-	(void)fno;
-
+	buffer[2] = 0;
 	priority_main = buffer[0];
 	if ( priority_main - 9 >= 0x73 )
 	{
 		printf("MTAPMAN:invalid priority_main %d\n", priority_main);
-		buffer[2] = 0;
-		return buffer;
+		return;
 	}
 	priority_sif = buffer[1];
 	if ( priority_sif - 9 >= 0x73 )
 	{
 		printf("MTAPMAN:invalid priority_sif %d\n", priority_sif);
-		buffer[2] = 0;
-		return buffer;
+		return;
 	}
 	ChangeThreadPriority(0, 8);
-	if ( do_set_main_priority_thread(*buffer) < 0 )
-	{
+	if ( do_set_main_priority_thread(priority_main) < 0 )
 		printf("MTAPMAN:error to set priority_main\n");
-		buffer[2] = 0;
-	}
-	else if ( do_set_sif_priority_thread_sif(buffer[1]) < 0 )
-	{
+	else if ( do_set_sif_priority_thread_sif(priority_sif) < 0 )
 		printf("MTAPMAN:error to set priority_sif\n");
-		buffer[2] = 0;
-	}
 	else
-	{
 		buffer[2] = 1;
-	}
-	return buffer;
 }
 
 //----- (0040131C) --------------------------------------------------------
-u32 *__cdecl RpcServerHandlerGetVersion(int fno, u32 *buffer)
+static void RpcServerHandlerGetVersion(u32 *buffer)
 {
-	(void)fno;
-
-	*buffer = do_get_version();
-	return buffer;
+	buffer[0] = do_get_version();
 }
 
 //----- (00401348) --------------------------------------------------------
-void *__cdecl RpcServerHandler(int fno, void *buffer, int length)
+static void *RpcServerHandler(int fno, void *buffer, int length)
 {
-	void *SlotNumber; // $s0
-
 	(void)length;
 
-	SlotNumber = buffer;
+	// Unofficial: clean up parameters and return value
 	switch ( fno )
 	{
 		case 0:
-			SlotNumber = RpcServerHandlerInit(fno, (u32 *)buffer);
+			// Unofficial: omit call to empty function
 			break;
 		case 1:
-			SlotNumber = RpcServerHandlerOpen(fno, (u32 *)buffer);
+			RpcServerHandlerOpen((u32 *)buffer);
 			break;
 		case 2:
-			SlotNumber = RpcServerHandlerClose(fno, (u32 *)buffer);
+			RpcServerHandlerClose((u32 *)buffer);
 			break;
 		case 3:
-			SlotNumber = RpcServerHandlerGetSlotNumber(fno, (u32 *)buffer);
+			RpcServerHandlerGetSlotNumber((u32 *)buffer);
 			break;
 		case 4:
-			SlotNumber = RpcServerHandlerSetThreadPriority(fno, (u32 *)buffer);
+			RpcServerHandlerSetThreadPriority((u32 *)buffer);
 			break;
 		case 5:
-			SlotNumber = RpcServerHandlerGetVersion(fno, (u32 *)buffer);
+			RpcServerHandlerGetVersion((u32 *)buffer);
 			break;
 		case 6:
-			SlotNumber = RpcServerHandlerSetWorkAddr(fno, (u32 *)buffer);
+			RpcServerHandlerSetWorkAddr((u32 *)buffer);
 			break;
 		default:
 			Kprintf("invalid function code (%03x)\n", fno);
 			break;
 	}
-	return SlotNumber;
+	return buffer;
 }
 
 //----- (00401414) --------------------------------------------------------
