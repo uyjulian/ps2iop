@@ -279,7 +279,6 @@ static void update_slot_numbers(void)
 
 int _start(int ac, char **av)
 {
-	int thid;
 	int i;
 	iop_event_t evparam;
 	iop_thread_t thparam;
@@ -336,12 +335,11 @@ int _start(int ac, char **av)
 	thparam.thread = (void (*)(void *))update_slot_numbers_thread;
 	thparam.stacksize = 2048;
 	thparam.priority = g_update_slot_numbers_thpriority;
-	thid = CreateThread(&thparam);
-	g_threadid_main = thid;
-	if ( thid <= 0 )
+	g_threadid_main = CreateThread(&thparam);
+	if ( g_threadid_main <= 0 )
 		// Unofficial: removed call to empty function
 		return 1;
-	StartThread(thid, NULL);
+	StartThread(g_threadid_main, NULL);
 	semaparam.initial = 1;
 	semaparam.attr = 0;
 	semaparam.max = 16;
@@ -485,26 +483,21 @@ static void RpcServerHandlerGetSlotNumber(u32 *buffer)
 
 static void RpcServerHandlerSetThreadPriority(u32 *buffer)
 {
-	u32 priority_main;
-	u32 priority_sif;
-
 	buffer[2] = 0;
-	priority_main = buffer[0];
-	if ( priority_main - 9 >= 0x73 )
+	if ( (u32)(buffer[0]) - 9 >= 0x73 )
 	{
-		printf("MTAPMAN:invalid priority_main %d\n", (int)priority_main);
+		printf("MTAPMAN:invalid priority_main %d\n", (int)buffer[0]);
 		return;
 	}
-	priority_sif = buffer[1];
-	if ( priority_sif - 9 >= 0x73 )
+	if ( (u32)(buffer[1]) - 9 >= 0x73 )
 	{
-		printf("MTAPMAN:invalid priority_sif %d\n", (int)priority_sif);
+		printf("MTAPMAN:invalid priority_sif %d\n", (int)buffer[1]);
 		return;
 	}
 	ChangeThreadPriority(0, 8);
-	if ( do_set_main_priority_thread(priority_main) < 0 )
+	if ( do_set_main_priority_thread(buffer[0]) < 0 )
 		printf("MTAPMAN:error to set priority_main\n");
-	else if ( do_set_sif_priority_thread_sif(priority_sif) < 0 )
+	else if ( do_set_sif_priority_thread_sif(buffer[1]) < 0 )
 		printf("MTAPMAN:error to set priority_sif\n");
 	else
 		buffer[2] = 1;
