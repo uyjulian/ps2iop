@@ -539,13 +539,13 @@ static void RpcServerHandlerSetThreadPriority(u32 *buffer)
 	priority_main = buffer[0];
 	if ( priority_main - 9 >= 0x73 )
 	{
-		printf("MTAPMAN:invalid priority_main %d\n", priority_main);
+		printf("MTAPMAN:invalid priority_main %d\n", (int)priority_main);
 		return;
 	}
 	priority_sif = buffer[1];
 	if ( priority_sif - 9 >= 0x73 )
 	{
-		printf("MTAPMAN:invalid priority_sif %d\n", priority_sif);
+		printf("MTAPMAN:invalid priority_sif %d\n", (int)priority_sif);
 		return;
 	}
 	ChangeThreadPriority(0, 8);
