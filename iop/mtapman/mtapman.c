@@ -156,7 +156,7 @@ void __cdecl get_slot_number_setup_td(u32 port, u32 reg)
 	// Unofficial: combine writes
 	g_tdata.port_ctrl1[p_tmp] = 5 | (5 << 8) | (2 << 16) | (0xFF << 24);
 	g_tdata.port_ctrl2[p_tmp] = 0x64 | (3 << 16);
-	g_tdata.regdata[reg] = p & 3 | 0x180640;
+	g_tdata.regdata[reg] = (p & 3) | 0x180640;
 	in_size = g_tdata.in_size;
 	do
 	{
@@ -266,7 +266,7 @@ s32 __cdecl change_slot_setup_td(unsigned int port, u8 slot)
 
 	retcond = 0;
 	p = port | 2;
-	portor_tmp = port & 1 | 0x742;
+	portor_tmp = (port & 1) | 0x742;
 	i = 0;
 	do
 	{
