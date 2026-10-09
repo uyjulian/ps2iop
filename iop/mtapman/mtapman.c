@@ -322,43 +322,21 @@ int __cdecl change_slot(s32 *arg)
 		arg_port = *port_arg_tmp4_1;
 		port_tmp = port;
 		if ( *port_arg_tmp4_1 == -1 )
-		{
 			port_arg_tmp4_1[4] = 0;
-			goto LABEL_16;
-		}
-		if ( arg_port < 0 )
-			goto LABEL_12;
-		if ( !g_state_open[port_tmp] )
-		{
-			if ( arg_port )
-			{
-				port_arg_tmp4_1[4] = -1;
-				goto LABEL_16;
-			}
-LABEL_10:
-			port_arg_tmp4_1[4] = 1;
-			goto LABEL_16;
-		}
-		if ( !*p_state_getcon_cur )
-		{
-			if ( !arg_port )
-				goto LABEL_10;
-LABEL_12:
+		else if ( arg_port < 0 )
 			port_arg_tmp4_1[4] = -1;
-			goto LABEL_16;
-		}
-		if ( arg_port >= g_state_slots[port_tmp] )
-			goto LABEL_12;
-		if ( change_slot_setup_td(port, arg_port) == 1 )
-		{
-			port_arg_tmp4_1[4] = 1;
-		}
+		else if ( !g_state_open[port_tmp] )
+			port_arg_tmp4_1[4] = arg_port ? -1 : 1;
+		else if ( !*p_state_getcon_cur )
+			port_arg_tmp4_1[4] = arg_port ? -1 : 1;
+		else if ( arg_port >= g_state_slots[port_tmp] )
+			port_arg_tmp4_1[4] = -1;
 		else
 		{
-			port_arg_tmp4_1[4] = -1;
-			*p_state_getcon_cur = 0;
+			port_arg_tmp4_1[4] = ( change_slot_setup_td(port, arg_port) == 1 ) ? 1 : -1;
+			if ( port_arg_tmp4_1[4] == -1 )
+				*p_state_getcon_cur = 0;
 		}
-LABEL_16:
 		++p_state_getcon_cur;
 		++port;
 		++port_arg_tmp4_1;
@@ -552,19 +530,20 @@ int __cdecl _start(int ac, char **av)
 	result = 1;
 	if ( reglibres )
 		return result;
-	curac = 1;
 	g_ee_work_addr_value = 0;
 	g_ee_work_addr_trid = 0;
 	g_update_slot_numbers_thpriority = 20;
 	if ( ac <= 1 )
 	{
 		if ( !InitRpcServers() )
-			goto LABEL_21;
+			// Unofficial: removed call to empty function
+			return 1;
 		evparam.attr = 2;
 		evparam.bits = 0;
 		g_event_flag = CreateEventFlag(&evparam);
 		if ( g_event_flag <= 0 )
-			goto LABEL_21;
+			// Unofficial: removed call to empty function
+			return 1;
 		thparam.attr = 0x2000000;
 		thparam.thread = (void (__cdecl *)(void *))update_slot_numbers_thread;
 		thparam.stacksize = 2048;
@@ -572,77 +551,74 @@ int __cdecl _start(int ac, char **av)
 		thid = CreateThread(&thparam);
 		g_threadid_main = thid;
 		if ( thid <= 0 )
-			goto LABEL_21;
+			// Unofficial: removed call to empty function
+			return 1;
 		StartThread(thid, 0);
 		semaparam.initial = 1;
 		semaparam.attr = 0;
 		semaparam.max = 16;
 		g_sema_ee_set_work_addr = CreateSema(&semaparam);
-		if ( g_sema_ee_set_work_addr >= 0 )
-		{
-			i = 0;
-			i2 = 0;
-			do
-			{
-				++i;
-				g_state_open[i2] = 0;
-				g_state_getcon[i2] = 0;
-				g_state_slots[i2] = 1;
-				i2 = i;
-			}
-			while ( i < 4 );
-			sio2_mtap_change_slot_set(change_slot);
-			sio2_mtap_get_slot_max_set(get_slots1);
-			sio2_mtap_get_slot_max2_set(get_slots2);
-			sio2_mtap_update_slots_set(update_slot_numbers);
-			result = 0;
-			g_tdata.in = (u8 *)g_in_buffer;
-			g_tdata.out = (u8 *)g_out_buffer;
-		}
-		else
-		{
-LABEL_21:
+		if ( g_sema_ee_set_work_addr < 0 )
 			// Unofficial: removed call to empty function
 			return 1;
+		i = 0;
+		i2 = 0;
+		do
+		{
+			++i;
+			g_state_open[i2] = 0;
+			g_state_getcon[i2] = 0;
+			g_state_slots[i2] = 1;
+			i2 = i;
 		}
+		while ( i < 4 );
+		sio2_mtap_change_slot_set(change_slot);
+		sio2_mtap_get_slot_max_set(get_slots1);
+		sio2_mtap_get_slot_max2_set(get_slots2);
+		sio2_mtap_update_slots_set(update_slot_numbers);
+		result = 0;
+		g_tdata.in = (u8 *)g_in_buffer;
+		g_tdata.out = (u8 *)g_out_buffer;
 		return result;
 	}
+	curac = 1;
 	curav = (const char **)(av + 1);
-	while ( strncmp("thpri=", *curav, 6) )
+	while ( curac < ac )
 	{
-LABEL_17:
+		if ( !strncmp("thpri=", *curav, 6) )
+		{
+			cursifpriority = -1;
+			curmainpriority = -1;
+			val_plus_six = *curav + 6;
+			if ( (look_ctype_table(*val_plus_six) & 4) != 0 )
+				curmainpriority = strtol(val_plus_six, 0, 10);
+			while ( (look_ctype_table(*val_plus_six) & 4) != 0 )
+				++val_plus_six;
+			curmainprioity_minus_nine = curmainpriority - 9;
+			if ( *val_plus_six == ',' )
+			{
+				if ( (look_ctype_table(val_plus_six[1]) & 4) != 0 )
+					cursifpriority = strtol(val_plus_six + 1, 0, 10);
+				curmainprioity_minus_nine = curmainpriority - 9;
+			}
+			if ( curmainprioity_minus_nine >= 0x73 )
+			{
+				printf("MTAPMAN:invalid priority_main %d\n", curmainpriority);
+				return 1;
+			}
+			if ( (unsigned int)(cursifpriority - 9) >= 0x73 )
+			{
+				printf("MTAPMAN:invalid priority_sif %d\n", cursifpriority);
+				return 1;
+			}
+			g_update_slot_numbers_thpriority = curmainpriority;
+			do_set_sif_priority_thread(cursifpriority);
+		}
 		++curac;
 		++curav;
-		if ( curac >= ac )
-			// Unofficial: correct failure condition
-			goto LABEL_21;
 	}
-	cursifpriority = -1;
-	curmainpriority = -1;
-	val_plus_six = *curav + 6;
-	if ( (look_ctype_table(*val_plus_six) & 4) != 0 )
-		curmainpriority = strtol(val_plus_six, 0, 10);
-	while ( (look_ctype_table(*val_plus_six) & 4) != 0 )
-		++val_plus_six;
-	curmainprioity_minus_nine = curmainpriority - 9;
-	if ( *val_plus_six == ',' )
-	{
-		if ( (look_ctype_table(val_plus_six[1]) & 4) != 0 )
-			cursifpriority = strtol(val_plus_six + 1, 0, 10);
-		curmainprioity_minus_nine = curmainpriority - 9;
-	}
-	if ( curmainprioity_minus_nine >= 0x73 )
-	{
-		printf("MTAPMAN:invalid priority_main %d\n", curmainpriority);
-		return 1;
-	}
-	if ( (unsigned int)(cursifpriority - 9) < 0x73 )
-	{
-		g_update_slot_numbers_thpriority = curmainpriority;
-		do_set_sif_priority_thread(cursifpriority);
-		goto LABEL_17;
-	}
-	printf("MTAPMAN:invalid priority_sif %d\n", cursifpriority);
+	// Unofficial: correct failure condition
+	// Unofficial: removed call to empty function
 	return 1;
 }
 // 401AB8: using guessed type int g_sema_ee_set_work_addr;
@@ -733,7 +709,10 @@ int __fastcall mtapChangeSlot_unused(u32 port, u32 slot)
 	if ( port >= 4 )
 		return 0;
 	if ( g_state_open[port] != 1 )
-		goto LABEL_8;
+	{
+		// Unofficial: removed call to empty function
+		return 1;
+	}
 	idx = 3;
 	p_data_fill = &data[3];
 	do
@@ -755,7 +734,6 @@ int __fastcall mtapChangeSlot_unused(u32 port, u32 slot)
 	}
 	else
 	{
-LABEL_8:
 		// Unofficial: removed call to empty function
 		return 1;
 	}
