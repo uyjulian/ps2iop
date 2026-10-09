@@ -90,8 +90,8 @@ void __cdecl get_slot_number_setup_td(u32 port, u32 reg)
 		g_tdata.in[i + g_tdata.in_size] = 0;
 	g_tdata.in[g_tdata.in_size] = 0x21;
 	g_tdata.in[g_tdata.in_size + 1] = 0x12 | !!( port >= 2 );
-	g_tdata.in_dma.addr = 0;
-	g_tdata.out_dma.addr = 0;
+	g_tdata.in_dma.addr = NULL;
+	g_tdata.out_dma.addr = NULL;
 	g_tdata.in_size += 6;
 	g_tdata.out_size += 6;
 }
@@ -165,8 +165,8 @@ s32 __cdecl change_slot_setup_td(unsigned int port, u8 slot)
 		g_tdata.in[2] = slot;
 		g_tdata.in_size = 7;
 		g_tdata.out_size = 7;
-		g_tdata.in_dma.addr = 0;
-		g_tdata.out_dma.addr = 0;
+		g_tdata.in_dma.addr = NULL;
+		g_tdata.out_dma.addr = NULL;
 		sio2_transfer2(&g_tdata);
 		if ( read_stat6c_bit(0, &g_tdata) != 1 && g_tdata.out[5] != 0x66 )
 			return 1;
@@ -329,9 +329,9 @@ int __cdecl _start(int ac, char **av)
 		if ( !strncmp("thpri=", av[i], 6) )
 		{
 			j = 6;
-			curmainpriority = ( (look_ctype_table(av[i][j]) & 4) != 0 ) ? strtol(&av[i][j], 0, 10) : -1;
+			curmainpriority = ( (look_ctype_table(av[i][j]) & 4) != 0 ) ? strtol(&av[i][j], NULL, 10) : -1;
 			for ( ; (look_ctype_table(av[i][j]) & 4) != 0; j += 1 );
-			cursifpriority = ( av[i][j] == ','  && (look_ctype_table(av[i][j + 1]) & 4) != 0 ) ? strtol(&av[i][j + 1], 0, 10) : -1;
+			cursifpriority = ( av[i][j] == ','  && (look_ctype_table(av[i][j + 1]) & 4) != 0 ) ? strtol(&av[i][j + 1], NULL, 10) : -1;
 			if ( (unsigned int)(curmainpriority - 9) >= 0x73 )
 			{
 				printf("MTAPMAN:invalid priority_main %d\n", curmainpriority);
@@ -371,7 +371,7 @@ int __cdecl _start(int ac, char **av)
 	if ( thid <= 0 )
 		// Unofficial: removed call to empty function
 		return 1;
-	StartThread(thid, 0);
+	StartThread(thid, NULL);
 	semaparam.initial = 1;
 	semaparam.attr = 0;
 	semaparam.max = 16;
@@ -402,10 +402,10 @@ int __cdecl _start(int ac, char **av)
 //----- (00400E44) --------------------------------------------------------
 void _deinit(void)
 {
-	sio2_mtap_change_slot_set(0);
-	sio2_mtap_get_slot_max_set(0);
-	sio2_mtap_get_slot_max2_set(0);
-	sio2_mtap_update_slots_set(0);
+	sio2_mtap_change_slot_set(NULL);
+	sio2_mtap_get_slot_max_set(NULL);
+	sio2_mtap_get_slot_max2_set(NULL);
+	sio2_mtap_update_slots_set(NULL);
 	do_set_work_addr_ee(0);
 	WaitSema(g_sema_ee_set_work_addr);
 	DeleteSema(g_sema_ee_set_work_addr);
@@ -614,7 +614,7 @@ void MtapServCommon(void)
 	}
 	sceSifInitRpc(0);
 	sceSifSetRpcQueue(&g_RpcServerQd, GetThreadId());
-	sceSifRegisterRpc(&g_RpcServerSd, 0x80000900, RpcServerHandler, g_RpcServerSb, 0, 0, &g_RpcServerQd);
+	sceSifRegisterRpc(&g_RpcServerSd, 0x80000900, RpcServerHandler, g_RpcServerSb, NULL, NULL, &g_RpcServerQd);
 	sceSifRpcLoop(&g_RpcServerQd);
 }
 // 401E10: using guessed type SifRpcDataQueue_t g_RpcServerQd;
@@ -631,7 +631,7 @@ int InitRpcServers(void)
 	thparam.priority = g_MtapServPriority;
 	g_threadid_rpc = CreateThread(&thparam);
 	if ( g_threadid_rpc )
-		StartThread(g_threadid_rpc, 0);
+		StartThread(g_threadid_rpc, NULL);
 	else
 		Kprintf("mtapman: CreateThread Error\n");
 	return g_threadid_rpc ? 1 : 0;
