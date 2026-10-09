@@ -734,7 +734,7 @@ int __fastcall mtapChangeSlot_unused(u32 port, u32 slot)
 	int idx; // $v1
 	s32 *p_data_fill; // $v0
 	s32 *p_data_slot; // $s0
-	s32 data[4]; // [sp+10h] [-20h] BYREF
+	s32 data[8]; // [sp+10h] [-20h] BYREF
 
 	if ( port >= 4 )
 		return 0;
