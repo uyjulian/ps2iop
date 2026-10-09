@@ -256,7 +256,7 @@ static void update_slot_numbers_thread(void *userdata)
 				s32 slots;
 
 				slots = get_slot_number(i, ( mtapGetConnection(i) == 1 ) ? 10 : 0);
-				g_state_getcon[i] = ( slots >= 0 ) ? 1 : 0;
+				g_state_getcon[i] = !!( slots >= 0 );
 				g_state_slots[i] = ( slots >= 0 ) ? slots : 1;
 			}
 		}
@@ -380,7 +380,7 @@ s32 mtapPortOpen(u32 port)
 		return 0;
 	g_state_open[port] = 1;
 	slot = get_slot_number(port, 0xAu);
-	g_state_getcon[port] = ( slot >= 0 ) ? 1 : 0;
+	g_state_getcon[port] = !!( slot >= 0 );
 	g_state_slots[port] = ( slot >= 0 ) ? slot : 1;
 	return 1;
 }
@@ -568,5 +568,5 @@ static int InitRpcServers(void)
 		StartThread(g_threadid_rpc, NULL);
 	else
 		Kprintf("mtapman: CreateThread Error\n");
-	return g_threadid_rpc ? 1 : 0;
+	return !!g_threadid_rpc;
 }
