@@ -247,7 +247,7 @@ static void update_slot_numbers_thread(void *userdata)
 	while ( 1 )
 	{
 		WaitEventFlag(g_event_flag, 3u, 0x11, &resbits);
-		if ( (resbits & 2) != 0 )
+		if ( (resbits & 2) )
 			break;
 		for ( i = 0; i < 4; i += 1 )
 		{
@@ -285,7 +285,7 @@ int _start(int ac, char **av)
 	iop_thread_t thparam;
 	iop_sema_t semaparam;
 
-	if ( RegisterLibraryEntries(&_exp_mtapman) != 0 || SetRebootTimeLibraryHandlingMode(&_exp_mtapman, 2) != 0 )
+	if ( RegisterLibraryEntries(&_exp_mtapman) || SetRebootTimeLibraryHandlingMode(&_exp_mtapman, 2) )
 		return 1;
 	g_ee_work_addr_value = 0;
 	g_ee_work_addr_trid = 0;
@@ -299,9 +299,9 @@ int _start(int ac, char **av)
 			int j;
 
 			j = 6;
-			curmainpriority = ( (look_ctype_table(av[i][j]) & 4) != 0 ) ? strtol(&av[i][j], NULL, 10) : -1;
-			for ( ; (look_ctype_table(av[i][j]) & 4) != 0; j += 1 );
-			cursifpriority = ( av[i][j] == ','  && (look_ctype_table(av[i][j + 1]) & 4) != 0 ) ? strtol(&av[i][j + 1], NULL, 10) : -1;
+			curmainpriority = ( (look_ctype_table(av[i][j]) & 4) ) ? strtol(&av[i][j], NULL, 10) : -1;
+			for ( ; (look_ctype_table(av[i][j]) & 4); j += 1 );
+			cursifpriority = ( av[i][j] == ','  && (look_ctype_table(av[i][j + 1]) & 4) ) ? strtol(&av[i][j + 1], NULL, 10) : -1;
 			if ( (unsigned int)(curmainpriority - 9) >= 0x73 )
 			{
 				printf("MTAPMAN:invalid priority_main %d\n", curmainpriority);
