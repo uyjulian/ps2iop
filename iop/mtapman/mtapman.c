@@ -241,12 +241,12 @@ static int send_mtap_state_to_ee(void)
 static void update_slot_numbers_thread(void)
 {
 	int i;
-	int resbits[2];
+	u32 resbits;
 
 	while ( 1 )
 	{
-		WaitEventFlag(g_event_flag, 3u, 0x11, (u32 *)resbits);
-		if ( (resbits[0] & 2) != 0 )
+		WaitEventFlag(g_event_flag, 3u, 0x11, &resbits);
+		if ( (resbits & 2) != 0 )
 			break;
 		for ( i = 0; i < 4; i += 1 )
 		{
