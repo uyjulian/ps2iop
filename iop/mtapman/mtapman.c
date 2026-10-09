@@ -12,7 +12,6 @@ IRX_ID("multitap_manager", 3, 16);
 //-------------------------------------------------------------------------
 // Function declarations
 
-void stack_magic_nullsub();
 s32 __cdecl read_stat6c_bit(u32 bit, sio2_transfer_data_t *tdata);
 void __cdecl get_slot_number_setup_td(u32 port, u32 reg);
 s32 __cdecl get_slot_number_check_td(u32 bit);
@@ -71,12 +70,7 @@ SifRpcServerData_t g_RpcServerSd; // idb
 int g_threadid_rpc; // idb
 int g_RpcServerSb[32]; // weak
 
-
-//----- (00400000) --------------------------------------------------------
-void stack_magic_nullsub()
-{
-	;
-}
+// Removed empty function with stack manipulation
 
 //----- (00400018) --------------------------------------------------------
 s32 __cdecl read_stat6c_bit(u32 bit, sio2_transfer_data_t *tdata)
@@ -608,7 +602,7 @@ int __cdecl _start(int ac, char **av)
 		else
 		{
 LABEL_21:
-			stack_magic_nullsub();
+			// Unofficial: removed call to empty function
 			return 1;
 		}
 		return result;
@@ -756,13 +750,13 @@ int __fastcall mtapChangeSlot_unused(u32 port, u32 slot)
 	sio2_transfer_reset2();
 	if ( p_data_slot[4] < 0 )
 	{
-		stack_magic_nullsub();
+		// Unofficial: removed call to empty function
 		return 0;
 	}
 	else
 	{
 LABEL_8:
-		stack_magic_nullsub();
+		// Unofficial: removed call to empty function
 		return 1;
 	}
 }
