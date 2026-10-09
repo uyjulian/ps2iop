@@ -806,12 +806,16 @@ int __cdecl do_set_sif_priority_thread_sif(int priority)
 //----- (0040114C) --------------------------------------------------------
 u32 *__cdecl RpcServerHandlerInit(int fno, u32 *buffer)
 {
+	(void)fno;
+
 	return buffer;
 }
 
 //----- (00401154) --------------------------------------------------------
 u32 *__cdecl RpcServerHandlerOpen(int fno, u32 *buffer)
 {
+	(void)fno;
+
 	buffer[1] = mtapPortOpen(*buffer);
 	return buffer;
 }
@@ -819,6 +823,8 @@ u32 *__cdecl RpcServerHandlerOpen(int fno, u32 *buffer)
 //----- (00401188) --------------------------------------------------------
 u32 *__cdecl RpcServerHandlerClose(int fno, u32 *buffer)
 {
+	(void)fno;
+
 	buffer[1] = mtapPortClose(*buffer);
 	return buffer;
 }
@@ -826,6 +832,8 @@ u32 *__cdecl RpcServerHandlerClose(int fno, u32 *buffer)
 //----- (004011BC) --------------------------------------------------------
 u32 *__cdecl RpcServerHandlerSetWorkAddr(int fno, u32 *buffer)
 {
+	(void)fno;
+
 	*buffer = do_set_work_addr_ee(buffer[1]);
 	return buffer;
 }
@@ -833,6 +841,8 @@ u32 *__cdecl RpcServerHandlerSetWorkAddr(int fno, u32 *buffer)
 //----- (004011F0) --------------------------------------------------------
 u32 *__cdecl RpcServerHandlerGetSlotNumber(int fno, u32 *buffer)
 {
+	(void)fno;
+
 	buffer[1] = mtapGetConnection(*buffer);
 	return buffer;
 }
@@ -842,6 +852,8 @@ u32 *__cdecl RpcServerHandlerSetThreadPriority(int fno, u32 *buffer)
 {
 	u32 priority_main; // $a1
 	u32 priority_sif; // $a1
+
+	(void)fno;
 
 	priority_main = *buffer;
 	if ( priority_main - 9 >= 0x73 )
@@ -879,6 +891,8 @@ u32 *__cdecl RpcServerHandlerSetThreadPriority(int fno, u32 *buffer)
 //----- (0040131C) --------------------------------------------------------
 u32 *__cdecl RpcServerHandlerGetVersion(int fno, u32 *buffer)
 {
+	(void)fno;
+
 	*buffer = do_get_version();
 	return buffer;
 }
@@ -887,6 +901,8 @@ u32 *__cdecl RpcServerHandlerGetVersion(int fno, u32 *buffer)
 void *__cdecl RpcServerHandler(int fno, void *buffer, int length)
 {
 	void *SlotNumber; // $s0
+
+	(void)length;
 
 	SlotNumber = buffer;
 	switch ( fno )
