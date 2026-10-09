@@ -315,11 +315,9 @@ int _start(int ac, char **av)
 			do_set_sif_priority_thread(cursifpriority);
 		}
 		else
-		{
 			// Unofficial: correct failure condition
 			// Unofficial: removed call to empty function
 			return 1;
-		}
 	}
 	// Unofficial: correct success condition when argv parsing loop ends
 	if ( !InitRpcServers() )
@@ -418,10 +416,8 @@ int mtapChangeSlot_unused(u32 port, u32 slot)
 	if ( port >= 4 )
 		return 0;
 	if ( g_state_open[port] != 1 )
-	{
 		// Unofficial: removed call to empty function
 		return 1;
-	}
 	for ( i = 3; i >= 0; i -= 1 )
 		data[i] = -1;
 	data[port] = slot;
