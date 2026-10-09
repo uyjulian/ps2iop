@@ -189,7 +189,7 @@ int __cdecl change_slot(s32 *arg)
 			arg[i + 4] = -1;
 		else if ( !g_state_open[i] )
 			arg[i + 4] = arg[i] ? -1 : 1;
-		else if ( !g_state_getcon[i] )
+		else if ( !mtapGetConnection(i) )
 			arg[i + 4] = arg[i] ? -1 : 1;
 		else if ( arg[i] >= g_state_slots[i] )
 			arg[i + 4] = -1;
@@ -241,8 +241,8 @@ int send_mtap_state_to_ee(void)
 		for ( i = 0; i < 4; i += 1 )
 		{
 			g_ee_data_contents[i + 2] = g_state_open[i];
-			g_ee_data_contents[i + 6] = g_state_getcon[i];
-			g_ee_data_contents[i + 10] = g_state_slots[i];
+			g_ee_data_contents[i + 6] = mtapGetConnection(i);
+			g_ee_data_contents[i + 10] = get_slots1(i);
 		}
 		g_ee_data_contents[1] = 1;
 		dmat.dest = (void *)g_ee_work_addr_value;
@@ -283,7 +283,7 @@ void __noreturn update_slot_numbers_thread(void)
 		{
 			if ( g_state_open[i] == 1 )
 			{
-				slots = get_slot_number(i, ( g_state_getcon[i] == 1 ) ? 10 : 0);
+				slots = get_slot_number(i, ( mtapGetConnection(i) == 1 ) ? 10 : 0);
 				g_state_getcon[i] = ( slots >= 0 ) ? 1 : 0;
 				g_state_slots[i] = ( slots >= 0 ) ? slots : 1;
 			}
@@ -387,8 +387,7 @@ int __cdecl _start(int ac, char **av)
 		return 1;
 	for ( i = 0; i < 4; i += 1 )
 	{
-		g_state_open[i] = 0;
-		g_state_getcon[i] = 0;
+		mtapPortClose(i);
 		g_state_slots[i] = 1;
 	}
 	sio2_mtap_change_slot_set(change_slot);
