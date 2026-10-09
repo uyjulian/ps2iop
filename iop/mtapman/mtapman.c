@@ -75,63 +75,8 @@ int g_RpcServerSb[32]; // weak
 //----- (00400018) --------------------------------------------------------
 s32 __cdecl read_stat6c_bit(u32 bit, sio2_transfer_data_t *tdata)
 {
-	s32 retval; // $v1
-
-	retval = 0;
-	switch ( bit )
-	{
-		case 0u:
-			retval = (tdata->stat6c >> 16) & 1;
-			break;
-		case 1u:
-			retval = (tdata->stat6c >> 17) & 1;
-			break;
-		case 2u:
-			retval = (tdata->stat6c >> 18) & 1;
-			break;
-		case 3u:
-			retval = (tdata->stat6c >> 19) & 1;
-			break;
-		case 4u:
-			retval = (tdata->stat6c >> 20) & 1;
-			break;
-		case 5u:
-			retval = (tdata->stat6c >> 21) & 1;
-			break;
-		case 6u:
-			retval = (tdata->stat6c >> 22) & 1;
-			break;
-		case 7u:
-			retval = (tdata->stat6c >> 23) & 1;
-			break;
-		case 8u:
-			retval = (tdata->stat6c >> 24) & 1;
-			break;
-		case 9u:
-			retval = (tdata->stat6c >> 25) & 1;
-			break;
-		case 0xAu:
-			retval = (tdata->stat6c >> 26) & 1;
-			break;
-		case 0xBu:
-			retval = (tdata->stat6c >> 27) & 1;
-			break;
-		case 0xCu:
-			retval = (tdata->stat6c >> 28) & 1;
-			break;
-		case 0xDu:
-			retval = (tdata->stat6c >> 29) & 1;
-			break;
-		case 0xEu:
-			retval = (tdata->stat6c >> 30) & 1;
-			break;
-		case 0xFu:
-			retval = tdata->stat6c >> 31;
-			break;
-		default:
-			return retval;
-	}
-	return retval;
+	// Unofficial: calculate shift
+	return ( bit < 16 ) ? ((tdata->stat6c >> (16 + bit)) & 1) : 0;
 }
 
 //----- (00400170) --------------------------------------------------------
@@ -791,16 +736,13 @@ void *__cdecl RpcServerHandler(int fno, void *buffer, int length)
 //----- (00401414) --------------------------------------------------------
 void MtapServCommon(void)
 {
-	int ThreadId; // $v0
-
 	if ( !sceSifCheckInit() )
 	{
 		Kprintf("yet sif hasn't been init\n");
 		sceSifInit();
 	}
 	sceSifInitRpc(0);
-	ThreadId = GetThreadId();
-	sceSifSetRpcQueue(&g_RpcServerQd, ThreadId);
+	sceSifSetRpcQueue(&g_RpcServerQd, GetThreadId());
 	sceSifRegisterRpc(&g_RpcServerSd, 0x80000900, RpcServerHandler, g_RpcServerSb, 0, 0, &g_RpcServerQd);
 	sceSifRpcLoop(&g_RpcServerQd);
 }
