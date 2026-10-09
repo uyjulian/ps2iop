@@ -141,10 +141,8 @@ void __cdecl get_slot_number_setup_td(u32 port, u32 reg)
 	u32 p; // $a0
 	u32 p_tmp; // $v0
 	u32 in_size; // $a0
-	u32 tmpval; // $v0
 	u8 in_val_tmp; // $v1
 
-	i = 0;
 	p = port | 2;
 	p_tmp = p;
 	// Unofficial: combine writes
@@ -152,12 +150,8 @@ void __cdecl get_slot_number_setup_td(u32 port, u32 reg)
 	g_tdata.port_ctrl2[p_tmp] = 0x64 | (3 << 16);
 	g_tdata.regdata[reg] = (p & 3) | 0x180640;
 	in_size = g_tdata.in_size;
-	do
-	{
-		tmpval = in_size + i++;
-		g_tdata.in[tmpval] = 0;
-	}
-	while ( i < 6 );
+	for ( i = 0; i < 6; i += 1 )
+		g_tdata.in[i + in_size] = 0;
 	g_tdata.in[in_size] = 0x21;
 	in_val_tmp = 0x12;
 	if ( port >= 2 )
@@ -174,9 +168,6 @@ s32 __cdecl get_slot_number_check_td(u32 bit)
 {
 	s32 retval_tmp1; // $a1
 	int i; // $a0
-	u8 *tdata_ptr; // $v0
-	u8 tdata_val; // $v1
-	s32 retval_tmp2; // $v0
 
 	if ( read_stat6c_bit(bit, &g_tdata) == 1 )
 	{
@@ -188,15 +179,10 @@ s32 __cdecl get_slot_number_check_td(u32 bit)
 		if ( g_tdata.out[5] != 0x66 && !g_tdata.out[4] )
 			retval_tmp1 = g_tdata.out[3];
 	}
-	for ( i = 0; i < 0xFA; ++i )
-	{
-		tdata_ptr = &g_tdata.out[i];
-		tdata_val = g_tdata.out[i + 6];
-		*tdata_ptr = tdata_val;
-		retval_tmp2 = retval_tmp1;
-	}
+	for ( i = 0; i < 0xFA; i += 1 )
+		g_tdata.out[i] = g_tdata.out[i + 6];
 	g_tdata.out_size -= 6;
-	return retval_tmp2;
+	return retval_tmp1;
 }
 
 //----- (00400360) --------------------------------------------------------
@@ -205,28 +191,19 @@ s32 __cdecl get_slot_number(u32 port, u32 retries)
 	signed __int32 i; // $s0
 	s32 slots_tmp; // $s1
 	int j; // $v1
-	int j2; // $v0
 	s32 slots; // $v0
 
 	if ( port >= 4 )
 		return -3;
-	i = 0;
 	if ( !g_state_open[port] )
 		return -4;
-	do
+	for ( i = 0; i <= (int)retries; i += 1 )
 	{
 		sio2_mtap_transfer_init();
-		j = 0xF;
-		j2 = 0xF;
 		g_tdata.in_size = 0;
 		g_tdata.out_size = 0;
-		do
-		{
-			g_tdata.regdata[j2] = 0;
-			--j;
-			--j2;
-		}
-		while ( j >= 0 );
+		for ( j = 0xF; j >= 0; j -= 1 )
+			g_tdata.regdata[j] = 0;
 		get_slot_number_setup_td(port, 0);
 		sio2_transfer2(&g_tdata);
 		slots = get_slot_number_check_td(0);
@@ -241,10 +218,8 @@ s32 __cdecl get_slot_number(u32 port, u32 retries)
 			sio2_transfer_reset2();
 			return slots_tmp;
 		}
-		++i;
 		sio2_transfer_reset2();
 	}
-	while ( (int)retries >= i );
 	return -4;
 }
 
@@ -255,26 +230,18 @@ s32 __cdecl change_slot_setup_td(unsigned int port, u8 slot)
 	unsigned int p; // $s0
 	unsigned int portor_tmp; // $s3
 	int i; // $v1
-	u8 *tmpptr; // $v0
-	s32 result; // $v0
 
-	retcond = 0;
 	p = port | 2;
 	portor_tmp = (port & 1) | 0x742;
-	i = 0;
-	do
+	for ( retcond = 0; retcond < 10; retcond += 1 )
 	{
 		// Unofficial: combine writes
 		g_tdata.port_ctrl1[p] = 5 | (5 << 8) | (2 << 16) | (0xFF << 24);
 		g_tdata.port_ctrl2[p] = 0x64 | (3 << 16);
 		g_tdata.regdata[0] = portor_tmp | 0x1C0000;
 		g_tdata.regdata[1] = 0;
-		do
-		{
-			tmpptr = &g_tdata.in[i++];
-			*tmpptr = 0;
-		}
-		while ( i < 7 );
+		for ( i = 0; i < 7; i += 1 )
+			g_tdata.in[i] = 0;
 		*g_tdata.in = 0x21;
 		if ( port >= 2 )
 			g_tdata.in[1] = 0x22;
@@ -286,72 +253,39 @@ s32 __cdecl change_slot_setup_td(unsigned int port, u8 slot)
 		g_tdata.in_dma.addr = 0;
 		g_tdata.out_dma.addr = 0;
 		sio2_transfer2(&g_tdata);
-		if ( read_stat6c_bit(0, &g_tdata) == 1 )
-		{
-			++retcond;
-		}
-		else
-		{
-			result = retcond < 10;
-			if ( g_tdata.out[5] != 0x66 )
-				return result;
-			++retcond;
-		}
-		i = 0;
+		if ( read_stat6c_bit(0, &g_tdata) != 1 && g_tdata.out[5] != 0x66 )
+			return 1;
 	}
-	while ( retcond < 10 );
-	return retcond < 10;
+	return 0;
 }
 
 //----- (00400680) --------------------------------------------------------
 int __cdecl change_slot(s32 *arg)
 {
-	signed int port; // $s1
-	int *p_state_getcon_cur; // $s2
-	s32 *port_arg_tmp4_1; // $s0
-	int arg_port; // $a1
-	signed int port_tmp; // $v1
-	int i2; // $s1
-	s32 *port_arg_tmp4_2; // $a0
+	int port; // $s1
 
-	port = 0;
-	p_state_getcon_cur = g_state_getcon;
-	port_arg_tmp4_1 = arg;
-	do
+	for ( port = 0; port < 4; port += 1 )
 	{
-		arg_port = *port_arg_tmp4_1;
-		port_tmp = port;
-		if ( *port_arg_tmp4_1 == -1 )
-			port_arg_tmp4_1[4] = 0;
-		else if ( arg_port < 0 )
-			port_arg_tmp4_1[4] = -1;
-		else if ( !g_state_open[port_tmp] )
-			port_arg_tmp4_1[4] = arg_port ? -1 : 1;
-		else if ( !*p_state_getcon_cur )
-			port_arg_tmp4_1[4] = arg_port ? -1 : 1;
-		else if ( arg_port >= g_state_slots[port_tmp] )
-			port_arg_tmp4_1[4] = -1;
+		if ( arg[port] == -1 )
+			arg[port + 4] = 0;
+		else if ( arg[port] < 0 )
+			arg[port + 4] = -1;
+		else if ( !g_state_open[port] )
+			arg[port + 4] = arg[port] ? -1 : 1;
+		else if ( !g_state_getcon[port] )
+			arg[port + 4] = arg[port] ? -1 : 1;
+		else if ( arg[port] >= g_state_slots[port] )
+			arg[port + 4] = -1;
 		else
 		{
-			port_arg_tmp4_1[4] = ( change_slot_setup_td(port, arg_port) == 1 ) ? 1 : -1;
-			if ( port_arg_tmp4_1[4] == -1 )
-				*p_state_getcon_cur = 0;
+			arg[port + 4] = ( change_slot_setup_td(port, arg[port]) == 1 ) ? 1 : -1;
+			if ( arg[port + 4] == -1 )
+				g_state_getcon[port] = 0;
 		}
-		++p_state_getcon_cur;
-		++port;
-		++port_arg_tmp4_1;
 	}
-	while ( port < 4 );
-	i2 = 0;
-	port_arg_tmp4_2 = arg;
-	do
-	{
-		++i2;
-		if ( port_arg_tmp4_2[4] < 0 )
+	for ( port = 0; port < 4; port += 1 )
+		if ( arg[port + 4] < 0 )
 			return 0;
-		++port_arg_tmp4_2;
-	}
-	while ( i2 < 4 );
 	return 1;
 }
 
@@ -369,10 +303,8 @@ int __cdecl do_set_work_addr_ee(int addr)
 	else
 	{
 		if ( g_ee_work_addr_value && g_ee_work_addr_trid )
-		{
 			while ( sceSifDmaStat(g_ee_work_addr_trid) >= 0 )
 				DelayThread(100);
-		}
 		sematmp = g_sema_ee_set_work_addr;
 		g_ee_work_addr_trid = 0;
 		g_ee_work_addr_value = 0;
@@ -387,29 +319,22 @@ int __cdecl do_set_work_addr_ee(int addr)
 int send_mtap_state_to_ee(void)
 {
 	int i; // $a1
-	int dmastat; // $v0
-	int *p_ee_data_contents; // $a0
-	int slot_value_tmp; // $v0
 	int trid; // $s0
 	SifDmaTransfer_t dmat; // [sp+10h] [-88h] BYREF
 	int state; // [sp+90h] [-8h] BYREF
 
 	state = 0;
 	WaitSema(g_sema_ee_set_work_addr);
-	if ( g_ee_work_addr_value
-		&& ((i = 0, !g_ee_work_addr_trid) || (dmastat = sceSifDmaStat(g_ee_work_addr_trid), i = 0, dmastat < 0)) )
+	if ( g_ee_work_addr_value && (!g_ee_work_addr_trid || (sceSifDmaStat(g_ee_work_addr_trid) < 0)) )
 	{
-		p_ee_data_contents = g_ee_data_contents;
-		g_ee_data_contents[0] = ++g_ee_magic_value;
-		do
+		g_ee_magic_value += 1;
+		g_ee_data_contents[0] = g_ee_magic_value;
+		for ( i = 0; i < 4; i += 1 )
 		{
-			p_ee_data_contents[2] = g_state_open[i];
-			p_ee_data_contents[6] = g_state_getcon[i];
-			slot_value_tmp = g_state_slots[i++];
-			p_ee_data_contents[10] = slot_value_tmp;
-			++p_ee_data_contents;
+			g_ee_data_contents[i + 2] = g_state_open[i];
+			g_ee_data_contents[i + 6] = g_state_getcon[i];
+			g_ee_data_contents[i + 10] = g_state_slots[i];
 		}
-		while ( i < 4 );
 		g_ee_data_contents[1] = 1;
 		dmat.dest = (void *)g_ee_work_addr_value;
 		dmat.src = g_ee_data_contents;
@@ -436,49 +361,24 @@ int send_mtap_state_to_ee(void)
 //----- (004009D4) --------------------------------------------------------
 void __noreturn update_slot_numbers_thread(void)
 {
-	signed __int32 port2; // $s1
-	int *p_state_slots; // $s2
-	int *p_state_getcon; // $s0
-	int port1; // $s3
-	u32 retrycnt; // $a1
+	int port; // $s3
 	s32 slots; // $v0
 	int resbits[2]; // [sp+10h] [-8h] BYREF
 
 	while ( 1 )
 	{
 		WaitEventFlag(g_event_flag, 3u, 0x11, (u32 *)resbits);
-		port2 = 0;
 		if ( (resbits[0] & 2) != 0 )
 			break;
-		p_state_slots = g_state_slots;
-		p_state_getcon = g_state_getcon;
-		port1 = 0;
-		do
+		for ( port = 0; port < 4; port += 1 )
 		{
-			if ( g_state_open[port1] == 1 )
+			if ( g_state_open[port] == 1 )
 			{
-				if ( *p_state_getcon == 1 )
-					retrycnt = 10;
-				else
-					retrycnt = 0;
-				slots = get_slot_number(port2, retrycnt);
-				if ( slots < 0 )
-				{
-					*p_state_getcon = 0;
-					*p_state_slots = 1;
-				}
-				else
-				{
-					*p_state_getcon = 1;
-					*p_state_slots = slots;
-				}
+				slots = get_slot_number(port, ( g_state_getcon[port] == 1 ) ? 10 : 0);
+				g_state_getcon[port] = ( slots >= 0 ) ? 1 : 0;
+				g_state_slots[port] = ( slots >= 0 ) ? slots : 1;
 			}
-			++p_state_slots;
-			++p_state_getcon;
-			++port2;
-			++port1;
 		}
-		while ( port2 < 4 );
 		send_mtap_state_to_ee();
 	}
 	SetEventFlag(g_event_flag, 4u);
@@ -516,7 +416,6 @@ int __cdecl _start(int ac, char **av)
 	unsigned int curmainprioity_minus_nine; // $v0
 	int thid; // $v0
 	int i; // $s1
-	int i2; // $v0
 	iop_event_t evparam; // [sp+10h] [-38h] BYREF
 	iop_thread_t thparam; // [sp+20h] [-28h] BYREF
 	iop_sema_t semaparam; // [sp+38h] [-10h] BYREF
@@ -541,8 +440,7 @@ int __cdecl _start(int ac, char **av)
 			val_plus_six = av[curac] + 6;
 			if ( (look_ctype_table(*val_plus_six) & 4) != 0 )
 				curmainpriority = strtol(val_plus_six, 0, 10);
-			while ( (look_ctype_table(*val_plus_six) & 4) != 0 )
-				++val_plus_six;
+			for ( ; (look_ctype_table(*val_plus_six) & 4) != 0; val_plus_six += 1 );
 			curmainprioity_minus_nine = curmainpriority - 9;
 			if ( *val_plus_six == ',' )
 			{
@@ -597,17 +495,12 @@ int __cdecl _start(int ac, char **av)
 	if ( g_sema_ee_set_work_addr < 0 )
 		// Unofficial: removed call to empty function
 		return 1;
-	i = 0;
-	i2 = 0;
-	do
+	for ( i = 0; i < 4; i += 1 )
 	{
-		++i;
-		g_state_open[i2] = 0;
-		g_state_getcon[i2] = 0;
-		g_state_slots[i2] = 1;
-		i2 = i;
+		g_state_open[i] = 0;
+		g_state_getcon[i] = 0;
+		g_state_slots[i] = 1;
 	}
-	while ( i < 4 );
 	sio2_mtap_change_slot_set(change_slot);
 	sio2_mtap_get_slot_max_set(get_slots1);
 	sio2_mtap_get_slot_max2_set(get_slots2);
@@ -697,8 +590,7 @@ s32 __fastcall mtapGetSlotNumber_unused(u32 port)
 //----- (00400FD4) --------------------------------------------------------
 int __fastcall mtapChangeSlot_unused(u32 port, u32 slot)
 {
-	int idx; // $v1
-	s32 *p_data_fill; // $v0
+	int i; // $v1
 	s32 *p_data_slot; // $s0
 	s32 data[8]; // [sp+10h] [-20h] BYREF
 
@@ -709,15 +601,8 @@ int __fastcall mtapChangeSlot_unused(u32 port, u32 slot)
 		// Unofficial: removed call to empty function
 		return 1;
 	}
-	idx = 3;
-	p_data_fill = &data[3];
-	do
-	{
-		*p_data_fill = -1;
-		--idx;
-		--p_data_fill;
-	}
-	while ( idx >= 0 );
+	for ( i = 3; i >= 0; i -= 1 )
+		data[i] = -1;
 	p_data_slot = &data[port];
 	*p_data_slot = slot;
 	sio2_mtap_transfer_init();
