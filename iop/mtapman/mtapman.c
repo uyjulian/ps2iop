@@ -84,7 +84,7 @@ static void get_slot_number_setup_td(u32 port, u32 reg)
 	for ( i = 0; i < 6; i += 1 )
 		g_tdata.in[i + g_tdata.in_size] = 0;
 	g_tdata.in[g_tdata.in_size] = 0x21;
-	g_tdata.in[g_tdata.in_size + 1] = 0x12 | !!( port >= 2 );
+	g_tdata.in[g_tdata.in_size + 1] = 0x12 | (!!( port >= 2 ));
 	g_tdata.in_dma.addr = NULL;
 	g_tdata.out_dma.addr = NULL;
 	g_tdata.in_size += 6;
