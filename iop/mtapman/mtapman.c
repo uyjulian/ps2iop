@@ -4,9 +4,6 @@
 // Based on the module from SDK 3.1.0.
 IRX_ID("multitap_manager", 3, 16);
 
-//-------------------------------------------------------------------------
-// Function declarations
-
 static s32 read_stat6c_bit(u32 bit, const sio2_transfer_data_t *tdata);
 static void get_slot_number_setup_td(u32 port, u32 reg);
 static s32 get_slot_number_check_td(u32 bit);
@@ -39,43 +36,38 @@ static void *RpcServerHandler(int fno, void *buffer, int length);
 static void MtapServCommon(void);
 static int InitRpcServers(void);
 
-//-------------------------------------------------------------------------
-// Data declarations
-
 extern struct irx_export_table _exp_mtapman;
-static int g_ee_magic_value = 0; // weak
-static int g_MtapServPriority = 46; // weak
-static int g_event_flag; // idb
-static int g_threadid_main; // idb
-static int g_sema_ee_set_work_addr; // weak
-static int g_update_slot_numbers_thpriority; // weak
+static int g_ee_magic_value = 0;
+static int g_MtapServPriority = 46;
+static int g_event_flag;
+static int g_threadid_main;
+static int g_sema_ee_set_work_addr;
+static int g_update_slot_numbers_thpriority;
 static int g_state_open[4];
 static int g_state_getcon[4];
 static int g_state_slots[4];
-static sio2_transfer_data_t g_tdata; // idb
-static int g_in_buffer[64]; // weak
-static int g_out_buffer[64]; // weak
-static int g_ee_work_addr_value; // weak
-static int g_ee_work_addr_trid; // idb
+static sio2_transfer_data_t g_tdata;
+static int g_in_buffer[64];
+static int g_out_buffer[64];
+static int g_ee_work_addr_value;
+static int g_ee_work_addr_trid;
 static int g_ee_data_contents[32];
-static SifRpcDataQueue_t g_RpcServerQd; // weak
-static SifRpcServerData_t g_RpcServerSd; // idb
-static int g_threadid_rpc; // idb
-static int g_RpcServerSb[32]; // weak
+static SifRpcDataQueue_t g_RpcServerQd;
+static SifRpcServerData_t g_RpcServerSd;
+static int g_threadid_rpc;
+static int g_RpcServerSb[32];
 
 // Removed empty function with stack manipulation
 
-//----- (00400018) --------------------------------------------------------
 static s32 read_stat6c_bit(u32 bit, const sio2_transfer_data_t *tdata)
 {
 	// Unofficial: calculate shift
 	return ( bit < 16 ) ? ((tdata->stat6c >> (16 + bit)) & 1) : 0;
 }
 
-//----- (00400170) --------------------------------------------------------
 static void get_slot_number_setup_td(u32 port, u32 reg)
 {
-	int i; // $a3
+	int i;
 
 	// Unofficial: combine writes
 	g_tdata.port_ctrl1[port | 2] = 5 | (5 << 8) | (2 << 16) | (0xFF << 24);
@@ -91,11 +83,10 @@ static void get_slot_number_setup_td(u32 port, u32 reg)
 	g_tdata.out_size += 6;
 }
 
-//----- (004002B0) --------------------------------------------------------
 static s32 get_slot_number_check_td(u32 bit)
 {
-	s32 retval; // $a1
-	int i; // $a0
+	s32 retval;
+	int i;
 
 	retval = ( read_stat6c_bit(bit, &g_tdata) == 1 ) ? -1 : (( g_tdata.out[5] != 0x66 && !g_tdata.out[4] ) ? g_tdata.out[3] : -2);
 	for ( i = 0; i < 0xFA; i += 1 )
@@ -104,11 +95,10 @@ static s32 get_slot_number_check_td(u32 bit)
 	return retval;
 }
 
-//----- (00400360) --------------------------------------------------------
 static s32 get_slot_number(u32 port, u32 retries)
 {
-	int i; // $s0
-	int j; // $v1
+	int i;
+	int j;
 
 	if ( port >= 4 )
 		return -3;
@@ -141,11 +131,10 @@ static s32 get_slot_number(u32 port, u32 retries)
 	return -4;
 }
 
-//----- (0040048C) --------------------------------------------------------
 static s32 change_slot_setup_td(unsigned int port, u8 slot)
 {
-	int j; // $s1
-	int i; // $v1
+	int j;
+	int i;
 
 	for ( j = 0; j < 10; j += 1 )
 	{
@@ -170,10 +159,9 @@ static s32 change_slot_setup_td(unsigned int port, u8 slot)
 	return 0;
 }
 
-//----- (00400680) --------------------------------------------------------
 static int change_slot(s32 *arg)
 {
-	int i; // $s1
+	int i;
 
 	for ( i = 0; i < 4; i += 1 )
 	{
@@ -200,7 +188,6 @@ static int change_slot(s32 *arg)
 	return 1;
 }
 
-//----- (004007D0) --------------------------------------------------------
 static int do_set_work_addr_ee(int addr)
 {
 	WaitSema(g_sema_ee_set_work_addr);
@@ -215,16 +202,13 @@ static int do_set_work_addr_ee(int addr)
 	SignalSema(g_sema_ee_set_work_addr);
 	return 1;
 }
-// 401AB8: using guessed type int g_sema_ee_set_work_addr;
-// 401D84: using guessed type int g_ee_work_addr_value;
 
-//----- (00400888) --------------------------------------------------------
 static int send_mtap_state_to_ee(void)
 {
-	int i; // $a1
-	int trid; // $s0
-	SifDmaTransfer_t dmat; // [sp+10h] [-88h] BYREF
-	int state; // [sp+90h] [-8h] BYREF
+	int i;
+	int trid;
+	SifDmaTransfer_t dmat;
+	int state;
 
 	// Unofficial: remove unneeded zeroing of state
 	WaitSema(g_sema_ee_set_work_addr);
@@ -253,16 +237,11 @@ static int send_mtap_state_to_ee(void)
 	SignalSema(g_sema_ee_set_work_addr);
 	return 1;
 }
-// 401A88: using guessed type int g_ee_magic_value;
-// 401AB8: using guessed type int g_sema_ee_set_work_addr;
-// 401D84: using guessed type int g_ee_work_addr_value;
-// 400888: using guessed type SifDmaTransfer_t dmat;
 
-//----- (004009D4) --------------------------------------------------------
 static void update_slot_numbers_thread(void)
 {
-	int i; // $s3
-	int resbits[2]; // [sp+10h] [-8h] BYREF
+	int i;
+	int resbits[2];
 
 	while ( 1 )
 	{
@@ -285,9 +264,7 @@ static void update_slot_numbers_thread(void)
 	SetEventFlag(g_event_flag, 4u);
 	ExitThread();
 }
-// 4009D4: using guessed type u32 resbits[2];
 
-//----- (00400ACC) --------------------------------------------------------
 static int get_slots(int port)
 {
 	return g_state_slots[port];
@@ -295,20 +272,18 @@ static int get_slots(int port)
 
 // Unofficial: omit duplicate get_slots function
 
-//----- (00400AFC) --------------------------------------------------------
 static void update_slot_numbers(void)
 {
 	SetEventFlag(g_event_flag, 1u);
 }
 
-//----- (00400B24) --------------------------------------------------------
 int _start(int ac, char **av)
 {
-	int thid; // $v0
-	int i; // $s1
-	iop_event_t evparam; // [sp+10h] [-38h] BYREF
-	iop_thread_t thparam; // [sp+20h] [-28h] BYREF
-	iop_sema_t semaparam; // [sp+38h] [-10h] BYREF
+	int thid;
+	int i;
+	iop_event_t evparam;
+	iop_thread_t thparam;
+	iop_sema_t semaparam;
 
 	if ( RegisterLibraryEntries(&_exp_mtapman) != 0 || SetRebootTimeLibraryHandlingMode(&_exp_mtapman, 2) != 0 )
 		return 1;
@@ -388,13 +363,7 @@ int _start(int ac, char **av)
 	g_tdata.out = (u8 *)g_out_buffer;
 	return 0;
 }
-// 401AB8: using guessed type int g_sema_ee_set_work_addr;
-// 401ABC: using guessed type int g_update_slot_numbers_thpriority;
-// 401B84: using guessed type int g_in_buffer[64];
-// 401C84: using guessed type int g_out_buffer[64];
-// 401D84: using guessed type int g_ee_work_addr_value;
 
-//----- (00400E44) --------------------------------------------------------
 void _deinit(void)
 {
 	sio2_mtap_change_slot_set(NULL);
@@ -405,12 +374,10 @@ void _deinit(void)
 	WaitSema(g_sema_ee_set_work_addr);
 	DeleteSema(g_sema_ee_set_work_addr);
 }
-// 401AB8: using guessed type int g_sema_ee_set_work_addr;
 
-//----- (00400EA8) --------------------------------------------------------
 s32 mtapPortOpen(u32 port)
 {
-	s32 slot; // $v0
+	s32 slot;
 
 	if ( port >= 4 )
 		return 0;
@@ -421,7 +388,6 @@ s32 mtapPortOpen(u32 port)
 	return 1;
 }
 
-//----- (00400F3C) --------------------------------------------------------
 s32 mtapPortClose(u32 port)
 {
 	g_state_open[port] = 0;
@@ -429,16 +395,14 @@ s32 mtapPortClose(u32 port)
 	return 1;
 }
 
-//----- (00400F60) --------------------------------------------------------
 s32 mtapGetConnection(u32 port)
 {
 	return g_state_getcon[port];
 }
 
-//----- (00400F78) --------------------------------------------------------
 s32 mtapGetSlotNumber_unused(u32 port)
 {
-	s32 retres; // $v0
+	s32 retres;
 
 	if ( port >= 4 )
 		return -1;
@@ -448,11 +412,10 @@ s32 mtapGetSlotNumber_unused(u32 port)
 	return ( retres < 0 ) ? 1 : retres;
 }
 
-//----- (00400FD4) --------------------------------------------------------
 int mtapChangeSlot_unused(u32 port, u32 slot)
 {
-	int i; // $v1
-	s32 data[8]; // [sp+10h] [-20h] BYREF
+	int i;
+	s32 data[8];
 
 	if ( port >= 4 )
 		return 0;
@@ -471,33 +434,28 @@ int mtapChangeSlot_unused(u32 port, u32 slot)
 	return ( data[port + 4] < 0 ) ? 0 : 1;
 }
 
-//----- (004010AC) --------------------------------------------------------
 static int do_set_main_priority_thread(int priority)
 {
-	int retres; // $v0
+	int retres;
 
 	retres = ChangeThreadPriority(g_threadid_main, priority);
 	return ( retres >= 0 ) ? 0 : retres;
 }
 
-//----- (004010E8) --------------------------------------------------------
 static int do_get_version(void)
 {
 	return _irx_id.v;
 }
 
-//----- (00401100) --------------------------------------------------------
 static int do_set_sif_priority_thread(int priority)
 {
 	g_MtapServPriority = priority;
 	return 0;
 }
-// 401AA0: using guessed type int g_MtapServPriority;
 
-//----- (00401110) --------------------------------------------------------
 static int do_set_sif_priority_thread_sif(int priority)
 {
-	int retres; // $v0
+	int retres;
 
 	retres = ChangeThreadPriority(g_threadid_rpc, priority);
 	return ( retres >= 0 ) ? 0 : retres;
@@ -505,35 +463,30 @@ static int do_set_sif_priority_thread_sif(int priority)
 
 // Unofficial: remove empty function
 
-//----- (00401154) --------------------------------------------------------
 static void RpcServerHandlerOpen(u32 *buffer)
 {
 	buffer[1] = mtapPortOpen(buffer[0]);
 }
 
-//----- (00401188) --------------------------------------------------------
 static void RpcServerHandlerClose(u32 *buffer)
 {
 	buffer[1] = mtapPortClose(buffer[0]);
 }
 
-//----- (004011BC) --------------------------------------------------------
 static void RpcServerHandlerSetWorkAddr(u32 *buffer)
 {
 	buffer[0] = do_set_work_addr_ee(buffer[1]);
 }
 
-//----- (004011F0) --------------------------------------------------------
 static void RpcServerHandlerGetSlotNumber(u32 *buffer)
 {
 	buffer[1] = mtapGetConnection(buffer[0]);
 }
 
-//----- (00401224) --------------------------------------------------------
 static void RpcServerHandlerSetThreadPriority(u32 *buffer)
 {
-	u32 priority_main; // $a1
-	u32 priority_sif; // $a1
+	u32 priority_main;
+	u32 priority_sif;
 
 	buffer[2] = 0;
 	priority_main = buffer[0];
@@ -557,13 +510,11 @@ static void RpcServerHandlerSetThreadPriority(u32 *buffer)
 		buffer[2] = 1;
 }
 
-//----- (0040131C) --------------------------------------------------------
 static void RpcServerHandlerGetVersion(u32 *buffer)
 {
 	buffer[0] = do_get_version();
 }
 
-//----- (00401348) --------------------------------------------------------
 static void *RpcServerHandler(int fno, void *buffer, int length)
 {
 	(void)length;
@@ -599,7 +550,6 @@ static void *RpcServerHandler(int fno, void *buffer, int length)
 	return buffer;
 }
 
-//----- (00401414) --------------------------------------------------------
 static void MtapServCommon(void)
 {
 	if ( !sceSifCheckInit() )
@@ -612,13 +562,10 @@ static void MtapServCommon(void)
 	sceSifRegisterRpc(&g_RpcServerSd, 0x80000900, RpcServerHandler, g_RpcServerSb, NULL, NULL, &g_RpcServerQd);
 	sceSifRpcLoop(&g_RpcServerQd);
 }
-// 401E10: using guessed type SifRpcDataQueue_t g_RpcServerQd;
-// 401E70: using guessed type int g_RpcServerSb[32];
 
-//----- (004014B0) --------------------------------------------------------
 static int InitRpcServers(void)
 {
-	iop_thread_t thparam; // [sp+10h] [-18h] BYREF
+	iop_thread_t thparam;
 
 	thparam.attr = 0x2000000;
 	thparam.thread = (void (*)(void *))MtapServCommon;
@@ -631,4 +578,3 @@ static int InitRpcServers(void)
 		Kprintf("mtapman: CreateThread Error\n");
 	return g_threadid_rpc ? 1 : 0;
 }
-// 401AA0: using guessed type int g_MtapServPriority;
