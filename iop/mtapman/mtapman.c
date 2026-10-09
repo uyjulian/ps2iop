@@ -21,8 +21,7 @@ int __cdecl change_slot(s32 *arg);
 int __cdecl do_set_work_addr_ee(int addr);
 int send_mtap_state_to_ee(void);
 void __noreturn update_slot_numbers_thread(void);
-int __cdecl get_slots1(int port);
-int __cdecl get_slots2(int port);
+int __cdecl get_slots(int port);
 void update_slot_numbers(void);
 int __cdecl _start(int ac, char **av);
 void _deinit(void);
@@ -242,7 +241,7 @@ int send_mtap_state_to_ee(void)
 		{
 			g_ee_data_contents[i + 2] = g_state_open[i];
 			g_ee_data_contents[i + 6] = mtapGetConnection(i);
-			g_ee_data_contents[i + 10] = get_slots1(i);
+			g_ee_data_contents[i + 10] = get_slots(i);
 		}
 		g_ee_data_contents[1] = 1;
 		dmat.dest = (void *)g_ee_work_addr_value;
@@ -296,16 +295,12 @@ void __noreturn update_slot_numbers_thread(void)
 // 4009D4: using guessed type u32 resbits[2];
 
 //----- (00400ACC) --------------------------------------------------------
-int __cdecl get_slots1(int port)
+int __cdecl get_slots(int port)
 {
 	return g_state_slots[port];
 }
 
-//----- (00400AE4) --------------------------------------------------------
-int __cdecl get_slots2(int port)
-{
-	return g_state_slots[port];
-}
+// Unofficial: omit duplicate get_slots function
 
 //----- (00400AFC) --------------------------------------------------------
 void update_slot_numbers(void)
@@ -391,8 +386,9 @@ int __cdecl _start(int ac, char **av)
 		g_state_slots[i] = 1;
 	}
 	sio2_mtap_change_slot_set(change_slot);
-	sio2_mtap_get_slot_max_set(get_slots1);
-	sio2_mtap_get_slot_max2_set(get_slots2);
+	sio2_mtap_get_slot_max_set(get_slots);
+	// Unofficial: use deduplicated get_slots function
+	sio2_mtap_get_slot_max2_set(get_slots);
 	sio2_mtap_update_slots_set(update_slot_numbers);
 	g_tdata.in = (u8 *)g_in_buffer;
 	g_tdata.out = (u8 *)g_out_buffer;
