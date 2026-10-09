@@ -12,7 +12,7 @@ static s32 change_slot_setup_td(unsigned int port, u8 slot);
 static int change_slot(s32 *arg);
 static int do_set_work_addr_ee(int addr);
 static int send_mtap_state_to_ee(void);
-static void update_slot_numbers_thread(void);
+static void update_slot_numbers_thread(void *userdata);
 static int get_slots(int port);
 static void update_slot_numbers(void);
 int _start(int ac, char **av);
@@ -33,7 +33,7 @@ static void RpcServerHandlerGetSlotNumber(u32 *buffer);
 static void RpcServerHandlerSetThreadPriority(u32 *buffer);
 static void RpcServerHandlerGetVersion(u32 *buffer);
 static void *RpcServerHandler(int fno, void *buffer, int length);
-static void MtapServCommon(void);
+static void MtapServCommon(void *userdata);
 static int InitRpcServers(void);
 
 extern struct irx_export_table _exp_mtapman;
@@ -238,11 +238,12 @@ static int send_mtap_state_to_ee(void)
 	return 1;
 }
 
-static void update_slot_numbers_thread(void)
+static void update_slot_numbers_thread(void *userdata)
 {
 	int i;
 	u32 resbits;
 
+	(void)userdata;
 	while ( 1 )
 	{
 		WaitEventFlag(g_event_flag, 3u, 0x11, &resbits);
@@ -330,7 +331,7 @@ int _start(int ac, char **av)
 		// Unofficial: removed call to empty function
 		return 1;
 	thparam.attr = 0x2000000;
-	thparam.thread = (void (*)(void *))update_slot_numbers_thread;
+	thparam.thread = update_slot_numbers_thread;
 	thparam.stacksize = 2048;
 	thparam.priority = g_update_slot_numbers_thpriority;
 	g_threadid_main = CreateThread(&thparam);
@@ -539,8 +540,10 @@ static void *RpcServerHandler(int fno, void *buffer, int length)
 	return buffer;
 }
 
-static void MtapServCommon(void)
+static void MtapServCommon(void *userdata)
 {
+	(void)userdata;
+
 	if ( !sceSifCheckInit() )
 	{
 		Kprintf("yet sif hasn't been init\n");
@@ -557,7 +560,7 @@ static int InitRpcServers(void)
 	iop_thread_t thparam;
 
 	thparam.attr = 0x2000000;
-	thparam.thread = (void (*)(void *))MtapServCommon;
+	thparam.thread = MtapServCommon;
 	thparam.stacksize = 2048;
 	thparam.priority = g_MtapServPriority;
 	g_threadid_rpc = CreateThread(&thparam);
