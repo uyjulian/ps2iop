@@ -2,7 +2,7 @@ IOP_BIN = mtapman.irx
 
 IOP_OBJS = mtapman.o imports.o exports.o
 
-IOP_WARNFLAGS ?= -Wall
+IOP_WARNFLAGS ?= -Wall -Wextra
 
 all: $(IOP_BIN)
 
