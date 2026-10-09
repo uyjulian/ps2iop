@@ -169,9 +169,7 @@ static int change_slot(s32 *arg)
 			arg[i + 4] = 0;
 		else if ( arg[i] < 0 )
 			arg[i + 4] = -1;
-		else if ( !g_state_open[i] )
-			arg[i + 4] = arg[i] ? -1 : 1;
-		else if ( !mtapGetConnection(i) )
+		else if ( !g_state_open[i] || !mtapGetConnection(i) )
 			arg[i + 4] = arg[i] ? -1 : 1;
 		else if ( arg[i] >= g_state_slots[i] )
 			arg[i + 4] = -1;
