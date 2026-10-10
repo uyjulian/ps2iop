@@ -16,25 +16,25 @@ static int do_set_sif_priority_thread(int priority);
 static int InitRpcServers(void);
 
 extern struct irx_export_table _exp_mtapman;
-static int g_ee_magic_value = 0;
-static int g_MtapServPriority = 46;
+static int g_ee_status_magic = 0;
+static int g_sif_thpriority = 46;
 static int g_event_flag;
-static int g_threadid_main;
-static int g_sema_ee_set_work_addr;
-static int g_update_slot_numbers_thpriority;
+static int g_main_thid;
+static int g_ee_status_sema;
+static int g_main_thpriority;
 static int g_state_open[4];
 static int g_state_getcon[4];
 static int g_state_slots[4];
-static sio2_transfer_data_t g_tdata;
-static int g_in_buffer[64];
-static int g_out_buffer[64];
-static int g_ee_work_addr_value;
-static int g_ee_work_addr_trid;
-static int g_ee_data_contents[32];
-static SifRpcDataQueue_t g_RpcServerQd;
-static SifRpcServerData_t g_RpcServerSd;
-static int g_threadid_rpc;
-static int g_RpcServerSb[32];
+static sio2_transfer_data_t g_sio2_tdata;
+static int g_sio2_inbuf[64];
+static int g_sio2_outbuf[64];
+static int g_ee_status_eeaddr;
+static int g_ee_status_dma_trid;
+static int g_ee_status_data[32];
+static SifRpcDataQueue_t g_sif_qd;
+static SifRpcServerData_t g_sif_sd;
+static int g_sif_thid;
+static int g_sif_data[32];
 
 // Removed empty function with stack manipulation
 
@@ -49,17 +49,17 @@ static void get_slot_number_setup_td(u32 port, u32 reg)
 	int i;
 
 	// Unofficial: combine writes
-	g_tdata.port_ctrl1[port | 2] = 5 | (5 << 8) | (2 << 16) | (0xFF << 24);
-	g_tdata.port_ctrl2[port | 2] = 0x64 | (3 << 16);
-	g_tdata.regdata[reg] = ((port | 2) & 3) | 0x180640;
+	g_sio2_tdata.port_ctrl1[port | 2] = 5 | (5 << 8) | (2 << 16) | (0xFF << 24);
+	g_sio2_tdata.port_ctrl2[port | 2] = 0x64 | (3 << 16);
+	g_sio2_tdata.regdata[reg] = ((port | 2) & 3) | 0x180640;
 	for ( i = 0; i < 6; i += 1 )
-		g_tdata.in[i + g_tdata.in_size] = 0;
-	g_tdata.in[g_tdata.in_size] = 0x21;
-	g_tdata.in[g_tdata.in_size + 1] = 0x12 | (!!( port >= 2 ));
-	g_tdata.in_dma.addr = NULL;
-	g_tdata.out_dma.addr = NULL;
-	g_tdata.in_size += 6;
-	g_tdata.out_size += 6;
+		g_sio2_tdata.in[i + g_sio2_tdata.in_size] = 0;
+	g_sio2_tdata.in[g_sio2_tdata.in_size] = 0x21;
+	g_sio2_tdata.in[g_sio2_tdata.in_size + 1] = 0x12 | (!!( port >= 2 ));
+	g_sio2_tdata.in_dma.addr = NULL;
+	g_sio2_tdata.out_dma.addr = NULL;
+	g_sio2_tdata.in_size += 6;
+	g_sio2_tdata.out_size += 6;
 }
 
 static s32 get_slot_number_check_td(u32 bit)
@@ -67,10 +67,10 @@ static s32 get_slot_number_check_td(u32 bit)
 	s32 retval;
 	int i;
 
-	retval = ( read_stat6c_bit(bit, &g_tdata) == 1 ) ? -1 : (( g_tdata.out[5] != 0x66 && !g_tdata.out[4] ) ? g_tdata.out[3] : -2);
+	retval = ( read_stat6c_bit(bit, &g_sio2_tdata) == 1 ) ? -1 : (( g_sio2_tdata.out[5] != 0x66 && !g_sio2_tdata.out[4] ) ? g_sio2_tdata.out[3] : -2);
 	for ( i = 0; i < 0xFA; i += 1 )
-		g_tdata.out[i] = g_tdata.out[i + 6];
-	g_tdata.out_size -= 6;
+		g_sio2_tdata.out[i] = g_sio2_tdata.out[i + 6];
+	g_sio2_tdata.out_size -= 6;
 	return retval;
 }
 
@@ -88,12 +88,12 @@ static s32 get_slot_number(u32 port, u32 retries)
 		s32 slots;
 
 		sio2_mtap_transfer_init();
-		g_tdata.in_size = 0;
-		g_tdata.out_size = 0;
-		for ( j = 0; j < (int)(sizeof(g_tdata.regdata)/sizeof(g_tdata.regdata[0])); j += 1 )
-			g_tdata.regdata[j] = 0;
+		g_sio2_tdata.in_size = 0;
+		g_sio2_tdata.out_size = 0;
+		for ( j = 0; j < (int)(sizeof(g_sio2_tdata.regdata)/sizeof(g_sio2_tdata.regdata[0])); j += 1 )
+			g_sio2_tdata.regdata[j] = 0;
 		get_slot_number_setup_td(port, 0);
-		sio2_transfer2(&g_tdata);
+		sio2_transfer2(&g_sio2_tdata);
 		slots = get_slot_number_check_td(0);
 		if ( slots == -2 )
 		{
@@ -118,21 +118,21 @@ static s32 change_slot_setup_td(unsigned int port, u8 slot)
 	for ( j = 0; j < 10; j += 1 )
 	{
 		// Unofficial: combine writes
-		g_tdata.port_ctrl1[port | 2] = 5 | (5 << 8) | (2 << 16) | (0xFF << 24);
-		g_tdata.port_ctrl2[port | 2] = 0x64 | (3 << 16);
-		g_tdata.regdata[0] = (port & 1) | 0x742 | 0x1C0000;
-		g_tdata.regdata[1] = 0;
+		g_sio2_tdata.port_ctrl1[port | 2] = 5 | (5 << 8) | (2 << 16) | (0xFF << 24);
+		g_sio2_tdata.port_ctrl2[port | 2] = 0x64 | (3 << 16);
+		g_sio2_tdata.regdata[0] = (port & 1) | 0x742 | 0x1C0000;
+		g_sio2_tdata.regdata[1] = 0;
 		for ( i = 0; i < 7; i += 1 )
-			g_tdata.in[i] = 0;
-		g_tdata.in[0] = 0x21;
-		g_tdata.in[1] = 0x21 + !!( port >= 2 );
-		g_tdata.in[2] = slot;
-		g_tdata.in_size = 7;
-		g_tdata.out_size = 7;
-		g_tdata.in_dma.addr = NULL;
-		g_tdata.out_dma.addr = NULL;
-		sio2_transfer2(&g_tdata);
-		if ( read_stat6c_bit(0, &g_tdata) != 1 && g_tdata.out[5] != 0x66 )
+			g_sio2_tdata.in[i] = 0;
+		g_sio2_tdata.in[0] = 0x21;
+		g_sio2_tdata.in[1] = 0x21 + !!( port >= 2 );
+		g_sio2_tdata.in[2] = slot;
+		g_sio2_tdata.in_size = 7;
+		g_sio2_tdata.out_size = 7;
+		g_sio2_tdata.in_dma.addr = NULL;
+		g_sio2_tdata.out_dma.addr = NULL;
+		sio2_transfer2(&g_sio2_tdata);
+		if ( read_stat6c_bit(0, &g_sio2_tdata) != 1 && g_sio2_tdata.out[5] != 0x66 )
 			return 1;
 	}
 	return 0;
@@ -167,16 +167,16 @@ static int change_slot(s32 *arg)
 
 static int do_set_work_addr_ee(int addr)
 {
-	WaitSema(g_sema_ee_set_work_addr);
+	WaitSema(g_ee_status_sema);
 	if ( !addr )
 	{
-		if ( g_ee_work_addr_value && g_ee_work_addr_trid )
-			while ( sceSifDmaStat(g_ee_work_addr_trid) >= 0 )
+		if ( g_ee_status_eeaddr && g_ee_status_dma_trid )
+			while ( sceSifDmaStat(g_ee_status_dma_trid) >= 0 )
 				DelayThread(100);
-		g_ee_work_addr_trid = 0;
+		g_ee_status_dma_trid = 0;
 	}
-	g_ee_work_addr_value = addr;
-	SignalSema(g_sema_ee_set_work_addr);
+	g_ee_status_eeaddr = addr;
+	SignalSema(g_ee_status_sema);
 	return 1;
 }
 
@@ -188,30 +188,30 @@ static int send_mtap_state_to_ee(void)
 	int state;
 
 	// Unofficial: remove unneeded zeroing of state
-	WaitSema(g_sema_ee_set_work_addr);
-	if ( !g_ee_work_addr_value || (g_ee_work_addr_trid && (sceSifDmaStat(g_ee_work_addr_trid) >= 0)) )
+	WaitSema(g_ee_status_sema);
+	if ( !g_ee_status_eeaddr || (g_ee_status_dma_trid && (sceSifDmaStat(g_ee_status_dma_trid) >= 0)) )
 	{
-		SignalSema(g_sema_ee_set_work_addr);
+		SignalSema(g_ee_status_sema);
 		return 0;
 	}
-	g_ee_magic_value += 1;
-	g_ee_data_contents[0] = g_ee_magic_value;
+	g_ee_status_magic += 1;
+	g_ee_status_data[0] = g_ee_status_magic;
 	for ( i = 0; i < 4; i += 1 )
 	{
-		g_ee_data_contents[i + 2] = g_state_open[i];
-		g_ee_data_contents[i + 6] = mtapGetConnection(i);
-		g_ee_data_contents[i + 10] = get_slots(i);
+		g_ee_status_data[i + 2] = g_state_open[i];
+		g_ee_status_data[i + 6] = mtapGetConnection(i);
+		g_ee_status_data[i + 10] = get_slots(i);
 	}
-	g_ee_data_contents[1] = 1;
-	dmat.dest = (void *)g_ee_work_addr_value;
-	dmat.src = g_ee_data_contents;
-	dmat.size = sizeof(g_ee_data_contents);
+	g_ee_status_data[1] = 1;
+	dmat.dest = (void *)g_ee_status_eeaddr;
+	dmat.src = g_ee_status_data;
+	dmat.size = sizeof(g_ee_status_data);
 	dmat.attr = 0;
 	CpuSuspendIntr(&state);
 	trid = sceSifSetDma(&dmat, 1);
 	CpuResumeIntr(state);
-	g_ee_work_addr_trid = trid;
-	SignalSema(g_sema_ee_set_work_addr);
+	g_ee_status_dma_trid = trid;
+	SignalSema(g_ee_status_sema);
 	return 1;
 }
 
@@ -264,9 +264,9 @@ int _start(int ac, char **av)
 
 	if ( RegisterLibraryEntries(&_exp_mtapman) || SetRebootTimeLibraryHandlingMode(&_exp_mtapman, 2) )
 		return 1;
-	g_ee_work_addr_value = 0;
-	g_ee_work_addr_trid = 0;
-	g_update_slot_numbers_thpriority = 20;
+	g_ee_status_eeaddr = 0;
+	g_ee_status_dma_trid = 0;
+	g_main_thpriority = 20;
 	for ( i = 1; i < ac; i += 1 )
 	{
 		if ( !strncmp("thpri=", av[i], 6) )
@@ -289,7 +289,7 @@ int _start(int ac, char **av)
 				printf("MTAPMAN:invalid priority_sif %d\n", cursifpriority);
 				return 1;
 			}
-			g_update_slot_numbers_thpriority = curmainpriority;
+			g_main_thpriority = curmainpriority;
 			do_set_sif_priority_thread(cursifpriority);
 		}
 		else
@@ -310,17 +310,17 @@ int _start(int ac, char **av)
 	thparam.attr = 0x2000000;
 	thparam.thread = update_slot_numbers_thread;
 	thparam.stacksize = 2048;
-	thparam.priority = g_update_slot_numbers_thpriority;
-	g_threadid_main = CreateThread(&thparam);
-	if ( g_threadid_main <= 0 )
+	thparam.priority = g_main_thpriority;
+	g_main_thid = CreateThread(&thparam);
+	if ( g_main_thid <= 0 )
 		// Unofficial: removed call to empty function
 		return 1;
-	StartThread(g_threadid_main, NULL);
+	StartThread(g_main_thid, NULL);
 	semaparam.initial = 1;
 	semaparam.attr = 0;
 	semaparam.max = 16;
-	g_sema_ee_set_work_addr = CreateSema(&semaparam);
-	if ( g_sema_ee_set_work_addr < 0 )
+	g_ee_status_sema = CreateSema(&semaparam);
+	if ( g_ee_status_sema < 0 )
 		// Unofficial: removed call to empty function
 		return 1;
 	for ( i = 0; i < 4; i += 1 )
@@ -333,8 +333,8 @@ int _start(int ac, char **av)
 	// Unofficial: use deduplicated get_slots function
 	sio2_mtap_get_slot_max2_set(get_slots);
 	sio2_mtap_update_slots_set(update_slot_numbers);
-	g_tdata.in = (u8 *)g_in_buffer;
-	g_tdata.out = (u8 *)g_out_buffer;
+	g_sio2_tdata.in = (u8 *)g_sio2_inbuf;
+	g_sio2_tdata.out = (u8 *)g_sio2_outbuf;
 	return 0;
 }
 
@@ -345,8 +345,8 @@ void _deinit(void)
 	sio2_mtap_get_slot_max2_set(NULL);
 	sio2_mtap_update_slots_set(NULL);
 	do_set_work_addr_ee(0);
-	WaitSema(g_sema_ee_set_work_addr);
-	DeleteSema(g_sema_ee_set_work_addr);
+	WaitSema(g_ee_status_sema);
+	DeleteSema(g_ee_status_sema);
 }
 
 s32 mtapPortOpen(u32 port)
@@ -410,7 +410,7 @@ static int do_set_main_priority_thread(int priority)
 {
 	int retres;
 
-	retres = ChangeThreadPriority(g_threadid_main, priority);
+	retres = ChangeThreadPriority(g_main_thid, priority);
 	return ( retres >= 0 ) ? 0 : retres;
 }
 
@@ -421,7 +421,7 @@ static int do_get_version(void)
 
 static int do_set_sif_priority_thread(int priority)
 {
-	g_MtapServPriority = priority;
+	g_sif_thpriority = priority;
 	return 0;
 }
 
@@ -429,7 +429,7 @@ static int do_set_sif_priority_thread_sif(int priority)
 {
 	int retres;
 
-	retres = ChangeThreadPriority(g_threadid_rpc, priority);
+	retres = ChangeThreadPriority(g_sif_thid, priority);
 	return ( retres >= 0 ) ? 0 : retres;
 }
 
@@ -527,9 +527,9 @@ static void MtapServCommon(void *userdata)
 		sceSifInit();
 	}
 	sceSifInitRpc(0);
-	sceSifSetRpcQueue(&g_RpcServerQd, GetThreadId());
-	sceSifRegisterRpc(&g_RpcServerSd, 0x80000900, RpcServerHandler, g_RpcServerSb, NULL, NULL, &g_RpcServerQd);
-	sceSifRpcLoop(&g_RpcServerQd);
+	sceSifSetRpcQueue(&g_sif_qd, GetThreadId());
+	sceSifRegisterRpc(&g_sif_sd, 0x80000900, RpcServerHandler, g_sif_data, NULL, NULL, &g_sif_qd);
+	sceSifRpcLoop(&g_sif_qd);
 }
 
 static int InitRpcServers(void)
@@ -539,11 +539,11 @@ static int InitRpcServers(void)
 	thparam.attr = 0x2000000;
 	thparam.thread = MtapServCommon;
 	thparam.stacksize = 2048;
-	thparam.priority = g_MtapServPriority;
-	g_threadid_rpc = CreateThread(&thparam);
-	if ( g_threadid_rpc )
-		StartThread(g_threadid_rpc, NULL);
+	thparam.priority = g_sif_thpriority;
+	g_sif_thid = CreateThread(&thparam);
+	if ( g_sif_thid )
+		StartThread(g_sif_thid, NULL);
 	else
 		Kprintf("mtapman: CreateThread Error\n");
-	return !!g_threadid_rpc;
+	return !!g_sif_thid;
 }
