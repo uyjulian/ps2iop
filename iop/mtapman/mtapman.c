@@ -111,7 +111,7 @@ static s32 get_slot_number(u32 port, u32 retries)
 		sio2_mtap_transfer_init();
 		g_tdata.in_size = 0;
 		g_tdata.out_size = 0;
-		for ( j = 0xF; j >= 0; j -= 1 )
+		for ( j = 0; j < (int)(sizeof(g_tdata.regdata)/sizeof(g_tdata.regdata[0])); j += 1 )
 			g_tdata.regdata[j] = 0;
 		get_slot_number_setup_td(port, 0);
 		sio2_transfer2(&g_tdata);
@@ -226,7 +226,7 @@ static int send_mtap_state_to_ee(void)
 	g_ee_data_contents[1] = 1;
 	dmat.dest = (void *)g_ee_work_addr_value;
 	dmat.src = g_ee_data_contents;
-	dmat.size = 128;
+	dmat.size = sizeof(g_ee_data_contents);
 	dmat.attr = 0;
 	CpuSuspendIntr(&state);
 	trid = sceSifSetDma(&dmat, 1);
@@ -417,7 +417,7 @@ int mtapChangeSlot_unused(u32 port, u32 slot)
 	if ( g_state_open[port] != 1 )
 		// Unofficial: removed call to empty function
 		return 1;
-	for ( i = 3; i >= 0; i -= 1 )
+	for ( i = 0; i < 4; i += 1 )
 		data[i] = -1;
 	data[port] = slot;
 	sio2_mtap_transfer_init();
