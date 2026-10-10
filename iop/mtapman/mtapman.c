@@ -162,7 +162,7 @@ static int change_slot(s32 *arg)
 	return 1;
 }
 
-static int do_set_work_addr_ee(int addr)
+static int set_mtap_state_ee_addr(int addr)
 {
 	WaitSema(g_ee_status_sema);
 	if ( !addr )
@@ -343,7 +343,7 @@ void _deinit(void)
 	sio2_mtap_get_slot_max_set(NULL);
 	sio2_mtap_get_slot_max2_set(NULL);
 	sio2_mtap_update_slots_set(NULL);
-	do_set_work_addr_ee(0);
+	set_mtap_state_ee_addr(0);
 	WaitSema(g_ee_status_sema);
 	DeleteSema(g_ee_status_sema);
 }
@@ -405,7 +405,7 @@ int mtapChangeSlot_unused(u32 port, u32 slot)
 	return ( data[port + 4] < 0 ) ? 0 : 1;
 }
 
-static int do_set_main_priority_thread(int priority)
+static int set_main_thpriority(int priority)
 {
 	int retres;
 
@@ -413,14 +413,14 @@ static int do_set_main_priority_thread(int priority)
 	return ( retres >= 0 ) ? 0 : retres;
 }
 
-static int do_get_version(void)
+static int get_module_version(void)
 {
 	return _irx_id.v;
 }
 
 // Unofficial: remove thread priority related function
 
-static int do_set_sif_priority_thread_sif(int priority)
+static int set_sif_thpriority(int priority)
 {
 	int retres;
 
@@ -442,7 +442,7 @@ static void RpcServerHandlerClose(u32 *buffer)
 
 static void RpcServerHandlerSetWorkAddr(u32 *buffer)
 {
-	buffer[0] = do_set_work_addr_ee(buffer[1]);
+	buffer[0] = set_mtap_state_ee_addr(buffer[1]);
 }
 
 static void RpcServerHandlerGetSlotNumber(u32 *buffer)
@@ -464,9 +464,9 @@ static void RpcServerHandlerSetThreadPriority(u32 *buffer)
 		return;
 	}
 	ChangeThreadPriority(0, 8);
-	if ( do_set_main_priority_thread(buffer[0]) < 0 )
+	if ( set_main_thpriority(buffer[0]) < 0 )
 		printf("MTAPMAN:error to set priority_main\n");
-	else if ( do_set_sif_priority_thread_sif(buffer[1]) < 0 )
+	else if ( set_sif_thpriority(buffer[1]) < 0 )
 		printf("MTAPMAN:error to set priority_sif\n");
 	else
 		buffer[2] = 1;
@@ -474,7 +474,7 @@ static void RpcServerHandlerSetThreadPriority(u32 *buffer)
 
 static void RpcServerHandlerGetVersion(u32 *buffer)
 {
-	buffer[0] = do_get_version();
+	buffer[0] = get_module_version();
 }
 
 static void *RpcServerHandler(int fno, void *buffer, int length)
