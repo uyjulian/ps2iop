@@ -4,17 +4,7 @@
 // Based on the module from SDK 3.1.0.
 IRX_ID("multitap_manager", 3, 16);
 
-static s32 read_stat6c_bit(u32 bit, const sio2_transfer_data_t *tdata);
-static void get_slot_number_setup_td(u32 port, u32 reg);
-static s32 get_slot_number_check_td(u32 bit);
-static s32 get_slot_number(u32 port, u32 retries);
-static s32 change_slot_setup_td(unsigned int port, u8 slot);
-static int change_slot(s32 *arg);
-static int do_set_work_addr_ee(int addr);
-static int send_mtap_state_to_ee(void);
-static void update_slot_numbers_thread(void *userdata);
 static int get_slots(int port);
-static void update_slot_numbers(void);
 int _start(int ac, char **av);
 void _deinit(void);
 s32 mtapPortOpen(u32 port);
@@ -22,18 +12,7 @@ s32 mtapPortClose(u32 port);
 s32 mtapGetConnection(u32 port);
 s32 mtapGetSlotNumber_unused(u32 port);
 int mtapChangeSlot_unused(u32 port, u32 slot);
-static int do_set_main_priority_thread(int priority);
-static int do_get_version(void);
 static int do_set_sif_priority_thread(int priority);
-static int do_set_sif_priority_thread_sif(int priority);
-static void RpcServerHandlerOpen(u32 *buffer);
-static void RpcServerHandlerClose(u32 *buffer);
-static void RpcServerHandlerSetWorkAddr(u32 *buffer);
-static void RpcServerHandlerGetSlotNumber(u32 *buffer);
-static void RpcServerHandlerSetThreadPriority(u32 *buffer);
-static void RpcServerHandlerGetVersion(u32 *buffer);
-static void *RpcServerHandler(int fno, void *buffer, int length);
-static void MtapServCommon(void *userdata);
 static int InitRpcServers(void);
 
 extern struct irx_export_table _exp_mtapman;
