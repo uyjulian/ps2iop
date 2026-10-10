@@ -12,16 +12,13 @@ s32 mtapPortClose(u32 port);
 s32 mtapGetConnection(u32 port);
 s32 mtapGetSlotNumber_unused(u32 port);
 int mtapChangeSlot_unused(u32 port, u32 slot);
-static int do_set_sif_priority_thread(int priority);
-static int InitRpcServers(void);
+static int InitRpcServers(int thpri);
 
 extern struct irx_export_table _exp_mtapman;
 static int g_ee_status_magic = 0;
-static int g_sif_thpriority = 46;
 static int g_event_flag;
 static int g_main_thid;
 static int g_ee_status_sema;
-static int g_main_thpriority;
 static int g_state_open[4];
 static int g_state_getcon[4];
 static int g_state_slots[4];
@@ -257,6 +254,8 @@ static void update_slot_numbers(void)
 
 int _start(int ac, char **av)
 {
+	int cursifpriority;
+	int curmainpriority;
 	int i;
 	iop_event_t evparam;
 	iop_thread_t thparam;
@@ -264,15 +263,16 @@ int _start(int ac, char **av)
 
 	if ( RegisterLibraryEntries(&_exp_mtapman) || SetRebootTimeLibraryHandlingMode(&_exp_mtapman, 2) )
 		return 1;
+	// Unofficial: priority from local variable
+	cursifpriority = 46;
+	// Unofficial: priority from local variable
+	curmainpriority = 20;
 	g_ee_status_eeaddr = 0;
 	g_ee_status_dma_trid = 0;
-	g_main_thpriority = 20;
 	for ( i = 1; i < ac; i += 1 )
 	{
 		if ( !strncmp("thpri=", av[i], 6) )
 		{
-			int cursifpriority;
-			int curmainpriority;
 			int j;
 
 			j = 6;
@@ -289,8 +289,6 @@ int _start(int ac, char **av)
 				printf("MTAPMAN:invalid priority_sif %d\n", cursifpriority);
 				return 1;
 			}
-			g_main_thpriority = curmainpriority;
-			do_set_sif_priority_thread(cursifpriority);
 		}
 		else
 			// Unofficial: correct failure condition
@@ -298,7 +296,7 @@ int _start(int ac, char **av)
 			return 1;
 	}
 	// Unofficial: correct success condition when argv parsing loop ends
-	if ( !InitRpcServers() )
+	if ( !InitRpcServers(cursifpriority) )
 		// Unofficial: removed call to empty function
 		return 1;
 	evparam.attr = 2;
@@ -310,7 +308,8 @@ int _start(int ac, char **av)
 	thparam.attr = 0x2000000;
 	thparam.thread = update_slot_numbers_thread;
 	thparam.stacksize = 2048;
-	thparam.priority = g_main_thpriority;
+	// Unofficial: priority from local variable
+	thparam.priority = curmainpriority;
 	g_main_thid = CreateThread(&thparam);
 	if ( g_main_thid <= 0 )
 		// Unofficial: removed call to empty function
@@ -419,11 +418,7 @@ static int do_get_version(void)
 	return _irx_id.v;
 }
 
-static int do_set_sif_priority_thread(int priority)
-{
-	g_sif_thpriority = priority;
-	return 0;
-}
+// Unofficial: remove thread priority related function
 
 static int do_set_sif_priority_thread_sif(int priority)
 {
@@ -532,14 +527,15 @@ static void MtapServCommon(void *userdata)
 	sceSifRpcLoop(&g_sif_qd);
 }
 
-static int InitRpcServers(void)
+static int InitRpcServers(int thpri)
 {
 	iop_thread_t thparam;
 
 	thparam.attr = 0x2000000;
 	thparam.thread = MtapServCommon;
 	thparam.stacksize = 2048;
-	thparam.priority = g_sif_thpriority;
+	// Unofficial: thread priority from parameter
+	thparam.priority = thpri;
 	g_sif_thid = CreateThread(&thparam);
 	if ( g_sif_thid )
 		StartThread(g_sif_thid, NULL);
