@@ -10,8 +10,8 @@ void _deinit(void);
 s32 mtapPortOpen(u32 port);
 s32 mtapPortClose(u32 port);
 s32 mtapGetConnection(u32 port);
-s32 mtapGetSlotNumber_unused(u32 port);
-int mtapChangeSlot_unused(u32 port, u32 slot);
+s32 mtapGetSlotNumber(u32 port);
+int mtapChangeSlot(u32 port, u32 slot);
 static int InitRpcServers(int thpri);
 
 struct mtap_state
@@ -34,10 +34,7 @@ static int g_sio2_outbuf[64];
 static int g_ee_status_eeaddr;
 static int g_ee_status_dma_trid;
 static int g_ee_status_data[32];
-static SifRpcDataQueue_t g_sif_qd;
-static SifRpcServerData_t g_sif_sd;
 static int g_sif_thid;
-static int g_sif_data[32];
 
 // Removed empty function with stack manipulation
 
@@ -379,7 +376,7 @@ s32 mtapGetConnection(u32 port)
 	return g_mtap_state[port].m_connection;
 }
 
-s32 mtapGetSlotNumber_unused(u32 port)
+s32 mtapGetSlotNumber(u32 port)
 {
 	s32 retres;
 
@@ -391,7 +388,7 @@ s32 mtapGetSlotNumber_unused(u32 port)
 	return ( retres < 0 ) ? 1 : retres;
 }
 
-int mtapChangeSlot_unused(u32 port, u32 slot)
+int mtapChangeSlot(u32 port, u32 slot)
 {
 	int i;
 	s32 data[8];
@@ -483,7 +480,7 @@ static void RpcServerHandlerGetVersion(u32 *buffer)
 	buffer[0] = get_module_version();
 }
 
-static void *RpcServerHandler(int fno, void *buffer, int length)
+static void *Rpc80000900ServerHandler(int fno, void *buffer, int length)
 {
 	(void)length;
 
@@ -518,8 +515,75 @@ static void *RpcServerHandler(int fno, void *buffer, int length)
 	return buffer;
 }
 
+static void *Rpc80000901ServerHandler(int fno, void *buffer, int length)
+{
+	(void)fno;
+	(void)length;
+
+	RpcServerHandlerOpen((u32 *)buffer);
+	return buffer;
+}
+
+static void *Rpc80000902ServerHandler(int fno, void *buffer, int length)
+{
+	(void)fno;
+	(void)length;
+
+	RpcServerHandlerClose((u32 *)buffer);
+	return buffer;
+}
+
+static void *Rpc80000903ServerHandler(int fno, void *buffer, int length)
+{
+	(void)fno;
+	(void)length;
+
+	RpcServerHandlerGetSlotNumber((u32 *)buffer);
+	return buffer;
+}
+
+static void *Rpc80000904ServerHandler(int fno, void *buffer, int length)
+{
+	(void)fno;
+	(void)length;
+
+	RpcServerHandlerSetThreadPriority((u32 *)buffer);
+	return buffer;
+}
+
+static void *Rpc80000905ServerHandler(int fno, void *buffer, int length)
+{
+	(void)fno;
+	(void)length;
+
+	RpcServerHandlerGetVersion((u32 *)buffer);
+	return buffer;
+}
+
+static void *Rpc800009FEServerHandler(int fno, void *buffer, int length)
+{
+	(void)fno;
+	(void)length;
+
+	((u32 *)buffer)[1] = mtapGetSlotNumber(((u32 *)buffer)[0]);
+	return buffer;
+}
+
+static void *Rpc800009FFServerHandler(int fno, void *buffer, int length)
+{
+	(void)fno;
+	(void)length;
+
+	((u32 *)buffer)[2] = mtapChangeSlot(((u32 *)buffer)[0], ((u32 *)buffer)[1]);
+	return buffer;
+}
+
 static void MtapServCommon(void *userdata)
 {
+	SifRpcDataQueue_t qd;
+	SifRpcServerData_t sd[8];
+	int sifbuf[8][32];
+
 	(void)userdata;
 
 	if ( !sceSifCheckInit() )
@@ -528,9 +592,17 @@ static void MtapServCommon(void *userdata)
 		sceSifInit();
 	}
 	sceSifInitRpc(0);
-	sceSifSetRpcQueue(&g_sif_qd, GetThreadId());
-	sceSifRegisterRpc(&g_sif_sd, 0x80000900, RpcServerHandler, g_sif_data, NULL, NULL, &g_sif_qd);
-	sceSifRpcLoop(&g_sif_qd);
+	sceSifSetRpcQueue(&qd, GetThreadId());
+	sceSifRegisterRpc(&sd[0], 0x80000900, Rpc80000900ServerHandler, &sifbuf[0], NULL, NULL, &qd);
+	// Unofficial: the following RPC are for backwards compatibility
+	sceSifRegisterRpc(&sd[1], 0x80000901, Rpc80000901ServerHandler, &sifbuf[1], NULL, NULL, &qd);
+	sceSifRegisterRpc(&sd[2], 0x80000902, Rpc80000902ServerHandler, &sifbuf[2], NULL, NULL, &qd);
+	sceSifRegisterRpc(&sd[3], 0x80000903, Rpc80000903ServerHandler, &sifbuf[3], NULL, NULL, &qd);
+	sceSifRegisterRpc(&sd[4], 0x80000904, Rpc80000904ServerHandler, &sifbuf[4], NULL, NULL, &qd);
+	sceSifRegisterRpc(&sd[5], 0x80000905, Rpc80000905ServerHandler, &sifbuf[5], NULL, NULL, &qd);
+	sceSifRegisterRpc(&sd[6], 0x800009FE, Rpc800009FEServerHandler, &sifbuf[6], NULL, NULL, &qd);
+	sceSifRegisterRpc(&sd[7], 0x800009FF, Rpc800009FFServerHandler, &sifbuf[7], NULL, NULL, &qd);
+	sceSifRpcLoop(&qd);
 }
 
 static int InitRpcServers(int thpri)
@@ -539,7 +611,8 @@ static int InitRpcServers(int thpri)
 
 	thparam.attr = 0x2000000;
 	thparam.thread = MtapServCommon;
-	thparam.stacksize = 2048;
+	// Unofficial: bump stack size for RPC data
+	thparam.stacksize = 4096;
 	// Unofficial: thread priority from parameter
 	thparam.priority = thpri;
 	g_sif_thid = CreateThread(&thparam);
