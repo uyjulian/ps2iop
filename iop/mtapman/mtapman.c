@@ -14,14 +14,20 @@ s32 mtapGetSlotNumber_unused(u32 port);
 int mtapChangeSlot_unused(u32 port, u32 slot);
 static int InitRpcServers(int thpri);
 
+struct mtap_state
+{
+	int m_open;
+	int m_connection;
+	int m_slots;
+};
+
 extern struct irx_export_table _exp_mtapman;
 static int g_ee_status_magic = 0;
 static int g_event_flag;
 static int g_main_thid;
 static int g_ee_status_sema;
-static int g_state_open[4];
-static int g_state_getcon[4];
-static int g_state_slots[4];
+// Unofficial: move state into interleaved structure
+static struct mtap_state g_mtap_state[4];
 static sio2_transfer_data_t g_sio2_tdata;
 static int g_sio2_inbuf[64];
 static int g_sio2_outbuf[64];
@@ -76,9 +82,9 @@ static s32 get_slot_number(u32 port, u32 retries)
 	int i;
 	int j;
 
-	if ( port >= 4 )
+	if ( port >= (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])) )
 		return -3;
-	if ( !g_state_open[port] )
+	if ( !g_mtap_state[port].m_open )
 		return -4;
 	for ( i = 0; i <= (int)retries; i += 1 )
 	{
@@ -139,24 +145,24 @@ static int change_slot(s32 *arg)
 {
 	int i;
 
-	for ( i = 0; i < 4; i += 1 )
+	for ( i = 0; i < (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])); i += 1 )
 	{
 		if ( arg[i] == -1 )
 			arg[i + 4] = 0;
 		else if ( arg[i] < 0 )
 			arg[i + 4] = -1;
-		else if ( !g_state_open[i] || !mtapGetConnection(i) )
+		else if ( !g_mtap_state[i].m_open || !mtapGetConnection(i) )
 			arg[i + 4] = arg[i] ? -1 : 1;
-		else if ( arg[i] >= g_state_slots[i] )
+		else if ( arg[i] >= g_mtap_state[i].m_slots )
 			arg[i + 4] = -1;
 		else
 		{
 			arg[i + 4] = ( change_slot_setup_td(i, arg[i]) == 1 ) ? 1 : -1;
 			if ( arg[i + 4] == -1 )
-				g_state_getcon[i] = 0;
+				g_mtap_state[i].m_connection = 0;
 		}
 	}
-	for ( i = 0; i < 4; i += 1 )
+	for ( i = 0; i < (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])); i += 1 )
 		if ( arg[i + 4] < 0 )
 			return 0;
 	return 1;
@@ -193,9 +199,9 @@ static int send_mtap_state_to_ee(void)
 	}
 	g_ee_status_magic += 1;
 	g_ee_status_data[0] = g_ee_status_magic;
-	for ( i = 0; i < 4; i += 1 )
+	for ( i = 0; i < (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])); i += 1 )
 	{
-		g_ee_status_data[i + 2] = g_state_open[i];
+		g_ee_status_data[i + 2] = g_mtap_state[i].m_open;
 		g_ee_status_data[i + 6] = mtapGetConnection(i);
 		g_ee_status_data[i + 10] = get_slots(i);
 	}
@@ -223,15 +229,15 @@ static void update_slot_numbers_thread(void *userdata)
 		WaitEventFlag(g_event_flag, 3, 0x11, &resbits);
 		if ( (resbits & 2) )
 			break;
-		for ( i = 0; i < 4; i += 1 )
+		for ( i = 0; i < (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])); i += 1 )
 		{
-			if ( g_state_open[i] == 1 )
+			if ( g_mtap_state[i].m_open == 1 )
 			{
 				s32 slots;
 
 				slots = get_slot_number(i, ( mtapGetConnection(i) == 1 ) ? 10 : 0);
-				g_state_getcon[i] = !!( slots >= 0 );
-				g_state_slots[i] = ( slots >= 0 ) ? slots : 1;
+				g_mtap_state[i].m_connection = !!( slots >= 0 );
+				g_mtap_state[i].m_slots = ( slots >= 0 ) ? slots : 1;
 			}
 		}
 		send_mtap_state_to_ee();
@@ -242,7 +248,7 @@ static void update_slot_numbers_thread(void *userdata)
 
 static int get_slots(int port)
 {
-	return g_state_slots[port];
+	return g_mtap_state[port].m_slots;
 }
 
 // Unofficial: omit duplicate get_slots function
@@ -322,10 +328,10 @@ int _start(int ac, char **av)
 	if ( g_ee_status_sema < 0 )
 		// Unofficial: removed call to empty function
 		return 1;
-	for ( i = 0; i < 4; i += 1 )
+	for ( i = 0; i < (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])); i += 1 )
 	{
 		mtapPortClose(i);
-		g_state_slots[i] = 1;
+		g_mtap_state[i].m_slots = 1;
 	}
 	sio2_mtap_change_slot_set(change_slot);
 	sio2_mtap_get_slot_max_set(get_slots);
@@ -352,34 +358,34 @@ s32 mtapPortOpen(u32 port)
 {
 	s32 slot;
 
-	if ( port >= 4 )
+	if ( port >= (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])) )
 		return 0;
-	g_state_open[port] = 1;
+	g_mtap_state[port].m_open = 1;
 	slot = get_slot_number(port, 10);
-	g_state_getcon[port] = !!( slot >= 0 );
-	g_state_slots[port] = ( slot >= 0 ) ? slot : 1;
+	g_mtap_state[port].m_connection = !!( slot >= 0 );
+	g_mtap_state[port].m_slots = ( slot >= 0 ) ? slot : 1;
 	return 1;
 }
 
 s32 mtapPortClose(u32 port)
 {
-	g_state_open[port] = 0;
-	g_state_getcon[port] = 0;
+	g_mtap_state[port].m_open = 0;
+	g_mtap_state[port].m_connection = 0;
 	return 1;
 }
 
 s32 mtapGetConnection(u32 port)
 {
-	return g_state_getcon[port];
+	return g_mtap_state[port].m_connection;
 }
 
 s32 mtapGetSlotNumber_unused(u32 port)
 {
 	s32 retres;
 
-	if ( port >= 4 )
+	if ( port >= (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])) )
 		return -1;
-	if ( g_state_open[port] != 1 )
+	if ( g_mtap_state[port].m_open != 1 )
 		return 1;
 	retres = get_slot_number(port, 10);
 	return ( retres < 0 ) ? 1 : retres;
@@ -390,12 +396,12 @@ int mtapChangeSlot_unused(u32 port, u32 slot)
 	int i;
 	s32 data[8];
 
-	if ( port >= 4 )
+	if ( port >= (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])) )
 		return 0;
-	if ( g_state_open[port] != 1 )
+	if ( g_mtap_state[port].m_open != 1 )
 		// Unofficial: removed call to empty function
 		return 1;
-	for ( i = 0; i < 4; i += 1 )
+	for ( i = 0; i < (int)(sizeof(g_mtap_state)/sizeof(g_mtap_state[0])); i += 1 )
 		data[i] = -1;
 	data[port] = slot;
 	sio2_mtap_transfer_init();
