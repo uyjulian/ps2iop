@@ -486,7 +486,6 @@ u32 __cdecl GetThreadsStatus(padState_t *state)
 {
 	int count; // $s0
 	bool condtmp; // dc
-	u32 result; // $v0
 	iop_thread_info_t tinfo; // [sp+10h] [-48h] BYREF
 
 	count = 0;
@@ -501,14 +500,12 @@ u32 __cdecl GetThreadsStatus(padState_t *state)
 	if ( !ReferThreadStatus(state->setbuttoninfoTid, &tinfo) && (tinfo.status & 0x10) == 0 )
 		++count;
 	condtmp = ReferThreadStatus(state->setvrefparamTid, &tinfo) != 0;
-	result = count < 1;
 	if ( !condtmp )
 	{
-		result = count < 1;
 		if ( (tinfo.status & 0x10) == 0 )
 			return count + 1 < 1;
 	}
-	return result;
+	return count < 1;
 }
 
 //----- (004002D8) --------------------------------------------------------
@@ -789,11 +786,8 @@ void __cdecl shiftarray(u8 *buf)
 //----- (00400910) --------------------------------------------------------
 int __cdecl VblankEnd(void *arg)
 {
-	int result; // $v0
-
-	result = 1;
 	vblank_end = 1;
-	return result;
+	return 1;
 }
 // 408320: using guessed type int vblank_end;
 
@@ -2457,7 +2451,6 @@ int __cdecl ParseParams(int argc, char *argv[])
 	const char **av_tmp; // $s1
 	int thparam_after; // $s0
 	BOOL condtmp; // $v0
-	int result; // $v0
 
 	new_thpri_hi = 20;
 	new_thpri_lo = 46;
@@ -2465,10 +2458,9 @@ int __cdecl ParseParams(int argc, char *argv[])
 	if ( argc <= 1 )
 	{
 LABEL_18:
-		result = 1;
 		thpri_hi = new_thpri_hi;
 		thpri_lo = new_thpri_lo;
-		return result;
+		return 1;
 	}
 	av_tmp = (const char **)(argv + 1);
 	while ( strncmp("thpri=", *av_tmp, 6) )
@@ -2516,7 +2508,6 @@ LABEL_15:
 //----- (00403448) --------------------------------------------------------
 int __cdecl _start(int ac, char **av)
 {
-	int result; // $v0
 	bool condtmp; // dc
 
 	vblank_end = 0;
@@ -2531,33 +2522,29 @@ int __cdecl _start(int ac, char **av)
 		Kprintf("padman: thread priority: high=%d, low=%d\n", thpri_hi, thpri_lo);
 	if ( RegisterLibraryEntries(&_exp_padman) )
 	{
-		result = 1;
 		if ( g_padman_verbose )
 		{
 			Kprintf("padman: RegisterLibraryEntries Faild\n");
-			return 1;
 		}
 	}
 	else
 	{
 		condtmp = SetRebootTimeLibraryHandlingMode(&_exp_padman, 2) != 0;
-		result = 1;
 		if ( !condtmp )
 		{
 			condtmp = InitRpcServers(thpri_lo) != 0;
-			result = 0;
 			if ( !condtmp )
 			{
-				result = 1;
 				if ( g_padman_verbose )
 				{
 					Kprintf("padman: sif_init Faild\n");
-					return 1;
 				}
+				return 1;
 			}
+			return 0;
 		}
 	}
-	return result;
+	return 1;
 }
 // 4082F8: using guessed type int g_padman_verbose;
 // 408320: using guessed type int vblank_end;
@@ -2577,7 +2564,6 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 {
 	int thid2; // $v0
 	int thid1; // $v0
-	s32 result; // $v0
 	iop_event_t evparam; // [sp+10h] [-40h] BYREF
 	iop_thread_t thparam; // [sp+20h] [-30h] BYREF
 	iop_sema_t semaparam; // [sp+38h] [-18h] BYREF
@@ -2654,10 +2640,9 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 		do_set_timer(346, g_readxfertimer_val);
 	}
 	CpuResumeIntr(state[0]);
-	result = 1;
 	vblankdata.init = 1;
 	padman_init = 1;
-	return result;
+	return 1;
 }
 // 4082F8: using guessed type int g_padman_verbose;
 // 409260: using guessed type int openSlots[];
@@ -2673,7 +2658,6 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 //----- (00403858) --------------------------------------------------------
 s32 __cdecl padEnd()
 {
-	s32 result; // $v0
 	s32 i1; // $s1
 	int *slot_tmp; // $s2
 	s32 i; // $s0
@@ -2710,16 +2694,14 @@ s32 __cdecl padEnd()
 			;
 		FreeHardTimer(g_readxfertimer_timid);
 	}
-	result = 1;
 	if ( g_sema >= 0 )
 	{
 		DeleteSema(g_sema);
 		g_sema = -1;
-		result = 1;
 	}
 	padman_init = 0;
 	g_padman_nonblock_dma = 0;
-	return result;
+	return 1;
 }
 // 409260: using guessed type int openSlots[];
 // 409268: using guessed type vblankData_t vblankdata;
@@ -2733,7 +2715,6 @@ s32 __cdecl padPortOpen(s32 port, s32 slot, s32 pad_area_ee_addr, struct libpad_
 {
 	padState_t *padstate_tmp; // $s0
 	int *slot_buf_tmp; // $a3
-	s32 result; // $v0
 	int ef_tmp; // $v0
 	int th_tmp1; // $v0
 	int th_tmp2; // $v0
@@ -2756,9 +2737,8 @@ s32 __cdecl padPortOpen(s32 port, s32 slot, s32 pad_area_ee_addr, struct libpad_
 	padstate_tmp->m_dma_act_direct_state[1].m_unhandled = 0;
 	padstate_tmp->m_dma_act_direct_state[0].m_unused = 0;
 	padstate_tmp->m_dma_act_direct_state[1].m_unused = 0;
-	result = 0;
 	if ( ((*slot_buf_tmp >> slot) & 1) != 0 )
-		return result;
+		return 0;
 	padstate_tmp->port = port;
 	padstate_tmp->slot = slot;
 	*slot_buf_tmp |= 1 << slot;
@@ -2846,12 +2826,10 @@ s32 __cdecl padPortOpen(s32 port, s32 slot, s32 pad_area_ee_addr, struct libpad_
 s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait)
 {
 	padState_t *padstate_tmp; // $s0
-	s32 result; // $v0
 	int efres[2]; // [sp+10h] [-8h] BYREF
 
 	efres[0] = 0;
 	padstate_tmp = &g_pad_state[port][slot];
-	result = 0;
 	if ( ((openSlots[port] >> slot) & 1) != 0 )
 	{
 		if ( padstate_tmp->reqState == 2 )
@@ -2873,7 +2851,7 @@ s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait)
 			return 1;
 		}
 	}
-	return result;
+	return 0;
 }
 // 409260: using guessed type int openSlots[];
 // 403C78: using guessed type u32 efres[2];
@@ -3163,12 +3141,10 @@ s32 __cdecl padInfoAct(u32 port, u32 slot, s32 act, u32 val)
 s32 __cdecl padInfoComb(u32 port, u32 slot, s32 val1, u32 val2)
 {
 	padState_t *padstate_tmp; // $v1
-	s32 result; // $v0
 	s32 listno; // $v0
 	u8 *combData; // $v0
 
 	padstate_tmp = &g_pad_state[port][slot];
-	result = 0;
 	if ( padstate_tmp->currentTask == 1 )
 	{
 		if ( padstate_tmp->modeConfig >= 2u )
@@ -3194,14 +3170,13 @@ s32 __cdecl padInfoComb(u32 port, u32 slot, s32 val1, u32 val2)
 		}
 		return -1;
 	}
-	return result;
+	return 0;
 }
 
 //----- (00404344) --------------------------------------------------------
 s32 __cdecl padInfoMode(u32 port, u32 slot, s32 val1, u32 val2)
 {
 	padState_t *padstate_tmp; // $v1
-	s32 result; // $v0
 	unsigned int modeCurId; // $v1
 	int modeCurOffs; // $v0
 
@@ -3223,9 +3198,8 @@ s32 __cdecl padInfoMode(u32 port, u32 slot, s32 val1, u32 val2)
 				return padstate_tmp->modeCurOffs;
 			return 0;
 		}
-		result = -1;
 		if ( val1 != 4 )
-			return result;
+			return -1;
 		if ( padstate_tmp->modeConfig == 1 )
 			return 0;
 		if ( val2 == -1 )
@@ -3235,15 +3209,14 @@ s32 __cdecl padInfoMode(u32 port, u32 slot, s32 val1, u32 val2)
 			return 0;
 		return padstate_tmp->modeTable[modeCurOffs];
 	}
-	result = -1;
 	if ( val1 == 1 )
 	{
 		modeCurId = padstate_tmp->modeCurId;
-		result = modeCurId >> 4;
 		if ( modeCurId == 243 )
 			return 0;
+		return modeCurId >> 4;
 	}
-	return result;
+	return -1;
 }
 
 //----- (0040447C) --------------------------------------------------------
@@ -3275,13 +3248,11 @@ u32 __cdecl padSetActDirect(u32 port, u32 slot, u8 *actData)
 u32 __cdecl padSetMainMode(u32 port, u32 slot, u32 mode, u32 lock)
 {
 	padState_t *padstate_tmp; // $a1
-	u32 result; // $v0
 	u32 setmainmodeTid; // $a0
 
 	padstate_tmp = &g_pad_state[port][slot];
 	if ( padstate_tmp->currentTask != 1 || padstate_tmp->modeConfig < 2u || (int)mode >= padstate_tmp->numModes )
 		return 0;
-	result = 1;
 	if ( padstate_tmp->reqState == 2 )
 		return 0;
 	setmainmodeTid = padstate_tmp->setmainmodeTid;
@@ -3290,14 +3261,13 @@ u32 __cdecl padSetMainMode(u32 port, u32 slot, u32 mode, u32 lock)
 	padstate_tmp->runTask = 4;
 	padstate_tmp->reqState = 2;
 	padstate_tmp->taskTid = setmainmodeTid;
-	return result;
+	return 1;
 }
 
 //----- (004045EC) --------------------------------------------------------
 u32 __cdecl padSetActAlign(u32 port, u32 slot, const u8 *actData)
 {
 	padState_t *padstate_tmp1; // $a1
-	u32 result; // $v0
 	int i1; // $a0
 	padState_t *padstate_tmp2; // $v1
 	u8 valtmp; // $v0
@@ -3319,19 +3289,17 @@ u32 __cdecl padSetActAlign(u32 port, u32 slot, const u8 *actData)
 		padstate_tmp2 = (padState_t *)((char *)padstate_tmp1 + i1);
 	}
 	while ( i1 < 6 );
-	result = 1;
 	setactalignTid = padstate_tmp1->setactalignTid;
 	padstate_tmp1->reqState = 2;
 	padstate_tmp1->runTask = 5;
 	padstate_tmp1->taskTid = setactalignTid;
-	return result;
+	return 1;
 }
 
 //----- (004046A0) --------------------------------------------------------
 u32 __cdecl padSetVrefParam(u32 port, u32 slot, const u8 *vparam)
 {
 	padState_t *padstate_tmp1; // $a1
-	u32 result; // $v0
 	int i1; // $a0
 	padState_t *padstate_tmp2; // $v1
 	u8 valtmp; // $v0
@@ -3355,12 +3323,11 @@ u32 __cdecl padSetVrefParam(u32 port, u32 slot, const u8 *vparam)
 		padstate_tmp2 = (padState_t *)((char *)padstate_tmp1 + i1);
 	}
 	while ( i1 < 12 );
-	result = 1;
 	setvrefparamTid = padstate_tmp1->setvrefparamTid;
 	padstate_tmp1->runTask = 7;
 	padstate_tmp1->reqState = 2;
 	padstate_tmp1->taskTid = setvrefparamTid;
-	return result;
+	return 1;
 }
 
 //----- (00404768) --------------------------------------------------------
@@ -3368,7 +3335,6 @@ u32 __cdecl padSetButtonInfo(u32 port, u32 slot, u32 info)
 {
 	padState_t *padstate_tmp; // $a1
 	u32 infotmp; // $v0
-	u32 result; // $v0
 	int i1; // $a0
 	u8 *padbuf; // $v1
 	u32 setbuttoninfoTid; // $a0
@@ -3396,12 +3362,11 @@ u32 __cdecl padSetButtonInfo(u32 port, u32 slot, u32 info)
 		--padbuf;
 	}
 	while ( i1 >= 0 );
-	result = 1;
 	setbuttoninfoTid = padstate_tmp->setbuttoninfoTid;
 	padstate_tmp->runTask = 6;
 	padstate_tmp->reqState = 2;
 	padstate_tmp->taskTid = setbuttoninfoTid;
-	return result;
+	return 1;
 }
 
 //----- (0040484C) --------------------------------------------------------
@@ -3611,7 +3576,6 @@ u32 __cdecl padTransfer(u32 slot)
 	u32 port_1; // $s7
 	u32 slot_mul; // $v0
 	u32 slot_offs; // $a1
-	u32 result; // $v0
 	u32 port_2; // $s0
 	int i; // $s1
 	u32 stat70; // $s0
@@ -3656,7 +3620,6 @@ u32 __cdecl padTransfer(u32 slot)
 		if ( *(u32 *)((char *)&padData[1][0].active + slot_offs) == 1 && change_slot_buffer[5] != 1 )
 			*(u32 *)((char *)&padData[1][0].error + slot_offs) = 10;
 	}
-	result = 0;
 	if ( xferdatres )
 	{
 		sio2_transfer2(&sio2_td);
@@ -3676,7 +3639,7 @@ u32 __cdecl padTransfer(u32 slot)
 		pdSetStat70bit(1u, slot, (stat70 >> 5) & 1);
 		return 1;
 	}
-	return result;
+	return 0;
 }
 // 4095F0: using guessed type sio2_transfer_data_t sio2_td;
 
@@ -3781,14 +3744,12 @@ u32 __cdecl pdSetInSize(u32 port, u32 slot, u32 size)
 //----- (004053E0) --------------------------------------------------------
 u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf)
 {
-	u32 result; // $v0
 	signed __int32 i1; // $t0
 	u32 slotoffs; // $a1
 	u32 portoffs; // $a0
 	u32 slotoffs_1; // $v0
 	u8 *valrval; // $v1
 
-	result = 0;
 	if ( port < 2 )
 	{
 		if ( !size )
@@ -3809,7 +3770,7 @@ u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf)
 		}
 		return size;
 	}
-	return result;
+	return 0;
 }
 
 //----- (00405498) --------------------------------------------------------
@@ -3824,14 +3785,12 @@ u32 __cdecl pdSetOutSize(u32 port, u32 slot, u32 size)
 //----- (004054E8) --------------------------------------------------------
 u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf)
 {
-	u32 result; // $v0
 	signed __int32 i1; // $t0
 	u32 slotoffs; // $a1
 	u32 portoffs; // $a0
 	u8 *bufbuf; // $v1
 	u8 valrval; // $v0
 
-	result = 0;
 	if ( port < 2 )
 	{
 		if ( !size )
@@ -3853,7 +3812,7 @@ u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf)
 		}
 		return size;
 	}
-	return result;
+	return 0;
 }
 
 //----- (004055A0) --------------------------------------------------------
@@ -3966,7 +3925,6 @@ void sio2cmdReset(void)
 //----- (00405940) --------------------------------------------------------
 int __cdecl SetupCmds(const sio2Cmds_t *s)
 {
-	int result; // $v0
 	int ix1; // $v1
 	int ix2; // $a0
 	int i1; // $a1
@@ -4006,12 +3964,11 @@ int __cdecl SetupCmds(const sio2Cmds_t *s)
 	sio2Cmds[i2].querybuttonmask = s->querybuttonmask;
 	sio2Cmds[i2].setbuttoninfo = s->setbuttoninfo;
 	sio2Cmds[i2].setvrefparam = s->setvrefparam;
-	result = 1;
 	sio2Cmds[i2].setmainmode = s->setmainmode;
 	setactalign = s->setactalign;
 	numControllers = i1 + 1;
 	sio2Cmds[i2].setactalign = setactalign;
-	return result;
+	return 1;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -4581,16 +4538,13 @@ u32 MouseSize2(void)
 //----- (004065F4) --------------------------------------------------------
 u32 __cdecl MouseEnterConfigMode(u8 *a)
 {
-	u32 result; // $v0
-
 	a[1] = 0x43;
-	result = 7;
 	*a = 1;
 	a[2] = 0;
 	*(_WORD *)(a + 3) = 1;
 	a[5] = 0;
 	a[6] = 0;
-	return result;
+	return 7;
 }
 
 //----- (00406620) --------------------------------------------------------
@@ -4658,14 +4612,11 @@ u32 DigitalSize2(void)
 //----- (0040674C) --------------------------------------------------------
 u32 __cdecl DigitalEnterConfigMode(u8 *a)
 {
-	u32 result; // $v0
-
 	a[1] = 0x43;
-	result = 5;
 	*a = 1;
 	a[2] = 0;
 	*(_WORD *)(a + 3) = 1;
-	return result;
+	return 5;
 }
 
 //----- (00406770) --------------------------------------------------------
@@ -4741,10 +4692,7 @@ u32 __cdecl AnalogGetPortCtrl2(u32 a)
 //----- (004068FC) --------------------------------------------------------
 u32 __cdecl AnalogEnterConfigMode(u8 *a)
 {
-	u32 result; // $v0
-
 	a[1] = 0x43;
-	result = 0x15;
 	*a = 1;
 	a[2] = 0;
 	*(_WORD *)(a + 3) = 1;
@@ -4758,7 +4706,7 @@ u32 __cdecl AnalogEnterConfigMode(u8 *a)
 	a[12] = 0;
 	a[13] = 0;
 	a[14] = 0;
-	return result;
+	return 0x15;
 }
 
 //----- (00406948) --------------------------------------------------------
@@ -4828,10 +4776,7 @@ u32 NegiconSize2(void)
 //----- (00406A6C) --------------------------------------------------------
 u32 __cdecl NegiconEnterConfigMode(u8 *a)
 {
-	u32 result; // $v0
-
 	a[1] = 0x43;
-	result = 9;
 	*a = 1;
 	a[2] = 0;
 	*(_WORD *)(a + 3) = 1;
@@ -4839,7 +4784,7 @@ u32 __cdecl NegiconEnterConfigMode(u8 *a)
 	a[6] = 0;
 	a[7] = 0;
 	a[8] = 0;
-	return result;
+	return 9;
 }
 
 //----- (00406AA0) --------------------------------------------------------
@@ -4911,10 +4856,7 @@ u32 JoystickSize2(void)
 //----- (00406BDC) --------------------------------------------------------
 u32 __cdecl JoystickEnterConfigMode(u8 *a)
 {
-	u32 result; // $v0
-
 	a[1] = 0x43;
-	result = 9;
 	*a = 1;
 	a[2] = 0;
 	*(_WORD *)(a + 3) = 1;
@@ -4922,7 +4864,7 @@ u32 __cdecl JoystickEnterConfigMode(u8 *a)
 	a[6] = 0;
 	a[7] = 0;
 	a[8] = 0;
-	return result;
+	return 9;
 }
 
 //----- (00406C10) --------------------------------------------------------
@@ -4990,14 +4932,11 @@ u32 KonamiGunSize2(void)
 //----- (00406D40) --------------------------------------------------------
 u32 __cdecl KonamiGunEnterConfigMode(u8 *a)
 {
-	u32 result; // $v0
-
 	a[1] = 0x43;
-	result = 5;
 	*a = 1;
 	a[2] = 0;
 	*(_WORD *)(a + 3) = 1;
-	return result;
+	return 5;
 }
 
 //----- (00406D64) --------------------------------------------------------
@@ -5069,10 +5008,7 @@ u32 NamcoGunSize2(void)
 //----- (00406E9C) --------------------------------------------------------
 u32 __cdecl NamcoGunEnterConfigMode(u8 *a)
 {
-	u32 result; // $v0
-
 	a[1] = 0x43;
-	result = 9;
 	*a = 1;
 	a[2] = 0;
 	*(_WORD *)(a + 3) = 1;
@@ -5080,7 +5016,7 @@ u32 __cdecl NamcoGunEnterConfigMode(u8 *a)
 	a[6] = 0;
 	a[7] = 0;
 	a[8] = 0;
-	return result;
+	return 9;
 }
 
 //----- (00406ED0) --------------------------------------------------------
@@ -5156,10 +5092,7 @@ u32 JogconSize2(void)
 //----- (0040701C) --------------------------------------------------------
 u32 __cdecl JogconEnterConfigMode(u8 *a)
 {
-	u32 result; // $v0
-
 	a[1] = 67;
-	result = 13;
 	*a = 1;
 	a[2] = 0;
 	*(_WORD *)(a + 3) = 1;
@@ -5171,7 +5104,7 @@ u32 __cdecl JogconEnterConfigMode(u8 *a)
 	a[10] = 0;
 	a[11] = 0;
 	a[12] = 0;
-	return result;
+	return 13;
 }
 
 //----- (00407060) --------------------------------------------------------
@@ -5244,7 +5177,6 @@ u32 ConfigSize2(void)
 //----- (004071A0) --------------------------------------------------------
 u32 __cdecl ConfigExitConfigMode(u8 *a)
 {
-	u32 result; // $v0
 
 	*a = 1;
 	a[1] = 0x43;
@@ -5253,17 +5185,14 @@ u32 __cdecl ConfigExitConfigMode(u8 *a)
 	a[6] = 0x5A;
 	a[7] = 0x5A;
 	a[8] = 0x5A;
-	result = 9;
 	a[2] = 0;
 	a[3] = 0;
-	return result;
+	return 9;
 }
 
 //----- (004071D8) --------------------------------------------------------
 u32 __cdecl ConfigQueryModel(u8 *a)
 {
-	u32 result; // $v0
-
 	*a = 1;
 	a[1] = 0x45;
 	a[3] = 0x5A;
@@ -5272,16 +5201,13 @@ u32 __cdecl ConfigQueryModel(u8 *a)
 	a[6] = 0x5A;
 	a[7] = 0x5A;
 	a[8] = 0x5A;
-	result = 9;
 	a[2] = 0;
-	return result;
+	return 9;
 }
 
 //----- (00407210) --------------------------------------------------------
 u32 __cdecl ConfigQueryAct(u8 *a)
 {
-	u32 result; // $v0
-
 	*a = 1;
 	a[1] = 0x46;
 	a[4] = 0x5A;
@@ -5289,17 +5215,14 @@ u32 __cdecl ConfigQueryAct(u8 *a)
 	a[6] = 0x5A;
 	a[7] = 0x5A;
 	a[8] = 0x5A;
-	result = 9;
 	a[2] = 0;
 	a[3] = 0;
-	return result;
+	return 9;
 }
 
 //----- (00407248) --------------------------------------------------------
 u32 __cdecl ConfigQueryComb(u8 *a)
 {
-	u32 result; // $v0
-
 	*a = 1;
 	a[1] = 0x47;
 	a[4] = 0x5A;
@@ -5307,17 +5230,14 @@ u32 __cdecl ConfigQueryComb(u8 *a)
 	a[6] = 0x5A;
 	a[7] = 0x5A;
 	a[8] = 0x5A;
-	result = 9;
 	a[2] = 0;
 	a[3] = 0;
-	return result;
+	return 9;
 }
 
 //----- (00407280) --------------------------------------------------------
 u32 __cdecl ConfigQueryMode(u8 *a)
 {
-	u32 result; // $v0
-
 	*a = 1;
 	a[1] = 0x4C;
 	a[4] = 0x5A;
@@ -5325,17 +5245,14 @@ u32 __cdecl ConfigQueryMode(u8 *a)
 	a[6] = 0x5A;
 	a[7] = 0x5A;
 	a[8] = 0x5A;
-	result = 9;
 	a[2] = 0;
 	a[3] = 0;
-	return result;
+	return 9;
 }
 
 //----- (004072B8) --------------------------------------------------------
 u32 __cdecl ConfigQueryButtonMask(u8 *a)
 {
-	u32 result; // $v0
-
 	*a = 1;
 	a[1] = 0x41;
 	a[3] = 0x5A;
@@ -5344,19 +5261,15 @@ u32 __cdecl ConfigQueryButtonMask(u8 *a)
 	a[6] = 0x5A;
 	a[7] = 0x5A;
 	a[8] = 0x5A;
-	result = 9;
 	a[2] = 0;
-	return result;
+	return 9;
 }
 
 //----- (004072F0) --------------------------------------------------------
 u32 __cdecl ConfigSetButtonInfo(u8 *a)
 {
-	u32 result; // $v0
-
 	*a = 1;
 	a[1] = 0x4F;
-	result = 9;
 	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
@@ -5364,17 +5277,14 @@ u32 __cdecl ConfigSetButtonInfo(u8 *a)
 	a[6] = 0;
 	a[7] = 0;
 	a[8] = 0;
-	return result;
+	return 9;
 }
 
 //----- (00407324) --------------------------------------------------------
 u32 __cdecl ConfigSetVrefParam(u8 *a)
 {
-	u32 result; // $v0
-
 	*a = 1;
 	a[1] = 0x40;
-	result = 9;
 	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
@@ -5382,17 +5292,14 @@ u32 __cdecl ConfigSetVrefParam(u8 *a)
 	a[6] = 0;
 	a[7] = 0;
 	a[8] = 0;
-	return result;
+	return 9;
 }
 
 //----- (00407358) --------------------------------------------------------
 u32 __cdecl ConfigSetMainMode(u8 *a)
 {
-	u32 result; // $v0
-
 	*a = 1;
 	a[1] = 0x44;
-	result = 9;
 	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
@@ -5400,17 +5307,14 @@ u32 __cdecl ConfigSetMainMode(u8 *a)
 	a[6] = 0;
 	a[7] = 0;
 	a[8] = 0;
-	return result;
+	return 9;
 }
 
 //----- (0040738C) --------------------------------------------------------
 u32 __cdecl ConfigSetSetActAlign(u8 *a)
 {
-	u32 result; // $v0
-
 	*a = 1;
 	a[1] = 0x4D;
-	result = 9;
 	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
@@ -5418,7 +5322,7 @@ u32 __cdecl ConfigSetSetActAlign(u8 *a)
 	a[6] = 0;
 	a[7] = 0;
 	a[8] = 0;
-	return result;
+	return 9;
 }
 
 //----- (004073C0) --------------------------------------------------------
@@ -5576,91 +5480,70 @@ void *__cdecl RpcSetNonblockDma(u32 *a1)
 //----- (0040789C) --------------------------------------------------------
 void *__cdecl RpcServer(int fno, void *buffer, int length)
 {
-	void *result; // $v0
-
 	switch ( *(_DWORD *)buffer )
 	{
 		case 1:
 			RpcPadOpen((u32 *)buffer);
-			result = buffer;
 			break;
 		case 3:
 			RpcPadInfoAct((u32 *)buffer);
-			result = buffer;
 			break;
 		case 4:
 			RpcPadInfoComb((u32 *)buffer);
-			result = buffer;
 			break;
 		case 5:
 			RpcPadInfoMode((u32 *)buffer);
-			result = buffer;
 			break;
 		case 6:
 			RpcPadSetMainMode((u32 *)buffer);
-			result = buffer;
 			break;
 		case 7:
 			RpcPadSetActDirect((u32 *)buffer);
-			result = buffer;
 			break;
 		case 8:
 			RpcPadSetActAlign((u32 *)buffer);
-			result = buffer;
 			break;
 		case 9:
 			RpcPadGetButtonMask((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0xA:
 			RpcPadSetButtonInfo((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0xB:
 			RpcPadSetVrefParam((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0xC:
 			RpcPadGetPortMax((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0xD:
 			RpcPadGetSlotMax((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0xE:
 			RpcPadClose((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0xF:
 			RpcPadEnd((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0x10:
 			RpcPadInit((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0x12:
 			RpcGetModVersion((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0x13:
 			goto LABEL_21;
 		case 0x14:
 			RpcSetVerbose((u32 *)buffer);
-			result = buffer;
 			break;
 		case 0x18:
 			RpcSetNonblockDma((u32 *)buffer);
-			result = buffer;
 			break;
 		default:
 			printf("invalid function code (%03x)\n", *(_DWORD *)buffer);
 LABEL_21:
-			result = buffer;
 			break;
 	}
-	return result;
+	return buffer;
 }
 
 //----- (00407A28) --------------------------------------------------------
