@@ -1686,9 +1686,9 @@ u32 __cdecl SetButtonInfo(padState_t *pstate)
 u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 {
 	u32 retval_r; // $s3
-	signed __int32 p; // $s1
+	u32 p; // $s1
 	int ind2; // $s4
-	signed __int32 s; // $s0
+	u32 s; // $s0
 	int ind1; // $s2
 	padState_t *pstate_tmp1; // $a1
 	int i1; // $a0
@@ -1698,11 +1698,11 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 	retval_r = 0;
 	p = 0;
 	ind2 = 0;
-	while ( p < (int)padGetPortMax() )
+	while ( (int)p < (int)padGetPortMax() )
 	{
 		s = 0;
 		ind1 = 0;
-		while ( s < (int)padGetSlotMax(p) )
+		while ( (int)s < (int)padGetSlotMax(p) )
 		{
 			if ( (port != p || slot != s) && ((openSlots[p] >> s) & 1) != 0 )
 			{
@@ -3148,7 +3148,7 @@ s32 __cdecl padInfoComb(u32 port, u32 slot, s32 val1, u32 val2)
 			if ( val1 < padstate_tmp->numActComb )
 			{
 				listno = val1;
-				if ( val2 == -1 )
+				if ( val2 == (u32)-1 )
 					return padstate_tmp->combData[listno][0];
 				combData = &padstate_tmp->ee_pdata.data[listno * 4];
 				switch ( val2 )
@@ -3196,7 +3196,7 @@ s32 __cdecl padInfoMode(u32 port, u32 slot, s32 val1, u32 val2)
 			return -1;
 		if ( padstate_tmp->modeConfig == 1 )
 			return 0;
-		if ( val2 == -1 )
+		if ( val2 == (u32)-1 )
 			return padstate_tmp->numModes;
 		modeCurOffs = val2;
 		if ( (int)val2 >= padstate_tmp->numModes )
