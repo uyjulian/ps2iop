@@ -564,7 +564,6 @@ void DmaSendEE(void)
 	u32 combtmp1; // $t3
 	u32 combtmp2; // $t4
 	u32 combtmp3; // $t9
-	u32 modetmp1; // $t3
 	int readytmp; // $v1
 	u32 padarea_ee_addr; // $v0
 	int dmat_count_1; // $v1
@@ -672,9 +671,7 @@ void DmaSendEE(void)
 				p->ee_pdata.combData[1] = combtmp1;
 				p->ee_pdata.combData[2] = combtmp2;
 				p->ee_pdata.combData[3] = combtmp3;
-				modetmp1 = *(_DWORD *)&p->modeTable[2];
-				p->ee_pdata.modeTable[0] = *(_DWORD *)p->modeTable;
-				p->ee_pdata.modeTable[1] = modetmp1;
+				memcpy(&p->ee_pdata.modeTable[0], &p->modeTable[0], sizeof(p->ee_pdata.modeTable));
 				*(_DWORD *)&p->ee_pdata.padding[4] = *(_DWORD *)p->buttonMask;
 				*(_DWORD *)p->ee_pdata.padding = *(_DWORD *)p->buttonInfo;
 				readytmp = p->buttonDataReady;
