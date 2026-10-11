@@ -709,7 +709,7 @@ void DmaSendEE(void)
 					Kprintf("padman: SIFDMA PANIC!\n");
 				CpuSuspendIntr(&state);
 				g_dma_buf[3] = vblankStartCount;
-				trid2 = sceSifSendCmdIntr(0x80000019, g_dma_buf, 16, 0, 0, 0, ee_dma_send_completion_cb, (void *)g_sema);
+				trid2 = sceSifSendCmdIntr(0x80000019, g_dma_buf, 16, NULL, NULL, 0, ee_dma_send_completion_cb, (void *)g_sema);
 				sifdma_id = trid2;
 				CpuResumeIntr(state);
 				if ( trid2 )
@@ -893,7 +893,7 @@ void __cdecl __noreturn MainThread(void *arg)
 						}
 						else if ( padstate_p->currentTask == 1 )
 						{
-							StartThread(padstate_p->taskTid, 0);
+							StartThread(padstate_p->taskTid, NULL);
 							runtask_t = padstate_p->runTask;
 							padstate_p->runTask = 0;
 							padstate_p->reqState = 2;
@@ -954,7 +954,7 @@ LABEL_23:
 							padstate_p->buttonDataReady = 0;
 LABEL_24:
 							SetEventFlag(ef_tmp, flag_to_set);
-							WaitEventFlag(padstate_p->eventflag, 0x80u, 16, 0);
+							WaitEventFlag(padstate_p->eventflag, 0x80u, 16, NULL);
 							pdSetActive(port, slot, 1u);
 							break;
 						default:
@@ -987,7 +987,7 @@ LABEL_26:
 					if ( pdIsActive(port_2, slot_2) == 1 )
 					{
 						SetEventFlag(padstate_elm->eventflag, 0x100u);
-						WaitEventFlag(padstate_elm->eventflag, 0x200u, 16, 0);
+						WaitEventFlag(padstate_elm->eventflag, 0x200u, 16, NULL);
 					}
 					++slot_2;
 					++padstate_p2;
@@ -1860,7 +1860,7 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 			querypadTid = pstate->querypadTid;
 LABEL_19:
 			pstate->currentTask = 2;
-			StartThread(querypadTid, 0);
+			StartThread(querypadTid, NULL);
 		}
 	}
 }
@@ -2474,7 +2474,7 @@ LABEL_17:
 	thparam_after = (int)(*av_tmp + 6);
 	if ( (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0 )
 	{
-		new_thpri_hi = strtol((const char *)thparam_after, 0, 10);
+		new_thpri_hi = strtol((const char *)thparam_after, NULL, 10);
 		if ( (unsigned int)(new_thpri_hi - 9) >= 0x73 )
 		{
 			printf("PADMAN : invalid priority %d\n");
@@ -2494,7 +2494,7 @@ LABEL_15:
 		goto LABEL_17;
 	}
 	if ( (look_ctype_table(*(_BYTE *)(thparam_after + 1)) & 4) == 0
-		|| (new_thpri_lo = strtol((const char *)(thparam_after + 1), 0, 10), (unsigned int)(new_thpri_lo - 9) < 0x73) )
+		|| (new_thpri_lo = strtol((const char *)(thparam_after + 1), NULL, 10), (unsigned int)(new_thpri_lo - 9) < 0x73) )
 	{
 		goto LABEL_15;
 	}
@@ -2602,7 +2602,7 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 	vblankdata.tid_2 = thid2;
 	if ( !thid2 )
 		return 0;
-	StartThread(thid2, 0);
+	StartThread(thid2, NULL);
 	thparam.attr = 0x2000000;
 	thparam.thread = (void (__cdecl *)(void *))MainThread;
 	thparam.option = 1;
@@ -2612,7 +2612,7 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 	vblankdata.tid_1 = thid1;
 	if ( !thid1 )
 		return 0;
-	StartThread(thid1, 0);
+	StartThread(thid1, NULL);
 	semaparam.attr = 0;
 	semaparam.initial = 0;
 	semaparam.max = 16;
@@ -2673,7 +2673,7 @@ s32 __cdecl padEnd()
 	while ( i1 < 2 );
 	SetEventFlag(vblankdata.eventflag, 0x1000u);
 	vblankdata.padEnd = 1;
-	WaitEventFlag(vblankdata.eventflag, 8u, 17, 0);
+	WaitEventFlag(vblankdata.eventflag, 8u, 17, NULL);
 	DeleteThreadsEventFlag(&vblankdata);
 	if ( g_readxfertimer_val <= 0 )
 	{
@@ -2811,7 +2811,7 @@ s32 __cdecl padPortOpen(s32 port, s32 slot, s32 pad_area_ee_addr, struct libpad_
 		return 0;
 	updatepadTid = padstate_tmp->updatepadTid;
 	padstate_tmp->currentTask = 1;
-	StartThread(updatepadTid, 0);
+	StartThread(updatepadTid, NULL);
 	return 1;
 }
 // 409260: using guessed type int openSlots[];
@@ -3578,8 +3578,8 @@ u32 __cdecl padTransfer(u32 slot)
 	port_i = 0;
 	sio2_td.in_size = 0;
 	sio2_td.out_size = 0;
-	sio2_td.out_dma.addr = 0;
-	sio2_td.in_dma.addr = 0;
+	sio2_td.out_dma.addr = NULL;
+	sio2_td.in_dma.addr = NULL;
 	unused_4 = padData[1][slot].unused_4;
 	chslot_buf_tmp[1] = 0;
 	chslot_buf_tmp[0] = 0;
@@ -3843,8 +3843,8 @@ int __fastcall unusedref_405680(u32 port, u32 slot)
 	port_tmp = port;
 	sio2_td.in_size = 0;
 	sio2_td.out_size = 0;
-	sio2_td.out_dma.addr = 0;
-	sio2_td.in_dma.addr = 0;
+	sio2_td.out_dma.addr = NULL;
+	sio2_td.in_dma.addr = NULL;
 	if ( change_slot_buffer[port + 4] != 1 )
 		return 0;
 	stat70_tmp = sio2_stat70_get();
@@ -5358,7 +5358,7 @@ void sio2cmdInitConfig(void)
 	s.setbuttoninfo = (u32 (__cdecl *)(u8 *))ConfigSetButtonInfo;
 	s.setvrefparam = (u32 (__cdecl *)(u8 *))ConfigSetVrefParam;
 	s.setmainmode = (u32 (__cdecl *)(u8 *))ConfigSetMainMode;
-	s.enterconfigmode = 0;
+	s.enterconfigmode = NULL; // TODO no-op
 	s.setactalign = (u32 (__cdecl *)(u8 *))ConfigSetSetActAlign;
 	SetupCmds(&s);
 }
@@ -5574,7 +5574,7 @@ void __cdecl RpcThread(void *arg)
 	sceSifInitRpc(0);
 	ThreadId = GetThreadId();
 	sceSifSetRpcQueue(&rpc_qd, ThreadId);
-	sceSifRegisterRpc(&rpc_sd, 0x80000100, (SifRpcFunc_t)RpcServer, rpc_buf, 0, 0, &rpc_qd);
+	sceSifRegisterRpc(&rpc_sd, 0x80000100, (SifRpcFunc_t)RpcServer, rpc_buf, NULL, NULL, &rpc_qd);
 	sceSifRpcLoop(&rpc_qd);
 }
 // 409D44: using guessed type SifRpcDataQueue_t rpc_qd;
@@ -5604,7 +5604,7 @@ void __cdecl RpcThreadExt(void *arg)
 	sceSifInitRpc(0);
 	ThreadId = GetThreadId();
 	sceSifSetRpcQueue(&rpcext_qd, ThreadId);
-	sceSifRegisterRpc(&rpcext_sd, 0x80000101, (SifRpcFunc_t)RpcServerExt, rpcext_buf, 0, 0, &rpcext_qd);
+	sceSifRegisterRpc(&rpcext_sd, 0x80000101, (SifRpcFunc_t)RpcServerExt, rpcext_buf, NULL, NULL, &rpcext_qd);
 	sceSifRpcLoop(&rpcext_qd);
 }
 // 409E24: using guessed type SifRpcDataQueue_t rpcext_qd;
@@ -5630,7 +5630,7 @@ int __cdecl InitRpcServers(int prio)
 	ThreadIdRpcServer = thid1;
 	if ( !thid1 )
 		return 0;
-	StartThread(thid1, 0);
+	StartThread(thid1, NULL);
 	thparam.attr = 0x2000000;
 	thparam.thread = (void (__cdecl *)(void *))RpcThreadExt;
 	thparam.priority = priorx;
@@ -5639,7 +5639,7 @@ int __cdecl InitRpcServers(int prio)
 	ThreadIdRpcServerExt = thid2;
 	if ( !thid2 )
 		return 0;
-	StartThread(thid2, 0);
+	StartThread(thid2, NULL);
 	return 1;
 }
 // 409D40: using guessed type int ThreadIdRpcServer;
