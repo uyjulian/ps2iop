@@ -4041,7 +4041,7 @@ u32 __cdecl sio2CmdGetPortCtrl1(u8 id, u32 b, u8 c)
 		if ( ++i1 >= numControllers )
 			return 0;
 	}
-	return ((int (__fastcall *)(u32, u8))getportctrl1)(b, c);
+	return getportctrl1(b, c);
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
