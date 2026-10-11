@@ -1,10 +1,17 @@
 
-loadcore_IMPORTS_start
+sysmem_IMPORTS_start
+I_Kprintf
+sysmem_IMPORTS_end
+
+xloadcore_IMPORTS_start
 I_RegisterLibraryEntries
-loadcore_IMPORTS_end
+I_SetRebootTimeLibraryHandlingMode
+xloadcore_IMPORTS_end
 
 intrman_IMPORTS_start
-I_CpuEnableIntr
+I_RegisterIntrHandler
+I_ReleaseIntrHandler
+I_EnableIntr
 I_CpuSuspendIntr
 I_CpuResumeIntr
 intrman_IMPORTS_end
@@ -13,11 +20,15 @@ stdio_IMPORTS_start
 I_printf
 stdio_IMPORTS_end
 
-sio2man_IMPORTS_start
+rsio2man_IMPORTS_start
 I_sio2_stat70_get
-I_sio2_pad_transfer_init
-I_sio2_transfer
-sio2man_IMPORTS_end
+I_sio2_pad_transfer_init2
+I_sio2_transfer2
+I_sio2_transfer_reset2
+I_sio2_mtap_change_slot
+I_sio2_mtap_get_slot_max
+I_sio2_mtap_update_slots
+rsio2man_IMPORTS_end
 
 thbase_IMPORTS_start
 I_CreateThread
@@ -26,6 +37,7 @@ I_StartThread
 I_ExitThread
 I_GetThreadId
 I_ReferThreadStatus
+I_iReferThreadStatus
 thbase_IMPORTS_end
 
 thevent_IMPORTS_start
@@ -37,10 +49,28 @@ I_ClearEventFlag
 I_WaitEventFlag
 thevent_IMPORTS_end
 
+thsemap_IMPORTS_start
+I_CreateSema
+I_DeleteSema
+I_iSignalSema
+I_WaitSema
+thsemap_IMPORTS_end
+
+timrman_IMPORTS_start
+I_AllocHardTimer
+I_FreeHardTimer
+I_SetTimerMode
+I_SetTimerCounter
+I_SetTimerCompare
+I_GetHardTimerIntrCode
+timrman_IMPORTS_end
+
 sifman_IMPORTS_start
 I_sceSifInit
 I_sceSifSetDma
+I_sceSifDmaStat
 I_sceSifCheckInit
+I_sceSifSetDmaIntr
 sifman_IMPORTS_end
 
 sifcmd_IMPORTS_start
@@ -48,9 +78,18 @@ I_sceSifInitRpc
 I_sceSifRegisterRpc
 I_sceSifSetRpcQueue
 I_sceSifRpcLoop
+I_sceSifSendCmdIntr
 sifcmd_IMPORTS_end
 
 vblank_IMPORTS_start
 I_RegisterVblankHandler
 I_ReleaseVblankHandler
 vblank_IMPORTS_end
+
+sysclib_IMPORTS_start
+I_look_ctype_table
+I_memcpy
+I_strncmp
+I_strtol
+I_memset
+sysclib_IMPORTS_end

@@ -1,6 +1,6 @@
 IOP_BIN = padman.irx
 
-IOP_OBJS = _start.o imports.o exports.o main.o
+IOP_OBJS = imports.o exports.o padman.o
 
 all: $(IOP_BIN)
 
