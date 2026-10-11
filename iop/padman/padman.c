@@ -5,7 +5,6 @@
 #define __fastcall
 #define __cdecl
 #define __noreturn
-#define BOOL u32
 #define __int8 char
 #define __int16 short
 #define __int32 int
@@ -166,7 +165,7 @@ IRX_ID("padman", 4, 34);
 //-------------------------------------------------------------------------
 // Function declarations
 
-BOOL __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate);
+u32 __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate);
 void __cdecl WaitClearEvent(int eventflag, u32 bits);
 s32 __cdecl VbReferThreadStatus(vblankData_t *vData);
 void __cdecl DeleteThreadsEventFlag(vblankData_t *vbdat);
@@ -244,7 +243,7 @@ u32 __cdecl pdSetOutSize(u32 port, u32 slot, u32 size);
 u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf);
 int __fastcall unusedref_4055A0(unsigned int port, u32 slot, u32 port_ctrl);
 int __fastcall unusedref_405680(u32 port, u32 slot);
-BOOL __fastcall unused_4057D4(u32 port, s32 slot);
+int __fastcall unused_4057D4(u32 port, s32 slot);
 void sio2cmdReset(void);
 int __cdecl SetupCmds(const sio2Cmds_t *s);
 u32 __cdecl sio2cmdCheckId(u8 id);
@@ -419,10 +418,10 @@ int rpcext_buf[32]; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-BOOL __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate)
+u32 __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate)
 {
 	struct libpad_dma_act_direct_state *astate; // $s0
-	BOOL framecmp; // $s1
+	u32 framecmp; // $s1
 
 	astate = &pstate->m_dma_act_direct_state[pstate->m_dma_act_direct_state[0].m_frame < pstate->m_dma_act_direct_state[1].m_frame];
 	framecmp = pstate->m_dma_act_direct_state[0].m_frame < pstate->m_dma_act_direct_state[1].m_frame;
@@ -454,23 +453,18 @@ void __cdecl WaitClearEvent(int eventflag, u32 bits)
 //----- (004000E4) --------------------------------------------------------
 s32 __cdecl VbReferThreadStatus(vblankData_t *vData)
 {
-	BOOL ret2; // $s0
-	bool condtmp; // dc
-	s32 ret1; // $v0
+	u32 ret2; // $s0
 	iop_thread_info_t tinfo; // [sp+10h] [-48h] BYREF
 
 	ret2 = 0;
 	if ( !iReferThreadStatus(vData->tid_1, &tinfo) )
 		ret2 = (tinfo.status & 0x10) == 0;
-	condtmp = iReferThreadStatus(vData->tid_2, &tinfo) != 0;
-	ret1 = ret2;
-	if ( !condtmp )
+	if ( !(iReferThreadStatus(vData->tid_2, &tinfo) != 0) )
 	{
-		ret1 = ret2;
 		if ( (tinfo.status & 0x10) == 0 )
 			return ret2 + 1;
 	}
-	return ret1;
+	return ret2;
 }
 
 //----- (00400164) --------------------------------------------------------
@@ -485,7 +479,6 @@ void __cdecl DeleteThreadsEventFlag(vblankData_t *vbdat)
 u32 __cdecl GetThreadsStatus(padState_t *state)
 {
 	int count; // $s0
-	bool condtmp; // dc
 	iop_thread_info_t tinfo; // [sp+10h] [-48h] BYREF
 
 	count = 0;
@@ -499,8 +492,7 @@ u32 __cdecl GetThreadsStatus(padState_t *state)
 		++count;
 	if ( !ReferThreadStatus(state->setbuttoninfoTid, &tinfo) && (tinfo.status & 0x10) == 0 )
 		++count;
-	condtmp = ReferThreadStatus(state->setvrefparamTid, &tinfo) != 0;
-	if ( !condtmp )
+	if ( !(ReferThreadStatus(state->setvrefparamTid, &tinfo) != 0) )
 	{
 		if ( (tinfo.status & 0x10) == 0 )
 			return count + 1 < 1;
@@ -2450,7 +2442,6 @@ int __cdecl ParseParams(int argc, char *argv[])
 	int ac_tmp; // $s4
 	const char **av_tmp; // $s1
 	int thparam_after; // $s0
-	BOOL condtmp; // $v0
 
 	new_thpri_hi = 20;
 	new_thpri_lo = 46;
@@ -2483,11 +2474,10 @@ LABEL_17:
 	}
 	while ( (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0 )
 		++thparam_after;
-	condtmp = new_thpri_lo < new_thpri_hi;
 	if ( *(_BYTE *)thparam_after != 44 )
 	{
 LABEL_15:
-		if ( condtmp )
+		if ( new_thpri_lo < new_thpri_hi )
 		{
 			new_thpri_lo = new_thpri_hi;
 			printf("PADMAN : high prio thread must be higher than low prio thread\n");
@@ -2497,7 +2487,6 @@ LABEL_15:
 	if ( (look_ctype_table(*(_BYTE *)(thparam_after + 1)) & 4) == 0
 		|| (new_thpri_lo = strtol((const char *)(thparam_after + 1), 0, 10), (unsigned int)(new_thpri_lo - 9) < 0x73) )
 	{
-		condtmp = new_thpri_lo < new_thpri_hi;
 		goto LABEL_15;
 	}
 	printf(" SDR driver error: invalid priority %d\n");
@@ -2508,8 +2497,6 @@ LABEL_15:
 //----- (00403448) --------------------------------------------------------
 int __cdecl _start(int ac, char **av)
 {
-	bool condtmp; // dc
-
 	vblank_end = 0;
 	padman_init = 0;
 	sifdma_id = 0;
@@ -2529,11 +2516,9 @@ int __cdecl _start(int ac, char **av)
 	}
 	else
 	{
-		condtmp = SetRebootTimeLibraryHandlingMode(&_exp_padman, 2) != 0;
-		if ( !condtmp )
+		if ( !(SetRebootTimeLibraryHandlingMode(&_exp_padman, 2) != 0) )
 		{
-			condtmp = InitRpcServers(thpri_lo) != 0;
-			if ( !condtmp )
+			if ( !(InitRpcServers(thpri_lo) != 0) )
 			{
 				if ( g_padman_verbose )
 				{
@@ -3529,7 +3514,6 @@ u32 __cdecl readSio2OutBuffer(u32 bit, u32 port, u32 slot)
 	u32 slotstuff; // $v1
 	u32 slotoffs2; // $v1
 	u32 out_size_plus_1; // $a1
-	BOOL condtmp; // $v0
 
 	if ( ((sio2_td.stat6c >> 13) & 1) == 1 )
 	{
@@ -3556,10 +3540,9 @@ u32 __cdecl readSio2OutBuffer(u32 bit, u32 port, u32 slot)
 				out_size_plus_1 = sio2_td.out_size + 1;
 				padData[port][0].out_buffer[slotoffs1 + slotoffs2] = sio2_td.out[sio2_td.out_size];
 				sio2_td.out_size = out_size_plus_1;
-				condtmp = ++slotoffs1 < *(signed __int32 *)((char *)&padData[port][0].out_size + slotoffs2);
 				slotstuff = 3 * slot;
 			}
-			while ( condtmp );
+			while ( ++slotoffs1 < *(signed __int32 *)((char *)&padData[port][0].out_size + slotoffs2) );
 		}
 		return 1;
 	}
@@ -3874,13 +3857,13 @@ int __fastcall unusedref_405680(u32 port, u32 slot)
 // 4095F0: using guessed type sio2_transfer_data_t sio2_td;
 
 //----- (004057D4) --------------------------------------------------------
-BOOL __fastcall unused_4057D4(u32 port, s32 slot)
+int __fastcall unused_4057D4(u32 port, s32 slot)
 {
-	BOOL condtmp; // $s4
+	int retres; // $s4
 	u32 Stat70bit; // $v0
 	u32 bit70stuff; // $v0
 
-	condtmp = 0;
+	retres = 0;
 	sio2_pad_transfer_init2();
 	change_slot_buffer[2] = -1;
 	change_slot_buffer[3] = -1;
@@ -3892,14 +3875,14 @@ BOOL __fastcall unused_4057D4(u32 port, s32 slot)
 	bit70stuff = pdGetStat70bit(1u, slot);
 	unusedref_4055A0(1u, slot, bit70stuff);
 	if ( unusedref_405680(port, slot) == 1 )
-		condtmp = padData[port][slot].error == 0;
+		retres = padData[port][slot].error == 0;
 	change_slot_buffer[2] = -1;
 	change_slot_buffer[3] = -1;
 	change_slot_buffer[0] = 0;
 	change_slot_buffer[1] = 0;
 	sio2_mtap_change_slot(change_slot_buffer);
 	sio2_transfer_reset2();
-	return condtmp;
+	return retres;
 }
 
 //----- (00405910) --------------------------------------------------------
