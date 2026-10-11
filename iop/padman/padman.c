@@ -3549,7 +3549,7 @@ u32 __cdecl setupTransferData(u32 index, u32 port, u32 slot)
 	index_cur = index++;
 	sio2_td.port_ctrl1[port_cur] = p_padData->port_ctrl1;
 	sio2_td.port_ctrl2[port_cur] = p_padData->port_ctrl2;
-	sio2_td.regdata[index_cur] = p_padData->reg_data & 0xFFFFFFFC | port & 3;
+	sio2_td.regdata[index_cur] = (p_padData->reg_data & 0xFFFFFFFC) | (port & 3);
 	sio2_td.regdata[index] = 0;
 	return index;
 }
@@ -4726,7 +4726,7 @@ u32 __cdecl AnalogGetPortCtrl1(u32 a, u32 b)
 	val4 = 0xC0;
 	if ( tempbtest )
 		val4 = 0x60;
-	return val3 & 0xFF00FFFF | (val4 << 16) | 0xFF000000;
+	return (val3 & 0xFF00FFFF) | (val4 << 16) | 0xFF000000;
 }
 
 //----- (004068DC) --------------------------------------------------------
