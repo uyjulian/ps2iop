@@ -778,6 +778,7 @@ void __cdecl shiftarray(u8 *buf)
 //----- (00400910) --------------------------------------------------------
 int __cdecl VblankEnd(void *arg)
 {
+	(void)arg;
 	vblank_end = 1;
 	return 1;
 }
@@ -822,6 +823,7 @@ int __cdecl VblankStart(vblankData_t *vData)
 //----- (00400A10) --------------------------------------------------------
 void __cdecl __noreturn TransferThread(void *arg)
 {
+	(void)arg;
 	while ( 1 )
 	{
 		WaitClearEvent(vblankdata.eventflag, 1u);
@@ -855,6 +857,7 @@ void __cdecl __noreturn MainThread(void *arg)
 	padState_t *padstate_p2; // $s2
 	padState_t *padstate_elm; // $s0
 
+	(void)arg;
 	while ( 1 )
 	{
 		update_slots_cond = 0x55555556LL * (mainThreadCount + 1);
@@ -1791,6 +1794,7 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 	u32 findPadRetries; // $v0
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
+	(void)arg;
 	retval = 0;
 	ReferThreadStatus(0, &thinfo);
 	pstate = (padState_t *)thinfo.option;
@@ -1888,6 +1892,7 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 	u8 cur_id_tmp; // $s2
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
+	(void)arg;
 	ReferThreadStatus(0, &thinfo);
 	option = (padState_t *)thinfo.option;
 	i1 = 0;
@@ -2153,6 +2158,7 @@ void __cdecl __noreturn SetMainModeThread(void *arg)
 	int tries3; // $s1
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
+	(void)arg;
 	tries1 = 0;
 	ReferThreadStatus(0, &thinfo);
 	option = (padState_t *)thinfo.option;
@@ -2212,6 +2218,7 @@ void __cdecl __noreturn SetActAlignThread(void *arg)
 	int tries3; // $s1
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
+	(void)arg;
 	tries1 = 0;
 	ReferThreadStatus(0, &thinfo);
 	option = (padState_t *)thinfo.option;
@@ -2272,6 +2279,7 @@ void __cdecl __noreturn SetButtonInfoThread(void *arg)
 	int tries3; // $s1
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
+	(void)arg;
 	tries1 = 0;
 	ReferThreadStatus(0, &thinfo);
 	option = (padState_t *)thinfo.option;
@@ -2352,6 +2360,7 @@ void __cdecl __noreturn SetVrefParamThread(void *arg)
 	int tries2; // $s1
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
+	(void)arg;
 	tries1 = 0;
 	ReferThreadStatus(0, &thinfo);
 	option = (padState_t *)thinfo.option;
@@ -4412,6 +4421,8 @@ void __cdecl FindPadsReadData(u8 *a)
 //----- (00406430) --------------------------------------------------------
 u32 __cdecl FindPadsGetPortCtrl1(u32 a, u32 b)
 {
+	(void)b;
+
 	if ( a )
 		return 0xFF060505;
 	else
@@ -4451,6 +4462,8 @@ u32 FindPadsRegData(void)
 //----- (004064BC) --------------------------------------------------------
 u32 __cdecl FindPadsEnterConfigMode(u8 *a)
 {
+	(void)a;
+
 	return 0;
 }
 
@@ -4485,6 +4498,8 @@ void __cdecl MouseReadData(u8 *a)
 //----- (00406598) --------------------------------------------------------
 u32 __cdecl MouseGetPortCtrl1(u32 a, u32 b)
 {
+	(void)b;
+
 	if ( a )
 		return 0xFF060505;
 	else
@@ -4559,6 +4574,8 @@ void __cdecl DigitalReadData(u8 *a)
 //----- (004066F0) --------------------------------------------------------
 u32 __cdecl DigitalGetPortCtrl1(u32 a, u32 b)
 {
+	(void)b;
+
 	if ( a )
 		return 0xFF060505;
 	else
@@ -4723,6 +4740,8 @@ void __cdecl NegiconReadData(u8 *a)
 //----- (00406A10) --------------------------------------------------------
 u32 __cdecl NegiconGetPortCtrl1(u32 a, u32 b)
 {
+	(void)b;
+
 	if ( a )
 		return 0xFF060505;
 	else
@@ -4803,6 +4822,8 @@ void __cdecl JoystickReadData(u8 *a)
 //----- (00406B80) --------------------------------------------------------
 u32 __cdecl JoystickGetPortCtrl1(u32 a, u32 b)
 {
+	(void)b;
+
 	if ( a )
 		return 0xFF060505;
 	else
@@ -4879,6 +4900,8 @@ void __cdecl KonamiGunReadData(u8 *a)
 //----- (00406CE4) --------------------------------------------------------
 u32 __cdecl KonamiGunGetPortCtrl1(u32 a, u32 b)
 {
+	(void)b;
+
 	if ( a )
 		return 0xFF060505;
 	else
@@ -4955,6 +4978,8 @@ void __cdecl NamcoGunReadData(u8 *a)
 //----- (00406E40) --------------------------------------------------------
 u32 __cdecl NamcoGunGetPortCtrl1(u32 a, u32 b)
 {
+	(void)b;
+
 	if ( a )
 		return 0xFF060505;
 	else
@@ -5039,6 +5064,8 @@ void __cdecl JogconReadData(u8 *a)
 //----- (00406FC0) --------------------------------------------------------
 u32 __cdecl JogconGetPortCtrl1(u32 a, u32 b)
 {
+	(void)b;
+
 	if ( a )
 		return 0xFF060505;
 	else
@@ -5124,6 +5151,8 @@ void __cdecl ConfigReadData(u8 *a)
 //----- (00407144) --------------------------------------------------------
 u32 __cdecl ConfigGetPortCtrl1(u32 a, u32 b)
 {
+	(void)b;
+
 	if ( a )
 		return 0xFF060505;
 	else
@@ -5463,6 +5492,8 @@ void *__cdecl RpcSetNonblockDma(u32 *a1)
 //----- (0040789C) --------------------------------------------------------
 void *__cdecl RpcServer(int fno, void *buffer, int length)
 {
+	(void)fno;
+	(void)length;
 	switch ( *(_DWORD *)buffer )
 	{
 		case 1:
@@ -5534,6 +5565,7 @@ void __cdecl RpcThread(void *arg)
 {
 	int ThreadId; // $v0
 
+	(void)arg;
 	if ( !sceSifCheckInit() )
 	{
 		printf("yet sif hasn't been init\n");
@@ -5552,6 +5584,8 @@ void __cdecl RpcThread(void *arg)
 //----- (00407ABC) --------------------------------------------------------
 void *__cdecl RpcServerExt(int fno, void *buffer, int length)
 {
+	(void)fno;
+	(void)length;
 	printf("Extend Service : this service is not support\n");
 	return buffer;
 }
@@ -5561,6 +5595,7 @@ void __cdecl RpcThreadExt(void *arg)
 {
 	int ThreadId; // $v0
 
+	(void)arg;
 	if ( !sceSifCheckInit() )
 	{
 		printf("yet sif hasn't been init\n");
