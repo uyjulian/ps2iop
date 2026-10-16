@@ -587,49 +587,48 @@ void DmaSendEE(void)
 			}
 		}
 	}
-	if ( dmat_count_2 )
+	if ( !dmat_count_2 )
+		return;
+	if ( g_padman_nonblock_dma == 1 )
 	{
-		if ( g_padman_nonblock_dma == 1 )
+		CpuSuspendIntr(&state);
+		trid3 = sceSifSetDmaIntr(sifdma_td, dmat_count_2, ee_dma_send_completion_cb, (void *)g_sema);
+		sifdma_id = trid3;
+		CpuResumeIntr(state);
+		if ( !trid3 )
 		{
-			CpuSuspendIntr(&state);
-			trid3 = sceSifSetDmaIntr(sifdma_td, dmat_count_2, ee_dma_send_completion_cb, (void *)g_sema);
-			sifdma_id = trid3;
-			CpuResumeIntr(state);
-			if ( trid3 )
-			{
-				WaitSema(g_sema);
-				if ( sceSifDmaStat(trid3) >= 0 && g_padman_verbose >= 2 )
-					Kprintf("padman: SIFDMA PANIC!\n");
-				CpuSuspendIntr(&state);
-				g_dma_buf[3] = vblankStartCount;
-				trid2 = sceSifSendCmdIntr(0x80000019, g_dma_buf, 16, NULL, NULL, 0, ee_dma_send_completion_cb, (void *)g_sema);
-				sifdma_id = trid2;
-				CpuResumeIntr(state);
-				if ( trid2 )
-				{
-					WaitSema(g_sema);
-					if ( sceSifDmaStat(trid2) >= 0 && g_padman_verbose >= 2 )
-						Kprintf("padman: SIFCMD PANIC!\n");
-				}
-				else if ( g_padman_verbose >= 2 )
-				{
-					Kprintf("padman: SIFCMD faild\n");
-				}
-				return;
-			}
+			if ( g_padman_verbose >= 2 )
+				Kprintf("padman: SIFDMA faild\n");
+			return;
 		}
-		else
+		WaitSema(g_sema);
+		if ( sceSifDmaStat(trid3) >= 0 )
+			if ( g_padman_verbose >= 2 )
+				Kprintf("padman: SIFDMA PANIC!\n");
+		CpuSuspendIntr(&state);
+		g_dma_buf[3] = vblankStartCount;
+		trid2 = sceSifSendCmdIntr(0x80000019, g_dma_buf, 16, NULL, NULL, 0, ee_dma_send_completion_cb, (void *)g_sema);
+		sifdma_id = trid2;
+		CpuResumeIntr(state);
+		if ( !trid2 )
 		{
-			CpuSuspendIntr(&state);
-			trid1 = sceSifSetDma(sifdma_td, dmat_count_2);
-			sifdma_id = trid1;
-			CpuResumeIntr(state);
-			if ( trid1 )
-				return;
+			if ( g_padman_verbose >= 2 )
+				Kprintf("padman: SIFCMD faild\n");
+			return;
 		}
+		WaitSema(g_sema);
+		if ( sceSifDmaStat(trid2) >= 0 )
+			if ( g_padman_verbose >= 2 )
+				Kprintf("padman: SIFCMD PANIC!\n");
+		return;
+	}
+	CpuSuspendIntr(&state);
+	trid1 = sceSifSetDma(sifdma_td, dmat_count_2);
+	sifdma_id = trid1;
+	CpuResumeIntr(state);
+	if ( !trid1 )
 		if ( g_padman_verbose >= 2 )
 			Kprintf("padman: SIFDMA faild\n");
-	}
 }
 // 4082F8: using guessed type int g_padman_verbose;
 // 4082FC: using guessed type int vblankStartCount;
@@ -769,15 +768,13 @@ void __cdecl __noreturn MainThread(void *arg)
 							pstate->reqState = 0;
 							openSlots[port] ^= 1 << slot;
 							DeleteThreads(pstate);
-							if ( pstate->m_close_wait_blocking )
-							{
-								SetEventFlag(pstate->eventflag, 0x400u);
-							}
-							else
+							if ( !pstate->m_close_wait_blocking )
 							{
 								DeleteEventFlag(pstate->eventflag);
 								pstate->eventflag = 0;
+								break;
 							}
+							SetEventFlag(pstate->eventflag, 0x400u);
 							break;
 						case 4u:
 							flag_to_set = 8;
@@ -1038,9 +1035,9 @@ u32 __cdecl QueryModel(padState_t *pstate)
 				pstate->numActuators = 4;
 			if ( pstate->numActComb >= 4u )
 				pstate->numActComb = 4;
-			retflag = 1;
 			if ( pstate->numModes >= 4u )
 				pstate->numModes = 4;
+			retflag = 1;
 		}
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
@@ -1073,8 +1070,8 @@ u32 __cdecl QueryAct(u32 actuator, padState_t *pstate)
 			pstate->actData[actuator][0] = pstate->outbuffer[5];
 			pstate->actData[actuator][1] = pstate->outbuffer[6];
 			pstate->actData[actuator][2] = pstate->outbuffer[7];
-			retflag = 1;
 			pstate->actData[actuator][3] = pstate->outbuffer[8];
+			retflag = 1;
 		}
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
@@ -1107,8 +1104,8 @@ u32 __cdecl QueryComb(u32 val, padState_t *pstate)
 			pstate->combData[val][0] = pstate->outbuffer[5];
 			pstate->combData[val][1] = pstate->outbuffer[6];
 			pstate->combData[val][2] = pstate->outbuffer[7];
-			retflag = 1;
 			pstate->combData[val][3] = pstate->outbuffer[8];
+			retflag = 1;
 		}
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
@@ -1138,8 +1135,8 @@ u32 __cdecl QueryMode(u32 val, padState_t *pstate)
 			shiftarray(pstate->outbuffer);
 		if ( pstate->outbuffer[1] == 243 )
 		{
-			retflag = 1;
 			pstate->modeTable[val] = pstate->outbuffer[6] + (pstate->outbuffer[5] << 8);
+			retflag = 1;
 		}
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
@@ -2004,14 +2001,14 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 		RegisterVblankHandler(0, 16, (int (__cdecl *)(void *))VblankStart, &vblankdata);
 		RegisterVblankHandler(1, 16, VblankEnd, &vblankdata);
 	}
-	else
+	else if ( (unsigned int)(timer_interval - 0x4123) <= 0xC348 )
 	{
-		if ( (unsigned int)(timer_interval - 0x4123) > 0xC348 )
-			return 0;
 		g_readxfertimer_val = 0x3D76 * timer_interval / 1000000;
 		CpuSuspendIntr(state);
 		do_set_timer(346, g_readxfertimer_val);
 	}
+	else
+		return 0;
 	CpuResumeIntr(state[0]);
 	vblankdata.init = 1;
 	padman_init = 1;
@@ -2175,21 +2172,19 @@ s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait)
 
 	efres[0] = 0;
 	pstate = &g_pad_state[port][slot];
-	if ( ((openSlots[port] >> slot) & 1) != 0 && pstate->reqState != 2 )
+	if ( ((openSlots[port] >> slot) & 1) == 0 || pstate->reqState == 2 )
+		return 0;
+	pstate->runTask = 3;
+	pstate->taskTid = 0;
+	pstate->reqState = 2;
+	pstate->m_close_wait_blocking = wait;
+	if ( wait )
 	{
-		pstate->runTask = 3;
-		pstate->taskTid = 0;
-		pstate->reqState = 2;
-		pstate->m_close_wait_blocking = wait;
-		if ( wait )
-		{
-			WaitEventFlag(pstate->eventflag, 0x400u, 16, (u32 *)efres);
-			DeleteEventFlag(pstate->eventflag);
-			pstate->eventflag = 0;
-		}
-		return 1;
+		WaitEventFlag(pstate->eventflag, 0x400u, 16, (u32 *)efres);
+		DeleteEventFlag(pstate->eventflag);
+		pstate->eventflag = 0;
 	}
-	return 0;
+	return 1;
 }
 // 409260: using guessed type int openSlots[];
 // 403C78: using guessed type u32 efres[2];
@@ -2204,149 +2199,149 @@ u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, padState_t *pstate)
 	__int16 swapval2; // $v1
 
 	pstate_tmp = &g_pad_state[port][slot];
-	if ( pstate_tmp->buttonDataReady == 1 )
+	if ( pstate_tmp->buttonDataReady != 1 )
 	{
-		pstate->ee_pdata.data[0] = 0;
-		pstate->ee_pdata.data[1] = pstate_tmp->modeCurId;
-		pstate->ee_pdata.data[31] = pstate_tmp->buttonStatus[2];
-		for ( i = 2; i < 31; i += 1 )
-			pstate->ee_pdata.data[i] = pstate_tmp->buttonStatus[i + 1];
-		if ( pstate_tmp->modeCurId == 18 )
-		{
-			pstate->ee_pdata.data[2] = -1;
-			pstate->ee_pdata.data[3] = -1;
-			pstate->ee_pdata.data[4] = 0;
-			pstate->ee_pdata.data[5] = 0;
-		}
-		if ( pstate_tmp->modeCurId != 121 )
-			return 32;
-		swapval2 = ~BSWAP16(*(_WORD *)&pstate->ee_pdata.data[2]);
-		if ( (swapval2 & 0x2000) != 0 )
-		{
-			if ( !pstate->ee_pdata.data[8] )
-				pstate->ee_pdata.data[8] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[8] )
-				pstate->ee_pdata.data[8] = 0;
-		}
-		if ( swapval2 & 0x8000 )
-		{
-			if ( !pstate->ee_pdata.data[9] )
-				pstate->ee_pdata.data[9] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[9] )
-				pstate->ee_pdata.data[9] = 0;
-		}
-		if ( swapval2 & 0x1000 )
-		{
-			if ( !pstate->ee_pdata.data[10] )
-				pstate->ee_pdata.data[10] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[10] )
-				pstate->ee_pdata.data[10] = 0;
-		}
-		if ( swapval2 & 0x4000 )
-		{
-			if ( !pstate->ee_pdata.data[11] )
-				pstate->ee_pdata.data[11] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[11] )
-				pstate->ee_pdata.data[11] = 0;
-		}
-		if ( swapval2 & 0x10 )
-		{
-			if ( !pstate->ee_pdata.data[12] )
-				pstate->ee_pdata.data[12] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[12] )
-				pstate->ee_pdata.data[12] = 0;
-		}
-		if ( swapval2 & 0x20 )
-		{
-			if ( !pstate->ee_pdata.data[13] )
-				pstate->ee_pdata.data[13] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[13] )
-				pstate->ee_pdata.data[13] = 0;
-		}
-		if ( swapval2 & 0x40 )
-		{
-			if ( !pstate->ee_pdata.data[14] )
-				pstate->ee_pdata.data[14] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[14] )
-				pstate->ee_pdata.data[14] = 0;
-		}
-		if ( swapval2 & 0x80 )
-		{
-			if ( !pstate->ee_pdata.data[15] )
-				pstate->ee_pdata.data[15] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[15] )
-				pstate->ee_pdata.data[15] = 0;
-		}
-		if ( swapval2 & 4 )
-		{
-			if ( !pstate->ee_pdata.data[16] )
-				pstate->ee_pdata.data[16] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[16] )
-				pstate->ee_pdata.data[16] = 0;
-		}
-		if ( swapval2 & 8 )
-		{
-			if ( !pstate->ee_pdata.data[17] )
-				pstate->ee_pdata.data[17] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[17] )
-				pstate->ee_pdata.data[17] = 0;
-		}
-		if ( swapval2 & 1 )
-		{
-			if ( !pstate->ee_pdata.data[18] )
-				pstate->ee_pdata.data[18] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[18] )
-				pstate->ee_pdata.data[18] = 0;
-		}
-		if ( swapval2 & 2 )
-		{
-			if ( !pstate->ee_pdata.data[19] )
-				pstate->ee_pdata.data[19] = 1;
-		}
-		else
-		{
-			if ( pstate->ee_pdata.data[19] )
-				pstate->ee_pdata.data[19] = 0;
-		}
-		return 32;
+		pstate->ee_pdata.data[0] = -1;
+		for ( i = 1; i < 32; i += 1 )
+			pstate->ee_pdata.data[i] = 0;
+		return 0;
 	}
-	pstate->ee_pdata.data[0] = -1;
-	for ( i = 1; i < 32; i += 1 )
-		pstate->ee_pdata.data[i] = 0;
-	return 0;
+	pstate->ee_pdata.data[0] = 0;
+	pstate->ee_pdata.data[1] = pstate_tmp->modeCurId;
+	pstate->ee_pdata.data[31] = pstate_tmp->buttonStatus[2];
+	for ( i = 2; i < 31; i += 1 )
+		pstate->ee_pdata.data[i] = pstate_tmp->buttonStatus[i + 1];
+	if ( pstate_tmp->modeCurId == 18 )
+	{
+		pstate->ee_pdata.data[2] = -1;
+		pstate->ee_pdata.data[3] = -1;
+		pstate->ee_pdata.data[4] = 0;
+		pstate->ee_pdata.data[5] = 0;
+	}
+	if ( pstate_tmp->modeCurId != 121 )
+		return 32;
+	swapval2 = ~BSWAP16(*(_WORD *)&pstate->ee_pdata.data[2]);
+	if ( (swapval2 & 0x2000) != 0 )
+	{
+		if ( !pstate->ee_pdata.data[8] )
+			pstate->ee_pdata.data[8] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[8] )
+			pstate->ee_pdata.data[8] = 0;
+	}
+	if ( swapval2 & 0x8000 )
+	{
+		if ( !pstate->ee_pdata.data[9] )
+			pstate->ee_pdata.data[9] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[9] )
+			pstate->ee_pdata.data[9] = 0;
+	}
+	if ( swapval2 & 0x1000 )
+	{
+		if ( !pstate->ee_pdata.data[10] )
+			pstate->ee_pdata.data[10] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[10] )
+			pstate->ee_pdata.data[10] = 0;
+	}
+	if ( swapval2 & 0x4000 )
+	{
+		if ( !pstate->ee_pdata.data[11] )
+			pstate->ee_pdata.data[11] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[11] )
+			pstate->ee_pdata.data[11] = 0;
+	}
+	if ( swapval2 & 0x10 )
+	{
+		if ( !pstate->ee_pdata.data[12] )
+			pstate->ee_pdata.data[12] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[12] )
+			pstate->ee_pdata.data[12] = 0;
+	}
+	if ( swapval2 & 0x20 )
+	{
+		if ( !pstate->ee_pdata.data[13] )
+			pstate->ee_pdata.data[13] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[13] )
+			pstate->ee_pdata.data[13] = 0;
+	}
+	if ( swapval2 & 0x40 )
+	{
+		if ( !pstate->ee_pdata.data[14] )
+			pstate->ee_pdata.data[14] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[14] )
+			pstate->ee_pdata.data[14] = 0;
+	}
+	if ( swapval2 & 0x80 )
+	{
+		if ( !pstate->ee_pdata.data[15] )
+			pstate->ee_pdata.data[15] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[15] )
+			pstate->ee_pdata.data[15] = 0;
+	}
+	if ( swapval2 & 4 )
+	{
+		if ( !pstate->ee_pdata.data[16] )
+			pstate->ee_pdata.data[16] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[16] )
+			pstate->ee_pdata.data[16] = 0;
+	}
+	if ( swapval2 & 8 )
+	{
+		if ( !pstate->ee_pdata.data[17] )
+			pstate->ee_pdata.data[17] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[17] )
+			pstate->ee_pdata.data[17] = 0;
+	}
+	if ( swapval2 & 1 )
+	{
+		if ( !pstate->ee_pdata.data[18] )
+			pstate->ee_pdata.data[18] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[18] )
+			pstate->ee_pdata.data[18] = 0;
+	}
+	if ( swapval2 & 2 )
+	{
+		if ( !pstate->ee_pdata.data[19] )
+			pstate->ee_pdata.data[19] = 1;
+	}
+	else
+	{
+		if ( pstate->ee_pdata.data[19] )
+			pstate->ee_pdata.data[19] = 0;
+	}
+	return 32;
 }
 
 //----- (00404114) --------------------------------------------------------
@@ -2709,33 +2704,28 @@ u32 __cdecl padTransfer(u32 slot)
 		}
 		port ^= 1u;
 	}
-	if ( slot )
+	if ( slot && padData[0][slot].active == 1 && change_slot_buffer[4] != 1 )
+		padData[0][slot].error = 10;
+	if ( slot && padData[1][slot].active == 1 && change_slot_buffer[5] != 1 )
+		padData[1][slot].error = 10;
+	if ( !xferdatres )
+		return 0;
+	sio2_transfer2(&sio2_td);
+	sio2_td.out_size = 0;
+	port_2 = port_1;
+	for ( i = 0; i < 2; i += 1 )
 	{
-		if ( padData[0][slot].active == 1 && change_slot_buffer[4] != 1 )
-			padData[0][slot].error = 10;
-		if ( padData[1][slot].active == 1 && change_slot_buffer[5] != 1 )
-			padData[1][slot].error = 10;
-	}
-	if ( xferdatres )
-	{
-		sio2_transfer2(&sio2_td);
-		sio2_td.out_size = 0;
-		port_2 = port_1;
-		for ( i = 0; i < 2; i += 1 )
+		if ( chslot_buf_tmp[port_2] == 1 )
 		{
-			if ( chslot_buf_tmp[port_2] == 1 )
-			{
-				readSio2OutBuffer(porttmp[port_2], port_2, slot);
-				sio2_td.out_size = padData[port_2][slot].out_size;
-			}
-			port_2 ^= 1u;
+			readSio2OutBuffer(porttmp[port_2], port_2, slot);
+			sio2_td.out_size = padData[port_2][slot].out_size;
 		}
-		stat70 = sio2_stat70_get();
-		pdSetStat70bit(0, slot, (stat70 >> 4) & 1);
-		pdSetStat70bit(1u, slot, (stat70 >> 5) & 1);
-		return 1;
+		port_2 ^= 1u;
 	}
-	return 0;
+	stat70 = sio2_stat70_get();
+	pdSetStat70bit(0, slot, (stat70 >> 4) & 1);
+	pdSetStat70bit(1u, slot, (stat70 >> 5) & 1);
+	return 1;
 }
 // 4095F0: using guessed type sio2_transfer_data_t sio2_td;
 
