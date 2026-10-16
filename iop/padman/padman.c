@@ -796,14 +796,16 @@ void __cdecl __noreturn MainThread(void *arg)
 							pstate->reqState = 1;
 						}
 					}
+					flag_to_set = 0;
 					switch ( pstate->currentTask )
 					{
 						case 1u:
 							flag_to_set = 1;
-							goto LABEL_24;
+							break;
 						case 2u:
 							flag_to_set = 2;
-							goto LABEL_23;
+							pstate->buttonDataReady = 0;
+							break;
 						case 3u:
 							pstate->buttonDataReady = 0;
 							if ( GetThreadsStatus(pstate) != 1 )
@@ -821,30 +823,33 @@ void __cdecl __noreturn MainThread(void *arg)
 								DeleteEventFlag(pstate->eventflag);
 								pstate->eventflag = 0;
 							}
-							goto LABEL_26;
+							break;
 						case 4u:
 							flag_to_set = 8;
-							goto LABEL_23;
+							pstate->buttonDataReady = 0;
+							break;
 						case 5u:
 							flag_to_set = 16;
-							goto LABEL_23;
+							pstate->buttonDataReady = 0;
+							break;
 						case 6u:
 							flag_to_set = 32;
-							goto LABEL_23;
+							pstate->buttonDataReady = 0;
+							break;
 						case 7u:
 							flag_to_set = 64;
-LABEL_23:
 							pstate->buttonDataReady = 0;
-LABEL_24:
-							SetEventFlag(pstate->eventflag, flag_to_set);
-							WaitEventFlag(pstate->eventflag, 0x80u, 16, NULL);
-							pdSetActive(port, slot, 1u);
 							break;
 						default:
 							break;
 					}
+					if ( flag_to_set )
+					{
+						SetEventFlag(pstate->eventflag, flag_to_set);
+						WaitEventFlag(pstate->eventflag, 0x80u, 16, NULL);
+						pdSetActive(port, slot, 1u);
+					}
 				}
-LABEL_26:
 				++slot;
 			}
 			while ( slot < 4 );
@@ -1445,25 +1450,27 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 			WaitClearEvent(pstate->eventflag, 1u);
 			ApplyActDirectFromDmaBuf(pstate);
 			if ( ReadData(pstate) != 1 )
+			{
+				pstate->buttonDataReady = 0;
+				pstate->state = 7;
+				pstate->findPadRetries += 1;
+				retval += pdGetError(port, slot);
+				if ( retval >= 10 )
+				{
+					retval = 0;
+					pstate->currentTask = 2;
+					StartThread(pstate->querypadTid, NULL);
+				}
 				break;
+			}
 			retval = 0;
-			if ( pstate->outbuffer[2] != 90 )
+			if ( pstate->outbuffer[2] != 90 || pstate->outbuffer[1] != pstate->modeCurId || pstate->outbuffer[1] == 243 )
 			{
 				pstate->buttonDataReady = 0;
 				pstate->state = 5;
-				goto LABEL_19;
-			}
-			if ( pstate->outbuffer[1] != pstate->modeCurId )
-			{
-				pstate->buttonDataReady = 0;
-				pstate->state = 5;
-				goto LABEL_19;
-			}
-			if ( pstate->outbuffer[1] == 243 )
-			{
-				pstate->buttonDataReady = 0;
-				pstate->state = 5;
-				goto LABEL_19;
+				pstate->currentTask = 2;
+				StartThread(pstate->querypadTid, NULL);
+				break;
 			}
 			i1 = 0;
 			do
@@ -1479,17 +1486,6 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 				pstate->state = 6;
 			if ( pstate->reqState == 2 && !pstate->runTask )
 				pstate->reqState = 0;
-		}
-		pstate->buttonDataReady = 0;
-		pstate->state = 7;
-		pstate->findPadRetries += 1;
-		retval += pdGetError(port, slot);
-		if ( retval >= 10 )
-		{
-			retval = 0;
-LABEL_19:
-			pstate->currentTask = 2;
-			StartThread(pstate->querypadTid, NULL);
 		}
 	}
 }
@@ -2070,57 +2066,44 @@ int __cdecl ParseParams(int argc, char *argv[])
 	int new_thpri_hi; // $s3
 	int new_thpri_lo; // $s2
 	int ac_tmp; // $s4
-	const char **av_tmp; // $s1
 	int thparam_after; // $s0
 
 	new_thpri_hi = 20;
 	new_thpri_lo = 46;
-	ac_tmp = 1;
-	if ( argc <= 1 )
+	for ( ac_tmp = 1; ac_tmp < argc; ac_tmp += 1 )
 	{
-LABEL_18:
-		thpri_hi = new_thpri_hi;
-		thpri_lo = new_thpri_lo;
-		return 1;
-	}
-	av_tmp = (const char **)(argv + 1);
-	while ( strncmp("thpri=", *av_tmp, 6) )
-	{
-LABEL_17:
-		++ac_tmp;
-		++av_tmp;
-		if ( ac_tmp >= argc )
-			goto LABEL_18;
-	}
-	thparam_after = (int)(*av_tmp + 6);
-	if ( (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0 )
-	{
-		new_thpri_hi = strtol((const char *)thparam_after, NULL, 10);
-		if ( (unsigned int)(new_thpri_hi - 9) >= 0x73 )
+		if ( !strncmp("thpri=", argv[ac_tmp], 6) )
 		{
-			printf("PADMAN : invalid priority %d\n");
-			return 0;
+			thparam_after = (int)(argv[ac_tmp] + 6);
+			if ( (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0 )
+			{
+				new_thpri_hi = strtol((const char *)thparam_after, NULL, 10);
+				if ( (unsigned int)(new_thpri_hi - 9) >= 0x73 )
+				{
+					printf("PADMAN : invalid priority %d\n");
+					return 0;
+				}
+			}
+			while ( (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0 )
+				++thparam_after;
+			if ( *(_BYTE *)thparam_after != 44 || ((look_ctype_table(*(_BYTE *)(thparam_after + 1)) & 4) == 0 || (new_thpri_lo = strtol((const char *)(thparam_after + 1), NULL, 10), (unsigned int)(new_thpri_lo - 9) < 0x73)) )
+			{
+				if ( new_thpri_lo < new_thpri_hi )
+				{
+					new_thpri_lo = new_thpri_hi;
+					printf("PADMAN : high prio thread must be higher than low prio thread\n");
+				}
+			}
+			else
+			{
+				printf(" SDR driver error: invalid priority %d\n");
+				return 0;
+			}
 		}
 	}
-	while ( (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0 )
-		++thparam_after;
-	if ( *(_BYTE *)thparam_after != 44 )
-	{
-LABEL_15:
-		if ( new_thpri_lo < new_thpri_hi )
-		{
-			new_thpri_lo = new_thpri_hi;
-			printf("PADMAN : high prio thread must be higher than low prio thread\n");
-		}
-		goto LABEL_17;
-	}
-	if ( (look_ctype_table(*(_BYTE *)(thparam_after + 1)) & 4) == 0
-		|| (new_thpri_lo = strtol((const char *)(thparam_after + 1), NULL, 10), (unsigned int)(new_thpri_lo - 9) < 0x73) )
-	{
-		goto LABEL_15;
-	}
-	printf(" SDR driver error: invalid priority %d\n");
-	return 0;
+	thpri_hi = new_thpri_hi;
+	thpri_lo = new_thpri_lo;
+	return 1;
 }
 // 409294: using guessed type int thpri_hi;
 
@@ -2481,155 +2464,123 @@ u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, padState_t *pstate)
 		swapval2 = ~BSWAP16(*(_WORD *)&pstate->ee_pdata.data[2]);
 		if ( (swapval2 & 0x2000) != 0 )
 		{
-			if ( pstate->ee_pdata.data[8] )
-				goto LABEL_13;
-			pstate->ee_pdata.data[8] = 1;
+			if ( !pstate->ee_pdata.data[8] )
+				pstate->ee_pdata.data[8] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[8] )
-				goto LABEL_13;
-			pstate->ee_pdata.data[8] = 0;
+			if ( pstate->ee_pdata.data[8] )
+				pstate->ee_pdata.data[8] = 0;
 		}
-LABEL_13:
 		if ( swapval2 & 0x8000 )
 		{
-			if ( pstate->ee_pdata.data[9] )
-				goto LABEL_19;
-			pstate->ee_pdata.data[9] = 1;
+			if ( !pstate->ee_pdata.data[9] )
+				pstate->ee_pdata.data[9] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[9] )
-				goto LABEL_19;
-			pstate->ee_pdata.data[9] = 0;
+			if ( pstate->ee_pdata.data[9] )
+				pstate->ee_pdata.data[9] = 0;
 		}
-LABEL_19:
 		if ( swapval2 & 0x1000 )
 		{
-			if ( pstate->ee_pdata.data[10] )
-				goto LABEL_25;
-			pstate->ee_pdata.data[10] = 1;
+			if ( !pstate->ee_pdata.data[10] )
+				pstate->ee_pdata.data[10] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[10] )
-				goto LABEL_25;
-			pstate->ee_pdata.data[10] = 0;
+			if ( pstate->ee_pdata.data[10] )
+				pstate->ee_pdata.data[10] = 0;
 		}
-LABEL_25:
 		if ( swapval2 & 0x4000 )
 		{
-			if ( pstate->ee_pdata.data[11] )
-				goto LABEL_31;
-			pstate->ee_pdata.data[11] = 1;
+			if ( !pstate->ee_pdata.data[11] )
+				pstate->ee_pdata.data[11] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[11] )
-				goto LABEL_31;
-			pstate->ee_pdata.data[11] = 0;
+			if ( pstate->ee_pdata.data[11] )
+				pstate->ee_pdata.data[11] = 0;
 		}
-LABEL_31:
 		if ( swapval2 & 0x10 )
 		{
-			if ( pstate->ee_pdata.data[12] )
-				goto LABEL_37;
-			pstate->ee_pdata.data[12] = 1;
+			if ( !pstate->ee_pdata.data[12] )
+				pstate->ee_pdata.data[12] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[12] )
-				goto LABEL_37;
-			pstate->ee_pdata.data[12] = 0;
+			if ( pstate->ee_pdata.data[12] )
+				pstate->ee_pdata.data[12] = 0;
 		}
-LABEL_37:
 		if ( swapval2 & 0x20 )
 		{
-			if ( pstate->ee_pdata.data[13] )
-				goto LABEL_43;
-			pstate->ee_pdata.data[13] = 1;
+			if ( !pstate->ee_pdata.data[13] )
+				pstate->ee_pdata.data[13] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[13] )
-				goto LABEL_43;
-			pstate->ee_pdata.data[13] = 0;
+			if ( pstate->ee_pdata.data[13] )
+				pstate->ee_pdata.data[13] = 0;
 		}
-LABEL_43:
 		if ( swapval2 & 0x40 )
 		{
-			if ( pstate->ee_pdata.data[14] )
-				goto LABEL_49;
-			pstate->ee_pdata.data[14] = 1;
+			if ( !pstate->ee_pdata.data[14] )
+				pstate->ee_pdata.data[14] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[14] )
-				goto LABEL_49;
-			pstate->ee_pdata.data[14] = 0;
+			if ( pstate->ee_pdata.data[14] )
+				pstate->ee_pdata.data[14] = 0;
 		}
-LABEL_49:
 		if ( swapval2 & 0x80 )
 		{
-			if ( pstate->ee_pdata.data[15] )
-				goto LABEL_55;
-			pstate->ee_pdata.data[15] = 1;
+			if ( !pstate->ee_pdata.data[15] )
+				pstate->ee_pdata.data[15] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[15] )
-				goto LABEL_55;
-			pstate->ee_pdata.data[15] = 0;
+			if ( pstate->ee_pdata.data[15] )
+				pstate->ee_pdata.data[15] = 0;
 		}
-LABEL_55:
 		if ( swapval2 & 4 )
 		{
-			if ( pstate->ee_pdata.data[16] )
-				goto LABEL_61;
-			pstate->ee_pdata.data[16] = 1;
+			if ( !pstate->ee_pdata.data[16] )
+				pstate->ee_pdata.data[16] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[16] )
-				goto LABEL_61;
-			pstate->ee_pdata.data[16] = 0;
+			if ( pstate->ee_pdata.data[16] )
+				pstate->ee_pdata.data[16] = 0;
 		}
-LABEL_61:
 		if ( swapval2 & 8 )
 		{
-			if ( pstate->ee_pdata.data[17] )
-				goto LABEL_67;
-			pstate->ee_pdata.data[17] = 1;
+			if ( !pstate->ee_pdata.data[17] )
+				pstate->ee_pdata.data[17] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[17] )
-				goto LABEL_67;
-			pstate->ee_pdata.data[17] = 0;
+			if ( pstate->ee_pdata.data[17] )
+				pstate->ee_pdata.data[17] = 0;
 		}
-LABEL_67:
 		if ( swapval2 & 1 )
 		{
-			if ( pstate->ee_pdata.data[18] )
-				goto LABEL_73;
-			pstate->ee_pdata.data[18] = 1;
+			if ( !pstate->ee_pdata.data[18] )
+				pstate->ee_pdata.data[18] = 1;
 		}
 		else
 		{
-			if ( !pstate->ee_pdata.data[18] )
-				goto LABEL_73;
-			pstate->ee_pdata.data[18] = 0;
+			if ( pstate->ee_pdata.data[18] )
+				pstate->ee_pdata.data[18] = 0;
 		}
-LABEL_73:
 		if ( swapval2 & 2 )
 		{
 			if ( !pstate->ee_pdata.data[19] )
 				pstate->ee_pdata.data[19] = 1;
 		}
-		else if ( pstate->ee_pdata.data[19] )
+		else
 		{
-			pstate->ee_pdata.data[19] = 0;
+			if ( pstate->ee_pdata.data[19] )
+				pstate->ee_pdata.data[19] = 0;
 		}
 		return 32;
 	}
@@ -4890,7 +4841,7 @@ void *__cdecl RpcServer(int fno, void *buffer, int length)
 			RpcGetModVersion((u32 *)buffer);
 			break;
 		case 0x13:
-			goto LABEL_21;
+			break;
 		case 0x14:
 			RpcSetVerbose((u32 *)buffer);
 			break;
@@ -4899,7 +4850,6 @@ void *__cdecl RpcServer(int fno, void *buffer, int length)
 			break;
 		default:
 			printf("invalid function code (%03x)\n", *(_DWORD *)buffer);
-LABEL_21:
 			break;
 	}
 	return buffer;
