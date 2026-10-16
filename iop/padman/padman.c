@@ -642,12 +642,11 @@ void DmaSendEE(void)
 //----- (004008B4) --------------------------------------------------------
 void __cdecl shiftarray(u8 *buf)
 {
-	int i1; // $a1
 	int i; // $a1
 	_BYTE temp[32]; // [sp+0h] [-20h] BYREF
 
-	for ( i1 = 0; i1 < 32; i1 += 1 )
-		temp[i1] = buf[i1];
+	for ( i = 0; i < 32; i += 1 )
+		temp[i] = buf[i];
 	buf[0] = -1;
 	for ( i = 1; i < 32; i += 1 )
 		buf[i] = temp[i - 1];
@@ -714,8 +713,6 @@ void __cdecl __noreturn MainThread(void *arg)
 	signed __int32 slot; // $s1
 	padState_t *pstate; // $s0
 	u32 flag_to_set; // $a1
-	signed __int32 port_2; // $s3
-	signed __int32 slot_2; // $s1
 
 	(void)arg;
 	while ( 1 )
@@ -814,12 +811,12 @@ void __cdecl __noreturn MainThread(void *arg)
 		WaitClearEvent(vblankdata.eventflag, 4u);
 		if ( openSlots[0] || openSlots[1] )
 		{
-			for ( port_2 = 0; port_2 < 2; port_2 += 1 )
+			for ( port = 0; port < 2; port += 1 )
 			{
-				for ( slot_2 = 0; slot_2 < 4; slot_2 += 1 )
+				for ( slot = 0; slot < 4; slot += 1 )
 				{
-					pstate = &g_pad_state[port_2][slot_2];
-					if ( pdIsActive(port_2, slot_2) == 1 )
+					pstate = &g_pad_state[port][slot];
+					if ( pdIsActive(port, slot) == 1 )
 					{
 						SetEventFlag(pstate->eventflag, 0x100u);
 						WaitEventFlag(pstate->eventflag, 0x200u, 16, NULL);
@@ -838,8 +835,7 @@ void __cdecl __noreturn MainThread(void *arg)
 u32 __cdecl ReadData(padState_t *pstate)
 {
 	u32 has_result_flag; // $s3
-	int i1; // $a0
-	int i2; // $a0
+	int i; // $a0
 
 	has_result_flag = 0;
 	pdSetCtrl1(pstate->port, pstate->slot, sio2CmdGetPortCtrl1(pstate->modeCurId, pstate->stat70bit, pstate->model));
@@ -847,14 +843,14 @@ u32 __cdecl ReadData(padState_t *pstate)
 	pdSetRegData(pstate->port, pstate->slot, pdGetRegData(pstate->modeCurId));
 	pdSetInSize(pstate->port, pstate->slot, pdGetInSize(pstate->modeCurId));
 	pdSetOutSize(pstate->port, pstate->slot, pdGetOutSize(pstate->modeCurId));
-	for ( i1 = 0; i1 < 32; i1 += 1 )
+	for ( i = 0; i < 32; i += 1 )
 	{
-		pstate->inbuffer[i1] = 0;
-		pstate->outbuffer[i1] = 0;
+		pstate->inbuffer[i] = 0;
+		pstate->outbuffer[i] = 0;
 	}
 	sio2CmdSetReadData(pstate->modeCurId, pstate->inbuffer);
-	for ( i2 = 0; i2 < pstate->ee_actDirectSize; i2 += 1 )
-		pstate->inbuffer[i2 + 3] = ( pstate->ee_actAlignData[i2] == 255 ) ? 0 : pstate->ee_actDirectData[i2];
+	for ( i = 0; i < pstate->ee_actDirectSize; i += 1 )
+		pstate->inbuffer[i + 3] = ( pstate->ee_actAlignData[i] == 255 ) ? 0 : pstate->ee_actDirectData[i];
 	pdSetInBuffer(pstate->port, pstate->slot, 0, pstate->inbuffer);
 	SetEventFlag(pstate->eventflag, 0x80u);
 	WaitClearEvent(pstate->eventflag, 0x100u);
@@ -985,7 +981,7 @@ u32 __cdecl SetMainMode(padState_t *pstate)
 u32 __cdecl SetActAlign(padState_t *pstate)
 {
 	u32 retflag; // $s3
-	int i1; // $a0
+	int i; // $a0
 
 	retflag = 0;
 	pdSetCtrl1(pstate->port, pstate->slot, sio2CmdGetPortCtrl1(0xF3u, pstate->stat70bit, pstate->model));
@@ -994,8 +990,8 @@ u32 __cdecl SetActAlign(padState_t *pstate)
 	pdSetInSize(pstate->port, pstate->slot, pdGetInSize(0xF3u));
 	pdSetOutSize(pstate->port, pstate->slot, pdGetOutSize(0xF3u));
 	sio2CmdSetSetActAlign(0xF3u, pstate->inbuffer);
-	for ( i1 = 0; i1 < 6; i1 += 1 )
-		pstate->inbuffer[i1 + 3] = pstate->ee_actAlignData[i1];
+	for ( i = 0; i < 6; i += 1 )
+		pstate->inbuffer[i + 3] = pstate->ee_actAlignData[i];
 	pdSetInBuffer(pstate->port, pstate->slot, 0, pstate->inbuffer);
 	SetEventFlag(pstate->eventflag, 0x80u);
 	WaitClearEvent(pstate->eventflag, 0x100u);
@@ -1213,7 +1209,7 @@ u32 __cdecl QueryButtonMask(padState_t *pstate)
 u32 __cdecl SetButtonInfo(padState_t *pstate)
 {
 	u32 retflag; // $s3
-	int i1; // $a0
+	int i; // $a0
 
 	retflag = 0;
 	pdSetCtrl1(pstate->port, pstate->slot, sio2CmdGetPortCtrl1(0xF3u, pstate->stat70bit, pstate->model));
@@ -1222,8 +1218,8 @@ u32 __cdecl SetButtonInfo(padState_t *pstate)
 	pdSetInSize(pstate->port, pstate->slot, pdGetInSize(0xF3u));
 	pdSetOutSize(pstate->port, pstate->slot, pdGetOutSize(0xF3u));
 	sio2CmdSetSetButtonInfo(0xF3u, pstate->inbuffer);
-	for ( i1 = 0; i1 < 4; i1 += 1 )
-		pstate->inbuffer[i1 + 3] = pstate->buttonInfo[i1];
+	for ( i = 0; i < 4; i += 1 )
+		pstate->inbuffer[i + 3] = pstate->buttonInfo[i];
 	pdSetInBuffer(pstate->port, pstate->slot, 0, pstate->inbuffer);
 	SetEventFlag(pstate->eventflag, 0x80u);
 	WaitClearEvent(pstate->eventflag, 0x100u);
@@ -1246,7 +1242,7 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 	u32 p; // $s1
 	u32 s; // $s0
 	padState_t *pstate; // $a1
-	int i1; // $a0
+	int i; // $a0
 
 	retval_r = 0;
 	for ( p = 0; (int)p < (int)padGetPortMax(); p += 1 )
@@ -1257,8 +1253,8 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 			{
 				pstate = &g_pad_state[p][s];
 				if ( pstate->modeCurId )
-					for ( i1 = 0; i1 < pstate->ee_actDirectSize; i1 += 1 )
-						retval_r += ( pstate->ee_actAlignData[i1] != 255 && pstate->ee_actDirectData[pstate->ee_actAlignData[i1]] ) ? pstate->actData[pstate->ee_actAlignData[i1]][3] : 0;
+					for ( i = 0; i < pstate->ee_actDirectSize; i += 1 )
+						retval_r += ( pstate->ee_actAlignData[i] != 255 && pstate->ee_actDirectData[pstate->ee_actAlignData[i]] ) ? pstate->actData[pstate->ee_actAlignData[i]][3] : 0;
 			}
 		}
 	}
@@ -1271,15 +1267,15 @@ u32 __cdecl CheckAirDirectTotal(u32 port, u32 slot, u8 *actData)
 {
 	u32 total; // $s3
 	padState_t *pstate; // $s2
-	int i1; // $s0
+	int i; // $s0
 	int itmp; // $v1
 	int totaltmp; // $v1
 
 	total = ActDirectTotal(port, slot);
 	pstate = &g_pad_state[port][slot];
-	for ( i1 = 0; i1 < 6; i1 += 1 )
+	for ( i = 0; i < 6; i += 1 )
 	{
-		itmp = pstate->ee_actAlignData[i1];
+		itmp = pstate->ee_actAlignData[i];
 		if ( itmp != 255 && actData[itmp] )
 		{
 			totaltmp = total + pstate->actData[itmp][3];
@@ -1306,7 +1302,7 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 	padState_t *pstate; // $s0
 	u32 port; // $s6
 	u32 slot; // $s5
-	int i1; // $a0
+	int i; // $a0
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
 	(void)arg;
@@ -1342,8 +1338,8 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 			StartThread(pstate->querypadTid, NULL);
 			continue;
 		}
-		for ( i1 = 0; i1 < 32; i1 += 1 )
-			pstate->buttonStatus[i1] = pstate->outbuffer[i1];
+		for ( i = 0; i < 32; i += 1 )
+			pstate->buttonStatus[i] = pstate->outbuffer[i];
 		pstate->buttonDataReady = 1;
 		pstate->state = ( pstate->modeConfig == 1 ) ? 2 : 6;
 		if ( pstate->reqState == 2 && !pstate->runTask )
@@ -1355,23 +1351,9 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 void __cdecl __noreturn QueryPadThread(void *arg)
 {
 	padState_t *pstate; // $s0
-	int i1; // $v1
-	int i2; // $v1
-	int i3; // $v1
+	int i; // $v1
+	int trycnt; // $v1
 	u8 modeCurId; // $s2
-	int i4; // $v1
-	int i5; // $s1
-	int i6; // $s1
-	int i7; // $s1
-	unsigned __int8 i9; // $s2
-	int i8; // $s1
-	unsigned __int8 i11; // $s2
-	int i10; // $s1
-	unsigned __int8 i13; // $s2
-	int i12; // $s1
-	int i14; // $s1
-	int i15; // $s1
-	int i16; // $s1
 	u8 cur_id_tmp; // $s2
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
@@ -1387,17 +1369,17 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 	pstate->buttonDataReady = 0;
 	pstate->ee_actDirectSize = 0;
 	pstate->findPadRetries = 0;
-	for ( i1 = 0; i1 < 4; i1 += 1 )
+	for ( i = 0; i < 4; i += 1 )
 	{
-		pstate->buttonInfo[i1] = 0;
-		pstate->buttonMask[i1] = 0;
+		pstate->buttonInfo[i] = 0;
+		pstate->buttonMask[i] = 0;
 	}
 	pstate->ee_actAlignData[0] = 0;
 	pstate->ee_actAlignData[1] = 1;
-	for ( i2 = 2; i2 < 6; i2 += 1 )
-		pstate->ee_actAlignData[i2] = -1;
-	for ( i3 = 5; i3 >= 0; i3 -= 1 )
-		pstate->ee_actDirectData[i3] = 0;
+	for ( i = 2; i < 6; i += 1 )
+		pstate->ee_actAlignData[i] = -1;
+	for ( i = 5; i >= 0; i -= 1 )
+		pstate->ee_actDirectData[i] = 0;
 	pstate->modeCurId = 0;
 	while ( 1 )
 	{
@@ -1411,16 +1393,16 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 	pstate->modeCurId = 0;
 	pstate->state = 5;
 	if ( pstate->disconnected )
-		for ( i4 = 5; i4 >= 0; i4 -= 1 )
-			pstate->ee_actAlignData[i4] = -1;
-	i5 = 0;
+		for ( i = 5; i >= 0; i -= 1 )
+			pstate->ee_actAlignData[i] = -1;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 2u);
-		++i5;
+		++trycnt;
 		if ( EnterConfigMode(modeCurId, pstate) == 1 )
 			break;
-		if ( i5 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->modeConfig = 1;
 			pstate->modeCurId = modeCurId;
@@ -1429,56 +1411,53 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 		}
 	}
 	pstate->modeConfig = 2;
-	i6 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 2u);
-		++i6;
+		++trycnt;
 		if ( QueryModel(pstate) == 1 )
 			break;
-		if ( i6 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->modeCurId = 0;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	if ( pstate->disconnected == 1 )
+	if ( pstate->disconnected == 1 && pstate->modeCurOffs )
 	{
-		i7 = 0;
-		if ( pstate->modeCurOffs )
-		{
-			pstate->mode = 0;
-			pstate->lock = 0;
-			while ( 1 )
-			{
-				WaitClearEvent(pstate->eventflag, 2u);
-				++i7;
-				if ( SetMainMode(pstate) == 1 )
-					break;
-				if ( i7 >= 10 )
-				{
-					pstate->reqState = 1;
-					pstate->currentTask = 1;
-					ExitThread();
-				}
-			}
-			pstate->modeCurId = 0;
-			pstate->currentTask = 1;
-			pstate->disconnected = 0;
-			ExitThread();
-		}
-	}
-	for ( i9 = 0; i9 < (unsigned int)pstate->numActuators; i9 += 1 )
-	{
-		i8 = 0;
+		pstate->mode = 0;
+		pstate->lock = 0;
+		trycnt = 0;
 		while ( 1 )
 		{
 			WaitClearEvent(pstate->eventflag, 2u);
-			++i8;
-			if ( QueryAct(i9, pstate) == 1 )
+			++trycnt;
+			if ( SetMainMode(pstate) == 1 )
 				break;
-			if ( i8 >= 10 )
+			if ( trycnt >= 10 )
+			{
+				pstate->reqState = 1;
+				pstate->currentTask = 1;
+				ExitThread();
+			}
+		}
+		pstate->modeCurId = 0;
+		pstate->currentTask = 1;
+		pstate->disconnected = 0;
+		ExitThread();
+	}
+	for ( i = 0; (unsigned int)i < (unsigned int)pstate->numActuators; i += 1 )
+	{
+		trycnt = 0;
+		while ( 1 )
+		{
+			WaitClearEvent(pstate->eventflag, 2u);
+			++trycnt;
+			if ( QueryAct(i, pstate) == 1 )
+				break;
+			if ( trycnt >= 10 )
 			{
 				pstate->modeCurId = 0;
 				pstate->currentTask = 1;
@@ -1486,16 +1465,16 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 			}
 		}
 	}
-	for ( i11 = 0; i11 < (unsigned int)pstate->numActComb; i11 += 1 )
+	for ( i = 0; (unsigned int)i < (unsigned int)pstate->numActComb; i += 1 )
 	{
-		i10 = 0;
+		trycnt = 0;
 		while ( 1 )
 		{
 			WaitClearEvent(pstate->eventflag, 2u);
-			++i10;
-			if ( QueryComb(i11, pstate) == 1 )
+			++trycnt;
+			if ( QueryComb(i, pstate) == 1 )
 				break;
-			if ( i10 >= 10 )
+			if ( trycnt >= 10 )
 			{
 				pstate->modeCurId = 0;
 				pstate->currentTask = 1;
@@ -1503,16 +1482,16 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 			}
 		}
 	}
-	for ( i13 = 0; i13 < (unsigned int)pstate->numModes; i13 += 1 )
+	for ( i = 0; (unsigned int)i < (unsigned int)pstate->numModes; i += 1 )
 	{
-		i12 = 0;
+		trycnt = 0;
 		while ( 1 )
 		{
 			WaitClearEvent(pstate->eventflag, 2u);
-			++i12;
-			if ( QueryMode(i13, pstate) == 1 )
+			++trycnt;
+			if ( QueryMode(i, pstate) == 1 )
 				break;
-			if ( i12 >= 10 )
+			if ( trycnt >= 10 )
 			{
 				pstate->modeCurId = 0;
 				pstate->currentTask = 1;
@@ -1520,59 +1499,59 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 			}
 		}
 	}
-	i14 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 2u);
-		++i14;
+		++trycnt;
 		if ( SetActAlign(pstate) == 1 )
 			break;
-		if ( i14 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	i15 = 0;
 	if ( (*(_DWORD *)&pstate->modeConfig & 0x200FF) == 0x20002 )
 	{
+		trycnt = 0;
 		while ( 1 )
 		{
 			WaitClearEvent(pstate->eventflag, 2u);
-			++i15;
+			++trycnt;
 			if ( QueryButtonMask(pstate) == 1 )
 				break;
-			if ( i15 >= 10 )
+			if ( trycnt >= 10 )
 			{
 				pstate->modeCurId = 0;
 				pstate->currentTask = 1;
 				ExitThread();
 			}
 		}
-		i15 = 0;
 	}
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 2u);
-		++i15;
+		++trycnt;
 		if ( ExitConfigMode(pstate) == 1 )
 			break;
-		if ( i15 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->modeCurId = 0;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	i16 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 2u);
-		++i16;
+		++trycnt;
 		if ( PadIsSupported(pstate) == 1 )
 			break;
-		if ( i16 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->modeCurId = 0;
 			pstate->currentTask = 1;
@@ -1591,53 +1570,51 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 //----- (00402C54) --------------------------------------------------------
 void __cdecl __noreturn SetMainModeThread(void *arg)
 {
-	int tries1; // $s1
+	int trycnt; // $s1
 	padState_t *pstate; // $s0
-	int tries2; // $s1
-	int tries3; // $s1
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
 	(void)arg;
-	tries1 = 0;
 	ReferThreadStatus(0, &thinfo);
 	pstate = (padState_t *)thinfo.option;
 	pstate->buttonDataReady = 0;
 	pstate->state = 5;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 8u);
-		++tries1;
+		++trycnt;
 		if ( EnterConfigMode(pstate->modeCurId, pstate) == 1 )
 			break;
-		if ( tries1 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	tries2 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 8u);
-		++tries2;
+		++trycnt;
 		if ( SetMainMode(pstate) == 1 )
 			break;
-		if ( tries2 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	tries3 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 8u);
-		++tries3;
+		++trycnt;
 		if ( ExitConfigMode(pstate) == 1 )
 			break;
-		if ( tries3 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
@@ -1651,53 +1628,51 @@ void __cdecl __noreturn SetMainModeThread(void *arg)
 //----- (00402D8C) --------------------------------------------------------
 void __cdecl __noreturn SetActAlignThread(void *arg)
 {
-	int tries1; // $s1
+	int trycnt; // $s1
 	padState_t *pstate; // $s0
-	int tries2; // $s1
-	int tries3; // $s1
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
 	(void)arg;
-	tries1 = 0;
 	ReferThreadStatus(0, &thinfo);
 	pstate = (padState_t *)thinfo.option;
 	pstate->buttonDataReady = 0;
 	pstate->state = 5;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 0x10u);
-		++tries1;
+		++trycnt;
 		if ( EnterConfigMode(pstate->modeCurId, pstate) == 1 )
 			break;
-		if ( tries1 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	tries2 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 0x10u);
-		++tries2;
+		++trycnt;
 		if ( SetActAlign(pstate) == 1 )
 			break;
-		if ( tries2 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	tries3 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 0x10u);
-		++tries3;
+		++trycnt;
 		if ( ExitConfigMode(pstate) == 1 )
 			break;
-		if ( tries3 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
@@ -1711,56 +1686,54 @@ void __cdecl __noreturn SetActAlignThread(void *arg)
 //----- (00402EC4) --------------------------------------------------------
 void __cdecl __noreturn SetButtonInfoThread(void *arg)
 {
-	int tries1; // $s1
+	int trycnt; // $s1
+	int i; // $s2
 	padState_t *pstate; // $s0
-	int tries2; // $s1
-	signed __int32 tries4; // $s2
-	int tries3; // $s1
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
 	(void)arg;
-	tries1 = 0;
 	ReferThreadStatus(0, &thinfo);
 	pstate = (padState_t *)thinfo.option;
 	pstate->buttonDataReady = 0;
 	pstate->state = 5;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 0x20u);
-		++tries1;
+		++trycnt;
 		if ( EnterConfigMode(pstate->modeCurId, pstate) == 1 )
 			break;
-		if ( tries1 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	tries2 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 0x20u);
-		++tries2;
+		++trycnt;
 		if ( SetButtonInfo(pstate) == 1 )
 			break;
-		if ( tries2 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	for ( tries4 = 0; tries4 < 12; tries4 += 1 )
+	for ( i = 0; i < 12; i += 1 )
 	{
-		tries3 = 0;
+		trycnt = 0;
 		while ( 1 )
 		{
 			WaitClearEvent(pstate->eventflag, 0x20u);
-			++tries3;
-			if ( VrefParam(tries4, pstate) == 1 )
+			++trycnt;
+			if ( VrefParam(i, pstate) == 1 )
 				break;
-			if ( tries3 >= 10 )
+			if ( trycnt >= 10 )
 			{
 				pstate->reqState = 1;
 				pstate->currentTask = 1;
@@ -1768,14 +1741,14 @@ void __cdecl __noreturn SetButtonInfoThread(void *arg)
 			}
 		}
 	}
-	tries3 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 0x20u);
-		++tries3;
+		++trycnt;
 		if ( ExitConfigMode(pstate) == 1 )
 			break;
-		if ( tries3 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
@@ -1790,41 +1763,40 @@ void __cdecl __noreturn SetButtonInfoThread(void *arg)
 //----- (00403068) --------------------------------------------------------
 void __cdecl __noreturn SetVrefParamThread(void *arg)
 {
-	int tries1; // $s1
+	int trycnt; // $s1
 	padState_t *pstate; // $s0
-	signed __int32 tries3; // $s2
-	int tries2; // $s1
+	int i; // $s2
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
 	(void)arg;
-	tries1 = 0;
 	ReferThreadStatus(0, &thinfo);
 	pstate = (padState_t *)thinfo.option;
 	pstate->buttonDataReady = 0;
 	pstate->state = 5;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 0x40u);
-		++tries1;
+		++trycnt;
 		if ( EnterConfigMode(pstate->modeCurId, pstate) == 1 )
 			break;
-		if ( tries1 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
 			ExitThread();
 		}
 	}
-	for ( tries3 = 0; tries3 < 12; tries3 += 1 )
+	for ( i = 0; i < 12; i += 1 )
 	{
-		tries2 = 0;
+		trycnt = 0;
 		while ( 1 )
 		{
 			WaitClearEvent(pstate->eventflag, 0x40u);
-			++tries2;
-			if ( VrefParam(tries3, pstate) == 1 )
+			++trycnt;
+			if ( VrefParam(i, pstate) == 1 )
 				break;
-			if ( tries2 >= 10 )
+			if ( trycnt >= 10 )
 			{
 				pstate->reqState = 1;
 				pstate->currentTask = 1;
@@ -1832,14 +1804,14 @@ void __cdecl __noreturn SetVrefParamThread(void *arg)
 			}
 		}
 	}
-	tries2 = 0;
+	trycnt = 0;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 0x40u);
-		++tries2;
+		++trycnt;
 		if ( ExitConfigMode(pstate) == 1 )
 			break;
-		if ( tries2 >= 10 )
+		if ( trycnt >= 10 )
 		{
 			pstate->reqState = 1;
 			pstate->currentTask = 1;
@@ -1881,16 +1853,16 @@ int __cdecl ParseParams(int argc, char *argv[])
 {
 	int new_thpri_hi; // $s3
 	int new_thpri_lo; // $s2
-	int ac_tmp; // $s4
+	int i; // $s4
 	int thparam_after; // $s0
 
 	new_thpri_hi = 20;
 	new_thpri_lo = 46;
-	for ( ac_tmp = 1; ac_tmp < argc; ac_tmp += 1 )
+	for ( i = 1; i < argc; i += 1 )
 	{
-		if ( !strncmp("thpri=", argv[ac_tmp], 6) )
+		if ( !strncmp("thpri=", argv[i], 6) )
 		{
-			thparam_after = (int)(argv[ac_tmp] + 6);
+			thparam_after = (int)(argv[i] + 6);
 			if ( (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0 )
 			{
 				new_thpri_hi = strtol((const char *)thparam_after, NULL, 10);
@@ -2059,15 +2031,15 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 //----- (00403858) --------------------------------------------------------
 s32 __cdecl padEnd()
 {
-	s32 i1; // $s1
-	s32 i; // $s0
+	s32 port; // $s1
+	s32 slot; // $s0
 
 	if ( !padman_init )
 		return 1;
-	for ( i1 = 0; i1 < 2; i1 += 1 )
-		for ( i = 0; i < 4; i += 1 )
-			if ( ((openSlots[i1] >> i) & 1) != 0 )
-				padPortClose(i1, i, 1);
+	for ( port = 0; port < 2; port += 1 )
+		for ( slot = 0; slot < 4; slot += 1 )
+			if ( ((openSlots[port] >> slot) & 1) != 0 )
+				padPortClose(port, slot, 1);
 	SetEventFlag(vblankdata.eventflag, 0x1000u);
 	vblankdata.padEnd = 1;
 	WaitEventFlag(vblankdata.eventflag, 8u, 17, NULL);
@@ -2228,9 +2200,8 @@ s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait)
 u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, padState_t *pstate)
 {
 	padState_t *pstate_tmp; // $a1
-	int i1; // $v1
+	int i; // $v1
 	__int16 swapval2; // $v1
-	int i2; // $v1
 
 	pstate_tmp = &g_pad_state[port][slot];
 	if ( pstate_tmp->buttonDataReady == 1 )
@@ -2238,8 +2209,8 @@ u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, padState_t *pstate)
 		pstate->ee_pdata.data[0] = 0;
 		pstate->ee_pdata.data[1] = pstate_tmp->modeCurId;
 		pstate->ee_pdata.data[31] = pstate_tmp->buttonStatus[2];
-		for ( i1 = 2; i1 < 31; i1 += 1 )
-			pstate->ee_pdata.data[i1] = pstate_tmp->buttonStatus[i1 + 1];
+		for ( i = 2; i < 31; i += 1 )
+			pstate->ee_pdata.data[i] = pstate_tmp->buttonStatus[i + 1];
 		if ( pstate_tmp->modeCurId == 18 )
 		{
 			pstate->ee_pdata.data[2] = -1;
@@ -2373,8 +2344,8 @@ u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, padState_t *pstate)
 		return 32;
 	}
 	pstate->ee_pdata.data[0] = -1;
-	for ( i2 = 1; i2 < 32; i2 += 1 )
-		pstate->ee_pdata.data[i2] = 0;
+	for ( i = 1; i < 32; i += 1 )
+		pstate->ee_pdata.data[i] = 0;
 	return 0;
 }
 
@@ -2476,14 +2447,14 @@ s32 __cdecl padInfoMode(u32 port, u32 slot, s32 val1, u32 val2)
 u32 __cdecl padSetActDirect(u32 port, u32 slot, u8 *actData)
 {
 	padState_t *pstate; // $s0
-	int i1; // $a0
+	int i; // $a0
 
 	pstate = &g_pad_state[port][slot];
 	if ( pstate->modeConfig == 1 || pstate->currentTask != 1 )
 		return 0;
 	CheckAirDirectTotal(port, slot, actData);
-	for ( i1 = 0; i1 < 6; i1 += 1 )
-		pstate->ee_actDirectData[i1] = actData[i1];
+	for ( i = 0; i < 6; i += 1 )
+		pstate->ee_actDirectData[i] = actData[i];
 	pstate->ee_actDirectSize = 6;
 	return 1;
 }
@@ -2508,13 +2479,13 @@ u32 __cdecl padSetMainMode(u32 port, u32 slot, u32 mode, u32 lock)
 u32 __cdecl padSetActAlign(u32 port, u32 slot, const u8 *actData)
 {
 	padState_t *pstate; // $a1
-	int i1; // $a0
+	int i; // $a0
 
 	pstate = &g_pad_state[port][slot];
 	if ( pstate->currentTask != 1 || pstate->modeConfig < 2u || pstate->reqState == 2 )
 		return 0;
-	for ( i1 = 0; i1 < 6; i1 += 1 )
-		pstate->ee_actAlignData[i1] = actData[i1];
+	for ( i = 0; i < 6; i += 1 )
+		pstate->ee_actAlignData[i] = actData[i];
 	pstate->reqState = 2;
 	pstate->runTask = 5;
 	pstate->taskTid = pstate->setactalignTid;
@@ -2525,13 +2496,13 @@ u32 __cdecl padSetActAlign(u32 port, u32 slot, const u8 *actData)
 u32 __cdecl padSetVrefParam(u32 port, u32 slot, const u8 *vparam)
 {
 	padState_t *pstate; // $a1
-	int i1; // $a0
+	int i; // $a0
 
 	pstate = &g_pad_state[port][slot];
 	if ( pstate->currentTask != 1 || pstate->modeConfig < 2u || pstate->model < 2u || pstate->reqState == 2 )
 		return 0;
-	for ( i1 = 0; i1 < 12; i1 += 1 )
-		pstate->modeParam[i1] = vparam[i1];
+	for ( i = 0; i < 12; i += 1 )
+		pstate->modeParam[i] = vparam[i];
 	pstate->runTask = 7;
 	pstate->reqState = 2;
 	pstate->taskTid = pstate->setvrefparamTid;
@@ -2542,7 +2513,7 @@ u32 __cdecl padSetVrefParam(u32 port, u32 slot, const u8 *vparam)
 u32 __cdecl padSetButtonInfo(u32 port, u32 slot, u32 info)
 {
 	padState_t *pstate; // $a1
-	int i1; // $a0
+	int i; // $a0
 
 	pstate = &g_pad_state[port][slot];
 	if ( pstate->currentTask != 1 || pstate->modeConfig < 2u || (pstate->model & 2) == 0 || pstate->reqState == 2 )
@@ -2551,8 +2522,8 @@ u32 __cdecl padSetButtonInfo(u32 port, u32 slot, u32 info)
 	pstate->buttonInfo[2] = ((info << 6) | 0x3F) >> 16;
 	pstate->buttonInfo[0] = (info << 6) | 0x3F;
 	pstate->buttonInfo[3] = ((info << 6) | 0x3F) >> 24;
-	for ( i1 = 11; i1 >= 0; i1 -= 1 )
-		pstate->modeParam[i1] = 2;
+	for ( i = 11; i >= 0; i -= 1 )
+		pstate->modeParam[i] = 2;
 	pstate->runTask = 6;
 	pstate->reqState = 2;
 	pstate->taskTid = pstate->setbuttoninfoTid;
@@ -2709,11 +2680,10 @@ u32 __cdecl readSio2OutBuffer(u32 bit, u32 port, u32 slot)
 u32 __cdecl padTransfer(u32 slot)
 {
 	int xferdatres; // $a0
-	int port_i; // $s1
+	int i; // $s1
 	u32 port; // $s0
 	u32 port_1; // $s7
 	u32 port_2; // $s0
-	int i; // $s1
 	u32 stat70; // $s0
 	int chslot_buf_tmp[2]; // [sp+10h] [-10h]
 	int porttmp[2]; // [sp+18h] [-8h]
@@ -2729,7 +2699,7 @@ u32 __cdecl padTransfer(u32 slot)
 	porttmp[0] = 0;
 	port = padData[1][slot].fixme_used_4 == 0x63;
 	port_1 = port;
-	for ( port_i = 0; port_i < 2; port_i += 1 )
+	for ( i = 0; i < 2; i += 1 )
 	{
 		if ( padData[port][slot].active && change_slot_buffer[port + 4] == 1 )
 		{
@@ -2852,14 +2822,14 @@ u32 __cdecl pdSetInSize(u32 port, u32 slot, u32 size)
 //----- (004053E0) --------------------------------------------------------
 u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf)
 {
-	signed __int32 i1; // $t0
+	signed __int32 i; // $t0
 
 	if ( port >= 2 )
 		return 0;
 	if ( !size )
 		size = padData[port][slot].in_size;
-	for ( i1 = 0; i1 < (int)size; i1 += 1 )
-		padData[port][slot].in_buffer[i1] = buf[i1];
+	for ( i = 0; i < (int)size; i += 1 )
+		padData[port][slot].in_buffer[i] = buf[i];
 	return size;
 }
 
@@ -2875,14 +2845,14 @@ u32 __cdecl pdSetOutSize(u32 port, u32 slot, u32 size)
 //----- (004054E8) --------------------------------------------------------
 u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf)
 {
-	signed __int32 i1; // $t0
+	signed __int32 i; // $t0
 
 	if ( port >= 2 )
 		return 0;
 	if ( !size )
 		size = padData[port][slot].out_size;
-	for ( i1 = 0; i1 < (int)size; i1 += 1 )
-		buf[i1] = padData[port][slot].out_buffer[i1];
+	for ( i = 0; i < (int)size; i += 1 )
+		buf[i] = padData[port][slot].out_buffer[i];
 	return size;
 }
 
@@ -2956,10 +2926,10 @@ int __fastcall unused_4057D4(u32 port, s32 slot)
 //----- (00405910) --------------------------------------------------------
 void sio2cmdReset(void)
 {
-	int i1; // $v1
+	int i; // $v1
 
-	for ( i1 = 15; i1 >= 0; i1 -= 1 )
-		sio2Cmds[i1].id = 0;
+	for ( i = 15; i >= 0; i -= 1 )
+		sio2Cmds[i].id = 0;
 	numControllers = 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
@@ -2968,36 +2938,32 @@ void sio2cmdReset(void)
 //----- (00405940) --------------------------------------------------------
 int __cdecl SetupCmds(const sio2Cmds_t *s)
 {
-	int ix1; // $v1
-	int i1; // $a1
-	int i2; // $v1
+	int i; // $v1
 
 	if ( numControllers + 1 >= 16 || !s )
 		return 0;
-	for ( ix1 = 0; ix1 < numControllers; ix1 += 1 )
-		if ( s->id == sio2Cmds[ix1].id )
+	for ( i = 0; i < numControllers; i += 1 )
+		if ( s->id == sio2Cmds[i].id )
 			return 0;
 	sio2Cmds[numControllers].id = s->id;
-	i1 = numControllers;
-	i2 = numControllers;
-	sio2Cmds[i2].readdata = s->readdata;
-	sio2Cmds[i2].getportctrl1 = s->getportctrl1;
-	sio2Cmds[i2].getportctrl2 = s->getportctrl2;
-	sio2Cmds[i2].reg_data = s->reg_data;
-	sio2Cmds[i2].size1 = s->size1;
-	sio2Cmds[i2].size2 = s->size2;
-	sio2Cmds[i2].enterconfigmode = s->enterconfigmode;
-	sio2Cmds[i2].exitconfigmode = s->exitconfigmode;
-	sio2Cmds[i2].querymodel = s->querymodel;
-	sio2Cmds[i2].queryact = s->queryact;
-	sio2Cmds[i2].querycomb = s->querycomb;
-	sio2Cmds[i2].querymode = s->querymode;
-	sio2Cmds[i2].querybuttonmask = s->querybuttonmask;
-	sio2Cmds[i2].setbuttoninfo = s->setbuttoninfo;
-	sio2Cmds[i2].setvrefparam = s->setvrefparam;
-	sio2Cmds[i2].setmainmode = s->setmainmode;
-	sio2Cmds[i2].setactalign = s->setactalign;
-	numControllers = i1 + 1;
+	sio2Cmds[numControllers].readdata = s->readdata;
+	sio2Cmds[numControllers].getportctrl1 = s->getportctrl1;
+	sio2Cmds[numControllers].getportctrl2 = s->getportctrl2;
+	sio2Cmds[numControllers].reg_data = s->reg_data;
+	sio2Cmds[numControllers].size1 = s->size1;
+	sio2Cmds[numControllers].size2 = s->size2;
+	sio2Cmds[numControllers].enterconfigmode = s->enterconfigmode;
+	sio2Cmds[numControllers].exitconfigmode = s->exitconfigmode;
+	sio2Cmds[numControllers].querymodel = s->querymodel;
+	sio2Cmds[numControllers].queryact = s->queryact;
+	sio2Cmds[numControllers].querycomb = s->querycomb;
+	sio2Cmds[numControllers].querymode = s->querymode;
+	sio2Cmds[numControllers].querybuttonmask = s->querybuttonmask;
+	sio2Cmds[numControllers].setbuttoninfo = s->setbuttoninfo;
+	sio2Cmds[numControllers].setvrefparam = s->setvrefparam;
+	sio2Cmds[numControllers].setmainmode = s->setmainmode;
+	sio2Cmds[numControllers].setactalign = s->setactalign;
+	numControllers += 1;
 	return 1;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
