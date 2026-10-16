@@ -890,7 +890,6 @@ u32 __cdecl ReadData(padState_t *pstate)
 	u32 has_result_flag; // $s3
 	int i1; // $a0
 	int i2; // $a0
-	int i3; // $a1
 
 	has_result_flag = 0;
 	pdSetCtrl1(pstate->port, pstate->slot, sio2CmdGetPortCtrl1(pstate->modeCurId, pstate->stat70bit, pstate->model));
@@ -907,21 +906,8 @@ u32 __cdecl ReadData(padState_t *pstate)
 	}
 	while ( i1 < 32 );
 	sio2CmdSetReadData(pstate->modeCurId, pstate->inbuffer);
-	i2 = 0;
-	if ( pstate->ee_actDirectSize )
-	{
-		i3 = 3;
-		do
-		{
-			if ( pstate->ee_actAlignData[i2] == 255 )
-				pstate->inbuffer[i3] = 0;
-			else
-				pstate->inbuffer[i3] = pstate->ee_actDirectData[i2];
-			++i2;
-			++i3;
-		}
-		while ( i2 < pstate->ee_actDirectSize );
-	}
+	for ( i2 = 0; i2 < pstate->ee_actDirectSize; i2 += 1 )
+		pstate->inbuffer[i2 + 3] = ( pstate->ee_actAlignData[i2] == 255 ) ? 0 : pstate->ee_actDirectData[i2];
 	pdSetInBuffer(pstate->port, pstate->slot, 0, pstate->inbuffer);
 	SetEventFlag(pstate->eventflag, 0x80u);
 	WaitClearEvent(pstate->eventflag, 0x100u);
@@ -1364,22 +1350,9 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 			{
 				pstate = &g_pad_state[p][s];
 				if ( pstate->modeCurId )
-				{
-					i1 = 0;
-					if ( pstate->ee_actDirectSize )
-					{
-						do
-						{
-							if ( pstate->ee_actAlignData[i1] != 255 )
-							{
-								if ( pstate->ee_actDirectData[pstate->ee_actAlignData[i1]] )
-									retval_r += pstate->actData[pstate->ee_actAlignData[i1]][3];
-							}
-							++i1;
-						}
-						while ( i1 < pstate->ee_actDirectSize );
-					}
-				}
+					for ( i1 = 0; i1 < pstate->ee_actDirectSize; i1 += 1 )
+						if ( pstate->ee_actAlignData[i1] != 255 && pstate->ee_actDirectData[pstate->ee_actAlignData[i1]] )
+							retval_r += pstate->actData[pstate->ee_actAlignData[i1]][3];
 			}
 			++s;
 		}
@@ -1624,77 +1597,56 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 			ExitThread();
 		}
 	}
-	i9 = 0;
-	if ( pstate->numActuators )
+	for ( i9 = 0; i9 < (unsigned int)pstate->numActuators; i9 += 1 )
 	{
 		i8 = 0;
-		do
+		while ( 1 )
 		{
-			while ( 1 )
+			WaitClearEvent(pstate->eventflag, 2u);
+			++i8;
+			if ( QueryAct(i9, pstate) == 1 )
+				break;
+			if ( i8 >= 10 )
 			{
-				WaitClearEvent(pstate->eventflag, 2u);
-				++i8;
-				if ( QueryAct(i9, pstate) == 1 )
-					break;
-				if ( i8 >= 10 )
-				{
-					pstate->modeCurId = 0;
-					pstate->currentTask = 1;
-					ExitThread();
-				}
+				pstate->modeCurId = 0;
+				pstate->currentTask = 1;
+				ExitThread();
 			}
-			++i9;
-			i8 = 0;
 		}
-		while ( i9 < (unsigned int)pstate->numActuators );
 	}
-	i11 = 0;
-	if ( pstate->numActComb )
+	for ( i11 = 0; i11 < (unsigned int)pstate->numActComb; i11 += 1 )
 	{
 		i10 = 0;
-		do
+		while ( 1 )
 		{
-			while ( 1 )
+			WaitClearEvent(pstate->eventflag, 2u);
+			++i10;
+			if ( QueryComb(i11, pstate) == 1 )
+				break;
+			if ( i10 >= 10 )
 			{
-				WaitClearEvent(pstate->eventflag, 2u);
-				++i10;
-				if ( QueryComb(i11, pstate) == 1 )
-					break;
-				if ( i10 >= 10 )
-				{
-					pstate->modeCurId = 0;
-					pstate->currentTask = 1;
-					ExitThread();
-				}
+				pstate->modeCurId = 0;
+				pstate->currentTask = 1;
+				ExitThread();
 			}
-			++i11;
-			i10 = 0;
 		}
-		while ( i11 < (unsigned int)pstate->numActComb );
 	}
-	i13 = 0;
-	if ( pstate->numModes )
+	for ( i13 = 0; i13 < (unsigned int)pstate->numModes; i13 += 1 )
 	{
 		i12 = 0;
-		do
+		while ( 1 )
 		{
-			while ( 1 )
+			WaitClearEvent(pstate->eventflag, 2u);
+			++i12;
+			if ( QueryMode(i13, pstate) == 1 )
+				break;
+			if ( i12 >= 10 )
 			{
-				WaitClearEvent(pstate->eventflag, 2u);
-				++i12;
-				if ( QueryMode(i13, pstate) == 1 )
-					break;
-				if ( i12 >= 10 )
-				{
-					pstate->modeCurId = 0;
-					pstate->currentTask = 1;
-					ExitThread();
-				}
+				pstate->modeCurId = 0;
+				pstate->currentTask = 1;
+				ExitThread();
 			}
-			++i13;
-			i12 = 0;
 		}
-		while ( i13 < (unsigned int)pstate->numModes );
 	}
 	i14 = 0;
 	while ( 1 )
@@ -2980,17 +2932,9 @@ u32 __cdecl readSio2OutBuffer(u32 bit, u32 port, u32 slot)
 	{
 		outsize_old = padData[port][slot].out_size;
 		padData[port][slot].error = 0;
-		i = 0;
-		if ( outsize_old > 0 )
-		{
-			do
-			{
-				padData[port][slot].out_buffer[i] = sio2_td.out[sio2_td.out_size];
-				sio2_td.out_size += 1;
-				i += 1;
-			}
-			while ( i < (int)outsize_old );
-		}
+		for ( i = 0; i < (int)outsize_old; i += 1 )
+			padData[port][slot].out_buffer[i] = sio2_td.out[sio2_td.out_size + i];
+		sio2_td.out_size += outsize_old;
 		return 1;
 	}
 }
@@ -3167,16 +3111,8 @@ u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf)
 	{
 		if ( !size )
 			size = padData[port][slot].in_size;
-		i1 = 0;
-		if ( (int)size > 0 )
-		{
-			do
-			{
-				padData[port][slot].in_buffer[i1] = buf[i1];
-				i1 += 1;
-			}
-			while ( i1 < (int)size );
-		}
+		for ( i1 = 0; i1 < (int)size; i1 += 1 )
+			padData[port][slot].in_buffer[i1] = buf[i1];
 		return size;
 	}
 	return 0;
@@ -3200,16 +3136,8 @@ u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf)
 	{
 		if ( !size )
 			size = padData[port][slot].out_size;
-		i1 = 0;
-		if ( (int)size > 0 )
-		{
-			do
-			{
-				buf[i1] = padData[port][slot].out_buffer[i1];
-				++i1;
-			}
-			while ( i1 < (int)size );
-		}
+		for ( i1 = 0; i1 < (int)size; i1 += 1 )
+			buf[i1] = padData[port][slot].out_buffer[i1];
 		return size;
 	}
 	return 0;
@@ -3306,25 +3234,14 @@ void sio2cmdReset(void)
 int __cdecl SetupCmds(const sio2Cmds_t *s)
 {
 	int ix1; // $v1
-	int ix2; // $a0
 	int i1; // $a1
 	int i2; // $v1
 
 	if ( numControllers + 1 >= 16 || !s )
 		return 0;
-	ix1 = 0;
-	if ( numControllers > 0 )
-	{
-		ix2 = 0;
-		do
-		{
-			++ix1;
-			if ( s->id == sio2Cmds[ix2].id )
-				return 0;
-			++ix2;
-		}
-		while ( ix1 < numControllers );
-	}
+	for ( ix1 = 0; ix1 < numControllers; ix1 += 1 )
+		if ( s->id == sio2Cmds[ix1].id )
+			return 0;
 	sio2Cmds[numControllers].id = s->id;
 	i1 = numControllers;
 	i2 = numControllers;
