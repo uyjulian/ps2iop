@@ -1300,11 +1300,9 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 	int i1; // $a0
 
 	retval_r = 0;
-	p = 0;
-	while ( (int)p < (int)padGetPortMax() )
+	for ( p = 0; (int)p < (int)padGetPortMax(); p += 1 )
 	{
-		s = 0;
-		while ( (int)s < (int)padGetSlotMax(p) )
+		for ( s = 0; (int)s < (int)padGetSlotMax(p); s += 1 )
 		{
 			if ( (port != p || slot != s) && ((openSlots[p] >> s) & 1) != 0 )
 			{
@@ -1314,9 +1312,7 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 						if ( pstate->ee_actAlignData[i1] != 255 && pstate->ee_actDirectData[pstate->ee_actAlignData[i1]] )
 							retval_r += pstate->actData[pstate->ee_actAlignData[i1]][3];
 			}
-			++s;
 		}
-		++p;
 	}
 	return retval_r;
 }
@@ -1373,43 +1369,40 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 	slot = pstate->slot;
 	while ( 1 )
 	{
-		while ( 1 )
+		WaitClearEvent(pstate->eventflag, 1u);
+		ApplyActDirectFromDmaBuf(pstate);
+		if ( ReadData(pstate) != 1 )
 		{
-			WaitClearEvent(pstate->eventflag, 1u);
-			ApplyActDirectFromDmaBuf(pstate);
-			if ( ReadData(pstate) != 1 )
+			pstate->buttonDataReady = 0;
+			pstate->state = 7;
+			pstate->findPadRetries += 1;
+			retval += pdGetError(port, slot);
+			if ( retval >= 10 )
 			{
-				pstate->buttonDataReady = 0;
-				pstate->state = 7;
-				pstate->findPadRetries += 1;
-				retval += pdGetError(port, slot);
-				if ( retval >= 10 )
-				{
-					retval = 0;
-					pstate->currentTask = 2;
-					StartThread(pstate->querypadTid, NULL);
-				}
-				break;
-			}
-			retval = 0;
-			if ( pstate->outbuffer[2] != 90 || pstate->outbuffer[1] != pstate->modeCurId || pstate->outbuffer[1] == 243 )
-			{
-				pstate->buttonDataReady = 0;
-				pstate->state = 5;
+				retval = 0;
 				pstate->currentTask = 2;
 				StartThread(pstate->querypadTid, NULL);
-				break;
 			}
-			for ( i1 = 0; i1 < 32; i1 += 1 )
-				pstate->buttonStatus[i1] = pstate->outbuffer[i1];
-			pstate->buttonDataReady = 1;
-			if ( pstate->modeConfig == 1 )
-				pstate->state = 2;
-			else
-				pstate->state = 6;
-			if ( pstate->reqState == 2 && !pstate->runTask )
-				pstate->reqState = 0;
+			continue;
 		}
+		retval = 0;
+		if ( pstate->outbuffer[2] != 90 || pstate->outbuffer[1] != pstate->modeCurId || pstate->outbuffer[1] == 243 )
+		{
+			pstate->buttonDataReady = 0;
+			pstate->state = 5;
+			pstate->currentTask = 2;
+			StartThread(pstate->querypadTid, NULL);
+			continue;
+		}
+		for ( i1 = 0; i1 < 32; i1 += 1 )
+			pstate->buttonStatus[i1] = pstate->outbuffer[i1];
+		pstate->buttonDataReady = 1;
+		if ( pstate->modeConfig == 1 )
+			pstate->state = 2;
+		else
+			pstate->state = 6;
+		if ( pstate->reqState == 2 && !pstate->runTask )
+			pstate->reqState = 0;
 	}
 }
 
@@ -1962,8 +1955,7 @@ int __cdecl ParseParams(int argc, char *argv[])
 					return 0;
 				}
 			}
-			while ( (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0 )
-				++thparam_after;
+			for ( ; (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0; thparam_after += 1 );
 			if ( *(_BYTE *)thparam_after != 44 || ((look_ctype_table(*(_BYTE *)(thparam_after + 1)) & 4) == 0 || (new_thpri_lo = strtol((const char *)(thparam_after + 1), NULL, 10), (unsigned int)(new_thpri_lo - 9) < 0x73)) )
 			{
 				if ( new_thpri_lo < new_thpri_hi )
