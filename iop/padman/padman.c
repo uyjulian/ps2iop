@@ -457,13 +457,8 @@ s32 __cdecl VbReferThreadStatus(vblankData_t *vData)
 	iop_thread_info_t tinfo; // [sp+10h] [-48h] BYREF
 
 	ret2 = 0;
-	if ( !iReferThreadStatus(vData->tid_1, &tinfo) )
-		ret2 = (tinfo.status & 0x10) == 0;
-	if ( !(iReferThreadStatus(vData->tid_2, &tinfo) != 0) )
-	{
-		if ( (tinfo.status & 0x10) == 0 )
-			return ret2 + 1;
-	}
+	ret2 += !!( !iReferThreadStatus(vData->tid_1, &tinfo) && (tinfo.status & 0x10) == 0 );
+	ret2 += !!( !iReferThreadStatus(vData->tid_2, &tinfo) && (tinfo.status & 0x10) == 0 );
 	return ret2;
 }
 
@@ -482,21 +477,12 @@ u32 __cdecl GetThreadsStatus(padState_t *pstate)
 	iop_thread_info_t tinfo; // [sp+10h] [-48h] BYREF
 
 	count = 0;
-	if ( !ReferThreadStatus(pstate->updatepadTid, &tinfo) )
-		count = (tinfo.status & 0x10) == 0;
-	if ( !ReferThreadStatus(pstate->querypadTid, &tinfo) && (tinfo.status & 0x10) == 0 )
-		++count;
-	if ( !ReferThreadStatus(pstate->setmainmodeTid, &tinfo) && (tinfo.status & 0x10) == 0 )
-		++count;
-	if ( !ReferThreadStatus(pstate->setactalignTid, &tinfo) && (tinfo.status & 0x10) == 0 )
-		++count;
-	if ( !ReferThreadStatus(pstate->setbuttoninfoTid, &tinfo) && (tinfo.status & 0x10) == 0 )
-		++count;
-	if ( !(ReferThreadStatus(pstate->setvrefparamTid, &tinfo) != 0) )
-	{
-		if ( (tinfo.status & 0x10) == 0 )
-			return count + 1 < 1;
-	}
+	count += !!( !ReferThreadStatus(pstate->updatepadTid, &tinfo) && (tinfo.status & 0x10) == 0 );
+	count += !!( !ReferThreadStatus(pstate->querypadTid, &tinfo) && (tinfo.status & 0x10) == 0 );
+	count += !!( !ReferThreadStatus(pstate->setmainmodeTid, &tinfo) && (tinfo.status & 0x10) == 0 );
+	count += !!( !ReferThreadStatus(pstate->setactalignTid, &tinfo) && (tinfo.status & 0x10) == 0 );
+	count += !!( !ReferThreadStatus(pstate->setbuttoninfoTid, &tinfo) && (tinfo.status & 0x10) == 0 );
+	count += !!( !ReferThreadStatus(pstate->setvrefparamTid, &tinfo) && (tinfo.status & 0x10) == 0 );
 	return count < 1;
 }
 
@@ -591,18 +577,9 @@ void DmaSendEE(void)
 				*(_DWORD *)&pstate->ee_pdata.padding[4] = *(_DWORD *)pstate->buttonMask;
 				*(_DWORD *)pstate->ee_pdata.padding = *(_DWORD *)pstate->buttonInfo;
 				pstate->ee_pdata.stat70bit = pstate->stat70bit;
-				if ( pstate->buttonDataReady == 1 )
-				{
-					pstate->ee_pdata.length = padSetupEEButtonData(port, slot, pstate);
-				}
-				else
-				{
-					pstate->ee_pdata.length = 0;
-				}
+				pstate->ee_pdata.length = ( pstate->buttonDataReady == 1 ) ? padSetupEEButtonData(port, slot, pstate) : 0;
 				pstate->frame += 1;
-				sifdma_td[dmat_count_2].dest = (void *)((u32)pstate->padarea_ee_addr);
-				if ( pstate->ee_pdata.frame & 1 )
-					sifdma_td[dmat_count_2].dest = (void *)(((u32)pstate->padarea_ee_addr) + 128);
+				sifdma_td[dmat_count_2].dest = (void *)(((u32)pstate->padarea_ee_addr) + (( pstate->ee_pdata.frame & 1 ) ? 128 : 0));
 				sifdma_td[dmat_count_2].src = pstate;
 				sifdma_td[dmat_count_2].size = 128;
 				sifdma_td[dmat_count_2].attr = 0;
@@ -884,12 +861,9 @@ u32 __cdecl ReadData(padState_t *pstate)
 	if ( !pdGetError(pstate->port, pstate->slot) )
 	{
 		pdGetOutBuffer(pstate->port, pstate->slot, 0, pstate->outbuffer);
-		has_result_flag = 1;
 		if ( pstate->stat70bit == 1 )
-		{
 			shiftarray(pstate->outbuffer);
-			has_result_flag = 1;
-		}
+		has_result_flag = 1;
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
 	return has_result_flag;
@@ -915,20 +889,11 @@ u32 __cdecl PadIsSupported(padState_t *pstate)
 		pdGetOutBuffer(pstate->port, pstate->slot, 0, pstate->outbuffer);
 		if ( pstate->stat70bit == 1 )
 			shiftarray(pstate->outbuffer);
-		if ( pstate->outbuffer[1] )
+		if ( pstate->outbuffer[1] && sio2cmdCheckId(pstate->outbuffer[1]) == 1 && pstate->outbuffer[1] && sio2cmdCheckId(pstate->outbuffer[1]) == 1 )
 		{
-			if ( sio2cmdCheckId(pstate->outbuffer[1]) == 1 )
-			{
-				if ( pstate->outbuffer[1] )
-				{
-					if ( sio2cmdCheckId(pstate->outbuffer[1]) == 1 )
-					{
-						retflag = 1;
-						pstate->modeCurId = pstate->outbuffer[1];
-						do_set_fixme_used_4_pad(pstate->port, pstate->slot, pstate->modeCurId);
-					}
-				}
-			}
+			pstate->modeCurId = pstate->outbuffer[1];
+			do_set_fixme_used_4_pad(pstate->port, pstate->slot, pstate->modeCurId);
+			retflag = 1;
 		}
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
@@ -953,12 +918,9 @@ u32 __cdecl EnterConfigMode(u8 val, padState_t *pstate)
 	if ( !pdGetError(pstate->port, pstate->slot) )
 	{
 		pdGetOutBuffer(pstate->port, pstate->slot, 0, pstate->outbuffer);
-		retflag = 1;
 		if ( pstate->stat70bit == 1 )
-		{
 			shiftarray(pstate->outbuffer);
-			retflag = 1;
-		}
+		retflag = 1;
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
 	return retflag;
@@ -982,12 +944,9 @@ u32 __cdecl ExitConfigMode(padState_t *pstate)
 	if ( !pdGetError(pstate->port, pstate->slot) )
 	{
 		pdGetOutBuffer(pstate->port, pstate->slot, 0, pstate->outbuffer);
-		retflag = 1;
 		if ( pstate->stat70bit == 1 )
-		{
 			shiftarray(pstate->outbuffer);
-			retflag = 1;
-		}
+		retflag = 1;
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
 	return retflag;
@@ -1240,20 +1199,10 @@ u32 __cdecl QueryButtonMask(padState_t *pstate)
 		pdGetOutBuffer(pstate->port, pstate->slot, 0, pstate->outbuffer);
 		if ( pstate->stat70bit == 1 )
 			shiftarray(pstate->outbuffer);
-		if ( pstate->outbuffer[8] == 90 )
-		{
-			pstate->buttonMask[0] = pstate->outbuffer[3];
-			pstate->buttonMask[1] = pstate->outbuffer[4];
-			pstate->buttonMask[2] = pstate->outbuffer[5];
-			pstate->buttonMask[3] = pstate->outbuffer[6];
-		}
-		else
-		{
-			pstate->buttonMask[0] = 0;
-			pstate->buttonMask[1] = 0;
-			pstate->buttonMask[2] = 0;
-			pstate->buttonMask[3] = 0;
-		}
+		pstate->buttonMask[0] = ( pstate->outbuffer[8] == 90 ) ? pstate->outbuffer[3] : 0;
+		pstate->buttonMask[1] = ( pstate->outbuffer[8] == 90 ) ? pstate->outbuffer[4] : 0;
+		pstate->buttonMask[2] = ( pstate->outbuffer[8] == 90 ) ? pstate->outbuffer[5] : 0;
+		pstate->buttonMask[3] = ( pstate->outbuffer[8] == 90 ) ? pstate->outbuffer[6] : 0;
 		retflag = 1;
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
@@ -1309,8 +1258,7 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 				pstate = &g_pad_state[p][s];
 				if ( pstate->modeCurId )
 					for ( i1 = 0; i1 < pstate->ee_actDirectSize; i1 += 1 )
-						if ( pstate->ee_actAlignData[i1] != 255 && pstate->ee_actDirectData[pstate->ee_actAlignData[i1]] )
-							retval_r += pstate->actData[pstate->ee_actAlignData[i1]][3];
+						retval_r += ( pstate->ee_actAlignData[i1] != 255 && pstate->ee_actDirectData[pstate->ee_actAlignData[i1]] ) ? pstate->actData[pstate->ee_actAlignData[i1]][3] : 0;
 			}
 		}
 	}
@@ -1397,10 +1345,7 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 		for ( i1 = 0; i1 < 32; i1 += 1 )
 			pstate->buttonStatus[i1] = pstate->outbuffer[i1];
 		pstate->buttonDataReady = 1;
-		if ( pstate->modeConfig == 1 )
-			pstate->state = 2;
-		else
-			pstate->state = 6;
+		pstate->state = ( pstate->modeConfig == 1 ) ? 2 : 6;
 		if ( pstate->reqState == 2 && !pstate->runTask )
 			pstate->reqState = 0;
 	}
@@ -1912,22 +1857,22 @@ void __cdecl do_set_timer(int timer_mode, u32 timer_compare)
 	int HardTimerIntrCode; // $s1
 
 	timerid = AllocHardTimer(4, 32, 1);
-	if ( timerid >= 0 || (timerid = AllocHardTimer(4, 32, 1), timerid >= 0) )
-	{
-		HardTimerIntrCode = GetHardTimerIntrCode(timerid);
-		RegisterIntrHandler(HardTimerIntrCode, 1, (int (__cdecl *)(void *))VblankStart, &vblankdata);
-		SetTimerMode(timerid, 0);
-		SetTimerCompare(timerid, timer_compare);
-		SetTimerCounter(timerid, 0);
-		SetTimerMode(timerid, timer_mode);
-		EnableIntr(HardTimerIntrCode);
-		g_readxfertimer_timid = timerid;
-		g_readxfertimer_irq = HardTimerIntrCode;
-	}
-	else
+	if ( timerid < 0 )
+		timerid = AllocHardTimer(4, 32, 1);
+	if ( timerid < 0 )
 	{
 		Kprintf("Timer alloc faild\n");
+		return;
 	}
+	HardTimerIntrCode = GetHardTimerIntrCode(timerid);
+	RegisterIntrHandler(HardTimerIntrCode, 1, (int (__cdecl *)(void *))VblankStart, &vblankdata);
+	SetTimerMode(timerid, 0);
+	SetTimerCompare(timerid, timer_compare);
+	SetTimerCounter(timerid, 0);
+	SetTimerMode(timerid, timer_mode);
+	EnableIntr(HardTimerIntrCode);
+	g_readxfertimer_timid = timerid;
+	g_readxfertimer_irq = HardTimerIntrCode;
 }
 // 409268: using guessed type vblankData_t vblankdata;
 
@@ -1993,26 +1938,18 @@ int __cdecl _start(int ac, char **av)
 	if ( RegisterLibraryEntries(&_exp_padman) )
 	{
 		if ( g_padman_verbose )
-		{
 			Kprintf("padman: RegisterLibraryEntries Faild\n");
-		}
+		return 1;
 	}
-	else
+	if ( SetRebootTimeLibraryHandlingMode(&_exp_padman, 2) )
+		return 1;
+	if ( !InitRpcServers(thpri_lo) )
 	{
-		if ( !(SetRebootTimeLibraryHandlingMode(&_exp_padman, 2) != 0) )
-		{
-			if ( !(InitRpcServers(thpri_lo) != 0) )
-			{
-				if ( g_padman_verbose )
-				{
-					Kprintf("padman: sif_init Faild\n");
-				}
-				return 1;
-			}
-			return 0;
-		}
+		if ( g_padman_verbose )
+			Kprintf("padman: sif_init Faild\n");
+		return 1;
 	}
-	return 1;
+	return 0;
 }
 // 4082F8: using guessed type int g_padman_verbose;
 // 408320: using guessed type int vblank_end;
@@ -2266,26 +2203,19 @@ s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait)
 
 	efres[0] = 0;
 	pstate = &g_pad_state[port][slot];
-	if ( ((openSlots[port] >> slot) & 1) != 0 )
+	if ( ((openSlots[port] >> slot) & 1) != 0 && pstate->reqState != 2 )
 	{
-		if ( pstate->reqState == 2 )
+		pstate->runTask = 3;
+		pstate->taskTid = 0;
+		pstate->reqState = 2;
+		pstate->m_close_wait_blocking = wait;
+		if ( wait )
 		{
-			return 0;
+			WaitEventFlag(pstate->eventflag, 0x400u, 16, (u32 *)efres);
+			DeleteEventFlag(pstate->eventflag);
+			pstate->eventflag = 0;
 		}
-		else
-		{
-			pstate->runTask = 3;
-			pstate->taskTid = 0;
-			pstate->reqState = 2;
-			pstate->m_close_wait_blocking = wait;
-			if ( wait )
-			{
-				WaitEventFlag(pstate->eventflag, 0x400u, 16, (u32 *)efres);
-				DeleteEventFlag(pstate->eventflag);
-				pstate->eventflag = 0;
-			}
-			return 1;
-		}
+		return 1;
 	}
 	return 0;
 }
@@ -2487,30 +2417,28 @@ s32 __cdecl padInfoComb(u32 port, u32 slot, s32 val1, u32 val2)
 	padState_t *pstate; // $v1
 
 	pstate = &g_pad_state[port][slot];
-	if ( pstate->currentTask == 1 )
-	{
-		if ( pstate->modeConfig >= 2u )
-		{
-			if ( val1 == -1 )
-				return pstate->numActComb;
-			if ( val1 < pstate->numActComb )
-			{
-				switch ( val2 )
-				{
-					case -1:
-						return pstate->combData[val1][0];
-					case 0:
-						return pstate->combData[val1][1];
-					case 1:
-						return pstate->combData[val1][2];
-					case 2:
-						return pstate->combData[val1][3];
-				}
-			}
-		}
+	if ( pstate->currentTask != 1 )
+		return 0;
+	if ( pstate->modeConfig < 2u )
 		return -1;
+	if ( val1 == -1 )
+		return pstate->numActComb;
+	if ( val1 >= pstate->numActComb )
+		return 0;
+	switch ( val2 )
+	{
+		case -1:
+			return pstate->combData[val1][0];
+		case 0:
+			return pstate->combData[val1][1];
+		case 1:
+			return pstate->combData[val1][2];
+		case 2:
+			return pstate->combData[val1][3];
+		// Unofficial: default case
+		default:
+			return 0;
 	}
-	return 0;
 }
 
 //----- (00404344) --------------------------------------------------------
@@ -2521,37 +2449,27 @@ s32 __cdecl padInfoMode(u32 port, u32 slot, s32 val1, u32 val2)
 	pstate = &g_pad_state[port][slot];
 	if ( pstate->currentTask != 1 || pstate->reqState == 2 )
 		return 0;
-	if ( val1 == 2 )
+	switch ( val1 )
 	{
-		if ( pstate->modeConfig == 1 )
-			return 0;
-		return pstate->modeTable[pstate->modeCurOffs];
-	}
-	if ( val1 >= 3 )
-	{
-		if ( val1 == 3 )
+		case 1:
+			return ( pstate->modeCurId == 243 ) ? 0 : ((u32)pstate->modeCurId >> 4);
+		case 2:
+			return ( pstate->modeConfig == 1 ) ? 0 : pstate->modeTable[pstate->modeCurOffs];
+		case 3:
+			return ( pstate->modeConfig == 1 ) ? 0 : pstate->modeCurOffs;
+		case 4:
 		{
-			if ( pstate->modeConfig != 1 )
-				return pstate->modeCurOffs;
-			return 0;
+			if ( pstate->modeConfig == 1 )
+				return 0;
+			if ( val2 == (u32)-1 )
+				return pstate->numModes;
+			if ( (int)val2 >= pstate->numModes )
+				return 0;
+			return pstate->modeTable[val2];
 		}
-		if ( val1 != 4 )
+		default:
 			return -1;
-		if ( pstate->modeConfig == 1 )
-			return 0;
-		if ( val2 == (u32)-1 )
-			return pstate->numModes;
-		if ( (int)val2 >= pstate->numModes )
-			return 0;
-		return pstate->modeTable[val2];
 	}
-	if ( val1 == 1 )
-	{
-		if ( pstate->modeCurId == 243 )
-			return 0;
-		return (u32)pstate->modeCurId >> 4;
-	}
-	return -1;
 }
 
 //----- (0040447C) --------------------------------------------------------
@@ -2576,9 +2494,7 @@ u32 __cdecl padSetMainMode(u32 port, u32 slot, u32 mode, u32 lock)
 	padState_t *pstate; // $a1
 
 	pstate = &g_pad_state[port][slot];
-	if ( pstate->currentTask != 1 || pstate->modeConfig < 2u || (int)mode >= pstate->numModes )
-		return 0;
-	if ( pstate->reqState == 2 )
+	if ( pstate->currentTask != 1 || pstate->modeConfig < 2u || (int)mode >= pstate->numModes || pstate->reqState == 2 )
 		return 0;
 	pstate->mode = mode;
 	pstate->lock = lock;
@@ -2595,11 +2511,7 @@ u32 __cdecl padSetActAlign(u32 port, u32 slot, const u8 *actData)
 	int i1; // $a0
 
 	pstate = &g_pad_state[port][slot];
-	if ( pstate->currentTask != 1 )
-		return 0;
-	if ( pstate->modeConfig < 2u )
-		return 0;
-	if ( pstate->reqState == 2 )
+	if ( pstate->currentTask != 1 || pstate->modeConfig < 2u || pstate->reqState == 2 )
 		return 0;
 	for ( i1 = 0; i1 < 6; i1 += 1 )
 		pstate->ee_actAlignData[i1] = actData[i1];
@@ -2616,13 +2528,7 @@ u32 __cdecl padSetVrefParam(u32 port, u32 slot, const u8 *vparam)
 	int i1; // $a0
 
 	pstate = &g_pad_state[port][slot];
-	if ( pstate->currentTask != 1 )
-		return 0;
-	if ( pstate->modeConfig < 2u )
-		return 0;
-	if ( pstate->model < 2u )
-		return 0;
-	if ( pstate->reqState == 2 )
+	if ( pstate->currentTask != 1 || pstate->modeConfig < 2u || pstate->model < 2u || pstate->reqState == 2 )
 		return 0;
 	for ( i1 = 0; i1 < 12; i1 += 1 )
 		pstate->modeParam[i1] = vparam[i1];
@@ -2639,13 +2545,7 @@ u32 __cdecl padSetButtonInfo(u32 port, u32 slot, u32 info)
 	int i1; // $a0
 
 	pstate = &g_pad_state[port][slot];
-	if ( pstate->currentTask != 1 )
-		return 0;
-	if ( pstate->modeConfig < 2u )
-		return 0;
-	if ( (pstate->model & 2) == 0 )
-		return 0;
-	if ( pstate->reqState == 2 )
+	if ( pstate->currentTask != 1 || pstate->modeConfig < 2u || (pstate->model & 2) == 0 || pstate->reqState == 2 )
 		return 0;
 	pstate->buttonInfo[1] = (unsigned __int16)((info << 6) | 0x3F) >> 8;
 	pstate->buttonInfo[2] = ((info << 6) | 0x3F) >> 16;
@@ -2665,13 +2565,7 @@ u32 __cdecl padGetButtonMask(u32 port, u32 slot)
 	padState_t *pstate; // $a1
 
 	pstate = &g_pad_state[port][slot];
-	if ( pstate->currentTask == 1 && pstate->modeConfig >= 2u && pstate->model >= 2u )
-		return pstate->buttonMask[0]
-				 + (pstate->buttonMask[1] << 8)
-				 + (pstate->buttonMask[2] << 16)
-				 + (pstate->buttonMask[3] << 24);
-	else
-		return 0;
+	return ( pstate->currentTask == 1 && pstate->modeConfig >= 2u && pstate->model >= 2u ) ? (pstate->buttonMask[0] + (pstate->buttonMask[1] << 8) + (pstate->buttonMask[2] << 16) + (pstate->buttonMask[3] << 24)) : 0;
 }
 
 //----- (004048F0) --------------------------------------------------------
@@ -2797,25 +2691,17 @@ u32 __cdecl readSio2OutBuffer(u32 bit, u32 port, u32 slot)
 	int outsize_old; // $v1
 	int i; // $a3
 
-	if ( ((sio2_td.stat6c >> 13) & 1) == 1 )
+	if ( ((sio2_td.stat6c >> 13) & 1) == 1 || readStat6cBit(bit, &sio2_td) == 1 )
 	{
 		padData[port][slot].error = 1;
 		return 0;
 	}
-	else if ( readStat6cBit(bit, &sio2_td) == 1 )
-	{
-		padData[port][slot].error = 1;
-		return 0;
-	}
-	else
-	{
-		outsize_old = padData[port][slot].out_size;
-		padData[port][slot].error = 0;
-		for ( i = 0; i < (int)outsize_old; i += 1 )
-			padData[port][slot].out_buffer[i] = sio2_td.out[sio2_td.out_size + i];
-		sio2_td.out_size += outsize_old;
-		return 1;
-	}
+	outsize_old = padData[port][slot].out_size;
+	padData[port][slot].error = 0;
+	for ( i = 0; i < (int)outsize_old; i += 1 )
+		padData[port][slot].out_buffer[i] = sio2_td.out[sio2_td.out_size + i];
+	sio2_td.out_size += outsize_old;
+	return 1;
 }
 // 4095F0: using guessed type sio2_transfer_data_t sio2_td;
 
@@ -2855,11 +2741,8 @@ u32 __cdecl padTransfer(u32 slot)
 	}
 	if ( slot )
 	{
-		if ( padData[0][slot].active == 1 )
-		{
-			if ( change_slot_buffer[4] != 1 )
-				padData[0][slot].error = 10;
-		}
+		if ( padData[0][slot].active == 1 && change_slot_buffer[4] != 1 )
+			padData[0][slot].error = 10;
 		if ( padData[1][slot].active == 1 && change_slot_buffer[5] != 1 )
 			padData[1][slot].error = 10;
 	}
@@ -2893,11 +2776,8 @@ u32 __cdecl mtapChangeSlot(u32 slot)
 	change_slot_buffer[1] = -1;
 	change_slot_buffer[2] = -1;
 	change_slot_buffer[3] = -1;
-	if ( !padData[0][slot].active )
-	{
-		if ( !padData[1][slot].active )
-			return 0;
-	}
+	if ( !padData[0][slot].active && !padData[1][slot].active )
+		return 0;
 	if ( padData[0][slot].active == 1 )
 		change_slot_buffer[0] = slot;
 	if ( padData[1][slot].active == 1 )
@@ -2957,10 +2837,7 @@ u32 __cdecl pdSetRegData(u32 port, u32 slot, u32 reg_data)
 //----- (00405340) --------------------------------------------------------
 s32 __cdecl pdGetError(u32 port, u32 slot)
 {
-	if ( port >= 2 )
-		return -1;
-	else
-		return padData[port][slot].error;
+	return ( port >= 2 ) ? -1 : (s32)padData[port][slot].error;
 }
 
 //----- (00405390) --------------------------------------------------------
@@ -2977,15 +2854,13 @@ u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf)
 {
 	signed __int32 i1; // $t0
 
-	if ( port < 2 )
-	{
-		if ( !size )
-			size = padData[port][slot].in_size;
-		for ( i1 = 0; i1 < (int)size; i1 += 1 )
-			padData[port][slot].in_buffer[i1] = buf[i1];
-		return size;
-	}
-	return 0;
+	if ( port >= 2 )
+		return 0;
+	if ( !size )
+		size = padData[port][slot].in_size;
+	for ( i1 = 0; i1 < (int)size; i1 += 1 )
+		padData[port][slot].in_buffer[i1] = buf[i1];
+	return size;
 }
 
 //----- (00405498) --------------------------------------------------------
@@ -3002,15 +2877,13 @@ u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf)
 {
 	signed __int32 i1; // $t0
 
-	if ( port < 2 )
-	{
-		if ( !size )
-			size = padData[port][slot].out_size;
-		for ( i1 = 0; i1 < (int)size; i1 += 1 )
-			buf[i1] = padData[port][slot].out_buffer[i1];
-		return size;
-	}
-	return 0;
+	if ( port >= 2 )
+		return 0;
+	if ( !size )
+		size = padData[port][slot].out_size;
+	for ( i1 = 0; i1 < (int)size; i1 += 1 )
+		buf[i1] = padData[port][slot].out_buffer[i1];
+	return size;
 }
 
 //----- (004055A0) --------------------------------------------------------
@@ -3189,17 +3062,13 @@ u32 __cdecl sio2CmdGetPortCtrl2(u32 id, u32 b)
 //----- (00405D24) --------------------------------------------------------
 u32 __cdecl pdGetInSize(u8 id)
 {
-	if ( !id )
-		id = 0x41;
-	return 2 * (id & 0xF) + 3;
+	return 2 * ((id ? id : 0x41) & 0xF) + 3;
 }
 
 //----- (00405D44) --------------------------------------------------------
 u32 __cdecl pdGetOutSize(u8 id)
 {
-	if ( !id )
-		id = 0x41;
-	return 2 * (id & 0xF) + 3;
+	return 2 * ((id ? id : 0x41) & 0xF) + 3;
 }
 
 //----- (00405D64) --------------------------------------------------------
@@ -3365,19 +3234,13 @@ u32 __cdecl FindPadsGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
-	if ( a )
-		return 0xFF060505;
-	else
-		return 0xFFC00505;
+	return a ? 0xFF060505 : 0xFFC00505;
 }
 
 //----- (00406450) --------------------------------------------------------
 u32 __cdecl FindPadsGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x2000A;
+	return a ? 0x2012C : 0x2000A;
 }
 
 //----- (00406470) --------------------------------------------------------
@@ -3439,19 +3302,13 @@ u32 __cdecl MouseGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
-	if ( a )
-		return 0xFF060505;
-	else
-		return 0xFFC00505;
+	return a ? 0xFF060505 : 0xFFC00505;
 }
 
 //----- (004065B8) --------------------------------------------------------
 u32 __cdecl MouseGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x20014;
+	return a ? 0x2012C : 0x20014;
 }
 
 //----- (004065D8) --------------------------------------------------------
@@ -3515,19 +3372,13 @@ u32 __cdecl DigitalGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
-	if ( a )
-		return 0xFF060505;
-	else
-		return 0xFFC00505;
+	return a ? 0xFF060505 : 0xFFC00505;
 }
 
 //----- (00406710) --------------------------------------------------------
 u32 __cdecl DigitalGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x20014;
+	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406730) --------------------------------------------------------
@@ -3597,18 +3448,13 @@ void __cdecl AnalogReadData(u8 *a)
 //----- (00406868) --------------------------------------------------------
 u32 __cdecl AnalogGetPortCtrl1(u32 a, u32 b)
 {
-	if ( a )
-		return 0xFF060505;
-	return ((((b & 2) ? 10 : 5) | (((b & 2) ? 10 : 5) << 8)) & 0xFF00FFFF) | (((b & 2) ? 0x60 : 0xC0) << 16) | 0xFF000000;
+	return a ? 0xFF060505 :  (((((b & 2) ? 10 : 5) | (((b & 2) ? 10 : 5) << 8)) & 0xFF00FFFF) | (((b & 2) ? 0x60 : 0xC0) << 16) | 0xFF000000);
 }
 
 //----- (004068DC) --------------------------------------------------------
 u32 __cdecl AnalogGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x20014;
+	return a ? 0x2012C : 0x20014;
 }
 
 //----- (004068FC) --------------------------------------------------------
@@ -3664,19 +3510,13 @@ u32 __cdecl NegiconGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
-	if ( a )
-		return 0xFF060505;
-	else
-		return 0xFFC00505;
+	return a ? 0xFF060505 : 0xFFC00505;
 }
 
 //----- (00406A30) --------------------------------------------------------
 u32 __cdecl NegiconGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x20014;
+	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406A50) --------------------------------------------------------
@@ -3746,19 +3586,13 @@ u32 __cdecl JoystickGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
-	if ( a )
-		return 0xFF060505;
-	else
-		return 0xFFC00505;
+	return a ? 0xFF060505 : 0xFFC00505;
 }
 
 //----- (00406BA0) --------------------------------------------------------
 u32 __cdecl JoystickGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x20014;
+	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406BC0) --------------------------------------------------------
@@ -3824,19 +3658,13 @@ u32 __cdecl KonamiGunGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
-	if ( a )
-		return 0xFF060505;
-	else
-		return 0xFFC00505;
+	return a ? 0xFF060505 : 0xFFC00505;
 }
 
 //----- (00406D04) --------------------------------------------------------
 u32 __cdecl KonamiGunGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x20014;
+	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406D24) --------------------------------------------------------
@@ -3902,19 +3730,13 @@ u32 __cdecl NamcoGunGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
-	if ( a )
-		return 0xFF060505;
-	else
-		return 0xFFC00505;
+	return a ? 0xFF060505 : 0xFFC00505;
 }
 
 //----- (00406E60) --------------------------------------------------------
 u32 __cdecl NamcoGunGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x20014;
+	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406E80) --------------------------------------------------------
@@ -3988,19 +3810,13 @@ u32 __cdecl JogconGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
-	if ( a )
-		return 0xFF060505;
-	else
-		return 0xFFC00505;
+	return a ? 0xFF060505 : 0xFFC00505;
 }
 
 //----- (00406FE0) --------------------------------------------------------
 u32 __cdecl JogconGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x20014;
+	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00407000) --------------------------------------------------------
@@ -4075,19 +3891,13 @@ u32 __cdecl ConfigGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
-	if ( a )
-		return 0xFF060505;
-	else
-		return 0xFFC00505;
+	return a ? 0xFF060505 : 0xFFC00505;
 }
 
 //----- (00407164) --------------------------------------------------------
 u32 __cdecl ConfigGetPortCtrl2(u32 a)
 {
-	if ( a )
-		return 0x2012C;
-	else
-		return 0x20014;
+	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00407184) --------------------------------------------------------
