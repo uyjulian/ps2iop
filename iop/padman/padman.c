@@ -687,10 +687,8 @@ void __cdecl shiftarray(u8 *buf)
 	}
 	while ( i1 < 32 );
 	buf[0] = -1;
-	for ( i = 1; i < 32; ++i )
-	{
+	for ( i = 1; i < 32; i += 1 )
 		buf[i] = temp[i - 1];
-	}
 }
 
 //----- (00400910) --------------------------------------------------------
@@ -2260,11 +2258,9 @@ s32 __cdecl padEnd()
 	i1 = 0;
 	do
 	{
-		for ( i = 0; i < 4; ++i )
-		{
+		for ( i = 0; i < 4; i += 1 )
 			if ( ((openSlots[i1] >> i) & 1) != 0 )
 				padPortClose(i1, i, 1);
-		}
 		++i1;
 	}
 	while ( i1 < 2 );
@@ -3052,7 +3048,7 @@ u32 __cdecl padTransfer(u32 slot)
 		sio2_transfer2(&sio2_td);
 		sio2_td.out_size = 0;
 		port_2 = port_1;
-		for ( i = 0; i < 2; ++i )
+		for ( i = 0; i < 2; i += 1 )
 		{
 			if ( chslot_buf_tmp[port_2] == 1 )
 			{
@@ -3358,21 +3354,12 @@ int __cdecl SetupCmds(const sio2Cmds_t *s)
 //----- (00405B0C) --------------------------------------------------------
 u32 __cdecl sio2cmdCheckId(u8 id)
 {
-	int i2; // $v1
 	int i; // $a1
 
-	i2 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		++i2;
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
 		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-			break;
-		if ( i2 >= numControllers )
-			return 0;
-	}
-	return 1;
+			return 1;
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3380,24 +3367,14 @@ u32 __cdecl sio2cmdCheckId(u8 id)
 //----- (00405B68) --------------------------------------------------------
 void __cdecl sio2CmdSetReadData(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers > 0 )
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
 	{
-		for ( i = 0; ; ++i )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].readdata )
 		{
-			if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-			{
-				if ( sio2Cmds[i].readdata )
-				{
-					sio2Cmds[i].readdata(buf);
-					return;
-				}
-			}
-			if ( ++i1 >= numControllers )
-				return;
+			sio2Cmds[i].readdata(buf);
+			return;
 		}
 	}
 }
@@ -3407,22 +3384,12 @@ void __cdecl sio2CmdSetReadData(u32 id, u8 *buf)
 //----- (00405BF8) --------------------------------------------------------
 u32 __cdecl sio2CmdGetPortCtrl1(u8 id, u32 b, u8 c)
 {
-	int i1; // $a3
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].getportctrl1 )
-				return sio2Cmds[i].getportctrl1(b, c);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].getportctrl1 )
+			return sio2Cmds[i].getportctrl1(b, c);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3430,22 +3397,12 @@ u32 __cdecl sio2CmdGetPortCtrl1(u8 id, u32 b, u8 c)
 //----- (00405C90) --------------------------------------------------------
 u32 __cdecl sio2CmdGetPortCtrl2(u32 id, u32 b)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].getportctrl2 )
-				return sio2Cmds[i].getportctrl2(b);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].getportctrl2 )
+			return sio2Cmds[i].getportctrl2(b);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3475,22 +3432,12 @@ u32 __cdecl pdGetRegData(u32 id)
 //----- (00405DB4) --------------------------------------------------------
 u32 __cdecl sio2CmdSetEnterConfigMode(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].enterconfigmode )
-				return sio2Cmds[i].enterconfigmode(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].enterconfigmode )
+			return sio2Cmds[i].enterconfigmode(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3498,22 +3445,12 @@ u32 __cdecl sio2CmdSetEnterConfigMode(u32 id, u8 *buf)
 //----- (00405E48) --------------------------------------------------------
 u32 __cdecl sio2CmdSetExitConfigMode(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].exitconfigmode )
-				return sio2Cmds[i].exitconfigmode(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].exitconfigmode )
+			return sio2Cmds[i].exitconfigmode(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3521,22 +3458,12 @@ u32 __cdecl sio2CmdSetExitConfigMode(u32 id, u8 *buf)
 //----- (00405EDC) --------------------------------------------------------
 u32 __cdecl sio2CmdSetQueryModel(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].querymodel )
-				return sio2Cmds[i].querymodel(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].querymodel )
+			return sio2Cmds[i].querymodel(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3544,22 +3471,12 @@ u32 __cdecl sio2CmdSetQueryModel(u32 id, u8 *buf)
 //----- (00405F70) --------------------------------------------------------
 u32 __cdecl sio2CmdSetQueryAct(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].queryact )
-				return sio2Cmds[i].queryact(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].queryact )
+			return sio2Cmds[i].queryact(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3567,22 +3484,12 @@ u32 __cdecl sio2CmdSetQueryAct(u32 id, u8 *buf)
 //----- (00406004) --------------------------------------------------------
 u32 __cdecl sio2CmdSetQueryComb(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].querycomb )
-				return sio2Cmds[i].querycomb(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].querycomb )
+			return sio2Cmds[i].querycomb(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3590,22 +3497,12 @@ u32 __cdecl sio2CmdSetQueryComb(u32 id, u8 *buf)
 //----- (00406098) --------------------------------------------------------
 u32 __cdecl sio2CmdSetQueryMode(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].querymode )
-				return sio2Cmds[i].querymode(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].querymode )
+			return sio2Cmds[i].querymode(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3613,22 +3510,12 @@ u32 __cdecl sio2CmdSetQueryMode(u32 id, u8 *buf)
 //----- (0040612C) --------------------------------------------------------
 u32 __cdecl sio2CmdSetQueryButtonMask(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].querybuttonmask )
-				return sio2Cmds[i].querybuttonmask(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].querybuttonmask )
+			return sio2Cmds[i].querybuttonmask(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3636,22 +3523,12 @@ u32 __cdecl sio2CmdSetQueryButtonMask(u32 id, u8 *buf)
 //----- (004061C0) --------------------------------------------------------
 u32 __cdecl sio2CmdSetSetButtonInfo(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].setbuttoninfo )
-				return sio2Cmds[i].setbuttoninfo(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].setbuttoninfo )
+			return sio2Cmds[i].setbuttoninfo(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3659,22 +3536,12 @@ u32 __cdecl sio2CmdSetSetButtonInfo(u32 id, u8 *buf)
 //----- (00406254) --------------------------------------------------------
 u32 __cdecl sio2CmdSetSetVrefParam(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].setvrefparam )
-				return sio2Cmds[i].setvrefparam(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].setvrefparam )
+			return sio2Cmds[i].setvrefparam(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3682,22 +3549,12 @@ u32 __cdecl sio2CmdSetSetVrefParam(u32 id, u8 *buf)
 //----- (004062E8) --------------------------------------------------------
 u32 __cdecl sio2CmdSetSetMainMode(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].setmainmode )
-				return sio2Cmds[i].setmainmode(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].setmainmode )
+			return sio2Cmds[i].setmainmode(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
@@ -3705,22 +3562,12 @@ u32 __cdecl sio2CmdSetSetMainMode(u32 id, u8 *buf)
 //----- (0040637C) --------------------------------------------------------
 u32 __cdecl sio2CmdSetSetActAlign(u32 id, u8 *buf)
 {
-	int i1; // $a2
 	int i; // $v1
 
-	i1 = 0;
-	if ( numControllers <= 0 )
-		return 0;
-	for ( i = 0; ; ++i )
-	{
-		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id )
-		{
-			if ( sio2Cmds[i].setactalign )
-				return sio2Cmds[i].setactalign(buf);
-		}
-		if ( ++i1 >= numControllers )
-			return 0;
-	}
+	for ( i = 0; (i + 1) < numControllers; i += 1 )
+		if ( (unsigned __int8)(id >> 4) == sio2Cmds[i].id && sio2Cmds[i].setactalign )
+			return sio2Cmds[i].setactalign(buf);
+	return 0;
 }
 // 4098B0: using guessed type sio2Cmds_t sio2Cmds[16];
 // 409D30: using guessed type int numControllers;
