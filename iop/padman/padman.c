@@ -668,19 +668,16 @@ int __cdecl VblankStart(vblankData_t *vData)
 	frame_count += 1;
 	if ( vData->init )
 	{
-		if ( vData->stopTransfer )
-		{
-			if ( (unsigned int)frame_count >= 0x12C )
-			{
-				if ( g_padman_verbose )
-					Kprintf("padman: *** VBLANK OVERLAP ***\n");
-				frame_count = 0;
-			}
-		}
-		else
+		if ( !vData->stopTransfer )
 		{
 			vData->stopTransfer = 1;
 			iSetEventFlag(vData->eventflag, 1u);
+		}
+		else if ( (unsigned int)frame_count >= 0x12C )
+		{
+			if ( g_padman_verbose )
+				Kprintf("padman: *** VBLANK OVERLAP ***\n");
+			frame_count = 0;
 		}
 	}
 	if ( vData->padEnd == 1 && !VbReferThreadStatus(vData) )
