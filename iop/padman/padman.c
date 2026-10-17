@@ -3166,8 +3166,9 @@ u32 __cdecl sio2CmdSetSetActAlign(u32 id, u8 *buf)
 //----- (00406410) --------------------------------------------------------
 void __cdecl FindPadsReadData(u8 *a)
 {
-	*a = 1;
-	*(_WORD *)(a + 1) = 0x42;
+	a[0] = 1;
+	a[1] = 0x42;
+	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
 }
@@ -3232,8 +3233,9 @@ void sio2cmdInitFindPads(void)
 //----- (00406570) --------------------------------------------------------
 void __cdecl MouseReadData(u8 *a)
 {
-	*a = 1;
-	*(_WORD *)(a + 1) = 0x42;
+	a[0] = 1;
+	a[1] = 0x42;
+	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
 	a[5] = 0;
@@ -3276,9 +3278,10 @@ u32 MouseSize2(void)
 u32 __cdecl MouseEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
-	*a = 1;
+	a[0] = 1;
 	a[2] = 0;
-	*(_WORD *)(a + 3) = 1;
+	a[3] = 1;
+	a[4] = 0;
 	a[5] = 0;
 	a[6] = 0;
 	return 7;
@@ -3304,8 +3307,9 @@ void sio2cmdInitMouse(void)
 //----- (004066D0) --------------------------------------------------------
 void __cdecl DigitalReadData(u8 *a)
 {
-	*a = 1;
-	*(_WORD *)(a + 1) = 0x42;
+	a[0] = 1;
+	a[1] = 0x42;
+	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
 }
@@ -3346,9 +3350,10 @@ u32 DigitalSize2(void)
 u32 __cdecl DigitalEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
-	*a = 1;
+	a[0] = 1;
 	a[2] = 0;
-	*(_WORD *)(a + 3) = 1;
+	a[3] = 1;
+	a[4] = 0;
 	return 5;
 }
 
@@ -3372,8 +3377,9 @@ void sio2cmdInitDigital(void)
 //----- (00406820) --------------------------------------------------------
 void __cdecl AnalogReadData(u8 *a)
 {
-	*a = 1;
-	*(_WORD *)(a + 1) = 0x42;
+	a[0] = 1;
+	a[1] = 0x42;
+	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
 	a[5] = 0;
@@ -3404,9 +3410,10 @@ u32 __cdecl AnalogGetPortCtrl2(u32 a)
 u32 __cdecl AnalogEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
-	*a = 1;
+	a[0] = 1;
 	a[2] = 0;
-	*(_WORD *)(a + 3) = 1;
+	a[3] = 1;
+	a[4] = 0;
 	a[5] = 0;
 	a[6] = 0;
 	a[7] = 0;
@@ -3438,8 +3445,9 @@ void sio2cmdInitAnalog(void)
 //----- (004069E0) --------------------------------------------------------
 void __cdecl NegiconReadData(u8 *a)
 {
-	*a = 1;
-	*(_WORD *)(a + 1) = 0x42;
+	a[0] = 1;
+	a[1] = 0x42;
+	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
 	a[5] = 0;
@@ -3484,9 +3492,10 @@ u32 NegiconSize2(void)
 u32 __cdecl NegiconEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
-	*a = 1;
+	a[0] = 1;
 	a[2] = 0;
-	*(_WORD *)(a + 3) = 1;
+	a[3] = 1;
+	a[4] = 0;
 	a[5] = 0;
 	a[6] = 0;
 	a[7] = 0;
@@ -3514,8 +3523,9 @@ void sio2cmdInitNegicon(void)
 //----- (00406B50) --------------------------------------------------------
 void __cdecl JoystickReadData(u8 *a)
 {
-	*a = 1;
-	*(_WORD *)(a + 1) = 0x42;
+	a[0] = 1;
+	a[1] = 0x42;
+	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
 	a[5] = 0;
@@ -3560,9 +3570,10 @@ u32 JoystickSize2(void)
 u32 __cdecl JoystickEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
-	*a = 1;
+	a[0] = 1;
 	a[2] = 0;
-	*(_WORD *)(a + 3) = 1;
+	a[3] = 1;
+	a[4] = 0;
 	a[5] = 0;
 	a[6] = 0;
 	a[7] = 0;
@@ -3590,10 +3601,11 @@ void sio2cmdInitJoystick(void)
 //----- (00406CC0) --------------------------------------------------------
 void __cdecl KonamiGunReadData(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x42;
 	a[2] = 0;
-	*(_WORD *)(a + 3) = 0x10;
+	a[3] = 0x10;
+	a[4] = 0;
 }
 
 //----- (00406CE4) --------------------------------------------------------
@@ -3632,9 +3644,10 @@ u32 KonamiGunSize2(void)
 u32 __cdecl KonamiGunEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
-	*a = 1;
+	a[0] = 1;
 	a[2] = 0;
-	*(_WORD *)(a + 3) = 1;
+	a[3] = 1;
+	a[4] = 0;
 	return 5;
 }
 
@@ -3658,8 +3671,9 @@ void sio2cmdInitKonamiGun(void)
 //----- (00406E10) --------------------------------------------------------
 void __cdecl NamcoGunReadData(u8 *a)
 {
-	*a = 1;
-	*(_WORD *)(a + 1) = 0x42;
+	a[0] = 1;
+	a[1] = 0x42;
+	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
 	a[5] = 0;
@@ -3704,9 +3718,10 @@ u32 NamcoGunSize2(void)
 u32 __cdecl NamcoGunEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
-	*a = 1;
+	a[0] = 1;
 	a[2] = 0;
-	*(_WORD *)(a + 3) = 1;
+	a[3] = 1;
+	a[4] = 0;
 	a[5] = 0;
 	a[6] = 0;
 	a[7] = 0;
@@ -3734,8 +3749,9 @@ void sio2cmdInitNamcoGun(void)
 //----- (00406F80) --------------------------------------------------------
 void __cdecl JogconReadData(u8 *a)
 {
-	*a = 1;
-	*(_WORD *)(a + 1) = 0x42;
+	a[0] = 1;
+	a[1] = 0x42;
+	a[2] = 0;
 	a[3] = 0;
 	a[4] = 0;
 	a[5] = 0;
@@ -3784,9 +3800,10 @@ u32 JogconSize2(void)
 u32 __cdecl JogconEnterConfigMode(u8 *a)
 {
 	a[1] = 67;
-	*a = 1;
+	a[0] = 1;
 	a[2] = 0;
-	*(_WORD *)(a + 3) = 1;
+	a[3] = 1;
+	a[4] = 0;
 	a[5] = 0;
 	a[6] = 0;
 	a[7] = 0;
@@ -3818,7 +3835,7 @@ void sio2cmdInitJogcon(void)
 //----- (00407110) --------------------------------------------------------
 void __cdecl ConfigReadData(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x42;
 	a[2] = 0;
 	a[3] = 0x5A;
@@ -3864,8 +3881,7 @@ u32 ConfigSize2(void)
 //----- (004071A0) --------------------------------------------------------
 u32 __cdecl ConfigExitConfigMode(u8 *a)
 {
-
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x43;
 	a[4] = 0x5A;
 	a[5] = 0x5A;
@@ -3880,7 +3896,7 @@ u32 __cdecl ConfigExitConfigMode(u8 *a)
 //----- (004071D8) --------------------------------------------------------
 u32 __cdecl ConfigQueryModel(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x45;
 	a[3] = 0x5A;
 	a[4] = 0x5A;
@@ -3895,7 +3911,7 @@ u32 __cdecl ConfigQueryModel(u8 *a)
 //----- (00407210) --------------------------------------------------------
 u32 __cdecl ConfigQueryAct(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x46;
 	a[4] = 0x5A;
 	a[5] = 0x5A;
@@ -3910,7 +3926,7 @@ u32 __cdecl ConfigQueryAct(u8 *a)
 //----- (00407248) --------------------------------------------------------
 u32 __cdecl ConfigQueryComb(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x47;
 	a[4] = 0x5A;
 	a[5] = 0x5A;
@@ -3925,7 +3941,7 @@ u32 __cdecl ConfigQueryComb(u8 *a)
 //----- (00407280) --------------------------------------------------------
 u32 __cdecl ConfigQueryMode(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x4C;
 	a[4] = 0x5A;
 	a[5] = 0x5A;
@@ -3940,7 +3956,7 @@ u32 __cdecl ConfigQueryMode(u8 *a)
 //----- (004072B8) --------------------------------------------------------
 u32 __cdecl ConfigQueryButtonMask(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x41;
 	a[3] = 0x5A;
 	a[4] = 0x5A;
@@ -3955,7 +3971,7 @@ u32 __cdecl ConfigQueryButtonMask(u8 *a)
 //----- (004072F0) --------------------------------------------------------
 u32 __cdecl ConfigSetButtonInfo(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x4F;
 	a[2] = 0;
 	a[3] = 0;
@@ -3970,7 +3986,7 @@ u32 __cdecl ConfigSetButtonInfo(u8 *a)
 //----- (00407324) --------------------------------------------------------
 u32 __cdecl ConfigSetVrefParam(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x40;
 	a[2] = 0;
 	a[3] = 0;
@@ -3985,7 +4001,7 @@ u32 __cdecl ConfigSetVrefParam(u8 *a)
 //----- (00407358) --------------------------------------------------------
 u32 __cdecl ConfigSetMainMode(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x44;
 	a[2] = 0;
 	a[3] = 0;
@@ -4000,7 +4016,7 @@ u32 __cdecl ConfigSetMainMode(u8 *a)
 //----- (0040738C) --------------------------------------------------------
 u32 __cdecl ConfigSetSetActAlign(u8 *a)
 {
-	*a = 1;
+	a[0] = 1;
 	a[1] = 0x4D;
 	a[2] = 0;
 	a[3] = 0;
