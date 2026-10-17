@@ -175,7 +175,7 @@ void __cdecl ee_dma_send_completion_cb(void *userdata);
 void DmaSendEE(void);
 void __cdecl shiftarray(u8 *buf);
 int __cdecl VblankEnd(void *arg);
-int __cdecl VblankStart(vblankData_t *vData);
+int __cdecl VblankStart(void *arg);
 void __cdecl __noreturn TransferThread(void *arg);
 void __cdecl __noreturn MainThread(void *arg);
 u32 __cdecl ReadData(padState_t *pstate);
@@ -655,8 +655,11 @@ int __cdecl VblankEnd(void *arg)
 // 408320: using guessed type int vblank_end;
 
 //----- (00400924) --------------------------------------------------------
-int __cdecl VblankStart(vblankData_t *vData)
+int __cdecl VblankStart(void *arg)
 {
+	vblankData_t *vData;
+
+	vData = (vblankData_t *)arg;
 	vblank_end = 0;
 	++vblankStartCount;
 	frame_count += 1;
@@ -1821,7 +1824,7 @@ void __cdecl do_set_timer(int timer_mode, u32 timer_compare)
 		return;
 	}
 	HardTimerIntrCode = GetHardTimerIntrCode(timerid);
-	RegisterIntrHandler(HardTimerIntrCode, 1, (int (__cdecl *)(void *))VblankStart, &vblankdata);
+	RegisterIntrHandler(HardTimerIntrCode, 1, VblankStart, &vblankdata);
 	SetTimerMode(timerid, 0);
 	SetTimerCompare(timerid, timer_compare);
 	SetTimerCounter(timerid, 0);
@@ -1959,7 +1962,7 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 	if ( !vblankdata.eventflag )
 		return 0;
 	thparam.attr = 0x2000000;
-	thparam.thread = (void (__cdecl *)(void *))TransferThread;
+	thparam.thread = TransferThread;
 	thparam.option = 0;
 	thparam.stacksize = 2048;
 	thparam.priority = thpri_hi;
@@ -1968,7 +1971,7 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 		return 0;
 	StartThread(vblankdata.tid_2, NULL);
 	thparam.attr = 0x2000000;
-	thparam.thread = (void (__cdecl *)(void *))MainThread;
+	thparam.thread = MainThread;
 	thparam.option = 1;
 	thparam.stacksize = 4096;
 	thparam.priority = thpri_lo;
@@ -1985,7 +1988,7 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 	if ( timer_interval <= 0 )
 	{
 		CpuSuspendIntr(state);
-		RegisterVblankHandler(0, 16, (int (__cdecl *)(void *))VblankStart, &vblankdata);
+		RegisterVblankHandler(0, 16, VblankStart, &vblankdata);
 		RegisterVblankHandler(1, 16, VblankEnd, &vblankdata);
 	}
 	else if ( (unsigned int)(timer_interval - 0x4123) <= 0xC348 )
@@ -2030,7 +2033,7 @@ s32 __cdecl padEnd()
 	DeleteThreadsEventFlag(&vblankdata);
 	if ( g_readxfertimer_val <= 0 )
 	{
-		while ( ReleaseVblankHandler(0, (int (__cdecl *)(void *))VblankStart) )
+		while ( ReleaseVblankHandler(0, VblankStart) )
 			;
 		while ( ReleaseVblankHandler(1, VblankEnd) )
 			;
@@ -3218,14 +3221,14 @@ void sio2cmdInitFindPads(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
-	s.readdata = (void (__cdecl *)(u8 *))FindPadsReadData;
-	s.getportctrl1 = (u32 (__cdecl *)(u32, u32))FindPadsGetPortCtrl1;
-	s.getportctrl2 = (u32 (__cdecl *)(u32))FindPadsGetPortCtrl2;
-	s.reg_data = (u32 (*)(void))FindPadsRegData;
-	s.size1 = (u32 (*)(void))FindPadsGetSize1;
-	s.size2 = (u32 (*)(void))FindPadsGetSize2;
+	s.readdata = FindPadsReadData;
+	s.getportctrl1 = FindPadsGetPortCtrl1;
+	s.getportctrl2 = FindPadsGetPortCtrl2;
+	s.reg_data = FindPadsRegData;
+	s.size1 = FindPadsGetSize1;
+	s.size2 = FindPadsGetSize2;
 	s.id = 0;
-	s.enterconfigmode = (u32 (__cdecl *)(u8 *))FindPadsEnterConfigMode;
+	s.enterconfigmode = FindPadsEnterConfigMode;
 	memset(&s.exitconfigmode, 0, 40);
 	SetupCmds(&s);
 }
@@ -3293,13 +3296,13 @@ void sio2cmdInitMouse(void)
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
 	s.id = 1;
-	s.readdata = (void (__cdecl *)(u8 *))MouseReadData;
-	s.getportctrl1 = (u32 (__cdecl *)(u32, u32))MouseGetPortCtrl1;
-	s.getportctrl2 = (u32 (__cdecl *)(u32))MouseGetPortCtrl2;
-	s.reg_data = (u32 (*)(void))MouseRegData;
-	s.size1 = (u32 (*)(void))MouseSize1;
-	s.size2 = (u32 (*)(void))MouseSize2;
-	s.enterconfigmode = (u32 (__cdecl *)(u8 *))MouseEnterConfigMode;
+	s.readdata = MouseReadData;
+	s.getportctrl1 = MouseGetPortCtrl1;
+	s.getportctrl2 = MouseGetPortCtrl2;
+	s.reg_data = MouseRegData;
+	s.size1 = MouseSize1;
+	s.size2 = MouseSize2;
+	s.enterconfigmode = MouseEnterConfigMode;
 	memset(&s.exitconfigmode, 0, 40);
 	SetupCmds(&s);
 }
@@ -3363,13 +3366,13 @@ void sio2cmdInitDigital(void)
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
 	s.id = 4;
-	s.readdata = (void (__cdecl *)(u8 *))DigitalReadData;
-	s.getportctrl1 = (u32 (__cdecl *)(u32, u32))DigitalGetPortCtrl1;
-	s.getportctrl2 = (u32 (__cdecl *)(u32))DigitalGetPortCtrl2;
-	s.reg_data = (u32 (*)(void))DigitalRegData;
-	s.size1 = (u32 (*)(void))DigitalSize1;
-	s.size2 = (u32 (*)(void))DigitalSize2;
-	s.enterconfigmode = (u32 (__cdecl *)(u8 *))DigitalEnterConfigMode;
+	s.readdata = DigitalReadData;
+	s.getportctrl1 = DigitalGetPortCtrl1;
+	s.getportctrl2 = DigitalGetPortCtrl2;
+	s.reg_data = DigitalRegData;
+	s.size1 = DigitalSize1;
+	s.size2 = DigitalSize2;
+	s.enterconfigmode = DigitalEnterConfigMode;
 	memset(&s.exitconfigmode, 0, 40);
 	SetupCmds(&s);
 }
@@ -3433,11 +3436,11 @@ void sio2cmdInitAnalog(void)
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
 	s.id = 7;
-	s.readdata = (void (__cdecl *)(u8 *))AnalogReadData;
-	s.getportctrl1 = (u32 (__cdecl *)(u32, u32))AnalogGetPortCtrl1;
-	s.getportctrl2 = (u32 (__cdecl *)(u32))AnalogGetPortCtrl2;
+	s.readdata = AnalogReadData;
+	s.getportctrl1 = AnalogGetPortCtrl1;
+	s.getportctrl2 = AnalogGetPortCtrl2;
 	memset(&s.reg_data, 0, 12);
-	s.enterconfigmode = (u32 (__cdecl *)(u8 *))AnalogEnterConfigMode;
+	s.enterconfigmode = AnalogEnterConfigMode;
 	memset(&s.exitconfigmode, 0, 40);
 	SetupCmds(&s);
 }
@@ -3509,13 +3512,13 @@ void sio2cmdInitNegicon(void)
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
 	s.id = 2;
-	s.readdata = (void (__cdecl *)(u8 *))NegiconReadData;
-	s.getportctrl1 = (u32 (__cdecl *)(u32, u32))NegiconGetPortCtrl1;
-	s.getportctrl2 = (u32 (__cdecl *)(u32))NegiconGetPortCtrl2;
-	s.reg_data = (u32 (*)(void))NegiconRegData;
-	s.size1 = (u32 (*)(void))NegiconSize1;
-	s.size2 = (u32 (*)(void))NegiconSize2;
-	s.enterconfigmode = (u32 (__cdecl *)(u8 *))NegiconEnterConfigMode;
+	s.readdata = NegiconReadData;
+	s.getportctrl1 = NegiconGetPortCtrl1;
+	s.getportctrl2 = NegiconGetPortCtrl2;
+	s.reg_data = NegiconRegData;
+	s.size1 = NegiconSize1;
+	s.size2 = NegiconSize2;
+	s.enterconfigmode = NegiconEnterConfigMode;
 	memset(&s.exitconfigmode, 0, 40);
 	SetupCmds(&s);
 }
@@ -3587,13 +3590,13 @@ void sio2cmdInitJoystick(void)
 	sio2Cmds_t v0; // [sp+10h] [-48h] BYREF
 
 	v0.id = 5;
-	v0.readdata = (void (__cdecl *)(u8 *))JoystickReadData;
-	v0.getportctrl1 = (u32 (__cdecl *)(u32, u32))JoystickGetPortCtrl1;
-	v0.getportctrl2 = (u32 (__cdecl *)(u32))JoystickGetPortCtrl2;
-	v0.reg_data = (u32 (*)(void))JoystickRegData;
-	v0.size1 = (u32 (*)(void))JoystickSize1;
-	v0.size2 = (u32 (*)(void))JoystickSize2;
-	v0.enterconfigmode = (u32 (__cdecl *)(u8 *))JoystickEnterConfigMode;
+	v0.readdata = JoystickReadData;
+	v0.getportctrl1 = JoystickGetPortCtrl1;
+	v0.getportctrl2 = JoystickGetPortCtrl2;
+	v0.reg_data = JoystickRegData;
+	v0.size1 = JoystickSize1;
+	v0.size2 = JoystickSize2;
+	v0.enterconfigmode = JoystickEnterConfigMode;
 	memset(&v0.exitconfigmode, 0, 40);
 	SetupCmds(&v0);
 }
@@ -3657,13 +3660,13 @@ void sio2cmdInitKonamiGun(void)
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
 	s.id = 3;
-	s.readdata = (void (__cdecl *)(u8 *))KonamiGunReadData;
-	s.getportctrl1 = (u32 (__cdecl *)(u32, u32))KonamiGunGetPortCtrl1;
-	s.getportctrl2 = (u32 (__cdecl *)(u32))KonamiGunGetPortCtrl2;
-	s.reg_data = (u32 (*)(void))KonamiGunRegData;
-	s.size1 = (u32 (*)(void))KonamiGunSize1;
-	s.size2 = (u32 (*)(void))KonamiGunSize2;
-	s.enterconfigmode = (u32 (__cdecl *)(u8 *))KonamiGunEnterConfigMode;
+	s.readdata = KonamiGunReadData;
+	s.getportctrl1 = KonamiGunGetPortCtrl1;
+	s.getportctrl2 = KonamiGunGetPortCtrl2;
+	s.reg_data = KonamiGunRegData;
+	s.size1 = KonamiGunSize1;
+	s.size2 = KonamiGunSize2;
+	s.enterconfigmode = KonamiGunEnterConfigMode;
 	memset(&s.exitconfigmode, 0, 40);
 	SetupCmds(&s);
 }
@@ -3735,13 +3738,13 @@ void sio2cmdInitNamcoGun(void)
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
 	s.id = 6;
-	s.readdata = (void (__cdecl *)(u8 *))NamcoGunReadData;
-	s.getportctrl1 = (u32 (__cdecl *)(u32, u32))NamcoGunGetPortCtrl1;
-	s.getportctrl2 = (u32 (__cdecl *)(u32))NamcoGunGetPortCtrl2;
-	s.reg_data = (u32 (*)(void))NamcoGunRegData;
-	s.size1 = (u32 (*)(void))NamcoGunSize1;
-	s.size2 = (u32 (*)(void))NamcoGunSize2;
-	s.enterconfigmode = (u32 (__cdecl *)(u8 *))NamcoGunEnterConfigMode;
+	s.readdata = NamcoGunReadData;
+	s.getportctrl1 = NamcoGunGetPortCtrl1;
+	s.getportctrl2 = NamcoGunGetPortCtrl2;
+	s.reg_data = NamcoGunRegData;
+	s.size1 = NamcoGunSize1;
+	s.size2 = NamcoGunSize2;
+	s.enterconfigmode = NamcoGunEnterConfigMode;
 	memset(&s.exitconfigmode, 0, 40);
 	SetupCmds(&s);
 }
@@ -3821,13 +3824,13 @@ void sio2cmdInitJogcon(void)
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
 	s.id = 14;
-	s.readdata = (void (__cdecl *)(u8 *))JogconReadData;
-	s.getportctrl1 = (u32 (__cdecl *)(u32, u32))JogconGetPortCtrl1;
-	s.getportctrl2 = (u32 (__cdecl *)(u32))JogconGetPortCtrl2;
-	s.reg_data = (u32 (*)(void))JogconRegData;
-	s.size1 = (u32 (*)(void))JogconSize1;
-	s.size2 = (u32 (*)(void))JogconSize2;
-	s.enterconfigmode = (u32 (__cdecl *)(u8 *))JogconEnterConfigMode;
+	s.readdata = JogconReadData;
+	s.getportctrl1 = JogconGetPortCtrl1;
+	s.getportctrl2 = JogconGetPortCtrl2;
+	s.reg_data = JogconRegData;
+	s.size1 = JogconSize1;
+	s.size2 = JogconSize2;
+	s.enterconfigmode = JogconEnterConfigMode;
 	memset(&s.exitconfigmode, 0, 40);
 	SetupCmds(&s);
 }
@@ -4034,23 +4037,23 @@ void sio2cmdInitConfig(void)
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
 	s.id = 15;
-	s.readdata = (void (__cdecl *)(u8 *))ConfigReadData;
-	s.getportctrl1 = (u32 (__cdecl *)(u32, u32))ConfigGetPortCtrl1;
-	s.getportctrl2 = (u32 (__cdecl *)(u32))ConfigGetPortCtrl2;
-	s.reg_data = (u32 (*)(void))ConfigRegData;
-	s.size1 = (u32 (*)(void))ConfigSize1;
-	s.size2 = (u32 (*)(void))ConfigSize2;
-	s.exitconfigmode = (u32 (__cdecl *)(u8 *))ConfigExitConfigMode;
-	s.querymodel = (u32 (__cdecl *)(u8 *))ConfigQueryModel;
-	s.queryact = (u32 (__cdecl *)(u8 *))ConfigQueryAct;
-	s.querycomb = (u32 (__cdecl *)(u8 *))ConfigQueryComb;
-	s.querymode = (u32 (__cdecl *)(u8 *))ConfigQueryMode;
-	s.querybuttonmask = (u32 (__cdecl *)(u8 *))ConfigQueryButtonMask;
-	s.setbuttoninfo = (u32 (__cdecl *)(u8 *))ConfigSetButtonInfo;
-	s.setvrefparam = (u32 (__cdecl *)(u8 *))ConfigSetVrefParam;
-	s.setmainmode = (u32 (__cdecl *)(u8 *))ConfigSetMainMode;
+	s.readdata = ConfigReadData;
+	s.getportctrl1 = ConfigGetPortCtrl1;
+	s.getportctrl2 = ConfigGetPortCtrl2;
+	s.reg_data = ConfigRegData;
+	s.size1 = ConfigSize1;
+	s.size2 = ConfigSize2;
+	s.exitconfigmode = ConfigExitConfigMode;
+	s.querymodel = ConfigQueryModel;
+	s.queryact = ConfigQueryAct;
+	s.querycomb = ConfigQueryComb;
+	s.querymode = ConfigQueryMode;
+	s.querybuttonmask = ConfigQueryButtonMask;
+	s.setbuttoninfo = ConfigSetButtonInfo;
+	s.setvrefparam = ConfigSetVrefParam;
+	s.setmainmode = ConfigSetMainMode;
 	s.enterconfigmode = NULL; // TODO no-op
-	s.setactalign = (u32 (__cdecl *)(u8 *))ConfigSetSetActAlign;
+	s.setactalign = ConfigSetSetActAlign;
 	SetupCmds(&s);
 }
 
@@ -4301,7 +4304,7 @@ int __cdecl InitRpcServers(int prio)
 	iop_thread_t thparam; // [sp+10h] [-18h] BYREF
 
 	thparam.attr = 0x2000000;
-	thparam.thread = (void (__cdecl *)(void *))RpcThread;
+	thparam.thread = RpcThread;
 	thparam.priority = prio ? prio : 46;
 	thparam.stacksize = 2048;
 	ThreadIdRpcServer = CreateThread(&thparam);
@@ -4309,7 +4312,7 @@ int __cdecl InitRpcServers(int prio)
 		return 0;
 	StartThread(ThreadIdRpcServer, NULL);
 	thparam.attr = 0x2000000;
-	thparam.thread = (void (__cdecl *)(void *))RpcThreadExt;
+	thparam.thread = RpcThreadExt;
 	thparam.priority = prio ? prio : 46;
 	thparam.stacksize = 2048;
 	ThreadIdRpcServerExt = CreateThread(&thparam);
