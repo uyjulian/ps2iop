@@ -1334,12 +1334,33 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 	}
 }
 
+#define PADMAN_PAD_RETRY(evbits, cond, timeout_statement) \
+	do \
+	{ \
+		int trycnt; \
+		\
+		trycnt = 0; \
+		while ( 1 ) \
+		{ \
+			WaitClearEvent(pstate->eventflag, evbits); \
+			trycnt += 1; \
+			if ( (cond) ) \
+				break; \
+			if ( trycnt >= 10 ) \
+			{ \
+				timeout_statement; \
+				pstate->currentTask = 1; \
+				ExitThread(); \
+			} \
+		} \
+	} \
+	while (0)
+
 //----- (00402704) --------------------------------------------------------
 void __cdecl __noreturn QueryPadThread(void *arg)
 {
 	padState_t *pstate; // $s0
 	int i; // $v1
-	int trycnt; // $v1
 	u8 modeCurId; // $s2
 	u8 cur_id_tmp; // $s2
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
@@ -1382,169 +1403,30 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 	if ( pstate->disconnected )
 		for ( i = 5; i >= 0; i -= 1 )
 			pstate->ee_actAlignData[i] = -1;
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 2u);
-		++trycnt;
-		if ( EnterConfigMode(modeCurId, pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->modeConfig = 1;
-			pstate->modeCurId = modeCurId;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+	PADMAN_PAD_RETRY(2, ( EnterConfigMode(modeCurId, pstate) == 1 ), (pstate->modeConfig = 1, pstate->modeCurId = modeCurId));
 	pstate->modeConfig = 2;
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 2u);
-		++trycnt;
-		if ( QueryModel(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->modeCurId = 0;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+	PADMAN_PAD_RETRY(2, ( QueryModel(pstate) == 1 ), (pstate->modeCurId = 0));
 	if ( pstate->disconnected == 1 && pstate->modeCurOffs )
 	{
 		pstate->mode = 0;
 		pstate->lock = 0;
-		trycnt = 0;
-		while ( 1 )
-		{
-			WaitClearEvent(pstate->eventflag, 2u);
-			++trycnt;
-			if ( SetMainMode(pstate) == 1 )
-				break;
-			if ( trycnt >= 10 )
-			{
-				pstate->reqState = 1;
-				pstate->currentTask = 1;
-				ExitThread();
-			}
-		}
+		PADMAN_PAD_RETRY(2, ( SetMainMode(pstate) == 1 ), (pstate->reqState = 1));
 		pstate->modeCurId = 0;
 		pstate->currentTask = 1;
 		pstate->disconnected = 0;
 		ExitThread();
 	}
 	for ( i = 0; (unsigned int)i < (unsigned int)pstate->numActuators; i += 1 )
-	{
-		trycnt = 0;
-		while ( 1 )
-		{
-			WaitClearEvent(pstate->eventflag, 2u);
-			++trycnt;
-			if ( QueryAct(i, pstate) == 1 )
-				break;
-			if ( trycnt >= 10 )
-			{
-				pstate->modeCurId = 0;
-				pstate->currentTask = 1;
-				ExitThread();
-			}
-		}
-	}
+		PADMAN_PAD_RETRY(2, ( QueryAct(i, pstate) == 1 ), (pstate->modeCurId = 0));
 	for ( i = 0; (unsigned int)i < (unsigned int)pstate->numActComb; i += 1 )
-	{
-		trycnt = 0;
-		while ( 1 )
-		{
-			WaitClearEvent(pstate->eventflag, 2u);
-			++trycnt;
-			if ( QueryComb(i, pstate) == 1 )
-				break;
-			if ( trycnt >= 10 )
-			{
-				pstate->modeCurId = 0;
-				pstate->currentTask = 1;
-				ExitThread();
-			}
-		}
-	}
+		PADMAN_PAD_RETRY(2, ( QueryComb(i, pstate) == 1 ), (pstate->modeCurId = 0));
 	for ( i = 0; (unsigned int)i < (unsigned int)pstate->numModes; i += 1 )
-	{
-		trycnt = 0;
-		while ( 1 )
-		{
-			WaitClearEvent(pstate->eventflag, 2u);
-			++trycnt;
-			if ( QueryMode(i, pstate) == 1 )
-				break;
-			if ( trycnt >= 10 )
-			{
-				pstate->modeCurId = 0;
-				pstate->currentTask = 1;
-				ExitThread();
-			}
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 2u);
-		++trycnt;
-		if ( SetActAlign(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+		PADMAN_PAD_RETRY(2, ( QueryMode(i, pstate) == 1 ), (pstate->modeCurId = 0));
+	PADMAN_PAD_RETRY(2, ( SetActAlign(pstate) == 1 ), (pstate->reqState = 1));
 	if ( pstate->modeConfig == 0x02 && !!(pstate->model & 2) )
-	{
-		trycnt = 0;
-		while ( 1 )
-		{
-			WaitClearEvent(pstate->eventflag, 2u);
-			++trycnt;
-			if ( QueryButtonMask(pstate) == 1 )
-				break;
-			if ( trycnt >= 10 )
-			{
-				pstate->modeCurId = 0;
-				pstate->currentTask = 1;
-				ExitThread();
-			}
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 2u);
-		++trycnt;
-		if ( ExitConfigMode(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->modeCurId = 0;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 2u);
-		++trycnt;
-		if ( PadIsSupported(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->modeCurId = 0;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+		PADMAN_PAD_RETRY(2, ( QueryButtonMask(pstate) == 1 ), (pstate->modeCurId = 0));
+	PADMAN_PAD_RETRY(2, ( ExitConfigMode(pstate) == 1 ), (pstate->modeCurId = 0));
+	PADMAN_PAD_RETRY(2, ( PadIsSupported(pstate) == 1 ), (pstate->modeCurId = 0));
 	cur_id_tmp = pstate->modeCurId;
 	pstate->state = 5;
 	pstate->modeCurId = 0;
@@ -1557,7 +1439,6 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 //----- (00402C54) --------------------------------------------------------
 void __cdecl __noreturn SetMainModeThread(void *arg)
 {
-	int trycnt; // $s1
 	padState_t *pstate; // $s0
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
@@ -1566,48 +1447,9 @@ void __cdecl __noreturn SetMainModeThread(void *arg)
 	pstate = (padState_t *)thinfo.option;
 	pstate->buttonDataReady = 0;
 	pstate->state = 5;
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 8u);
-		++trycnt;
-		if ( EnterConfigMode(pstate->modeCurId, pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 8u);
-		++trycnt;
-		if ( SetMainMode(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 8u);
-		++trycnt;
-		if ( ExitConfigMode(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+	PADMAN_PAD_RETRY(8, ( EnterConfigMode(pstate->modeCurId, pstate) == 1 ), (pstate->reqState = 1));
+	PADMAN_PAD_RETRY(8, ( SetMainMode(pstate) == 1 ), (pstate->reqState = 1));
+	PADMAN_PAD_RETRY(8, ( ExitConfigMode(pstate) == 1 ), (pstate->reqState = 1));
 	pstate->currentTask = 1;
 	ExitThread();
 }
@@ -1615,7 +1457,6 @@ void __cdecl __noreturn SetMainModeThread(void *arg)
 //----- (00402D8C) --------------------------------------------------------
 void __cdecl __noreturn SetActAlignThread(void *arg)
 {
-	int trycnt; // $s1
 	padState_t *pstate; // $s0
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
@@ -1624,48 +1465,9 @@ void __cdecl __noreturn SetActAlignThread(void *arg)
 	pstate = (padState_t *)thinfo.option;
 	pstate->buttonDataReady = 0;
 	pstate->state = 5;
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 0x10u);
-		++trycnt;
-		if ( EnterConfigMode(pstate->modeCurId, pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 0x10u);
-		++trycnt;
-		if ( SetActAlign(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 0x10u);
-		++trycnt;
-		if ( ExitConfigMode(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+	PADMAN_PAD_RETRY(0x10, ( EnterConfigMode(pstate->modeCurId, pstate) == 1 ), (pstate->reqState = 1));
+	PADMAN_PAD_RETRY(0x10, ( SetActAlign(pstate) == 1 ), (pstate->reqState = 1));
+	PADMAN_PAD_RETRY(0x10, ( ExitConfigMode(pstate) == 1 ), (pstate->reqState = 1));
 	pstate->currentTask = 1;
 	ExitThread();
 }
@@ -1673,7 +1475,6 @@ void __cdecl __noreturn SetActAlignThread(void *arg)
 //----- (00402EC4) --------------------------------------------------------
 void __cdecl __noreturn SetButtonInfoThread(void *arg)
 {
-	int trycnt; // $s1
 	int i; // $s2
 	padState_t *pstate; // $s0
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
@@ -1683,65 +1484,11 @@ void __cdecl __noreturn SetButtonInfoThread(void *arg)
 	pstate = (padState_t *)thinfo.option;
 	pstate->buttonDataReady = 0;
 	pstate->state = 5;
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 0x20u);
-		++trycnt;
-		if ( EnterConfigMode(pstate->modeCurId, pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 0x20u);
-		++trycnt;
-		if ( SetButtonInfo(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+	PADMAN_PAD_RETRY(0x20, ( EnterConfigMode(pstate->modeCurId, pstate) == 1 ), (pstate->reqState = 1));
+	PADMAN_PAD_RETRY(0x20, ( SetButtonInfo(pstate) == 1 ), (pstate->reqState = 1));
 	for ( i = 0; i < 12; i += 1 )
-	{
-		trycnt = 0;
-		while ( 1 )
-		{
-			WaitClearEvent(pstate->eventflag, 0x20u);
-			++trycnt;
-			if ( VrefParam(i, pstate) == 1 )
-				break;
-			if ( trycnt >= 10 )
-			{
-				pstate->reqState = 1;
-				pstate->currentTask = 1;
-				ExitThread();
-			}
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 0x20u);
-		++trycnt;
-		if ( ExitConfigMode(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+		PADMAN_PAD_RETRY(0x20, ( VrefParam(i, pstate) == 1 ), (pstate->reqState = 1));
+	PADMAN_PAD_RETRY(0x20, ( ExitConfigMode(pstate) == 1 ), (pstate->reqState = 1));
 	pstate->val_c6 = 1;
 	pstate->currentTask = 1;
 	ExitThread();
@@ -1750,7 +1497,6 @@ void __cdecl __noreturn SetButtonInfoThread(void *arg)
 //----- (00403068) --------------------------------------------------------
 void __cdecl __noreturn SetVrefParamThread(void *arg)
 {
-	int trycnt; // $s1
 	padState_t *pstate; // $s0
 	int i; // $s2
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
@@ -1760,51 +1506,10 @@ void __cdecl __noreturn SetVrefParamThread(void *arg)
 	pstate = (padState_t *)thinfo.option;
 	pstate->buttonDataReady = 0;
 	pstate->state = 5;
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 0x40u);
-		++trycnt;
-		if ( EnterConfigMode(pstate->modeCurId, pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+	PADMAN_PAD_RETRY(0x40, ( EnterConfigMode(pstate->modeCurId, pstate) == 1 ), (pstate->reqState = 1));
 	for ( i = 0; i < 12; i += 1 )
-	{
-		trycnt = 0;
-		while ( 1 )
-		{
-			WaitClearEvent(pstate->eventflag, 0x40u);
-			++trycnt;
-			if ( VrefParam(i, pstate) == 1 )
-				break;
-			if ( trycnt >= 10 )
-			{
-				pstate->reqState = 1;
-				pstate->currentTask = 1;
-				ExitThread();
-			}
-		}
-	}
-	trycnt = 0;
-	while ( 1 )
-	{
-		WaitClearEvent(pstate->eventflag, 0x40u);
-		++trycnt;
-		if ( ExitConfigMode(pstate) == 1 )
-			break;
-		if ( trycnt >= 10 )
-		{
-			pstate->reqState = 1;
-			pstate->currentTask = 1;
-			ExitThread();
-		}
-	}
+		PADMAN_PAD_RETRY(0x40, ( VrefParam(i, pstate) == 1 ), (pstate->reqState = 1));
+	PADMAN_PAD_RETRY(0x40, ( ExitConfigMode(pstate) == 1 ), (pstate->reqState = 1));
 	pstate->currentTask = 1;
 	ExitThread();
 }
