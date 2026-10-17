@@ -511,9 +511,6 @@ void DmaSendEE(void)
 	signed __int32 port; // $t8
 	signed __int32 slot; // $s5
 	padState_t *pstate; // $s4
-	int trid3; // $s0
-	int trid2; // $s0
-	int trid1; // $s0
 	int state; // [sp+20h] [-20h] BYREF
 
 	dmat_count_2 = 0;
@@ -592,41 +589,38 @@ void DmaSendEE(void)
 	if ( g_padman_nonblock_dma == 1 )
 	{
 		CpuSuspendIntr(&state);
-		trid3 = sceSifSetDmaIntr(sifdma_td, dmat_count_2, ee_dma_send_completion_cb, (void *)g_sema);
-		sifdma_id = trid3;
+		sifdma_id = sceSifSetDmaIntr(sifdma_td, dmat_count_2, ee_dma_send_completion_cb, (void *)g_sema);
 		CpuResumeIntr(state);
-		if ( !trid3 )
+		if ( !sifdma_id )
 		{
 			if ( g_padman_verbose >= 2 )
 				Kprintf("padman: SIFDMA faild\n");
 			return;
 		}
 		WaitSema(g_sema);
-		if ( sceSifDmaStat(trid3) >= 0 )
+		if ( sceSifDmaStat(sifdma_id) >= 0 )
 			if ( g_padman_verbose >= 2 )
 				Kprintf("padman: SIFDMA PANIC!\n");
 		CpuSuspendIntr(&state);
 		g_dma_buf[3] = vblankStartCount;
-		trid2 = sceSifSendCmdIntr(0x80000019, g_dma_buf, 16, NULL, NULL, 0, ee_dma_send_completion_cb, (void *)g_sema);
-		sifdma_id = trid2;
+		sifdma_id = sceSifSendCmdIntr(0x80000019, g_dma_buf, 16, NULL, NULL, 0, ee_dma_send_completion_cb, (void *)g_sema);
 		CpuResumeIntr(state);
-		if ( !trid2 )
+		if ( !sifdma_id )
 		{
 			if ( g_padman_verbose >= 2 )
 				Kprintf("padman: SIFCMD faild\n");
 			return;
 		}
 		WaitSema(g_sema);
-		if ( sceSifDmaStat(trid2) >= 0 )
+		if ( sceSifDmaStat(sifdma_id) >= 0 )
 			if ( g_padman_verbose >= 2 )
 				Kprintf("padman: SIFCMD PANIC!\n");
 		return;
 	}
 	CpuSuspendIntr(&state);
-	trid1 = sceSifSetDma(sifdma_td, dmat_count_2);
-	sifdma_id = trid1;
+	sifdma_id = sceSifSetDma(sifdma_td, dmat_count_2);
 	CpuResumeIntr(state);
-	if ( !trid1 )
+	if ( !sifdma_id )
 		if ( g_padman_verbose >= 2 )
 			Kprintf("padman: SIFDMA faild\n");
 }
