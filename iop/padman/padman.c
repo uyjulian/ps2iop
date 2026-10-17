@@ -1500,7 +1500,7 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 			ExitThread();
 		}
 	}
-	if ( (*(_DWORD *)&pstate->modeConfig & 0x200FF) == 0x20002 )
+	if ( pstate->modeConfig == 0x02 && !!(pstate->model & 2) )
 	{
 		trycnt = 0;
 		while ( 1 )
