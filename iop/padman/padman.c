@@ -205,7 +205,7 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval);
 s32 __cdecl padEnd();
 s32 __cdecl padPortOpen(s32 port, s32 slot, s32 pad_area_ee_addr, struct libpad_dma_act_direct_state **buf);
 s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait);
-u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, padState_t *pstate);
+u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, ee_paddata_t *eedata);
 u32 __cdecl padGetModeConfig(u32 port, u32 slot);
 s32 __cdecl padInfoAct(u32 port, u32 slot, s32 act, u32 val);
 s32 __cdecl padInfoComb(u32 port, u32 slot, s32 val1, u32 val2);
@@ -574,7 +574,7 @@ void DmaSendEE(void)
 				*(_DWORD *)&pstate->ee_pdata.padding[4] = *(_DWORD *)pstate->buttonMask;
 				*(_DWORD *)pstate->ee_pdata.padding = *(_DWORD *)pstate->buttonInfo;
 				pstate->ee_pdata.stat70bit = pstate->stat70bit;
-				pstate->ee_pdata.length = ( pstate->buttonDataReady == 1 ) ? padSetupEEButtonData(port, slot, pstate) : 0;
+				pstate->ee_pdata.length = ( pstate->buttonDataReady == 1 ) ? padSetupEEButtonData(port, slot, &pstate->ee_pdata) : 0;
 				pstate->frame += 1;
 				sifdma_td[dmat_count_2].dest = (void *)(((u32)pstate->padarea_ee_addr) + (( pstate->ee_pdata.frame & 1 ) ? 128 : 0));
 				sifdma_td[dmat_count_2].src = pstate;
@@ -1887,154 +1887,154 @@ s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait)
 #define BSWAP16(x) ((((unsigned short int)x) << 8) | (x >> 8))
 
 //----- (00403D48) --------------------------------------------------------
-u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, padState_t *pstate)
+u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, ee_paddata_t *eedata)
 {
-	padState_t *pstate_tmp; // $a1
+	padState_t *pstate; // $a1
 	int i; // $v1
 	__int16 swapval2; // $v1
 
-	pstate_tmp = &g_pad_state[port][slot];
-	if ( pstate_tmp->buttonDataReady != 1 )
+	pstate = &g_pad_state[port][slot];
+	if ( pstate->buttonDataReady != 1 )
 	{
-		pstate->ee_pdata.data[0] = -1;
+		eedata->data[0] = -1;
 		for ( i = 1; i < 32; i += 1 )
-			pstate->ee_pdata.data[i] = 0;
+			eedata->data[i] = 0;
 		return 0;
 	}
-	pstate->ee_pdata.data[0] = 0;
-	pstate->ee_pdata.data[1] = pstate_tmp->modeCurId;
-	pstate->ee_pdata.data[31] = pstate_tmp->buttonStatus[2];
+	eedata->data[0] = 0;
+	eedata->data[1] = pstate->modeCurId;
+	eedata->data[31] = pstate->buttonStatus[2];
 	for ( i = 2; i < 31; i += 1 )
-		pstate->ee_pdata.data[i] = pstate_tmp->buttonStatus[i + 1];
-	if ( pstate_tmp->modeCurId == 18 )
+		eedata->data[i] = pstate->buttonStatus[i + 1];
+	if ( pstate->modeCurId == 18 )
 	{
-		pstate->ee_pdata.data[2] = -1;
-		pstate->ee_pdata.data[3] = -1;
-		pstate->ee_pdata.data[4] = 0;
-		pstate->ee_pdata.data[5] = 0;
+		eedata->data[2] = -1;
+		eedata->data[3] = -1;
+		eedata->data[4] = 0;
+		eedata->data[5] = 0;
 	}
-	if ( pstate_tmp->modeCurId != 121 )
+	if ( pstate->modeCurId != 121 )
 		return 32;
-	swapval2 = ~BSWAP16(*(_WORD *)&pstate->ee_pdata.data[2]);
+	swapval2 = ~BSWAP16(*(_WORD *)&eedata->data[2]);
 	if ( (swapval2 & 0x2000) != 0 )
 	{
-		if ( !pstate->ee_pdata.data[8] )
-			pstate->ee_pdata.data[8] = 1;
+		if ( !eedata->data[8] )
+			eedata->data[8] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[8] )
-			pstate->ee_pdata.data[8] = 0;
+		if ( eedata->data[8] )
+			eedata->data[8] = 0;
 	}
 	if ( swapval2 & 0x8000 )
 	{
-		if ( !pstate->ee_pdata.data[9] )
-			pstate->ee_pdata.data[9] = 1;
+		if ( !eedata->data[9] )
+			eedata->data[9] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[9] )
-			pstate->ee_pdata.data[9] = 0;
+		if ( eedata->data[9] )
+			eedata->data[9] = 0;
 	}
 	if ( swapval2 & 0x1000 )
 	{
-		if ( !pstate->ee_pdata.data[10] )
-			pstate->ee_pdata.data[10] = 1;
+		if ( !eedata->data[10] )
+			eedata->data[10] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[10] )
-			pstate->ee_pdata.data[10] = 0;
+		if ( eedata->data[10] )
+			eedata->data[10] = 0;
 	}
 	if ( swapval2 & 0x4000 )
 	{
-		if ( !pstate->ee_pdata.data[11] )
-			pstate->ee_pdata.data[11] = 1;
+		if ( !eedata->data[11] )
+			eedata->data[11] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[11] )
-			pstate->ee_pdata.data[11] = 0;
+		if ( eedata->data[11] )
+			eedata->data[11] = 0;
 	}
 	if ( swapval2 & 0x10 )
 	{
-		if ( !pstate->ee_pdata.data[12] )
-			pstate->ee_pdata.data[12] = 1;
+		if ( !eedata->data[12] )
+			eedata->data[12] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[12] )
-			pstate->ee_pdata.data[12] = 0;
+		if ( eedata->data[12] )
+			eedata->data[12] = 0;
 	}
 	if ( swapval2 & 0x20 )
 	{
-		if ( !pstate->ee_pdata.data[13] )
-			pstate->ee_pdata.data[13] = 1;
+		if ( !eedata->data[13] )
+			eedata->data[13] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[13] )
-			pstate->ee_pdata.data[13] = 0;
+		if ( eedata->data[13] )
+			eedata->data[13] = 0;
 	}
 	if ( swapval2 & 0x40 )
 	{
-		if ( !pstate->ee_pdata.data[14] )
-			pstate->ee_pdata.data[14] = 1;
+		if ( !eedata->data[14] )
+			eedata->data[14] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[14] )
-			pstate->ee_pdata.data[14] = 0;
+		if ( eedata->data[14] )
+			eedata->data[14] = 0;
 	}
 	if ( swapval2 & 0x80 )
 	{
-		if ( !pstate->ee_pdata.data[15] )
-			pstate->ee_pdata.data[15] = 1;
+		if ( !eedata->data[15] )
+			eedata->data[15] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[15] )
-			pstate->ee_pdata.data[15] = 0;
+		if ( eedata->data[15] )
+			eedata->data[15] = 0;
 	}
 	if ( swapval2 & 4 )
 	{
-		if ( !pstate->ee_pdata.data[16] )
-			pstate->ee_pdata.data[16] = 1;
+		if ( !eedata->data[16] )
+			eedata->data[16] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[16] )
-			pstate->ee_pdata.data[16] = 0;
+		if ( eedata->data[16] )
+			eedata->data[16] = 0;
 	}
 	if ( swapval2 & 8 )
 	{
-		if ( !pstate->ee_pdata.data[17] )
-			pstate->ee_pdata.data[17] = 1;
+		if ( !eedata->data[17] )
+			eedata->data[17] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[17] )
-			pstate->ee_pdata.data[17] = 0;
+		if ( eedata->data[17] )
+			eedata->data[17] = 0;
 	}
 	if ( swapval2 & 1 )
 	{
-		if ( !pstate->ee_pdata.data[18] )
-			pstate->ee_pdata.data[18] = 1;
+		if ( !eedata->data[18] )
+			eedata->data[18] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[18] )
-			pstate->ee_pdata.data[18] = 0;
+		if ( eedata->data[18] )
+			eedata->data[18] = 0;
 	}
 	if ( swapval2 & 2 )
 	{
-		if ( !pstate->ee_pdata.data[19] )
-			pstate->ee_pdata.data[19] = 1;
+		if ( !eedata->data[19] )
+			eedata->data[19] = 1;
 	}
 	else
 	{
-		if ( pstate->ee_pdata.data[19] )
-			pstate->ee_pdata.data[19] = 0;
+		if ( eedata->data[19] )
+			eedata->data[19] = 0;
 	}
 	return 32;
 }
