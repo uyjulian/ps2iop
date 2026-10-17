@@ -437,10 +437,10 @@ u32 __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate)
 void __cdecl WaitClearEvent(int eventflag, u32 bits)
 {
 	iop_thread_info_t tinfo; // [sp+10h] [-50h] BYREF
-	u32 resbits[2]; // [sp+58h] [-8h] BYREF
+	u32 efres; // [sp+58h] [-8h] BYREF
 
-	WaitEventFlag(eventflag, bits | 0x1000, 1, resbits);
-	if ( (resbits[0] & 0x1000) != 0 )
+	WaitEventFlag(eventflag, bits | 0x1000, 1, &efres);
+	if ( (efres & 0x1000) != 0 )
 	{
 		ReferThreadStatus(0, &tinfo);
 		SetEventFlag(eventflag, 0x1000u);
@@ -822,10 +822,10 @@ void __cdecl __noreturn MainThread(void *arg)
 //----- (00400D98) --------------------------------------------------------
 u32 __cdecl ReadData(padState_t *pstate)
 {
-	u32 has_result_flag; // $s3
+	u32 retflag; // $s3
 	int i; // $a0
 
-	has_result_flag = 0;
+	retflag = 0;
 	pdSetCtrl1(pstate->port, pstate->slot, sio2CmdGetPortCtrl1(pstate->modeCurId, pstate->stat70bit, pstate->model));
 	pdSetCtrl2(pstate->port, pstate->slot, sio2CmdGetPortCtrl2(pstate->modeCurId, pstate->stat70bit));
 	pdSetRegData(pstate->port, pstate->slot, pdGetRegData(pstate->modeCurId));
@@ -847,10 +847,10 @@ u32 __cdecl ReadData(padState_t *pstate)
 		pdGetOutBuffer(pstate->port, pstate->slot, 0, pstate->outbuffer);
 		if ( pstate->stat70bit == 1 )
 			shiftarray(pstate->outbuffer);
-		has_result_flag = 1;
+		retflag = 1;
 	}
 	SetEventFlag(pstate->eventflag, 0x200u);
-	return has_result_flag;
+	return retflag;
 }
 
 //----- (00400F74) --------------------------------------------------------
@@ -1288,8 +1288,6 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 {
 	int retval; // $s1
 	padState_t *pstate; // $s0
-	u32 port; // $s6
-	u32 slot; // $s5
 	int i; // $a0
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
@@ -1297,8 +1295,6 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 	retval = 0;
 	ReferThreadStatus(0, &thinfo);
 	pstate = (padState_t *)thinfo.option;
-	port = pstate->port;
-	slot = pstate->slot;
 	while ( 1 )
 	{
 		WaitClearEvent(pstate->eventflag, 1u);
@@ -1308,7 +1304,7 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 			pstate->buttonDataReady = 0;
 			pstate->state = 7;
 			pstate->findPadRetries += 1;
-			retval += pdGetError(port, slot);
+			retval += pdGetError(pstate->port, pstate->slot);
 			if ( retval >= 10 )
 			{
 				retval = 0;
@@ -2159,9 +2155,9 @@ s32 __cdecl padPortOpen(s32 port, s32 slot, s32 pad_area_ee_addr, struct libpad_
 s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait)
 {
 	padState_t *pstate; // $s0
-	int efres[2]; // [sp+10h] [-8h] BYREF
+	u32 efres; // [sp+10h] [-8h] BYREF
 
-	efres[0] = 0;
+	efres = 0;
 	pstate = &g_pad_state[port][slot];
 	if ( ((openSlots[port] >> slot) & 1) == 0 || pstate->reqState == 2 )
 		return 0;
@@ -2171,7 +2167,7 @@ s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait)
 	pstate->m_close_wait_blocking = wait;
 	if ( wait )
 	{
-		WaitEventFlag(pstate->eventflag, 0x400u, 16, (u32 *)efres);
+		WaitEventFlag(pstate->eventflag, 0x400u, 16, &efres);
 		DeleteEventFlag(pstate->eventflag);
 		pstate->eventflag = 0;
 	}
