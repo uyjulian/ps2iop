@@ -165,42 +165,6 @@ IRX_ID("padman", 4, 34);
 //-------------------------------------------------------------------------
 // Function declarations
 
-u32 __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate);
-void __cdecl WaitClearEvent(int eventflag, u32 bits);
-s32 __cdecl VbReferThreadStatus(const vblankData_t *vData);
-void __cdecl DeleteThreadsEventFlag(const vblankData_t *vbdat);
-u32 __cdecl GetThreadsStatus(const padState_t *pstate);
-void __cdecl DeleteThreads(const padState_t *pstate);
-void __cdecl ee_dma_send_completion_cb(void *userdata);
-void DmaSendEE(void);
-void __cdecl shiftarray(u8 *buf);
-int __cdecl VblankEnd(void *arg);
-int __cdecl VblankStart(void *arg);
-void __cdecl __noreturn TransferThread(void *arg);
-void __cdecl __noreturn MainThread(void *arg);
-u32 __cdecl ReadData(padState_t *pstate);
-u32 __cdecl PadIsSupported(padState_t *pstate);
-u32 __cdecl EnterConfigMode(u8 val, padState_t *pstate);
-u32 __cdecl ExitConfigMode(padState_t *pstate);
-u32 __cdecl SetMainMode(padState_t *pstate);
-u32 __cdecl SetActAlign(padState_t *pstate);
-u32 __cdecl QueryModel(padState_t *pstate);
-u32 __cdecl QueryAct(u32 actuator, padState_t *pstate);
-u32 __cdecl QueryComb(u32 val, padState_t *pstate);
-u32 __cdecl QueryMode(u32 val, padState_t *pstate);
-u32 __cdecl VrefParam(u32 val, padState_t *pstate);
-u32 __cdecl QueryButtonMask(padState_t *pstate);
-u32 __cdecl SetButtonInfo(padState_t *pstate);
-u32 __cdecl ActDirectTotal(u32 port, u32 slot);
-u32 __cdecl CheckAirDirectTotal(u32 port, u32 slot, u8 *actData);
-void __cdecl UpdatePadThread(void *arg);
-void __cdecl QueryPadThread(void *arg);
-void __cdecl SetMainModeThread(void *arg);
-void __cdecl SetActAlignThread(void *arg);
-void __cdecl SetButtonInfoThread(void *arg);
-void __cdecl SetVrefParamThread(void *arg);
-void __cdecl do_set_timer(int timer_mode, u32 timer_compare);
-int __cdecl ParseParams(int argc, char *argv[]);
 s32 __cdecl padInit(void *ee_addr, int timer_interval);
 s32 __cdecl padEnd();
 s32 __cdecl padPortOpen(s32 port, s32 slot, s32 pad_area_ee_addr, struct libpad_dma_act_direct_state **buf);
@@ -213,214 +177,102 @@ s32 __cdecl padInfoMode(u32 port, u32 slot, s32 val1, u32 val2);
 u32 __cdecl padSetActDirect(u32 port, u32 slot, u8 *actData);
 u32 __cdecl padSetMainMode(u32 port, u32 slot, u32 mode, u32 lock);
 u32 __cdecl padSetActAlign(u32 port, u32 slot, const u8 *actData);
-u32 __cdecl padSetVrefParam(u32 port, u32 slot, const u8 *vparam);
 u32 __cdecl padSetButtonInfo(u32 port, u32 slot, u32 info);
 u32 __cdecl padGetButtonMask(u32 port, u32 slot);
-u32 padGetPortMax(void);
-u32 __cdecl padGetSlotMax(u32 port);
-int padGetVersion(void);
-int __cdecl padSetVerbose(int val);
-int __cdecl padSetNonblockDma(int val);
-u32 __cdecl readStat6cBit(u32 bit, const sio2_transfer_data_t *td);
-void pdReset(void);
-void __cdecl do_set_fixme_used_4_pad(int port, int slot, u32 val);
-u32 __cdecl pdSetActive(u32 port, u32 slot, u32 active);
-u32 __cdecl pdIsActive(u32 port, u32 slot);
-u32 __cdecl pdSetStat70bit(u32 port, u32 slot, u32 val);
-u32 __cdecl pdGetStat70bit(u32 port, u32 slot);
-u32 __cdecl setupTransferData(u32 index, u32 port, u32 slot);
-u32 __cdecl readSio2OutBuffer(u32 bit, u32 port, u32 slot);
-u32 __cdecl padTransfer(u32 slot);
-u32 __cdecl mtapChangeSlot(u32 slot);
-void pdTransfer(void);
-u32 __cdecl pdSetCtrl1(u32 port, u32 slot, u32 ctrl);
-u32 __cdecl pdSetCtrl2(u32 port, u32 slot, u32 ctrl);
-u32 __cdecl pdSetRegData(u32 port, u32 slot, u32 reg_data);
-s32 __cdecl pdGetError(u32 port, u32 slot);
-u32 __cdecl pdSetInSize(u32 port, u32 slot, u32 size);
-u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf);
-u32 __cdecl pdSetOutSize(u32 port, u32 slot, u32 size);
-u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf);
-int __fastcall unusedref_4055A0(unsigned int port, u32 slot, u32 port_ctrl);
-int __fastcall unusedref_405680(u32 port, u32 slot);
-int __fastcall unused_4057D4(u32 port, s32 slot);
-void sio2cmdReset(void);
-int __cdecl SetupCmds(const sio2Cmds_t *s);
-u32 __cdecl sio2cmdCheckId(u8 id);
-void __cdecl sio2CmdSetReadData(u32 id, u8 *buf);
-u32 __cdecl sio2CmdGetPortCtrl1(u8 id, u32 b, u8 c);
-u32 __cdecl sio2CmdGetPortCtrl2(u32 id, u32 b);
-u32 __cdecl pdGetInSize(u8 id);
-u32 __cdecl pdGetOutSize(u8 id);
-u32 __cdecl pdGetRegData(u32 id);
-u32 __cdecl sio2CmdSetEnterConfigMode(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetExitConfigMode(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetQueryModel(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetQueryAct(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetQueryComb(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetQueryMode(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetQueryButtonMask(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetSetButtonInfo(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetSetVrefParam(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetSetMainMode(u32 id, u8 *buf);
-u32 __cdecl sio2CmdSetSetActAlign(u32 id, u8 *buf);
-void __cdecl FindPadsReadData(u8 *a);
-u32 __cdecl FindPadsGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl FindPadsGetPortCtrl2(u32 a);
-u32 FindPadsGetSize1(void);
-u32 FindPadsGetSize2(void);
-u32 FindPadsRegData(void);
-u32 __cdecl FindPadsEnterConfigMode(u8 *a);
-void sio2cmdInitFindPads(void);
-void __cdecl MouseReadData(u8 *a);
-u32 __cdecl MouseGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl MouseGetPortCtrl2(u32 a);
-u32 MouseRegData(void);
-u32 MouseSize1(void);
-u32 MouseSize2(void);
-u32 __cdecl MouseEnterConfigMode(u8 *a);
-void sio2cmdInitMouse(void);
-void __cdecl DigitalReadData(u8 *a);
-u32 __cdecl DigitalGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl DigitalGetPortCtrl2(u32 a);
-u32 DigitalRegData(void);
-u32 DigitalSize1(void);
-u32 DigitalSize2(void);
-u32 __cdecl DigitalEnterConfigMode(u8 *a);
-void sio2cmdInitDigital(void);
-void __cdecl AnalogReadData(u8 *a);
-u32 __cdecl AnalogGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl AnalogGetPortCtrl2(u32 a);
-u32 __cdecl AnalogEnterConfigMode(u8 *a);
-void sio2cmdInitAnalog(void);
-void __cdecl NegiconReadData(u8 *a);
-u32 __cdecl NegiconGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl NegiconGetPortCtrl2(u32 a);
-u32 NegiconRegData(void);
-u32 NegiconSize1(void);
-u32 NegiconSize2(void);
-u32 __cdecl NegiconEnterConfigMode(u8 *a);
-void sio2cmdInitNegicon(void);
-void __cdecl JoystickReadData(u8 *a);
-u32 __cdecl JoystickGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl JoystickGetPortCtrl2(u32 a);
-u32 JoystickRegData(void);
-u32 JoystickSize1(void);
-u32 JoystickSize2(void);
-u32 __cdecl JoystickEnterConfigMode(u8 *a);
-void sio2cmdInitJoystick(void);
-void __cdecl KonamiGunReadData(u8 *a);
-u32 __cdecl KonamiGunGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl KonamiGunGetPortCtrl2(u32 a);
-u32 KonamiGunRegData(void);
-u32 KonamiGunSize1(void);
-u32 KonamiGunSize2(void);
-u32 __cdecl KonamiGunEnterConfigMode(u8 *a);
-void sio2cmdInitKonamiGun(void);
-void __cdecl NamcoGunReadData(u8 *a);
-u32 __cdecl NamcoGunGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl NamcoGunGetPortCtrl2(u32 a);
-u32 NamcoGunRegData(void);
-u32 NamcoGunSize1(void);
-u32 NamcoGunSize2(void);
-u32 __cdecl NamcoGunEnterConfigMode(u8 *a);
-void sio2cmdInitNamcoGun(void);
-void __cdecl JogconReadData(u8 *a);
-u32 __cdecl JogconGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl JogconGetPortCtrl2(u32 a);
-u32 JogconRegData(void);
-u32 JogconSize1(void);
-u32 JogconSize2(void);
-u32 __cdecl JogconEnterConfigMode(u8 *a);
-void sio2cmdInitJogcon(void);
-void __cdecl ConfigReadData(u8 *a);
-u32 __cdecl ConfigGetPortCtrl1(u32 a, u32 b);
-u32 __cdecl ConfigGetPortCtrl2(u32 a);
-u32 ConfigRegData(void);
-u32 ConfigSize1(void);
-u32 ConfigSize2(void);
-u32 __cdecl ConfigExitConfigMode(u8 *a);
-u32 __cdecl ConfigQueryModel(u8 *a);
-u32 __cdecl ConfigQueryAct(u8 *a);
-u32 __cdecl ConfigQueryComb(u8 *a);
-u32 __cdecl ConfigQueryMode(u8 *a);
-u32 __cdecl ConfigQueryButtonMask(u8 *a);
-u32 __cdecl ConfigSetButtonInfo(u8 *a);
-u32 __cdecl ConfigSetVrefParam(u8 *a);
-u32 __cdecl ConfigSetMainMode(u8 *a);
-u32 __cdecl ConfigSetSetActAlign(u8 *a);
-void sio2cmdInitConfig(void);
-void *__cdecl RpcPadInit(u32 *data);
-void *__cdecl RpcPadEnd(u32 *data);
-void *__cdecl RpcSetVerbose(u32 *data);
-void *__cdecl RpcGetModVersion(u32 *data);
-void *__cdecl RpcPadOpen(u32 *data);
-void *__cdecl RpcPadClose(u32 *data);
-void *__cdecl RpcPadInfoAct(u32 *data);
-void *__cdecl RpcPadInfoComb(u32 *data);
-void *__cdecl RpcPadInfoMode(u32 *data);
-void *__cdecl RpcPadSetMainMode(u32 *data);
-void *__cdecl RpcPadSetActDirect(u32 *data);
-void *__cdecl RpcPadSetActAlign(u32 *data);
-void *__cdecl RpcPadGetButtonMask(u32 *data);
-void *__cdecl RpcPadSetButtonInfo(u32 *data);
-void *__cdecl RpcPadSetVrefParam(u32 *data);
-void *__cdecl RpcPadGetPortMax(u32 *data);
-void *__cdecl RpcPadGetSlotMax(u32 *data);
-void *__cdecl RpcSetNonblockDma(u32 *data);
-void *__cdecl RpcServer(int fno, void *buffer, int length);
-void __cdecl RpcThread(void *arg);
-void *__cdecl RpcServerExt(int fno, void *buffer, int length);
-void __cdecl RpcThreadExt(void *arg);
-int __cdecl InitRpcServers(int prio);
+static u32 padGetPortMax(void);
+static u32 __cdecl padGetSlotMax(u32 port);
+static void pdReset(void);
+static void __cdecl do_set_fixme_used_4_pad(int port, int slot, u32 val);
+static u32 __cdecl pdSetActive(u32 port, u32 slot, u32 active);
+static u32 __cdecl pdIsActive(u32 port, u32 slot);
+static u32 __cdecl pdGetStat70bit(u32 port, u32 slot);
+static void pdTransfer(void);
+static u32 __cdecl pdSetCtrl1(u32 port, u32 slot, u32 ctrl);
+static u32 __cdecl pdSetCtrl2(u32 port, u32 slot, u32 ctrl);
+static u32 __cdecl pdSetRegData(u32 port, u32 slot, u32 reg_data);
+static s32 __cdecl pdGetError(u32 port, u32 slot);
+static u32 __cdecl pdSetInSize(u32 port, u32 slot, u32 size);
+static u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf);
+static u32 __cdecl pdSetOutSize(u32 port, u32 slot, u32 size);
+static u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf);
+static void sio2cmdReset(void);
+static u32 __cdecl sio2cmdCheckId(u8 id);
+static void __cdecl sio2CmdSetReadData(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdGetPortCtrl1(u8 id, u32 b, u8 c);
+static u32 __cdecl sio2CmdGetPortCtrl2(u32 id, u32 b);
+static u32 __cdecl pdGetInSize(u8 id);
+static u32 __cdecl pdGetOutSize(u8 id);
+static u32 __cdecl pdGetRegData(u32 id);
+static u32 __cdecl sio2CmdSetEnterConfigMode(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetExitConfigMode(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetQueryModel(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetQueryAct(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetQueryComb(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetQueryMode(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetQueryButtonMask(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetSetButtonInfo(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetSetVrefParam(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetSetMainMode(u32 id, u8 *buf);
+static u32 __cdecl sio2CmdSetSetActAlign(u32 id, u8 *buf);
+static void sio2cmdInitFindPads(void);
+static void sio2cmdInitMouse(void);
+static void sio2cmdInitDigital(void);
+static void sio2cmdInitAnalog(void);
+static void sio2cmdInitNegicon(void);
+static void sio2cmdInitJoystick(void);
+static void sio2cmdInitKonamiGun(void);
+static void sio2cmdInitNamcoGun(void);
+static void sio2cmdInitJogcon(void);
+static void sio2cmdInitConfig(void);
+static int __cdecl InitRpcServers(int prio);
 
 //-------------------------------------------------------------------------
 // Data declarations
 
 extern struct irx_export_table _exp_padman;
-int g_padman_verbose = 1; // weak
-int vblankStartCount = 0; // weak
-int frame_count = 0; // weak
-int mainThreadCount = 0; // weak
-int transferCount = 0; // weak
-int vblank_end; // weak
-SifDmaTransfer_t sifdma_td[16];
-int g_dma_buf[4]; // weak
-padState_t g_pad_state[2][4];
-int openSlots[2]; // weak
-vblankData_t vblankdata; // weak
-int g_readxfertimer_timid; // idb
-int g_readxfertimer_irq; // idb
-int padman_init; // weak
+static int g_padman_verbose = 1; // weak
+static int vblankStartCount = 0; // weak
+static int frame_count = 0; // weak
+static int mainThreadCount = 0; // weak
+static int transferCount = 0; // weak
+static int vblank_end; // weak
+static SifDmaTransfer_t sifdma_td[16];
+static int g_dma_buf[4]; // weak
+static padState_t g_pad_state[2][4];
+static int openSlots[2]; // weak
+static vblankData_t vblankdata; // weak
+static int g_readxfertimer_timid; // idb
+static int g_readxfertimer_irq; // idb
+static int padman_init; // weak
 #ifdef DEAD_CODE
-int g_padman_unk_40928C; // weak
-int g_padman_ee_addr; // weak
+static int g_padman_unk_40928C; // weak
+static int g_padman_ee_addr; // weak
 #endif
-int thpri_hi; // weak
-int thpri_lo; // idb
-int g_padman_nonblock_dma; // weak
-int g_readxfertimer_val; // weak
-int sifdma_id; // weak
-int g_sema; // weak
-padData_t padData[2][4];
-sio2_transfer_data_t sio2_td; // weak
-s32 change_slot_buffer[8];
-int g_td_in_buf[64]; // weak
-int g_td_out_buf[66]; // weak
-sio2Cmds_t sio2Cmds[16]; // weak
-int numControllers; // weak
-int ThreadIdRpcServer; // weak
-SifRpcDataQueue_t rpc_qd; // weak
-SifRpcServerData_t rpc_sd; // weak
-int rpc_buf[32]; // weak
-int ThreadIdRpcServerExt; // weak
-SifRpcDataQueue_t rpcext_qd; // weak
-SifRpcServerData_t rpcext_sd; // weak
-int rpcext_buf[32]; // weak
+static int thpri_hi; // weak
+static int thpri_lo; // idb
+static int g_padman_nonblock_dma; // weak
+static int g_readxfertimer_val; // weak
+static int sifdma_id; // weak
+static int g_sema; // weak
+static padData_t padData[2][4];
+static sio2_transfer_data_t sio2_td; // weak
+static s32 change_slot_buffer[8];
+static int g_td_in_buf[64]; // weak
+static int g_td_out_buf[66]; // weak
+static sio2Cmds_t sio2Cmds[16]; // weak
+static int numControllers; // weak
+static int ThreadIdRpcServer; // weak
+static SifRpcDataQueue_t rpc_qd; // weak
+static SifRpcServerData_t rpc_sd; // weak
+static int rpc_buf[32]; // weak
+static int ThreadIdRpcServerExt; // weak
+static SifRpcDataQueue_t rpcext_qd; // weak
+static SifRpcServerData_t rpcext_sd; // weak
+static int rpcext_buf[32]; // weak
 
 
 //----- (00400000) --------------------------------------------------------
-u32 __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate)
+static u32 __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate)
 {
 	struct libpad_dma_act_direct_state *astate; // $s0
 	u32 framecmp; // $s1
@@ -436,7 +288,7 @@ u32 __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate)
 }
 
 //----- (0040006C) --------------------------------------------------------
-void __cdecl WaitClearEvent(int eventflag, u32 bits)
+static void __cdecl WaitClearEvent(int eventflag, u32 bits)
 {
 	iop_thread_info_t tinfo; // [sp+10h] [-50h] BYREF
 	u32 efres; // [sp+58h] [-8h] BYREF
@@ -453,7 +305,7 @@ void __cdecl WaitClearEvent(int eventflag, u32 bits)
 // 40006C: using guessed type iop_thread_info_t tinfo;
 
 //----- (004000E4) --------------------------------------------------------
-s32 __cdecl VbReferThreadStatus(const vblankData_t *vData)
+static s32 __cdecl VbReferThreadStatus(const vblankData_t *vData)
 {
 	u32 ret2; // $s0
 	iop_thread_info_t tinfo; // [sp+10h] [-48h] BYREF
@@ -465,7 +317,7 @@ s32 __cdecl VbReferThreadStatus(const vblankData_t *vData)
 }
 
 //----- (00400164) --------------------------------------------------------
-void __cdecl DeleteThreadsEventFlag(const vblankData_t *vbdat)
+static void __cdecl DeleteThreadsEventFlag(const vblankData_t *vbdat)
 {
 	DeleteThread(vbdat->tid_1);
 	DeleteThread(vbdat->tid_2);
@@ -473,7 +325,7 @@ void __cdecl DeleteThreadsEventFlag(const vblankData_t *vbdat)
 }
 
 //----- (004001A8) --------------------------------------------------------
-u32 __cdecl GetThreadsStatus(const padState_t *pstate)
+static u32 __cdecl GetThreadsStatus(const padState_t *pstate)
 {
 	int count; // $s0
 	iop_thread_info_t tinfo; // [sp+10h] [-48h] BYREF
@@ -489,7 +341,7 @@ u32 __cdecl GetThreadsStatus(const padState_t *pstate)
 }
 
 //----- (004002D8) --------------------------------------------------------
-void __cdecl DeleteThreads(const padState_t *pstate)
+static void __cdecl DeleteThreads(const padState_t *pstate)
 {
 	DeleteThread(pstate->updatepadTid);
 	DeleteThread(pstate->querypadTid);
@@ -501,13 +353,13 @@ void __cdecl DeleteThreads(const padState_t *pstate)
 
 //----- (00400340) --------------------------------------------------------
 // cppcheck-suppress constParameterCallback
-void __cdecl ee_dma_send_completion_cb(void *userdata)
+static void __cdecl ee_dma_send_completion_cb(void *userdata)
 {
 	iSignalSema((int)userdata);
 }
 
 //----- (00400360) --------------------------------------------------------
-void DmaSendEE(void)
+static void DmaSendEE(void)
 {
 	int dmat_count_2; // $s7
 	int dma_stat; // $a2
@@ -636,7 +488,7 @@ void DmaSendEE(void)
 // 4092A8: using guessed type int g_sema;
 
 //----- (004008B4) --------------------------------------------------------
-void __cdecl shiftarray(u8 *buf)
+static void __cdecl shiftarray(u8 *buf)
 {
 	int i; // $a1
 	_BYTE temp[32]; // [sp+0h] [-20h] BYREF
@@ -649,7 +501,7 @@ void __cdecl shiftarray(u8 *buf)
 }
 
 //----- (00400910) --------------------------------------------------------
-int __cdecl VblankEnd(void *arg)
+static int __cdecl VblankEnd(void *arg)
 {
 	(void)arg;
 	vblank_end = 1;
@@ -658,7 +510,7 @@ int __cdecl VblankEnd(void *arg)
 // 408320: using guessed type int vblank_end;
 
 //----- (00400924) --------------------------------------------------------
-int __cdecl VblankStart(void *arg)
+static int __cdecl VblankStart(void *arg)
 {
 	vblankData_t *vData;
 
@@ -690,7 +542,7 @@ int __cdecl VblankStart(void *arg)
 // 408320: using guessed type int vblank_end;
 
 //----- (00400A10) --------------------------------------------------------
-void __cdecl __noreturn TransferThread(void *arg)
+static void __cdecl __noreturn TransferThread(void *arg)
 {
 	(void)arg;
 	while ( 1 )
@@ -703,7 +555,7 @@ void __cdecl __noreturn TransferThread(void *arg)
 // 409268: using guessed type vblankData_t vblankdata;
 
 //----- (00400A54) --------------------------------------------------------
-void __cdecl __noreturn MainThread(void *arg)
+static void __cdecl __noreturn MainThread(void *arg)
 {
 	signed __int32 port; // $s3
 	signed __int32 slot; // $s1
@@ -827,7 +679,7 @@ void __cdecl __noreturn MainThread(void *arg)
 // 409268: using guessed type vblankData_t vblankdata;
 
 //----- (00400D98) --------------------------------------------------------
-u32 __cdecl ReadData(padState_t *pstate)
+static u32 __cdecl ReadData(padState_t *pstate)
 {
 	u32 retflag; // $s3
 	int i; // $a0
@@ -861,7 +713,7 @@ u32 __cdecl ReadData(padState_t *pstate)
 }
 
 //----- (00400F74) --------------------------------------------------------
-u32 __cdecl PadIsSupported(padState_t *pstate)
+static u32 __cdecl PadIsSupported(padState_t *pstate)
 {
 	u32 retflag; // $s6
 
@@ -892,7 +744,7 @@ u32 __cdecl PadIsSupported(padState_t *pstate)
 }
 
 //----- (00401140) --------------------------------------------------------
-u32 __cdecl EnterConfigMode(u8 val, padState_t *pstate)
+static u32 __cdecl EnterConfigMode(u8 val, padState_t *pstate)
 {
 	u32 retflag; // $s4
 
@@ -918,7 +770,7 @@ u32 __cdecl EnterConfigMode(u8 val, padState_t *pstate)
 }
 
 //----- (004012AC) --------------------------------------------------------
-u32 __cdecl ExitConfigMode(padState_t *pstate)
+static u32 __cdecl ExitConfigMode(padState_t *pstate)
 {
 	u32 retflag; // $s4
 
@@ -944,7 +796,7 @@ u32 __cdecl ExitConfigMode(padState_t *pstate)
 }
 
 //----- (00401414) --------------------------------------------------------
-u32 __cdecl SetMainMode(padState_t *pstate)
+static u32 __cdecl SetMainMode(padState_t *pstate)
 {
 	u32 retflag; // $s4
 
@@ -973,7 +825,7 @@ u32 __cdecl SetMainMode(padState_t *pstate)
 }
 
 //----- (0040159C) --------------------------------------------------------
-u32 __cdecl SetActAlign(padState_t *pstate)
+static u32 __cdecl SetActAlign(padState_t *pstate)
 {
 	u32 retflag; // $s3
 	int i; // $a0
@@ -1003,7 +855,7 @@ u32 __cdecl SetActAlign(padState_t *pstate)
 }
 
 //----- (0040172C) --------------------------------------------------------
-u32 __cdecl QueryModel(padState_t *pstate)
+static u32 __cdecl QueryModel(padState_t *pstate)
 {
 	u32 retflag; // $s4
 
@@ -1043,7 +895,7 @@ u32 __cdecl QueryModel(padState_t *pstate)
 }
 
 //----- (00401910) --------------------------------------------------------
-u32 __cdecl QueryAct(u32 actuator, padState_t *pstate)
+static u32 __cdecl QueryAct(u32 actuator, padState_t *pstate)
 {
 	u32 retflag; // $s4
 
@@ -1077,7 +929,7 @@ u32 __cdecl QueryAct(u32 actuator, padState_t *pstate)
 }
 
 //----- (00401AC4) --------------------------------------------------------
-u32 __cdecl QueryComb(u32 val, padState_t *pstate)
+static u32 __cdecl QueryComb(u32 val, padState_t *pstate)
 {
 	u32 retflag; // $s4
 
@@ -1111,7 +963,7 @@ u32 __cdecl QueryComb(u32 val, padState_t *pstate)
 }
 
 //----- (00401C78) --------------------------------------------------------
-u32 __cdecl QueryMode(u32 val, padState_t *pstate)
+static u32 __cdecl QueryMode(u32 val, padState_t *pstate)
 {
 	u32 retflag; // $s4
 
@@ -1142,7 +994,7 @@ u32 __cdecl QueryMode(u32 val, padState_t *pstate)
 }
 
 //----- (00401E1C) --------------------------------------------------------
-u32 __cdecl VrefParam(u32 val, padState_t *pstate)
+static u32 __cdecl VrefParam(u32 val, padState_t *pstate)
 {
 	u32 retflag; // $s5
 
@@ -1171,7 +1023,7 @@ u32 __cdecl VrefParam(u32 val, padState_t *pstate)
 }
 
 //----- (00401FA0) --------------------------------------------------------
-u32 __cdecl QueryButtonMask(padState_t *pstate)
+static u32 __cdecl QueryButtonMask(padState_t *pstate)
 {
 	u32 retflag; // $s4
 
@@ -1201,7 +1053,7 @@ u32 __cdecl QueryButtonMask(padState_t *pstate)
 }
 
 //----- (0040214C) --------------------------------------------------------
-u32 __cdecl SetButtonInfo(padState_t *pstate)
+static u32 __cdecl SetButtonInfo(padState_t *pstate)
 {
 	u32 retflag; // $s3
 	int i; // $a0
@@ -1231,7 +1083,7 @@ u32 __cdecl SetButtonInfo(padState_t *pstate)
 }
 
 //----- (004022DC) --------------------------------------------------------
-u32 __cdecl ActDirectTotal(u32 port, u32 slot)
+static u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 {
 	u32 retval_r; // $s3
 	u32 p; // $s1
@@ -1259,7 +1111,7 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 // 409260: using guessed type int openSlots[];
 
 //----- (00402448) --------------------------------------------------------
-u32 __cdecl CheckAirDirectTotal(u32 port, u32 slot, u8 *actData)
+static u32 __cdecl CheckAirDirectTotal(u32 port, u32 slot, u8 *actData)
 {
 	u32 total; // $s3
 	padState_t *pstate; // $s2
@@ -1286,7 +1138,7 @@ u32 __cdecl CheckAirDirectTotal(u32 port, u32 slot, u8 *actData)
 // 4082F8: using guessed type int g_padman_verbose;
 
 //----- (00402574) --------------------------------------------------------
-void __cdecl __noreturn UpdatePadThread(void *arg)
+static void __cdecl __noreturn UpdatePadThread(void *arg)
 {
 	int retval; // $s1
 	padState_t *pstate; // $s0
@@ -1356,7 +1208,7 @@ void __cdecl __noreturn UpdatePadThread(void *arg)
 	while (0)
 
 //----- (00402704) --------------------------------------------------------
-void __cdecl __noreturn QueryPadThread(void *arg)
+static void __cdecl __noreturn QueryPadThread(void *arg)
 {
 	padState_t *pstate; // $s0
 	int i; // $v1
@@ -1436,7 +1288,7 @@ void __cdecl __noreturn QueryPadThread(void *arg)
 }
 
 //----- (00402C54) --------------------------------------------------------
-void __cdecl __noreturn SetMainModeThread(void *arg)
+static void __cdecl __noreturn SetMainModeThread(void *arg)
 {
 	padState_t *pstate; // $s0
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
@@ -1454,7 +1306,7 @@ void __cdecl __noreturn SetMainModeThread(void *arg)
 }
 
 //----- (00402D8C) --------------------------------------------------------
-void __cdecl __noreturn SetActAlignThread(void *arg)
+static void __cdecl __noreturn SetActAlignThread(void *arg)
 {
 	padState_t *pstate; // $s0
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
@@ -1472,7 +1324,7 @@ void __cdecl __noreturn SetActAlignThread(void *arg)
 }
 
 //----- (00402EC4) --------------------------------------------------------
-void __cdecl __noreturn SetButtonInfoThread(void *arg)
+static void __cdecl __noreturn SetButtonInfoThread(void *arg)
 {
 	int i; // $s2
 	padState_t *pstate; // $s0
@@ -1494,7 +1346,7 @@ void __cdecl __noreturn SetButtonInfoThread(void *arg)
 }
 
 //----- (00403068) --------------------------------------------------------
-void __cdecl __noreturn SetVrefParamThread(void *arg)
+static void __cdecl __noreturn SetVrefParamThread(void *arg)
 {
 	padState_t *pstate; // $s0
 	int i; // $s2
@@ -1514,7 +1366,7 @@ void __cdecl __noreturn SetVrefParamThread(void *arg)
 }
 
 //----- (004031BC) --------------------------------------------------------
-void __cdecl do_set_timer(int timer_mode, u32 timer_compare)
+static void __cdecl do_set_timer(int timer_mode, u32 timer_compare)
 {
 	int timerid; // $s2
 	int HardTimerIntrCode; // $s1
@@ -1540,7 +1392,7 @@ void __cdecl do_set_timer(int timer_mode, u32 timer_compare)
 // 409268: using guessed type vblankData_t vblankdata;
 
 //----- (004032BC) --------------------------------------------------------
-int __cdecl ParseParams(int argc, char *argv[])
+static int __cdecl ParseParams(int argc, char *argv[])
 {
 	int new_thpri_hi; // $s3
 	int new_thpri_lo; // $s2
@@ -2097,7 +1949,7 @@ u32 __cdecl padSetActAlign(u32 port, u32 slot, const u8 *actData)
 }
 
 //----- (004046A0) --------------------------------------------------------
-u32 __cdecl padSetVrefParam(u32 port, u32 slot, const u8 *vparam)
+static u32 __cdecl padSetVrefParam(u32 port, u32 slot, const u8 *vparam)
 {
 	padState_t *pstate; // $a1
 	int i; // $a0
@@ -2144,25 +1996,25 @@ u32 __cdecl padGetButtonMask(u32 port, u32 slot)
 }
 
 //----- (004048F0) --------------------------------------------------------
-u32 padGetPortMax(void)
+static u32 padGetPortMax(void)
 {
 	return 2;
 }
 
 //----- (004048F8) --------------------------------------------------------
-u32 __cdecl padGetSlotMax(u32 port)
+static u32 __cdecl padGetSlotMax(u32 port)
 {
 	return sio2_mtap_get_slot_max(port);
 }
 
 //----- (00404918) --------------------------------------------------------
-int padGetVersion(void)
+static int padGetVersion(void)
 {
 	return (unsigned __int16)_irx_id.v;
 }
 
 //----- (00404928) --------------------------------------------------------
-int __cdecl padSetVerbose(int val)
+static int __cdecl padSetVerbose(int val)
 {
 	g_padman_verbose = val;
 	return 1;
@@ -2170,7 +2022,7 @@ int __cdecl padSetVerbose(int val)
 // 4082F8: using guessed type int g_padman_verbose;
 
 //----- (00404938) --------------------------------------------------------
-int __cdecl padSetNonblockDma(int val)
+static int __cdecl padSetNonblockDma(int val)
 {
 	g_padman_nonblock_dma = val;
 	return 1;
@@ -2178,13 +2030,13 @@ int __cdecl padSetNonblockDma(int val)
 // 40929C: using guessed type int g_padman_nonblock_dma;
 
 //----- (00404950) --------------------------------------------------------
-u32 __cdecl readStat6cBit(u32 bit, const sio2_transfer_data_t *td)
+static u32 __cdecl readStat6cBit(u32 bit, const sio2_transfer_data_t *td)
 {
 	return (td->stat6c & (0x10000 << bit)) != 0;
 }
 
 //----- (00404968) --------------------------------------------------------
-void pdReset(void)
+static void pdReset(void)
 {
 	int port; // $a1
 	int slot; // $v1
@@ -2206,13 +2058,13 @@ void pdReset(void)
 // 4097A8: using guessed type int g_td_out_buf[66];
 
 //----- (004049D8) --------------------------------------------------------
-void __cdecl do_set_fixme_used_4_pad(int port, int slot, u32 val)
+static void __cdecl do_set_fixme_used_4_pad(int port, int slot, u32 val)
 {
 	padData[port][slot].fixme_used_4 = val;
 }
 
 //----- (00404A18) --------------------------------------------------------
-u32 __cdecl pdSetActive(u32 port, u32 slot, u32 active)
+static u32 __cdecl pdSetActive(u32 port, u32 slot, u32 active)
 {
 	u32 oldval; // $v0
 
@@ -2222,13 +2074,13 @@ u32 __cdecl pdSetActive(u32 port, u32 slot, u32 active)
 }
 
 //----- (00404A64) --------------------------------------------------------
-u32 __cdecl pdIsActive(u32 port, u32 slot)
+static u32 __cdecl pdIsActive(u32 port, u32 slot)
 {
 	return padData[port][slot].active;
 }
 
 //----- (00404AA4) --------------------------------------------------------
-u32 __cdecl pdSetStat70bit(u32 port, u32 slot, u32 val)
+static u32 __cdecl pdSetStat70bit(u32 port, u32 slot, u32 val)
 {
 	u32 oldval; // $v0
 
@@ -2238,13 +2090,13 @@ u32 __cdecl pdSetStat70bit(u32 port, u32 slot, u32 val)
 }
 
 //----- (00404AF0) --------------------------------------------------------
-u32 __cdecl pdGetStat70bit(u32 port, u32 slot)
+static u32 __cdecl pdGetStat70bit(u32 port, u32 slot)
 {
 	return padData[port][slot].stat70bit;
 }
 
 //----- (00404B30) --------------------------------------------------------
-u32 __cdecl setupTransferData(u32 index, u32 port, u32 slot)
+static u32 __cdecl setupTransferData(u32 index, u32 port, u32 slot)
 {
 	padData_t *pdata; // $s0
 
@@ -2261,7 +2113,7 @@ u32 __cdecl setupTransferData(u32 index, u32 port, u32 slot)
 // 4095F0: using guessed type sio2_transfer_data_t sio2_td;
 
 //----- (00404C4C) --------------------------------------------------------
-u32 __cdecl readSio2OutBuffer(u32 bit, u32 port, u32 slot)
+static u32 __cdecl readSio2OutBuffer(u32 bit, u32 port, u32 slot)
 {
 	int outsize_old; // $v1
 	int i; // $a3
@@ -2281,7 +2133,7 @@ u32 __cdecl readSio2OutBuffer(u32 bit, u32 port, u32 slot)
 // 4095F0: using guessed type sio2_transfer_data_t sio2_td;
 
 //----- (00404DF8) --------------------------------------------------------
-u32 __cdecl padTransfer(u32 slot)
+static u32 __cdecl padTransfer(u32 slot)
 {
 	int xferdatres; // $a0
 	int i; // $s1
@@ -2339,7 +2191,7 @@ u32 __cdecl padTransfer(u32 slot)
 // 4095F0: using guessed type sio2_transfer_data_t sio2_td;
 
 //----- (004050B0) --------------------------------------------------------
-u32 __cdecl mtapChangeSlot(u32 slot)
+static u32 __cdecl mtapChangeSlot(u32 slot)
 {
 	change_slot_buffer[0] = -1;
 	change_slot_buffer[1] = -1;
@@ -2356,7 +2208,7 @@ u32 __cdecl mtapChangeSlot(u32 slot)
 }
 
 //----- (00405194) --------------------------------------------------------
-void pdTransfer(void)
+static void pdTransfer(void)
 {
 	signed __int32 slot; // $s0
 
@@ -2377,7 +2229,7 @@ void pdTransfer(void)
 // 408310: using guessed type int transferCount;
 
 //----- (00405250) --------------------------------------------------------
-u32 __cdecl pdSetCtrl1(u32 port, u32 slot, u32 ctrl)
+static u32 __cdecl pdSetCtrl1(u32 port, u32 slot, u32 ctrl)
 {
 	if ( port >= 2 )
 		return 0;
@@ -2386,7 +2238,7 @@ u32 __cdecl pdSetCtrl1(u32 port, u32 slot, u32 ctrl)
 }
 
 //----- (004052A0) --------------------------------------------------------
-u32 __cdecl pdSetCtrl2(u32 port, u32 slot, u32 ctrl)
+static u32 __cdecl pdSetCtrl2(u32 port, u32 slot, u32 ctrl)
 {
 	if ( port >= 2 )
 		return 0;
@@ -2395,7 +2247,7 @@ u32 __cdecl pdSetCtrl2(u32 port, u32 slot, u32 ctrl)
 }
 
 //----- (004052F0) --------------------------------------------------------
-u32 __cdecl pdSetRegData(u32 port, u32 slot, u32 reg_data)
+static u32 __cdecl pdSetRegData(u32 port, u32 slot, u32 reg_data)
 {
 	if ( port >= 2 )
 		return 0;
@@ -2404,13 +2256,13 @@ u32 __cdecl pdSetRegData(u32 port, u32 slot, u32 reg_data)
 }
 
 //----- (00405340) --------------------------------------------------------
-s32 __cdecl pdGetError(u32 port, u32 slot)
+static s32 __cdecl pdGetError(u32 port, u32 slot)
 {
 	return ( port >= 2 ) ? -1 : (s32)padData[port][slot].error;
 }
 
 //----- (00405390) --------------------------------------------------------
-u32 __cdecl pdSetInSize(u32 port, u32 slot, u32 size)
+static u32 __cdecl pdSetInSize(u32 port, u32 slot, u32 size)
 {
 	if ( port >= 2 )
 		return 0;
@@ -2419,7 +2271,7 @@ u32 __cdecl pdSetInSize(u32 port, u32 slot, u32 size)
 }
 
 //----- (004053E0) --------------------------------------------------------
-u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf)
+static u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf)
 {
 	signed __int32 i; // $t0
 
@@ -2433,7 +2285,7 @@ u32 __cdecl pdSetInBuffer(u32 port, u32 slot, u32 size, const u8 *buf)
 }
 
 //----- (00405498) --------------------------------------------------------
-u32 __cdecl pdSetOutSize(u32 port, u32 slot, u32 size)
+static u32 __cdecl pdSetOutSize(u32 port, u32 slot, u32 size)
 {
 	if ( port >= 2 )
 		return 0;
@@ -2442,7 +2294,7 @@ u32 __cdecl pdSetOutSize(u32 port, u32 slot, u32 size)
 }
 
 //----- (004054E8) --------------------------------------------------------
-u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf)
+static u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf)
 {
 	signed __int32 i; // $t0
 
@@ -2455,6 +2307,7 @@ u32 __cdecl pdGetOutBuffer(u32 port, u32 slot, u32 size, u8 *buf)
 	return size;
 }
 
+#ifdef DEAD_CODE
 //----- (004055A0) --------------------------------------------------------
 int __fastcall unusedref_4055A0(unsigned int port, u32 slot, u32 port_ctrl)
 {
@@ -2521,9 +2374,10 @@ int __fastcall unused_4057D4(u32 port, s32 slot)
 	sio2_transfer_reset2();
 	return retres;
 }
+#endif
 
 //----- (00405910) --------------------------------------------------------
-void sio2cmdReset(void)
+static void sio2cmdReset(void)
 {
 	int i; // $v1
 
@@ -2535,7 +2389,7 @@ void sio2cmdReset(void)
 // 409D30: using guessed type int numControllers;
 
 //----- (00405940) --------------------------------------------------------
-int __cdecl SetupCmds(const sio2Cmds_t *s)
+static int __cdecl SetupCmds(const sio2Cmds_t *s)
 {
 	int i; // $v1
 
@@ -2569,7 +2423,7 @@ int __cdecl SetupCmds(const sio2Cmds_t *s)
 // 409D30: using guessed type int numControllers;
 
 //----- (00405B0C) --------------------------------------------------------
-u32 __cdecl sio2cmdCheckId(u8 id)
+static u32 __cdecl sio2cmdCheckId(u8 id)
 {
 	int i; // $a1
 
@@ -2582,7 +2436,7 @@ u32 __cdecl sio2cmdCheckId(u8 id)
 // 409D30: using guessed type int numControllers;
 
 //----- (00405B68) --------------------------------------------------------
-void __cdecl sio2CmdSetReadData(u32 id, u8 *buf)
+static void __cdecl sio2CmdSetReadData(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2599,7 +2453,7 @@ void __cdecl sio2CmdSetReadData(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (00405BF8) --------------------------------------------------------
-u32 __cdecl sio2CmdGetPortCtrl1(u8 id, u32 b, u8 c)
+static u32 __cdecl sio2CmdGetPortCtrl1(u8 id, u32 b, u8 c)
 {
 	int i; // $v1
 
@@ -2612,7 +2466,7 @@ u32 __cdecl sio2CmdGetPortCtrl1(u8 id, u32 b, u8 c)
 // 409D30: using guessed type int numControllers;
 
 //----- (00405C90) --------------------------------------------------------
-u32 __cdecl sio2CmdGetPortCtrl2(u32 id, u32 b)
+static u32 __cdecl sio2CmdGetPortCtrl2(u32 id, u32 b)
 {
 	int i; // $v1
 
@@ -2625,25 +2479,25 @@ u32 __cdecl sio2CmdGetPortCtrl2(u32 id, u32 b)
 // 409D30: using guessed type int numControllers;
 
 //----- (00405D24) --------------------------------------------------------
-u32 __cdecl pdGetInSize(u8 id)
+static u32 __cdecl pdGetInSize(u8 id)
 {
 	return 2 * ((id ? id : 0x41) & 0xF) + 3;
 }
 
 //----- (00405D44) --------------------------------------------------------
-u32 __cdecl pdGetOutSize(u8 id)
+static u32 __cdecl pdGetOutSize(u8 id)
 {
 	return 2 * ((id ? id : 0x41) & 0xF) + 3;
 }
 
 //----- (00405D64) --------------------------------------------------------
-u32 __cdecl pdGetRegData(u32 id)
+static u32 __cdecl pdGetRegData(u32 id)
 {
 	return (((pdGetInSize(id) & 0x1FF) << 8) | 0x40) | ((pdGetOutSize(id & 0xFF) & 0x1FF) << 18);
 }
 
 //----- (00405DB4) --------------------------------------------------------
-u32 __cdecl sio2CmdSetEnterConfigMode(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetEnterConfigMode(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2656,7 +2510,7 @@ u32 __cdecl sio2CmdSetEnterConfigMode(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (00405E48) --------------------------------------------------------
-u32 __cdecl sio2CmdSetExitConfigMode(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetExitConfigMode(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2669,7 +2523,7 @@ u32 __cdecl sio2CmdSetExitConfigMode(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (00405EDC) --------------------------------------------------------
-u32 __cdecl sio2CmdSetQueryModel(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetQueryModel(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2682,7 +2536,7 @@ u32 __cdecl sio2CmdSetQueryModel(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (00405F70) --------------------------------------------------------
-u32 __cdecl sio2CmdSetQueryAct(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetQueryAct(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2695,7 +2549,7 @@ u32 __cdecl sio2CmdSetQueryAct(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (00406004) --------------------------------------------------------
-u32 __cdecl sio2CmdSetQueryComb(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetQueryComb(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2708,7 +2562,7 @@ u32 __cdecl sio2CmdSetQueryComb(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (00406098) --------------------------------------------------------
-u32 __cdecl sio2CmdSetQueryMode(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetQueryMode(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2721,7 +2575,7 @@ u32 __cdecl sio2CmdSetQueryMode(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (0040612C) --------------------------------------------------------
-u32 __cdecl sio2CmdSetQueryButtonMask(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetQueryButtonMask(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2734,7 +2588,7 @@ u32 __cdecl sio2CmdSetQueryButtonMask(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (004061C0) --------------------------------------------------------
-u32 __cdecl sio2CmdSetSetButtonInfo(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetSetButtonInfo(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2747,7 +2601,7 @@ u32 __cdecl sio2CmdSetSetButtonInfo(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (00406254) --------------------------------------------------------
-u32 __cdecl sio2CmdSetSetVrefParam(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetSetVrefParam(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2760,7 +2614,7 @@ u32 __cdecl sio2CmdSetSetVrefParam(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (004062E8) --------------------------------------------------------
-u32 __cdecl sio2CmdSetSetMainMode(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetSetMainMode(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2773,7 +2627,7 @@ u32 __cdecl sio2CmdSetSetMainMode(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (0040637C) --------------------------------------------------------
-u32 __cdecl sio2CmdSetSetActAlign(u32 id, u8 *buf)
+static u32 __cdecl sio2CmdSetSetActAlign(u32 id, u8 *buf)
 {
 	int i; // $v1
 
@@ -2786,7 +2640,7 @@ u32 __cdecl sio2CmdSetSetActAlign(u32 id, u8 *buf)
 // 409D30: using guessed type int numControllers;
 
 //----- (00406410) --------------------------------------------------------
-void __cdecl FindPadsReadData(u8 *a)
+static void __cdecl FindPadsReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -2796,7 +2650,7 @@ void __cdecl FindPadsReadData(u8 *a)
 }
 
 //----- (00406430) --------------------------------------------------------
-u32 __cdecl FindPadsGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl FindPadsGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
@@ -2804,31 +2658,31 @@ u32 __cdecl FindPadsGetPortCtrl1(u32 a, u32 b)
 }
 
 //----- (00406450) --------------------------------------------------------
-u32 __cdecl FindPadsGetPortCtrl2(u32 a)
+static u32 __cdecl FindPadsGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x2000A;
 }
 
 //----- (00406470) --------------------------------------------------------
-u32 FindPadsGetSize1(void)
+static u32 FindPadsGetSize1(void)
 {
 	return 5;
 }
 
 //----- (00406478) --------------------------------------------------------
-u32 FindPadsGetSize2(void)
+static u32 FindPadsGetSize2(void)
 {
 	return 5;
 }
 
 //----- (00406480) --------------------------------------------------------
-u32 FindPadsRegData(void)
+static u32 FindPadsRegData(void)
 {
 	return (((FindPadsGetSize1() & 0x1FF) << 8) | 0x40) | ((FindPadsGetSize2() & 0x1FF) << 18);
 }
 
 //----- (004064BC) --------------------------------------------------------
-u32 __cdecl FindPadsEnterConfigMode(u8 *a)
+static u32 __cdecl FindPadsEnterConfigMode(u8 *a)
 {
 	(void)a;
 
@@ -2836,7 +2690,7 @@ u32 __cdecl FindPadsEnterConfigMode(u8 *a)
 }
 
 //----- (004064C4) --------------------------------------------------------
-void sio2cmdInitFindPads(void)
+static void sio2cmdInitFindPads(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -2853,7 +2707,7 @@ void sio2cmdInitFindPads(void)
 }
 
 //----- (00406570) --------------------------------------------------------
-void __cdecl MouseReadData(u8 *a)
+static void __cdecl MouseReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -2865,7 +2719,7 @@ void __cdecl MouseReadData(u8 *a)
 }
 
 //----- (00406598) --------------------------------------------------------
-u32 __cdecl MouseGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl MouseGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
@@ -2873,31 +2727,31 @@ u32 __cdecl MouseGetPortCtrl1(u32 a, u32 b)
 }
 
 //----- (004065B8) --------------------------------------------------------
-u32 __cdecl MouseGetPortCtrl2(u32 a)
+static u32 __cdecl MouseGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x20014;
 }
 
 //----- (004065D8) --------------------------------------------------------
-u32 MouseRegData(void)
+static u32 MouseRegData(void)
 {
 	return 0x1C0740;
 }
 
 //----- (004065E4) --------------------------------------------------------
-u32 MouseSize1(void)
+static u32 MouseSize1(void)
 {
 	return 7;
 }
 
 //----- (004065EC) --------------------------------------------------------
-u32 MouseSize2(void)
+static u32 MouseSize2(void)
 {
 	return 7;
 }
 
 //----- (004065F4) --------------------------------------------------------
-u32 __cdecl MouseEnterConfigMode(u8 *a)
+static u32 __cdecl MouseEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
 	a[0] = 1;
@@ -2910,7 +2764,7 @@ u32 __cdecl MouseEnterConfigMode(u8 *a)
 }
 
 //----- (00406620) --------------------------------------------------------
-void sio2cmdInitMouse(void)
+static void sio2cmdInitMouse(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -2927,7 +2781,7 @@ void sio2cmdInitMouse(void)
 }
 
 //----- (004066D0) --------------------------------------------------------
-void __cdecl DigitalReadData(u8 *a)
+static void __cdecl DigitalReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -2937,7 +2791,7 @@ void __cdecl DigitalReadData(u8 *a)
 }
 
 //----- (004066F0) --------------------------------------------------------
-u32 __cdecl DigitalGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl DigitalGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
@@ -2945,31 +2799,31 @@ u32 __cdecl DigitalGetPortCtrl1(u32 a, u32 b)
 }
 
 //----- (00406710) --------------------------------------------------------
-u32 __cdecl DigitalGetPortCtrl2(u32 a)
+static u32 __cdecl DigitalGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406730) --------------------------------------------------------
-u32 DigitalRegData(void)
+static u32 DigitalRegData(void)
 {
 	return 0x140540;
 }
 
 //----- (0040673C) --------------------------------------------------------
-u32 DigitalSize1(void)
+static u32 DigitalSize1(void)
 {
 	return 5;
 }
 
 //----- (00406744) --------------------------------------------------------
-u32 DigitalSize2(void)
+static u32 DigitalSize2(void)
 {
 	return 5;
 }
 
 //----- (0040674C) --------------------------------------------------------
-u32 __cdecl DigitalEnterConfigMode(u8 *a)
+static u32 __cdecl DigitalEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
 	a[0] = 1;
@@ -2980,7 +2834,7 @@ u32 __cdecl DigitalEnterConfigMode(u8 *a)
 }
 
 //----- (00406770) --------------------------------------------------------
-void sio2cmdInitDigital(void)
+static void sio2cmdInitDigital(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -2997,7 +2851,7 @@ void sio2cmdInitDigital(void)
 }
 
 //----- (00406820) --------------------------------------------------------
-void __cdecl AnalogReadData(u8 *a)
+static void __cdecl AnalogReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -3017,19 +2871,19 @@ void __cdecl AnalogReadData(u8 *a)
 }
 
 //----- (00406868) --------------------------------------------------------
-u32 __cdecl AnalogGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl AnalogGetPortCtrl1(u32 a, u32 b)
 {
 	return a ? 0xFF060505 :  (((((b & 2) ? 10 : 5) | (((b & 2) ? 10 : 5) << 8)) & 0xFF00FFFF) | (((b & 2) ? 0x60 : 0xC0) << 16) | 0xFF000000);
 }
 
 //----- (004068DC) --------------------------------------------------------
-u32 __cdecl AnalogGetPortCtrl2(u32 a)
+static u32 __cdecl AnalogGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x20014;
 }
 
 //----- (004068FC) --------------------------------------------------------
-u32 __cdecl AnalogEnterConfigMode(u8 *a)
+static u32 __cdecl AnalogEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
 	a[0] = 1;
@@ -3050,7 +2904,7 @@ u32 __cdecl AnalogEnterConfigMode(u8 *a)
 }
 
 //----- (00406948) --------------------------------------------------------
-void sio2cmdInitAnalog(void)
+static void sio2cmdInitAnalog(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -3065,7 +2919,7 @@ void sio2cmdInitAnalog(void)
 }
 
 //----- (004069E0) --------------------------------------------------------
-void __cdecl NegiconReadData(u8 *a)
+static void __cdecl NegiconReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -3079,7 +2933,7 @@ void __cdecl NegiconReadData(u8 *a)
 }
 
 //----- (00406A10) --------------------------------------------------------
-u32 __cdecl NegiconGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl NegiconGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
@@ -3087,31 +2941,31 @@ u32 __cdecl NegiconGetPortCtrl1(u32 a, u32 b)
 }
 
 //----- (00406A30) --------------------------------------------------------
-u32 __cdecl NegiconGetPortCtrl2(u32 a)
+static u32 __cdecl NegiconGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406A50) --------------------------------------------------------
-u32 NegiconRegData(void)
+static u32 NegiconRegData(void)
 {
 	return 0x240940;
 }
 
 //----- (00406A5C) --------------------------------------------------------
-u32 NegiconSize1(void)
+static u32 NegiconSize1(void)
 {
 	return 9;
 }
 
 //----- (00406A64) --------------------------------------------------------
-u32 NegiconSize2(void)
+static u32 NegiconSize2(void)
 {
 	return 9;
 }
 
 //----- (00406A6C) --------------------------------------------------------
-u32 __cdecl NegiconEnterConfigMode(u8 *a)
+static u32 __cdecl NegiconEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
 	a[0] = 1;
@@ -3126,7 +2980,7 @@ u32 __cdecl NegiconEnterConfigMode(u8 *a)
 }
 
 //----- (00406AA0) --------------------------------------------------------
-void sio2cmdInitNegicon(void)
+static void sio2cmdInitNegicon(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -3143,7 +2997,7 @@ void sio2cmdInitNegicon(void)
 }
 
 //----- (00406B50) --------------------------------------------------------
-void __cdecl JoystickReadData(u8 *a)
+static void __cdecl JoystickReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -3157,7 +3011,7 @@ void __cdecl JoystickReadData(u8 *a)
 }
 
 //----- (00406B80) --------------------------------------------------------
-u32 __cdecl JoystickGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl JoystickGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
@@ -3165,31 +3019,31 @@ u32 __cdecl JoystickGetPortCtrl1(u32 a, u32 b)
 }
 
 //----- (00406BA0) --------------------------------------------------------
-u32 __cdecl JoystickGetPortCtrl2(u32 a)
+static u32 __cdecl JoystickGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406BC0) --------------------------------------------------------
-u32 JoystickRegData(void)
+static u32 JoystickRegData(void)
 {
 	return 0x240940;
 }
 
 //----- (00406BCC) --------------------------------------------------------
-u32 JoystickSize1(void)
+static u32 JoystickSize1(void)
 {
 	return 9;
 }
 
 //----- (00406BD4) --------------------------------------------------------
-u32 JoystickSize2(void)
+static u32 JoystickSize2(void)
 {
 	return 9;
 }
 
 //----- (00406BDC) --------------------------------------------------------
-u32 __cdecl JoystickEnterConfigMode(u8 *a)
+static u32 __cdecl JoystickEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
 	a[0] = 1;
@@ -3204,7 +3058,7 @@ u32 __cdecl JoystickEnterConfigMode(u8 *a)
 }
 
 //----- (00406C10) --------------------------------------------------------
-void sio2cmdInitJoystick(void)
+static void sio2cmdInitJoystick(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -3221,7 +3075,7 @@ void sio2cmdInitJoystick(void)
 }
 
 //----- (00406CC0) --------------------------------------------------------
-void __cdecl KonamiGunReadData(u8 *a)
+static void __cdecl KonamiGunReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -3231,7 +3085,7 @@ void __cdecl KonamiGunReadData(u8 *a)
 }
 
 //----- (00406CE4) --------------------------------------------------------
-u32 __cdecl KonamiGunGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl KonamiGunGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
@@ -3239,31 +3093,31 @@ u32 __cdecl KonamiGunGetPortCtrl1(u32 a, u32 b)
 }
 
 //----- (00406D04) --------------------------------------------------------
-u32 __cdecl KonamiGunGetPortCtrl2(u32 a)
+static u32 __cdecl KonamiGunGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406D24) --------------------------------------------------------
-u32 KonamiGunRegData(void)
+static u32 KonamiGunRegData(void)
 {
 	return 0x140540;
 }
 
 //----- (00406D30) --------------------------------------------------------
-u32 KonamiGunSize1(void)
+static u32 KonamiGunSize1(void)
 {
 	return 5;
 }
 
 //----- (00406D38) --------------------------------------------------------
-u32 KonamiGunSize2(void)
+static u32 KonamiGunSize2(void)
 {
 	return 5;
 }
 
 //----- (00406D40) --------------------------------------------------------
-u32 __cdecl KonamiGunEnterConfigMode(u8 *a)
+static u32 __cdecl KonamiGunEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
 	a[0] = 1;
@@ -3274,7 +3128,7 @@ u32 __cdecl KonamiGunEnterConfigMode(u8 *a)
 }
 
 //----- (00406D64) --------------------------------------------------------
-void sio2cmdInitKonamiGun(void)
+static void sio2cmdInitKonamiGun(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -3291,7 +3145,7 @@ void sio2cmdInitKonamiGun(void)
 }
 
 //----- (00406E10) --------------------------------------------------------
-void __cdecl NamcoGunReadData(u8 *a)
+static void __cdecl NamcoGunReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -3305,7 +3159,7 @@ void __cdecl NamcoGunReadData(u8 *a)
 }
 
 //----- (00406E40) --------------------------------------------------------
-u32 __cdecl NamcoGunGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl NamcoGunGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
@@ -3313,31 +3167,31 @@ u32 __cdecl NamcoGunGetPortCtrl1(u32 a, u32 b)
 }
 
 //----- (00406E60) --------------------------------------------------------
-u32 __cdecl NamcoGunGetPortCtrl2(u32 a)
+static u32 __cdecl NamcoGunGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00406E80) --------------------------------------------------------
-u32 NamcoGunRegData(void)
+static u32 NamcoGunRegData(void)
 {
 	return 0x240940;
 }
 
 //----- (00406E8C) --------------------------------------------------------
-u32 NamcoGunSize1(void)
+static u32 NamcoGunSize1(void)
 {
 	return 9;
 }
 
 //----- (00406E94) --------------------------------------------------------
-u32 NamcoGunSize2(void)
+static u32 NamcoGunSize2(void)
 {
 	return 9;
 }
 
 //----- (00406E9C) --------------------------------------------------------
-u32 __cdecl NamcoGunEnterConfigMode(u8 *a)
+static u32 __cdecl NamcoGunEnterConfigMode(u8 *a)
 {
 	a[1] = 0x43;
 	a[0] = 1;
@@ -3352,7 +3206,7 @@ u32 __cdecl NamcoGunEnterConfigMode(u8 *a)
 }
 
 //----- (00406ED0) --------------------------------------------------------
-void sio2cmdInitNamcoGun(void)
+static void sio2cmdInitNamcoGun(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -3369,7 +3223,7 @@ void sio2cmdInitNamcoGun(void)
 }
 
 //----- (00406F80) --------------------------------------------------------
-void __cdecl JogconReadData(u8 *a)
+static void __cdecl JogconReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -3387,7 +3241,7 @@ void __cdecl JogconReadData(u8 *a)
 }
 
 //----- (00406FC0) --------------------------------------------------------
-u32 __cdecl JogconGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl JogconGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
@@ -3395,31 +3249,31 @@ u32 __cdecl JogconGetPortCtrl1(u32 a, u32 b)
 }
 
 //----- (00406FE0) --------------------------------------------------------
-u32 __cdecl JogconGetPortCtrl2(u32 a)
+static u32 __cdecl JogconGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00407000) --------------------------------------------------------
-u32 JogconRegData(void)
+static u32 JogconRegData(void)
 {
 	return 0x340D40;
 }
 
 //----- (0040700C) --------------------------------------------------------
-u32 JogconSize1(void)
+static u32 JogconSize1(void)
 {
 	return 13;
 }
 
 //----- (00407014) --------------------------------------------------------
-u32 JogconSize2(void)
+static u32 JogconSize2(void)
 {
 	return 13;
 }
 
 //----- (0040701C) --------------------------------------------------------
-u32 __cdecl JogconEnterConfigMode(u8 *a)
+static u32 __cdecl JogconEnterConfigMode(u8 *a)
 {
 	a[1] = 67;
 	a[0] = 1;
@@ -3438,7 +3292,7 @@ u32 __cdecl JogconEnterConfigMode(u8 *a)
 }
 
 //----- (00407060) --------------------------------------------------------
-void sio2cmdInitJogcon(void)
+static void sio2cmdInitJogcon(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -3455,7 +3309,7 @@ void sio2cmdInitJogcon(void)
 }
 
 //----- (00407110) --------------------------------------------------------
-void __cdecl ConfigReadData(u8 *a)
+static void __cdecl ConfigReadData(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x42;
@@ -3469,7 +3323,7 @@ void __cdecl ConfigReadData(u8 *a)
 }
 
 //----- (00407144) --------------------------------------------------------
-u32 __cdecl ConfigGetPortCtrl1(u32 a, u32 b)
+static u32 __cdecl ConfigGetPortCtrl1(u32 a, u32 b)
 {
 	(void)b;
 
@@ -3477,31 +3331,31 @@ u32 __cdecl ConfigGetPortCtrl1(u32 a, u32 b)
 }
 
 //----- (00407164) --------------------------------------------------------
-u32 __cdecl ConfigGetPortCtrl2(u32 a)
+static u32 __cdecl ConfigGetPortCtrl2(u32 a)
 {
 	return a ? 0x2012C : 0x20014;
 }
 
 //----- (00407184) --------------------------------------------------------
-u32 ConfigRegData(void)
+static u32 ConfigRegData(void)
 {
 	return 0x240940;
 }
 
 //----- (00407190) --------------------------------------------------------
-u32 ConfigSize1(void)
+static u32 ConfigSize1(void)
 {
 	return 9;
 }
 
 //----- (00407198) --------------------------------------------------------
-u32 ConfigSize2(void)
+static u32 ConfigSize2(void)
 {
 	return 9;
 }
 
 //----- (004071A0) --------------------------------------------------------
-u32 __cdecl ConfigExitConfigMode(u8 *a)
+static u32 __cdecl ConfigExitConfigMode(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x43;
@@ -3516,7 +3370,7 @@ u32 __cdecl ConfigExitConfigMode(u8 *a)
 }
 
 //----- (004071D8) --------------------------------------------------------
-u32 __cdecl ConfigQueryModel(u8 *a)
+static u32 __cdecl ConfigQueryModel(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x45;
@@ -3531,7 +3385,7 @@ u32 __cdecl ConfigQueryModel(u8 *a)
 }
 
 //----- (00407210) --------------------------------------------------------
-u32 __cdecl ConfigQueryAct(u8 *a)
+static u32 __cdecl ConfigQueryAct(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x46;
@@ -3546,7 +3400,7 @@ u32 __cdecl ConfigQueryAct(u8 *a)
 }
 
 //----- (00407248) --------------------------------------------------------
-u32 __cdecl ConfigQueryComb(u8 *a)
+static u32 __cdecl ConfigQueryComb(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x47;
@@ -3561,7 +3415,7 @@ u32 __cdecl ConfigQueryComb(u8 *a)
 }
 
 //----- (00407280) --------------------------------------------------------
-u32 __cdecl ConfigQueryMode(u8 *a)
+static u32 __cdecl ConfigQueryMode(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x4C;
@@ -3576,7 +3430,7 @@ u32 __cdecl ConfigQueryMode(u8 *a)
 }
 
 //----- (004072B8) --------------------------------------------------------
-u32 __cdecl ConfigQueryButtonMask(u8 *a)
+static u32 __cdecl ConfigQueryButtonMask(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x41;
@@ -3591,7 +3445,7 @@ u32 __cdecl ConfigQueryButtonMask(u8 *a)
 }
 
 //----- (004072F0) --------------------------------------------------------
-u32 __cdecl ConfigSetButtonInfo(u8 *a)
+static u32 __cdecl ConfigSetButtonInfo(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x4F;
@@ -3606,7 +3460,7 @@ u32 __cdecl ConfigSetButtonInfo(u8 *a)
 }
 
 //----- (00407324) --------------------------------------------------------
-u32 __cdecl ConfigSetVrefParam(u8 *a)
+static u32 __cdecl ConfigSetVrefParam(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x40;
@@ -3621,7 +3475,7 @@ u32 __cdecl ConfigSetVrefParam(u8 *a)
 }
 
 //----- (00407358) --------------------------------------------------------
-u32 __cdecl ConfigSetMainMode(u8 *a)
+static u32 __cdecl ConfigSetMainMode(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x44;
@@ -3636,7 +3490,7 @@ u32 __cdecl ConfigSetMainMode(u8 *a)
 }
 
 //----- (0040738C) --------------------------------------------------------
-u32 __cdecl ConfigSetSetActAlign(u8 *a)
+static u32 __cdecl ConfigSetSetActAlign(u8 *a)
 {
 	a[0] = 1;
 	a[1] = 0x4D;
@@ -3651,7 +3505,7 @@ u32 __cdecl ConfigSetSetActAlign(u8 *a)
 }
 
 //----- (004073C0) --------------------------------------------------------
-void sio2cmdInitConfig(void)
+static void sio2cmdInitConfig(void)
 {
 	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
@@ -3677,133 +3531,133 @@ void sio2cmdInitConfig(void)
 }
 
 //----- (004074B0) --------------------------------------------------------
-void *__cdecl RpcPadInit(u32 *data)
+static void *__cdecl RpcPadInit(u32 *data)
 {
 	data[3] = padInit((void *)data[4], data[5]);
 	return data;
 }
 
 //----- (004074E8) --------------------------------------------------------
-void *__cdecl RpcPadEnd(u32 *data)
+static void *__cdecl RpcPadEnd(u32 *data)
 {
 	data[3] = padEnd();
 	return data;
 }
 
 //----- (00407514) --------------------------------------------------------
-void *__cdecl RpcSetVerbose(u32 *data)
+static void *__cdecl RpcSetVerbose(u32 *data)
 {
 	data[2] = padSetVerbose(data[1]);
 	return data;
 }
 
 //----- (00407548) --------------------------------------------------------
-void *__cdecl RpcGetModVersion(u32 *data)
+static void *__cdecl RpcGetModVersion(u32 *data)
 {
 	data[3] = padGetVersion();
 	return data;
 }
 
 //----- (00407574) --------------------------------------------------------
-void *__cdecl RpcPadOpen(u32 *data)
+static void *__cdecl RpcPadOpen(u32 *data)
 {
 	data[3] = padPortOpen(data[1], data[2], data[4], (struct libpad_dma_act_direct_state **)data + 5);
 	return data;
 }
 
 //----- (004075B0) --------------------------------------------------------
-void *__cdecl RpcPadClose(u32 *data)
+static void *__cdecl RpcPadClose(u32 *data)
 {
 	data[3] = padPortClose(data[1], data[2], data[4]);
 	return data;
 }
 
 //----- (004075EC) --------------------------------------------------------
-void *__cdecl RpcPadInfoAct(u32 *data)
+static void *__cdecl RpcPadInfoAct(u32 *data)
 {
 	data[5] = padInfoAct(data[1], data[2], data[3], data[4]);
 	return data;
 }
 
 //----- (0040762C) --------------------------------------------------------
-void *__cdecl RpcPadInfoComb(u32 *data)
+static void *__cdecl RpcPadInfoComb(u32 *data)
 {
 	data[5] = padInfoComb(data[1], data[2], data[3], data[4]);
 	return data;
 }
 
 //----- (0040766C) --------------------------------------------------------
-void *__cdecl RpcPadInfoMode(u32 *data)
+static void *__cdecl RpcPadInfoMode(u32 *data)
 {
 	data[5] = padInfoMode(data[1], data[2], data[3], data[4]);
 	return data;
 }
 
 //----- (004076AC) --------------------------------------------------------
-void *__cdecl RpcPadSetMainMode(u32 *data)
+static void *__cdecl RpcPadSetMainMode(u32 *data)
 {
 	data[5] = padSetMainMode(data[1], data[2], data[3], data[4]);
 	return data;
 }
 
 //----- (004076EC) --------------------------------------------------------
-void *__cdecl RpcPadSetActDirect(u32 *data)
+static void *__cdecl RpcPadSetActDirect(u32 *data)
 {
 	data[5] = padSetActDirect(data[1], data[2], (u8 *)data + 12);
 	return data;
 }
 
 //----- (00407724) --------------------------------------------------------
-void *__cdecl RpcPadSetActAlign(u32 *data)
+static void *__cdecl RpcPadSetActAlign(u32 *data)
 {
 	data[5] = padSetActAlign(data[1], data[2], (const u8 *)data + 12);
 	return data;
 }
 
 //----- (0040775C) --------------------------------------------------------
-void *__cdecl RpcPadGetButtonMask(u32 *data)
+static void *__cdecl RpcPadGetButtonMask(u32 *data)
 {
 	data[3] = padGetButtonMask(data[1], data[2]);
 	return data;
 }
 
 //----- (00407794) --------------------------------------------------------
-void *__cdecl RpcPadSetButtonInfo(u32 *data)
+static void *__cdecl RpcPadSetButtonInfo(u32 *data)
 {
 	data[4] = padSetButtonInfo(data[1], data[2], data[3]);
 	return data;
 }
 
 //----- (004077D0) --------------------------------------------------------
-void *__cdecl RpcPadSetVrefParam(u32 *data)
+static void *__cdecl RpcPadSetVrefParam(u32 *data)
 {
 	data[7] = padSetVrefParam(data[1], data[2], (const u8 *)data + 12);
 	return data;
 }
 
 //----- (00407808) --------------------------------------------------------
-void *__cdecl RpcPadGetPortMax(u32 *data)
+static void *__cdecl RpcPadGetPortMax(u32 *data)
 {
 	data[3] = padGetPortMax();
 	return data;
 }
 
 //----- (00407834) --------------------------------------------------------
-void *__cdecl RpcPadGetSlotMax(u32 *data)
+static void *__cdecl RpcPadGetSlotMax(u32 *data)
 {
 	data[3] = padGetSlotMax(data[1]);
 	return data;
 }
 
 //----- (00407868) --------------------------------------------------------
-void *__cdecl RpcSetNonblockDma(u32 *data)
+static void *__cdecl RpcSetNonblockDma(u32 *data)
 {
 	data[2] = padSetNonblockDma(data[1]);
 	return data;
 }
 
 //----- (0040789C) --------------------------------------------------------
-void *__cdecl RpcServer(int fno, void *buffer, int length)
+static void *__cdecl RpcServer(int fno, void *buffer, int length)
 {
 	(void)fno;
 	(void)length;
@@ -3873,7 +3727,7 @@ void *__cdecl RpcServer(int fno, void *buffer, int length)
 }
 
 //----- (00407A28) --------------------------------------------------------
-void __cdecl RpcThread(void *arg)
+static void __cdecl RpcThread(void *arg)
 {
 	(void)arg;
 	if ( !sceSifCheckInit() )
@@ -3891,7 +3745,7 @@ void __cdecl RpcThread(void *arg)
 // 409DA0: using guessed type int rpc_buf[32];
 
 //----- (00407ABC) --------------------------------------------------------
-void *__cdecl RpcServerExt(int fno, void *buffer, int length)
+static void *__cdecl RpcServerExt(int fno, void *buffer, int length)
 {
 	(void)fno;
 	(void)length;
@@ -3900,7 +3754,7 @@ void *__cdecl RpcServerExt(int fno, void *buffer, int length)
 }
 
 //----- (00407AEC) --------------------------------------------------------
-void __cdecl RpcThreadExt(void *arg)
+static void __cdecl RpcThreadExt(void *arg)
 {
 	(void)arg;
 	if ( !sceSifCheckInit() )
@@ -3918,7 +3772,7 @@ void __cdecl RpcThreadExt(void *arg)
 // 409E80: using guessed type int rpcext_buf[32];
 
 //----- (00407B80) --------------------------------------------------------
-int __cdecl InitRpcServers(int prio)
+static int __cdecl InitRpcServers(int prio)
 {
 	iop_thread_t thparam; // [sp+10h] [-18h] BYREF
 
