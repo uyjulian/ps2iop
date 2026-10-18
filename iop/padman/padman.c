@@ -708,7 +708,6 @@ void __cdecl __noreturn MainThread(void *arg)
 	signed __int32 port; // $s3
 	signed __int32 slot; // $s1
 	padState_t *pstate; // $s0
-	u32 flag_to_set; // $a1
 
 	(void)arg;
 	while ( 1 )
@@ -723,6 +722,8 @@ void __cdecl __noreturn MainThread(void *arg)
 				pdSetActive(port, slot, 0);
 				if ( ((openSlots[port] >> slot) & 1) != 0 )
 				{
+					u32 flag_to_set; // $a1
+
 					pstate = &g_pad_state[port][slot];
 					pstate->stat70bit = pdGetStat70bit(port, slot);
 					if ( pstate->runTask )
@@ -1235,7 +1236,6 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 	u32 retval_r; // $s3
 	u32 p; // $s1
 	u32 s; // $s0
-	padState_t *pstate; // $a1
 	int i; // $a0
 
 	retval_r = 0;
@@ -1245,6 +1245,8 @@ u32 __cdecl ActDirectTotal(u32 port, u32 slot)
 		{
 			if ( (port != p || slot != s) && ((openSlots[p] >> s) & 1) != 0 )
 			{
+				padState_t *pstate; // $a1
+
 				pstate = &g_pad_state[p][s];
 				if ( pstate->modeCurId )
 					for ( i = 0; i < pstate->ee_actDirectSize; i += 1 )
@@ -1262,26 +1264,20 @@ u32 __cdecl CheckAirDirectTotal(u32 port, u32 slot, u8 *actData)
 	u32 total; // $s3
 	padState_t *pstate; // $s2
 	int i; // $s0
-	int itmp; // $v1
-	int totaltmp; // $v1
 
 	total = ActDirectTotal(port, slot);
 	pstate = &g_pad_state[port][slot];
 	for ( i = 0; i < 6; i += 1 )
 	{
-		itmp = pstate->ee_actAlignData[i];
-		if ( itmp != 255 && actData[itmp] )
+		if ( pstate->ee_actAlignData[i] != 255 && actData[pstate->ee_actAlignData[i]] )
 		{
-			totaltmp = total + pstate->actData[itmp][3];
-			if ( totaltmp < 61 )
+			total += pstate->actData[pstate->ee_actAlignData[i]][3];
+			if ( (int)total > 60 )
 			{
-				total = totaltmp;
-			}
-			else
-			{
+				total -= pstate->actData[pstate->ee_actAlignData[i]][3];
 				if ( g_padman_verbose )
 					Kprintf("padman: Over Consumpt Max [%d][%d]\n", port, slot);
-				actData[itmp] = 0;
+				actData[pstate->ee_actAlignData[i]] = 0;
 			}
 		}
 	}
@@ -1549,7 +1545,6 @@ int __cdecl ParseParams(int argc, char *argv[])
 	int new_thpri_hi; // $s3
 	int new_thpri_lo; // $s2
 	int i; // $s4
-	int thparam_after; // $s0
 
 	new_thpri_hi = 20;
 	new_thpri_lo = 46;
@@ -1557,6 +1552,8 @@ int __cdecl ParseParams(int argc, char *argv[])
 	{
 		if ( !strncmp("thpri=", argv[i], 6) )
 		{
+			int thparam_after; // $s0
+
 			thparam_after = (int)(argv[i] + 6);
 			if ( (look_ctype_table(*(_BYTE *)thparam_after) & 4) != 0 )
 			{
