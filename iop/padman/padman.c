@@ -1560,7 +1560,7 @@ int __cdecl ParseParams(int argc, char *argv[])
 				new_thpri_hi = strtol((const char *)thparam_after, NULL, 10);
 				if ( (unsigned int)(new_thpri_hi - 9) >= 0x73 )
 				{
-					printf("PADMAN : invalid priority %d\n");
+					printf("PADMAN : invalid priority %d\n", new_thpri_hi);
 					return 0;
 				}
 			}
@@ -1575,7 +1575,7 @@ int __cdecl ParseParams(int argc, char *argv[])
 			}
 			else
 			{
-				printf(" SDR driver error: invalid priority %d\n");
+				printf(" SDR driver error: invalid priority %d\n", new_thpri_lo);
 				return 0;
 			}
 		}
