@@ -711,7 +711,7 @@ void __cdecl __noreturn MainThread(void *arg)
 	while ( 1 )
 	{
 		mainThreadCount += 1;
-		if ( mainThreadCount == 3 * ((mainThreadCount / 3) - (mainThreadCount >> 31)) )
+		if ( (unsigned int)mainThreadCount == 3 * (((unsigned int)mainThreadCount / 3) - ((unsigned int)mainThreadCount >> 31)) )
 			sio2_mtap_update_slots();
 		for ( port = 0; port < 2; port += 1 )
 		{
@@ -3200,18 +3200,18 @@ u32 __cdecl JoystickEnterConfigMode(u8 *a)
 //----- (00406C10) --------------------------------------------------------
 void sio2cmdInitJoystick(void)
 {
-	sio2Cmds_t v0; // [sp+10h] [-48h] BYREF
+	sio2Cmds_t s; // [sp+10h] [-48h] BYREF
 
-	v0.id = 5;
-	v0.readdata = JoystickReadData;
-	v0.getportctrl1 = JoystickGetPortCtrl1;
-	v0.getportctrl2 = JoystickGetPortCtrl2;
-	v0.reg_data = JoystickRegData;
-	v0.size1 = JoystickSize1;
-	v0.size2 = JoystickSize2;
-	v0.enterconfigmode = JoystickEnterConfigMode;
-	memset(&v0.exitconfigmode, 0, 40);
-	SetupCmds(&v0);
+	s.id = 5;
+	s.readdata = JoystickReadData;
+	s.getportctrl1 = JoystickGetPortCtrl1;
+	s.getportctrl2 = JoystickGetPortCtrl2;
+	s.reg_data = JoystickRegData;
+	s.size1 = JoystickSize1;
+	s.size2 = JoystickSize2;
+	s.enterconfigmode = JoystickEnterConfigMode;
+	memset(&s.exitconfigmode, 0, 40);
+	SetupCmds(&s);
 }
 
 //----- (00406CC0) --------------------------------------------------------
@@ -3860,7 +3860,7 @@ void *__cdecl RpcServer(int fno, void *buffer, int length)
 			RpcSetNonblockDma((u32 *)buffer);
 			break;
 		default:
-			printf("invalid function code (%03x)\n", *(_DWORD *)buffer);
+			printf("invalid function code (%03x)\n", (unsigned int)*(_DWORD *)buffer);
 			break;
 	}
 	return buffer;
