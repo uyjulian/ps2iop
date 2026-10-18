@@ -167,10 +167,10 @@ IRX_ID("padman", 4, 34);
 
 u32 __fastcall ApplyActDirectFromDmaBuf(padState_t *pstate);
 void __cdecl WaitClearEvent(int eventflag, u32 bits);
-s32 __cdecl VbReferThreadStatus(vblankData_t *vData);
-void __cdecl DeleteThreadsEventFlag(vblankData_t *vbdat);
-u32 __cdecl GetThreadsStatus(padState_t *pstate);
-void __cdecl DeleteThreads(padState_t *pstate);
+s32 __cdecl VbReferThreadStatus(const vblankData_t *vData);
+void __cdecl DeleteThreadsEventFlag(const vblankData_t *vbdat);
+u32 __cdecl GetThreadsStatus(const padState_t *pstate);
+void __cdecl DeleteThreads(const padState_t *pstate);
 void __cdecl ee_dma_send_completion_cb(void *userdata);
 void DmaSendEE(void);
 void __cdecl shiftarray(u8 *buf);
@@ -221,7 +221,7 @@ u32 __cdecl padGetSlotMax(u32 port);
 int padGetVersion(void);
 int __cdecl padSetVerbose(int val);
 int __cdecl padSetNonblockDma(int val);
-u32 __cdecl readStat6cBit(u32 bit, sio2_transfer_data_t *td);
+u32 __cdecl readStat6cBit(u32 bit, const sio2_transfer_data_t *td);
 void pdReset(void);
 void __cdecl do_set_fixme_used_4_pad(int port, int slot, u32 val);
 u32 __cdecl pdSetActive(u32 port, u32 slot, u32 active);
@@ -392,8 +392,10 @@ vblankData_t vblankdata; // weak
 int g_readxfertimer_timid; // idb
 int g_readxfertimer_irq; // idb
 int padman_init; // weak
+#ifdef DEAD_CODE
 int g_padman_unk_40928C; // weak
 int g_padman_ee_addr; // weak
+#endif
 int thpri_hi; // weak
 int thpri_lo; // idb
 int g_padman_nonblock_dma; // weak
@@ -451,7 +453,7 @@ void __cdecl WaitClearEvent(int eventflag, u32 bits)
 // 40006C: using guessed type iop_thread_info_t tinfo;
 
 //----- (004000E4) --------------------------------------------------------
-s32 __cdecl VbReferThreadStatus(vblankData_t *vData)
+s32 __cdecl VbReferThreadStatus(const vblankData_t *vData)
 {
 	u32 ret2; // $s0
 	iop_thread_info_t tinfo; // [sp+10h] [-48h] BYREF
@@ -463,7 +465,7 @@ s32 __cdecl VbReferThreadStatus(vblankData_t *vData)
 }
 
 //----- (00400164) --------------------------------------------------------
-void __cdecl DeleteThreadsEventFlag(vblankData_t *vbdat)
+void __cdecl DeleteThreadsEventFlag(const vblankData_t *vbdat)
 {
 	DeleteThread(vbdat->tid_1);
 	DeleteThread(vbdat->tid_2);
@@ -471,7 +473,7 @@ void __cdecl DeleteThreadsEventFlag(vblankData_t *vbdat)
 }
 
 //----- (004001A8) --------------------------------------------------------
-u32 __cdecl GetThreadsStatus(padState_t *pstate)
+u32 __cdecl GetThreadsStatus(const padState_t *pstate)
 {
 	int count; // $s0
 	iop_thread_info_t tinfo; // [sp+10h] [-48h] BYREF
@@ -487,7 +489,7 @@ u32 __cdecl GetThreadsStatus(padState_t *pstate)
 }
 
 //----- (004002D8) --------------------------------------------------------
-void __cdecl DeleteThreads(padState_t *pstate)
+void __cdecl DeleteThreads(const padState_t *pstate)
 {
 	DeleteThread(pstate->updatepadTid);
 	DeleteThread(pstate->querypadTid);
@@ -498,6 +500,7 @@ void __cdecl DeleteThreads(padState_t *pstate)
 }
 
 //----- (00400340) --------------------------------------------------------
+// cppcheck-suppress constParameterCallback
 void __cdecl ee_dma_send_completion_cb(void *userdata)
 {
 	iSignalSema((int)userdata);
@@ -1638,7 +1641,9 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 
 	if ( padman_init == 1 )
 		padEnd();
+#ifdef DEAD_CODE
 	g_padman_unk_40928C = 0;
+#endif
 	g_padman_verbose = 1;
 	vblankdata.init = 0;
 	vblankdata.stopTransfer = 1;
@@ -1646,7 +1651,11 @@ s32 __cdecl padInit(void *ee_addr, int timer_interval)
 	g_padman_nonblock_dma = 0;
 	g_readxfertimer_val = timer_interval;
 	g_sema = -1;
+#ifdef DEAD_CODE
 	g_padman_ee_addr = (int)ee_addr;
+#else
+	(void)ee_addr;
+#endif
 	sio2cmdReset();
 	sio2cmdInitFindPads();
 	sio2cmdInitMouse();
@@ -1956,7 +1965,7 @@ u32 __cdecl padGetModeConfig(u32 port, u32 slot)
 //----- (00404158) --------------------------------------------------------
 s32 __cdecl padInfoAct(u32 port, u32 slot, s32 act, u32 val)
 {
-	padState_t *pstate; // $v1
+	const padState_t *pstate; // $v1
 
 	pstate = &g_pad_state[port][slot];
 	if ( pstate->currentTask != 1 || pstate->modeConfig < 2u )
@@ -1983,7 +1992,7 @@ s32 __cdecl padInfoAct(u32 port, u32 slot, s32 act, u32 val)
 //----- (00404258) --------------------------------------------------------
 s32 __cdecl padInfoComb(u32 port, u32 slot, s32 val1, u32 val2)
 {
-	padState_t *pstate; // $v1
+	const padState_t *pstate; // $v1
 
 	pstate = &g_pad_state[port][slot];
 	if ( pstate->currentTask != 1 )
@@ -2013,7 +2022,7 @@ s32 __cdecl padInfoComb(u32 port, u32 slot, s32 val1, u32 val2)
 //----- (00404344) --------------------------------------------------------
 s32 __cdecl padInfoMode(u32 port, u32 slot, s32 val1, u32 val2)
 {
-	padState_t *pstate; // $v1
+	const padState_t *pstate; // $v1
 
 	pstate = &g_pad_state[port][slot];
 	if ( pstate->currentTask != 1 || pstate->reqState == 2 )
@@ -2131,7 +2140,7 @@ u32 __cdecl padSetButtonInfo(u32 port, u32 slot, u32 info)
 //----- (0040484C) --------------------------------------------------------
 u32 __cdecl padGetButtonMask(u32 port, u32 slot)
 {
-	padState_t *pstate; // $a1
+	const padState_t *pstate; // $a1
 
 	pstate = &g_pad_state[port][slot];
 	return ( pstate->currentTask == 1 && pstate->modeConfig >= 2u && pstate->model >= 2u ) ? (pstate->buttonMask[0] + (pstate->buttonMask[1] << 8) + (pstate->buttonMask[2] << 16) + (pstate->buttonMask[3] << 24)) : 0;
@@ -2172,7 +2181,7 @@ int __cdecl padSetNonblockDma(int val)
 // 40929C: using guessed type int g_padman_nonblock_dma;
 
 //----- (00404950) --------------------------------------------------------
-u32 __cdecl readStat6cBit(u32 bit, sio2_transfer_data_t *td)
+u32 __cdecl readStat6cBit(u32 bit, const sio2_transfer_data_t *td)
 {
 	return (td->stat6c & (0x10000 << bit)) != 0;
 }
