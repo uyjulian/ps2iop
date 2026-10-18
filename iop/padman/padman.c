@@ -367,7 +367,7 @@ void *__cdecl RpcPadSetButtonInfo(u32 *data);
 void *__cdecl RpcPadSetVrefParam(u32 *data);
 void *__cdecl RpcPadGetPortMax(u32 *data);
 void *__cdecl RpcPadGetSlotMax(u32 *data);
-void *__cdecl RpcSetNonblockDma(u32 *a1);
+void *__cdecl RpcSetNonblockDma(u32 *data);
 void *__cdecl RpcServer(int fno, void *buffer, int length);
 void __cdecl RpcThread(void *arg);
 void *__cdecl RpcServerExt(int fno, void *buffer, int length);
@@ -1886,6 +1886,22 @@ s32 __cdecl padPortClose(s32 port, s32 slot, s32 wait)
 
 #define BSWAP16(x) ((((unsigned short int)x) << 8) | (x >> 8))
 
+#define EEDATA_SET_OFFSET(bits, offset) \
+	do \
+	{ \
+		if ( (swapval2 & bits) ) \
+		{ \
+			if ( !eedata->data[offset] ) \
+				eedata->data[offset] = 1; \
+		} \
+		else \
+		{ \
+			if ( eedata->data[offset] ) \
+				eedata->data[offset] = 0; \
+		} \
+	} \
+	while (0)
+
 //----- (00403D48) --------------------------------------------------------
 u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, ee_paddata_t *eedata)
 {
@@ -1916,126 +1932,18 @@ u32 __cdecl padSetupEEButtonData(u32 port, u32 slot, ee_paddata_t *eedata)
 	if ( pstate->modeCurId != 121 )
 		return 32;
 	swapval2 = ~BSWAP16(*(_WORD *)&eedata->data[2]);
-	if ( (swapval2 & 0x2000) != 0 )
-	{
-		if ( !eedata->data[8] )
-			eedata->data[8] = 1;
-	}
-	else
-	{
-		if ( eedata->data[8] )
-			eedata->data[8] = 0;
-	}
-	if ( swapval2 & 0x8000 )
-	{
-		if ( !eedata->data[9] )
-			eedata->data[9] = 1;
-	}
-	else
-	{
-		if ( eedata->data[9] )
-			eedata->data[9] = 0;
-	}
-	if ( swapval2 & 0x1000 )
-	{
-		if ( !eedata->data[10] )
-			eedata->data[10] = 1;
-	}
-	else
-	{
-		if ( eedata->data[10] )
-			eedata->data[10] = 0;
-	}
-	if ( swapval2 & 0x4000 )
-	{
-		if ( !eedata->data[11] )
-			eedata->data[11] = 1;
-	}
-	else
-	{
-		if ( eedata->data[11] )
-			eedata->data[11] = 0;
-	}
-	if ( swapval2 & 0x10 )
-	{
-		if ( !eedata->data[12] )
-			eedata->data[12] = 1;
-	}
-	else
-	{
-		if ( eedata->data[12] )
-			eedata->data[12] = 0;
-	}
-	if ( swapval2 & 0x20 )
-	{
-		if ( !eedata->data[13] )
-			eedata->data[13] = 1;
-	}
-	else
-	{
-		if ( eedata->data[13] )
-			eedata->data[13] = 0;
-	}
-	if ( swapval2 & 0x40 )
-	{
-		if ( !eedata->data[14] )
-			eedata->data[14] = 1;
-	}
-	else
-	{
-		if ( eedata->data[14] )
-			eedata->data[14] = 0;
-	}
-	if ( swapval2 & 0x80 )
-	{
-		if ( !eedata->data[15] )
-			eedata->data[15] = 1;
-	}
-	else
-	{
-		if ( eedata->data[15] )
-			eedata->data[15] = 0;
-	}
-	if ( swapval2 & 4 )
-	{
-		if ( !eedata->data[16] )
-			eedata->data[16] = 1;
-	}
-	else
-	{
-		if ( eedata->data[16] )
-			eedata->data[16] = 0;
-	}
-	if ( swapval2 & 8 )
-	{
-		if ( !eedata->data[17] )
-			eedata->data[17] = 1;
-	}
-	else
-	{
-		if ( eedata->data[17] )
-			eedata->data[17] = 0;
-	}
-	if ( swapval2 & 1 )
-	{
-		if ( !eedata->data[18] )
-			eedata->data[18] = 1;
-	}
-	else
-	{
-		if ( eedata->data[18] )
-			eedata->data[18] = 0;
-	}
-	if ( swapval2 & 2 )
-	{
-		if ( !eedata->data[19] )
-			eedata->data[19] = 1;
-	}
-	else
-	{
-		if ( eedata->data[19] )
-			eedata->data[19] = 0;
-	}
+	EEDATA_SET_OFFSET(0x2000, 8);
+	EEDATA_SET_OFFSET(0x8000, 9);
+	EEDATA_SET_OFFSET(0x1000, 10);
+	EEDATA_SET_OFFSET(0x4000, 11);
+	EEDATA_SET_OFFSET(0x10, 12);
+	EEDATA_SET_OFFSET(0x20, 13);
+	EEDATA_SET_OFFSET(0x40, 14);
+	EEDATA_SET_OFFSET(0x80, 15);
+	EEDATA_SET_OFFSET(4, 16);
+	EEDATA_SET_OFFSET(8, 17);
+	EEDATA_SET_OFFSET(1, 18);
+	EEDATA_SET_OFFSET(2, 19);
 	return 32;
 }
 
@@ -3882,10 +3790,10 @@ void *__cdecl RpcPadGetSlotMax(u32 *data)
 }
 
 //----- (00407868) --------------------------------------------------------
-void *__cdecl RpcSetNonblockDma(u32 *a1)
+void *__cdecl RpcSetNonblockDma(u32 *data)
 {
-	a1[2] = padSetNonblockDma(a1[1]);
-	return a1;
+	data[2] = padSetNonblockDma(data[1]);
+	return data;
 }
 
 //----- (0040789C) --------------------------------------------------------
