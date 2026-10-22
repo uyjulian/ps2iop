@@ -216,61 +216,53 @@ void rpc_thread()
 //----- (00400310) --------------------------------------------------------
 int *__fastcall rpc_handler(int fno, void *buffer, int length)
 {
-	int Dev; // $v0
-	int *result; // $v0
-
 	(void)buffer;
 	(void)length;
 	g_in_rpc_handler = 1;
-	if ( fno == 7 )
+	switch ( fno )
 	{
-		Dev = rpc_handler_07_sceMcxReadDev((u32 *)g_rpc_buf);
-LABEL_21:
-		g_rpc_retbuf[0] = Dev;
-		goto LABEL_22;
-	}
-	if ( (unsigned int)fno < 8 )
-	{
-		if ( fno == 2 )
+	case 1:
 		{
-			Dev = rpc_handler_02_sceMcxSetInfo((u32 *)g_rpc_buf);
+			g_rpc_retbuf[0] = rpc_handler_01_sceMcxGetInfo((u32 *)g_rpc_buf);
+			break;
 		}
-		else if ( (unsigned int)fno >= 3 )
+	case 2:
 		{
-			if ( fno != 5 )
-				goto LABEL_22;
-			Dev = rpc_handler_05_sceMcxDispTrans((u32 *)g_rpc_buf);
+			g_rpc_retbuf[0] = rpc_handler_02_sceMcxSetInfo((u32 *)g_rpc_buf);
+			break;
 		}
-		else
+	case 5:
 		{
-			if ( fno != 1 )
-				goto LABEL_22;
-			Dev = rpc_handler_01_sceMcxGetInfo((u32 *)g_rpc_buf);
+			g_rpc_retbuf[0] = rpc_handler_05_sceMcxDispTrans((u32 *)g_rpc_buf);
+			break;
 		}
-		goto LABEL_21;
+	case 7:
+		{
+			g_rpc_retbuf[0] = rpc_handler_07_sceMcxReadDev((u32 *)g_rpc_buf);
+			break;
+		}
+	case 8:
+		{
+			g_rpc_retbuf[0] = rpc_handler_08_sceMcxWriteDev((u32 *)g_rpc_buf);
+			break;
+		}
+	case 12:
+		{
+			g_rpc_retbuf[0] = rpc_handler_0C((u32 *)g_rpc_buf);
+			break;
+		}
+	case 254:
+		{
+			g_rpc_retbuf[0] = rpc_handler_FE_retzero();
+			g_rpc_retbuf[1] = (unsigned __int16)g_modver_mcxserv;
+			g_rpc_retbuf[2] = *((unsigned __int16 *)mcxman_5_GetMcxModVerStruct() + 2);
+			break;
+		}
+	default:
+		break;
 	}
-	if ( fno == 12 )
-	{
-		Dev = rpc_handler_0C((u32 *)g_rpc_buf);
-		goto LABEL_21;
-	}
-	if ( (unsigned int)fno < 0xD )
-	{
-		if ( fno != 8 )
-			goto LABEL_22;
-		Dev = rpc_handler_08_sceMcxWriteDev((u32 *)g_rpc_buf);
-		goto LABEL_21;
-	}
-	if ( fno == 254 )
-	{
-		g_rpc_retbuf[0] = rpc_handler_FE_retzero();
-		g_rpc_retbuf[1] = (unsigned __int16)g_modver_mcxserv;
-		g_rpc_retbuf[2] = *((unsigned __int16 *)mcxman_5_GetMcxModVerStruct() + 2);
-	}
-LABEL_22:
-	result = g_rpc_retbuf;
 	g_in_rpc_handler = 0;
-	return result;
+	return g_rpc_retbuf;
 }
 // 400DF4: using guessed type __int16 g_modver_mcxserv;
 // 400E10: using guessed type int g_rpc_retbuf[4];
@@ -340,7 +332,6 @@ int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 	u32 port; // $s4
 	int slot; // $s5
 	int xres; // $v1
-	int result; // $v0
 	char Year; // $a2
 	__int16 yeardiv1; // $a1
 	unsigned __int16 yeardiv2; // kr00_2
@@ -355,61 +346,59 @@ int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 	flagtmp = rpcbuf[4];
 	port = *rpcbuf;
 	slot = rpcbuf[1];
-	xres = 0;
-	if ( (flagtmp & 0x16) == 0 )
-		goto LABEL_18;
-	if ( (flagtmp & 2) == 0 )
-		mcx_info.Speaker = -1;
-	if ( (rpcbuf[4] & 4) == 0 )
-		mcx_info.Infrared = -1;
-	if ( (rpcbuf[4] & 0x10) == 0 )
-		mcx_info.Led = -1;
-	result = mcxman_7_McxSetInfoSpeakerInfraredLed(port, slot, mcx_info.Speaker, mcx_info.Infrared, mcx_info.Led);
-	xres = result;
-	if ( !result )
+	if ( (flagtmp & 0x16) )
 	{
-LABEL_18:
-		if ( (rpcbuf[4] & 8) == 0 || (result = mcxman_8_McxSetInfoFlash(port, slot, mcx_info.Flash), (xres = result) == 0) )
-		{
-			if ( (rpcbuf[4] & 0x20) == 0 )
-				goto LABEL_19;
-			Year = mcx_info._Rtc.Year;
-			yeardiv1 = mcx_info._Rtc.Year / 0x64u;
-			yeardiv2 = mcx_info._Rtc.Year / 0x3E8u;
-			yeardiv3 = mcx_info._Rtc.Year / 0xAu;
-			yeardiv4 = mcx_info._Rtc.Year / 0xAu;
-			yeardiv5 = mcx_info._Rtc.Year / 0x64u / 0xA;
-			mcx_info._Rtc.Year -= mcx_info._Rtc.Month < 3u;
-			sect_buf[3] = yeardiv1 - 10 * yeardiv5 + 16 * (yeardiv2 % 0xAu);
-			sect_buf[2] = Year - 10 * yeardiv3 + 16 * (yeardiv4 % 0xAu);
-			sect_buf[1] = mcx_info._Rtc.Month % 0xAu + 16 * (mcx_info._Rtc.Month / 0xAu % 0xA);
-			sect_buf[0] = mcx_info._Rtc.Day % 0xAu + 16 * (mcx_info._Rtc.Day / 0xAu % 0xA);
-			sect_buf[6] = mcx_info._Rtc.Hour % 0xAu + 16 * (mcx_info._Rtc.Hour / 0xAu % 0xA);
-			sect_buf[5] = mcx_info._Rtc.Min % 0xAu + 16 * (mcx_info._Rtc.Min / 0xAu % 0xA);
-			sect_buf[4] = mcx_info._Rtc.Sec % 0xAu + 16 * (mcx_info._Rtc.Sec / 0xAu % 0xA);
-			sect_buf[7] = (int)(mcx_info._Rtc.Year
-												+ (mcx_info._Rtc.Year >> 2)
-												- mcx_info._Rtc.Year / 0x64u
-												+ mcx_info._Rtc.Year / 0x190u
-												+ (unsigned __int8)g_month_table[mcx_info._Rtc.Month]
-												+ mcx_info._Rtc.Day)
-									% 7
-									+ 1;
-			result = mcxman_10_McxWriteDev(port, slot, 0, NULL, 0, sect_buf, 8);
-			xres = result;
-			if ( !result )
-			{
-LABEL_19:
-				if ( (rpcbuf[4] & 1) == 0 )
-					return xres;
-				result = mcxman_11_McxSetInfoAppli(port, slot, mcx_info.AppliNo, mcx_info.AplArg);
-				xres = result;
-				if ( !result )
-					return xres;
-			}
-		}
+		if ( (flagtmp & 2) == 0 )
+			mcx_info.Speaker = -1;
+		if ( (rpcbuf[4] & 4) == 0 )
+			mcx_info.Infrared = -1;
+		if ( (rpcbuf[4] & 0x10) == 0 )
+			mcx_info.Led = -1;
+		xres = mcxman_7_McxSetInfoSpeakerInfraredLed(port, slot, mcx_info.Speaker, mcx_info.Infrared, mcx_info.Led);
+		if ( xres )
+			return xres;
 	}
-	return result;
+	if ( (rpcbuf[4] & 8) )
+	{
+		xres = mcxman_8_McxSetInfoFlash(port, slot, mcx_info.Flash);
+		if ( xres )
+			return xres;
+	}
+	if ( (rpcbuf[4] & 0x20) )
+	{
+		Year = mcx_info._Rtc.Year;
+		yeardiv1 = mcx_info._Rtc.Year / 0x64u;
+		yeardiv2 = mcx_info._Rtc.Year / 0x3E8u;
+		yeardiv3 = mcx_info._Rtc.Year / 0xAu;
+		yeardiv4 = mcx_info._Rtc.Year / 0xAu;
+		yeardiv5 = mcx_info._Rtc.Year / 0x64u / 0xA;
+		mcx_info._Rtc.Year -= mcx_info._Rtc.Month < 3u;
+		sect_buf[3] = yeardiv1 - 10 * yeardiv5 + 16 * (yeardiv2 % 0xAu);
+		sect_buf[2] = Year - 10 * yeardiv3 + 16 * (yeardiv4 % 0xAu);
+		sect_buf[1] = mcx_info._Rtc.Month % 0xAu + 16 * (mcx_info._Rtc.Month / 0xAu % 0xA);
+		sect_buf[0] = mcx_info._Rtc.Day % 0xAu + 16 * (mcx_info._Rtc.Day / 0xAu % 0xA);
+		sect_buf[6] = mcx_info._Rtc.Hour % 0xAu + 16 * (mcx_info._Rtc.Hour / 0xAu % 0xA);
+		sect_buf[5] = mcx_info._Rtc.Min % 0xAu + 16 * (mcx_info._Rtc.Min / 0xAu % 0xA);
+		sect_buf[4] = mcx_info._Rtc.Sec % 0xAu + 16 * (mcx_info._Rtc.Sec / 0xAu % 0xA);
+		sect_buf[7] = (int)(mcx_info._Rtc.Year
+											+ (mcx_info._Rtc.Year >> 2)
+											- mcx_info._Rtc.Year / 0x64u
+											+ mcx_info._Rtc.Year / 0x190u
+											+ (unsigned __int8)g_month_table[mcx_info._Rtc.Month]
+											+ mcx_info._Rtc.Day)
+								% 7
+								+ 1;
+		xres = mcxman_10_McxWriteDev(port, slot, 0, NULL, 0, sect_buf, 8);
+		if ( xres )
+			return xres;
+	}
+	if ( (rpcbuf[4] & 1) )
+	{
+		xres = mcxman_11_McxSetInfoAppli(port, slot, mcx_info.AppliNo, mcx_info.AplArg);
+		if ( xres )
+			return xres;
+	}
+	return 0;
 }
 // 400560: using guessed type SifRpcReceiveData_t rdata;
 

@@ -138,27 +138,10 @@ void mcxman_0()
 int __fastcall unusedsub_400060(_BYTE *a1, unsigned __int8 a2)
 {
 	_BYTE *v2; // $a2
-	int v3; // $v0
-	int result; // $v0
 
-	v2 = a1;
-	if ( *a1 )
-	{
-		v3 = (unsigned __int8)*a1;
-		while ( v3 != a2 )
-		{
-			v3 = (unsigned __int8)*++v2;
-			if ( !*v2 )
-				goto LABEL_5;
-		}
-	}
-	else
-	{
-LABEL_5:
-		result = -1;
-		if ( (unsigned __int8)*v2 != a2 )
-			return result;
-	}
+	for ( v2 = a1; *v2 && ((unsigned __int8)*v2) != a2; v2 += 1 )
+	if ( (unsigned __int8)*v2 != a2 )
+		return -1;
 	return v2 - a1;
 }
 
@@ -452,38 +435,33 @@ int __fastcall mcxman_10_McxWriteDev(
 	int xferres; // $v0
 
 	condtmp = 0;
-	if ( dev_nr != 2 )
-		goto LABEL_7;
-	xferres = mcxman_11_McxSetInfoAppli(port, slot, -1, 0);
-	if ( !xferres )
+	if ( dev_nr == 2 )
 	{
-		condtmp = 0;
-		if ( !g_mcxman_idata.m_sio2_outbuf[3] )
-			condtmp = g_mcxman_idata.m_sio2_outbuf[4] == 0;
-		if ( !condtmp || (xferres = mcxman_11_McxSetInfoAppli(port, slot, 0, 288)) == 0 )
-		{
-LABEL_7:
-			mcx_sio2_prepare(port, slot, 12, param_buf_sz + sect_buf_sz);
-			g_mcxman_idata.m_sio2_inbuf[2] = dev_nr;
-			memcpy(&g_mcxman_idata.m_sio2_inbuf[4], param_buf, param_buf_sz);
-			memcpy(&g_mcxman_idata.m_sio2_outbuf[param_buf_sz - 139], sect_buf, sect_buf_sz);
-			xferres = mcx_sio2_xfer(port, slot);
-			if ( !xferres )
-			{
-				xferres = 0;
-				if ( dev_nr == 2 )
-				{
-					if ( condtmp )
-					{
-						xferres = mcxman_11_McxSetInfoAppli(port, slot, 0, 288);
-						if ( !xferres )
-							return 0;
-					}
-				}
-			}
-		}
+		xferres = mcxman_11_McxSetInfoAppli(port, slot, -1, 0);
+		if ( xferres )
+			return xferres;
+		condtmp = !g_mcxman_idata.m_sio2_outbuf[3];
+		if ( condtmp )
+			condtmp = !g_mcxman_idata.m_sio2_outbuf[4];
+		if ( condtmp )
+			xferres = mcxman_11_McxSetInfoAppli(port, slot, 0, 288);
+		if ( xferres )
+			return xferres;
 	}
-	return xferres;
+	mcx_sio2_prepare(port, slot, 12, param_buf_sz + sect_buf_sz);
+	g_mcxman_idata.m_sio2_inbuf[2] = dev_nr;
+	memcpy(&g_mcxman_idata.m_sio2_inbuf[4], param_buf, param_buf_sz);
+	memcpy(&g_mcxman_idata.m_sio2_outbuf[param_buf_sz - 139], sect_buf, sect_buf_sz);
+	xferres = mcx_sio2_xfer(port, slot);
+	if ( xferres )
+		return xferres;
+	if ( dev_nr == 2 && condtmp )
+	{
+		xferres = mcxman_11_McxSetInfoAppli(port, slot, 0, 288);
+		if ( xferres )
+			return xferres;
+	}
+	return 0;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
