@@ -348,7 +348,6 @@ int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 	SifRpcReceiveData_t rdata; // [sp+20h] [-58h] BYREF
 	sceMcxTblInfo mcx_info; // [sp+40h] [-38h] BYREF
 	char sect_buf[12]; // [sp+64h] [-14h] BYREF
-	int divtmp; // [sp+70h] [-8h]
 
 	sceSifGetOtherData(&rdata, (void *)rpcbuf[5], &mcx_info, 24, 0);
 	flagtmp = rpcbuf[4];
@@ -381,7 +380,6 @@ LABEL_18:
 			mcx_info._Rtc.Year -= mcx_info._Rtc.Month < 3u;
 			sect_buf[3] = yeardiv1 - 10 * yeardiv5 + 16 * (yeardiv2 % 0xAu);
 			sect_buf[2] = Year - 10 * yeardiv3 + 16 * (yeardiv4 % 0xAu);
-			divtmp = (0xCCCCCCCD * (unsigned __int64)mcx_info._Rtc.Hour) >> 32;
 			sect_buf[1] = mcx_info._Rtc.Month % 0xAu + 16 * (mcx_info._Rtc.Month / 0xAu % 0xA);
 			sect_buf[0] = mcx_info._Rtc.Day % 0xAu + 16 * (mcx_info._Rtc.Day / 0xAu % 0xA);
 			sect_buf[6] = mcx_info._Rtc.Hour % 0xAu + 16 * (mcx_info._Rtc.Hour / 0xAu % 0xA);
