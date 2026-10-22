@@ -350,7 +350,7 @@ int __fastcall mcx_sio2_xfer(char port, s32 slot)
 		sio2_transfer(&g_mcxman_idata.m_sio2_td);
 		mcx_sio2_mc_finish();
 		USec2SysClock(0x4E20u, &g_mcxman_idata.m_sysclk);
-		SetAlarm(&g_mcxman_idata.m_sysclk, (unsigned int (__cdecl *)(void *))alarm_cb, 0);
+		SetAlarm(&g_mcxman_idata.m_sysclk, (unsigned int (__cdecl *)(void *))alarm_cb, NULL);
 		if ( (g_mcxman_idata.m_sio2_td.stat6c & 0xF000) == 4096 )
 			break;
 	}
@@ -525,7 +525,7 @@ int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval
 	xferres = mcx_sio2_xfer(port, slot);
 	WaitSema(g_mcxman_idata.m_semid);
 	USec2SysClock(0x7530u, &g_mcxman_idata.m_sysclk);
-	SetAlarm(&g_mcxman_idata.m_sysclk, (unsigned int (__cdecl *)(void *))alarm_cb, 0);
+	SetAlarm(&g_mcxman_idata.m_sysclk, (unsigned int (__cdecl *)(void *))alarm_cb, NULL);
 	result = xferres;
 	if ( !xferres )
 		return 0;
@@ -563,7 +563,7 @@ int __fastcall unusedsub_400BB0(char a1, int a2)
 		sio2_transfer(&g_mcxman_idata.m_sio2_td);
 		mcx_sio2_mc_finish();
 		USec2SysClock(0x4E20u, &g_mcxman_idata.m_sysclk);
-		SetAlarm(&g_mcxman_idata.m_sysclk, (unsigned int (__cdecl *)(void *))alarm_cb, 0);
+		SetAlarm(&g_mcxman_idata.m_sysclk, (unsigned int (__cdecl *)(void *))alarm_cb, NULL);
 		if ( (g_mcxman_idata.m_sio2_td.stat6c & 0xF000) == 4096 && g_mcxman_idata.m_sio2_outbuf[2] == 90 )
 			break;
 	}

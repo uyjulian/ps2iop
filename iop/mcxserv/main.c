@@ -133,7 +133,7 @@ int __fastcall start(int ac, const char **av)
 		{
 			if ( !strncmp("thpri=", *av, 6) )
 			{
-				thpri_tmp = strtol(*av + 6, 0, 10);
+				thpri_tmp = strtol(*av + 6, NULL, 10);
 				if ( (unsigned int)(thpri_tmp - 9) >= 0x73 )
 				{
 					thpri_tmp = 104;
@@ -148,7 +148,7 @@ int __fastcall start(int ac, const char **av)
 		thparam.option = 0;
 		thparam.thread = (void (__cdecl *)(void *))rpc_thread;
 		g_thid = CreateThread(&thparam);
-		StartThread(g_thid, 0);
+		StartThread(g_thid, NULL);
 		return 2;
 	}
 	return result;
@@ -207,7 +207,7 @@ void rpc_thread()
 	sceSifInitRpc(0);
 	ThreadId = GetThreadId();
 	sceSifSetRpcQueue(&g_rpc_qd, ThreadId);
-	sceSifRegisterRpc(&g_rpc_sd, 0x80000420, (SifRpcFunc_t)rpc_handler, g_rpc_buf, 0, 0, &g_rpc_qd);
+	sceSifRegisterRpc(&g_rpc_sd, 0x80000420, (SifRpcFunc_t)rpc_handler, g_rpc_buf, NULL, NULL, &g_rpc_qd);
 	sceSifRpcLoop(&g_rpc_qd);
 }
 // 402E20: using guessed type int g_rpc_buf[12];
@@ -395,7 +395,7 @@ LABEL_18:
 												+ mcx_info._Rtc.Day)
 									% 7
 									+ 1;
-			result = mcxman_10_McxWriteDev(port, slot, 0, 0, 0, sect_buf, 8);
+			result = mcxman_10_McxWriteDev(port, slot, 0, NULL, 0, sect_buf, 8);
 			xres = result;
 			if ( !result )
 			{
