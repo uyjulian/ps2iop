@@ -294,7 +294,7 @@ int __fastcall mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz)
 	int result; // $v0
 
 	g_mcxman_idata.m_sio2_td.regdata[1] = 0;
-	g_mcxman_idata.m_sio2_td.regdata[0] = ((port & 1) + 2) & 3 | 0x40;
+	g_mcxman_idata.m_sio2_td.regdata[0] = (((port & 1) + 2) & 3) | 0x40;
 	if ( (unsigned int)(inoutidx - 11) >= 2 )
 		inoutsz = g_inoutszpairs[inoutidx].m_sz2;
 	else
@@ -302,7 +302,7 @@ int __fastcall mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz)
 	g_mcxman_idata.m_sio2_td.in_size = inoutsz;
 	g_mcxman_idata.m_sio2_td.out_size = inoutsz;
 	g_mcxman_idata.m_sio2_inbuf[0] = 0x81;
-	g_mcxman_idata.m_sio2_td.regdata[0] = g_mcxman_idata.m_sio2_td.regdata[0] & 0xF80200FF | ((inoutsz & 0x1FF) << 18) | ((inoutsz & 0x1FF) << 8);
+	g_mcxman_idata.m_sio2_td.regdata[0] = (g_mcxman_idata.m_sio2_td.regdata[0] & 0xF80200FF) | ((inoutsz & 0x1FF) << 18) | ((inoutsz & 0x1FF) << 8);
 	result = g_inoutszpairs[inoutidx].m_sz1;
 	g_mcxman_idata.m_sio2_inbuf[1] = g_inoutszpairs[inoutidx].m_sz1;
 	return result;
@@ -584,7 +584,7 @@ int __fastcall unusedsub_400CD8(char a1, s32 a2)
 	int result; // $v0
 
 	v4 = 0;
-	g_mcxman_idata.m_sio2_td.regdata[0] = ((a1 & 1) + 2) & 3 | 0x140540;
+	g_mcxman_idata.m_sio2_td.regdata[0] = (((a1 & 1) + 2) & 3) | 0x140540;
 	g_mcxman_idata.m_sio2_td.in_size = 5;
 	g_mcxman_idata.m_sio2_td.out_size = 5;
 	g_mcxman_idata.m_sio2_td.regdata[1] = 0;
