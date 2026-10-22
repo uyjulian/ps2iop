@@ -282,6 +282,8 @@ int mcx_cleanup()
 //----- (004002CC) --------------------------------------------------------
 unsigned int __fastcall alarm_cb(void *userdata)
 {
+	(void)userdata;
+
 	iSignalSema(g_mcxman_idata.m_semid);
 	return 0;
 }
@@ -293,6 +295,7 @@ int __fastcall mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz)
 	u32 inoutsz; // $a3
 	int result; // $v0
 
+	(void)slot;
 	g_mcxman_idata.m_sio2_td.regdata[1] = 0;
 	g_mcxman_idata.m_sio2_td.regdata[0] = (((port & 1) + 2) & 3) | 0x40;
 	if ( (unsigned int)(inoutidx - 11) >= 2 )

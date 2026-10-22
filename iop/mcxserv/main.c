@@ -219,6 +219,8 @@ int *__fastcall rpc_handler(int fno, void *buffer, int length)
 	int Dev; // $v0
 	int *result; // $v0
 
+	(void)buffer;
+	(void)length;
 	g_in_rpc_handler = 1;
 	if ( fno == 7 )
 	{
