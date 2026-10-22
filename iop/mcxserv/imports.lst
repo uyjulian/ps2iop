@@ -1,0 +1,71 @@
+
+loadcore_IMPORTS_start
+I_RegisterLibraryEntries
+I_ReleaseLibraryEntries
+loadcore_IMPORTS_end
+
+intrman_IMPORTS_start
+I_CpuEnableIntr
+I_CpuSuspendIntr
+I_CpuResumeIntr
+intrman_IMPORTS_end
+
+sysclib_IMPORTS_start
+I_strncmp
+I_strtol
+sysclib_IMPORTS_end
+
+stdio_IMPORTS_start
+I_printf
+stdio_IMPORTS_end
+
+sifman_IMPORTS_start
+I_sceSifInit
+I_sceSifSetDma
+I_sceSifDmaStat
+I_sceSifCheckInit
+sifman_IMPORTS_end
+
+sifcmd_IMPORTS_start
+I_sceSifInitRpc
+I_sceSifRegisterRpc
+I_sceSifSetRpcQueue
+I_sceSifRpcLoop
+I_sceSifGetOtherData
+I_sceSifRemoveRpc
+I_sceSifRemoveRpcQueue
+sifcmd_IMPORTS_end
+
+thbase_IMPORTS_start
+I_CreateThread
+I_DeleteThread
+I_StartThread
+I_TerminateThread
+I_ChangeThreadPriority
+I_GetThreadId
+I_ReferThreadStatus
+I_DelayThread
+thbase_IMPORTS_end
+
+#define mcxman_IMPORTS_start DECLARE_IMPORT_TABLE(mcxman, 2, 1)
+#define mcxman_IMPORTS_end END_IMPORT_TABLE
+
+#define I_mcxman_5_GetMcxModVerStruct DECLARE_IMPORT(5, mcxman_5_GetMcxModVerStruct)
+#define I_mcxman_6_McxGetInfo DECLARE_IMPORT(6, mcxman_6_McxGetInfo)
+#define I_mcxman_7_McxSetInfoSpeakerInfraredLed DECLARE_IMPORT(7, mcxman_7_McxSetInfoSpeakerInfraredLed)
+#define I_mcxman_8_McxSetInfoFlash DECLARE_IMPORT(8, mcxman_8_McxSetInfoFlash)
+#define I_mcxman_9_McxReadDev DECLARE_IMPORT(9, mcxman_9_McxReadDev)
+#define I_mcxman_10_McxWriteDev DECLARE_IMPORT(10, mcxman_10_McxWriteDev)
+#define I_mcxman_11_McxSetInfoAppli DECLARE_IMPORT(11, mcxman_11_McxSetInfoAppli)
+#define I_mcxman_12_McxDispTrans DECLARE_IMPORT(12, mcxman_12_McxDispTrans)
+
+mcxman_IMPORTS_start
+I_mcxman_5_GetMcxModVerStruct
+I_mcxman_6_McxGetInfo
+I_mcxman_7_McxSetInfoSpeakerInfraredLed
+I_mcxman_8_McxSetInfoFlash
+I_mcxman_9_McxReadDev
+I_mcxman_10_McxWriteDev
+I_mcxman_11_McxSetInfoAppli
+I_mcxman_12_McxDispTrans
+mcxman_IMPORTS_end

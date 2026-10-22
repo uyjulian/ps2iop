@@ -1,0 +1,18 @@
+
+DECLARE_EXPORT_TABLE(mcxman, 2, 1)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(_retonly)
+    DECLARE_EXPORT(mcxman_5_GetMcxModVerStruct)
+    DECLARE_EXPORT(mcxman_6_McxGetInfo)
+    DECLARE_EXPORT(mcxman_7_McxSetInfoSpeakerInfraredLed)
+    DECLARE_EXPORT(mcxman_8_McxSetInfoFlash)
+    DECLARE_EXPORT(mcxman_9_McxReadDev)
+    DECLARE_EXPORT(mcxman_10_McxWriteDev)
+    DECLARE_EXPORT(mcxman_11_McxSetInfoAppli)
+    DECLARE_EXPORT(mcxman_12_McxDispTrans)
+END_EXPORT_TABLE
+
+void _retonly() {}

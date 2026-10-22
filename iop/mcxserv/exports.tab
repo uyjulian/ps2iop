@@ -1,0 +1,13 @@
+
+DECLARE_EXPORT_TABLE(mcxserv, 2, 1)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(mcxserv_5)
+DECLARE_EXPORT(_retonly)
+DECLARE_EXPORT(_retonly)
+END_EXPORT_TABLE
+
+void _retonly() {}
