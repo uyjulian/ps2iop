@@ -128,7 +128,7 @@ int __fastcall unusedsub_400060(_BYTE *a1, unsigned __int8 a2)
 {
 	_BYTE *v2; // $a2
 
-	for ( v2 = a1; *v2 && ((unsigned __int8)*v2) != a2; v2 += 1 )
+	for ( v2 = a1; *v2 && ((unsigned __int8)*v2) != a2; v2 += 1 );
 	if ( (unsigned __int8)*v2 != a2 )
 		return -1;
 	return v2 - a1;
