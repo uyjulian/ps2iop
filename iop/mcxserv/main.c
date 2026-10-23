@@ -129,18 +129,17 @@ int __fastcall start(int ac, const char **av)
 	{
 		thpri_tmp = 104;
 		CpuEnableIntr();
-		for ( i = 0; i < ac; ++av )
+		for ( i = 0; i < ac; i += 1 )
 		{
-			if ( !strncmp("thpri=", *av, 6) )
+			if ( !strncmp("thpri=", av[i], 6) )
 			{
-				thpri_tmp = strtol(*av + 6, NULL, 10);
+				thpri_tmp = strtol(av[i] + 6, NULL, 10);
 				if ( (unsigned int)(thpri_tmp - 9) >= 0x73 )
 				{
 					thpri_tmp = 104;
 					printf("mcxserv.irx: thread prority definition ignored.\n");
 				}
 			}
-			++i;
 		}
 		thparam.attr = 0x2000000;
 		thparam.stacksize = 4096;
@@ -298,8 +297,6 @@ int __fastcall rpc_handler_01_sceMcxGetInfo(u32 *rpcbuf)
 	void *dstbuf; // $a1
 	int info_tmp; // $s1
 	int trid; // $s0
-	bool trres; // dc
-	int result; // $v0
 	sceMcxTblInfo mcx_info; // [sp+10h] [-30h] BYREF
 	SifDmaTransfer_t dmat; // [sp+28h] [-18h] BYREF
 	int state; // [sp+38h] [-8h] BYREF
@@ -314,15 +311,9 @@ int __fastcall rpc_handler_01_sceMcxGetInfo(u32 *rpcbuf)
 	CpuSuspendIntr(&state);
 	trid = sceSifSetDma(&dmat, 1);
 	CpuResumeIntr(state);
-	while ( 1 )
-	{
-		trres = sceSifDmaStat(trid) < 0;
-		result = info_tmp;
-		if ( trres )
-			break;
+	while ( sceSifDmaStat(trid) >= 0 )
 		DelayThread(100);
-	}
-	return result;
+	return info_tmp;
 }
 
 //----- (00400560) --------------------------------------------------------
@@ -420,8 +411,6 @@ int __fastcall rpc_handler_07_sceMcxReadDev(u32 *rpcbuf)
 	int sz_tmp; // $v1
 	int dev_tmp; // $s1
 	int trid; // $s0
-	bool trres; // dc
-	int result; // $v0
 	SifRpcReceiveData_t rdata; // [sp+20h] [-38h] BYREF
 	SifDmaTransfer_t dmat; // [sp+40h] [-18h] BYREF
 	int state; // [sp+50h] [-8h] BYREF
@@ -437,15 +426,9 @@ int __fastcall rpc_handler_07_sceMcxReadDev(u32 *rpcbuf)
 	CpuSuspendIntr(&state);
 	trid = sceSifSetDma(&dmat, 1);
 	CpuResumeIntr(state);
-	while ( 1 )
-	{
-		trres = sceSifDmaStat(trid) < 0;
-		result = dev_tmp;
-		if ( trres )
-			break;
+	while ( sceSifDmaStat(trid) >= 0 )
 		DelayThread(100);
-	}
-	return result;
+	return dev_tmp;
 }
 // 400E20: using guessed type int g_param_buf[32];
 // 400EA0: using guessed type int g_sect_buf[2016];

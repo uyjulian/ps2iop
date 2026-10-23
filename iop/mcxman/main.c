@@ -175,21 +175,11 @@ int module_unload()
 int __fastcall unusedsub_40016C(char *a1, int a2)
 {
 	unsigned __int8 v2; // $a2
-	int v3; // $v1
-	char v4; // $v0
+	int i; // $v1
 
 	v2 = 0;
-	v3 = a2 - 1;
-	if ( a2 )
-	{
-		do
-		{
-			v4 = *a1++;
-			--v3;
-			v2 ^= v4;
-		}
-		while ( v3 != -1 );
-	}
+	for ( i = 0; i < a2; i += 1 )
+		v2 ^= a1[i];
 	return v2;
 }
 
@@ -203,28 +193,22 @@ char **mcxman_5_GetMcxModVerStruct()
 //----- (004001B0) --------------------------------------------------------
 int mcx_init()
 {
-	int idx; // $a0
-	u32 *port_ctrl2; // $v1
-	u32 *port_ctrl1; // $s0
+	int i; // $a0
 	int result; // $v0
 	iop_sema_t semaparam; // [sp+10h] [-10h] BYREF
 
 	memset(&g_mcxman_idata, 0, 148);
-	idx = 0;
-	port_ctrl2 = g_mcxman_idata.m_sio2_td.port_ctrl2;
-	port_ctrl1 = g_mcxman_idata.m_sio2_td.port_ctrl1;
-	do
+	for ( i = 0; i < 4; i += 1 )
 	{
-		*(_BYTE *)port_ctrl1 = 5;
-		*((_BYTE *)port_ctrl1 + 1) = 5;
-		*((_BYTE *)port_ctrl1 + 2) = -64;
-		*((_BYTE *)port_ctrl1++ + 3) = -1;
-		*((_BYTE *)port_ctrl2 + 2) = 2;
-		*(_WORD *)port_ctrl2 = 500;
-		++idx;
-		*port_ctrl2++ &= 0xFCFFFFFF;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 0) = 5;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 1) = 5;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 2) = -64;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 3) = -1;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl2[i]) + 0) = 0xf4;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl2[i]) + 1) = 0x01;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl2[i]) + 2) = 2;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl2[i]) + 3) &= 0xFC;
 	}
-	while ( idx < 4 );
 	g_mcxman_idata.m_sio2_td.in = g_mcxman_idata.m_sio2_inbuf;
 	g_mcxman_idata.m_sio2_td.out = g_mcxman_idata.m_sio2_outbuf;
 	semaparam.attr = 1;
@@ -315,7 +299,7 @@ int __fastcall mcx_sio2_xfer(char port, s32 slot)
 	int i; // $s0
 	int result; // $v0
 
-	for ( i = 0; i < 5; ++i )
+	for ( i = 0; i < 5; i += 1 )
 	{
 		WaitSema(g_mcxman_idata.m_semid);
 		mcx_sio2_mc_start(port, slot);
@@ -510,7 +494,7 @@ int __fastcall unusedsub_400BB0(char a1, int a2)
 	int result; // $v0
 
 	mcx_sio2_prepare(a1, a2, 8, 0);
-	for ( i = 0; i < 5; ++i )
+	for ( i = 0; i < 5; i += 1 )
 	{
 		WaitSema(g_mcxman_idata.m_semid);
 		mcx_sio2_mc_start(a1, a2);
@@ -537,17 +521,16 @@ int __fastcall unusedsub_400BB0(char a1, int a2)
 //----- (00400CD8) --------------------------------------------------------
 int __fastcall unusedsub_400CD8(char a1, s32 a2)
 {
-	int v4; // $s0
+	int i; // $s0
 	int result; // $v0
 
-	v4 = 0;
 	g_mcxman_idata.m_sio2_td.regdata[0] = (((a1 & 1) + 2) & 3) | 0x140540;
 	g_mcxman_idata.m_sio2_td.in_size = 5;
 	g_mcxman_idata.m_sio2_td.out_size = 5;
 	g_mcxman_idata.m_sio2_td.regdata[1] = 0;
 	g_mcxman_idata.m_sio2_inbuf[0] = -127;
 	g_mcxman_idata.m_sio2_inbuf[1] = 88;
-	do
+	for ( i = 0; i < 5; i += 1 )
 	{
 		WaitSema(g_mcxman_idata.m_semid);
 		mcx_sio2_mc_start(a1, a2);
@@ -555,11 +538,9 @@ int __fastcall unusedsub_400CD8(char a1, s32 a2)
 		mcx_sio2_mc_finish();
 		if ( (g_mcxman_idata.m_sio2_td.stat6c & 0xF000) == 4096 )
 			break;
-		++v4;
 	}
-	while ( v4 < 5 );
 	result = -11;
-	if ( v4 != 5 )
+	if ( i != 5 )
 		return 0;
 	return result;
 }
