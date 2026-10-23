@@ -175,9 +175,9 @@ static void mcx_init()
 	{
 		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 0) = 5;
 		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 1) = 5;
-		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 2) = -64;
-		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 3) = -1;
-		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl2[i]) + 0) = 0xf4;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 2) = 0xC0;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl1[i]) + 3) = 0xFF;
+		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl2[i]) + 0) = 0xF4;
 		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl2[i]) + 1) = 0x01;
 		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl2[i]) + 2) = 2;
 		*((_BYTE *)(&g_mcxman_idata.m_sio2_td.port_ctrl2[i]) + 3) &= 0xFC;
