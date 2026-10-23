@@ -71,10 +71,10 @@ int __fastcall _start(int ac);
 int module_unload();
 int __fastcall unusedsub_40016C(char *, int);
 char **mcxman_5_GetMcxModVerStruct();
-int mcx_init();
+void mcx_init();
 int mcx_cleanup();
 unsigned int __fastcall alarm_cb(void *userdata);
-int __fastcall mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz);
+void mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz);
 int __fastcall mcx_sio2_mc_start(char port, s32 slot);
 void mcx_sio2_mc_finish();
 int __fastcall mcx_sio2_xfer(char port, s32 slot);
@@ -177,10 +177,9 @@ char **mcxman_5_GetMcxModVerStruct()
 // 400F30: using guessed type char *g_modver;
 
 //----- (004001B0) --------------------------------------------------------
-int mcx_init()
+void mcx_init()
 {
 	int i; // $a0
-	int result; // $v0
 	iop_sema_t semaparam; // [sp+10h] [-10h] BYREF
 
 	memset(&g_mcxman_idata, 0, 148);
@@ -201,9 +200,7 @@ int mcx_init()
 	semaparam.initial = 1;
 	semaparam.max = 1;
 	semaparam.option = 0;
-	result = CreateSema(&semaparam);
-	g_mcxman_idata.m_semid = result;
-	return result;
+	g_mcxman_idata.m_semid = CreateSema(&semaparam);
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
@@ -228,22 +225,16 @@ unsigned int __fastcall alarm_cb(void *userdata)
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
 //----- (004002F4) --------------------------------------------------------
-int __fastcall mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz)
+void mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz)
 {
-	u32 inoutsz; // $a3
-	int result; // $v0
-
 	(void)slot;
 	g_mcxman_idata.m_sio2_td.regdata[1] = 0;
 	g_mcxman_idata.m_sio2_td.regdata[0] = (((port & 1) + 2) & 3) | 0x40;
-	inoutsz = ( (unsigned int)(inoutidx - 11) >= 2 ) ? g_inoutszpairs[inoutidx].m_sz2 : (bufsz + 5);
-	g_mcxman_idata.m_sio2_td.in_size = inoutsz;
-	g_mcxman_idata.m_sio2_td.out_size = inoutsz;
+	g_mcxman_idata.m_sio2_td.in_size = ( (unsigned int)(inoutidx - 11) >= 2 ) ? g_inoutszpairs[inoutidx].m_sz2 : (bufsz + 5);
+	g_mcxman_idata.m_sio2_td.out_size = g_mcxman_idata.m_sio2_td.in_size;
 	g_mcxman_idata.m_sio2_inbuf[0] = 0x81;
-	g_mcxman_idata.m_sio2_td.regdata[0] = (g_mcxman_idata.m_sio2_td.regdata[0] & 0xF80200FF) | ((inoutsz & 0x1FF) << 18) | ((inoutsz & 0x1FF) << 8);
-	result = g_inoutszpairs[inoutidx].m_sz1;
+	g_mcxman_idata.m_sio2_td.regdata[0] = (g_mcxman_idata.m_sio2_td.regdata[0] & 0xF80200FF) | ((g_mcxman_idata.m_sio2_td.out_size & 0x1FF) << 18) | ((g_mcxman_idata.m_sio2_td.in_size & 0x1FF) << 8);
 	g_mcxman_idata.m_sio2_inbuf[1] = g_inoutszpairs[inoutidx].m_sz1;
-	return result;
 }
 // 400F40: using guessed type mcxman_inoutszpair g_inoutszpairs[16];
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
@@ -438,6 +429,7 @@ int __fastcall mcxman_12_McxDispTrans(char port, int slot, char dirval, char hid
 int __fastcall unusedsub_400BB0(char a1, int a2)
 {
 	int i; // $s0
+
 	mcx_sio2_prepare(a1, a2, 8, 0);
 	for ( i = 0; i < 5; i += 1 )
 	{

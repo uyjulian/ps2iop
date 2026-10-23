@@ -189,13 +189,10 @@ int __fastcall mcxserv_5(int thpri)
 //----- (00400284) --------------------------------------------------------
 void rpc_thread()
 {
-	int ThreadId; // $v0
-
 	if ( !sceSifCheckInit() )
 		sceSifInit();
 	sceSifInitRpc(0);
-	ThreadId = GetThreadId();
-	sceSifSetRpcQueue(&g_rpc_qd, ThreadId);
+	sceSifSetRpcQueue(&g_rpc_qd, GetThreadId());
 	sceSifRegisterRpc(&g_rpc_sd, 0x80000420, (SifRpcFunc_t)rpc_handler, g_rpc_buf, NULL, NULL, &g_rpc_qd);
 	sceSifRpcLoop(&g_rpc_qd);
 }
@@ -267,60 +264,43 @@ int rpc_handler_FE_retzero()
 //----- (0040048C) --------------------------------------------------------
 int __fastcall rpc_handler_0C(u32 *rpcbuf)
 {
-	int thpri; // $a1
-
-	thpri = rpcbuf[3];
-	if ( (unsigned int)(thpri - 9) >= 0x73 )
+	if ( (unsigned int)(((int)rpcbuf[3]) - 9) >= 0x73 )
 		return -403;
-	ChangeThreadPriority(0, thpri);
+	ChangeThreadPriority(0, ((int)rpcbuf[3]));
 	return 0;
 }
 
 //----- (004004C8) --------------------------------------------------------
 int __fastcall rpc_handler_01_sceMcxGetInfo(u32 *rpcbuf)
 {
-	int Info; // $v0
-	void *dstbuf; // $a1
-	int info_tmp; // $s1
+	int xferres; // $v0
 	int trid; // $s0
 	sceMcxTblInfo mcx_info; // [sp+10h] [-30h] BYREF
 	SifDmaTransfer_t dmat; // [sp+28h] [-18h] BYREF
 	int state; // [sp+38h] [-8h] BYREF
 
-	Info = mcxman_6_McxGetInfo(*rpcbuf, rpcbuf[1], &mcx_info);
+	xferres = mcxman_6_McxGetInfo(*rpcbuf, rpcbuf[1], &mcx_info);
 	dmat.src = &mcx_info;
-	dstbuf = (void *)rpcbuf[5];
-	info_tmp = Info;
 	dmat.size = 24;
 	dmat.attr = 0;
-	dmat.dest = dstbuf;
+	dmat.dest = (void *)rpcbuf[5];
 	CpuSuspendIntr(&state);
 	trid = sceSifSetDma(&dmat, 1);
 	CpuResumeIntr(state);
 	while ( sceSifDmaStat(trid) >= 0 )
 		DelayThread(100);
-	return info_tmp;
+	return xferres;
 }
 
 //----- (00400560) --------------------------------------------------------
 int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 {
-	u32 port; // $s4
-	int slot; // $s5
 	int xferres; // $v1
-	char Year; // $a2
-	__int16 yeardiv1; // $a1
-	unsigned __int16 yeardiv2; // kr00_2
-	__int16 yeardiv3; // $t3
-	unsigned __int16 yeardiv4; // kr02_2
-	__int16 yeardiv5; // $v1
 	SifRpcReceiveData_t rdata; // [sp+20h] [-58h] BYREF
 	sceMcxTblInfo mcx_info; // [sp+40h] [-38h] BYREF
 	char sect_buf[12]; // [sp+64h] [-14h] BYREF
 
 	sceSifGetOtherData(&rdata, (void *)rpcbuf[5], &mcx_info, 24, 0);
-	port = *rpcbuf;
-	slot = rpcbuf[1];
 	if ( (rpcbuf[4] & 0x16) )
 	{
 		if ( (rpcbuf[4] & 2) == 0 )
@@ -329,32 +309,26 @@ int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 			mcx_info.Infrared = -1;
 		if ( (rpcbuf[4] & 0x10) == 0 )
 			mcx_info.Led = -1;
-		xferres = mcxman_7_McxSetInfoSpeakerInfraredLed(port, slot, mcx_info.Speaker, mcx_info.Infrared, mcx_info.Led);
+		xferres = mcxman_7_McxSetInfoSpeakerInfraredLed(rpcbuf[0], rpcbuf[1], mcx_info.Speaker, mcx_info.Infrared, mcx_info.Led);
 		if ( xferres )
 			return xferres;
 	}
 	if ( (rpcbuf[4] & 8) )
 	{
-		xferres = mcxman_8_McxSetInfoFlash(port, slot, mcx_info.Flash);
+		xferres = mcxman_8_McxSetInfoFlash(rpcbuf[0], rpcbuf[1], mcx_info.Flash);
 		if ( xferres )
 			return xferres;
 	}
 	if ( (rpcbuf[4] & 0x20) )
 	{
-		Year = mcx_info._Rtc.Year;
-		yeardiv1 = mcx_info._Rtc.Year / 0x64u;
-		yeardiv2 = mcx_info._Rtc.Year / 0x3E8u;
-		yeardiv3 = mcx_info._Rtc.Year / 0xAu;
-		yeardiv4 = mcx_info._Rtc.Year / 0xAu;
-		yeardiv5 = mcx_info._Rtc.Year / 0x64u / 0xA;
-		mcx_info._Rtc.Year -= mcx_info._Rtc.Month < 3u;
-		sect_buf[3] = yeardiv1 - 10 * yeardiv5 + 16 * (yeardiv2 % 0xAu);
-		sect_buf[2] = Year - 10 * yeardiv3 + 16 * (yeardiv4 % 0xAu);
-		sect_buf[1] = mcx_info._Rtc.Month % 0xAu + 16 * (mcx_info._Rtc.Month / 0xAu % 0xA);
 		sect_buf[0] = mcx_info._Rtc.Day % 0xAu + 16 * (mcx_info._Rtc.Day / 0xAu % 0xA);
-		sect_buf[6] = mcx_info._Rtc.Hour % 0xAu + 16 * (mcx_info._Rtc.Hour / 0xAu % 0xA);
-		sect_buf[5] = mcx_info._Rtc.Min % 0xAu + 16 * (mcx_info._Rtc.Min / 0xAu % 0xA);
+		sect_buf[1] = mcx_info._Rtc.Month % 0xAu + 16 * (mcx_info._Rtc.Month / 0xAu % 0xA);
+		sect_buf[2] = (u8)(mcx_info._Rtc.Year) - 10 * (s16)(mcx_info._Rtc.Year / 0xAu) + 16 * ((u16)(mcx_info._Rtc.Year / 0xAu) % 0xAu);
+		sect_buf[3] = (s16)(mcx_info._Rtc.Year / 0x64u) - 10 * (s16)(mcx_info._Rtc.Year / 0x64u / 0xA) + 16 * ((u16)(mcx_info._Rtc.Year / 0x3E8u) % 0xAu);
 		sect_buf[4] = mcx_info._Rtc.Sec % 0xAu + 16 * (mcx_info._Rtc.Sec / 0xAu % 0xA);
+		sect_buf[5] = mcx_info._Rtc.Min % 0xAu + 16 * (mcx_info._Rtc.Min / 0xAu % 0xA);
+		sect_buf[6] = mcx_info._Rtc.Hour % 0xAu + 16 * (mcx_info._Rtc.Hour / 0xAu % 0xA);
+		mcx_info._Rtc.Year -= mcx_info._Rtc.Month < 3u;
 		sect_buf[7] = (int)(mcx_info._Rtc.Year
 											+ (mcx_info._Rtc.Year >> 2)
 											- mcx_info._Rtc.Year / 0x64u
@@ -363,13 +337,13 @@ int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 											+ mcx_info._Rtc.Day)
 								% 7
 								+ 1;
-		xferres = mcxman_10_McxWriteDev(port, slot, 0, NULL, 0, sect_buf, 8);
+		xferres = mcxman_10_McxWriteDev(rpcbuf[0], rpcbuf[1], 0, NULL, 0, sect_buf, 8);
 		if ( xferres )
 			return xferres;
 	}
 	if ( (rpcbuf[4] & 1) )
 	{
-		xferres = mcxman_11_McxSetInfoAppli(port, slot, mcx_info.AppliNo, mcx_info.AplArg);
+		xferres = mcxman_11_McxSetInfoAppli(rpcbuf[0], rpcbuf[1], mcx_info.AppliNo, mcx_info.AplArg);
 		if ( xferres )
 			return xferres;
 	}
@@ -386,28 +360,24 @@ int __fastcall rpc_handler_05_sceMcxDispTrans(u32 *rpcbuf)
 //----- (00400A1C) --------------------------------------------------------
 int __fastcall rpc_handler_07_sceMcxReadDev(u32 *rpcbuf)
 {
-	int Dev; // $v0
-	int sz_tmp; // $v1
-	int dev_tmp; // $s1
+	int xferres; // $v0
 	int trid; // $s0
 	SifRpcReceiveData_t rdata; // [sp+20h] [-38h] BYREF
 	SifDmaTransfer_t dmat; // [sp+40h] [-18h] BYREF
 	int state; // [sp+50h] [-8h] BYREF
 
 	sceSifGetOtherData(&rdata, (void *)rpcbuf[5], g_param_buf, rpcbuf[3], 0);
-	Dev = mcxman_9_McxReadDev(*rpcbuf, rpcbuf[1], rpcbuf[2], g_param_buf, rpcbuf[3], g_sect_buf, rpcbuf[4]);
+	xferres = mcxman_9_McxReadDev(*rpcbuf, rpcbuf[1], rpcbuf[2], g_param_buf, rpcbuf[3], g_sect_buf, rpcbuf[4]);
 	dmat.src = g_sect_buf;
 	dmat.dest = (void *)rpcbuf[6];
-	sz_tmp = rpcbuf[4];
-	dev_tmp = Dev;
 	dmat.attr = 0;
-	dmat.size = sz_tmp;
+	dmat.size = rpcbuf[4];
 	CpuSuspendIntr(&state);
 	trid = sceSifSetDma(&dmat, 1);
 	CpuResumeIntr(state);
 	while ( sceSifDmaStat(trid) >= 0 )
 		DelayThread(100);
-	return dev_tmp;
+	return xferres;
 }
 // 400E20: using guessed type int g_param_buf[32];
 // 400EA0: using guessed type int g_sect_buf[2016];
