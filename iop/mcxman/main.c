@@ -75,7 +75,7 @@ extern int __fastcall mcxman_7_McxSetInfoSpeakerInfraredLed(char port, int slot,
 extern int __fastcall mcxman_8_McxSetInfoFlash(char port, int slot, char flashval);
 extern int __fastcall mcxman_10_McxWriteDev(int port, int slot, int dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
 extern int __fastcall mcxman_9_McxReadDev(char port, int slot, char dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
-extern int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval, int aplargval);
+extern int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, u16 applinoval, int aplargval);
 extern int __fastcall mcxman_12_McxDispTrans(char port, int slot, char dirval, char hideshowval, char timeval);
 
 //-------------------------------------------------------------------------
@@ -386,7 +386,7 @@ int __fastcall mcxman_9_McxReadDev(
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
 //----- (00400A64) --------------------------------------------------------
-int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval, int aplargval)
+int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, u16 applinoval, int aplargval)
 {
 	int xferres; // $s1
 
