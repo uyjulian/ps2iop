@@ -65,35 +65,25 @@ struct mcxman_inoutszpair
 //-------------------------------------------------------------------------
 // Function declarations
 
-void mcxman_0();
-int __fastcall unusedsub_400060(_BYTE *, unsigned __int8);
-int __fastcall _start(int ac);
-int module_unload();
-int __fastcall unusedsub_40016C(char *, int);
-char **mcxman_5_GetMcxModVerStruct();
-void mcx_init();
-int mcx_cleanup();
-unsigned int __fastcall alarm_cb(void *userdata);
-void mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz);
-int __fastcall mcx_sio2_mc_start(char port, s32 slot);
-void mcx_sio2_mc_finish();
-int __fastcall mcx_sio2_xfer(char port, s32 slot);
-int __fastcall mcxman_6_McxGetInfo(char port, int slot, sceMcxTblInfo *mcx_info);
-int __fastcall mcxman_7_McxSetInfoSpeakerInfraredLed(char port, int slot, char speakerval, char infraredval, char ledval);
-int __fastcall mcxman_8_McxSetInfoFlash(char port, int slot, char flashval);
-int __fastcall mcxman_10_McxWriteDev(int port, int slot, int dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
-int __fastcall mcxman_9_McxReadDev(char port, int slot, char dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
-int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval, int aplargval);
-int __fastcall mcxman_12_McxDispTrans(char port, int slot, char dirval, char hideshowval, char timeval);
-int __fastcall unusedsub_400BB0(char, int);
-int __fastcall unusedsub_400CD8(char, s32);
+extern int __fastcall _start(int ac);
+static int module_unload();
+extern char **mcxman_5_GetMcxModVerStruct();
+static void mcx_init();
+static int mcx_cleanup();
+extern int __fastcall mcxman_6_McxGetInfo(char port, int slot, sceMcxTblInfo *mcx_info);
+extern int __fastcall mcxman_7_McxSetInfoSpeakerInfraredLed(char port, int slot, char speakerval, char infraredval, char ledval);
+extern int __fastcall mcxman_8_McxSetInfoFlash(char port, int slot, char flashval);
+extern int __fastcall mcxman_10_McxWriteDev(int port, int slot, int dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
+extern int __fastcall mcxman_9_McxReadDev(char port, int slot, char dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
+extern int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval, int aplargval);
+extern int __fastcall mcxman_12_McxDispTrans(char port, int slot, char dirval, char hideshowval, char timeval);
 
 //-------------------------------------------------------------------------
 // Data declarations
 
 extern struct irx_export_table _exp_mcxman;
-char *g_modver = "mcxman"; // weak
-struct mcxman_inoutszpair g_inoutszpairs[16] =
+static char *g_modver = "mcxman"; // weak
+static struct mcxman_inoutszpair g_inoutszpairs[16] =
 {
 	{ 80u, 3u },
 	{ 0u, 0u },
@@ -112,23 +102,19 @@ struct mcxman_inoutszpair g_inoutszpairs[16] =
 	{ 94u, 6u },
 	{ 95u, 4u }
 }; // weak
-struct mcxman_idata g_mcxman_idata; // weak
+static struct mcxman_idata g_mcxman_idata; // weak
 
 
-//----- (0040004C) --------------------------------------------------------
-void mcxman_0()
-{
-	;
-}
-
+#ifdef DEAD_CODE
 //----- (00400060) --------------------------------------------------------
-int __fastcall unusedsub_400060(_BYTE *a1, unsigned __int8 a2)
+static int __fastcall unusedsub_400060(_BYTE *a1, unsigned __int8 a2)
 {
 	_BYTE *v2; // $a2
 
 	for ( v2 = a1; *v2 && ((unsigned __int8)*v2) != a2; v2 += 1 );
 	return ( (unsigned __int8)*v2 != a2 ) ? -1 : (v2 - a1);
 }
+#endif
 
 //----- (004000B8) --------------------------------------------------------
 int __fastcall _start(int ac)
@@ -143,7 +129,7 @@ int __fastcall _start(int ac)
 }
 
 //----- (00400110) --------------------------------------------------------
-int module_unload()
+static int module_unload()
 {
 	int relres; // $s0
 	int state; // [sp+10h] [-8h] BYREF
@@ -157,8 +143,9 @@ int module_unload()
 	return 1;
 }
 
+#ifdef DEAD_CODE
 //----- (0040016C) --------------------------------------------------------
-int __fastcall unusedsub_40016C(char *a1, int a2)
+static int __fastcall unusedsub_40016C(char *a1, int a2)
 {
 	unsigned __int8 v2; // $a2
 	int i; // $v1
@@ -168,6 +155,7 @@ int __fastcall unusedsub_40016C(char *a1, int a2)
 		v2 ^= a1[i];
 	return v2;
 }
+#endif
 
 //----- (00400198) --------------------------------------------------------
 char **mcxman_5_GetMcxModVerStruct()
@@ -177,7 +165,7 @@ char **mcxman_5_GetMcxModVerStruct()
 // 400F30: using guessed type char *g_modver;
 
 //----- (004001B0) --------------------------------------------------------
-void mcx_init()
+static void mcx_init()
 {
 	int i; // $a0
 	iop_sema_t semaparam; // [sp+10h] [-10h] BYREF
@@ -205,7 +193,7 @@ void mcx_init()
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
 //----- (00400288) --------------------------------------------------------
-int mcx_cleanup()
+static int mcx_cleanup()
 {
 	int delres; // $v1
 
@@ -215,7 +203,7 @@ int mcx_cleanup()
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
 //----- (004002CC) --------------------------------------------------------
-unsigned int __fastcall alarm_cb(void *userdata)
+static unsigned int __fastcall alarm_cb(void *userdata)
 {
 	(void)userdata;
 
@@ -225,7 +213,7 @@ unsigned int __fastcall alarm_cb(void *userdata)
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
 //----- (004002F4) --------------------------------------------------------
-void mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz)
+static void mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz)
 {
 	(void)slot;
 	g_mcxman_idata.m_sio2_td.regdata[1] = 0;
@@ -240,7 +228,7 @@ void mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz)
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
 //----- (004003AC) --------------------------------------------------------
-int __fastcall mcx_sio2_mc_start(char port, s32 slot)
+static int __fastcall mcx_sio2_mc_start(char port, s32 slot)
 {
 	s32 chgslotbuf[8]; // [sp+10h] [-20h] BYREF
 
@@ -251,7 +239,7 @@ int __fastcall mcx_sio2_mc_start(char port, s32 slot)
 }
 
 //----- (00400400) --------------------------------------------------------
-void mcx_sio2_mc_finish()
+static void mcx_sio2_mc_finish()
 {
 	s32 chgslotbuf[8]; // [sp+10h] [-20h] BYREF
 
@@ -264,7 +252,7 @@ void mcx_sio2_mc_finish()
 }
 
 //----- (0040043C) --------------------------------------------------------
-int __fastcall mcx_sio2_xfer(char port, s32 slot)
+static int __fastcall mcx_sio2_xfer(char port, s32 slot)
 {
 	int i; // $s0
 
@@ -425,8 +413,9 @@ int __fastcall mcxman_12_McxDispTrans(char port, int slot, char dirval, char hid
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
+#ifdef DEAD_CODE
 //----- (00400BB0) --------------------------------------------------------
-int __fastcall unusedsub_400BB0(char a1, int a2)
+static int __fastcall unusedsub_400BB0(char a1, int a2)
 {
 	int i; // $s0
 
@@ -445,9 +434,11 @@ int __fastcall unusedsub_400BB0(char a1, int a2)
 	return ( i != 5 ) ? (( !g_mcxman_idata.m_sio2_outbuf[1] || g_mcxman_idata.m_sio2_outbuf[1] == 8 ) ? -13 : -14) : -12;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
+#endif
 
+#ifdef DEAD_CODE
 //----- (00400CD8) --------------------------------------------------------
-int __fastcall unusedsub_400CD8(char a1, s32 a2)
+static int __fastcall unusedsub_400CD8(char a1, s32 a2)
 {
 	int i; // $s0
 
@@ -469,3 +460,4 @@ int __fastcall unusedsub_400CD8(char a1, s32 a2)
 	return ( i != 5 ) ? 0 : -11;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
+#endif

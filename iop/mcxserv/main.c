@@ -39,36 +39,35 @@ typedef struct sceMcxTblInfo_ sceMcxTblInfo;
 //-------------------------------------------------------------------------
 // Function declarations
 
-void mcxserv_0();
-int __fastcall start(int ac, const char **av);
-int module_unload();
-int __fastcall mcxserv_5(int thpri);
-void rpc_thread();
-int *__fastcall rpc_handler(int fno, void *buffer, int length);
-int rpc_handler_FE_retzero();
-int __fastcall rpc_handler_0C(u32 *rpcbuf);
-int __fastcall rpc_handler_01_sceMcxGetInfo(u32 *rpcbuf);
-int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf);
-int __fastcall rpc_handler_05_sceMcxDispTrans(u32 *rpcbuf);
-int __fastcall rpc_handler_07_sceMcxReadDev(u32 *rpcbuf);
-int __fastcall rpc_handler_08_sceMcxWriteDev(u32 *rpcbuf);
+extern int __fastcall start(int ac, const char **av);
+static int module_unload();
+extern int __fastcall mcxserv_5(int thpri);
+static void rpc_thread();
+static int *__fastcall rpc_handler(int fno, void *buffer, int length);
+static int rpc_handler_FE_retzero();
+static int __fastcall rpc_handler_0C(u32 *rpcbuf);
+static int __fastcall rpc_handler_01_sceMcxGetInfo(u32 *rpcbuf);
+static int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf);
+static int __fastcall rpc_handler_05_sceMcxDispTrans(u32 *rpcbuf);
+static int __fastcall rpc_handler_07_sceMcxReadDev(u32 *rpcbuf);
+static int __fastcall rpc_handler_08_sceMcxWriteDev(u32 *rpcbuf);
 
 // temp
-char **mcxman_5_GetMcxModVerStruct();
-int __fastcall mcxman_6_McxGetInfo(char port, int slot, sceMcxTblInfo *mcx_info);
-int __fastcall mcxman_7_McxSetInfoSpeakerInfraredLed(char port, int slot, char speakerval, char infraredval, char ledval);
-int __fastcall mcxman_8_McxSetInfoFlash(char port, int slot, char flashval);
-int __fastcall mcxman_10_McxWriteDev(int port, int slot, int dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
-int __fastcall mcxman_9_McxReadDev(char port, int slot, char dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
-int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval, int aplargval);
-int __fastcall mcxman_12_McxDispTrans(char port, int slot, char dirval, char hideshowval, char timeval);
+extern char **mcxman_5_GetMcxModVerStruct();
+extern int __fastcall mcxman_6_McxGetInfo(char port, int slot, sceMcxTblInfo *mcx_info);
+extern int __fastcall mcxman_7_McxSetInfoSpeakerInfraredLed(char port, int slot, char speakerval, char infraredval, char ledval);
+extern int __fastcall mcxman_8_McxSetInfoFlash(char port, int slot, char flashval);
+extern int __fastcall mcxman_10_McxWriteDev(int port, int slot, int dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
+extern int __fastcall mcxman_9_McxReadDev(char port, int slot, char dev_nr, const void *param_buf, size_t param_buf_sz, void *sect_buf, size_t sect_buf_sz);
+extern int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval, int aplargval);
+extern int __fastcall mcxman_12_McxDispTrans(char port, int slot, char dirval, char hideshowval, char timeval);
 
 //-------------------------------------------------------------------------
 // Data declarations
 
 extern struct irx_export_table _exp_mcxserv;
-__int16 g_modver_mcxserv = 514; // weak
-char g_month_table[] =
+static __int16 g_modver_mcxserv = 514; // weak
+static char g_month_table[] =
 {
 	'\0',
 	'\0',
@@ -96,21 +95,15 @@ char g_month_table[] =
 	'\0',
 	'\0'
 }; // weak
-int g_rpc_retbuf[4]; // weak
-int g_param_buf[32]; // weak
-int g_sect_buf[2016]; // weak
-int g_rpc_buf[12]; // weak
-int g_thid; // idb
-SifRpcDataQueue_t g_rpc_qd; // weak
-SifRpcServerData_t g_rpc_sd; // idb
-int g_in_rpc_handler; // weak
+static int g_rpc_retbuf[4]; // weak
+static int g_param_buf[32]; // weak
+static int g_sect_buf[2016]; // weak
+static int g_rpc_buf[12]; // weak
+static int g_thid; // idb
+static SifRpcDataQueue_t g_rpc_qd; // weak
+static SifRpcServerData_t g_rpc_sd; // idb
+static int g_in_rpc_handler; // weak
 
-
-//----- (00400038) --------------------------------------------------------
-void mcxserv_0()
-{
-	;
-}
 
 //----- (00400040) --------------------------------------------------------
 int __fastcall start(int ac, const char **av)
@@ -148,7 +141,7 @@ int __fastcall start(int ac, const char **av)
 }
 
 //----- (0040015C) --------------------------------------------------------
-int module_unload()
+static int module_unload()
 {
 	int unregres; // $s0
 	int state; // [sp+10h] [-8h] BYREF
@@ -187,7 +180,7 @@ int __fastcall mcxserv_5(int thpri)
 }
 
 //----- (00400284) --------------------------------------------------------
-void rpc_thread()
+static void rpc_thread()
 {
 	if ( !sceSifCheckInit() )
 		sceSifInit();
@@ -200,7 +193,7 @@ void rpc_thread()
 // 402E58: using guessed type SifRpcDataQueue_t g_rpc_qd;
 
 //----- (00400310) --------------------------------------------------------
-int *__fastcall rpc_handler(int fno, void *buffer, int length)
+static int *__fastcall rpc_handler(int fno, void *buffer, int length)
 {
 	(void)buffer;
 	(void)length;
@@ -256,13 +249,13 @@ int *__fastcall rpc_handler(int fno, void *buffer, int length)
 // 402EB4: using guessed type int g_in_rpc_handler;
 
 //----- (00400484) --------------------------------------------------------
-int rpc_handler_FE_retzero()
+static int rpc_handler_FE_retzero()
 {
 	return 0;
 }
 
 //----- (0040048C) --------------------------------------------------------
-int __fastcall rpc_handler_0C(u32 *rpcbuf)
+static int __fastcall rpc_handler_0C(u32 *rpcbuf)
 {
 	if ( (unsigned int)(((int)rpcbuf[3]) - 9) >= 0x73 )
 		return -403;
@@ -271,7 +264,7 @@ int __fastcall rpc_handler_0C(u32 *rpcbuf)
 }
 
 //----- (004004C8) --------------------------------------------------------
-int __fastcall rpc_handler_01_sceMcxGetInfo(u32 *rpcbuf)
+static int __fastcall rpc_handler_01_sceMcxGetInfo(u32 *rpcbuf)
 {
 	int xferres; // $v0
 	int trid; // $s0
@@ -293,7 +286,7 @@ int __fastcall rpc_handler_01_sceMcxGetInfo(u32 *rpcbuf)
 }
 
 //----- (00400560) --------------------------------------------------------
-int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
+static int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 {
 	int xferres; // $v1
 	SifRpcReceiveData_t rdata; // [sp+20h] [-58h] BYREF
@@ -352,13 +345,13 @@ int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 // 400560: using guessed type SifRpcReceiveData_t rdata;
 
 //----- (004009D0) --------------------------------------------------------
-int __fastcall rpc_handler_05_sceMcxDispTrans(u32 *rpcbuf)
+static int __fastcall rpc_handler_05_sceMcxDispTrans(u32 *rpcbuf)
 {
 	return mcxman_12_McxDispTrans(*rpcbuf, rpcbuf[1], rpcbuf[3], rpcbuf[4], rpcbuf[2]);
 }
 
 //----- (00400A1C) --------------------------------------------------------
-int __fastcall rpc_handler_07_sceMcxReadDev(u32 *rpcbuf)
+static int __fastcall rpc_handler_07_sceMcxReadDev(u32 *rpcbuf)
 {
 	int xferres; // $v0
 	int trid; // $s0
@@ -384,7 +377,7 @@ int __fastcall rpc_handler_07_sceMcxReadDev(u32 *rpcbuf)
 // 400A1C: using guessed type SifRpcReceiveData_t rdata;
 
 //----- (00400AF4) --------------------------------------------------------
-int __fastcall rpc_handler_08_sceMcxWriteDev(u32 *rpcbuf)
+static int __fastcall rpc_handler_08_sceMcxWriteDev(u32 *rpcbuf)
 {
 	SifRpcReceiveData_t rdata; // [sp+20h] [-20h] BYREF
 
