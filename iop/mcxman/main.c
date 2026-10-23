@@ -64,17 +64,6 @@ struct mcxman_inoutszpair
 	u8 m_sz2;
 };
 
-#define LAST_IND(x, part_type) (sizeof(x) / sizeof(part_type) - 1)
-#define HIGH_IND(x, part_type) LAST_IND(x, part_type)
-#define LOW_IND(x, part_type) 0
-
-#define BYTEn(x, n) (*((_BYTE*)&(x) + n))
-
-#define LOBYTE(x) BYTEn(x, LOW_IND(x, _BYTE))
-#define HIBYTE(x) BYTEn(x, HIGH_IND(x, _BYTE))
-#define BYTE1(x) BYTEn(x, 1)
-#define BYTE2(x) BYTEn(x, 2)
-
 //-------------------------------------------------------------------------
 // Function declarations
 
@@ -348,41 +337,28 @@ int __fastcall mcx_sio2_xfer(char port, s32 slot)
 int __fastcall mcxman_6_McxGetInfo(char port, int slot, sceMcxTblInfo *mcx_info)
 {
 	int xferres; // $v0
-	u8 monthtmp; // $v1
-	int tmpval1; // [sp+14h] [-14h]
-	u32 tmpval2; // [sp+18h] [-10h]
-	int tmpval3; // [sp+1Ch] [-Ch]
-	int tmpval4; // [sp+20h] [-8h]
 
 	mcx_sio2_prepare(port, slot, 10, 0);
 	xferres = mcx_sio2_xfer(port, slot);
-	if ( !xferres )
-	{
-		tmpval1 = *(_DWORD *)&g_mcxman_idata.m_sio2_outbuf[5];
-		tmpval2 = *(_DWORD *)&g_mcxman_idata.m_sio2_outbuf[9];
-		tmpval3 = *(_DWORD *)&g_mcxman_idata.m_sio2_outbuf[13];
-		tmpval4 = *(_DWORD *)&g_mcxman_idata.m_sio2_outbuf[17];
-		mcx_info->AppliNo = g_mcxman_idata.m_sio2_outbuf[3] + g_mcxman_idata.m_sio2_outbuf[4];
-		*(_WORD *)&mcx_info->Speaker = *(_WORD *)((char *)&tmpval1 + 1);
-		mcx_info->Serial = tmpval2;
-		mcx_info->Flash = tmpval1;
-		mcx_info->Led = HIBYTE(tmpval1);
-		mcx_info->_Rtc.Year = (BYTE2(tmpval3) & 0xF)
-												+ 1000 * (HIBYTE(tmpval3) >> 4)
-												+ 100 * (HIBYTE(tmpval3) & 0xF)
-												+ 10 * (BYTE2(tmpval3) >> 4);
-		monthtmp = BYTE1(tmpval3) & 0xF;
-		if ( (tmpval3 & 0x1000) != 0 )
-			monthtmp += 10;
-		mcx_info->_Rtc.Month = monthtmp;
-		mcx_info->_Rtc.Day = 10 * ((unsigned __int8)(tmpval3 & 0x30) >> 4) + (tmpval3 & 0xF);
-		mcx_info->_Rtc.Hour = 10 * ((unsigned __int8)(BYTE2(tmpval4) & 0x30) >> 4) + (BYTE2(tmpval4) & 0xF);
-		mcx_info->_Rtc.Min = 10 * ((unsigned __int8)(BYTE1(tmpval4) & 0x70) >> 4) + (BYTE1(tmpval4) & 0xF);
-		mcx_info->_Rtc.Sec = 10 * ((unsigned __int8)(tmpval4 & 0x70) >> 4) + (tmpval4 & 0xF);
-		xferres = 0;
-		mcx_info->_Rtc.Week = (HIBYTE(tmpval4) & 7) - 1;
-	}
-	return xferres;
+	if ( xferres )
+		return xferres;
+	mcx_info->AppliNo = g_mcxman_idata.m_sio2_outbuf[3] + g_mcxman_idata.m_sio2_outbuf[4];
+	mcx_info->Speaker = g_mcxman_idata.m_sio2_outbuf[6];
+	mcx_info->Infrared = g_mcxman_idata.m_sio2_outbuf[7];
+	mcx_info->Serial = g_mcxman_idata.m_sio2_outbuf[9] | (g_mcxman_idata.m_sio2_outbuf[10] << 8) | (g_mcxman_idata.m_sio2_outbuf[11] << 16) | (g_mcxman_idata.m_sio2_outbuf[12] << 24);
+	mcx_info->Flash = g_mcxman_idata.m_sio2_outbuf[5];
+	mcx_info->Led = g_mcxman_idata.m_sio2_outbuf[8];
+	mcx_info->_Rtc.Year = (g_mcxman_idata.m_sio2_outbuf[15] & 0xF)
+											+ 1000 * (g_mcxman_idata.m_sio2_outbuf[16] >> 4)
+											+ 100 * (g_mcxman_idata.m_sio2_outbuf[16] & 0xF)
+											+ 10 * (g_mcxman_idata.m_sio2_outbuf[15] >> 4);
+	mcx_info->_Rtc.Month = (g_mcxman_idata.m_sio2_outbuf[14] & 0xF) + ((g_mcxman_idata.m_sio2_outbuf[14] & 0x10) ? 10 : 0);
+	mcx_info->_Rtc.Day = 10 * ((unsigned __int8)(g_mcxman_idata.m_sio2_outbuf[13] & 0x30) >> 4) + (g_mcxman_idata.m_sio2_outbuf[13] & 0xF);
+	mcx_info->_Rtc.Hour = 10 * ((unsigned __int8)(g_mcxman_idata.m_sio2_outbuf[19] & 0x30) >> 4) + (g_mcxman_idata.m_sio2_outbuf[19] & 0xF);
+	mcx_info->_Rtc.Min = 10 * ((unsigned __int8)(g_mcxman_idata.m_sio2_outbuf[18] & 0x70) >> 4) + (g_mcxman_idata.m_sio2_outbuf[18] & 0xF);
+	mcx_info->_Rtc.Sec = 10 * ((unsigned __int8)(g_mcxman_idata.m_sio2_outbuf[17] & 0x70) >> 4) + (g_mcxman_idata.m_sio2_outbuf[17] & 0xF);
+	mcx_info->_Rtc.Week = (g_mcxman_idata.m_sio2_outbuf[20] & 7) - 1;
+	return 0;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
@@ -497,7 +473,7 @@ int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval
 	int result; // $v0
 
 	mcx_sio2_prepare(port, slot, 9, 0);
-	g_mcxman_idata.m_sio2_inbuf[3] = HIBYTE(applinoval);
+	g_mcxman_idata.m_sio2_inbuf[3] = applinoval >> 8;
 	g_mcxman_idata.m_sio2_inbuf[4] = applinoval;
 	*(_DWORD *)&g_mcxman_idata.m_sio2_inbuf[5] = aplargval;
 	xferres = mcx_sio2_xfer(port, slot);
