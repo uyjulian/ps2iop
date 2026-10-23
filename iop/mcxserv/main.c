@@ -115,49 +115,42 @@ void mcxserv_0()
 //----- (00400040) --------------------------------------------------------
 int __fastcall start(int ac, const char **av)
 {
-	int result; // $v0
-	bool regres; // dc
 	int thpri_tmp; // $s1
 	int i; // $s2
 	iop_thread_t thparam; // [sp+10h] [-18h] BYREF
 
 	if ( ac < 0 )
 		return module_unload();
-	regres = RegisterLibraryEntries((struct irx_export_table *)&_exp_mcxserv) != 0;
-	result = 1;
-	if ( !regres )
+	if ( RegisterLibraryEntries((struct irx_export_table *)&_exp_mcxserv) != 0 )
+		return 1;
+	thpri_tmp = 104;
+	CpuEnableIntr();
+	for ( i = 0; i < ac; i += 1 )
 	{
-		thpri_tmp = 104;
-		CpuEnableIntr();
-		for ( i = 0; i < ac; i += 1 )
+		if ( !strncmp("thpri=", av[i], 6) )
 		{
-			if ( !strncmp("thpri=", av[i], 6) )
+			thpri_tmp = strtol(av[i] + 6, NULL, 10);
+			if ( (unsigned int)(thpri_tmp - 9) >= 0x73 )
 			{
-				thpri_tmp = strtol(av[i] + 6, NULL, 10);
-				if ( (unsigned int)(thpri_tmp - 9) >= 0x73 )
-				{
-					thpri_tmp = 104;
-					printf("mcxserv.irx: thread prority definition ignored.\n");
-				}
+				thpri_tmp = 104;
+				printf("mcxserv.irx: thread prority definition ignored.\n");
 			}
 		}
-		thparam.attr = 0x2000000;
-		thparam.stacksize = 4096;
-		thparam.priority = thpri_tmp;
-		thparam.option = 0;
-		thparam.thread = (void (__cdecl *)(void *))rpc_thread;
-		g_thid = CreateThread(&thparam);
-		StartThread(g_thid, NULL);
-		return 2;
 	}
-	return result;
+	thparam.attr = 0x2000000;
+	thparam.stacksize = 4096;
+	thparam.priority = thpri_tmp;
+	thparam.option = 0;
+	thparam.thread = (void (__cdecl *)(void *))rpc_thread;
+	g_thid = CreateThread(&thparam);
+	StartThread(g_thid, NULL);
+	return 2;
 }
 
 //----- (0040015C) --------------------------------------------------------
 int module_unload()
 {
 	int unregres; // $s0
-	int result; // $v0
 	int state; // [sp+10h] [-8h] BYREF
 
 	if ( g_in_rpc_handler )
@@ -165,15 +158,13 @@ int module_unload()
 	CpuSuspendIntr(&state);
 	unregres = ReleaseLibraryEntries((struct irx_export_table *)&_exp_mcxserv);
 	CpuResumeIntr(state);
-	if ( !unregres || (result = 2, unregres == -213) )
-	{
-		TerminateThread(g_thid);
-		DeleteThread(g_thid);
-		sceSifRemoveRpc(&g_rpc_sd, &g_rpc_qd);
-		sceSifRemoveRpcQueue(&g_rpc_qd);
-		return 1;
-	}
-	return result;
+	if ( unregres && unregres != -213 )
+		return 2;
+	TerminateThread(g_thid);
+	DeleteThread(g_thid);
+	sceSifRemoveRpc(&g_rpc_sd, &g_rpc_qd);
+	sceSifRemoveRpcQueue(&g_rpc_qd);
+	return 1;
 }
 // 402E58: using guessed type SifRpcDataQueue_t g_rpc_qd;
 // 402EB4: using guessed type int g_in_rpc_handler;
@@ -181,19 +172,18 @@ int module_unload()
 //----- (00400204) --------------------------------------------------------
 int __fastcall mcxserv_5(int thpri)
 {
-	int result; // $v0
+	int retres; // $v0
 	iop_thread_info_t thinfo; // [sp+10h] [-48h] BYREF
 
 	if ( (unsigned int)(thpri - 9) >= 0x73 )
 		return -403;
 	ReferThreadStatus(0, &thinfo);
 	ChangeThreadPriority(0, 8);
-	if ( g_thid <= 0 || (result = ChangeThreadPriority(g_thid, thpri), result >= 0) )
-	{
-		ChangeThreadPriority(0, thinfo.currentPriority);
-		return 0;
-	}
-	return result;
+	retres = ( g_thid > 0 ) ? ChangeThreadPriority(g_thid, thpri) : 0;
+	if ( retres < 0 )
+		return retres;
+	ChangeThreadPriority(0, thinfo.currentPriority);
+	return 0;
 }
 
 //----- (00400284) --------------------------------------------------------
@@ -278,16 +268,12 @@ int rpc_handler_FE_retzero()
 int __fastcall rpc_handler_0C(u32 *rpcbuf)
 {
 	int thpri; // $a1
-	int result; // $v0
 
 	thpri = rpcbuf[3];
-	result = -403;
-	if ( (unsigned int)(thpri - 9) < 0x73 )
-	{
-		ChangeThreadPriority(0, thpri);
-		return 0;
-	}
-	return result;
+	if ( (unsigned int)(thpri - 9) >= 0x73 )
+		return -403;
+	ChangeThreadPriority(0, thpri);
+	return 0;
 }
 
 //----- (004004C8) --------------------------------------------------------
@@ -319,10 +305,9 @@ int __fastcall rpc_handler_01_sceMcxGetInfo(u32 *rpcbuf)
 //----- (00400560) --------------------------------------------------------
 int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 {
-	u32 flagtmp; // $a0
 	u32 port; // $s4
 	int slot; // $s5
-	int xres; // $v1
+	int xferres; // $v1
 	char Year; // $a2
 	__int16 yeardiv1; // $a1
 	unsigned __int16 yeardiv2; // kr00_2
@@ -334,26 +319,25 @@ int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 	char sect_buf[12]; // [sp+64h] [-14h] BYREF
 
 	sceSifGetOtherData(&rdata, (void *)rpcbuf[5], &mcx_info, 24, 0);
-	flagtmp = rpcbuf[4];
 	port = *rpcbuf;
 	slot = rpcbuf[1];
-	if ( (flagtmp & 0x16) )
+	if ( (rpcbuf[4] & 0x16) )
 	{
-		if ( (flagtmp & 2) == 0 )
+		if ( (rpcbuf[4] & 2) == 0 )
 			mcx_info.Speaker = -1;
 		if ( (rpcbuf[4] & 4) == 0 )
 			mcx_info.Infrared = -1;
 		if ( (rpcbuf[4] & 0x10) == 0 )
 			mcx_info.Led = -1;
-		xres = mcxman_7_McxSetInfoSpeakerInfraredLed(port, slot, mcx_info.Speaker, mcx_info.Infrared, mcx_info.Led);
-		if ( xres )
-			return xres;
+		xferres = mcxman_7_McxSetInfoSpeakerInfraredLed(port, slot, mcx_info.Speaker, mcx_info.Infrared, mcx_info.Led);
+		if ( xferres )
+			return xferres;
 	}
 	if ( (rpcbuf[4] & 8) )
 	{
-		xres = mcxman_8_McxSetInfoFlash(port, slot, mcx_info.Flash);
-		if ( xres )
-			return xres;
+		xferres = mcxman_8_McxSetInfoFlash(port, slot, mcx_info.Flash);
+		if ( xferres )
+			return xferres;
 	}
 	if ( (rpcbuf[4] & 0x20) )
 	{
@@ -379,15 +363,15 @@ int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 											+ mcx_info._Rtc.Day)
 								% 7
 								+ 1;
-		xres = mcxman_10_McxWriteDev(port, slot, 0, NULL, 0, sect_buf, 8);
-		if ( xres )
-			return xres;
+		xferres = mcxman_10_McxWriteDev(port, slot, 0, NULL, 0, sect_buf, 8);
+		if ( xferres )
+			return xferres;
 	}
 	if ( (rpcbuf[4] & 1) )
 	{
-		xres = mcxman_11_McxSetInfoAppli(port, slot, mcx_info.AppliNo, mcx_info.AplArg);
-		if ( xres )
-			return xres;
+		xferres = mcxman_11_McxSetInfoAppli(port, slot, mcx_info.AppliNo, mcx_info.AplArg);
+		if ( xferres )
+			return xferres;
 	}
 	return 0;
 }
@@ -396,12 +380,7 @@ int __fastcall rpc_handler_02_sceMcxSetInfo(u32 *rpcbuf)
 //----- (004009D0) --------------------------------------------------------
 int __fastcall rpc_handler_05_sceMcxDispTrans(u32 *rpcbuf)
 {
-	int result; // $v0
-
-	result = mcxman_12_McxDispTrans(*rpcbuf, rpcbuf[1], rpcbuf[3], rpcbuf[4], rpcbuf[2]);
-	if ( !result )
-		return 0;
-	return result;
+	return mcxman_12_McxDispTrans(*rpcbuf, rpcbuf[1], rpcbuf[3], rpcbuf[4], rpcbuf[2]);
 }
 
 //----- (00400A1C) --------------------------------------------------------

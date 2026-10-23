@@ -20,8 +20,6 @@ IRX_ID("mcxman", 2, 2);
 #define __int16 short
 #define __int32 int
 
-#define BOOL int
-
 struct mcxman_idata
 {
 	sio2_transfer_data_t m_sio2_td;
@@ -129,46 +127,34 @@ int __fastcall unusedsub_400060(_BYTE *a1, unsigned __int8 a2)
 	_BYTE *v2; // $a2
 
 	for ( v2 = a1; *v2 && ((unsigned __int8)*v2) != a2; v2 += 1 );
-	if ( (unsigned __int8)*v2 != a2 )
-		return -1;
-	return v2 - a1;
+	return ( (unsigned __int8)*v2 != a2 ) ? -1 : (v2 - a1);
 }
 
 //----- (004000B8) --------------------------------------------------------
 int __fastcall _start(int ac)
 {
-	int result; // $v0
-	bool condtmp; // dc
-
 	if ( ac < 0 )
 		return module_unload();
-	condtmp = RegisterLibraryEntries((struct irx_export_table *)&_exp_mcxman) != 0;
-	result = 1;
-	if ( !condtmp )
-	{
-		CpuEnableIntr();
-		mcx_init();
-		return 2;
-	}
-	return result;
+	if ( RegisterLibraryEntries((struct irx_export_table *)&_exp_mcxman) )
+		return 1;
+	CpuEnableIntr();
+	mcx_init();
+	return 2;
 }
 
 //----- (00400110) --------------------------------------------------------
 int module_unload()
 {
 	int relres; // $s0
-	int result; // $v0
 	int state; // [sp+10h] [-8h] BYREF
 
 	CpuSuspendIntr(&state);
 	relres = ReleaseLibraryEntries((struct irx_export_table *)&_exp_mcxman);
 	CpuResumeIntr(state);
-	if ( !relres || (result = 2, relres == -213) )
-	{
-		mcx_cleanup();
-		return 1;
-	}
-	return result;
+	if ( relres && relres != -213 )
+		return 2;
+	mcx_cleanup();
+	return 1;
 }
 
 //----- (0040016C) --------------------------------------------------------
@@ -225,13 +211,9 @@ int mcx_init()
 int mcx_cleanup()
 {
 	int delres; // $v1
-	int retzero; // $a0
 
 	delres = DeleteSema(g_mcxman_idata.m_semid);
-	retzero = 0;
-	if ( !delres || delres == -408 )
-		return 1;
-	return retzero;
+	return ( !delres || delres == -408 ) ? 1 : 0;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
@@ -254,10 +236,7 @@ int __fastcall mcx_sio2_prepare(char port, int slot, int inoutidx, int bufsz)
 	(void)slot;
 	g_mcxman_idata.m_sio2_td.regdata[1] = 0;
 	g_mcxman_idata.m_sio2_td.regdata[0] = (((port & 1) + 2) & 3) | 0x40;
-	if ( (unsigned int)(inoutidx - 11) >= 2 )
-		inoutsz = g_inoutszpairs[inoutidx].m_sz2;
-	else
-		inoutsz = bufsz + 5;
+	inoutsz = ( (unsigned int)(inoutidx - 11) >= 2 ) ? g_inoutszpairs[inoutidx].m_sz2 : (bufsz + 5);
 	g_mcxman_idata.m_sio2_td.in_size = inoutsz;
 	g_mcxman_idata.m_sio2_td.out_size = inoutsz;
 	g_mcxman_idata.m_sio2_inbuf[0] = 0x81;
@@ -297,7 +276,6 @@ void mcx_sio2_mc_finish()
 int __fastcall mcx_sio2_xfer(char port, s32 slot)
 {
 	int i; // $s0
-	int result; // $v0
 
 	for ( i = 0; i < 5; i += 1 )
 	{
@@ -310,10 +288,7 @@ int __fastcall mcx_sio2_xfer(char port, s32 slot)
 		if ( (g_mcxman_idata.m_sio2_td.stat6c & 0xF000) == 4096 )
 			break;
 	}
-	result = -12;
-	if ( i != 5 )
-		return 0;
-	return result;
+	return ( i != 5 ) ? 0 : -12;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
@@ -354,30 +329,20 @@ int __fastcall mcxman_7_McxSetInfoSpeakerInfraredLed(
 				char infraredval,
 				char ledval)
 {
-	int xferres; // $v0
-
 	mcx_sio2_prepare(port, slot, 14, 0);
 	g_mcxman_idata.m_sio2_inbuf[3] = speakerval;
 	g_mcxman_idata.m_sio2_inbuf[4] = infraredval;
 	g_mcxman_idata.m_sio2_inbuf[5] = ledval;
-	xferres = mcx_sio2_xfer(port, slot);
-	if ( !xferres )
-		return 0;
-	return xferres;
+	return mcx_sio2_xfer(port, slot);
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
 //----- (004007E0) --------------------------------------------------------
 int __fastcall mcxman_8_McxSetInfoFlash(char port, int slot, char flashval)
 {
-	int xferres; // $v0
-
 	mcx_sio2_prepare(port, slot, 15, 0);
 	g_mcxman_idata.m_sio2_inbuf[3] = flashval;
-	xferres = mcx_sio2_xfer(port, slot);
-	if ( !xferres )
-		return 0;
-	return xferres;
+	return mcx_sio2_xfer(port, slot);
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
@@ -391,19 +356,17 @@ int __fastcall mcxman_10_McxWriteDev(
 				void *sect_buf,
 				size_t sect_buf_sz)
 {
-	BOOL condtmp; // $s1
+	int bufchk; // $s1
 	int xferres; // $v0
 
-	condtmp = 0;
+	bufchk = 0;
 	if ( dev_nr == 2 )
 	{
 		xferres = mcxman_11_McxSetInfoAppli(port, slot, -1, 0);
 		if ( xferres )
 			return xferres;
-		condtmp = !g_mcxman_idata.m_sio2_outbuf[3];
-		if ( condtmp )
-			condtmp = !g_mcxman_idata.m_sio2_outbuf[4];
-		if ( condtmp )
+		bufchk = !g_mcxman_idata.m_sio2_outbuf[3] && !g_mcxman_idata.m_sio2_outbuf[4];
+		if ( bufchk )
 			xferres = mcxman_11_McxSetInfoAppli(port, slot, 0, 288);
 		if ( xferres )
 			return xferres;
@@ -415,13 +378,9 @@ int __fastcall mcxman_10_McxWriteDev(
 	xferres = mcx_sio2_xfer(port, slot);
 	if ( xferres )
 		return xferres;
-	if ( dev_nr == 2 && condtmp )
-	{
+	if ( dev_nr == 2 && bufchk )
 		xferres = mcxman_11_McxSetInfoAppli(port, slot, 0, 288);
-		if ( xferres )
-			return xferres;
-	}
-	return 0;
+	return xferres;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
@@ -442,10 +401,7 @@ int __fastcall mcxman_9_McxReadDev(
 	memcpy(&g_mcxman_idata.m_sio2_inbuf[4], param_buf, param_buf_sz);
 	xferres = mcx_sio2_xfer(port, slot);
 	if ( !xferres )
-	{
 		memcpy(sect_buf, &g_mcxman_idata.m_sio2_outbuf[param_buf_sz + 5], sect_buf_sz);
-		return 0;
-	}
 	return xferres;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
@@ -454,7 +410,6 @@ int __fastcall mcxman_9_McxReadDev(
 int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval, int aplargval)
 {
 	int xferres; // $s1
-	int result; // $v0
 
 	mcx_sio2_prepare(port, slot, 9, 0);
 	g_mcxman_idata.m_sio2_inbuf[3] = applinoval >> 8;
@@ -464,26 +419,18 @@ int __fastcall mcxman_11_McxSetInfoAppli(char port, int slot, __int16 applinoval
 	WaitSema(g_mcxman_idata.m_semid);
 	USec2SysClock(0x7530u, &g_mcxman_idata.m_sysclk);
 	SetAlarm(&g_mcxman_idata.m_sysclk, (unsigned int (__cdecl *)(void *))alarm_cb, NULL);
-	result = xferres;
-	if ( !xferres )
-		return 0;
-	return result;
+	return xferres;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
 //----- (00400B24) --------------------------------------------------------
 int __fastcall mcxman_12_McxDispTrans(char port, int slot, char dirval, char hideshowval, char timeval)
 {
-	int xferres; // $v0
-
 	mcx_sio2_prepare(port, slot, 13, 0);
 	g_mcxman_idata.m_sio2_inbuf[3] = dirval;
 	g_mcxman_idata.m_sio2_inbuf[4] = hideshowval;
 	g_mcxman_idata.m_sio2_inbuf[5] = timeval;
-	xferres = mcx_sio2_xfer(port, slot);
-	if ( !xferres )
-		return 0;
-	return xferres;
+	return mcx_sio2_xfer(port, slot);
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
@@ -491,8 +438,6 @@ int __fastcall mcxman_12_McxDispTrans(char port, int slot, char dirval, char hid
 int __fastcall unusedsub_400BB0(char a1, int a2)
 {
 	int i; // $s0
-	int result; // $v0
-
 	mcx_sio2_prepare(a1, a2, 8, 0);
 	for ( i = 0; i < 5; i += 1 )
 	{
@@ -505,16 +450,7 @@ int __fastcall unusedsub_400BB0(char a1, int a2)
 		if ( (g_mcxman_idata.m_sio2_td.stat6c & 0xF000) == 4096 && g_mcxman_idata.m_sio2_outbuf[2] == 90 )
 			break;
 	}
-	result = -12;
-	if ( i != 5 )
-	{
-		if ( !g_mcxman_idata.m_sio2_outbuf[1] )
-			return -13;
-		result = -14;
-		if ( g_mcxman_idata.m_sio2_outbuf[1] == 8 )
-			return -13;
-	}
-	return result;
+	return ( i != 5 ) ? (( !g_mcxman_idata.m_sio2_outbuf[1] || g_mcxman_idata.m_sio2_outbuf[1] == 8 ) ? -13 : -14) : -12;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
 
@@ -522,7 +458,6 @@ int __fastcall unusedsub_400BB0(char a1, int a2)
 int __fastcall unusedsub_400CD8(char a1, s32 a2)
 {
 	int i; // $s0
-	int result; // $v0
 
 	g_mcxman_idata.m_sio2_td.regdata[0] = (((a1 & 1) + 2) & 3) | 0x140540;
 	g_mcxman_idata.m_sio2_td.in_size = 5;
@@ -539,9 +474,6 @@ int __fastcall unusedsub_400CD8(char a1, s32 a2)
 		if ( (g_mcxman_idata.m_sio2_td.stat6c & 0xF000) == 4096 )
 			break;
 	}
-	result = -11;
-	if ( i != 5 )
-		return 0;
-	return result;
+	return ( i != 5 ) ? 0 : -11;
 }
 // 400F60: using guessed type mcxman_idata g_mcxman_idata;
